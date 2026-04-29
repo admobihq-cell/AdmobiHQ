@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Menu, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 import { Container } from "./container"
 import { Logo } from "./logo"
@@ -44,6 +45,7 @@ export function SiteHeader() {
               {label}
             </Link>
           ))}
+          <ThemeToggle />
           <span className="mx-1 hidden h-6 w-px bg-border xl:block" aria-hidden />
           <Button asChild size="sm" variant="outline" className="ml-2">
             <Link href="#fleet">Partner fleet</Link>
@@ -71,6 +73,10 @@ export function SiteHeader() {
           className="border-t border-border bg-background lg:hidden"
         >
           <Container className="flex flex-col gap-4 py-4">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <span className="text-sm font-medium text-foreground">Appearance</span>
+              <ThemeToggle />
+            </div>
             <nav aria-label="Mobile primary" className="flex flex-col gap-1">
               {navItems.map(({ href, label }) => (
                 <Link
