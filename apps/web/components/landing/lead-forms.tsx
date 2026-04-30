@@ -8,9 +8,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 
-function isEmail(v: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
-}
+import { isEmail } from "@/lib/is-email"
 
 function FormSuccess({ message }: { message: string }) {
   return (
@@ -62,6 +60,7 @@ export function LeadForms() {
 
   function onWaitlistSubmit(e: FormEvent) {
     e.preventDefault()
+    setWaitlistOk(false)
     setWaitlistErr(null)
     if (!waitlist.email.trim()) {
       setWaitlistErr("Enter your email.")
@@ -79,6 +78,7 @@ export function LeadForms() {
 
   function onCampaignSubmit(e: FormEvent) {
     e.preventDefault()
+    setCampaignOk(false)
     const next: Record<string, string | null> = {}
     if (!campaign.name.trim()) next.name = "Add your name."
     if (!campaign.email.trim()) next.email = "Add your email."
@@ -94,6 +94,7 @@ export function LeadForms() {
 
   function onFleetSubmit(e: FormEvent) {
     e.preventDefault()
+    setFleetOk(false)
     const next: Record<string, string | null> = {}
     if (!fleet.company.trim()) next.company = "Add company name."
     if (!fleet.name.trim()) next.name = "Add contact name."
@@ -108,6 +109,7 @@ export function LeadForms() {
 
   function onDriverSubmit(e: FormEvent) {
     e.preventDefault()
+    setDriverOk(false)
     const next: Record<string, string | null> = {}
     if (!driver.name.trim()) next.name = "Add your name."
     if (!driver.phone.trim()) next.phone = "Add phone."
