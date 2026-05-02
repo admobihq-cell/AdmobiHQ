@@ -21,10 +21,10 @@ export function HeroSection() {
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Button asChild size="lg">
-                <Link href="#campaign">Start a campaign</Link>
+                <Link href="/start-campaign">Start a campaign</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="#fleet">Join as fleet manager</Link>
+                <Link href="/partner-fleet">Join as fleet manager</Link>
               </Button>
             </div>
           </div>

@@ -129,3 +129,23 @@
     @apply bg-background text-foreground;
     }
 }
+
+/* Landing logo marquee: transform-only, prefers-reduced-motion respected in markup */
+@keyframes trusted-logo-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .trusted-logo-marquee-track {
+    animation: trusted-logo-marquee 42s linear infinite;
+  }
+
+  .trusted-logo-marquee-track:hover {
+    animation-play-state: paused;
+  }
+}

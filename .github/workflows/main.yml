@@ -3,7 +3,7 @@ name: Merge to Main
 on:
   push:
     branches:
-      - main
+      - master
 
 env:
   TURBO_UI: false # Disable TUI — it requires an interactive terminal
