@@ -13,10 +13,10 @@ export function MobileStickyCta() {
       <div className="pointer-events-auto border-t border-border bg-background px-4 py-3 shadow-[0_-8px_24px_-8px_oklch(0.2_0.02_262/0.12)]">
         <div className="mx-auto flex max-w-[min(100%,36rem)] gap-2">
           <Button asChild className="min-h-11 flex-1" variant="outline" size="lg">
-            <Link href="#fleet">Fleet</Link>
+            <Link href="/partner-fleet">Fleet</Link>
           </Button>
           <Button asChild className="min-h-11 flex-1" size="lg">
-            <Link href="#campaign">Campaign</Link>
+            <Link href="/start-campaign">Start a campaign</Link>
           </Button>
         </div>
       </div>

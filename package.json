@@ -18,6 +18,9 @@
     "typescript": "5.9.3"
   },
   "packageManager": "npm@11.12.1",
+  "overrides": {
+    "zod": "3.25.76"
+  },
   "engines": {
     "node": ">=20"
   },

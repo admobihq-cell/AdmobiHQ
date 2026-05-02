@@ -1,18 +1,26 @@
 import { Container } from "./container"
 
+const bullets = [
+  "Screens move through the neighbourhoods and corridors your buyers already cross, hour by hour.",
+  "Repeat trips create frequency without stitching together dozens of static faces.",
+  "Pair geo cues with bursts for launches and events instead of committing to yearly hold.",
+] as const
+
 export function WhyTaxisSection() {
   return (
     <section id="why" className="scroll-mt-20 border-b border-border py-14 sm:py-20">
       <Container>
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
-          <div className="max-w-prose space-y-4 lg:col-span-1">
+          <div className="max-w-prose space-y-6 lg:col-span-1">
             <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
               Why moving screens
             </h2>
-            <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-              Fixed boards wait for eyes. Taxis circulate through the routes and hours your audience already uses. Repeat exposure across trips builds recognition without renting every static face in town.
-            </p>
-            <figure className="mt-8 rounded-2xl border border-border bg-muted/40 p-5">
+            <ul className="text-muted-foreground list-disc space-y-3 ps-6 text-base leading-relaxed sm:text-lg">
+              {bullets.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <figure className="rounded-2xl border border-border bg-muted/40 p-5">
               <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
                 Illustrative only
               </p>
