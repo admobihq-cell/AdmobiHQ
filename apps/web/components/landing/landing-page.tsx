@@ -27,8 +27,8 @@ export function LandingPage() {
         <ProcessSection />
         <FaqSection />
         <GetStartedSection />
-        <SiteFooter />
       </main>
+      <SiteFooter />
       <MobileStickyCta />
       <div className="h-[4.75rem] lg:hidden" aria-hidden />
     </>
