@@ -11,13 +11,9 @@ import { Container } from "./container"
 import { Logo } from "./logo"
 
 const navItems = [
-  { href: "#why", label: "Why taxis" },
-  { href: "#product", label: "Product" },
-  { href: "#who", label: "Who it's for" },
-  { href: "#markets", label: "Markets" },
-  { href: "#process", label: "Process" },
+  { href: "/products-solutions", label: "Products" },
+  { href: "#markets", label: "Rollout" },
   { href: "#get-started", label: "Get started" },
-  { href: "#media-kit", label: "Media kit" },
   { href: "#faq", label: "FAQ" },
 ] as const
 
@@ -48,10 +44,10 @@ export function SiteHeader() {
           <ThemeToggle />
           <span className="mx-1 hidden h-6 w-px bg-border xl:block" aria-hidden />
           <Button asChild size="sm" variant="outline" className="ml-2">
-            <Link href="#fleet">Partner fleet</Link>
+            <Link href="/partner-fleet">Partner your fleet</Link>
           </Button>
           <Button asChild size="sm" className="ml-1">
-            <Link href="#campaign">Start a campaign</Link>
+            <Link href="/start-campaign">Start a campaign</Link>
           </Button>
         </nav>
         <Button
@@ -91,12 +87,12 @@ export function SiteHeader() {
             </nav>
             <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
               <Button asChild variant="outline" size="sm" className="w-full sm:flex-1">
-                <Link href="#fleet" onClick={() => setOpen(false)}>
-                  Partner fleet
+                <Link href="/partner-fleet" onClick={() => setOpen(false)}>
+                  Partner your fleet
                 </Link>
               </Button>
               <Button asChild size="sm" className="w-full sm:flex-1">
-                <Link href="#campaign" onClick={() => setOpen(false)}>
+                <Link href="/start-campaign" onClick={() => setOpen(false)}>
                   Start a campaign
                 </Link>
               </Button>

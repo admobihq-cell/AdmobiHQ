@@ -2,10 +2,9 @@ import { Container } from "./container"
 
 const steps = [
   "Brief us on geography, timings, audiences, and brand rules.",
-  "Supply or commission creative to spec. Internal QA checks legibility.",
-  "Schedule fleets and rotations with your approvals.",
-  "Go live during agreed windows.",
-  "Receive delivery reporting as your package defines.",
+  "Supply creative to internal spec and pass QA for legibility and safe zones.",
+  "Schedule fleets, rotations, and publishing windows once everything is cleared.",
+  "Go live within agreed periods and tap into reporting as outlined in your plan.",
 ] as const
 
 export function ProcessSection() {
