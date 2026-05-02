@@ -13,6 +13,10 @@ const bullets = [
     title: "Flexible scheduling",
     body: "Run short bursts or sustained books. Minimum campaign length communicated clearly upfront.",
   },
+  {
+    title: "Creative delivery",
+    body: "Spec sheet for codecs, durations, and safe zones. QA before vehicles roll.",
+  },
 ] as const
 
 export function ProductSection() {

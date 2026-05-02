@@ -7,6 +7,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
+import { isEmail } from "@/lib/is-email"
+
 import { Container } from "./container"
 
 export function MediaKitSection() {
@@ -16,12 +18,13 @@ export function MediaKitSection() {
 
   function submit(e: FormEvent) {
     e.preventDefault()
+    setOk(false)
     setError(null)
     if (!email.trim()) {
       setError("Enter your email.")
       return
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!isEmail(email)) {
       setError("Use a valid email address.")
       return
     }

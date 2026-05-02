@@ -12,8 +12,13 @@ import { Logo } from "./logo"
 
 const navItems = [
   { href: "/products-solutions", label: "Products" },
+  { href: "#why", label: "Why taxis" },
+  { href: "#product", label: "Product" },
+  { href: "#who", label: "Who it's for" },
   { href: "#markets", label: "Rollout" },
+  { href: "#process", label: "Process" },
   { href: "#get-started", label: "Get started" },
+  { href: "/media-kit", label: "Media kit" },
   { href: "#faq", label: "FAQ" },
 ] as const
 
