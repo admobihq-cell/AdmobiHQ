@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -40,12 +39,6 @@ export default function MediaKitPage() {
   return (
     <div className="border-b border-border py-12 sm:py-20">
       <Container className="max-w-2xl">
-        <Link
-          href="/"
-          className="text-muted-foreground hover:text-foreground mb-8 inline-block text-sm font-medium"
-        >
-          ← Back home
-        </Link>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
           Media kit
         </h1>

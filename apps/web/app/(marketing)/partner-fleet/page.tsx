@@ -164,9 +164,6 @@ export default function PartnerFleetPage() {
     return (
       <div className="min-h-[60vh] border-b border-border py-14 sm:py-20">
         <Container className="max-w-3xl space-y-4">
-          <Link href="/" className="text-muted-foreground hover:text-foreground inline-block text-sm font-medium">
-            ← Back home
-          </Link>
           <p className="text-foreground text-xl font-semibold leading-snug sm:text-2xl">
             Thanks. We&apos;ll send over the partnership deck and follow up within 48 hours.
           </p>
@@ -180,9 +177,6 @@ export default function PartnerFleetPage() {
       <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
         <Container>
           <div className="max-w-2xl space-y-6">
-            <Link href="/" className="inline-flex text-sm font-medium text-background/70 hover:text-background">
-              ← Back home
-            </Link>
             <div className="space-y-3">
               <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
                 Fleet partnership · Kenya rollout

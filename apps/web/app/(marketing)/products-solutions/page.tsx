@@ -34,9 +34,6 @@ export default function ProductsSolutionsPage() {
       <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
         <Container>
           <div className="max-w-2xl space-y-6">
-            <Link href="/" className="inline-flex text-sm font-medium text-background/70 hover:text-background">
-              ← Back home
-            </Link>
             <div className="space-y-3">
               <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
                 Products & solutions · Kenya rollout
