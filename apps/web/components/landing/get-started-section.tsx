@@ -94,7 +94,8 @@ export function GetStartedSection() {
         </div>
 
         <form
-          className="mt-14 max-w-xl space-y-4 border-t border-border pt-10"
+          id="waitlist"
+          className="mt-14 max-w-xl scroll-mt-20 space-y-4 border-t border-border pt-10"
           onSubmit={onNotify}
           noValidate
         >
