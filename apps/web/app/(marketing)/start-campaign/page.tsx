@@ -101,12 +101,6 @@ export default function StartCampaignPage() {
     return (
       <div className="min-h-[60vh] border-b border-border py-14 sm:py-20">
         <Container className="max-w-3xl space-y-4">
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground inline-block text-sm font-medium"
-          >
-            ← Back home
-          </Link>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             We&apos;ve got your brief.
           </h1>
@@ -122,12 +116,6 @@ export default function StartCampaignPage() {
     <div className="border-b border-border py-10 sm:py-16 lg:py-20">
       <Container>
         <div className="mb-10 max-w-xl space-y-2">
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground inline-block text-sm font-medium"
-          >
-            ← Back home
-          </Link>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             Start a campaign
           </h1>
