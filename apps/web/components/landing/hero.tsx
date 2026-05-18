@@ -1,52 +1,69 @@
+import Image from "next/image"
 import Link from "next/link"
 
 import { Button } from "@workspace/ui/components/button"
 
 import { Container } from "./container"
+import { InView } from "./in-view"
+import { RouteSignal } from "./system-illustration"
+
+const LOGO_PREFIX = "/logo%20Carousel"
+
+const heroLogos = [
+  { src: `${LOGO_PREFIX}/safaricom.png`, alt: "Safaricom" },
+  { src: `${LOGO_PREFIX}/naivas.png`, alt: "Naivas" },
+  { src: `${LOGO_PREFIX}/eabl.png`, alt: "EABL" },
+  { src: `${LOGO_PREFIX}/java.png`, alt: "Java House" },
+  { src: `${LOGO_PREFIX}/sarova.png`, alt: "Sarova Hotels" },
+  { src: `${LOGO_PREFIX}/tsavo.png`, alt: "Tsavo" },
+] as const
 
 export function HeroSection() {
   return (
-    <section className="relative border-b border-border pb-14 pt-10 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-16">
+    <section className="relative border-b border-border pb-16 pt-12 sm:pb-24 sm:pt-16 lg:pb-28 lg:pt-20">
       <Container>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center lg:gap-14">
-          <div className="min-w-0 space-y-6">
-            <p className="text-muted-foreground text-[0.7rem] font-medium uppercase tracking-[0.22em] sm:text-xs">
-              Nairobi · Digital taxi-top screens
-            </p>
-            <h1 className="max-w-[20ch] text-balance text-4xl font-semibold leading-[1.07] tracking-tight text-foreground sm:text-5xl lg:text-[3.35rem]">
-              Reach the city from the roofline up.
-            </h1>
-            <p className="max-w-[62ch] text-base leading-relaxed text-muted-foreground sm:text-lg">
-              LED units on taxis put your creative in motion with geo and schedule control. Built for bursts, launches, and campaigns that need to move with demand.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Button asChild size="lg">
-                <Link href="/start-campaign">Start a campaign</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/partner-fleet">Join as fleet manager</Link>
-              </Button>
-            </div>
+        <div className="mx-auto max-w-[60rem] text-center">
+          <p className="text-muted-foreground text-[0.7rem] font-medium uppercase tracking-[0.22em] sm:text-xs">
+            Nairobi · Digital taxi-top screens
+          </p>
+          <h1 className="mx-auto mt-5 max-w-[20ch] text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem]">
+            Reach the city from the roofline up.
+          </h1>
+          <p className="text-muted-foreground mx-auto mt-6 max-w-[58ch] text-pretty text-base leading-relaxed sm:text-lg">
+            LED units on taxis put your creative in motion with geo and schedule control. Built for bursts, launches, and campaigns that need to move with demand.
+          </p>
+          <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <Button asChild size="lg">
+              <Link href="/start-campaign">Start a campaign</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/partner-fleet">Join as fleet manager</Link>
+            </Button>
           </div>
-          <figure className="relative isolate min-h-[240px] overflow-hidden rounded-2xl border border-border bg-muted/70 sm:min-h-[280px] lg:min-h-[320px]">
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.07]"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 35% 35%, var(--color-foreground) 0, transparent 52%)",
-              }}
-              aria-hidden
-            />
-            <div className="absolute inset-6 flex flex-col justify-end gap-2 sm:inset-8">
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                Visual placeholder
-              </p>
-              <p className="max-w-[40ch] text-sm leading-relaxed text-foreground/90">
-                Hero photography of taxi-top hardware in Nairobi traffic will sit here. Tone: daylight, sharp screen, city context.
-              </p>
-            </div>
-          </figure>
         </div>
+
+        <div className="mx-auto mt-14 max-w-[52rem] text-center sm:mt-16">
+          <p className="text-muted-foreground text-[0.65rem] font-medium uppercase tracking-[0.24em] sm:text-[0.7rem]">
+            In rotation across campaigns for
+          </p>
+          <ul className="mt-5 grid grid-cols-3 items-center justify-items-center gap-x-6 gap-y-5 sm:grid-cols-6 sm:gap-x-8">
+            {heroLogos.map((logo) => (
+              <li key={logo.src} className="flex h-7 items-center justify-center sm:h-8">
+                <Image
+                  src={logo.src}
+                  alt={logo.alt}
+                  width={120}
+                  height={32}
+                  className="max-h-7 w-auto max-w-[6rem] object-contain opacity-70 sm:max-h-8"
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <InView className="relative isolate mx-auto mt-14 w-full max-w-[64rem] sm:mt-20">
+          <RouteSignal className="aspect-[4/3] w-full sm:aspect-[16/9]" />
+        </InView>
       </Container>
     </section>
   )
