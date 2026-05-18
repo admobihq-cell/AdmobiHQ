@@ -149,3 +149,56 @@
     animation-play-state: paused;
   }
 }
+
+/* Landing system illustrations: route draw, staggered rise, live-signal pulse.
+   All transform/opacity only. Gated by [data-visible="true"] from <InView>. */
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: var(--route-len, 600);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes signal-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-visible="true"] .anim-route {
+    stroke-dasharray: var(--route-len, 600);
+    stroke-dashoffset: var(--route-len, 600);
+    animation: route-draw 900ms var(--ease-out-strong) forwards;
+  }
+
+  [data-visible="true"] .anim-rise {
+    opacity: 0;
+    animation: fade-rise 500ms var(--ease-out-strong) forwards;
+    animation-delay: var(--rise-delay, 0ms);
+  }
+
+  .anim-pulse {
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: signal-pulse 1800ms var(--ease-out-strong) infinite;
+  }
+}

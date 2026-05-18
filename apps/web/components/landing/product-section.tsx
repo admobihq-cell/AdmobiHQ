@@ -1,21 +1,23 @@
 import { Container } from "./container"
+import { InView } from "./in-view"
+import { SystemAnatomy } from "./system-illustration"
 
-const bullets = [
+const nodes = [
   {
-    title: "Rooftop LED units",
-    body: "High-brightness creatives sized for readability at curb height and modest distance.",
+    label: "Fleet",
+    body: "Rooftop LED units on partner taxis. High-brightness creatives sized for curb height and modest distance.",
   },
   {
-    title: "Geo and time routing",
-    body: "Target areas and shifts that match briefs instead of locking to a single postcode panel.",
+    label: "Network",
+    body: "Hardware reports back, content syncs centrally. Geo and time routing target the corridors that match the brief.",
   },
   {
-    title: "Flexible scheduling",
-    body: "Run short bursts or sustained books. Minimum campaign length communicated clearly upfront.",
+    label: "Schedule",
+    body: "Short bursts or sustained books. Minimum campaign length communicated clearly upfront.",
   },
   {
-    title: "Creative delivery",
-    body: "Spec sheet for codecs, durations, and safe zones. QA before vehicles roll.",
+    label: "Creative QA",
+    body: "Spec sheet for codecs, durations, and safe zones. Creative reviewed before vehicles roll.",
   },
 ] as const
 
@@ -31,21 +33,31 @@ export function ProductSection() {
             Hardware on fleet partners, content managed centrally, delivery aligned to your geography and calendar.
           </p>
         </div>
-        <ol className="mt-12 space-y-0 divide-y divide-border rounded-2xl border border-border">
-          {bullets.map((item, i) => (
-            <li key={item.title} className="grid gap-3 p-6 sm:grid-cols-[7rem_1fr] sm:gap-8 sm:p-8">
-              <span className="font-mono text-xs text-primary uppercase tracking-wider">
+
+        <figure className="mt-12 hidden lg:block">
+          <InView>
+            <SystemAnatomy className="block w-full" />
+          </InView>
+          <figcaption className="sr-only">
+            Admobi system flow from fleet hardware to network to schedule to creative quality assurance.
+          </figcaption>
+        </figure>
+
+        <dl className="mt-10 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:mt-14 lg:grid-cols-4 lg:gap-x-8">
+          {nodes.map((node, i) => (
+            <div key={node.label} className="grid grid-cols-[3rem_1fr] items-baseline gap-x-3 sm:block">
+              <span className="font-mono text-xs text-primary uppercase tracking-wider sm:block">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
-                <p className="text-muted-foreground mt-2 max-w-[62ch] text-sm leading-relaxed sm:text-base">
-                  {item.body}
-                </p>
+              <div className="sm:mt-3">
+                <dt className="text-lg font-semibold text-foreground">{node.label}</dt>
+                <dd className="text-muted-foreground mt-2 max-w-[40ch] text-sm leading-relaxed sm:text-base">
+                  {node.body}
+                </dd>
               </div>
-            </li>
+            </div>
           ))}
-        </ol>
+        </dl>
       </Container>
     </section>
   )
