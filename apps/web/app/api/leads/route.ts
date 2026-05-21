@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   }
 
   let insertData: Record<string, unknown>
-  let tableName: string
+  let tableName: 'leads' | 'fleet_partners'
 
   if (parsed.data.audience === 'campaign') {
     tableName = 'leads'
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   }
 
   const { data, error } = await supabase
-    .from(tableName)
+    .from(tableName as any)
     .insert([insertData])
 
   if (error) {
