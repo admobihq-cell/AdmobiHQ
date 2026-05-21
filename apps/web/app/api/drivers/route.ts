@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server"
 
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 
 export async function POST(req: Request) {
+  let supabase
+  try {
+    supabase = getSupabaseClient()
+  } catch {
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 },
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()

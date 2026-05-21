@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server"
 
-import { supabase } from "@/lib/supabase"
+import { getSupabaseClient } from "@/lib/supabase"
 import { leadBodySchema } from "@/lib/validation/lead-schemas"
 
 export async function POST(req: Request) {
-  console.log('[Leads API] NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-  console.log('[Leads API] NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 20) + '...')
+  let supabase
+  try {
+    supabase = getSupabaseClient()
+  } catch {
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 },
+    )
+  }
 
   let body: unknown
   try {
