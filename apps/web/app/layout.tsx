@@ -8,11 +8,16 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { WhatsappFab } from "@/components/landing/whatsapp-fab"
 import { cn } from "@workspace/ui/lib/utils"
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  fallback: ["system-ui", "arial"],
+})
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  fallback: ["courier new", "monospace"],
 })
 
 export const metadata: Metadata = {
