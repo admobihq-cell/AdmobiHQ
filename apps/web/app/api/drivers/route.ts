@@ -4,15 +4,7 @@ import { getSupabaseClient } from "@/lib/supabase"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 
 export async function POST(req: Request) {
-  let supabase
-  try {
-    supabase = getSupabaseClient()
-  } catch {
-    return NextResponse.json(
-      { error: "Server configuration error" },
-      { status: 500 },
-    )
-  }
+  const supabase = getSupabaseClient()
 
   let body: unknown
   try {
@@ -40,7 +32,7 @@ export async function POST(req: Request) {
   }
 
   const { data, error } = await supabase
-    .from('drivers')
+    .from('drivers' as any)
     .insert([driverData])
 
   if (error) {
