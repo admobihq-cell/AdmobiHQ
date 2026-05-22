@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let emailQueue: any = null
 let processorStarted = false
 
@@ -5,6 +6,7 @@ export async function getEmailQueue() {
   // Only initialize Bull if we're in a Node.js environment (not during build)
   if (!emailQueue && typeof require !== "undefined") {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Bull = require("bull").default || require("bull")
       const redisUrl = process.env.REDIS_URL || "redis://localhost:6380"
       const url = new URL(redisUrl)
@@ -29,9 +31,11 @@ export async function getEmailQueue() {
   return emailQueue
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function startProcessor(queue: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   queue.process(async (job: any) => {
-    const { to, subject, html } = job.data as any
+    const { to, subject, html } = job.data as { to: string; subject: string; html: string }
 
     try {
       const result = await fetch("https://api.resend.com/emails", {

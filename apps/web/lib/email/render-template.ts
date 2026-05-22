@@ -1,6 +1,8 @@
+import type { ReactElement } from "react"
 import { render } from "react-email"
 
-export async function renderTemplate(component: any, props: Record<string, any>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function renderTemplate(component: (props: any) => ReactElement, props: Record<string, unknown>) {
   try {
     const html = await render(component(props))
     return html
