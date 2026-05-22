@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { leadBodySchema } from "@/lib/validation/lead-schemas"
 
+// Database: Neon PostgreSQL with Prisma ORM
+
 export async function POST(req: Request) {
   let body: unknown
   try {
