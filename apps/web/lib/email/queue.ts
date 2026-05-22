@@ -14,8 +14,6 @@ export async function getEmailQueue() {
         redis: {
           url: redisUrl,
           maxRetriesPerRequest: 3,
-          enableReadyCheck: false,
-          enableOfflineQueue: false,
           connectTimeout: 10000,
           commandTimeout: 5000,
         },
