@@ -11,11 +11,18 @@ export async function getEmailQueue() {
       const redisUrl = process.env.REDIS_URL || "redis://localhost:6380"
 
       emailQueue = new Bull("email", {
-        redis: redisUrl,
+        redis: {
+          url: redisUrl,
+          maxRetriesPerRequest: 3,
+          enableReadyCheck: false,
+          enableOfflineQueue: false,
+          connectTimeout: 10000,
+          commandTimeout: 5000,
+        },
         settings: {
           retryProcess: {
             delay: 5000,
-            times: 2,
+            times: 1,
           },
         },
       })
