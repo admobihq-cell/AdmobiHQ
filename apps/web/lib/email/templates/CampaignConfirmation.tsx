@@ -1,28 +1,27 @@
 import * as React from "react"
-import { Body, Button, Container, Head, Hr, Html, Img, Link, Preview, Row, Section, Text } from "react-email"
+import { Body, Button, Container, Head, Hr, Html, Link, Preview, Row, Section, Text } from "react-email"
 
 interface CampaignConfirmationProps {
   name: string
   company: string
-  budget?: string
 }
 
-export const CampaignConfirmation = ({ name, company, budget }: CampaignConfirmationProps) => (
+export const CampaignConfirmation = ({ name, company }: CampaignConfirmationProps) => (
   <Html>
     <Head />
-    <Preview>We've received your campaign brief</Preview>
+    <Preview>We&apos;ve received your campaign brief</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={box}>
           <Row>
-            <Text style={heading}>We've got your brief.</Text>
+            <Text style={heading}>We&apos;ve got your brief.</Text>
           </Row>
           <Hr style={hr} />
           <Text style={paragraph}>
             Hi {name},
           </Text>
           <Text style={paragraph}>
-            Thank you for submitting your campaign brief for <strong>{company}</strong>. We're excited to work with you!
+            Thank you for submitting your campaign brief for <strong>{company}</strong>. We&apos;re excited to work with you!
           </Text>
           <Text style={paragraph}>
             Someone from the Admobi team will reach out within <strong>24 hours</strong> with availability, pricing, and a customized plan for your campaign.

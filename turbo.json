@@ -6,11 +6,11 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["DATABASE_URL", "NODE_ENV"]
+      "env": ["DATABASE_URL", "NODE_ENV", "RESEND_API_KEY", "REDIS_URL", "ADMIN_EMAIL", "SENDER_EMAIL", "TEST_RECIPIENT_EMAIL"]
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "env": ["DATABASE_URL", "NODE_ENV"]
+      "env": ["DATABASE_URL", "NODE_ENV", "RESEND_API_KEY", "REDIS_URL", "ADMIN_EMAIL", "SENDER_EMAIL", "TEST_RECIPIENT_EMAIL"]
     },
     "format": {
       "dependsOn": ["^format"]

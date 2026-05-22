@@ -21,10 +21,10 @@ export const DriverConfirmation = ({ name, city }: DriverConfirmationProps) => (
             Hi {name},
           </Text>
           <Text style={paragraph}>
-            Thank you for signing up for the Admobi driver program in <strong>{city}</strong>. We're excited to have you join our growing community!
+            Thank you for signing up for the Admobi driver program in <strong>{city}</strong>. We&apos;re excited to have you join our growing community!
           </Text>
           <Text style={paragraph}>
-            Your application is being reviewed. We'll be in touch within <strong>24 hours</strong> with:
+            Your application is being reviewed. We&apos;ll be in touch within <strong>24 hours</strong> with:
           </Text>
 
           <Section style={bulletContainer}>
