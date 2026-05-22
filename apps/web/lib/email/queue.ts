@@ -9,12 +9,14 @@ export async function getEmailQueue() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Bull = require("bull").default || require("bull")
       const redisUrl = process.env.REDIS_URL || "redis://localhost:6380"
-      const url = new URL(redisUrl)
 
       emailQueue = new Bull("email", {
-        redis: {
-          host: url.hostname,
-          port: parseInt(url.port || "6379"),
+        redis: redisUrl,
+        settings: {
+          retryProcess: {
+            delay: 5000,
+            times: 2,
+          },
         },
       })
 
