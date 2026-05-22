@@ -9,19 +9,19 @@ interface FleetPartnerConfirmationProps {
 export const FleetPartnerConfirmation = ({ name, company }: FleetPartnerConfirmationProps) => (
   <Html>
     <Head />
-    <Preview>We've received your fleet partnership application</Preview>
+    <Preview>We&apos;ve received your fleet partnership application</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={box}>
           <Row>
-            <Text style={heading}>We've got your application.</Text>
+            <Text style={heading}>We&apos;ve got your application.</Text>
           </Row>
           <Hr style={hr} />
           <Text style={paragraph}>
             Hi {name},
           </Text>
           <Text style={paragraph}>
-            Thank you for applying to become an Admobi fleet partner. We're impressed with <strong>{company}</strong> and excited about the possibility of working together!
+            Thank you for applying to become an Admobi fleet partner. We&apos;re impressed with <strong>{company}</strong> and excited about the possibility of working together!
           </Text>
           <Text style={paragraph}>
             Our partnerships team will review your application and reach out within <strong>24-48 hours</strong> to discuss:
