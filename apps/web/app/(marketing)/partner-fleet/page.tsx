@@ -128,6 +128,7 @@ export default function PartnerFleetPage() {
   })
 
   const { register, handleSubmit, setValue, watch, formState } = form
+  // eslint-disable-next-line react-hooks/incompatible-library
   const fleetTypesWatch = watch("fleetTypes").slice()
   const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
 
