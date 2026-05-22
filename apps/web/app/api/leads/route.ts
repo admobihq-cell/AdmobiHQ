@@ -2,8 +2,14 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
 import { leadBodySchema } from "@/lib/validation/lead-schemas"
+import { queueEmail } from "@/lib/email/send-email-job"
+import { renderTemplate } from "@/lib/email/render-template"
+import { CampaignConfirmation } from "@/lib/email/templates/CampaignConfirmation"
+import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConfirmation"
+import { AdminAlert } from "@/lib/email/templates/AdminAlert"
 
 // Database: Neon PostgreSQL with Prisma ORM
+// Email: Resend with Bull queue for reliability
 
 export async function POST(req: Request) {
   let body: unknown
@@ -35,6 +41,42 @@ export async function POST(req: Request) {
         },
       })
       console.log("[Admobi API leads] Saved campaign lead:", parsed.data)
+
+      // Queue confirmation and admin emails (fire-and-forget)
+      try {
+        const campaignHtml = await renderTemplate(CampaignConfirmation, {
+          name: parsed.data.name,
+          company: parsed.data.company,
+          budget: parsed.data.budget,
+        })
+
+        const adminHtml = await renderTemplate(AdminAlert, {
+          type: 'campaign',
+          submitterName: parsed.data.name,
+          submitterEmail: parsed.data.email,
+          submitterPhone: parsed.data.phone,
+          submitterCompany: parsed.data.company,
+          additionalInfo: parsed.data.brief,
+        })
+
+        await queueEmail({
+          to: process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
+          subject: "We've received your campaign brief",
+          html: campaignHtml,
+        })
+
+        await queueEmail({
+          to: process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+          subject: `New Campaign Submission: ${parsed.data.company}`,
+          html: adminHtml,
+        })
+
+        console.log("[Admobi API leads] Campaign emails queued")
+      } catch (emailError) {
+        console.error("[Admobi API leads] Failed to queue emails:", emailError)
+        // Don't block response if email queueing fails
+      }
+
       return NextResponse.json({ success: true, data })
     } else {
       const data = await prisma.fleetPartner.create({
@@ -51,6 +93,42 @@ export async function POST(req: Request) {
         },
       })
       console.log("[Admobi API leads] Saved fleet partner:", parsed.data)
+
+      // Queue confirmation and admin emails (fire-and-forget)
+      try {
+        const fleetHtml = await renderTemplate(FleetPartnerConfirmation, {
+          name: parsed.data.primaryContactName,
+          company: parsed.data.fleetOrCompanyName,
+        })
+
+        const adminFleetHtml = await renderTemplate(AdminAlert, {
+          type: 'fleet',
+          submitterName: parsed.data.primaryContactName,
+          submitterEmail: parsed.data.email,
+          submitterPhone: parsed.data.phone,
+          submitterCompany: parsed.data.fleetOrCompanyName,
+          submitterCity: parsed.data.city,
+          additionalInfo: parsed.data.notes,
+        })
+
+        await queueEmail({
+          to: process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
+          subject: "We've received your fleet partnership application",
+          html: fleetHtml,
+        })
+
+        await queueEmail({
+          to: process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+          subject: `New Fleet Partnership Application: ${parsed.data.fleetOrCompanyName}`,
+          html: adminFleetHtml,
+        })
+
+        console.log("[Admobi API leads] Fleet emails queued")
+      } catch (emailError) {
+        console.error("[Admobi API leads] Failed to queue emails:", emailError)
+        // Don't block response if email queueing fails
+      }
+
       return NextResponse.json({ success: true, data })
     }
   } catch (error: unknown) {
