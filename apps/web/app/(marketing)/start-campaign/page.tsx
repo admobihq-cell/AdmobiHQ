@@ -68,7 +68,7 @@ export default function StartCampaignPage() {
 
   function toggleFormat(key: "taxi_top" | "delivery_bike") {
     const curr = adFormatsWatch.slice()
-    let next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
     setValue("adFormats", next, { shouldValidate: true })
   }
 
