@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
-import { queueEmail } from "@/lib/email/send-email-job"
+import { sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
@@ -54,17 +54,17 @@ export async function POST(req: Request) {
         additionalInfo: `Vehicle: ${parsed.data.vehicleType}, Days/week: ${parsed.data.daysPerWeek}`,
       })
 
-      await queueEmail({
-        to: process.env.TEST_RECIPIENT_EMAIL || parsed.data.email || '',
-        subject: "Welcome to Admobi - We'll review your application",
-        html: driverHtml,
-      })
+      await sendEmail(
+        process.env.TEST_RECIPIENT_EMAIL || parsed.data.email || '',
+        "Welcome to Admobi - We'll review your application",
+        driverHtml
+      )
 
-      await queueEmail({
-        to: process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
-        subject: `New Driver Application: ${parsed.data.name}`,
-        html: adminDriverHtml,
-      })
+      await sendEmail(
+        process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+        `New Driver Application: ${parsed.data.name}`,
+        adminDriverHtml
+      )
 
       console.log("[Admobi API drivers] Driver emails queued")
     } catch (emailError) {
