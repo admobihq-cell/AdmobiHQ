@@ -47,6 +47,7 @@ export default function StartCampaignPage() {
     formState: { errors, isSubmitting },
   } = form
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const citiesWatch = watch("cities").slice()
   const adFormatsWatch = watch("adFormats").slice()
 
@@ -68,7 +69,7 @@ export default function StartCampaignPage() {
 
   function toggleFormat(key: "taxi_top" | "delivery_bike") {
     const curr = adFormatsWatch.slice()
-    let next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
     setValue("adFormats", next, { shouldValidate: true })
   }
 
