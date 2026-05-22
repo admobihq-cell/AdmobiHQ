@@ -47,6 +47,7 @@ export default function StartCampaignPage() {
     formState: { errors, isSubmitting },
   } = form
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const citiesWatch = watch("cities").slice()
   const adFormatsWatch = watch("adFormats").slice()
 
