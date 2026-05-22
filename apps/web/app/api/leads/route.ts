@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
 import { leadBodySchema } from "@/lib/validation/lead-schemas"
-import { queueEmail } from "@/lib/email/send-email-job"
+import { sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import { CampaignConfirmation } from "@/lib/email/templates/CampaignConfirmation"
 import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConfirmation"
@@ -59,17 +59,17 @@ export async function POST(req: Request) {
           additionalInfo: parsed.data.brief,
         })
 
-        await queueEmail({
-          to: process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
-          subject: "We've received your campaign brief",
-          html: campaignHtml,
-        })
+        await sendEmail(
+          process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
+          "We've received your campaign brief",
+          campaignHtml
+        )
 
-        await queueEmail({
-          to: process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
-          subject: `New Campaign Submission: ${parsed.data.company}`,
-          html: adminHtml,
-        })
+        await sendEmail(
+          process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+          `New Campaign Submission: ${parsed.data.company}`,
+          adminHtml
+        )
 
         console.log("[Admobi API leads] Campaign emails queued")
       } catch (emailError) {
@@ -111,17 +111,17 @@ export async function POST(req: Request) {
           additionalInfo: parsed.data.notes,
         })
 
-        await queueEmail({
-          to: process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
-          subject: "We've received your fleet partnership application",
-          html: fleetHtml,
-        })
+        await sendEmail(
+          process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
+          "We've received your fleet partnership application",
+          fleetHtml
+        )
 
-        await queueEmail({
-          to: process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
-          subject: `New Fleet Partnership Application: ${parsed.data.fleetOrCompanyName}`,
-          html: adminFleetHtml,
-        })
+        await sendEmail(
+          process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+          `New Fleet Partnership Application: ${parsed.data.fleetOrCompanyName}`,
+          adminFleetHtml
+        )
 
         console.log("[Admobi API leads] Fleet emails queued")
       } catch (emailError) {
