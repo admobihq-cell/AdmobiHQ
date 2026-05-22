@@ -43,7 +43,7 @@ export async function POST(req: Request) {
           phone: parsed.data.phone,
           city: parsed.data.city,
           fleet_types: parsed.data.fleetTypes,
-          fleet_size: parsed.data.vehicleCount,
+          fleet_size: String(parsed.data.vehicleCount),
           vehicles_active: parsed.data.vehiclesActive,
           notes: parsed.data.notes || '',
         },
