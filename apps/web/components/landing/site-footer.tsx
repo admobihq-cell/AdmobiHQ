@@ -12,7 +12,7 @@ const columns = [
     heading: "Product",
     links: [
       { href: "/products-solutions", label: "Products & solutions" },
-      { href: "#product", label: "Capabilities" },
+      { href: "/#product", label: "Capabilities" },
       { href: "/media-kit", label: "Media kit" },
     ],
   },
@@ -21,9 +21,9 @@ const columns = [
     heading: "For advertisers",
     links: [
       { href: "/start-campaign", label: "Start a campaign" },
-      { href: "#who", label: "Who buys OOH here" },
-      { href: "#process", label: "How bookings work" },
-      { href: "#faq", label: "FAQ" },
+      { href: "/#who", label: "Who buys OOH here" },
+      { href: "/#process", label: "How bookings work" },
+      { href: "/#faq", label: "FAQ" },
     ],
   },
   {
@@ -32,15 +32,15 @@ const columns = [
     links: [
       { href: "/partner-fleet", label: "Partner your fleet" },
       { href: "/drivers", label: "Driver sign-up" },
-      { href: "#markets", label: "Kenya rollout" },
+      { href: "/#markets", label: "Kenya rollout" },
     ],
   },
   {
     id: "legal",
     heading: "Legal",
     links: [
-      { href: "#", label: "Privacy" },
-      { href: "#", label: "Terms" },
+      { href: "/privacy", label: "Privacy" },
+      { href: "/terms", label: "Terms" },
     ],
   },
 ] as const
