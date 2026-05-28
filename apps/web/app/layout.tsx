@@ -26,16 +26,16 @@ const fontMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Admobi — Digital taxi-top OOH in Nairobi",
+    default: "Digital taxi-top OOH in Nairobi",
     template: "%s · Admobi",
   },
   description:
-    "Geotargeted LED taxi-top advertising in Kenyan cities. Campaigns that move with traffic, from one-day bursts to sustained books.",
+    "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books.",
   alternates: { canonical: SITE_URL },
   openGraph: {
-    title: "Admobi — Digital taxi-top OOH",
+    title: "Digital taxi-top OOH in Nairobi",
     description:
-      "Reach Nairobi in motion with geo and schedule control. Fleet and advertiser programs.",
+      "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books.",
     url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",
@@ -51,9 +51,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Admobi — Digital taxi-top OOH",
+    title: "Digital taxi-top OOH in Nairobi",
     description:
-      "Reach Nairobi in motion with geo and schedule control. Fleet and advertiser programs.",
+      "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books.",
     images: [DEFAULT_OG_IMAGE],
   },
 }
