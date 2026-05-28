@@ -37,7 +37,7 @@ export const FleetPartnerConfirmation = ({ name, company }: FleetPartnerConfirma
           <Section style={buttonContainer}>
             <Button
               style={button}
-              href="https://admobi.co"
+              href="https://admobihq.com"
             >
               Learn More About Our Partnership
             </Button>
