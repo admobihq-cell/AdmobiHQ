@@ -360,7 +360,7 @@ export default function DriversPage() {
                 />
                 <span>
                   I agree to the{" "}
-                  <Link href="#" className="text-primary underline-offset-4 hover:underline">
+                  <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
                     privacy policy
                   </Link>{" "}
                   and understand these are the working terms described above.

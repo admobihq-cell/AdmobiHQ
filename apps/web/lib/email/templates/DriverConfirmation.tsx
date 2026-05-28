@@ -37,7 +37,7 @@ export const DriverConfirmation = ({ name, city }: DriverConfirmationProps) => (
           <Section style={buttonContainer}>
             <Button
               style={button}
-              href="https://admobi.co"
+              href="https://admobihq.com"
             >
               Visit Admobi
             </Button>
@@ -55,8 +55,8 @@ export const DriverConfirmation = ({ name, city }: DriverConfirmationProps) => (
           <Hr style={hr} />
           <Text style={paragraph}>
             Questions? Reply to this email or visit{" "}
-            <Link href="https://admobi.co" style={link}>
-              admobi.co
+            <Link href="https://admobihq.com" style={link}>
+              admobihq.com
             </Link>
           </Text>
           <Text style={footerText}>
