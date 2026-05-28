@@ -1,21 +1,16 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Button } from "@workspace/ui/components/button"
 
 import { Container } from "@/components/landing/container"
+import { pageMetadata } from "@/lib/seo/site"
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Products & solutions",
   description:
     "Digital taxi-top and delivery-bike signage for Kenyan cities: geo-led scheduling, verified motion media, and short flights for brands.",
-  openGraph: {
-    title: "Products & solutions · Admobi",
-    description: "Moving LED inventory built for Kenyan streets and fleets.",
-    type: "website",
-    locale: "en_KE",
-  },
-}
+  path: "/products-solutions",
+})
 
 function PlaceholderVis({ caption }: { caption: string }) {
   return (
