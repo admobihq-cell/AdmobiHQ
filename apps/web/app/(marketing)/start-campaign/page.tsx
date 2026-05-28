@@ -262,7 +262,7 @@ export default function StartCampaignPage() {
               <input type="checkbox" className="border-input accent-primary mt-1 size-4 shrink-0 rounded border" {...register("consent")} />
               <span>
                 I agree to the{" "}
-                <Link href="#" className="text-primary underline-offset-4 hover:underline">
+                <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
                   privacy policy
                 </Link>
                 .
