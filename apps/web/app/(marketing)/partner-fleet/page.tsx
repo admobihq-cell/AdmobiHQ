@@ -165,9 +165,9 @@ export default function PartnerFleetPage() {
     return (
       <div className="min-h-[60vh] border-b border-border py-14 sm:py-20">
         <Container className="max-w-3xl space-y-4">
-          <p className="text-foreground text-xl font-semibold leading-snug sm:text-2xl">
+          <h1 className="text-foreground text-xl font-semibold leading-snug sm:text-2xl">
             Thanks. We&apos;ll send over the partnership deck and follow up within 48 hours.
-          </p>
+          </h1>
         </Container>
       </div>
     )
@@ -445,7 +445,7 @@ export default function PartnerFleetPage() {
               />
               <span>
                 I agree to the{" "}
-                <Link href="#" className="text-primary underline-offset-4 hover:underline">
+                <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
                   privacy policy
                 </Link>{" "}
                 and understand these are the working terms described above.
