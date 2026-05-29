@@ -12,17 +12,6 @@ export const metadata = pageMetadata({
   path: "/products-solutions",
 })
 
-function PlaceholderVis({ caption }: { caption: string }) {
-  return (
-    <figure className="bg-card flex aspect-[16/11] flex-col justify-end rounded-2xl border border-border p-6 sm:aspect-auto sm:min-h-[220px]">
-      <span className="text-muted-foreground font-mono text-[0.65rem] uppercase tracking-wider">
-        Visual placeholder
-      </span>
-      <figcaption className="text-foreground mt-2 max-w-[36ch] text-sm leading-relaxed">{caption}</figcaption>
-    </figure>
-  )
-}
-
 export default function ProductsSolutionsPage() {
   return (
     <div className="border-b border-border pb-14 sm:pb-20">
@@ -34,11 +23,10 @@ export default function ProductsSolutionsPage() {
                 Products & solutions · Kenya rollout
               </p>
               <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
-                Digital screens that ride with Kenyan traffic
+                Digital OOH advertising in Kenya — taxi tops and delivery bikes
               </h1>
               <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
-                Screens on taxis and delivery bikes tuned for real movement. Geography, calendars, and creative QA ship
-                with every booking so bursts stay fast without turning into roadside guesswork.
+                Admobi is Kenya&apos;s digital out-of-home network for brands that need motion-led outdoor advertising in Nairobi and beyond. Taxi-top LED screens and delivery bike enclosures bring geo-aware scheduling and proof-of-play to a format that moves with your audience instead of waiting for them.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -71,7 +59,14 @@ export default function ProductsSolutionsPage() {
                 Built for Nairobi first, expandable along the Kenyan rollout corridor as fleets come online behind you.
               </p>
             </div>
-            <PlaceholderVis caption="Unit photography and real reach charts land here once media is signed off." />
+            <div className="max-w-xl space-y-4">
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                High-visibility taxi-top screens across Nairobi
+              </h2>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                LED units mount above traffic sight lines so your creative stays visible through congestion, junctions, and arterial corridors. Every screen connects to the same geo and schedule layer as the rest of the Admobi network.
+              </p>
+            </div>
           </div>
         </Container>
       </section>
@@ -111,7 +106,14 @@ export default function ProductsSolutionsPage() {
       <section className="border-border border-t py-14 sm:py-20">
         <Container>
           <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.92fr),1fr] lg:gap-16">
-            <PlaceholderVis caption="Annotated city overlay or corridor map sample for geo routing conversations." />
+            <div className="max-w-xl space-y-4">
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                Geo-targeted outdoor advertising across Nairobi
+              </h2>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Plan your campaign by neighbourhood, arterial road, or time of day. CBD rush hour, Westlands lunch traffic, airport approach routes — each corridor is bookable separately so your spend follows real demand.
+              </p>
+            </div>
             <div className="max-w-xl lg:justify-self-end">
               <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
                 Geo-aware routing instead of postcode guesswork
@@ -141,7 +143,14 @@ export default function ProductsSolutionsPage() {
               </p>
             </div>
             <div className="lg:order-2">
-              <PlaceholderVis caption="Creative safe-zone diagram or looping render pull still from QA bench." />
+              <div className="max-w-xl space-y-4">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  Motion-ready creatives with curb-grade legibility checks
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Looping video and static rotations both run where codec specs allow. Operators validate readability at street level before your first play goes live, so motion ads stay sharp without sacrificing safety zones.
+                </p>
+              </div>
             </div>
           </div>
         </Container>
@@ -150,7 +159,14 @@ export default function ProductsSolutionsPage() {
       <section className="border-border border-t py-14 sm:py-20">
         <Container>
           <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.92fr),1fr] lg:gap-16">
-            <PlaceholderVis caption="Schedule grid concept for bursts vs sustained books layered on rollout cities." />
+            <div className="max-w-xl space-y-4">
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                Flexible flights from one-day bursts to sustained books
+              </h2>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Test creative on a single corridor for a day, then scale across multiple neighbourhoods once results land. Ops coordinates blackout rules and pacing so short flights and longer programmes share the same playbook.
+              </p>
+            </div>
             <div className="max-w-xl lg:justify-self-end">
               <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
                 Burst tests and national-scale stories in one playbook
@@ -183,7 +199,14 @@ export default function ProductsSolutionsPage() {
               </p>
             </div>
             <div className="lg:order-2">
-              <PlaceholderVis caption="Bike box hardware render paired with kinetic route shot when assets exist." />
+              <div className="max-w-xl space-y-4">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  Last-mile coverage on delivery bike corridors
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Smaller enclosures follow dispatch routes through estates, staging lots, and lunch-hour clusters where taxis may be sparse. Same trafficking specs as taxi tops mean one creative package can cover both formats.
+                </p>
+              </div>
             </div>
           </div>
         </Container>
