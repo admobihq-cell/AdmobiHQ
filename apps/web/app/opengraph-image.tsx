@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og"
 
-export const runtime = "edge"
+// Node.js runtime: ImageResponse (Satori) exceeds Vercel's 1 MB Edge bundle limit.
+export const runtime = "nodejs"
 export const alt = "Admobi — Digital taxi-top OOH in Kenya"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"

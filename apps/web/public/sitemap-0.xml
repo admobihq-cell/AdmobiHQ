@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-<url><loc>https://admobihq.com</loc><lastmod>2026-05-29T05:48:27.121Z</lastmod><changefreq>weekly</changefreq><priority>1</priority></url>
-<url><loc>https://admobihq.com/drivers</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
-<url><loc>https://admobihq.com/media-kit</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
-<url><loc>https://admobihq.com/partner-fleet</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-<url><loc>https://admobihq.com/privacy</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
-<url><loc>https://admobihq.com/products-solutions</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-<url><loc>https://admobihq.com/start-campaign</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-<url><loc>https://admobihq.com/terms</loc><lastmod>2026-05-29T05:48:27.122Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>https://admobihq.com</loc><lastmod>2026-05-29T05:55:56.895Z</lastmod><changefreq>weekly</changefreq><priority>1</priority></url>
+<url><loc>https://admobihq.com/drivers</loc><lastmod>2026-05-29T05:55:56.895Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>https://admobihq.com/media-kit</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>https://admobihq.com/opengraph-image</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>https://admobihq.com/partner-fleet</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+<url><loc>https://admobihq.com/privacy</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+<url><loc>https://admobihq.com/products-solutions</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+<url><loc>https://admobihq.com/start-campaign</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+<url><loc>https://admobihq.com/terms</loc><lastmod>2026-05-29T05:55:56.896Z</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>
