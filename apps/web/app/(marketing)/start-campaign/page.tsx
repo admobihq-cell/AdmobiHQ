@@ -116,17 +116,24 @@ export default function StartCampaignPage() {
   return (
     <div className="border-b border-border py-10 sm:py-16 lg:py-20">
       <Container>
-        <div className="mb-10 max-w-xl space-y-2">
+        <div className="mb-10 max-w-2xl space-y-6">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             Start a campaign
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
             Tell us what you want to run. We&apos;ll come back with availability, pricing, and a plan.
           </p>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.75rem]">
+              Advertise on taxi tops across Nairobi
+            </h2>
+            <p className="text-muted-foreground text-base leading-relaxed">
+              Fill in the brief below and we&apos;ll come back with availability, pricing, and a flight plan within 48 hours. Campaigns start from one day — no long-term contracts, no minimum fleet commitment. Outdoor advertising in Nairobi doesn&apos;t have to mean locking into a 6-month billboard. Admobi taxi-top screens let you run bursts around events, launches, and promotions, then pause when you don&apos;t need the air.
+            </p>
+          </div>
         </div>
 
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-16">
-          <form className="max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
+        <form className="max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-2">
               <Label htmlFor="sc-name">Your name *</Label>
               <Input id="sc-name" autoComplete="name" aria-invalid={!!errors.name} {...register("name")} />
@@ -279,24 +286,31 @@ export default function StartCampaignPage() {
             </Button>
           </form>
 
-          <aside className="text-muted-foreground hidden space-y-5 rounded-2xl border border-border bg-muted/35 p-6 text-sm leading-relaxed lg:block lg:sticky lg:top-24">
-            <p className="text-foreground text-base font-semibold">Why advertisers choose Admobi</p>
-            <ul className="marker:text-primary list-disc space-y-3 ps-4">
-              <li>Campaigns start from one day</li>
-              <li>GPS-verified proof of every play</li>
-              <li>No long-term contracts</li>
-            </ul>
-          </aside>
-
-          <div className="text-muted-foreground space-y-5 rounded-2xl border border-border bg-muted/35 p-6 text-sm leading-relaxed lg:hidden">
-            <p className="text-foreground text-base font-semibold">Why advertisers choose Admobi</p>
-            <ul className="marker:text-primary list-disc space-y-3 ps-4">
-              <li>Campaigns start from one day</li>
-              <li>GPS-verified proof of every play</li>
-              <li>No long-term contracts</li>
-            </ul>
+        <section className="mt-14 max-w-2xl space-y-8 sm:mt-16">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+            Why brands choose Admobi for taxi-top OOH
+          </h2>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Campaigns start from one day</h3>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Book a single day around a product launch, event, or promotion — then pause when the moment passes. No minimum fleet commitment or multi-month lock-in required to test taxi-top OOH in Nairobi.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">GPS-verified proof of every play</h3>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Every creative rotation is logged with location data so you know where your ad ran, not just that it aired. Post-campaign reports show corridor coverage you can reconcile against your brief.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">No long-term contracts</h3>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Scale up for sustained programmes or wind down between bursts without renegotiating terms. Admobi is built for brands that need outdoor reach without billboard-style commitment.
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
       </Container>
     </div>
   )
