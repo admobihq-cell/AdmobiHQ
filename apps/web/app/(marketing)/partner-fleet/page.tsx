@@ -183,11 +183,11 @@ export default function PartnerFleetPage() {
                 Fleet partnership · Kenya rollout
               </p>
               <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
-                Monetise every vehicle you already run
+                Earn revenue from fleet advertising in Kenya — partner with Admobi
               </h1>
               <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
                 Register taxis or delivery bikes with Admobi. We install connected screens, sell the media, and share
-                revenue while you keep routes and dispatch your own way.
+                revenue while you keep routes and dispatch your own way. Fleet advertising in Kenya is now a passive income stream — no ads management, no hardware costs.
               </p>
             </div>
             <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
