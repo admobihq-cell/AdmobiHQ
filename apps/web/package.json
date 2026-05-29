@@ -35,7 +35,7 @@
     "react-hook-form": "^7.71.1",
     "redis": "^5.12.1",
     "resend": "^6.12.3",
-    "zod": "3.25.76"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
