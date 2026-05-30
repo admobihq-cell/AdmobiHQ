@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { pageMetadata } from "@/lib/seo/site"
 
 export const metadata: Metadata = pageMetadata({
-  title: "Start a campaign",
+  title: "Start an OOH campaign in Nairobi | Admobi",
   description:
     "Brief Admobi for taxi-top OOH in Nairobi and Kenyan cities. Get availability, pricing, and a flight plan for geo-targeted LED campaigns.",
   path: "/start-campaign",

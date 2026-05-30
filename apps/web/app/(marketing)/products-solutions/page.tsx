@@ -6,9 +6,9 @@ import { Container } from "@/components/landing/container"
 import { pageMetadata } from "@/lib/seo/site"
 
 export const metadata = pageMetadata({
-  title: "Products & solutions",
+  title: "Digital OOH products — taxi tops & delivery bikes | Admobi Kenya",
   description:
-    "Digital taxi-top and delivery-bike signage for Kenyan cities: geo-led scheduling, verified motion media, and short flights for brands.",
+    "Run geo-targeted taxi-top LED and delivery bike advertising in Nairobi. Geo-aware scheduling, proof-of-play, and flexible flights from one day. Admobi Kenya.",
   path: "/products-solutions",
 })
 
@@ -65,38 +65,6 @@ export default function ProductsSolutionsPage() {
               </h2>
               <p className="text-muted-foreground text-base leading-relaxed">
                 LED units mount above traffic sight lines so your creative stays visible through congestion, junctions, and arterial corridors. Every screen connects to the same geo and schedule layer as the rest of the Admobi network.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      <section className="border-border border-t py-14 sm:py-20">
-        <Container>
-          <p className="text-muted-foreground font-mono text-[0.65rem] uppercase tracking-wider">Illustrative only</p>
-          <h2 className="text-foreground mt-3 max-w-xl text-3xl font-semibold tracking-tight sm:text-[2rem]">
-            Reference numbers for conversations
-          </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-base leading-relaxed">
-            Figures below are placeholders for decks, not audited performance guarantees.
-          </p>
-          <div className="mt-10 grid gap-5 sm:grid-cols-3">
-            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6">
-              <p className="tab-nums text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">60+ km</p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Example daily linked route distance sampled before audited loop data ships.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6">
-              <p className="tab-nums text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">8 to 12 hrs</p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Example on-street uptime window negotiated per operational pack and city rules.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6">
-              <p className="tab-nums text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">1 day min</p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Shortest illustrative flight referenced on the homepage minimums messaging.
               </p>
             </div>
           </div>

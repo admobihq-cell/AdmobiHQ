@@ -6,6 +6,11 @@ export const DEFAULT_OG_IMAGE_PATH = "/opengraph-image"
 /** Absolute URL for og:image and twitter:image crawlers. */
 export const DEFAULT_OG_IMAGE = `${SITE_URL}${DEFAULT_OG_IMAGE_PATH}`
 
+const GEO_META = {
+  "geo.region": "KE-110",
+  "geo.placename": "Nairobi",
+} as const
+
 type PageMetadataInput = {
   title: string
   description: string
@@ -15,13 +20,15 @@ type PageMetadataInput = {
 /** Per-route metadata with canonical URL and Open Graph defaults. */
 export function pageMetadata({ title, description, path }: PageMetadataInput): Metadata {
   const canonical = path === "/" ? SITE_URL : `${SITE_URL}${path}`
-  const isHome = path === "/"
 
   return {
-    title: isHome ? { absolute: title } : title,
+    title: { absolute: title },
     description,
-    alternates: { canonical },
-    other: { title },
+    alternates: {
+      canonical,
+      languages: { "en-ke": `${SITE_URL}/` },
+    },
+    other: GEO_META,
     openGraph: {
       title,
       description,
