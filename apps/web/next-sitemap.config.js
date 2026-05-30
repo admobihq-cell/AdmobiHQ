@@ -2,23 +2,18 @@ import {
   enhanceRobotsTxt,
 } from "./lib/seo/robots-content-signals.js"
 
-const HIGH_PRIORITY_PATHS = new Set([
-  "/",
-  "/start-campaign",
-  "/products-solutions",
-  "/partner-fleet",
-])
+const LEGAL_PATHS = new Set(["/privacy", "/terms"])
 
 /** @type {import('next-sitemap').IConfig} */
 export default {
   siteUrl: "https://admobihq.com",
   generateRobotsTxt: true,
-  exclude: ["/api/*"],
+  exclude: ["/api/*", "/opengraph-image"],
   transform: async (config, path) => {
-    const priority = path === "/" ? 1 : HIGH_PRIORITY_PATHS.has(path) ? 0.9 : 0.7
+    const priority = LEGAL_PATHS.has(path) ? 0.5 : 0.8
     return {
       loc: path,
-      changefreq: "weekly",
+      changefreq: "monthly",
       priority,
       lastmod: new Date().toISOString(),
     }
