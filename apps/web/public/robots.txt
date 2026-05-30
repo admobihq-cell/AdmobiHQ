@@ -25,12 +25,55 @@
 
 # *
 User-agent: *
-Content-Signal: ai-train=no, search=yes, ai-input=no
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
+Disallow: /api/
+
+# AI Search & Answer Engines
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: bingbot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+# Block all bots from API routes
+User-agent: *
 Disallow: /api/
 
 # Host
 Host: https://admobihq.com
 
+# Sitemaps
+Sitemap: https://admobihq.com/sitemap.xml
 # Sitemaps
 Sitemap: https://admobihq.com/sitemap.xml
