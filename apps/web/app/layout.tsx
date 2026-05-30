@@ -7,7 +7,7 @@ import "@workspace/ui/globals.css"
 import { JsonLd } from "@/components/seo/json-ld"
 import { ThemeProvider } from "@/components/theme-provider"
 import { WhatsappFab } from "@/components/landing/whatsapp-fab"
-import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/schema"
+import { websiteJsonLd } from "@/lib/seo/schema"
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo/site"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -23,19 +23,28 @@ const fontMono = Geist_Mono({
   fallback: ["courier new", "monospace"],
 })
 
+const HOME_TITLE = "Taxi-top LED advertising in Nairobi | Admobi"
+const HOME_DESCRIPTION =
+  "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books."
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Digital taxi-top OOH in Nairobi",
+    default: HOME_TITLE,
     template: "%s · Admobi",
   },
-  description:
-    "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books.",
-  alternates: { canonical: SITE_URL },
+  description: HOME_DESCRIPTION,
+  alternates: {
+    canonical: SITE_URL,
+    languages: { "en-ke": `${SITE_URL}/` },
+  },
+  other: {
+    "geo.region": "KE-110",
+    "geo.placename": "Nairobi",
+  },
   openGraph: {
-    title: "Digital taxi-top OOH in Nairobi",
-    description:
-      "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books.",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",
@@ -51,9 +60,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Digital taxi-top OOH in Nairobi",
-    description:
-      "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books.",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     images: [DEFAULT_OG_IMAGE],
   },
 }
@@ -69,9 +77,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("scroll-smooth antialiased", fontMono.variable, "font-sans", geist.variable)}
     >
-      <body>
-        <JsonLd data={organizationJsonLd} />
+      <head>
         <JsonLd data={websiteJsonLd} />
+      </head>
+      <body>
         <ThemeProvider>
           {children}
           <WhatsappFab />
