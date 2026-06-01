@@ -13,6 +13,7 @@ import { Logo } from "./logo"
 /** Route-first nav: homepage sections stay reachable via footer anchors and scrolling. */
 const navItems = [
   { href: "/products-solutions", label: "Products & solutions" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/media-kit", label: "Media kit" },
   { href: "/drivers", label: "Drivers" },
 ] as const

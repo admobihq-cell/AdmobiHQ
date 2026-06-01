@@ -1,5 +1,7 @@
 import Link from "next/link"
 
+import { LastUpdated } from "@/components/seo/last-updated"
+
 import { Container } from "./container"
 import { Logo } from "./logo"
 
@@ -12,6 +14,7 @@ const columns = [
     heading: "Product",
     links: [
       { href: "/products-solutions", label: "Products & solutions" },
+      { href: "/pricing", label: "Pricing" },
       { href: "/#product", label: "Capabilities" },
       { href: "/media-kit", label: "Media kit" },
     ],
@@ -103,6 +106,7 @@ export function SiteFooter() {
             <p className="max-w-xl leading-relaxed">
               English first · Copy and policies update as programmes expand.
             </p>
+            <LastUpdated className="mt-2" />
           </div>
           <p className="font-mono text-[0.65rem] leading-relaxed uppercase tracking-[0.12em] sm:shrink-0 sm:text-end">
             Press D for theme
