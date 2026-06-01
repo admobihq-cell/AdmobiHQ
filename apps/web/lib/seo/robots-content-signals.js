@@ -28,9 +28,39 @@ export const ROBOTS_CONTENT_SIGNALS_PREAMBLE = `# As a condition of accessing th
 # AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
 `
 
-/** Allow classic search indexing; block AI training and live AI ingestion. */
+/** Block AI training; allow search indexing and AI ingestion for answer engines. */
 export const ROBOTS_CONTENT_SIGNAL =
-  "Content-Signal: ai-train=no, search=yes, ai-input=no"
+  "Content-Signal: ai-train=no, search=yes, ai-input=yes"
+
+/** Crawlers used by AI search and answer products — explicitly allowed sitewide. */
+export const ROBOTS_AI_SEARCH_USER_AGENTS = [
+  "GPTBot",
+  "ChatGPT-User",
+  "PerplexityBot",
+  "ClaudeBot",
+  "anthropic-ai",
+  "GoogleOther",
+  "Google-Extended",
+  "Googlebot",
+  "bingbot",
+  "OAI-SearchBot",
+  "cohere-ai",
+  "YouBot",
+]
+
+const ROBOTS_AI_SEARCH_SECTION = [
+  "# AI Search & Answer Engines",
+  ...ROBOTS_AI_SEARCH_USER_AGENTS.flatMap((userAgent) => [
+    `User-agent: ${userAgent}`,
+    "Allow: /",
+    "",
+  ]),
+].join("\n")
+
+const ROBOTS_API_BLOCK_SECTION = `# Block all bots from API routes
+User-agent: *
+Disallow: /api/
+`
 
 /**
  * @param {string} robotsTxt
@@ -42,5 +72,15 @@ export function enhanceRobotsTxt(robotsTxt) {
     `User-agent: *\n${ROBOTS_CONTENT_SIGNAL}\n`
   )
 
-  return `${ROBOTS_CONTENT_SIGNALS_PREAMBLE}\n${withContentSignal}`
+  const withAiSearchPolicies = withContentSignal.replace(
+    /^(User-agent: \*\r?\nContent-Signal:.*\r?\nAllow: \/\r?\nDisallow: \/api\/\r?\n)/m,
+    `$1\n${ROBOTS_AI_SEARCH_SECTION}\n${ROBOTS_API_BLOCK_SECTION}\n`
+  )
+
+  const withoutDuplicateSitemaps = withAiSearchPolicies.replace(
+    /(# Sitemaps\r?\nSitemap: [^\r\n]+\r?\n)(?:# Sitemaps\r?\nSitemap: [^\r\n]+\r?\n)+/g,
+    "$1"
+  )
+
+  return `${ROBOTS_CONTENT_SIGNALS_PREAMBLE}\n${withoutDuplicateSitemaps}`
 }

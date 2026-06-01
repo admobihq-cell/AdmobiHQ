@@ -15,7 +15,6 @@ export default {
       loc: path,
       changefreq: "monthly",
       priority,
-      lastmod: new Date().toISOString(),
     }
   },
   robotsTxtOptions: {
