@@ -239,8 +239,10 @@ npx eslint .
 
 Two workflows under [.github/workflows/](../.github/workflows/):
 
-- [`pr.yml`](../.github/workflows/pr.yml) — runs on PR open / synchronize / reopen against `master`. Node 20 + npm cache + Turbo cache → `npm ci` → `typecheck` → `lint` → `build`.
-- [`main.yml`](../.github/workflows/main.yml) — same job, triggered on push to `master`. Has a placeholder deploy step (commented out) ready for a Vercel token.
+- [`pr.yml`](../.github/workflows/pr.yml) — runs on PR open / synchronize / reopen against `master`. Node 20 + npm cache + Turbo cache → verify GitHub secrets → `npm ci` → `prisma generate` → `typecheck` → `lint` → `build`.
+- [`master.yml`](../.github/workflows/master.yml) — same job on push to `master`. Has a placeholder deploy step (commented out) ready for a `VERCEL_TOKEN` secret.
+
+Job env vars are wired from **repository secrets** (`DATABASE_URL`, `PAYLOAD_SECRET`, and optional keys from [`.env.example`](../.env.example)). See [DEV-SETUP.md](./DEV-SETUP.md) § GitHub Actions secrets.
 
 Both set `TURBO_UI=false` for non-interactive output.
 

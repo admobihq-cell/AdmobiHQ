@@ -7,14 +7,23 @@ on:
 
 env:
   TURBO_UI: false # Disable TUI — it requires an interactive terminal
-  DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci?schema=public
-  PAYLOAD_SECRET: ci-build-placeholder-not-for-production
-  NEXT_PUBLIC_SERVER_URL: http://localhost:3000
 
 jobs:
   ci:
     name: Lint, Typecheck & Build
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+      NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL != '' && secrets.NEXT_PUBLIC_SERVER_URL || 'https://admobihq.com' }}
+      PAYLOAD_DATABASE_URL: ${{ secrets.PAYLOAD_DATABASE_URL }}
+      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+      API_KEY_PEXELS: ${{ secrets.API_KEY_PEXELS }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
 
     steps:
       - name: Checkout code
@@ -27,6 +36,21 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
+
+      - name: Verify required secrets
+        run: |
+          set -e
+          missing=0
+          for key in DATABASE_URL PAYLOAD_SECRET; do
+            if [ -z "${!key}" ]; then
+              echo "::error::GitHub Actions secret '$key' is not set. Add it under Settings → Secrets and variables → Actions."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          echo "Required secrets present."
 
       - name: Install dependencies
         run: npm ci

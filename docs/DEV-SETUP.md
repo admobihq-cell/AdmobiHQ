@@ -91,6 +91,31 @@ Verify keys are loaded:
 npm run env:check -w web
 ```
 
+### GitHub Actions secrets
+
+CI workflows ([`.github/workflows/pr.yml`](../.github/workflows/pr.yml), [`master.yml`](../.github/workflows/master.yml)) inject **repository secrets** into the job environment so `prisma generate`, typecheck, lint, and `npm run build` match local/Infisical config.
+
+**Where to add them:** GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
+
+Use the **same names** as `.env.example` (values can come from Infisical dev or a dedicated CI/staging Neon database).
+
+| Secret | Required in CI | Notes |
+|--------|----------------|--------|
+| `DATABASE_URL` | **Yes** | Neon pooled URL; Prisma + Payload at build time |
+| `PAYLOAD_SECRET` | **Yes** | Same as local (`openssl rand -hex 32`) |
+| `NEXT_PUBLIC_SERVER_URL` | No | Defaults to `https://admobihq.com` if unset |
+| `PAYLOAD_DATABASE_URL` | No | Only if you split CMS DB in staging |
+| `BLOB_READ_WRITE_TOKEN` | No | Omit if you do not need Blob plugin paths in CI build |
+| `API_KEY_PEXELS` | No | Admin image search only |
+| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | No | Email routes; not required for build |
+| `REDIS_URL` | No | Email queue; not required for build |
+
+A **Verify required secrets** step fails fast with an annotation if `DATABASE_URL` or `PAYLOAD_SECRET` is missing.
+
+**Fork PRs:** GitHub does not expose repository secrets to workflows from forked PRs. Use branches on the main repo or a `pull_request_target` policy only if you understand the security tradeoffs.
+
+**Tip:** Copy dev values from Infisical once (`infisical secrets --env=dev`) and paste into GitHub secrets. Prefer a **read-only or staging** Neon branch for CI if you want to isolate production data.
+
 ---
 
 ## First-time database setup
