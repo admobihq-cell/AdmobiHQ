@@ -399,8 +399,9 @@ async function upsertPost(payload: Payload, post: SeedPost) {
       collection: "blog-posts",
       id: existing.id,
       data: postData,
+      draft: false,
     })
-    console.log(`Blog post (updated): ${post.title}`)
+    console.log(`Blog post (updated & published): ${post.title}`)
   } else {
     await payload.create({
       collection: "blog-posts",

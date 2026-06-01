@@ -308,7 +308,7 @@ npm run build -w web
 | `db:push` wants to drop `help_*` tables | **Stop** — use Scenario B; never push over CMS |
 | Payload migrate fails | `env:check`; confirm DB reachable; SSL URL from Neon |
 | `/admin` build error `worker_threads` | `npm run generate:importmap -w web`; use `dev` not raw `next dev` |
-| `/help` or `/blog` empty | `seed:help` / `seed:blog`; check `PAYLOAD_SECRET` + `DATABASE_URL` |
+| `/help` or `/blog` empty but `/admin` works | Posts are **drafts** — click **Publish** in admin; or preview DB has no seed (run `seed:*` against that `DATABASE_URL`); preview may cache empty pages for up to 1h (`revalidate = 3600`) — redeploy or wait |
 | Import map reverted in git | Run `generate:importmap`; commit stub import if intentional |
 | Next “wrong workspace root” warning | Extra `package-lock.json` outside repo — see `outputFileTracingRoot` in `next.config.mjs` |
 | Prisma client out of date | `cd apps/web && npx prisma generate` |

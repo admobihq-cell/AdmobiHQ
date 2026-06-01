@@ -45,9 +45,10 @@ export type BlogPostListItem = {
   publishedAt: string
   authorName: string
   authorRole?: string | null
-  featuredImage: import("@/payload-types").Media
+  /** Populated at depth ≥ 1; list cards render without an image when missing. */
+  featuredImage: import("@/payload-types").Media | null
 }
 
 export type BlogPostDoc = import("@/payload-types").BlogPost & {
-  featuredImage: import("@/payload-types").Media
+  featuredImage: import("@/payload-types").Media | null
 }

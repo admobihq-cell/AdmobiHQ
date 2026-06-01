@@ -16,7 +16,10 @@ export const metadata: Metadata = blogPageMetadata({
 
 export default async function BlogPage() {
   const data = isPayloadConfigured()
-    ? await getBlogIndexData().catch(() => ({ posts: [] }))
+    ? await getBlogIndexData().catch((error) => {
+        console.error("[blog] Failed to load posts:", error)
+        return { posts: [] }
+      })
     : { posts: [] }
 
   return (

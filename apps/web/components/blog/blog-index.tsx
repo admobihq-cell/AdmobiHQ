@@ -63,12 +63,13 @@ export function BlogIndex({ posts }: BlogIndexProps) {
         <section className="py-14 sm:py-20">
           <Container>
             <p className="text-muted-foreground max-w-xl text-base leading-relaxed">
-              Blog posts will appear here once published in the Payload admin at{" "}
-              <code className="text-foreground">/admin</code>. Upload a cover image in{" "}
-              <strong className="text-foreground">Media</strong>, create a{" "}
-              <strong className="text-foreground">Blog post</strong>, then publish. Run{" "}
-              <code className="text-foreground">npm run payload:migrate -w web</code> after pulling
-              blog schema changes.
+              No published blog posts yet. In{" "}
+              <code className="text-foreground">/admin</code>, open each post and click{" "}
+              <strong className="text-foreground">Publish</strong> (drafts are visible in admin but
+              hidden here). Add a cover image in <strong className="text-foreground">Media</strong>{" "}
+              if you have not. For local or preview data, run{" "}
+              <code className="text-foreground">npm run seed:blog -w web</code> against the same{" "}
+              <code className="text-foreground">DATABASE_URL</code> this deployment uses.
             </p>
           </Container>
         </section>

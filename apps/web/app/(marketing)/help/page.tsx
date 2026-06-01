@@ -16,7 +16,10 @@ export const metadata: Metadata = pageMetadata({
 
 export default async function HelpPage() {
   const data = isPayloadConfigured()
-    ? await getHelpIndexData().catch(() => ({ categories: [], articles: [] }))
+    ? await getHelpIndexData().catch((error) => {
+        console.error("[help] Failed to load articles:", error)
+        return { categories: [], articles: [] }
+      })
     : { categories: [], articles: [] }
 
   return (

@@ -5,7 +5,7 @@ import { isMediaPopulated } from "@/lib/payload/media-url"
 import type { BlogPostDoc, BlogPostListItem } from "@/lib/payload/types"
 
 function toListItem(post: BlogPost): BlogPostListItem | null {
-  if (!isMediaPopulated(post.featuredImage)) {
+  if (!post.slug?.trim() || !post.title?.trim()) {
     return null
   }
 
@@ -19,7 +19,7 @@ function toListItem(post: BlogPost): BlogPostListItem | null {
     publishedAt: post.publishedAt,
     authorName: post.authorName,
     authorRole: post.authorRole,
-    featuredImage: post.featuredImage,
+    featuredImage: isMediaPopulated(post.featuredImage) ? post.featuredImage : null,
   }
 }
 
@@ -74,14 +74,14 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDoc | nul
   })
 
   const post = result.docs[0]
-  if (!post || !isMediaPopulated(post.featuredImage)) {
+  if (!post) {
     return null
   }
 
   return {
     ...post,
-    featuredImage: post.featuredImage,
-  }
+    featuredImage: isMediaPopulated(post.featuredImage) ? post.featuredImage : null,
+  } as BlogPostDoc
 }
 
 export async function getRelatedBlogPosts(

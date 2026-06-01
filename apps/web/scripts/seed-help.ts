@@ -301,8 +301,9 @@ async function seed() {
         collection: "help-articles",
         id: existingArticle.id,
         data: articleData,
+        draft: false,
       })
-      console.log(`Article (updated): ${article.title}`)
+      console.log(`Article (updated & published): ${article.title}`)
     } else {
       await payload.create({
         collection: "help-articles",

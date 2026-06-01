@@ -135,11 +135,12 @@ export function HelpIndex({ categories, articles, searchSlot }: HelpIndexProps) 
         <section className="py-14 sm:py-20">
           <Container>
             <p className="text-muted-foreground max-w-xl text-base leading-relaxed">
-              Help articles will appear here once published in the Payload admin at{" "}
-              <code className="text-foreground">/admin</code>. Set{" "}
-              <code className="text-foreground">DATABASE_URL</code> and{" "}
-              <code className="text-foreground">PAYLOAD_SECRET</code>, run migrations, then seed
-              with <code className="text-foreground">npm run seed:help -w web</code>.
+              No published help articles yet. In <code className="text-foreground">/admin</code>,
+              open each article and click <strong className="text-foreground">Publish</strong>{" "}
+              (drafts show in admin but not on this page). Run{" "}
+              <code className="text-foreground">npm run seed:help -w web</code> against the same{" "}
+              <code className="text-foreground">DATABASE_URL</code> as this deployment, or wait up
+              to an hour if the preview was built before content existed.
             </p>
           </Container>
         </section>
