@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "generate:ai-seo": "tsx scripts/generate-ai-seo-static.ts",
+    "prebuild": "npm run generate:ai-seo",
     "build": "prisma generate && next build --webpack",
     "postbuild": "next-sitemap",
     "start": "next start",
@@ -46,6 +48,7 @@
     "@workspace/typescript-config": "*",
     "eslint": "^9.39.2",
     "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
