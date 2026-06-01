@@ -2,12 +2,9 @@
 
 Phase 1 (machine-readable files, schema, `/pricing`, on-page structure) ships without a CMS. Use this document when you are ready to scale editorial content for AI citation and topical authority.
 
-## CMS direction (choose one)
+## CMS direction
 
-| Option | Best when |
-|--------|-----------|
-| **MDX / Contentlayer in-repo** | Developers publish 10–20 guides; lowest operational overhead |
-| **Sanity or Payload** | Marketing publishes weekly without deploys for copy-only changes |
+**Blog and help** ship on **Payload** in [`apps/web`](../apps/web) — see [BLOG-CMS.md](./BLOG-CMS.md) and [HELP-CMS.md](./HELP-CMS.md). For one-off developer guides only, MDX in-repo remains an option.
 
 Requirements for any CMS:
 
