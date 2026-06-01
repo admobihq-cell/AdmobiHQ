@@ -69,6 +69,8 @@ export function buildLlmsTxt(): string {
 - [Partner your fleet](${SITE_URL}/partner-fleet): Fleet partnership applications
 - [Driver sign-up](${SITE_URL}/drivers): Driver applications
 - [Media kit](${SITE_URL}/media-kit): Creative specifications request
+- [Blog](${SITE_URL}/blog): OOH insights, campaigns, and product updates
+- [Help center](${SITE_URL}/help): Guides for advertisers, drivers, and fleet partners
 
 ## Contact
 
