@@ -1,0 +1,31 @@
+# Admobi
+
+> Admobi (AdmobiHQ) is Kenya's digital out-of-home (OOH) network: geo-targeted LED taxi-top screens and delivery bike advertising enclosures. Advertisers book by corridor and time window in Nairobi-first, with GPS-verified proof-of-play. Fleet partners and drivers join through separate onboarding flows.
+
+## Audiences
+
+- **Advertisers:** Brands, SMEs, corporates, and event teams buying motion-led outdoor media
+- **Fleet partners:** Taxi and delivery fleets monetizing vehicles at scale
+- **Drivers:** Individual taxi and delivery riders earning monthly via verified screen hours
+
+## Key pages
+
+- [Home](https://admobihq.com/): Taxi-top LED advertising in Nairobi
+- [Products & solutions](https://admobihq.com/products-solutions): Taxi tops, delivery bikes, geo-targeting
+- [Indicative pricing](https://admobihq.com/pricing): Starting-from KES tiers (confirmed per brief)
+- [Machine-readable pricing](https://admobihq.com/pricing.md): Structured pricing for AI agents
+- [Start a campaign](https://admobihq.com/start-campaign): Advertiser brief and sales contact
+- [Partner your fleet](https://admobihq.com/partner-fleet): Fleet partnership applications
+- [Driver sign-up](https://admobihq.com/drivers): Driver applications
+- [Media kit](https://admobihq.com/media-kit): Creative specifications request
+
+## Contact
+
+- Sales / campaigns: https://admobihq.com/start-campaign
+- WhatsApp: https://wa.me/254703643560
+- Phone: +254703643560
+
+## Crawling
+
+- [robots.txt](https://admobihq.com/robots.txt): AI search bots allowed; training opt-out via content signals
+- [Sitemap](https://admobihq.com/sitemap.xml)
