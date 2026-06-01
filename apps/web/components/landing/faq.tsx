@@ -1,4 +1,4 @@
-import { faqItems } from "@/lib/seo/faq-data"
+import { advertiserFaqItems } from "@/lib/seo/faq-data"
 
 import { Container } from "./container"
 
@@ -10,7 +10,7 @@ export function FaqSection() {
           FAQ
         </h2>
         <div className="mt-8 divide-y divide-border border-t border-border">
-          {faqItems.map((item) => (
+          {advertiserFaqItems.map((item) => (
             <details key={item.q} className="group py-2">
               <summary className="cursor-pointer list-none py-4 text-base font-medium text-foreground outline-none marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center justify-between gap-4">
