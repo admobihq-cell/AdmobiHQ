@@ -3,6 +3,9 @@ import Link from "next/link"
 import { Button } from "@workspace/ui/components/button"
 
 import { Container } from "@/components/landing/container"
+import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
+import { LastUpdated } from "@/components/seo/last-updated"
+import { OohComparisonTable } from "@/components/seo/ooh-comparison-table"
 import { pageMetadata } from "@/lib/seo/site"
 
 export const metadata = pageMetadata({
@@ -14,195 +17,232 @@ export const metadata = pageMetadata({
 
 export default function ProductsSolutionsPage() {
   return (
-    <div className="border-b border-border pb-14 sm:pb-20">
-      <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
-        <Container>
-          <div className="max-w-2xl space-y-6">
-            <div className="space-y-3">
-              <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
-                Products & solutions · Kenya rollout
-              </p>
-              <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
-                Digital OOH advertising in Kenya — taxi tops and delivery bikes
-              </h1>
-              <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
-                Admobi is Kenya&apos;s digital out-of-home network for brands that need motion-led outdoor advertising in Nairobi and beyond. Taxi-top LED screens and delivery bike enclosures bring geo-aware scheduling and proof-of-play to a format that moves with your audience instead of waiting for them.
-              </p>
+    <>
+      <MarketingPageJsonLd
+        path="/products-solutions"
+        name="Digital OOH products — taxi tops & delivery bikes | Admobi Kenya"
+        description="Run geo-targeted taxi-top LED and delivery bike advertising in Nairobi with proof-of-play and flexible flights."
+        breadcrumbs={[
+          { name: "Home", path: "/" },
+          { name: "Products & solutions", path: "/products-solutions" },
+        ]}
+      />
+      <div className="border-b border-border pb-14 sm:pb-20">
+        <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
+          <Container>
+            <div className="max-w-2xl space-y-6">
+              <div className="space-y-3">
+                <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
+                  Products & solutions · Kenya rollout
+                </p>
+                <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
+                  Digital OOH advertising in Kenya — taxi tops and delivery bikes
+                </h1>
+                <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
+                  Admobi is Kenya&apos;s digital out-of-home network for brands that need motion-led outdoor advertising in Nairobi and beyond. Taxi-top LED screens and delivery bike enclosures bring geo-aware scheduling and proof-of-play to a format that moves with your audience instead of waiting for them.
+                </p>
+                <LastUpdated className="text-background/70 text-sm" />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+                  <Link href="/start-campaign">Talk to us</Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-background/35 bg-transparent text-background hover:bg-background/10 hover:text-background"
+                >
+                  <Link href="/pricing">Indicative pricing</Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-background/35 bg-transparent text-background hover:bg-background/10 hover:text-background"
+                >
+                  <Link href="/partner-fleet">Partner your fleet</Link>
+                </Button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
-                <Link href="/start-campaign">Talk to us</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-background/35 bg-transparent text-background hover:bg-background/10 hover:text-background"
-              >
-                <Link href="/partner-fleet">Partner your fleet</Link>
-              </Button>
-            </div>
-          </div>
-        </Container>
-      </section>
+          </Container>
+        </section>
 
-      <section className="py-14 sm:py-20">
-        <Container>
-          <div className="grid items-start gap-12 lg:grid-cols-[1fr,minmax(0,0.92fr)] lg:gap-16">
-            <div className="max-w-xl space-y-6">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">Digital taxi tops</h2>
-              <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-                Screens ride above bumper-to-bumper sight lines. Creatives rotate with the network so every route hour can
-                match a corridor plan instead of guessing which static boards might clear.
-              </p>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Built for Nairobi first, expandable along the Kenyan rollout corridor as fleets come online behind you.
-              </p>
-            </div>
-            <div className="max-w-xl space-y-4">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                High-visibility taxi-top screens across Nairobi
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                LED units mount above traffic sight lines so your creative stays visible through congestion, junctions, and arterial corridors. Every screen connects to the same geo and schedule layer as the rest of the Admobi network.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      <section className="border-border border-t py-14 sm:py-20">
-        <Container>
-          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.92fr),1fr] lg:gap-16">
-            <div className="max-w-xl space-y-4">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Geo-targeted outdoor advertising across Nairobi
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Plan your campaign by neighbourhood, arterial road, or time of day. CBD rush hour, Westlands lunch traffic, airport approach routes — each corridor is bookable separately so your spend follows real demand.
-              </p>
-            </div>
-            <div className="max-w-xl lg:justify-self-end">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Geo-aware routing instead of postcode guesswork
-              </h2>
-              <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-                Bundle neighbourhoods, arterial roads, staging yards, or event approach routes inside the same playbook.
-                When inventory moves, placements move with traffic instead of fading on a billboard no one revisits twice.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      <section className="border-border border-t py-14 sm:py-20">
-        <Container>
-          <div className="grid items-center gap-10 lg:grid-cols-[1fr,minmax(0,0.92fr)] lg:gap-16">
-            <div className="max-w-xl lg:order-1">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Video-forward units with legibility checks baked in
-              </h2>
-              <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-                Looping motion is allowed wherever codecs meet the spec sheet. Operators review readability at curb grade
-                and safe zones before the first kilometer rolls under a screen.
-              </p>
-              <p className="text-muted-foreground mt-3 text-base leading-relaxed">
-                Technical targets live in your media kit so agencies can traffick once and reuse across fleets.
-              </p>
-            </div>
-            <div className="lg:order-2">
+        <section className="py-14 sm:py-20">
+          <Container>
+            <div className="grid items-start gap-12 lg:grid-cols-[1fr,minmax(0,0.92fr)] lg:gap-16">
+              <div className="max-w-xl space-y-6">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  What is digital taxi-top advertising?
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
+                  Screens ride above bumper-to-bumper sight lines. Creatives rotate with the network so every route hour can
+                  match a corridor plan instead of guessing which static boards might clear.
+                </p>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Built for Nairobi first, expandable along the Kenyan rollout corridor as fleets come online behind you.
+                </p>
+              </div>
               <div className="max-w-xl space-y-4">
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                  Motion-ready creatives with curb-grade legibility checks
+                  How visible are taxi-top screens in Nairobi traffic?
                 </h2>
                 <p className="text-muted-foreground text-base leading-relaxed">
-                  Looping video and static rotations both run where codec specs allow. Operators validate readability at street level before your first play goes live, so motion ads stay sharp without sacrificing safety zones.
+                  LED units mount above traffic sight lines so your creative stays visible through congestion, junctions, and arterial corridors. Every screen connects to the same geo and schedule layer as the rest of the Admobi network.
                 </p>
               </div>
             </div>
-          </div>
-        </Container>
-      </section>
+          </Container>
+        </section>
 
-      <section className="border-border border-t py-14 sm:py-20">
-        <Container>
-          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.92fr),1fr] lg:gap-16">
-            <div className="max-w-xl space-y-4">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Flexible flights from one-day bursts to sustained books
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Test creative on a single corridor for a day, then scale across multiple neighbourhoods once results land. Ops coordinates blackout rules and pacing so short flights and longer programmes share the same playbook.
-              </p>
-            </div>
-            <div className="max-w-xl lg:justify-self-end">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Burst tests and national-scale stories in one playbook
-              </h2>
-              <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-                Start with ultra-short flights to qualify creative, stack multi-city arcs when fleets align, then sustain
-                the winners. Ops keeps legal, procurement, and network teams synced on blackout rules and pacing.
-              </p>
-              <p className="text-muted-foreground mt-3 text-base leading-relaxed">
-                Programmatic SSP hookups remain on the roadmap until supply is metered continuously end to end.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      <section className="border-border border-t py-14 sm:py-20">
-        <Container>
-          <div className="grid items-start gap-12 lg:grid-cols-[1fr,minmax(0,0.92fr)] lg:gap-16">
-            <div className="max-w-xl space-y-6 lg:order-1">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Delivery enclosures for last-mile corridors
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-                Smaller footprints match dispatch bikes courting dense estates and commuter staging lots. Placement
-                matches e-commerce timelines and midday lunch runs where taxis might be sparse but ridership spikes.
-              </p>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Specs inherit the same creative gates as taxi tops so a single trafficking doc can unlock both silhouettes.
-              </p>
-            </div>
-            <div className="lg:order-2">
+        <section className="border-border border-t py-14 sm:py-20">
+          <Container>
+            <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.92fr),1fr] lg:gap-16">
               <div className="max-w-xl space-y-4">
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                  Last-mile coverage on delivery bike corridors
+                  How does geo-targeted outdoor advertising work in Nairobi?
                 </h2>
                 <p className="text-muted-foreground text-base leading-relaxed">
-                  Smaller enclosures follow dispatch routes through estates, staging lots, and lunch-hour clusters where taxis may be sparse. Same trafficking specs as taxi tops mean one creative package can cover both formats.
+                  Plan your campaign by neighbourhood, arterial road, or time of day. CBD rush hour, Westlands lunch traffic, airport approach routes — each corridor is bookable separately so your spend follows real demand.
+                </p>
+              </div>
+              <div className="max-w-xl lg:justify-self-end">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  Can you target routes instead of postcodes?
+                </h2>
+                <p className="text-muted-foreground mt-4 text-base leading-relaxed">
+                  Bundle neighbourhoods, arterial roads, staging yards, or event approach routes inside the same playbook.
+                  When inventory moves, placements move with traffic instead of fading on a billboard no one revisits twice.
                 </p>
               </div>
             </div>
-          </div>
-        </Container>
-      </section>
+          </Container>
+        </section>
 
-      <section className="border-border border-t py-14 sm:py-20">
-        <Container>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-xl space-y-3">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                Ready when your brief locks
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Share flight intent and we assemble availability plus deck-ready proof points for Nairobi and the wider
-                rollout map.
-              </p>
+        <section className="border-border border-t py-14 sm:py-20">
+          <Container>
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+              Taxi-top LED vs static billboards vs delivery bikes
+            </h2>
+            <p className="text-muted-foreground mt-4 max-w-[58ch] text-base leading-relaxed">
+              Category-level comparison for planners evaluating moving digital OOH in Kenya. Named operators are not ranked here — focus on format fit for your brief.
+            </p>
+            <OohComparisonTable />
+          </Container>
+        </section>
+
+        <section className="border-border border-t py-14 sm:py-20">
+          <Container>
+            <div className="grid items-center gap-10 lg:grid-cols-[1fr,minmax(0,0.92fr)] lg:gap-16">
+              <div className="max-w-xl lg:order-1">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  What creative formats do taxi-top units accept?
+                </h2>
+                <p className="text-muted-foreground mt-4 text-base leading-relaxed">
+                  Looping motion is allowed wherever codecs meet the spec sheet. Operators review readability at curb grade
+                  and safe zones before the first kilometer rolls under a screen.
+                </p>
+                <p className="text-muted-foreground mt-3 text-base leading-relaxed">
+                  Technical targets live in your media kit so agencies can traffick once and reuse across fleets.
+                </p>
+              </div>
+              <div className="lg:order-2">
+                <div className="max-w-xl space-y-4">
+                  <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                    Are motion creatives checked before go-live?
+                  </h2>
+                  <p className="text-muted-foreground text-base leading-relaxed">
+                    Looping video and static rotations both run where codec specs allow. Operators validate readability at street level before your first play goes live, so motion ads stay sharp without sacrificing safety zones.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-shrink-0 flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link href="/start-campaign">Talk to us</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/partner-fleet">Partner your fleet</Link>
-              </Button>
+          </Container>
+        </section>
+
+        <section className="border-border border-t py-14 sm:py-20">
+          <Container>
+            <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.92fr),1fr] lg:gap-16">
+              <div className="max-w-xl space-y-4">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  How quickly can you launch a taxi-top campaign in Nairobi?
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Test creative on a single corridor for a day, then scale across multiple neighbourhoods once results land. Ops coordinates blackout rules and pacing so short flights and longer programmes share the same playbook.
+                </p>
+              </div>
+              <div className="max-w-xl lg:justify-self-end">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  Can you run one-day bursts and longer books?
+                </h2>
+                <p className="text-muted-foreground mt-4 text-base leading-relaxed">
+                  Start with ultra-short flights to qualify creative, stack multi-city arcs when fleets align, then sustain
+                  the winners. Ops keeps legal, procurement, and network teams synced on blackout rules and pacing.
+                </p>
+                <p className="text-muted-foreground mt-3 text-base leading-relaxed">
+                  See <Link href="/pricing" className="text-foreground underline underline-offset-[3px]">indicative pricing</Link> for starting-from KES tiers.
+                </p>
+              </div>
             </div>
-          </div>
-        </Container>
-      </section>
-    </div>
+          </Container>
+        </section>
+
+        <section className="border-border border-t py-14 sm:py-20">
+          <Container>
+            <div className="grid items-start gap-12 lg:grid-cols-[1fr,minmax(0,0.92fr)] lg:gap-16">
+              <div className="max-w-xl space-y-6 lg:order-1">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  When should you use delivery bike enclosures?
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
+                  Smaller footprints match dispatch bikes courting dense estates and commuter staging lots. Placement
+                  matches e-commerce timelines and midday lunch runs where taxis might be sparse but ridership spikes.
+                </p>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Specs inherit the same creative gates as taxi tops so a single trafficking doc can unlock both silhouettes.
+                </p>
+              </div>
+              <div className="lg:order-2">
+                <div className="max-w-xl space-y-4">
+                  <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                    How do bike ads reach last-mile corridors?
+                  </h2>
+                  <p className="text-muted-foreground text-base leading-relaxed">
+                    Smaller enclosures follow dispatch routes through estates, staging lots, and lunch-hour clusters where taxis may be sparse. Same trafficking specs as taxi tops mean one creative package can cover both formats.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Container>
+        </section>
+
+        <section className="border-border border-t py-14 sm:py-20">
+          <Container>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-xl space-y-3">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  Ready when your brief locks
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Share flight intent and we assemble availability plus deck-ready proof points for Nairobi and the wider
+                  rollout map.
+                </p>
+              </div>
+              <div className="flex flex-shrink-0 flex-wrap gap-3">
+                <Button asChild size="lg">
+                  <Link href="/start-campaign">Talk to us</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/pricing">View pricing</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/partner-fleet">Partner your fleet</Link>
+                </Button>
+              </div>
+            </div>
+          </Container>
+        </section>
+      </div>
+    </>
   )
 }

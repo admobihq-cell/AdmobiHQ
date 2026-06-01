@@ -31,7 +31,7 @@ export function HeroSection() {
             <span className="block">LED screens that move with the city</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-[58ch] text-pretty text-base leading-relaxed sm:text-lg">
-            Run taxi top advertising in Nairobi with geo-targeted LED screens on partner vehicles. Set your corridors, schedule your flight, and reach commuters across the CBD, Westlands, Karen, and beyond — from one day to sustained campaigns.
+            Admobi is Kenya&apos;s digital OOH network for taxi-top LED advertising in Nairobi: geo-targeted screens on partner vehicles, bookable by corridor and time window, with GPS proof-of-play from one-day tests to sustained campaigns.
           </p>
           <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <Button asChild size="lg">
