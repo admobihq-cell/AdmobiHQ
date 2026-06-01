@@ -112,9 +112,19 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 
 A **Verify required secrets** step fails fast with an annotation if `DATABASE_URL` or `PAYLOAD_SECRET` is missing.
 
+After `prisma generate`, CI runs **`npm run cms:bootstrap:ci -w web`**, which:
+
+1. Applies Payload migrations (`payload:migrate:ci`)
+2. Upserts help categories/articles (`seed:help:ci`)
+3. Upserts blog posts and cover images (`seed:blog:ci`)
+
+Seeds are **idempotent** (safe to re-run). This runs **before** `npm run build` so `/blog` and `/help` are not empty at static generation time. The database updated is whatever `DATABASE_URL` (and optional `PAYLOAD_DATABASE_URL`) your Infisical → GitHub sync points at — usually **dev/staging**, not production unless you configured that on purpose.
+
+To skip bootstrap in a one-off workflow run, set repository variable `SKIP_CMS_BOOTSTRAP=true` (optional; not enabled by default).
+
 **Fork PRs:** GitHub does not expose repository secrets to workflows from forked PRs. Use branches on the main repo or a `pull_request_target` policy only if you understand the security tradeoffs.
 
-**Tip:** Copy dev values from Infisical once (`infisical secrets --env=dev`) and paste into GitHub secrets. Prefer a **read-only or staging** Neon branch for CI if you want to isolate production data.
+**Tip:** With Infisical → GitHub autosync, ensure `DATABASE_URL` and `PAYLOAD_SECRET` match the Neon DB you want CI to populate. Production deploys on Vercel still need the same migrate/seed against prod once (or content created in `/admin`).
 
 ---
 

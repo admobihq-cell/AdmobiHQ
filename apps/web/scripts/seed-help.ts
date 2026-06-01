@@ -5,7 +5,11 @@
  *   npm run seed:help -w web
  *
  * Requires DATABASE_URL and PAYLOAD_SECRET.
+ *
+ *   npm run seed:help:ci -w web   # CI / env from process (no .env.local file)
  */
+
+import "../lib/load-env.ts"
 
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical"
 
