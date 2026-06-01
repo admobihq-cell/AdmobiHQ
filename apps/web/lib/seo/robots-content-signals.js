@@ -26,11 +26,22 @@ export const ROBOTS_CONTENT_SIGNALS_PREAMBLE = `# As a condition of accessing th
 # ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF
 # RIGHTS UNDER ARTICLE 4 OF THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT
 # AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
+#
+# Active policy (also sent as HTTP Content-Signal on page responses):
+# ai-train=no, search=yes, ai-input=yes
 `
 
 /** Block AI training; allow search indexing and AI ingestion for answer engines. */
-export const ROBOTS_CONTENT_SIGNAL =
-  "Content-Signal: ai-train=no, search=yes, ai-input=yes"
+export const CONTENT_SIGNAL_VALUE = "ai-train=no, search=yes, ai-input=yes"
+
+/**
+ * Sent on every HTML response. Googlebot does not parse Content-Signal in robots.txt;
+ * use the header so compliant crawlers still receive the policy without GSC warnings.
+ */
+export const CONTENT_SIGNAL_HEADER = {
+  key: "Content-Signal",
+  value: CONTENT_SIGNAL_VALUE,
+}
 
 /** Crawlers used by AI search and answer products — explicitly allowed sitewide. */
 export const ROBOTS_AI_SEARCH_USER_AGENTS = [
@@ -67,18 +78,18 @@ Disallow: /api/
  * @returns {string}
  */
 export function enhanceRobotsTxt(robotsTxt) {
-  const withContentSignal = robotsTxt.replace(
-    /^User-agent: \*\r?\n/m,
-    `User-agent: *\n${ROBOTS_CONTENT_SIGNAL}\n`
-  )
+  const withoutUnsupportedDirectives = robotsTxt
+    .replace(/^Content-Signal:.*\r?\n/gm, "")
+    .replace(/^# Host\r?\nHost:.*\r?\n/gm, "")
+    .replace(/^Host:.*\r?\n/gm, "")
 
-  const withAiSearchPolicies = withContentSignal.replace(
-    /^(User-agent: \*\r?\nContent-Signal:.*\r?\nAllow: \/\r?\nDisallow: \/api\/\r?\n)/m,
+  const withAiSearchPolicies = withoutUnsupportedDirectives.replace(
+    /^(User-agent: \*\r?\nAllow: \/\r?\nDisallow: \/api\/\r?\n)/m,
     `$1\n${ROBOTS_AI_SEARCH_SECTION}\n${ROBOTS_API_BLOCK_SECTION}\n`
   )
 
   const withoutDuplicateSitemaps = withAiSearchPolicies.replace(
-    /(# Sitemaps\r?\nSitemap: [^\r\n]+\r?\n)(?:# Sitemaps\r?\nSitemap: [^\r\n]+\r?\n)+/g,
+    /(^# Sitemaps\r?\nSitemap: [^\r\n]+\r?\n)(?:# Sitemaps\r?\nSitemap: [^\r\n]+\r?\n)+/gm,
     "$1"
   )
 
