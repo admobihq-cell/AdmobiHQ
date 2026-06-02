@@ -46,6 +46,9 @@ npm-debug.log*
 .eslintcache
 .stylelintcache
 
+# Payload local uploads (apps/web)
+apps/web/media/
+
 # Misc
 .pnp
 .pnp.js

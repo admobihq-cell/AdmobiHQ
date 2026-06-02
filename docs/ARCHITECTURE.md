@@ -63,8 +63,16 @@ App Router. Two top-level groupings:
   - `/partner-fleet` — fleet partner inquiry form
   - `/products-solutions` — static product showcase
   - `/start-campaign` — campaign brief form
+  - `/help` — help center index (Payload CMS)
+  - `/help/[slug]` — help article (Payload CMS, ISR)
 
-Every page is either fully static (SSR/SSG) or a client component for forms. Nothing is dynamic-by-default on the marketing surface; only the API routes are server-rendered on demand.
+- [`app/(payload)/`](../apps/web/app/(payload)/) — Payload admin and REST API (not wrapped by marketing header):
+  - `/admin` — content admin UI
+  - `/api/*` — Payload REST handlers (distinct from [`app/api/`](../apps/web/app/api/) form routes)
+
+Help and blog content are defined in [`apps/web/collections/`](../apps/web/collections/) and fetched via [`lib/payload/`](../apps/web/lib/payload/). **Prisma remains the main backend** for leads, drivers, and fleet data; Payload is CMS-only. See [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](./HELP-CMS.md), and [BLOG-CMS.md](./BLOG-CMS.md).
+
+Every page is either fully static (SSR/SSG) or a client component for forms. Help and blog routes use ISR (`revalidate = 3600`). Form API routes are server-rendered on demand.
 
 ### 4.2 Root layout
 
@@ -77,16 +85,16 @@ Every page is either fully static (SSR/SSG) or a client component for forms. Not
 
 ### 4.3 API routes
 
-All under [`app/api/`](../apps/web/app/api/). Every handler is POST-only, validates the body with a Zod schema, and currently **logs to console rather than persisting**. The presence of `RESEND_FROM_EMAIL` in the env suggests email delivery is the planned next step.
+Marketing form handlers live under [`app/api/`](../apps/web/app/api/). They are POST-only, validate with Zod, and persist through **Prisma** where implemented. Payload’s REST API is separate under [`app/(payload)/api/`](../apps/web/app/(payload)/api/) — see [DATA-LAYER.md](./DATA-LAYER.md).
 
-| Route | Purpose | Schema |
+| Route | Purpose | Persistence |
 |---|---|---|
-| [`/api/drivers`](../apps/web/app/api/drivers/route.ts) | Driver program enrollment | `driverJoinSchema` |
-| [`/api/leads`](../apps/web/app/api/leads/route.ts) | Discriminated union — campaign leads or fleet leads | `leadBodySchema` (`campaignLeadSchema` ∪ `fleetLeadSchema`) |
-| [`/api/media-kit`](../apps/web/app/api/media-kit/route.ts) | Media kit download request | `mediaKitSchema` |
-| [`/api/waitlist`](../apps/web/app/api/waitlist/route.ts) | Email-only waitlist signup | `waitlistSchema` |
+| [`/api/drivers`](../apps/web/app/api/drivers/route.ts) | Driver program enrollment | Prisma `drivers` + Resend |
+| [`/api/leads`](../apps/web/app/api/leads/route.ts) | Campaign leads or fleet partners | Prisma `leads` / `fleet_partners` + Resend |
+| [`/api/media-kit`](../apps/web/app/api/media-kit/route.ts) | Media kit request | Validates only (not persisted yet) |
+| [`/api/waitlist`](../apps/web/app/api/waitlist/route.ts) | Waitlist signup | Validates only (not persisted yet) |
 
-When you persist these for real, the integration point is inside each `route.ts` — keep the Zod schema as the contract and add the side effect (DB / Resend / queue) after `parse()` succeeds.
+When adding persistence to media-kit or waitlist, use **Prisma** (new models in [`prisma/schema.prisma`](../apps/web/prisma/schema.prisma)), not Payload collections.
 
 ### 4.4 Components
 
@@ -206,12 +214,14 @@ The `zod` version is pinned to `3.25.76` via a workspace-root [package.json](../
 All orchestrated by Turbo. Run from the repo root:
 
 ```bash
-npm run dev        # turbo dev — Next.js dev server with Turbopack
+npm run dev        # turbo dev — web uses webpack + Payload import map fix
 npm run build      # turbo build — production build, depends on ^build for packages
 npm run lint       # turbo lint
 npm run typecheck  # turbo typecheck
 npm run format     # prettier + tailwind plugin
 ```
+
+Full local setup (Infisical, database, Payload, seeds): [DEV-SETUP.md](./DEV-SETUP.md).
 
 Task graph in [turbo.json](../turbo.json) gives `build` a `^build` dependency (build packages first), caches Turbo outputs to `.next/**` (excluding the cache subdir), and marks `dev` non-cached + persistent.
 
@@ -229,8 +239,10 @@ npx eslint .
 
 Two workflows under [.github/workflows/](../.github/workflows/):
 
-- [`pr.yml`](../.github/workflows/pr.yml) — runs on PR open / synchronize / reopen against `master`. Node 20 + npm cache + Turbo cache → `npm ci` → `typecheck` → `lint` → `build`.
-- [`main.yml`](../.github/workflows/main.yml) — same job, triggered on push to `master`. Has a placeholder deploy step (commented out) ready for a Vercel token.
+- [`pr.yml`](../.github/workflows/pr.yml) — runs on PR open / synchronize / reopen against `master`. Node 20 + npm cache + Turbo cache → verify GitHub secrets → `npm ci` → `prisma generate` → **CMS migrate + seed** → `typecheck` → `lint` → `build`.
+- [`master.yml`](../.github/workflows/master.yml) — same job on push to `master`. Has a placeholder deploy step (commented out) ready for a `VERCEL_TOKEN` secret.
+
+Job env vars are wired from **repository secrets** (`DATABASE_URL`, `PAYLOAD_SECRET`, and optional keys from [`.env.example`](../.env.example)). See [DEV-SETUP.md](./DEV-SETUP.md) § GitHub Actions secrets.
 
 Both set `TURBO_UI=false` for non-interactive output.
 
