@@ -1,6 +1,8 @@
 import {
   enhanceRobotsTxt,
 } from "./lib/seo/robots-content-signals.js"
+import { fetchBlogSitemapPaths } from "./lib/payload/fetch-blog-sitemap-paths.js"
+import { fetchHelpSitemapPaths } from "./lib/payload/fetch-help-sitemap-paths.js"
 
 const LEGAL_PATHS = new Set(["/privacy", "/terms"])
 
@@ -10,14 +12,21 @@ const AI_SEO_STATIC_PATHS = ["/pricing", "/llms.txt", "/pricing.md"]
 export default {
   siteUrl: "https://admobihq.com",
   generateRobotsTxt: true,
-  exclude: ["/api/*", "/opengraph-image"],
-  additionalPaths: async () =>
-    AI_SEO_STATIC_PATHS.map((path) => ({
+  exclude: ["/api/*", "/opengraph-image", "/admin", "/admin/*"],
+  additionalPaths: async () => {
+    const now = new Date().toISOString()
+    const aiSeoPaths = AI_SEO_STATIC_PATHS.map((path) => ({
       loc: path,
       changefreq: "monthly",
       priority: path === "/pricing" ? 0.8 : 0.6,
-      lastmod: new Date().toISOString(),
-    })),
+      lastmod: now,
+    }))
+    const [helpPaths, blogPaths] = await Promise.all([
+      fetchHelpSitemapPaths(),
+      fetchBlogSitemapPaths(),
+    ])
+    return [...aiSeoPaths, ...helpPaths, ...blogPaths]
+  },
   transform: async (config, path) => {
     const priority = LEGAL_PATHS.has(path) ? 0.5 : 0.8
     return {

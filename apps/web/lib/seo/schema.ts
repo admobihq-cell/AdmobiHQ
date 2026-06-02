@@ -32,7 +32,11 @@ export function breadcrumbListJsonLd(
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: item.path === "/" ? SITE_URL : `${SITE_URL}${item.path}`,
+      item: item.path.startsWith("http")
+        ? item.path
+        : item.path === "/"
+          ? SITE_URL
+          : `${SITE_URL}${item.path}`,
     })),
   }
 }
@@ -41,12 +45,14 @@ export function marketingWebPageJsonLd({
   path,
   name,
   description,
+  url: urlOverride,
 }: {
   path: string
   name: string
   description: string
+  url?: string
 }) {
-  const url = path === "/" ? SITE_URL : `${SITE_URL}${path}`
+  const url = urlOverride ?? (path === "/" ? SITE_URL : `${SITE_URL}${path}`)
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
