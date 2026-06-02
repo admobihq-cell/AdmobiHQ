@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import { advertiserFaqItems } from "@/lib/seo/faq-data"
 
 import { Container } from "./container"
@@ -26,6 +28,14 @@ export function FaqSection() {
             </details>
           ))}
         </div>
+        <p className="mt-8">
+          <Link
+            href="/help"
+            className="text-foreground text-sm font-medium underline underline-offset-[3px] transition-colors hover:text-primary"
+          >
+            View all help articles
+          </Link>
+        </p>
       </Container>
     </section>
   )
