@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       })
 
       await sendEmail(
-        process.env.TEST_RECIPIENT_EMAIL || parsed.data.email || '',
+        parsed.data.email || '',
         "Welcome to Admobi - We'll review your application",
         driverHtml
       )
