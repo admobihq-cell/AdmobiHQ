@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         })
 
         await sendEmail(
-          process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
+          parsed.data.email,
           "We've received your campaign brief",
           campaignHtml
         )
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
         })
 
         await sendEmail(
-          process.env.TEST_RECIPIENT_EMAIL || parsed.data.email,
+          parsed.data.email,
           "We've received your fleet partnership application",
           fleetHtml
         )
