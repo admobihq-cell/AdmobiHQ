@@ -12,7 +12,15 @@ const AI_SEO_STATIC_PATHS = ["/pricing", "/llms.txt", "/pricing.md"]
 export default {
   siteUrl: "https://admobihq.com",
   generateRobotsTxt: true,
-  exclude: ["/api/*", "/opengraph-image", "/admin", "/admin/*"],
+  exclude: [
+    "/api/*",
+    "/opengraph-image",
+    "/opengraph-image.png",
+    "/twitter-image",
+    "/twitter-image.png",
+    "/admin",
+    "/admin/*",
+  ],
   additionalPaths: async () => {
     const now = new Date().toISOString()
     const aiSeoPaths = AI_SEO_STATIC_PATHS.map((path) => ({
