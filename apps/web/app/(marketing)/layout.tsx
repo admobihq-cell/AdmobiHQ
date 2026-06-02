@@ -11,7 +11,7 @@ import { JsonLd } from "@/components/seo/json-ld"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeScript } from "@/components/theme-script"
 import { websiteJsonLd } from "@/lib/seo/schema"
-import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo/site"
+import { DEFAULT_OG_IMAGE, INDEXABLE_ROBOTS, SITE_NAME, SITE_URL } from "@/lib/seo/site"
 import "@workspace/ui/globals.css"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -33,6 +33,7 @@ const HOME_DESCRIPTION =
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  robots: INDEXABLE_ROBOTS,
   title: {
     default: HOME_TITLE,
     template: "%s · Admobi",
@@ -40,7 +41,6 @@ export const metadata: Metadata = {
   description: HOME_DESCRIPTION,
   alternates: {
     canonical: SITE_URL,
-    languages: { "en-ke": `${SITE_URL}/` },
   },
   other: {
     "geo.region": "KE-110",

@@ -78,6 +78,10 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: "/opengraph-image",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
+      {
         source: "/:path*",
         headers: [CONTENT_SIGNAL_HEADER],
       },
