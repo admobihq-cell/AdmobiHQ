@@ -13,6 +13,8 @@ type MarketingPageJsonLdProps = {
   description: string
   breadcrumbs: readonly { name: string; path: string }[]
   faqItems?: readonly FaqItem[]
+  /** Override canonical page URL (rare; defaults to SITE_URL + path). */
+  pageUrl?: string
 }
 
 export function MarketingPageJsonLd({
@@ -21,12 +23,21 @@ export function MarketingPageJsonLd({
   description,
   breadcrumbs,
   faqItems,
+  pageUrl: pageUrlOverride,
 }: MarketingPageJsonLdProps) {
-  const pageUrl = path === "/" ? SITE_URL : `${SITE_URL}${path}`
+  const pageUrl =
+    pageUrlOverride ?? (path === "/" ? SITE_URL : `${SITE_URL}${path}`)
 
   return (
     <>
-      <JsonLd data={marketingWebPageJsonLd({ path, name, description })} />
+      <JsonLd
+        data={marketingWebPageJsonLd({
+          path,
+          name,
+          description,
+          url: pageUrl,
+        })}
+      />
       <JsonLd data={breadcrumbListJsonLd(breadcrumbs)} />
       {faqItems ? <JsonLd data={faqPageJsonLd(faqItems, pageUrl)} /> : null}
     </>

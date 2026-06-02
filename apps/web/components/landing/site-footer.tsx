@@ -2,6 +2,8 @@ import Link from "next/link"
 
 import { LastUpdated } from "@/components/seo/last-updated"
 
+import { BLOG_PATH } from "@/lib/seo/site"
+
 import { Container } from "./container"
 import { Logo } from "./logo"
 
@@ -17,6 +19,15 @@ const columns = [
       { href: "/pricing", label: "Pricing" },
       { href: "/#product", label: "Capabilities" },
       { href: "/media-kit", label: "Media kit" },
+    ],
+  },
+  {
+    id: "resources",
+    heading: "Resources",
+    links: [
+      { href: BLOG_PATH, label: "Blog" },
+      { href: "/help", label: "Help center" },
+      { href: "/#faq", label: "FAQ" },
     ],
   },
   {
@@ -78,7 +89,7 @@ export function SiteFooter() {
             </p>
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:gap-8">
             {columns.map(({ id, heading, links }) => (
               <nav key={id} aria-label={heading} className="min-w-0 space-y-4">
                 <FooterHeading>{heading}</FooterHeading>

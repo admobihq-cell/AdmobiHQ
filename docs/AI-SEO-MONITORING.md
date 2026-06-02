@@ -15,7 +15,8 @@ curl -s https://admobihq.com/pricing.md | head
 - [ ] `pricing.md` returns 200 with KES tiers and disclaimer
 - [ ] `/pricing` page loads with same tier data
 - [ ] [Rich Results Test](https://search.google.com/test/rich-results) passes for `/`, `/pricing`, `/drivers` (FAQ where applicable)
-- [ ] `sitemap.xml` includes `/pricing`, `/llms.txt`, `/pricing.md`
+- [ ] `sitemap.xml` includes `/pricing`, `/llms.txt`, `/pricing.md`, `/help`, and published `/help/*` slugs
+- [ ] `/help` loads and lists published articles from Payload
 - [ ] Search Console **robots.txt** report has no warnings (Google only supports `User-agent`, `Allow`, `Disallow`, `Sitemap`; content policy is sent via the `Content-Signal` HTTP header, not as a robots.txt rule)
 
 ## Query citation log (manual)
