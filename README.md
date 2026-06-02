@@ -28,19 +28,22 @@ Product and design intent for copy and UX lives in **`PRODUCT.md`** and **`DESIG
 
 ## Setup
 
+**Full guide (Infisical, Postgres, Prisma, Payload, seeds, troubleshooting):** [`docs/DEV-SETUP.md`](docs/DEV-SETUP.md).
+
 From the repository root:
 
 ```bash
 npm ci
+npm run env:pull -w web    # Infisical → apps/web/.env.local (or copy .env.example manually)
+npm run env:check -w web
+npm run dev
 ```
 
-Use `npm install` locally if you are not reproducing CI exactly.
+Use `npm install` locally if you are not reproducing CI exactly. Open **http://localhost:3000** (marketing) and **http://localhost:3000/admin** (Payload CMS).
 
 ## Run
 
 ### All dev tasks (Turbo)
-
-Starts every workspace `dev` script (today that is mainly the web app):
 
 ```bash
 npm run dev
@@ -52,7 +55,7 @@ npm run dev
 npm run dev -w web
 ```
 
-The site defaults to **http://localhost:3000** (Next.js).
+Webpack dev is the default (`fix-importmap` + Payload-safe). See [`docs/DEV-SETUP.md`](docs/DEV-SETUP.md) for `dev:turbo`, database setup, and when to run migrations.
 
 ### Production build
 
@@ -81,9 +84,7 @@ Run from the repo root:
 
 ## Environment variables
 
-There is **no committed `.env` template**. If you use integrations that read secrets (email, CRM, analytics), add **`apps/web/.env.local`** as needed; Next.js loads it automatically for the web app.
-
-API routes in this repo do not currently depend on `process.env` for basic local development of the forms.
+Copy [`.env.example`](.env.example) to **`apps/web/.env.local`**, or run `npm run env:pull -w web` after Infisical login. Required for CMS and database work: `DATABASE_URL`, `PAYLOAD_SECRET`, `NEXT_PUBLIC_SERVER_URL`. See [`.env.example`](.env.example) and [`docs/DEV-SETUP.md`](docs/DEV-SETUP.md).
 
 ## CI
 
@@ -108,5 +109,8 @@ import { Button } from "@workspace/ui/components/button"
 
 ## Further reading
 
+- **`docs/DEV-SETUP.md`** — Local dev commands, Infisical, Prisma, Payload, seeds
+- **`docs/DATA-LAYER.md`** — Prisma (backend) vs Payload (CMS)
+- **`docs/HELP-CMS.md`** / **`docs/BLOG-CMS.md`** — Content admin
 - **`PRODUCT.md`** — Audience, positioning, tone
 - **`DESIGN.md`** — Structure, anchors, layout notes for the marketing site

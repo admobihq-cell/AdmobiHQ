@@ -7,14 +7,16 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
+    "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "turbo": "^2.8.17",
+    "turbo": "^2.9.16",
     "typescript": "5.9.3"
   },
   "packageManager": "npm@11.12.1",

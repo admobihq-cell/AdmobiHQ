@@ -13,18 +13,47 @@ jobs:
   ci:
     name: Lint, Typecheck & Build
     runs-on: ubuntu-latest
+    env:
+      # Repository secrets (Settings → Secrets and variables → Actions).
+      # Names must match apps/web/.env.example. See docs/DEV-SETUP.md § GitHub Actions.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+      NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL != '' && secrets.NEXT_PUBLIC_SERVER_URL || 'https://admobihq.com' }}
+      PAYLOAD_DATABASE_URL: ${{ secrets.PAYLOAD_DATABASE_URL }}
+      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+      API_KEY_PEXELS: ${{ secrets.API_KEY_PEXELS }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: "npm"
+
+      - name: Verify required secrets
+        run: |
+          set -e
+          missing=0
+          for key in DATABASE_URL PAYLOAD_SECRET; do
+            if [ -z "${!key}" ]; then
+              echo "::error::GitHub Actions secret '$key' is not set. Add it under Settings → Secrets and variables → Actions (use the same values as Infisical dev/staging)."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          echo "Required secrets present."
 
       - name: Install dependencies
         run: npm ci
@@ -32,8 +61,12 @@ jobs:
       - name: Generate Prisma Client
         run: cd apps/web && npx prisma generate
 
+      - name: Bootstrap CMS (migrate + seed)
+        if: ${{ vars.SKIP_CMS_BOOTSTRAP != 'true' }}
+        run: npm run cms:bootstrap:ci -w web
+
       - name: Cache Turbo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}

@@ -1,5 +1,9 @@
 import Link from "next/link"
 
+import { LastUpdated } from "@/components/seo/last-updated"
+
+import { BLOG_PATH } from "@/lib/seo/site"
+
 import { Container } from "./container"
 import { Logo } from "./logo"
 
@@ -12,8 +16,18 @@ const columns = [
     heading: "Product",
     links: [
       { href: "/products-solutions", label: "Products & solutions" },
-      { href: "#product", label: "Capabilities" },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/#product", label: "Capabilities" },
       { href: "/media-kit", label: "Media kit" },
+    ],
+  },
+  {
+    id: "resources",
+    heading: "Resources",
+    links: [
+      { href: BLOG_PATH, label: "Blog" },
+      { href: "/help", label: "Help center" },
+      { href: "/#faq", label: "FAQ" },
     ],
   },
   {
@@ -21,9 +35,9 @@ const columns = [
     heading: "For advertisers",
     links: [
       { href: "/start-campaign", label: "Start a campaign" },
-      { href: "#who", label: "Who buys OOH here" },
-      { href: "#process", label: "How bookings work" },
-      { href: "#faq", label: "FAQ" },
+      { href: "/#who", label: "Who buys OOH here" },
+      { href: "/#process", label: "How bookings work" },
+      { href: "/#faq", label: "FAQ" },
     ],
   },
   {
@@ -32,15 +46,15 @@ const columns = [
     links: [
       { href: "/partner-fleet", label: "Partner your fleet" },
       { href: "/drivers", label: "Driver sign-up" },
-      { href: "#markets", label: "Kenya rollout" },
+      { href: "/#markets", label: "Kenya rollout" },
     ],
   },
   {
     id: "legal",
     heading: "Legal",
     links: [
-      { href: "#", label: "Privacy" },
-      { href: "#", label: "Terms" },
+      { href: "/privacy", label: "Privacy" },
+      { href: "/terms", label: "Terms" },
     ],
   },
 ] as const
@@ -75,7 +89,7 @@ export function SiteFooter() {
             </p>
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:gap-8">
             {columns.map(({ id, heading, links }) => (
               <nav key={id} aria-label={heading} className="min-w-0 space-y-4">
                 <FooterHeading>{heading}</FooterHeading>
@@ -103,6 +117,7 @@ export function SiteFooter() {
             <p className="max-w-xl leading-relaxed">
               English first · Copy and policies update as programmes expand.
             </p>
+            <LastUpdated className="mt-2" />
           </div>
           <p className="font-mono text-[0.65rem] leading-relaxed uppercase tracking-[0.12em] sm:shrink-0 sm:text-end">
             Press D for theme

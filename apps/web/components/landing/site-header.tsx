@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { BLOG_PATH } from "@/lib/seo/site"
 
 import { Container } from "./container"
 import { Logo } from "./logo"
@@ -13,9 +14,12 @@ import { Logo } from "./logo"
 /** Route-first nav: homepage sections stay reachable via footer anchors and scrolling. */
 const navItems = [
   { href: "/products-solutions", label: "Products & solutions" },
+  { href: "/pricing", label: "Pricing" },
+  { href: BLOG_PATH, label: "Blog" },
+  { href: "/help", label: "Help" },
   { href: "/media-kit", label: "Media kit" },
   { href: "/drivers", label: "Drivers" },
-] as const
+]
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)

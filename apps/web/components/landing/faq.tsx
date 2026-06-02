@@ -1,23 +1,8 @@
-import { Container } from "./container"
+import Link from "next/link"
 
-const items = [
-  {
-    q: "What creative formats do you accept?",
-    a: "Video and static packages sized to the unit spec. Loop length, safe zones, and codecs are listed in the media kit PDF when published.",
-  },
-  {
-    q: "How quickly can we launch?",
-    a: "Depends on materials and approved routes. Short flights are possible when inventory and compliance checks line up.",
-  },
-  {
-    q: "Do you cover counties outside Nairobi today?",
-    a: "Additional cities are on the roadmap. Nairobi is the first production footprint.",
-  },
-  {
-    q: "What minimum spend or duration applies?",
-    a: "Campaigns can start from a single day where inventory allows. Final pricing is confirmed with your brief.",
-  },
-] as const
+import { advertiserFaqItems } from "@/lib/seo/faq-data"
+
+import { Container } from "./container"
 
 export function FaqSection() {
   return (
@@ -27,7 +12,7 @@ export function FaqSection() {
           FAQ
         </h2>
         <div className="mt-8 divide-y divide-border border-t border-border">
-          {items.map((item) => (
+          {advertiserFaqItems.map((item) => (
             <details key={item.q} className="group py-2">
               <summary className="cursor-pointer list-none py-4 text-base font-medium text-foreground outline-none marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center justify-between gap-4">
@@ -43,6 +28,14 @@ export function FaqSection() {
             </details>
           ))}
         </div>
+        <p className="mt-8">
+          <Link
+            href="/help"
+            className="text-foreground text-sm font-medium underline underline-offset-[3px] transition-colors hover:text-primary"
+          >
+            View all help articles
+          </Link>
+        </p>
       </Container>
     </section>
   )

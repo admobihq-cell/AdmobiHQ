@@ -30,7 +30,7 @@ export const CampaignConfirmation = ({ name, company }: CampaignConfirmationProp
           <Section style={buttonContainer}>
             <Button
               style={button}
-              href="https://admobi.co"
+              href="https://admobihq.com"
             >
               Visit Our Website
             </Button>
@@ -48,8 +48,8 @@ export const CampaignConfirmation = ({ name, company }: CampaignConfirmationProp
           <Hr style={hr} />
           <Text style={footerText}>
             Questions? Reply to this email or visit{" "}
-            <Link href="https://admobi.co" style={link}>
-              admobi.co
+            <Link href="https://admobihq.com" style={link}>
+              admobihq.com
             </Link>
           </Text>
           <Text style={footerText}>
