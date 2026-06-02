@@ -4,7 +4,18 @@ import { SITE_URL } from "@/lib/seo/site"
 function serverOrigin(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SERVER_URL?.trim()
   if (fromEnv) {
-    return fromEnv.replace(/\/$/, "")
+    try {
+      const origin = new URL(fromEnv.replace(/\/$/, "")).origin
+      if (
+        process.env.NODE_ENV === "production" &&
+        new URL(SITE_URL).hostname !== new URL(origin).hostname
+      ) {
+        return SITE_URL
+      }
+      return origin
+    } catch {
+      return SITE_URL
+    }
   }
   return SITE_URL
 }
