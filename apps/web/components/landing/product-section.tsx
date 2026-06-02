@@ -46,15 +46,15 @@ export function ProductSection() {
         <dl className="mt-10 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:mt-14 lg:grid-cols-4 lg:gap-x-8">
           {nodes.map((node, i) => (
             <div key={node.label} className="grid grid-cols-[3rem_1fr] items-baseline gap-x-3 sm:block">
-              <span className="font-mono text-xs text-primary uppercase tracking-wider sm:block">
+              <dt className="font-mono text-xs text-primary uppercase tracking-wider sm:block">
                 {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="sm:mt-3">
-                <dt className="text-lg font-semibold text-foreground">{node.label}</dt>
-                <dd className="text-muted-foreground mt-2 max-w-[40ch] text-sm leading-relaxed sm:text-base">
-                  {node.body}
-                </dd>
-              </div>
+              </dt>
+              <dt className="col-start-2 row-start-1 text-lg font-semibold text-foreground sm:mt-3 sm:block">
+                {node.label}
+              </dt>
+              <dd className="text-muted-foreground col-start-2 row-start-2 mt-2 max-w-[40ch] text-sm leading-relaxed sm:mt-2 sm:text-base">
+                {node.body}
+              </dd>
             </div>
           ))}
         </dl>
