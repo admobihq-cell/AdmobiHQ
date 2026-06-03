@@ -1,4 +1,4 @@
-/* Payload admin layout — generated pattern from blank template */
+/* Payload admin layout, generated pattern from blank template */
 import config from "@payload-config"
 import "@payloadcms/next/css"
 import type { ServerFunctionClient } from "payload"

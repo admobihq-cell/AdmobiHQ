@@ -53,7 +53,7 @@ export function HelpIndex({ categories, articles, searchSlot }: HelpIndexProps) 
               Guides and answers for Admobi in Kenya
             </h1>
             <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed">
-              Campaign setup, driver onboarding, fleet partnerships, and Nairobi rollout — all in
+              Campaign setup, driver onboarding, fleet partnerships, and Nairobi rollout, all in
               one place.
             </p>
           </div>

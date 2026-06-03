@@ -3,7 +3,7 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
 
 /**
  * ISR revalidation only works inside a Next.js server context (admin publish, etc.).
- * Seed scripts and Payload CLI run outside Next — skip silently there.
+ * Seed scripts and Payload CLI run outside Next, skip silently there.
  */
 function revalidateHelpPaths(slug?: string | null) {
   try {

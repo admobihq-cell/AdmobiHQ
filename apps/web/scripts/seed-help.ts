@@ -204,7 +204,7 @@ async function seed() {
       excerpt: "No. Admobi schedules and reviews all creative centrally.",
       body: richText(
         paragraph(
-          "No. Screens run automatically during normal driving hours. Admobi schedules, reviews, and plays all creative—you do not manage ads on the unit.",
+          "No. Screens run automatically during normal driving hours. Admobi schedules, reviews, and plays all creative, you do not manage ads on the unit.",
         ),
       ),
       sortOrder: 2,

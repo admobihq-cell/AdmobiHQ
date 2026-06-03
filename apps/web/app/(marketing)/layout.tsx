@@ -58,7 +58,7 @@ export const metadata: Metadata = {
         url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Admobi — Digital taxi-top OOH in Kenya",
+        alt: "Admobi: Digital taxi-top OOH in Kenya",
       },
     ],
   },

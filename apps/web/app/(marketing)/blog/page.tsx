@@ -9,7 +9,7 @@ import { blogPageMetadata } from "@/lib/seo/site"
 export const revalidate = 3600
 
 export const metadata: Metadata = blogPageMetadata({
-  title: "Blog — taxi-top OOH insights & campaigns | Admobi Kenya",
+  title: "Blog | taxi-top OOH insights & campaigns | Admobi Kenya",
   description:
     "Articles on digital out-of-home, taxi-top LED campaigns, and Admobi product updates from Nairobi and Kenya.",
 })

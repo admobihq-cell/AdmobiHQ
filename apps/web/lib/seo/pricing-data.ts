@@ -12,7 +12,7 @@ export type PricingTier = {
   notes?: string
 }
 
-/** Illustrative KES ranges for AI agents and planners — confirm with sales before booking. */
+/** Illustrative KES ranges for AI agents and planners, confirm with sales before booking. */
 export const pricingTiers: readonly PricingTier[] = [
   {
     id: "taxi-day-burst",
