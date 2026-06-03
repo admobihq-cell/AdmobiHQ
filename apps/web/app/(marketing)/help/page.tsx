@@ -8,7 +8,7 @@ import { pageMetadata } from "@/lib/seo/site"
 export const revalidate = 3600
 
 export const metadata: Metadata = pageMetadata({
-  title: "Help center — taxi-top OOH guides & FAQs | Admobi Kenya",
+  title: "Help center | taxi-top OOH guides & FAQs | Admobi Kenya",
   description:
     "Guides for advertisers, drivers, and fleet partners on Admobi taxi-top LED and delivery bike OOH in Nairobi and Kenya.",
   path: "/help",

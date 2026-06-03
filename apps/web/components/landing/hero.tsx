@@ -27,7 +27,7 @@ export function HeroSection() {
             Nairobi · Digital taxi-top screens
           </p>
           <h1 className="mx-auto mt-5 text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem]">
-            <span className="block">Taxi-top advertising in Nairobi —</span>
+            <span className="block">Taxi-top advertising in Nairobi</span>
             <span className="block">LED screens that move with the city</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-[58ch] text-pretty text-base leading-relaxed sm:text-lg">

@@ -56,7 +56,7 @@ export default buildConfig({
             collections: {
               media: true,
             },
-            // Server-side uploads only — avoids browser → Blob direct upload path.
+            // Server-side uploads only, avoids browser → Blob direct upload path.
             clientUploads: false,
             token: blobToken,
           }),
@@ -67,7 +67,7 @@ export default buildConfig({
       providerAccess: ({ req: { user } }) => Boolean(user),
       enablePreview: true,
     }),
-    // After vercelBlobStorage — rewrite client handler to local stub for import map / webpack.
+    // After vercelBlobStorage, rewrite client handler to local stub for import map / webpack.
     patchVercelBlobClientImport(),
   ],
   sharp,

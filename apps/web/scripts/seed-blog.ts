@@ -98,7 +98,7 @@ const SEED_POSTS: SeedPost[] = [
     slug: "traditional-ooh-vs-moving-led-taxi-tops-kenya",
     title: "Traditional advertising vs moving LED taxi tops in Kenya",
     excerpt:
-      "How static billboards, broadcast, and print compare to geo-targeted taxi-top LED and delivery bike OOH in Nairobi — mobility, proof, and minimum flights.",
+      "How static billboards, broadcast, and print compare to geo-targeted taxi-top LED and delivery bike OOH in Nairobi, mobility, proof, and minimum flights.",
     topic: "ooh",
     featured: true,
     publishedAt: "2026-06-01T09:00:00.000Z",
@@ -106,7 +106,7 @@ const SEED_POSTS: SeedPost[] = [
     authorRole: "OOH & campaigns",
     seoTitle: "Traditional OOH vs moving LED taxi tops in Kenya | Admobi Blog",
     seoDescription:
-      "Compare static billboards, radio, print, and social with geo-targeted taxi-top LED and delivery bike OOH in Nairobi — targeting, proof-of-play, and flight length.",
+      "Compare static billboards, radio, print, and social with geo-targeted taxi-top LED and delivery bike OOH in Nairobi, targeting, proof-of-play, and flight length.",
     cover: {
       alt: "Illustrated cover: Traditional OOH versus moving LED taxi-top advertising in Nairobi",
       badge: "ADMOBI BLOG",
@@ -116,32 +116,32 @@ const SEED_POSTS: SeedPost[] = [
     },
     body: richText(
       paragraph(
-        "Kenyan advertisers still spread budget across channels that were built for a different media landscape: fixed roadside boards, broadcast slots, and print runs that cannot follow where Nairobi actually moves. Moving LED taxi tops and geo-scheduled delivery bike enclosures are not a replacement for every line item — they answer a specific gap: reach that travels with traffic, proof that plays happened, and flights short enough to test before you commit a quarter.",
+        "Kenyan advertisers still spread budget across channels that were built for a different media landscape: fixed roadside boards, broadcast slots, and print runs that cannot follow where Nairobi actually moves. Moving LED taxi tops and geo-scheduled delivery bike enclosures are not a replacement for every line item, they answer a specific gap: reach that travels with traffic, proof that plays happened, and flights short enough to test before you commit a quarter.",
       ),
       heading("What we mean by “traditional” channels", "h2"),
       paragraph(
-        "In this guide, “traditional” means formats that do not move with the audience or do not report plays at route level: static billboards, radio and TV spots, newspaper and magazine placements, flyers, and unlit roadside panels. We compare them fairly on planning, targeting, proof, and minimum flight length — without ranking brands or vendors.",
+        "In this guide, “traditional” means formats that do not move with the audience or do not report plays at route level: static billboards, radio and TV spots, newspaper and magazine placements, flyers, and unlit roadside panels. We compare them fairly on planning, targeting, proof, and minimum flight length, without ranking brands or vendors.",
       ),
       heading("Static billboards and unlit roadside panels", "h2"),
       paragraph(
-        "A static board owns one sight line. That is powerful when your audience truly lives on that road — but Nairobi commutes cut across CBD arterials, estates, and junctions that no single board can cover. Booking is often tied to multi-week minimums, creative is fixed for the flight, and measurement usually stops at installation photos plus traffic estimates rather than verified plays on your schedule.",
+        "A static board owns one sight line. That is powerful when your audience truly lives on that road, but Nairobi commutes cut across CBD arterials, estates, and junctions that no single board can cover. Booking is often tied to multi-week minimums, creative is fixed for the flight, and measurement usually stops at installation photos plus traffic estimates rather than verified plays on your schedule.",
       ),
       paragraph(
-        "Admobi taxi-top LED units ride above congestion sight lines and follow corridor traffic. You book corridors and time windows, not a single postcode. GPS-verified proof-of-play shows when and where creatives ran — useful when procurement asks for evidence beyond a site photo.",
+        "Admobi taxi-top LED units ride above congestion sight lines and follow corridor traffic. You book corridors and time windows, not a single postcode. GPS-verified proof-of-play shows when and where creatives ran, useful when procurement asks for evidence beyond a site photo.",
       ),
       heading("Radio and television", "h2"),
       paragraph(
         "Broadcast still builds fame and audio recall at scale. The trade-off is audience fragmentation and limited geographic precision: a Nairobi FM buy may wash across counties you do not serve, and TV dayparts are expensive for short tests. There is no route-level log tying a spot to Thika Road versus Westlands.",
       ),
       paragraph(
-        "Moving OOH complements broadcast rather than replacing it. Brands often use taxi-top flights to reinforce a radio or digital burst in specific corridors — same week, same message, verifiable outdoor presence where commuters are stuck in traffic.",
+        "Moving OOH complements broadcast rather than replacing it. Brands often use taxi-top flights to reinforce a radio or digital burst in specific corridors, same week, same message, verifiable outdoor presence where commuters are stuck in traffic.",
       ),
       heading("Print, flyers, and door drops", "h2"),
       paragraph(
         "Print is tangible and trusted for coupons, tariffs, and local language. Production lead times and distribution control vary by vendor; proof is circulation-based, not GPS. Flyers work for hyper-local handoffs but do not scale corridor reach without heavy staffing.",
       ),
       paragraph(
-        "Digital OOH on taxis and delivery bikes keeps motion and schedule control: creative can be trafficked centrally, swapped per agreement, and reported like other performance media — without guessing how many leaflets survived the rain.",
+        "Digital OOH on taxis and delivery bikes keeps motion and schedule control: creative can be trafficked centrally, swapped per agreement, and reported like other performance media, without guessing how many leaflets survived the rain.",
       ),
       heading("Social and search (the “new traditional”)", "h2"),
       paragraph(
@@ -157,7 +157,7 @@ const SEED_POSTS: SeedPost[] = [
       ),
       heading("How to run a short taxi-top test in Nairobi", "h2"),
       paragraph(
-        "Share your corridors, dates, and creative format (video or static per the media kit). Admobi confirms inventory, runs creative QA, schedules plays by time window, and delivers GPS proof-of-play summaries after the flight. Indicative taxi-top day bursts start from KES 85,000 for a single corridor where inventory allows — final pricing is confirmed per brief.",
+        "Share your corridors, dates, and creative format (video or static per the media kit). Admobi confirms inventory, runs creative QA, schedules plays by time window, and delivers GPS proof-of-play summaries after the flight. Indicative taxi-top day bursts start from KES 85,000 for a single corridor where inventory allows, final pricing is confirmed per brief.",
       ),
       paragraph(
         "Ready to compare a moving LED flight against your current OOH line-up? Start a campaign brief and we will model corridors against your goals.",
@@ -186,7 +186,7 @@ const SEED_POSTS: SeedPost[] = [
     },
     body: richText(
       paragraph(
-        "A taxi-top LED flight works when the corridors match where your audience actually commutes — not when a map pin looks impressive on slide three. This guide walks through what to put in a brief so Admobi can confirm inventory, schedule plays, and deliver GPS proof-of-play without last-minute creative rework.",
+        "A taxi-top LED flight works when the corridors match where your audience actually commutes, not when a map pin looks impressive on slide three. This guide walks through what to put in a brief so Admobi can confirm inventory, schedule plays, and deliver GPS proof-of-play without last-minute creative rework.",
       ),
       heading("Start with the outcome, not the format", "h2"),
       paragraph(
@@ -197,11 +197,11 @@ const SEED_POSTS: SeedPost[] = [
         "Nairobi campaigns usually cluster around CBD ingress and egress (Mombasa Road, Waiyaki Way, Thika Road, Langata Road), airport and hotel strips, and estate connectors where traffic stalls long enough for a six- to ten-second loop to register. List priority corridors in order; we will flag inventory gaps and suggest adjacent routes rather than over-promising coverage.",
       ),
       paragraph(
-        "If your audience is office workers, bias morning and evening peaks. If you are chasing lunch-hour consideration near estates or industrial parks, say so — we may recommend delivery bike enclosures in parallel.",
+        "If your audience is office workers, bias morning and evening peaks. If you are chasing lunch-hour consideration near estates or industrial parks, say so, we may recommend delivery bike enclosures in parallel.",
       ),
       heading("Time windows matter as much as geography", "h2"),
       paragraph(
-        "Plays can be weighted to weekday peaks, weekend afternoons, or event-specific days (payday weekends, school terms, holiday travel). Specify start and end dates plus daily windows in EAT. Short test flights — even a single corridor for one day — are viable where inventory allows, which is how many brands de-risk before a multi-week book.",
+        "Plays can be weighted to weekday peaks, weekend afternoons, or event-specific days (payday weekends, school terms, holiday travel). Specify start and end dates plus daily windows in EAT. Short test flights, even a single corridor for one day, are viable where inventory allows, which is how many brands de-risk before a multi-week book.",
       ),
       heading("Creative: what to send and when", "h2"),
       paragraph(
@@ -209,7 +209,7 @@ const SEED_POSTS: SeedPost[] = [
       ),
       heading("What happens after you submit a brief", "h2"),
       paragraph(
-        "We confirm corridor inventory and pricing, run creative QA, traffic the schedule, and monitor the fleet during the flight. After wrap, you receive GPS proof-of-play summaries aligned to your booked windows — useful for finance, agencies, and client reporting.",
+        "We confirm corridor inventory and pricing, run creative QA, traffic the schedule, and monitor the fleet during the flight. After wrap, you receive GPS proof-of-play summaries aligned to your booked windows, useful for finance, agencies, and client reporting.",
       ),
       heading("Brief checklist (copy into your email)", "h2"),
       paragraph(
@@ -224,7 +224,7 @@ const SEED_POSTS: SeedPost[] = [
     slug: "gps-proof-of-play-outdoor-advertising-kenya",
     title: "What GPS proof-of-play means for outdoor advertising in Kenya",
     excerpt:
-      "Why installation photos are not enough for procurement — and how route-level play logs make moving LED OOH accountable like digital media.",
+      "Why installation photos are not enough for procurement, and how route-level play logs make moving LED OOH accountable like digital media.",
     topic: "product",
     featured: false,
     publishedAt: "2026-06-12T10:00:00.000Z",
@@ -232,7 +232,7 @@ const SEED_POSTS: SeedPost[] = [
     authorRole: "Product & operations",
     seoTitle: "GPS proof-of-play for OOH in Kenya | Admobi Blog",
     seoDescription:
-      "How GPS-verified proof-of-play works for taxi-top LED and delivery bike OOH — what advertisers, agencies, and finance teams receive after a flight.",
+      "How GPS-verified proof-of-play works for taxi-top LED and delivery bike OOH, what advertisers, agencies, and finance teams receive after a flight.",
     cover: {
       alt: "Illustrated cover: GPS proof-of-play for outdoor advertising in Kenya",
       badge: "PRODUCT",
@@ -242,15 +242,15 @@ const SEED_POSTS: SeedPost[] = [
     },
     body: richText(
       paragraph(
-        "Outdoor has historically been the hardest channel to audit: you pay for a board or a package, receive installation photography, and trust traffic models for the rest. Moving LED on taxis and delivery bikes changes the conversation because plays can be tied to time, route, and device — closer to how digital reports impressions.",
+        "Outdoor has historically been the hardest channel to audit: you pay for a board or a package, receive installation photography, and trust traffic models for the rest. Moving LED on taxis and delivery bikes changes the conversation because plays can be tied to time, route, and device, closer to how digital reports impressions.",
       ),
       heading("Proof-of-play vs proof-of-posting", "h2"),
       paragraph(
-        "Proof-of-posting shows that a unit existed and a creative was mounted — important, but silent on whether your ad actually ran on schedule. Proof-of-play confirms that scheduled loops fired while the vehicle was on route during your booked window. For procurement teams under scrutiny, that distinction is the difference between “we bought media” and “we can show delivery.”",
+        "Proof-of-posting shows that a unit existed and a creative was mounted, important, but silent on whether your ad actually ran on schedule. Proof-of-play confirms that scheduled loops fired while the vehicle was on route during your booked window. For procurement teams under scrutiny, that distinction is the difference between “we bought media” and “we can show delivery.”",
       ),
       heading("What Admobi logs on a typical flight", "h2"),
       paragraph(
-        "During a booked window, plays are associated with GPS traces from equipped units. Summaries align to your campaign dates, corridors, and time bands — not a single hero photo at one junction. You still get operational visibility (creative live, QA passed); the log is what you attach when finance asks whether the flight delivered.",
+        "During a booked window, plays are associated with GPS traces from equipped units. Summaries align to your campaign dates, corridors, and time bands, not a single hero photo at one junction. You still get operational visibility (creative live, QA passed); the log is what you attach when finance asks whether the flight delivered.",
       ),
       heading("Who benefits inside your organisation", "h2"),
       paragraph(
@@ -258,7 +258,7 @@ const SEED_POSTS: SeedPost[] = [
       ),
       heading("Limits to set expectations fairly", "h2"),
       paragraph(
-        "GPS proof describes delivery on moving inventory, not individual viewer attention. Weather, traffic incidents, and temporary road closures can reduce impressions on a given day without voiding the entire flight — we work with you on make-goods per contract. Proof complements creative strength; it does not replace it.",
+        "GPS proof describes delivery on moving inventory, not individual viewer attention. Weather, traffic incidents, and temporary road closures can reduce impressions on a given day without voiding the entire flight, we work with you on make-goods per contract. Proof complements creative strength; it does not replace it.",
       ),
       heading("How to request proof in your brief", "h2"),
       paragraph(
@@ -273,7 +273,7 @@ const SEED_POSTS: SeedPost[] = [
     slug: "delivery-bike-ooh-lunch-hour-estates-nairobi",
     title: "Delivery bike OOH: reaching Nairobi estates at lunch hour",
     excerpt:
-      "When taxi-top corridors are not enough — how LED enclosures on delivery bikes put brand messages into estate loops and last-mile routes.",
+      "When taxi-top corridors are not enough, how LED enclosures on delivery bikes put brand messages into estate loops and last-mile routes.",
     topic: "ooh",
     featured: false,
     publishedAt: "2026-06-15T07:30:00.000Z",
@@ -281,7 +281,7 @@ const SEED_POSTS: SeedPost[] = [
     authorRole: "OOH & campaigns",
     seoTitle: "Delivery bike OOH for Nairobi estates | Admobi Blog",
     seoDescription:
-      "LED delivery bike enclosures for estate and lunch-hour OOH in Nairobi — audiences, booking rhythm, and how they pair with taxi-top campaigns.",
+      "LED delivery bike enclosures for estate and lunch-hour OOH in Nairobi, audiences, booking rhythm, and how they pair with taxi-top campaigns.",
     cover: {
       alt: "Illustrated cover: Delivery bike OOH for Nairobi estate and lunch-hour reach",
       badge: "OOH",
@@ -291,7 +291,7 @@ const SEED_POSTS: SeedPost[] = [
     },
     body: richText(
       paragraph(
-        "Taxi-top LED excels on arterials where traffic stacks and sight lines are long. But many purchase decisions in Nairobi happen off the highway — estate roads, industrial lunch routes, and the last mile between hub and doorstep. Delivery bike enclosures carry your message into those loops without pretending a CBD board can see them.",
+        "Taxi-top LED excels on arterials where traffic stacks and sight lines are long. But many purchase decisions in Nairobi happen off the highway, estate roads, industrial lunch routes, and the last mile between hub and doorstep. Delivery bike enclosures carry your message into those loops without pretending a CBD board can see them.",
       ),
       heading("Who this format is for", "h2"),
       paragraph(
@@ -299,7 +299,7 @@ const SEED_POSTS: SeedPost[] = [
       ),
       heading("How booking differs from taxi tops", "h2"),
       paragraph(
-        "Delivery bike books are typically weekly and clustered by estate or dispatch zone rather than a single arterial name. Creative specs differ from taxi tops — check the media kit for enclosure dimensions and brightness. GPS proof-of-play applies the same way: you see delivery on route during booked windows, not just a photo of a mounted panel.",
+        "Delivery bike books are typically weekly and clustered by estate or dispatch zone rather than a single arterial name. Creative specs differ from taxi tops, check the media kit for enclosure dimensions and brightness. GPS proof-of-play applies the same way: you see delivery on route during booked windows, not just a photo of a mounted panel.",
       ),
       heading("Pairing bikes with taxi tops", "h2"),
       paragraph(
@@ -307,7 +307,7 @@ const SEED_POSTS: SeedPost[] = [
       ),
       heading("Creative tips for enclosure legibility", "h2"),
       paragraph(
-        "Shorter copy, bolder contrast, and one call to action per loop. Remember pedestrians and riders see the panel at close range and shallow angles — fine print that works on a billboard will not survive here.",
+        "Shorter copy, bolder contrast, and one call to action per loop. Remember pedestrians and riders see the panel at close range and shallow angles, fine print that works on a billboard will not survive here.",
       ),
       heading("Next steps", "h2"),
       paragraph(

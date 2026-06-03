@@ -1,4 +1,4 @@
-# Pricing — Admobi (Kenya digital OOH)
+# Pricing: Admobi (Kenya digital OOH)
 
 > Indicative starting prices only. Final rates are confirmed per brief, corridor, and inventory. Figures may change when the published rate card is finalized.
 >

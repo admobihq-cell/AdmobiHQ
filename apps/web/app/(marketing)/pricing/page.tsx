@@ -9,7 +9,7 @@ import { PricingTiersTable } from "@/components/seo/pricing-tiers-table"
 import { pageMetadata } from "@/lib/seo/site"
 
 export const metadata = pageMetadata({
-  title: "Indicative OOH pricing — taxi tops & delivery bikes | Admobi Kenya",
+  title: "Indicative OOH pricing | taxi tops & delivery bikes | Admobi Kenya",
   description:
     "Starting-from KES tiers for geo-targeted taxi-top LED and delivery bike advertising in Nairobi. Confirmed per brief. Machine-readable pricing for AI agents.",
   path: "/pricing",
@@ -20,7 +20,7 @@ export default function PricingPage() {
     <>
       <MarketingPageJsonLd
         path="/pricing"
-        name="Indicative OOH pricing — taxi tops & delivery bikes | Admobi Kenya"
+        name="Indicative OOH pricing | taxi tops & delivery bikes | Admobi Kenya"
         description="Starting-from KES tiers for geo-targeted taxi-top LED and delivery bike advertising in Nairobi. Confirmed per brief."
         breadcrumbs={[
           { name: "Home", path: "/" },
@@ -39,7 +39,7 @@ export default function PricingPage() {
                   How much does taxi-top advertising cost in Nairobi?
                 </h1>
                 <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
-                  Admobi publishes starting-from KES tiers for taxi-top LED and delivery bike flights so planners can budget before a brief. Final rates depend on corridors, duration, inventory, and creative scope — confirmed when you start a campaign.
+                  Admobi publishes starting-from KES tiers for taxi-top LED and delivery bike flights so planners can budget before a brief. Final rates depend on corridors, duration, inventory, and creative scope, confirmed when you start a campaign.
                 </p>
                 <LastUpdated className="text-background/70 text-sm" />
               </div>
