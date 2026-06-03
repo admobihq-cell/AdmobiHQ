@@ -29,7 +29,7 @@ export function LandingPage() {
               How taxi-top advertising works in Nairobi
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Admobi mounts connected LED screens on partner taxis operating across Nairobi&apos;s busiest corridors. Brands book by geography and time window — not by guessing which billboard a target audience passes. Every play is GPS-verified, so you know exactly where your creative ran.
+              Admobi mounts connected LED screens on partner taxis operating across Nairobi&apos;s busiest corridors. Brands book by geography and time window, not by guessing which billboard a target audience passes. Every play is GPS-verified, so you know exactly where your creative ran.
             </p>
           </div>
         </Container>

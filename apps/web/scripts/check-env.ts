@@ -10,7 +10,7 @@ const keys = [
   "API_KEY_PEXELS",
 ]
 
-console.log("apps/web/.env.local — keys present:\n")
+console.log("apps/web/.env.local, keys present:\n")
 
 for (const key of keys) {
   const value = process.env[key]

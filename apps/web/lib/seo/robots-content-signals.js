@@ -43,7 +43,7 @@ export const CONTENT_SIGNAL_HEADER = {
   value: CONTENT_SIGNAL_VALUE,
 }
 
-/** Crawlers used by AI search and answer products — explicitly allowed sitewide. */
+/** Crawlers used by AI search and answer products; explicitly allowed sitewide. */
 export const ROBOTS_AI_SEARCH_USER_AGENTS = [
   "GPTBot",
   "ChatGPT-User",

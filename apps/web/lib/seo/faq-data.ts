@@ -3,7 +3,7 @@ export type FaqItem = {
   a: string
 }
 
-/** Homepage / advertiser FAQ — single source for UI and JSON-LD. */
+/** Homepage / advertiser FAQ, single source for UI and JSON-LD. */
 export const advertiserFaqItems: readonly FaqItem[] = [
   {
     q: "What is taxi-top advertising in Kenya?",
@@ -11,11 +11,11 @@ export const advertiserFaqItems: readonly FaqItem[] = [
   },
   {
     q: "How does geo-targeted OOH work on moving taxis?",
-    a: "You book corridors and time windows—not a single postcode. Partner taxis carry connected screens; plays are logged against GPS routes so reporting shows where and when creatives actually ran across Nairobi.",
+    a: "You book corridors and time windows, not a single postcode. Partner taxis carry connected screens; plays are logged against GPS routes so reporting shows where and when creatives actually ran across Nairobi.",
   },
   {
     q: "How does moving LED taxi-top advertising compare to static billboards?",
-    a: "Static billboards stay on one road; taxi tops follow traffic through CBD, arterials, and estates. You can run short test flights, shift corridors mid-campaign, and verify plays digitally—useful when audiences move more than they pass one board.",
+    a: "Static billboards stay on one road; taxi tops follow traffic through CBD, arterials, and estates. You can run short test flights, shift corridors mid-campaign, and verify plays digitally, which is useful when audiences move more than they pass one board.",
   },
   {
     q: "What creative formats does Admobi accept?",
@@ -35,7 +35,7 @@ export const advertiserFaqItems: readonly FaqItem[] = [
   },
 ] as const
 
-/** @deprecated Use advertiserFaqItems — kept for existing imports. */
+/** @deprecated Use advertiserFaqItems, kept for existing imports. */
 export const faqItems = advertiserFaqItems
 
 export const driverFaqItems: readonly FaqItem[] = [

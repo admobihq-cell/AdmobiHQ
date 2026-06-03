@@ -9,7 +9,7 @@ import { OohComparisonTable } from "@/components/seo/ooh-comparison-table"
 import { pageMetadata } from "@/lib/seo/site"
 
 export const metadata = pageMetadata({
-  title: "Digital OOH products — taxi tops & delivery bikes | Admobi Kenya",
+  title: "Digital OOH products | taxi tops & delivery bikes | Admobi Kenya",
   description:
     "Run geo-targeted taxi-top LED and delivery bike advertising in Nairobi. Geo-aware scheduling, proof-of-play, and flexible flights from one day. Admobi Kenya.",
   path: "/products-solutions",
@@ -20,7 +20,7 @@ export default function ProductsSolutionsPage() {
     <>
       <MarketingPageJsonLd
         path="/products-solutions"
-        name="Digital OOH products — taxi tops & delivery bikes | Admobi Kenya"
+        name="Digital OOH products | taxi tops & delivery bikes | Admobi Kenya"
         description="Run geo-targeted taxi-top LED and delivery bike advertising in Nairobi with proof-of-play and flexible flights."
         breadcrumbs={[
           { name: "Home", path: "/" },
@@ -36,7 +36,7 @@ export default function ProductsSolutionsPage() {
                   Products & solutions · Kenya rollout
                 </p>
                 <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
-                  Digital OOH advertising in Kenya — taxi tops and delivery bikes
+                  Digital OOH advertising in Kenya, taxi tops and delivery bikes
                 </h1>
                 <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
                   Admobi is Kenya&apos;s digital out-of-home network for brands that need motion-led outdoor advertising in Nairobi and beyond. Taxi-top LED screens and delivery bike enclosures bring geo-aware scheduling and proof-of-play to a format that moves with your audience instead of waiting for them.
@@ -103,7 +103,7 @@ export default function ProductsSolutionsPage() {
                   How does geo-targeted outdoor advertising work in Nairobi?
                 </h2>
                 <p className="text-muted-foreground text-base leading-relaxed">
-                  Plan your campaign by neighbourhood, arterial road, or time of day. CBD rush hour, Westlands lunch traffic, airport approach routes — each corridor is bookable separately so your spend follows real demand.
+                  Plan your campaign by neighbourhood, arterial road, or time of day. CBD rush hour, Westlands lunch traffic, airport approach routes, each corridor is bookable separately so your spend follows real demand.
                 </p>
               </div>
               <div className="max-w-xl lg:justify-self-end">
@@ -125,7 +125,7 @@ export default function ProductsSolutionsPage() {
               Taxi-top LED vs static billboards vs delivery bikes
             </h2>
             <p className="text-muted-foreground mt-4 max-w-[58ch] text-base leading-relaxed">
-              Category-level comparison for planners evaluating moving digital OOH in Kenya. Named operators are not ranked here — focus on format fit for your brief.
+              Category-level comparison for planners evaluating moving digital OOH in Kenya. Named operators are not ranked here, focus on format fit for your brief.
             </p>
             <OohComparisonTable />
           </Container>
