@@ -11,15 +11,17 @@ import { BLOG_PATH } from "@/lib/seo/site"
 import { Container } from "./container"
 import { Logo } from "./logo"
 
-/** Route-first nav: homepage sections stay reachable via footer anchors and scrolling. */
+/** Primary routes for sitelinks and internal linking (homepage sections stay in footer). */
 const navItems = [
-  { href: "/products-solutions", label: "Products & solutions" },
-  { href: "/pricing", label: "Pricing" },
-  { href: BLOG_PATH, label: "Blog" },
-  { href: "/help", label: "Help" },
-  { href: "/media-kit", label: "Media kit" },
-  { href: "/drivers", label: "Drivers" },
-]
+  { href: "/", label: "Taxi-top OOH" },
+  { href: "/products-solutions", label: "OOH products & solutions" },
+  { href: "/pricing", label: "OOH campaign pricing" },
+  { href: "/start-campaign", label: "Start OOH campaign" },
+  { href: "/partner-fleet", label: "Partner taxi-top fleet" },
+  { href: "/drivers", label: "Driver sign-up" },
+  { href: BLOG_PATH, label: "OOH blog & insights" },
+  { href: "/help", label: "OOH help center" },
+] as const
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
@@ -48,10 +50,10 @@ export function SiteHeader() {
           <ThemeToggle />
           <span className="mx-1 hidden h-6 w-px bg-border xl:block" aria-hidden />
           <Button asChild size="sm" variant="outline" className="ml-2">
-            <Link href="/partner-fleet">Partner your fleet</Link>
+            <Link href="/partner-fleet">Partner taxi-top fleet</Link>
           </Button>
           <Button asChild size="sm" className="ml-1">
-            <Link href="/start-campaign">Start a campaign</Link>
+            <Link href="/start-campaign">Start OOH campaign</Link>
           </Button>
         </nav>
         <Button
@@ -92,12 +94,12 @@ export function SiteHeader() {
             <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
               <Button asChild variant="outline" size="sm" className="w-full sm:flex-1">
                 <Link href="/partner-fleet" onClick={() => setOpen(false)}>
-                  Partner your fleet
+                  Partner taxi-top fleet
                 </Link>
               </Button>
               <Button asChild size="sm" className="w-full sm:flex-1">
                 <Link href="/start-campaign" onClick={() => setOpen(false)}>
-                  Start a campaign
+                  Start OOH campaign
                 </Link>
               </Button>
             </div>
