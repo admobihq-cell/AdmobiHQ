@@ -95,7 +95,7 @@ export function pageMetadata({ title, description, path }: PageMetadataInput): M
           url: DEFAULT_OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: `${SITE_NAME} — Digital taxi-top OOH in Kenya`,
+          alt: `${SITE_NAME}: Digital taxi-top OOH in Kenya`,
         },
       ],
     },
