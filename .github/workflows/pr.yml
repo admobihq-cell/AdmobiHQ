@@ -40,20 +40,16 @@ jobs:
           node-version: 20
           cache: "npm"
 
-      - name: Verify required secrets
+      - name: Check database secrets
+        id: db_secrets
         run: |
-          set -e
-          missing=0
-          for key in DATABASE_URL PAYLOAD_SECRET; do
-            if [ -z "${!key}" ]; then
-              echo "::error::GitHub Actions secret '$key' is not set. Add it under Settings → Secrets and variables → Actions (use the same values as Infisical dev/staging)."
-              missing=1
-            fi
-          done
-          if [ "$missing" -ne 0 ]; then
-            exit 1
+          if [ -n "${DATABASE_URL}" ] && [ -n "${PAYLOAD_SECRET}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Database secrets present — CMS bootstrap enabled."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DATABASE_URL or PAYLOAD_SECRET is not set. Skipping CMS bootstrap; lint, typecheck, and build will still run. Add secrets under Settings → Secrets and variables → Actions for full /blog and /help static generation."
           fi
-          echo "Required secrets present."
 
       - name: Install dependencies
         run: npm ci
@@ -62,7 +58,7 @@ jobs:
         run: cd apps/web && npx prisma generate
 
       - name: Bootstrap CMS (migrate + seed)
-        if: ${{ vars.SKIP_CMS_BOOTSTRAP != 'true' }}
+        if: ${{ steps.db_secrets.outputs.available == 'true' && vars.SKIP_CMS_BOOTSTRAP != 'true' }}
         run: npm run cms:bootstrap:ci -w web
 
       - name: Cache Turbo
