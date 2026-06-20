@@ -11,7 +11,7 @@ import { buildConfig } from "payload"
 import sharp from "sharp"
 
 import { patchVercelBlobClientImport } from "@/lib/payload/patch-vercel-blob-client-import"
-import { resolvePayloadDatabaseUrl } from "@/lib/resolve-database-url"
+import { resolvePayloadDatabaseUrlForConfig } from "@/lib/resolve-database-url"
 
 import { BlogPosts } from "./collections/BlogPosts"
 import { HelpArticles } from "./collections/HelpArticles"
@@ -22,10 +22,7 @@ import { Users } from "./collections/Users"
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const payloadDatabaseUrl = resolvePayloadDatabaseUrl()
-if (!payloadDatabaseUrl) {
-  throw new Error("DATABASE_URL is not set. Add it to apps/web/.env.local")
-}
+const payloadDatabaseUrl = resolvePayloadDatabaseUrlForConfig()
 
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim()
 

@@ -28,15 +28,34 @@ jobs:
           node-version: 20
           cache: "npm"
 
-      - name: Enable Corepack (if using pnpm/yarn in monorepo)
-        run: corepack enable
-        continue-on-error: true
+      - name: Check database secrets
+        id: db_secrets
+        run: |
+          if [ -n "${DATABASE_URL}" ] && [ -n "${PAYLOAD_SECRET}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Database secrets present — CMS bootstrap enabled."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DATABASE_URL or PAYLOAD_SECRET is not set. Skipping CMS bootstrap; lint, typecheck, and build will still run. Add secrets under Settings → Secrets and variables → Actions for full /blog and /help static generation."
+          fi
 
       - name: Install dependencies
         run: npm ci
 
       - name: Generate Prisma Client (safe mode)
         run: cd apps/web && npx prisma generate
+
+      - name: Bootstrap CMS (migrate + seed)
+        if: ${{ steps.db_secrets.outputs.available == 'true' && vars.SKIP_CMS_BOOTSTRAP != 'true' }}
+        run: npm run cms:bootstrap:ci -w web
+
+      - name: Cache Turbo
+        uses: actions/cache@v5
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
       - name: Typecheck
         run: npm run typecheck
