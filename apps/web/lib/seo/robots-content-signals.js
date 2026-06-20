@@ -2,7 +2,7 @@
  * EU Directive 2019/790 content-signals preamble for robots.txt.
  * @see https://contentsignals.org/
  */
-export const ROBOTS_CONTENT_SIGNALS_PREAMBLE = `# As a condition of accessing this website, you agree to abide by the following
+const ROBOTS_CONTENT_SIGNALS_PREAMBLE = `# As a condition of accessing this website, you agree to abide by the following
 # content signals:
 #
 # (a)  If a content-signal = yes, you may collect content for the corresponding
@@ -32,7 +32,7 @@ export const ROBOTS_CONTENT_SIGNALS_PREAMBLE = `# As a condition of accessing th
 `
 
 /** Block AI training; allow search indexing and AI ingestion for answer engines. */
-export const CONTENT_SIGNAL_VALUE = "ai-train=no, search=yes, ai-input=yes"
+const CONTENT_SIGNAL_VALUE = "ai-train=no, search=yes, ai-input=yes"
 
 /**
  * Sent on every HTML response. Googlebot does not parse Content-Signal in robots.txt;
@@ -44,7 +44,7 @@ export const CONTENT_SIGNAL_HEADER = {
 }
 
 /** Crawlers used by AI search and answer products; explicitly allowed sitewide. */
-export const ROBOTS_AI_SEARCH_USER_AGENTS = [
+const ROBOTS_AI_SEARCH_USER_AGENTS = [
   "GPTBot",
   "ChatGPT-User",
   "PerplexityBot",
