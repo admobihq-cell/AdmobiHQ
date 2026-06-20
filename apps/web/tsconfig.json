@@ -2,7 +2,6 @@
   "extends": "@workspace/typescript-config/nextjs.json",
   "compilerOptions": {
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
       "@payload-config": ["./payload.config.ts"],
