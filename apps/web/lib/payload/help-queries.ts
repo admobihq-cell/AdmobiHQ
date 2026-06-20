@@ -1,6 +1,7 @@
 import type { HelpArticle, HelpCategory } from "@/payload-types"
 
 import { getPayloadClient } from "@/lib/payload/get-payload"
+import { resolvePayloadDatabaseUrl } from "@/lib/resolve-database-url"
 import type { HelpArticleDoc, HelpArticleListItem } from "@/lib/payload/types"
 
 function isCategoryPopulated(
@@ -135,6 +136,6 @@ export async function getRelatedHelpArticles(
 
 export function isPayloadConfigured(): boolean {
   return Boolean(
-    process.env.DATABASE_URL?.trim() && process.env.PAYLOAD_SECRET?.trim(),
+    resolvePayloadDatabaseUrl()?.trim() && process.env.PAYLOAD_SECRET?.trim(),
   )
 }
