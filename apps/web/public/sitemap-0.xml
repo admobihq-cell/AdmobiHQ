@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 <url><loc>https://admobihq.com</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-<url><loc>https://admobihq.com/blog</loc><lastmod>2026-06-01T19:10:05.358Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://admobihq.com/blog</loc><lastmod>2026-06-20T17:47:10.142Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://admobihq.com/blog/delivery-bike-ooh-lunch-hour-estates-nairobi</loc><lastmod>2026-06-20T17:47:10.142Z</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
+<url><loc>https://admobihq.com/blog/gps-proof-of-play-outdoor-advertising-kenya</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://admobihq.com/blog/planning-nairobi-taxi-top-campaign-corridors</loc><lastmod>2026-06-20T17:47:10.142Z</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>
 <url><loc>https://admobihq.com/blog/traditional-ooh-vs-moving-led-taxi-tops-kenya</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/drivers</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-<url><loc>https://admobihq.com/help</loc><lastmod>2026-06-01T19:10:05.351Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+<url><loc>https://admobihq.com/help</loc><lastmod>2026-06-20T17:47:10.125Z</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/help/coverage-nairobi</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/help/creative-formats</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/help/driver-content-management</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
@@ -18,11 +21,11 @@
 <url><loc>https://admobihq.com/media-kit</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/opengraph-image-pwu6ef</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/partner-fleet</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-<url><loc>https://admobihq.com/pricing</loc><lastmod>2026-06-01T19:10:05.351Z</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://admobihq.com/pricing</loc><lastmod>2026-06-20T17:47:10.123Z</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 <url><loc>https://admobihq.com/products-solutions</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/start-campaign</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://admobihq.com/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-<url><loc>https://admobihq.com/llms.txt</loc><lastmod>2026-06-01T19:10:05.351Z</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-<url><loc>https://admobihq.com/pricing.md</loc><lastmod>2026-06-01T19:10:05.351Z</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>https://admobihq.com/llms.txt</loc><lastmod>2026-06-20T17:47:10.123Z</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url><loc>https://admobihq.com/pricing.md</loc><lastmod>2026-06-20T17:47:10.123Z</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>
