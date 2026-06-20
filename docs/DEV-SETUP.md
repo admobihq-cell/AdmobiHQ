@@ -101,8 +101,8 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 
 | Secret | Required in CI | Notes |
 |--------|----------------|--------|
-| `DATABASE_URL` | **Yes** | Neon pooled URL; Prisma + Payload at build time |
-| `PAYLOAD_SECRET` | **Yes** | Same as local (`openssl rand -hex 32`) |
+| `DATABASE_URL` | For CMS bootstrap | Neon pooled URL; optional for lint/typecheck/build |
+| `PAYLOAD_SECRET` | For CMS bootstrap | Same as local (`openssl rand -hex 32`); optional for lint/typecheck/build |
 | `NEXT_PUBLIC_SERVER_URL` | No | Defaults to `https://admobihq.com` if unset |
 | `PAYLOAD_DATABASE_URL` | No | Only if you split CMS DB in staging |
 | `BLOB_READ_WRITE_TOKEN` | No | Omit if you do not need Blob plugin paths in CI build |
@@ -110,9 +110,9 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | No | Email routes; not required for build |
 | `REDIS_URL` | No | Email queue; not required for build |
 
-A **Verify required secrets** step fails fast with an annotation if `DATABASE_URL` or `PAYLOAD_SECRET` is missing.
+If `DATABASE_URL` or `PAYLOAD_SECRET` is missing, CI logs a **warning** and skips CMS bootstrap; lint, typecheck, and build still run (Dependabot PRs do not need a database).
 
-After `prisma generate`, CI runs **`npm run cms:bootstrap:ci -w web`**, which:
+When both secrets are present, after `prisma generate` CI runs **`npm run cms:bootstrap:ci -w web`**, which:
 
 1. Applies Payload migrations (`payload:migrate:ci`)
 2. Upserts help categories/articles (`seed:help:ci`)
