@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/lib/seo/faq-data"
 import { advertiserFaqItems } from "@/lib/seo/faq-data"
 import { SEO_LAST_UPDATED } from "@/lib/seo/site-updates"
-import { SITE_NAME, SITE_URL } from "@/lib/seo/site"
+import { SITE_LOGO_URL, SITE_NAME, SITE_URL } from "@/lib/seo/site"
 
 const ORGANIZATION_ID = `${SITE_URL}/#organization`
 
@@ -86,7 +86,7 @@ export const homepageGraphJsonLd = {
       name: "Admobi",
       alternateName: "AdmobiHQ",
       url: SITE_URL,
-      logo: `${SITE_URL}/opengraph-image`,
+      logo: SITE_LOGO_URL,
       description:
         "Kenya's digital out-of-home advertising network. Geo-targeted LED taxi-top screens and delivery bike enclosures in Nairobi and beyond.",
       areaServed: ["Nairobi", "Kenya"],
