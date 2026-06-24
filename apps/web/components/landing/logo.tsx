@@ -1,3 +1,9 @@
+import {
+  ROUTE_SIGNAL_NODES,
+  ROUTE_SIGNAL_PATH,
+  ROUTE_SIGNAL_STROKE_WIDTH,
+  ROUTE_SIGNAL_VIEWBOX,
+} from "@/lib/brand/geometry"
 import { cn } from "@workspace/ui/lib/utils"
 
 export function Logo({ className }: { className?: string }) {
@@ -10,22 +16,29 @@ export function Logo({ className }: { className?: string }) {
     >
       <span className="sr-only">Admobi</span>
       <svg
-        viewBox="0 0 40 28"
+        viewBox={`0 0 ${ROUTE_SIGNAL_VIEWBOX.width} ${ROUTE_SIGNAL_VIEWBOX.height}`}
         width="36"
         height="25"
         aria-hidden
         className="shrink-0 text-primary"
       >
         <path
-          d="M 6 14 Q 12 -4 19 14 T 34 14"
+          d={ROUTE_SIGNAL_PATH}
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.8"
+          strokeWidth={ROUTE_SIGNAL_STROKE_WIDTH}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="6" cy="14" r="3.4" fill="currentColor" />
-        <circle cx="34" cy="14" r="3.4" fill="currentColor" />
+        {ROUTE_SIGNAL_NODES.map((node) => (
+          <circle
+            key={`${node.cx}-${node.cy}`}
+            cx={node.cx}
+            cy={node.cy}
+            r={node.r}
+            fill="currentColor"
+          />
+        ))}
       </svg>
       <span className="text-lg leading-none sm:text-xl">Admobi</span>
     </span>

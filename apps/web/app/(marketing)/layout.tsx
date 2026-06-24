@@ -11,7 +11,13 @@ import { JsonLd } from "@/components/seo/json-ld"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeScript } from "@/components/theme-script"
 import { websiteJsonLd } from "@/lib/seo/schema"
-import { DEFAULT_OG_IMAGE, INDEXABLE_ROBOTS, SITE_NAME, SITE_URL } from "@/lib/seo/site"
+import {
+  DEFAULT_OG_IMAGE,
+  INDEXABLE_ROBOTS,
+  SITE_ICON_PATH,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/seo/site"
 import "@workspace/ui/globals.css"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -39,6 +45,10 @@ export const metadata: Metadata = {
     template: "%s · Admobi",
   },
   description: HOME_DESCRIPTION,
+  icons: {
+    icon: SITE_ICON_PATH,
+    apple: "/apple-icon",
+  },
   alternates: {
     canonical: SITE_URL,
   },
