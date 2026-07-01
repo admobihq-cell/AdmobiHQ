@@ -59,7 +59,7 @@ jobs:
         run: npm run cms:bootstrap:ci -w web
 
       - name: Cache Turbo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
