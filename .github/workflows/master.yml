@@ -24,6 +24,10 @@ jobs:
       ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
       TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_OPS_URL: ${{ secrets.NEXT_PUBLIC_OPS_URL != '' && secrets.NEXT_PUBLIC_OPS_URL || 'https://ops.admobihq.com' }}
+      NEXT_PUBLIC_WEB_URL: ${{ secrets.NEXT_PUBLIC_WEB_URL != '' && secrets.NEXT_PUBLIC_WEB_URL || 'https://admobihq.com' }}
 
     steps:
       - name: Checkout code

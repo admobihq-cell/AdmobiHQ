@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import {
@@ -16,7 +15,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@workspace/ui/components/chart"
-import { formatBytes } from "@/lib/format"
+import { CmsHealthCard } from "@/components/cms-health-card"
 
 type OverviewData = {
   overview: {
@@ -173,46 +172,7 @@ export function OverviewDashboard({ data }: { data: OverviewData }) {
         )}
       </div>
 
-      {content && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>CMS health</CardTitle>
-              <CardDescription>Read-only snapshot · edit at admobihq.com/admin</CardDescription>
-            </div>
-            <Link
-              href="https://admobihq.com/admin"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              Open CMS Editor →
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <p className="text-sm text-muted-foreground">Blog posts</p>
-                <p className="text-lg font-semibold">
-                  {content.blog.published} published · {content.blog.draft} draft
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Help articles</p>
-                <p className="text-lg font-semibold">
-                  {content.help.published} published · {content.help.draft} draft
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Media library</p>
-                <p className="text-lg font-semibold">
-                  {content.media.total} files · {formatBytes(content.media.totalSize)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {content && <CmsHealthCard content={content} />}
     </div>
   )
 }
