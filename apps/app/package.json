@@ -15,21 +15,21 @@
   "dependencies": {
     "@workspace/ui": "*",
     "dotenv": "^16.6.1",
-    "lucide-react": "^1.12.0",
-    "next": "^16.2.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "lucide-react": "^1.23.0",
+    "next": "^16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^25.1.0",
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.39.2",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.0",
     "typescript": "^5.9.3"
   }
 }
