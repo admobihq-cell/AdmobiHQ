@@ -14,6 +14,4 @@ export const config = {
     "/(api|trpc)(.*)",
     "/__clerk/:path*",
   ],
-  // Vercel Edge can fail Clerk auth with MIDDLEWARE_INVOCATION_FAILED; Node runtime is stable.
-  runtime: "nodejs",
 }
