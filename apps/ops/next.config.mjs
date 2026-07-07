@@ -6,6 +6,8 @@ const repoRoot = path.join(appDir, "../..")
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Monorepo: trace deps from repo root on Vercel (matches apps/web).
+  outputFileTracingRoot: repoRoot,
   transpilePackages: ["@workspace/ui"],
   // Monorepo: stop Turbopack from using C:\Users\victo\ as the workspace root
   turbopack: {

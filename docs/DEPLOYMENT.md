@@ -221,6 +221,14 @@ This almost always means **Clerk env vars are missing or wrong on the ops Vercel
 
 If keys are correct locally but prod fails, re-copy from [Clerk API keys](https://dashboard.clerk.com/last-active?path=api-keys) into Infisical prod → Vercel sync.
 
+### `ERR_REQUIRE_ESM` / 500 on `/`, `/sign-in`, favicon
+
+Vercel’s Node launcher uses `require()` on `.next/server/**/*.js`. If `apps/ops/package.json` has `"type": "module"`, those files are treated as ESM and every page 500s after Clerk auth works.
+
+**Fix (in repo):** ops must **not** use `"type": "module"` and should build with `next build --webpack` (same as web). Redeploy the ops Vercel project after merging.
+
+Symptoms: signup works in Clerk UI, then “This page couldn’t load” / server error on redirect to `/` or `/sign-in`.
+
 ---
 
 ## Out of scope (future)
