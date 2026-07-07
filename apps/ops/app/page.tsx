@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation"
 
 import { OpsAccessDenied } from "@/components/ops-access-denied"
-import { SignInForm } from "@/components/sign-in-form"
+import { OpsGateway } from "@/components/ops-gateway"
 import { getOpsAccess } from "@/lib/auth"
 
-export default async function SignInPage() {
+export default async function EntrancePage() {
   const access = await getOpsAccess()
 
   if (access.status === "authorized") {
@@ -15,5 +15,5 @@ export default async function SignInPage() {
     return <OpsAccessDenied email={access.email} />
   }
 
-  return <SignInForm />
+  return <OpsGateway />
 }

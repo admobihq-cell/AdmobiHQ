@@ -1,27 +1,19 @@
-import { SignUp } from "@clerk/nextjs"
-import Link from "next/link"
+import { redirect } from "next/navigation"
 
-import { AuthThemeToggle } from "@/components/auth-theme-toggle"
+import { OpsAccessDenied } from "@/components/ops-access-denied"
+import { SignUpForm } from "@/components/sign-up-form"
+import { getOpsAccess } from "@/lib/auth"
 
-export default function SignUpPage() {
-  return (
-    <>
-      <AuthThemeToggle />
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-4">
-      <div className="flex flex-col items-center gap-1 text-center">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Admobi Ops
-        </p>
-        <h1 className="text-lg font-semibold">Create your @admobihq.com account</h1>
-      </div>
-      <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" forceRedirectUrl="/" />
-      <p className="text-sm text-muted-foreground">
-        Already have an account?{" "}
-        <Link href="/sign-in" className="font-medium text-primary hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </div>
-    </>
-  )
+export default async function SignUpPage() {
+  const access = await getOpsAccess()
+
+  if (access.status === "authorized") {
+    redirect("/home")
+  }
+
+  if (access.status === "forbidden") {
+    return <OpsAccessDenied email={access.email} />
+  }
+
+  return <SignUpForm />
 }
