@@ -1,11 +1,10 @@
 {
   "name": "ops",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.local -e ../web/.env.local -- next dev --port 3001 --webpack",
-    "build": "prisma generate --schema=../web/prisma/schema.prisma && next build",
+    "build": "prisma generate --schema=../web/prisma/schema.prisma && next build --webpack",
     "start": "next start --port 3001",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
