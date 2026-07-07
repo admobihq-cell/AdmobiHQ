@@ -1,9 +1,13 @@
 import { SignIn } from "@clerk/nextjs"
 import Link from "next/link"
 
+import { AuthThemeToggle } from "@/components/auth-theme-toggle"
+
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-4">
+    <>
+      <AuthThemeToggle />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-4">
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Admobi Ops
@@ -18,5 +22,6 @@ export default function SignInPage() {
         </Link>
       </p>
     </div>
+    </>
   )
 }

@@ -37,6 +37,7 @@ import {
   SidebarTrigger,
 } from "@workspace/ui/components/sidebar"
 import { Separator } from "@workspace/ui/components/separator"
+import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
 const navItems = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
@@ -147,6 +148,9 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <OpsBreadcrumbs pathname={pathname} />
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</main>
       </SidebarInset>

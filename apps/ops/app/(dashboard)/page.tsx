@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Loader2 } from "lucide-react"
 
 import { OverviewDashboard } from "@/components/overview-dashboard"
+import { OverviewPageSkeleton } from "@/components/overview-dashboard-skeleton"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -33,14 +33,7 @@ export default function OverviewPage() {
   }, [range])
 
   if (loading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">Overview</h1>
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    )
+    return <OverviewPageSkeleton />
   }
 
   if (error || !data) {

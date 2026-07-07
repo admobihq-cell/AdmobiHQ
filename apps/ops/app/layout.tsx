@@ -2,8 +2,10 @@ import { ClerkProvider } from "@clerk/nextjs"
 import { shadcn } from "@clerk/ui/themes"
 import { Geist, Geist_Mono } from "next/font/google"
 
-import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { ThemeProvider } from "@workspace/ui/components/theme-provider"
+import { ThemeScript } from "@/components/theme-script"
 import { Toaster } from "@workspace/ui/components/sonner"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 import "@clerk/ui/themes/shadcn.css"
 import "@workspace/ui/globals.css"
@@ -21,20 +23,23 @@ export const dynamic = "force-dynamic"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable}`}>
       <body className="min-h-screen font-sans antialiased">
-        <ClerkProvider
-          appearance={{ theme: shadcn }}
-          signInUrl="/sign-in"
-          signUpUrl="/sign-up"
-          afterSignInUrl="/"
-          afterSignUpUrl="/"
-        >
-          <TooltipProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </TooltipProvider>
-        </ClerkProvider>
+        <ThemeScript />
+        <ThemeProvider>
+          <ClerkProvider
+            appearance={{ theme: shadcn }}
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            afterSignInUrl="/"
+            afterSignUpUrl="/"
+          >
+            <TooltipProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
