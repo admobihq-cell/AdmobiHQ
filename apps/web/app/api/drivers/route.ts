@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
-import { sendEmail } from "@/lib/email/send-email"
+import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
@@ -54,14 +54,15 @@ export async function POST(req: Request) {
         additionalInfo: `Vehicle: ${parsed.data.vehicleType}, Days/week: ${parsed.data.daysPerWeek}`,
       })
 
-      await sendEmail(
-        parsed.data.email || '',
-        "Welcome to Admobi - We'll review your application",
-        driverHtml
-      )
+      if (parsed.data.email) {
+        await sendEmail(
+          parsed.data.email,
+          "Welcome to Admobi - We'll review your application",
+          driverHtml
+        )
+      }
 
-      await sendEmail(
-        process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+      await sendAdminEmail(
         `New Driver Application: ${parsed.data.name}`,
         adminDriverHtml
       )
