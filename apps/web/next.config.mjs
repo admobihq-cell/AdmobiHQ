@@ -19,12 +19,25 @@ const cloudStorageClientUtilities = webpackPath(
   "lib/payload/cloud-storage-client-utilities.js",
 )
 
+function mediaHostnamesFromEnv() {
+  const hosts = new Set(["admobihq.com", "staging.admobihq.com"])
+  const fromEnv = process.env.NEXT_PUBLIC_SERVER_URL?.trim()
+  if (fromEnv) {
+    try {
+      hosts.add(new URL(fromEnv.replace(/\/$/, "")).hostname)
+    } catch {
+      // ignore invalid URL
+    }
+  }
+  return [...hosts]
+}
+
 const mediaImagePatterns = [
-  {
+  ...mediaHostnamesFromEnv().map((hostname) => ({
     protocol: "https",
-    hostname: "admobihq.com",
+    hostname,
     pathname: "/api/media/**",
-  },
+  })),
   {
     protocol: "http",
     hostname: "localhost",
@@ -37,6 +50,8 @@ const mediaImagePatterns = [
     pathname: "/**",
   },
 ]
+
+const allowSiteIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING !== "false"
 
 /** Node built-ins that must never ship in the Payload admin client bundle. */
 const CLIENT_NODE_FALLBACKS = {
@@ -76,6 +91,10 @@ const nextConfig = {
     },
   },
   async headers() {
+    const stagingNoIndex = allowSiteIndexing
+      ? []
+      : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
+
     return [
       {
         source: "/opengraph-image",
@@ -87,7 +106,7 @@ const nextConfig = {
       },
       {
         source: "/:path*",
-        headers: [CONTENT_SIGNAL_HEADER],
+        headers: [CONTENT_SIGNAL_HEADER, ...stagingNoIndex],
       },
     ]
   },

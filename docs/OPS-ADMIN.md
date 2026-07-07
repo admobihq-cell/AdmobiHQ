@@ -4,6 +4,8 @@
 
 Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 
+**Deployment:** see [DEPLOYMENT.md](./DEPLOYMENT.md) for Vercel, Infisical staging/prod, Clerk, and DNS.
+
 
 
 ## URLs
@@ -15,6 +17,8 @@ Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 |-------------|-----|
 
 | Production | `https://ops.admobihq.com` |
+
+| Staging | `https://ops.staging.admobihq.com` |
 
 | Local dev | `http://localhost:3001` |
 
@@ -63,6 +67,7 @@ infisical init
 | `CLERK_SECRET_KEY` | Yes | Server-only; never expose to client |
 
 | `NEXT_PUBLIC_OPS_URL` | Recommended | `http://localhost:3001` (dev), `https://ops.admobihq.com` (prod) |
+| `NEXT_PUBLIC_WEB_URL` | Recommended | Marketing + CMS origin for admin links (`http://localhost:3000` dev, `https://admobihq.com` prod) |
 
 
 
@@ -175,15 +180,12 @@ Clerk auth is **separate** from Payload CMS users at `/admin`.
 
 ## Vercel deployment
 
-
+Full checklist: [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 1. Monorepo project with root directory `apps/ops`.
-
-2. Domain: `ops.admobihq.com`.
-
-3. Env vars: sync from **Infisical** (Vercel integration) or copy the same keys as Infisical **prod**.
-
-4. Build: `npm run build -w ops`
+2. Domain: `ops.admobihq.com` (prod), `ops.staging.admobihq.com` (staging branch).
+3. Env vars: sync from **Infisical** (Vercel integration) or copy the same keys as Infisical **prod** / **staging**.
+4. Build: `npm run build -w ops` (no `.env.local` on Vercel — env injected by platform).
 
 
 

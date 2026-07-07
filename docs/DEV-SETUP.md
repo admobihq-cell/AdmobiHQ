@@ -2,7 +2,7 @@
 
 Command reference for running **Admobi** locally: Next.js marketing site, **Prisma** (leads/drivers/fleet), and **Payload** CMS (help, blog, `/admin`). Run commands from the **repository root** unless noted.
 
-**Related:** [DATA-LAYER.md](./DATA-LAYER.md) (Prisma vs Payload), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md).
+**Related:** [DATA-LAYER.md](./DATA-LAYER.md) (Prisma vs Payload), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md) (prod/staging Vercel + domains).
 
 ---
 
@@ -60,6 +60,7 @@ Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.loc
 ```bash
 npm run env:pull -w web          # apps/web/.env.local
 npm run env:pull -w ops          # apps/ops/.env.local
+npm run env:pull:staging -w ops  # staging env
 # or both:
 npm run env:pull
 ```
@@ -119,6 +120,7 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Ops / Clerk | Ops console (`apps/ops`) |
 | `CLERK_SECRET_KEY` | Ops / Clerk | Ops console; server-only |
 | `NEXT_PUBLIC_OPS_URL` | No | Ops metadata; defaults sensible if unset locally |
+| `NEXT_PUBLIC_WEB_URL` | No | Ops CMS links; defaults to `NEXT_PUBLIC_SERVER_URL` |
 
 If `DATABASE_URL` or `PAYLOAD_SECRET` is missing, CI logs a **warning** and skips CMS bootstrap; lint, typecheck, and build still run (Dependabot PRs do not need a database).
 
