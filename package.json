@@ -8,8 +8,8 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops",
-    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops",
+    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app",
+    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app",
     "postinstall": "patch-package"
   },
   "devDependencies": {

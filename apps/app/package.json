@@ -1,0 +1,35 @@
+{
+  "name": "app",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "dotenv -e .env.local -e ../web/.env.local -- next dev --port 3002 --webpack",
+    "build": "next build --webpack",
+    "start": "next start --port 3002",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
+    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
+    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
+  },
+  "dependencies": {
+    "@workspace/ui": "*",
+    "dotenv": "^16.6.1",
+    "lucide-react": "^1.12.0",
+    "next": "^16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^25.1.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@workspace/eslint-config": "*",
+    "@workspace/typescript-config": "*",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "^9.39.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

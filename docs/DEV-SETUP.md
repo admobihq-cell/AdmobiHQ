@@ -29,10 +29,11 @@ infisical init   # links to workspace in .infisical.json at repo root
 
 ```bash
 npm install
-npm run env:pull                 # web + ops .env.local from Infisical dev
+npm run env:pull                 # web + ops + app .env.local from Infisical dev
 npm run env:check -w web
 npm run env:check -w ops         # optional until ops secrets exist in Infisical
-npm run dev                      # turbo → web (3000) + ops (3001) if both running
+npm run env:check -w app         # optional until app secrets exist in Infisical
+npm run dev                      # turbo → web (3000) + ops (3001) + app (3002)
 ```
 
 Open:
@@ -43,25 +44,27 @@ Open:
 | http://localhost:3000/admin | Payload CMS |
 | http://localhost:3000/help | Help center |
 | http://localhost:3000/blog | Blog |
-| http://localhost:3001 | **Ops console** (Clerk auth) |
+| http://localhost:3001 | **Ops console** (Clerk auth, @admobihq.com) |
+| http://localhost:3002 | **Customer app** (sidebar shell, no auth yet) |
 
 **Prefer `npm run dev`** (webpack). Use `npm run dev:turbo -w web` only if you accept less-tested Payload + Turbopack behaviour.
 
-Run ops alone: `npm run dev -w ops`. See [OPS-ADMIN.md](./OPS-ADMIN.md).
+Run ops alone: `npm run dev -w ops`. Run app alone: `npm run dev -w app`. See [OPS-ADMIN.md](./OPS-ADMIN.md).
 
 ---
 
 ## Environment variables
 
-Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`** and **`apps/ops/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example).
+Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/ops/.env.local`**, and **`apps/app/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/app/.env.example`](../apps/app/.env.example).
 
 ### Pull from Infisical (recommended on Windows)
 
 ```bash
 npm run env:pull -w web          # apps/web/.env.local
 npm run env:pull -w ops          # apps/ops/.env.local
+npm run env:pull -w app          # apps/app/.env.local
 npm run env:pull:staging -w ops  # staging env
-# or both:
+# or all three:
 npm run env:pull
 ```
 
