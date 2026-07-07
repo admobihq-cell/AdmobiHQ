@@ -4,7 +4,7 @@ How the codebase is laid out, what each part does, and how to extend it without 
 
 ## 1. What this is
 
-Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../PRODUCT.md). The visual system lives in [DESIGN.md](../DESIGN.md). This repo is the **public marketing site** plus the workspaces that support it. The site itself is the primary product surface today; there is no separate consumer app yet.
+Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../PRODUCT.md). The visual system lives in [DESIGN.md](../DESIGN.md). This monorepo hosts the **marketing site**, **internal ops console**, and a **customer app scaffold** (product UI ships in a later phase). Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## 2. Stack at a glance
 
@@ -25,14 +25,16 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 ```
 .
 ├── apps/
-│   └── web/                         Next.js marketing site
+│   ├── web/                         Marketing site + Payload CMS (:3000)
+│   ├── ops/                         Internal ops console (:3001, Clerk)
+│   └── app/                         Customer app scaffold (:3002, no auth yet)
 ├── packages/
 │   ├── ui/                          Shared UI primitives + design tokens
 │   ├── eslint-config/               Flat-config ESLint presets
 │   └── typescript-config/           Base and Next-flavoured tsconfigs
 ├── .agents/
 │   └── skills/                      Agent skill bundles (impeccable, others)
-├── docs/                            This file lives here
+├── docs/                            Architecture, deployment, CMS guides
 ├── .github/
 │   └── workflows/                   CI: PR checks + merge-to-main
 ├── PRODUCT.md                       Brand, audience, anti-references
@@ -43,6 +45,16 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 ├── .eslintrc.js                     Root ignore patterns only
 └── .prettierrc                      Prettier + tailwind plugin
 ```
+
+### Apps summary
+
+| App | Path | Role |
+|-----|------|------|
+| **Web** | `apps/web` | Public marketing, Prisma form APIs, Payload CMS at `/admin` |
+| **Ops** | `apps/ops` | Staff console at `ops.admobihq.com` — CRUD on Prisma data, Clerk `@admobihq.com` |
+| **App** | `apps/app` | Future customer product at `app.admobihq.com` — sidebar shell + coming-soon routes only |
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for Vercel projects, Infisical secrets per project, and domains.
 
 Workspaces are declared in [package.json](../package.json):
 
