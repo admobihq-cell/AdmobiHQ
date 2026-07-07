@@ -3,9 +3,10 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  BarChart3,
   Car,
   FileText,
-  LayoutDashboard,
+  Home,
   Mail,
   Megaphone,
   Truck,
@@ -40,7 +41,8 @@ import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
 const navItems = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/home", label: "Home", icon: Home },
+  { href: "/overview", label: "Overview", icon: BarChart3 },
   { href: "/leads", label: "Campaign Leads", icon: Megaphone },
   { href: "/fleet", label: "Fleet Partners", icon: Truck },
   { href: "/drivers", label: "Drivers", icon: Car },
@@ -59,14 +61,14 @@ const activeSidebarLinkClassName =
 
 function OpsBreadcrumbs({ pathname }: { pathname: string }) {
   const current =
-    allNavItems.find((item) => item.href === pathname)?.label ?? "Overview"
+    allNavItems.find((item) => item.href === pathname)?.label ?? "Home"
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/">Ops</Link>
+            <Link href="/home">Ops</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
@@ -138,7 +140,7 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border p-3">
           <div className="flex items-center gap-2">
-            <UserButton afterSignOutUrl="/sign-in" />
+            <UserButton afterSignOutUrl="/" />
             <span className="text-xs text-muted-foreground">@admobihq.com</span>
           </div>
         </SidebarFooter>
