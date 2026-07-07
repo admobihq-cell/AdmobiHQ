@@ -6,6 +6,7 @@ import { BLOG_PATH } from "@/lib/seo/site"
 
 import { Container } from "./container"
 import { Logo } from "./logo"
+import { SocialLinks } from "./social-links"
 
 const footerLinkClass =
   "inline-block rounded-md py-1 text-muted-foreground text-sm underline-offset-[3px] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -87,6 +88,7 @@ export function SiteFooter() {
             <p className="text-muted-foreground text-xs leading-relaxed">
               Nairobi-first network. Scheduling, creative QA, and proof-of-play that respect how streets actually move.
             </p>
+            <SocialLinks />
           </div>
 
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:gap-8">
