@@ -8,10 +8,15 @@ const LEGAL_PATHS = new Set(["/privacy", "/terms"])
 
 const AI_SEO_STATIC_PATHS = ["/pricing", "/llms.txt", "/pricing.md"]
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SERVER_URL?.replace(/\/$/, "") || "https://admobihq.com"
+
+const allowIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING !== "false"
+
 /** @type {import('next-sitemap').IConfig} */
 export default {
-  siteUrl: "https://admobihq.com",
-  generateRobotsTxt: true,
+  siteUrl,
+  generateRobotsTxt: allowIndexing,
   exclude: [
     "/api/*",
     "/opengraph-image",

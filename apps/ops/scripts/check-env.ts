@@ -4,7 +4,11 @@ const required = [
   "CLERK_SECRET_KEY",
 ] as const
 
-const optional = ["NEXT_PUBLIC_OPS_URL", "PAYLOAD_SECRET"] as const
+const optional = [
+  "NEXT_PUBLIC_OPS_URL",
+  "NEXT_PUBLIC_WEB_URL",
+  "PAYLOAD_SECRET",
+] as const
 
 function clerkKeyMode(value: string): "test" | "live" | null {
   if (value.startsWith("pk_test_") || value.startsWith("sk_test_")) return "test"
