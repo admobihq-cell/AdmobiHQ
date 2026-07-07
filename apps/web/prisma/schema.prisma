@@ -10,16 +10,21 @@ datasource db {
 }
 
 model Lead {
-  id                 Int     @id @default(autoincrement())
-  email              String
-  company_name       String
-  phone              String?
-  audience           String  // "campaign"
-  budget_range       String? // "under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"
+  id                  Int       @id @default(autoincrement())
+  contact_name        String    @default("")
+  email               String
+  company_name        String
+  phone               String?
+  audience            String    // "campaign"
+  cities              String[]  @default([])
+  ad_formats          String[]  @default([])
+  duration            String?
+  budget_range        String?   // "under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"
   campaign_start_date DateTime?
-  additional_info    String?
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  additional_info     String?
+  status              String?   @default("new") // new, contacted, qualified, closed
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
 
   @@map("leads")
 }
@@ -35,7 +40,7 @@ model FleetPartner {
   fleet_size           String?
   vehicles_active      String? // "yes", "no", "some"
   notes                String?
-  status               String? @default("pending") // "pending", "verified", "active"
+  status               String?  @default("pending") // "pending", "verified", "active"
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
 
@@ -51,9 +56,30 @@ model Driver {
   vehicle_type    String? // "taxi", "delivery_bike", "three_wheeler", "other"
   days_per_week   String? // "1_2", "3_4", "5_6", "daily"
   heard_about     String? // "whatsapp", "facebook", "friend", "roadside", "other"
-  status          String? @default("pending") // "pending", "verified", "active"
+  status          String?  @default("pending") // "pending", "verified", "active"
+  notes           String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
   @@map("drivers")
+}
+
+model WaitlistEntry {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  source     String?  @default("homepage")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("waitlist_entries")
+}
+
+model MediaKitRequest {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("media_kit_requests")
 }

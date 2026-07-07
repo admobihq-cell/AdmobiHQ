@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
+import { cookies } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -9,7 +10,6 @@ import { SiteHeader } from "@/components/landing/site-header"
 import { WhatsappFab } from "@/components/landing/whatsapp-fab"
 import { JsonLd } from "@/components/seo/json-ld"
 import { ThemeProvider } from "@/components/theme-provider"
-import { ThemeScript } from "@/components/theme-script"
 import { websiteJsonLd } from "@/lib/seo/schema"
 import {
   DEFAULT_OG_IMAGE,
@@ -19,6 +19,9 @@ import {
   SITE_URL,
 } from "@/lib/seo/site"
 import "@workspace/ui/globals.css"
+import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
+import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
+import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
 import { cn } from "@workspace/ui/lib/utils"
 
 const geist = Geist({
@@ -81,19 +84,33 @@ export const metadata: Metadata = {
 }
 
 /** Marketing site root layout (Payload admin uses its own root in app/(payload)/layout.tsx). */
-export default function MarketingLayout({
+export default async function MarketingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()
+  const serverTheme = getServerThemeClass(cookieStore.get(THEME_STORAGE_KEY)?.value)
+
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("scroll-smooth antialiased", fontMono.variable, "font-sans", geist.variable)}
+      className={cn(
+        "scroll-smooth antialiased",
+        fontMono.variable,
+        "font-sans",
+        geist.variable,
+        serverTheme,
+      )}
     >
-      <body>
-        <ThemeScript />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: getThemeBlockingScript() }}
+          suppressHydrationWarning
+        />
+      </head>
+      <body className="bg-background">
         <JsonLd data={websiteJsonLd} />
         <GoogleAnalytics />
         <ThemeProvider>
