@@ -1,5 +1,7 @@
 import * as React from "react"
-import { Body, Button, Container, Head, Hr, Html, Link, Preview, Row, Section, Text } from "react-email"
+import { Button, Hr, Link, Section, Text } from "react-email"
+
+import { EmailLayout, EmailList, emailStyles } from "@/lib/email/templates/shared/EmailLayout"
 
 interface CampaignConfirmationProps {
   name: string
@@ -7,134 +9,40 @@ interface CampaignConfirmationProps {
 }
 
 export const CampaignConfirmation = ({ name, company }: CampaignConfirmationProps) => (
-  <Html>
-    <Head />
-    <Preview>We&apos;ve received your campaign brief</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Section style={box}>
-          <Row>
-            <Text style={heading}>We&apos;ve got your brief.</Text>
-          </Row>
-          <Hr style={hr} />
-          <Text style={paragraph}>
-            Hi {name},
-          </Text>
-          <Text style={paragraph}>
-            Thank you for submitting your campaign brief for <strong>{company}</strong>. We&apos;re excited to work with you!
-          </Text>
-          <Text style={paragraph}>
-            Someone from the Admobi team will reach out within <strong>24 hours</strong> with availability, pricing, and a customized plan for your campaign.
-          </Text>
+  <EmailLayout preview="Your campaign brief is with the Admobi team">
+    <Text style={emailStyles.heading}>Campaign brief received</Text>
 
-          <Section style={buttonContainer}>
-            <Button
-              style={button}
-              href="https://admobihq.com"
-            >
-              Visit Our Website
-            </Button>
-          </Section>
+    <Text style={emailStyles.paragraph}>Hi {name},</Text>
 
-          <Hr style={hr} />
-          <Text style={footer}>
-            <strong>What to expect next:</strong>
-          </Text>
-          <Text style={bulletPoint}>✓ Campaign strategy review</Text>
-          <Text style={bulletPoint}>✓ Pricing breakdown for your budget range</Text>
-          <Text style={bulletPoint}>✓ GPS-verified delivery guarantee</Text>
-          <Text style={bulletPoint}>✓ No long-term contracts</Text>
+    <Text style={emailStyles.paragraph}>
+      We have your brief for <strong>{company}</strong>. A member of the Admobi
+      team will reply within one business day with availability, pricing, and a
+      proposed flight plan.
+    </Text>
 
-          <Hr style={hr} />
-          <Text style={footerText}>
-            Questions? Reply to this email or visit{" "}
-            <Link href="https://admobihq.com" style={link}>
-              admobihq.com
-            </Link>
-          </Text>
-          <Text style={footerText}>
-            © 2026 Admobi. All rights reserved.
-          </Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
+    <Text style={emailStyles.label}>What we will cover</Text>
+    <EmailList
+      items={[
+        "Corridor and city coverage for your dates",
+        "Creative format options and lead times",
+        "Budget-aligned pricing with delivery reporting",
+        "Terms suited to short tests or longer flights",
+      ]}
+    />
+
+    <Section style={emailStyles.buttonWrap}>
+      <Button style={emailStyles.button} href="https://admobihq.com/start-campaign">
+        Review campaign options
+      </Button>
+    </Section>
+
+    <Hr style={emailStyles.divider} />
+
+    <Text style={emailStyles.paragraph}>
+      If anything in your brief has changed, reply to this email and we will
+      update the file before we call.
+    </Text>
+
+    <Text style={emailStyles.meta}>© {new Date().getFullYear()} Admobi</Text>
+  </EmailLayout>
 )
-
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,Cantarell,"Fira Sans","Droid Sans","Source Sans Pro",sans-serif',
-}
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-}
-
-const box = {
-  padding: "0 48px",
-}
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "20px 0",
-}
-
-const paragraph = {
-  color: "#525f7f",
-  fontSize: "16px",
-  lineHeight: "24px",
-  textAlign: "left" as const,
-}
-
-const heading = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#1a1a1a",
-  margin: "16px 0",
-  textAlign: "left" as const,
-}
-
-const buttonContainer = {
-  textAlign: "center" as const,
-  margin: "32px 0",
-}
-
-const button = {
-  backgroundColor: "#5469d4",
-  borderRadius: "4px",
-  color: "#fff",
-  fontSize: "16px",
-  fontWeight: "bold",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "block",
-}
-
-const bulletPoint = {
-  color: "#525f7f",
-  fontSize: "15px",
-  lineHeight: "24px",
-  marginLeft: "20px",
-}
-
-const footer = {
-  color: "#1a1a1a",
-  fontSize: "14px",
-  fontWeight: "600",
-  lineHeight: "24px",
-}
-
-const footerText = {
-  color: "#525f7f",
-  fontSize: "12px",
-  lineHeight: "20px",
-}
-
-const link = {
-  color: "#5469d4",
-  textDecoration: "underline",
-}
