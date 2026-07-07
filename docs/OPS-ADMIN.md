@@ -47,7 +47,7 @@ npm run env:pull -w ops          # writes apps/ops/.env.local
 npm run env:check -w ops
 ```
 
-Or pull **web + ops** together:
+Or pull **web + ops + app** together:
 
 ```bash
 npm run env:pull                 # root script

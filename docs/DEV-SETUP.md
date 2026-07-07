@@ -122,8 +122,9 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `REDIS_URL` | No | Email queue; not required for build |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Ops / Clerk | Ops console (`apps/ops`) |
 | `CLERK_SECRET_KEY` | Ops / Clerk | Ops console; server-only |
-| `NEXT_PUBLIC_OPS_URL` | No | Ops metadata; defaults sensible if unset locally |
-| `NEXT_PUBLIC_WEB_URL` | No | Ops CMS links; defaults to `NEXT_PUBLIC_SERVER_URL` |
+| `NEXT_PUBLIC_OPS_URL` | No | Ops metadata; defaults to `https://ops.admobihq.com` in CI |
+| `NEXT_PUBLIC_APP_URL` | No | App metadata; defaults to `https://app.admobihq.com` in CI |
+| `NEXT_PUBLIC_WEB_URL` | No | Cross-app links; defaults to marketing URL |
 
 If `DATABASE_URL` or `PAYLOAD_SECRET` is missing, CI logs a **warning** and skips CMS bootstrap; lint, typecheck, and build still run (Dependabot PRs do not need a database).
 
@@ -210,10 +211,13 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 |---------|-------------|
 | `npm run env:pull -w web` | First setup, after Infisical secret changes, new machine |
 | `npm run env:pull -w ops` | Same, for ops console secrets |
-| `npm run env:pull` | Pull web + ops in one command |
+| `npm run env:pull -w app` | Same, for customer app URL vars |
+| `npm run env:pull` | Pull web + ops + app in one command |
 | `npm run env:check -w web` | Debug “DATABASE_URL not set”, before migrate/seed |
 | `npm run env:check -w ops` | Verify Clerk + DATABASE_URL for ops |
+| `npm run env:check -w app` | Verify URL env vars for app (optional keys) |
 | `npm run dev -w ops` | Ops console only (port 3001) |
+| `npm run dev -w app` | Customer app only (port 3002) |
 | `infisical secrets --env=dev` | Inspect secrets without writing `.env.local` |
 
 ### Prisma (main backend — forms)
@@ -341,4 +345,4 @@ npm run build -w web
 | [DATA-LAYER.md](./DATA-LAYER.md) | Prisma = backend, Payload = CMS; migration rules |
 | [HELP-CMS.md](./HELP-CMS.md) | Help center, Payload migrations, admin build |
 | [BLOG-CMS.md](./BLOG-CMS.md) | Blog subdomain, media, seed posts |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Repo layout, components, CI |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Repo layout, apps (web / ops / app), CI |
