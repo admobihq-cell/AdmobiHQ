@@ -5,12 +5,13 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.local -e ../web/.env.local -- next dev --port 3001 --webpack",
-    "build": "dotenv -e .env.local -e ../web/.env.local -- prisma generate --schema=../web/prisma/schema.prisma && dotenv -e .env.local -e ../web/.env.local -- next build",
-    "start": "dotenv -e .env.local -e ../web/.env.local -- next start --port 3001",
+    "build": "prisma generate --schema=../web/prisma/schema.prisma && next build",
+    "start": "next start --port 3001",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
-    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local"
+    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
+    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
