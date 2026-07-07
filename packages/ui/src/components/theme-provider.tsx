@@ -7,6 +7,7 @@ import {
   type ThemeOption,
   themeConfig,
 } from "@workspace/ui/lib/theme/config"
+import { persistThemePreference } from "@workspace/ui/lib/theme/persist"
 
 type ThemeContextValue = {
   theme: ThemeOption | undefined
@@ -67,11 +68,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
     (value) => {
       setThemeState((current) => {
         const next = typeof value === "function" ? value(current ?? themeConfig.defaultTheme) : value
-        try {
-          localStorage.setItem(THEME_STORAGE_KEY, next)
-        } catch {
-          // ignore
-        }
+        persistThemePreference(next)
         const resolved = resolveTheme(next)
         setResolvedTheme(resolved)
         applyThemeToDocument(resolved)
@@ -83,6 +80,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const stored = readStoredTheme()
+    persistThemePreference(stored)
     const resolved = resolveTheme(stored)
     setThemeState(stored)
     setResolvedTheme(resolved)
@@ -112,6 +110,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
         return
       }
       const stored = readStoredTheme()
+      persistThemePreference(stored)
       const resolved = resolveTheme(stored)
       setThemeState(stored)
       setResolvedTheme(resolved)

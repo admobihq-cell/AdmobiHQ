@@ -76,23 +76,3 @@ export function OverviewDashboardSkeleton() {
     </div>
   )
 }
-
-export function OverviewPageSkeleton() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-36" />
-          <Skeleton className="h-4 w-72 max-w-full" />
-        </div>
-        <Skeleton className="h-10 w-[17rem] rounded-lg" />
-      </div>
-      <OverviewDashboardSkeleton />
-      <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-32 rounded-md" />
-        ))}
-      </div>
-    </div>
-  )
-}
