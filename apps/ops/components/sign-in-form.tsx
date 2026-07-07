@@ -1,8 +1,8 @@
 "use client"
 
-import { SignIn } from "@clerk/nextjs"
 import Link from "next/link"
 
+import { AdmobiOtpSignInForm } from "@/components/admobi-otp-sign-in-form"
 import { AuthThemeToggle } from "@/components/auth-theme-toggle"
 
 export function SignInForm() {
@@ -16,12 +16,7 @@ export function SignInForm() {
           </p>
           <h1 className="text-lg font-semibold">Sign in with your @admobihq.com account</h1>
         </div>
-        <SignIn
-          routing="path"
-          path="/sign-in"
-          signUpUrl="/sign-up"
-          forceRedirectUrl="/home"
-        />
+        <AdmobiOtpSignInForm />
         <p className="text-sm text-muted-foreground">
           No account?{" "}
           <Link href="/sign-up" className="font-medium text-primary hover:underline">
