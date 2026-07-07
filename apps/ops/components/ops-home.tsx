@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Megaphone,
   Mail,
-  Shield,
   Truck,
   Users,
 } from "lucide-react"
@@ -92,10 +91,6 @@ export function OpsHome({ displayName, email, stats }: OpsHomeProps) {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
         <div className="relative flex flex-col gap-6 p-6 md:p-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex max-w-2xl flex-col gap-4">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <Shield className="size-3.5" />
-              Super Admin Console
-            </div>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
                 Welcome back, {displayName}
