@@ -1,0 +1,46 @@
+{
+  "name": "ops",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "dotenv -e .env.local -e ../web/.env.local -- next dev --port 3001 --webpack",
+    "build": "dotenv -e .env.local -e ../web/.env.local -- prisma generate --schema=../web/prisma/schema.prisma && dotenv -e .env.local -e ../web/.env.local -- next build",
+    "start": "dotenv -e .env.local -e ../web/.env.local -- next start --port 3001",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
+    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.36.5",
+    "@clerk/ui": "^1.24.2",
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@workspace/ui": "*",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.6.1",
+    "lucide-react": "^1.12.0",
+    "next": "^16.2.6",
+    "pg": "^8.21.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.71.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^25.1.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@workspace/eslint-config": "*",
+    "@workspace/typescript-config": "*",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "^9.39.2",
+    "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
