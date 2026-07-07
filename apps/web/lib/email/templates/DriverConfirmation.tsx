@@ -1,5 +1,7 @@
 import * as React from "react"
-import { Body, Button, Container, Head, Hr, Html, Link, Preview, Row, Section, Text } from "react-email"
+import { Button, Hr, Section, Text } from "react-email"
+
+import { EmailLayout, EmailList, emailStyles } from "@/lib/email/templates/shared/EmailLayout"
 
 interface DriverConfirmationProps {
   name: string
@@ -7,145 +9,40 @@ interface DriverConfirmationProps {
 }
 
 export const DriverConfirmation = ({ name, city }: DriverConfirmationProps) => (
-  <Html>
-    <Head />
-    <Preview>Welcome to Admobi driver program</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Section style={box}>
-          <Row>
-            <Text style={heading}>Welcome to Admobi!</Text>
-          </Row>
-          <Hr style={hr} />
-          <Text style={paragraph}>
-            Hi {name},
-          </Text>
-          <Text style={paragraph}>
-            Thank you for signing up for the Admobi driver program in <strong>{city}</strong>. We&apos;re excited to have you join our growing community!
-          </Text>
-          <Text style={paragraph}>
-            Your application is being reviewed. We&apos;ll be in touch within <strong>24 hours</strong> with:
-          </Text>
+  <EmailLayout preview="Your Admobi driver application is under review">
+    <Text style={emailStyles.heading}>Driver application received</Text>
 
-          <Section style={bulletContainer}>
-            <Text style={bulletPoint}>✓ Application status</Text>
-            <Text style={bulletPoint}>✓ Onboarding instructions</Text>
-            <Text style={bulletPoint}>✓ Earnings potential and opportunities</Text>
-            <Text style={bulletPoint}>✓ Support contact information</Text>
-          </Section>
+    <Text style={emailStyles.paragraph}>Hi {name},</Text>
 
-          <Section style={buttonContainer}>
-            <Button
-              style={button}
-              href="https://admobihq.com"
-            >
-              Visit Admobi
-            </Button>
-          </Section>
+    <Text style={emailStyles.paragraph}>
+      Your application for the Admobi driver programme in <strong>{city}</strong>{" "}
+      is in review. We will contact you within one business day with your status
+      and the next onboarding steps.
+    </Text>
 
-          <Hr style={hr} />
-          <Text style={footer}>
-            <strong>What You Need to Know:</strong>
-          </Text>
-          <Text style={bulletPoint}>Flexible schedule - work when you want</Text>
-          <Text style={bulletPoint}>Transparent earnings - paid weekly</Text>
-          <Text style={bulletPoint}>Vehicle requirements - must be operational and insured</Text>
-          <Text style={bulletPoint}>Safety first - we prioritize driver and passenger safety</Text>
+    <Text style={emailStyles.label}>In that follow-up</Text>
+    <EmailList
+      items={[
+        "Application outcome and any documents we still need",
+        "Vehicle and insurance requirements for your city",
+        "How earnings are calculated and paid",
+        "A direct line to driver support",
+      ]}
+    />
 
-          <Hr style={hr} />
-          <Text style={paragraph}>
-            Questions? Reply to this email or visit{" "}
-            <Link href="https://admobihq.com" style={link}>
-              admobihq.com
-            </Link>
-          </Text>
-          <Text style={footerText}>
-            © 2026 Admobi. All rights reserved.
-          </Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
+    <Section style={emailStyles.buttonWrap}>
+      <Button style={emailStyles.button} href="https://admobihq.com/drivers">
+        Driver programme details
+      </Button>
+    </Section>
+
+    <Hr style={emailStyles.divider} />
+
+    <Text style={emailStyles.paragraph}>
+      Keep this email for reference. If your contact details change before we
+      reach you, reply here with the update.
+    </Text>
+
+    <Text style={emailStyles.meta}>© {new Date().getFullYear()} Admobi</Text>
+  </EmailLayout>
 )
-
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,Cantarell,"Fira Sans","Droid Sans","Source Sans Pro",sans-serif',
-}
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-}
-
-const box = {
-  padding: "0 48px",
-}
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "20px 0",
-}
-
-const paragraph = {
-  color: "#525f7f",
-  fontSize: "16px",
-  lineHeight: "24px",
-  textAlign: "left" as const,
-}
-
-const heading = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#1a1a1a",
-  margin: "16px 0",
-  textAlign: "left" as const,
-}
-
-const bulletContainer = {
-  margin: "16px 0",
-}
-
-const bulletPoint = {
-  color: "#525f7f",
-  fontSize: "15px",
-  lineHeight: "24px",
-  marginLeft: "20px",
-}
-
-const buttonContainer = {
-  textAlign: "center" as const,
-  margin: "32px 0",
-}
-
-const button = {
-  backgroundColor: "#5469d4",
-  borderRadius: "4px",
-  color: "#fff",
-  fontSize: "16px",
-  fontWeight: "bold",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "block",
-}
-
-const footer = {
-  color: "#1a1a1a",
-  fontSize: "14px",
-  fontWeight: "600",
-  lineHeight: "24px",
-}
-
-const footerText = {
-  color: "#525f7f",
-  fontSize: "12px",
-  lineHeight: "20px",
-}
-
-const link = {
-  color: "#5469d4",
-  textDecoration: "underline",
-}
