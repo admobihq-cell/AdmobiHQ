@@ -8,6 +8,7 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
+    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops",
     "postinstall": "patch-package"
   },
   "devDependencies": {
@@ -21,7 +22,9 @@
   },
   "packageManager": "npm@11.12.1",
   "overrides": {
-    "zod": "3.25.76"
+    "zod": "3.25.76",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "engines": {
     "node": ">=20"

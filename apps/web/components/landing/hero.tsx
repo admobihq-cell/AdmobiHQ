@@ -45,7 +45,7 @@ export function HeroSection() {
 
         <div className="mx-auto mt-14 max-w-[52rem] text-center sm:mt-16">
           <p className="text-muted-foreground text-[0.65rem] font-medium uppercase tracking-[0.24em] sm:text-[0.7rem]">
-            In rotation across campaigns for
+            Brands we&apos;re built for
           </p>
           <ul className="mt-5 grid grid-cols-3 items-center justify-items-center gap-x-6 gap-y-5 sm:grid-cols-6 sm:gap-x-8">
             {heroLogos.map((logo) => (

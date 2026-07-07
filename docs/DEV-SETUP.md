@@ -29,9 +29,10 @@ infisical init   # links to workspace in .infisical.json at repo root
 
 ```bash
 npm install
-npm run env:pull -w web          # or maintain apps/web/.env.local manually
+npm run env:pull                 # web + ops .env.local from Infisical dev
 npm run env:check -w web
-npm run dev                      # turbo → web dev server (webpack + import map fix)
+npm run env:check -w ops         # optional until ops secrets exist in Infisical
+npm run dev                      # turbo → web (3000) + ops (3001) if both running
 ```
 
 Open:
@@ -42,19 +43,25 @@ Open:
 | http://localhost:3000/admin | Payload CMS |
 | http://localhost:3000/help | Help center |
 | http://localhost:3000/blog | Blog |
+| http://localhost:3001 | **Ops console** (Clerk auth) |
 
 **Prefer `npm run dev`** (webpack). Use `npm run dev:turbo -w web` only if you accept less-tested Payload + Turbopack behaviour.
+
+Run ops alone: `npm run dev -w ops`. See [OPS-ADMIN.md](./OPS-ADMIN.md).
 
 ---
 
 ## Environment variables
 
-Secrets live in **`apps/web/.env.local`** (never commit). Template: [`.env.example`](../.env.example).
+Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`** and **`apps/ops/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example).
 
 ### Pull from Infisical (recommended on Windows)
 
 ```bash
-npm run env:pull -w web
+npm run env:pull -w web          # apps/web/.env.local
+npm run env:pull -w ops          # apps/ops/.env.local
+# or both:
+npm run env:pull
 ```
 
 Writes `apps/web/.env.local` from Infisical **dev** environment.
@@ -109,6 +116,9 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `API_KEY_PEXELS` | No | Admin image search only |
 | `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | No | Email routes; not required for build |
 | `REDIS_URL` | No | Email queue; not required for build |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Ops / Clerk | Ops console (`apps/ops`) |
+| `CLERK_SECRET_KEY` | Ops / Clerk | Ops console; server-only |
+| `NEXT_PUBLIC_OPS_URL` | No | Ops metadata; defaults sensible if unset locally |
 
 If `DATABASE_URL` or `PAYLOAD_SECRET` is missing, CI logs a **warning** and skips CMS bootstrap; lint, typecheck, and build still run (Dependabot PRs do not need a database).
 
@@ -194,7 +204,11 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | Command | When to run |
 |---------|-------------|
 | `npm run env:pull -w web` | First setup, after Infisical secret changes, new machine |
+| `npm run env:pull -w ops` | Same, for ops console secrets |
+| `npm run env:pull` | Pull web + ops in one command |
 | `npm run env:check -w web` | Debug “DATABASE_URL not set”, before migrate/seed |
+| `npm run env:check -w ops` | Verify Clerk + DATABASE_URL for ops |
+| `npm run dev -w ops` | Ops console only (port 3001) |
 | `infisical secrets --env=dev` | Inspect secrets without writing `.env.local` |
 
 ### Prisma (main backend — forms)
