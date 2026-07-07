@@ -2,7 +2,26 @@
 
 Production and staging deployment for **Admobi** (`apps/web`), **Ops console** (`apps/ops`), and **Customer app** (`apps/app`).
 
-**Related:** [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](./OPS-ADMIN.md)
+**Related:** [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md)
+
+---
+
+## Platform overview
+
+Three **separate Vercel projects** from one GitHub repo. Each project has its own root directory, domains, env vars, and (if using Infisical) its **own Vercel sync** — syncing secrets to the web project does **not** populate ops or app.
+
+| | **Web** | **Ops** | **App** |
+|---|---------|---------|---------|
+| **Repo path** | `apps/web` | `apps/ops` | `apps/app` |
+| **Purpose** | Marketing site + Payload CMS | Internal admin (`@admobihq.com`) | Customer product (scaffold) |
+| **Production** | [admobihq.com](https://admobihq.com) | [ops.admobihq.com](https://ops.admobihq.com) | [app.admobihq.com](https://app.admobihq.com) |
+| **Staging** (`staging` branch) | staging.admobihq.com | ops.staging.admobihq.com | app.staging.admobihq.com |
+| **Local port** | `:3000` | `:3001` | `:3002` |
+| **Auth** | Payload at `/admin` | Clerk (staff only) | None yet |
+| **Database** | Prisma + Payload (owner) | Prisma (shared) | None yet |
+| **Build** | `next build --webpack` | `next build --webpack` | `next build --webpack` |
+
+**Branch → deploy:** push to `staging` → preview/staging domains on all three projects; merge to `master` → production domains.
 
 ---
 
@@ -57,11 +76,33 @@ npm run env:pull              # dev → web + ops + app .env.local
 npm run env:pull:staging      # staging → web + ops + app .env.local
 ```
 
+### Which secrets go where
+
+Infisical holds **all** keys below. Each Vercel project only needs **its row** — configure one Infisical → Vercel integration per project (or paste manually).
+
+| Variable | Web Vercel | Ops Vercel | App Vercel | Notes |
+|----------|:----------:|:----------:|:----------:|-------|
+| `DATABASE_URL` | ✓ | ✓ | — | Shared Neon; ops reads/writes Prisma tables |
+| `PAYLOAD_SECRET` | ✓ | — | — | Payload CMS only |
+| `NEXT_PUBLIC_SERVER_URL` | ✓ | — | — | Legacy web canonical URL |
+| `NEXT_PUBLIC_WEB_URL` | ✓ | ✓ | optional | Marketing + CMS links |
+| `NEXT_PUBLIC_OPS_URL` | optional | ✓ | optional | Ops console origin |
+| `NEXT_PUBLIC_APP_URL` | — | — | ✓ | Customer app origin |
+| `NEXT_PUBLIC_ALLOW_INDEXING` | ✓ (staging: `false`) | — | — | Staging web noindex |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | — | ✓ | — | Ops only; **redeploy after change** |
+| `CLERK_SECRET_KEY` | — | ✓ | — | Ops only |
+| `BLOB_READ_WRITE_TOKEN` | ✓ | — | — | Payload media uploads |
+| `RESEND_*`, `REDIS_URL`, etc. | ✓ | — | — | Web forms / email (see DEV-SETUP) |
+
+**Important:** `NEXT_PUBLIC_*` vars are inlined at **build time**. After changing them in Vercel or Infisical, **redeploy** that project.
+
 ---
 
 ## Vercel — three projects
 
-Use the **same GitHub repo** with three Vercel projects.
+Use the **same GitHub repo** with **three** Vercel projects (create each in Vercel → Add New → Project → same repo, different root directory).
+
+Suggested project names (yours may differ): **Admobi Web**, **Admobi Ops**, **Admobi App**.
 
 ### Project 1: Web (`apps/web`)
 
