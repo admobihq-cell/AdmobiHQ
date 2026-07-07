@@ -4,10 +4,12 @@ import { getOverviewStats } from "@/lib/queries/stats"
 
 export default async function HomePage() {
   const user = await getOpsUser()
-  const displayName =
+  const rawName =
     user?.user?.firstName?.trim() ||
     user?.email.split("@")[0] ||
     "there"
+  const displayName =
+    rawName.charAt(0).toUpperCase() + rawName.slice(1)
 
   let stats: {
     leads: number
