@@ -1,7 +1,6 @@
 import Link from "next/link"
 
 import { cmsAdminLabel, cmsAdminUrl } from "@/lib/site-urls"
-
 import { getContentStats } from "@/lib/queries/content"
 import {
   Card,
