@@ -9,7 +9,7 @@
     "generate:ai-seo": "tsx scripts/generate-ai-seo-static.ts",
     "prebuild": "npm run generate:ai-seo && tsx scripts/fix-importmap.ts",
     "build": "prisma generate && next build --webpack",
-    "postbuild": "next-sitemap",
+    "postbuild": "node scripts/run-sitemap.mjs",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
@@ -32,7 +32,8 @@
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
     "seed:help": "dotenv -e .env.local -- tsx scripts/seed-help.ts",
     "seed:blog": "dotenv -e .env.local -- tsx scripts/seed-blog.ts",
-    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local"
+    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
+    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

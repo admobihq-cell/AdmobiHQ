@@ -1,15 +1,17 @@
 import type { Media } from "@/payload-types"
 import { SITE_URL } from "@/lib/seo/site"
 
+function isTrustedAdmobiHost(hostname: string): boolean {
+  return hostname === "admobihq.com" || hostname.endsWith(".admobihq.com")
+}
+
 function serverOrigin(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SERVER_URL?.trim()
   if (fromEnv) {
     try {
       const origin = new URL(fromEnv.replace(/\/$/, "")).origin
-      if (
-        process.env.NODE_ENV === "production" &&
-        new URL(SITE_URL).hostname !== new URL(origin).hostname
-      ) {
+      const hostname = new URL(origin).hostname
+      if (process.env.NODE_ENV === "production" && !isTrustedAdmobiHost(hostname)) {
         return SITE_URL
       }
       return origin

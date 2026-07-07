@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { cmsAdminLabel, cmsAdminUrl } from "@/lib/site-urls"
 import { getContentStats } from "@/lib/queries/content"
 import {
   Card,
@@ -21,6 +22,8 @@ import { formatBytes, formatDateTime } from "@/lib/format"
 
 export default async function ContentPage() {
   const content = await getContentStats()
+  const adminUrl = cmsAdminUrl()
+  const adminLabel = cmsAdminLabel()
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,11 +31,11 @@ export default async function ContentPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Content Overview</h1>
           <p className="text-sm text-muted-foreground">
-            Read-only CMS snapshot. Edit content at admobihq.com/admin.
+            Read-only CMS snapshot. Edit content at {adminLabel}.
           </p>
         </div>
         <Button asChild>
-          <Link href="https://admobihq.com/admin" target="_blank" rel="noopener noreferrer">
+          <Link href={adminUrl} target="_blank" rel="noopener noreferrer">
             Open CMS Editor →
           </Link>
         </Button>
