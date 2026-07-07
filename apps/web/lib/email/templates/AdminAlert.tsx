@@ -1,5 +1,7 @@
 import * as React from "react"
-import { Body, Container, Head, Hr, Html, Link, Preview, Row, Section, Text } from "react-email"
+import { Hr, Link, Text } from "react-email"
+
+import { EmailLayout, emailStyles } from "@/lib/email/templates/shared/EmailLayout"
 
 interface AdminAlertProps {
   type: "campaign" | "fleet" | "driver"
@@ -11,6 +13,12 @@ interface AdminAlertProps {
   additionalInfo?: string
 }
 
+const typeLabels = {
+  campaign: "Campaign brief",
+  fleet: "Fleet partnership",
+  driver: "Driver application",
+} as const
+
 export const AdminAlert = ({
   type,
   submitterName,
@@ -20,139 +28,67 @@ export const AdminAlert = ({
   submitterCity,
   additionalInfo,
 }: AdminAlertProps) => {
-  const typeLabel = {
-    campaign: "Campaign Brief",
-    fleet: "Fleet Partnership",
-    driver: "Driver Signup",
-  }[type]
+  const submittedAt = new Date().toLocaleString("en-KE", {
+    timeZone: "Africa/Nairobi",
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
 
   return (
-    <Html>
-      <Head />
-      <Preview>New {typeLabel} submission from Admobi</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={box}>
-            <Row>
-              <Text style={heading}>🎯 New {typeLabel} Submission</Text>
-            </Row>
-            <Hr style={hr} />
+    <EmailLayout preview={`New ${typeLabels[type].toLowerCase()} on Admobi`}>
+      <Text style={emailStyles.heading}>New {typeLabels[type]}</Text>
 
-            <Text style={label}>Submitter:</Text>
-            <Text style={value}>{submitterName}</Text>
+      <Text style={emailStyles.paragraph}>
+        A new submission arrived on the marketing site. Full record is in the ops
+        database.
+      </Text>
 
-            <Text style={label}>Email:</Text>
-            <Text style={value}>
-              <Link href={`mailto:${submitterEmail}`} style={link}>
-                {submitterEmail}
-              </Link>
-            </Text>
+      <Text style={emailStyles.label}>Name</Text>
+      <Text style={emailStyles.value}>{submitterName}</Text>
 
-            {submitterPhone && (
-              <>
-                <Text style={label}>Phone:</Text>
-                <Text style={value}>{submitterPhone}</Text>
-              </>
-            )}
+      <Text style={emailStyles.label}>Email</Text>
+      <Text style={emailStyles.value}>
+        <Link href={`mailto:${submitterEmail}`} style={emailStyles.link}>
+          {submitterEmail}
+        </Link>
+      </Text>
 
-            {submitterCompany && (
-              <>
-                <Text style={label}>Company:</Text>
-                <Text style={value}>{submitterCompany}</Text>
-              </>
-            )}
+      {submitterPhone ? (
+        <>
+          <Text style={emailStyles.label}>Phone</Text>
+          <Text style={emailStyles.value}>{submitterPhone}</Text>
+        </>
+      ) : null}
 
-            {submitterCity && (
-              <>
-                <Text style={label}>City:</Text>
-                <Text style={value}>{submitterCity}</Text>
-              </>
-            )}
+      {submitterCompany ? (
+        <>
+          <Text style={emailStyles.label}>Company</Text>
+          <Text style={emailStyles.value}>{submitterCompany}</Text>
+        </>
+      ) : null}
 
-            {additionalInfo && (
-              <>
-                <Text style={label}>Details:</Text>
-                <Text style={value}>{additionalInfo}</Text>
-              </>
-            )}
+      {submitterCity ? (
+        <>
+          <Text style={emailStyles.label}>City</Text>
+          <Text style={emailStyles.value}>{submitterCity}</Text>
+        </>
+      ) : null}
 
-            <Hr style={hr} />
-            <Text style={timestamp}>
-              Submitted: {new Date().toLocaleString("en-US", { timeZone: "Africa/Nairobi" })} EAT
-            </Text>
+      {additionalInfo ? (
+        <>
+          <Text style={emailStyles.label}>Notes</Text>
+          <Text style={emailStyles.value}>{additionalInfo}</Text>
+        </>
+      ) : null}
 
-            <Hr style={hr} />
-            <Text style={footer}>
-              This is an automated alert. Check the database for full submission details.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      <Hr style={emailStyles.divider} />
+
+      <Text style={emailStyles.label}>Submitted</Text>
+      <Text style={emailStyles.value}>{submittedAt} EAT</Text>
+
+      <Text style={emailStyles.meta}>
+        Internal alert from admobihq.com forms. No reply required.
+      </Text>
+    </EmailLayout>
   )
-}
-
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,Cantarell,"Fira Sans","Droid Sans","Source Sans Pro",sans-serif',
-}
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-}
-
-const box = {
-  padding: "0 48px",
-}
-
-const heading = {
-  fontSize: "24px",
-  fontWeight: "700",
-  color: "#1a1a1a",
-  margin: "16px 0",
-  textAlign: "left" as const,
-}
-
-const label = {
-  color: "#525f7f",
-  fontSize: "14px",
-  fontWeight: "600",
-  lineHeight: "24px",
-  textAlign: "left" as const,
-  marginTop: "16px",
-}
-
-const value = {
-  color: "#1a1a1a",
-  fontSize: "15px",
-  lineHeight: "24px",
-  textAlign: "left" as const,
-  marginTop: "4px",
-}
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "20px 0",
-}
-
-const timestamp = {
-  color: "#999",
-  fontSize: "12px",
-  lineHeight: "20px",
-  fontStyle: "italic" as const,
-}
-
-const footer = {
-  color: "#525f7f",
-  fontSize: "12px",
-  lineHeight: "20px",
-}
-
-const link = {
-  color: "#5469d4",
-  textDecoration: "underline",
 }
