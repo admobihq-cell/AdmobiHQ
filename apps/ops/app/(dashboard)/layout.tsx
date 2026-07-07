@@ -12,9 +12,9 @@ export default async function DashboardLayout({
     await requireOpsUser()
   } catch (e) {
     if (e instanceof Response && e.status === 403) {
-      redirect("/sign-in?error=forbidden")
+      redirect("/")
     }
-    redirect("/sign-in")
+    redirect("/")
   }
 
   return <OpsShell>{children}</OpsShell>
