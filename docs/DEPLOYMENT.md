@@ -1,6 +1,6 @@
 # Deployment guide
 
-Production and staging deployment for **Admobi** (`apps/web`) and **Ops console** (`apps/ops`).
+Production and staging deployment for **Admobi** (`apps/web`), **Ops console** (`apps/ops`), and **Customer app** (`apps/app`).
 
 **Related:** [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](./OPS-ADMIN.md)
 
@@ -12,6 +12,7 @@ Production and staging deployment for **Admobi** (`apps/web`) and **Ops console*
 |-----|-------------|------------|----------------------------|-------|
 | Marketing + CMS | `apps/web` | `admobihq.com` | `staging.admobihq.com` | `:3000` |
 | Ops console | `apps/ops` | `ops.admobihq.com` | `ops.staging.admobihq.com` | `:3001` |
+| Customer app | `apps/app` | `app.admobihq.com` | `app.staging.admobihq.com` | `:3002` |
 
 Payload `/admin` stays on the web app (`admobihq.com/admin` or `staging.admobihq.com/admin`) until you add a separate CMS subdomain.
 
@@ -43,6 +44,7 @@ Create **`staging`** in Infisical alongside `dev` and `prod`.
 | `NEXT_PUBLIC_SERVER_URL` | `http://localhost:3000` | `https://staging.admobihq.com` | `https://admobihq.com` |
 | `NEXT_PUBLIC_WEB_URL` | `http://localhost:3000` | `https://staging.admobihq.com` | `https://admobihq.com` |
 | `NEXT_PUBLIC_OPS_URL` | `http://localhost:3001` | `https://ops.staging.admobihq.com` | `https://ops.admobihq.com` |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3002` | `https://app.staging.admobihq.com` | `https://app.admobihq.com` |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | (omit / `true`) | `false` | (omit / `true`) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | test | test | live (recommended) |
 | `CLERK_SECRET_KEY` | full test key | full test key | full live key |
@@ -51,15 +53,15 @@ Create **`staging`** in Infisical alongside `dev` and `prod`.
 Pull locally:
 
 ```bash
-npm run env:pull              # dev → web + ops .env.local
-npm run env:pull:staging      # staging → web + ops .env.local
+npm run env:pull              # dev → web + ops + app .env.local
+npm run env:pull:staging      # staging → web + ops + app .env.local
 ```
 
 ---
 
-## Vercel — two projects
+## Vercel — three projects
 
-Use the **same GitHub repo** with two Vercel projects.
+Use the **same GitHub repo** with three Vercel projects.
 
 ### Project 1: Web (`apps/web`)
 
@@ -104,6 +106,24 @@ After first prod deploy: run Payload migrate + seed once if CMS is empty ([BLOG-
 
 **Ops env vars:** `DATABASE_URL`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_WEB_URL`.
 
+### Project 3: App (`apps/app`)
+
+| Setting | Value |
+|---------|--------|
+| Root Directory | `apps/app` |
+| Include files outside root | **Enabled** |
+| Production Branch | `master` |
+| Build Command | `cd ../.. && npm run build -w app` if default fails |
+
+**Domains**
+
+- Production: `app.admobihq.com`
+- Staging: `app.staging.admobihq.com` → **`staging` branch**
+
+**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL` (optional cross-links). No auth secrets required until the product login phase.
+
+Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-app" }`.
+
 ---
 
 ## DNS (typical Vercel records)
@@ -114,6 +134,8 @@ After first prod deploy: run Payload migrate + seed once if CMS is empty ([BLOG-
 | `staging` | CNAME | `cname.vercel-dns.com` |
 | `ops` | CNAME | `cname.vercel-dns.com` |
 | `ops.staging` | CNAME | `cname.vercel-dns.com` |
+| `app` | CNAME | `cname.vercel-dns.com` |
+| `app.staging` | CNAME | `cname.vercel-dns.com` |
 
 Use the exact records shown in Vercel → Domains for your project.
 
@@ -123,13 +145,15 @@ Use the exact records shown in Vercel → Domains for your project.
 
 App: **`app_3GALZRS50nwbrWeiFLZXxsgDIid`**
 
-**Allowed origins / redirect URLs**
+**Allowed origins / redirect URLs (ops console)**
 
 - `https://ops.admobihq.com`
 - `https://ops.staging.admobihq.com`
 - `http://localhost:3001`
 
-**Restrictions:** `@admobihq.com` email domain only.
+The customer app (`apps/app`) has **no auth yet** — add app URLs here when login ships.
+
+**Restrictions:** `@admobihq.com` email domain only (ops).
 
 **Keys:** test (`pk_test_` / `sk_test_`) for dev/staging; live keys for production ops.
 
@@ -148,6 +172,7 @@ Add under **Settings → Secrets and variables → Actions**:
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Ops build in CI |
 | `CLERK_SECRET_KEY` | Ops build in CI |
 | `NEXT_PUBLIC_OPS_URL` | Ops build metadata |
+| `NEXT_PUBLIC_APP_URL` | App build metadata |
 | `NEXT_PUBLIC_WEB_URL` | Ops CMS link metadata |
 
 Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DEV-SETUP.md](./DEV-SETUP.md).
@@ -158,7 +183,7 @@ Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DE
 
 1. Push to **`staging`** → Vercel deploys preview domains with Infisical `staging` env.
 2. Smoke test staging (see below).
-3. Merge to **`master`** → production deploy on `admobihq.com` + `ops.admobihq.com`.
+3. Merge to **`master`** → production deploy on `admobihq.com`, `ops.admobihq.com`, and `app.admobihq.com`.
 
 ---
 
@@ -177,9 +202,15 @@ Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DE
 - [ ] CRUD on one entity (e.g. leads)
 - [ ] CMS link opens `{NEXT_PUBLIC_WEB_URL}/admin`
 
+### App production
+
+- [ ] Sidebar shell loads at `app.admobihq.com`
+- [ ] Routes `/`, `/campaigns`, `/reports`, `/settings` show coming-soon states
+- [ ] `GET /api/health` returns `{ ok: true }`
+
 ### Staging
 
-Repeat on `staging.admobihq.com` and `ops.staging.admobihq.com` against the staging database.
+Repeat on `staging.admobihq.com`, `ops.staging.admobihq.com`, and `app.staging.admobihq.com` against the staging database.
 
 Verify staging returns `X-Robots-Tag: noindex` and does not generate a public sitemap.
 
@@ -189,7 +220,7 @@ Verify staging returns `X-Robots-Tag: noindex` and does not generate a public si
 
 Use this when going live:
 
-- [ ] **Vercel:** Two projects configured (`apps/web`, `apps/ops`) with domains above
+- [ ] **Vercel:** Three projects configured (`apps/web`, `apps/ops`, `apps/app`) with domains above
 - [ ] **Infisical:** `staging` + `prod` envs synced to Vercel
 - [ ] **Clerk:** All ops URLs in allowed origins; live keys in prod
 - [ ] **Neon:** `ops-schema-additive.sql` applied on prod (and staging)
@@ -235,4 +266,4 @@ Symptoms: signup works in Clerk UI, then “This page couldn’t load” / serve
 
 - `cms.admobihq.com` — add as alternate domain on the web Vercel project
 - GitHub Actions → Vercel deploy job (Vercel Git integration is sufficient)
-- Separate Clerk production application (optional hardening)
+- Separate Clerk production application for **ops vs customer app** (optional hardening)
