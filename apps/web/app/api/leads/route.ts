@@ -31,10 +31,14 @@ export async function POST(req: Request) {
     if (parsed.data.audience === 'campaign') {
       const data = await prisma.lead.create({
         data: {
+          contact_name: parsed.data.name,
           email: parsed.data.email,
           company_name: parsed.data.company,
           phone: parsed.data.phone || '',
           audience: parsed.data.audience,
+          cities: parsed.data.cities,
+          ad_formats: parsed.data.adFormats,
+          duration: parsed.data.duration,
           budget_range: parsed.data.budget,
           campaign_start_date: null,
           additional_info: parsed.data.brief || '',
