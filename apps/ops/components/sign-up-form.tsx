@@ -1,8 +1,8 @@
 "use client"
 
-import { SignUp } from "@clerk/nextjs"
 import Link from "next/link"
 
+import { AdmobiOtpSignUpForm } from "@/components/admobi-otp-sign-up-form"
 import { AuthThemeToggle } from "@/components/auth-theme-toggle"
 
 export function SignUpForm() {
@@ -16,12 +16,7 @@ export function SignUpForm() {
           </p>
           <h1 className="text-lg font-semibold">Create your @admobihq.com account</h1>
         </div>
-        <SignUp
-          routing="path"
-          path="/sign-up"
-          signInUrl="/sign-in"
-          forceRedirectUrl="/home"
-        />
+        <AdmobiOtpSignUpForm />
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link href="/sign-in" className="font-medium text-primary hover:underline">

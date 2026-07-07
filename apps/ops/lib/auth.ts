@@ -1,15 +1,13 @@
 import { auth, currentUser } from "@clerk/nextjs/server"
 
-const ALLOWED_DOMAIN = "@admobihq.com"
+import { isAdmobiEmail } from "@/lib/allowed-email"
+
+export { ALLOWED_DOMAIN, getAdmobiEmailError, isAdmobiEmail } from "@/lib/allowed-email"
 
 export type OpsAccess =
   | { status: "unauthenticated" }
   | { status: "forbidden"; email: string | null }
   | { status: "authorized"; userId: string; email: string; user: NonNullable<Awaited<ReturnType<typeof currentUser>>> }
-
-export function isAdmobiEmail(email: string | null | undefined): boolean {
-  return !!email?.toLowerCase().endsWith(ALLOWED_DOMAIN)
-}
 
 function resolvePrimaryEmail(
   user: NonNullable<Awaited<ReturnType<typeof currentUser>>>,
