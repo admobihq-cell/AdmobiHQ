@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs"
 import { shadcn } from "@clerk/ui/themes"
+import { Analytics } from "@vercel/analytics/next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { cookies } from "next/headers"
 
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </TooltipProvider>
           </ClerkProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )
