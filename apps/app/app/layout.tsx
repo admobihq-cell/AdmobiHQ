@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { cookies } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
@@ -15,9 +16,16 @@ import "@workspace/ui/globals.css"
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
-export const metadata = {
-  title: "Admobi App",
-  description: "Admobi customer application",
+export const metadata: Metadata = {
+  title: {
+    default: "Customer App",
+    template: "%s · Admobi",
+  },
+  description: "Create and manage taxi-top OOH campaigns with Admobi.",
+  icons: {
+    icon: "/icon",
+    apple: "/apple-icon",
+  },
   robots: { index: false, follow: false },
 }
 
