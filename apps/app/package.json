@@ -13,6 +13,7 @@
     "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@workspace/ui": "*",
     "dotenv": "^16.6.1",
     "lucide-react": "^1.12.0",
