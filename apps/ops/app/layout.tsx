@@ -4,6 +4,7 @@ import { shadcn } from "@clerk/ui/themes"
 import { Analytics } from "@vercel/analytics/next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { cookies } from "next/headers"
+import { Analytics } from "@vercel/analytics/next"
 
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
