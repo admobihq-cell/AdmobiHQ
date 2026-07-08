@@ -20,6 +20,8 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { formatBytes, formatDateTime } from "@/lib/format"
 
+export const metadata = { title: "Content" }
+
 export default async function ContentPage() {
   const content = await getContentStats()
   const adminUrl = cmsAdminUrl()

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { ClerkProvider } from "@clerk/nextjs"
 import { shadcn } from "@clerk/ui/themes"
 import { Analytics } from "@vercel/analytics/next"
@@ -18,9 +19,16 @@ import "@workspace/ui/globals.css"
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
-export const metadata = {
-  title: "Admobi Ops",
-  description: "Super admin console for Admobi operational data",
+export const metadata: Metadata = {
+  title: {
+    default: "Ops Console",
+    template: "%s · Admobi",
+  },
+  description: "Internal operations console for Admobi campaign and fleet data.",
+  icons: {
+    icon: "/icon",
+    apple: "/apple-icon",
+  },
   robots: { index: false, follow: false },
 }
 
