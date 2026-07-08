@@ -4,6 +4,8 @@ import { OpsAccessDenied } from "@/components/ops-access-denied"
 import { OpsGateway } from "@/components/ops-gateway"
 import { getOpsAccess } from "@/lib/auth"
 
+export const metadata = { title: "Sign in" }
+
 export default async function EntrancePage() {
   const access = await getOpsAccess()
 

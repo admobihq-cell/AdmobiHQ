@@ -2,6 +2,8 @@ import { OpsHome } from "@/components/ops-home"
 import { getOpsUser } from "@/lib/auth"
 import { getOverviewStats } from "@/lib/queries/stats"
 
+export const metadata = { title: "Home" }
+
 export default async function HomePage() {
   const user = await getOpsUser()
   const rawName =

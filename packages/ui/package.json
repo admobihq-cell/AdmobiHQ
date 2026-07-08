@@ -35,6 +35,9 @@
     "typescript": "^5.9.3"
   },
   "exports": {
+    "./brand/admobi-mark": "./src/brand/admobi-mark.tsx",
+    "./brand/constants": "./src/brand/constants.ts",
+    "./brand/geometry": "./src/brand/geometry.ts",
     "./globals.css": "./src/styles/globals.css",
     "./postcss.config": "./postcss.config.mjs",
     "./lib/*": "./src/lib/*.ts",
