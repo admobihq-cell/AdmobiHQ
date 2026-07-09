@@ -92,6 +92,39 @@ export function DriversView({ initialData }: DriversViewProps) {
       description="Driver onboarding applications and walk-in registrations."
       apiPath="/api/drivers"
       initialData={initialData}
+      getRecordTitle={(row) => row.name}
+      detailFields={[
+        {
+          key: "created_at",
+          label: "Submitted",
+          render: (r) => formatDateTime(r.created_at),
+        },
+        { key: "name", label: "Name", render: (r) => r.name },
+        { key: "phone", label: "Phone", render: (r) => r.phone },
+        { key: "email", label: "Email", render: (r) => r.email ?? "—" },
+        { key: "city", label: "City", render: (r) => r.city },
+        {
+          key: "vehicle_type",
+          label: "Vehicle type",
+          render: (r) => formatLabel(r.vehicle_type),
+        },
+        {
+          key: "days_per_week",
+          label: "Days per week",
+          render: (r) => formatLabel(r.days_per_week),
+        },
+        {
+          key: "heard_about",
+          label: "Heard about",
+          render: (r) => formatLabel(r.heard_about),
+        },
+        {
+          key: "status",
+          label: "Status",
+          render: (r) => <StatusBadge status={r.status} />,
+        },
+        { key: "notes", label: "Internal notes", render: (r) => r.notes ?? "—" },
+      ]}
       columns={[
         {
           key: "created_at",
