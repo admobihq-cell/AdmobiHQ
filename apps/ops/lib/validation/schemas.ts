@@ -63,3 +63,39 @@ export const mediaKitCreateSchema = z.object({
 })
 
 export const mediaKitUpdateSchema = mediaKitCreateSchema.partial()
+
+const bulkIdsSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+})
+
+export const bulkDeleteSchema = bulkIdsSchema.extend({
+  action: z.literal("delete"),
+})
+
+export const leadBulkSchema = z.discriminatedUnion("action", [
+  bulkDeleteSchema,
+  bulkIdsSchema.extend({
+    action: z.literal("updateStatus"),
+    status: z.enum(["new", "contacted", "qualified", "closed"]),
+  }),
+])
+
+export const driverBulkSchema = z.discriminatedUnion("action", [
+  bulkDeleteSchema,
+  bulkIdsSchema.extend({
+    action: z.literal("updateStatus"),
+    status: z.enum(["pending", "verified", "active"]),
+  }),
+])
+
+export const fleetBulkSchema = z.discriminatedUnion("action", [
+  bulkDeleteSchema,
+  bulkIdsSchema.extend({
+    action: z.literal("updateStatus"),
+    status: z.enum(["pending", "verified", "active"]),
+  }),
+])
+
+export const waitlistBulkSchema = bulkDeleteSchema
+
+export const mediaKitBulkSchema = bulkDeleteSchema

@@ -93,6 +93,11 @@ export function DriversView({ initialData }: DriversViewProps) {
       apiPath="/api/drivers"
       initialData={initialData}
       getRecordTitle={(row) => row.name}
+      statusBulkOptions={[
+        { value: "pending", label: "Pending" },
+        { value: "verified", label: "Verified" },
+        { value: "active", label: "Active" },
+      ]}
       detailFields={[
         {
           key: "created_at",

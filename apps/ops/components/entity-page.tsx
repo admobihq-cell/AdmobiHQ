@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { Download, Loader2, Plus, Search, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { ChevronDown, Download, Loader2, Plus, Search, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
 import {
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
@@ -58,6 +65,22 @@ type Paginated<T> = {
   totalPages: number
 }
 
+export type StatusBulkOption = {
+  value: string
+  label: string
+}
+
+export type BulkActionDef<T> = {
+  id: string
+  label: string
+  variant?: "default" | "destructive" | "outline"
+  confirm?: {
+    title: string
+    description: (count: number) => string
+  }
+  action: (ids: number[], rows: T[]) => Promise<void>
+}
+
 type EntityPageProps<T extends { id: number }> = {
   title: string
   description: string
@@ -67,6 +90,8 @@ type EntityPageProps<T extends { id: number }> = {
   initialData?: Paginated<T>
   detailFields?: DetailFieldDef<T>[]
   getRecordTitle?: (row: T) => string
+  statusBulkOptions?: StatusBulkOption[]
+  bulkActions?: BulkActionDef<T>[]
   renderForm: (props: {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -86,6 +111,8 @@ export function EntityPage<T extends { id: number }>({
   initialData,
   detailFields,
   getRecordTitle,
+  statusBulkOptions,
+  bulkActions = [],
   renderForm,
   getCsvRow,
 }: EntityPageProps<T>) {
@@ -99,6 +126,27 @@ export function EntityPage<T extends { id: number }>({
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkPending, setBulkPending] = useState(false)
+  const [bulkConfirm, setBulkConfirm] = useState<{
+    title: string
+    description: string
+    destructive?: boolean
+    onConfirm: () => Promise<void>
+  } | null>(null)
+
+  const pageIds = useMemo(
+    () => data?.items.map((row) => row.id) ?? [],
+    [data?.items],
+  )
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id))
+  const somePageSelected = pageIds.some((id) => selectedIds.has(id))
+  const selectedCount = selectedIds.size
+  const selectedRows = useMemo(
+    () => data?.items.filter((row) => selectedIds.has(row.id)) ?? [],
+    [data?.items, selectedIds],
+  )
 
   const detailRows =
     detailFields ??
@@ -132,6 +180,100 @@ export function EntityPage<T extends { id: number }>({
     }
     void fetchData()
   }, [fetchData, initialData, page, search])
+
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [page, search, apiPath])
+
+  const toggleRow = (id: number, checked: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  const toggleAllOnPage = (checked: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      for (const id of pageIds) {
+        if (checked) next.add(id)
+        else next.delete(id)
+      }
+      return next
+    })
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const postBulk = async (body: Record<string, unknown>) => {
+    const res = await fetch(`${apiPath}/bulk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error ?? "Bulk action failed")
+    }
+    return res.json() as Promise<{ count: number }>
+  }
+
+  const runBulkAction = async (action: () => Promise<void>) => {
+    setBulkPending(true)
+    try {
+      await action()
+      clearSelection()
+      void fetchData()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bulk action failed")
+    } finally {
+      setBulkPending(false)
+      setBulkConfirm(null)
+    }
+  }
+
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds)
+    setBulkConfirm({
+      title: `Delete ${ids.length} record${ids.length === 1 ? "" : "s"}?`,
+      description: `This action cannot be undone. ${ids.length} record${ids.length === 1 ? "" : "s"} will be permanently removed.`,
+      destructive: true,
+      onConfirm: async () => {
+        const result = await postBulk({ action: "delete", ids })
+        toast.success(`Deleted ${result.count} record${result.count === 1 ? "" : "s"}`)
+      },
+    })
+  }
+
+  const handleBulkStatus = (status: string, label: string) => {
+    const ids = Array.from(selectedIds)
+    void runBulkAction(async () => {
+      const result = await postBulk({ action: "updateStatus", ids, status })
+      toast.success(
+        `Updated ${result.count} record${result.count === 1 ? "" : "s"} to ${label}`,
+      )
+    })
+  }
+
+  const handleBulkExport = () => {
+    if (!selectedRows.length) return
+    const csvColumns = columns.filter((c) => c.csv).map((c) => c.key)
+    const rows = selectedRows.map((row) => {
+      if (getCsvRow) return getCsvRow(row)
+      return Object.fromEntries(
+        columns
+          .filter((c) => c.csv)
+          .map((c) => [c.key, c.csv!(row)]),
+      )
+    })
+    downloadCsv(
+      `${apiPath.replace("/api/", "")}-selected.csv`,
+      toCsv(rows, csvColumns),
+    )
+    toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
+  }
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     setSaving(true)
@@ -225,10 +367,100 @@ export function EntityPage<T extends { id: number }>({
         </Button>
       </div>
 
+      {selectedCount > 0 && (
+        <div className="bg-muted/50 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2">
+          <span className="text-sm font-medium">
+            {selectedCount} selected
+          </span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {statusBulkOptions && statusBulkOptions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={bulkPending}>
+                    Set status
+                    <ChevronDown data-icon="inline-end" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {statusBulkOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => handleBulkStatus(option.value, option.label)}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {bulkActions.map((action) => (
+              <Button
+                key={action.id}
+                variant={action.variant ?? "outline"}
+                size="sm"
+                disabled={bulkPending}
+                onClick={() => {
+                  const ids = Array.from(selectedIds)
+                  if (action.confirm) {
+                    setBulkConfirm({
+                      title: action.confirm.title,
+                      description: action.confirm.description(ids.length),
+                      destructive: action.variant === "destructive",
+                      onConfirm: () => action.action(ids, selectedRows),
+                    })
+                    return
+                  }
+                  void runBulkAction(() => action.action(ids, selectedRows))
+                }}
+              >
+                {action.label}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkExport}
+              disabled={bulkPending}
+            >
+              <Download data-icon="inline-start" />
+              Export selected
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={bulkPending}
+            >
+              <Trash2 data-icon="inline-start" />
+              Delete
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              disabled={bulkPending}
+              aria-label="Clear selection"
+            >
+              <X />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={
+                    allPageSelected ? true : somePageSelected ? "indeterminate" : false
+                  }
+                  onCheckedChange={(checked) => toggleAllOnPage(checked === true)}
+                  aria-label="Select all on page"
+                  disabled={loading || !data?.items.length}
+                />
+              </TableHead>
               {columns.map((col) => (
                 <TableHead key={col.key}>{col.header}</TableHead>
               ))}
@@ -237,10 +469,10 @@ export function EntityPage<T extends { id: number }>({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly />
+              <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly selectable />
             ) : !data?.items.length ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 1} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={columns.length + 2} className="h-24 text-center text-muted-foreground">
                   {emptyMessage}
                 </TableCell>
               </TableRow>
@@ -248,9 +480,17 @@ export function EntityPage<T extends { id: number }>({
               data.items.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  data-state={selectedIds.has(row.id) ? "selected" : undefined}
+                  className="cursor-pointer hover:bg-muted/50 data-[state=selected]:bg-muted/50"
                   onClick={() => setViewing(row)}
                 >
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(row.id)}
+                      onCheckedChange={(checked) => toggleRow(row.id, checked === true)}
+                      aria-label={`Select record #${row.id}`}
+                    />
+                  </TableCell>
                   {columns.map((col) => (
                     <TableCell key={col.key}>{col.render(row)}</TableCell>
                   ))}
@@ -401,6 +641,32 @@ export function EntityPage<T extends { id: number }>({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? <Loader2 className="size-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkConfirm !== null} onOpenChange={() => !bulkPending && setBulkConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{bulkConfirm?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{bulkConfirm?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                if (bulkConfirm) void runBulkAction(bulkConfirm.onConfirm)
+              }}
+              disabled={bulkPending}
+              className={
+                bulkConfirm?.destructive
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : undefined
+              }
+            >
+              {bulkPending ? <Loader2 className="size-4 animate-spin" /> : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
