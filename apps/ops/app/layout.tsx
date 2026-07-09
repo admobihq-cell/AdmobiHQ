@@ -56,8 +56,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             appearance={{ theme: shadcn }}
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
-            afterSignInUrl="/home"
-            afterSignUpUrl="/home"
+            signInFallbackRedirectUrl="/home"
+            signUpFallbackRedirectUrl="/home"
+            afterSignOutUrl="/"
           >
             <TooltipProvider>
               {children}
