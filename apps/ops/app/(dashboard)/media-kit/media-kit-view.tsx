@@ -32,6 +32,7 @@ export function MediaKitView({ initialData }: MediaKitViewProps) {
       description="Marketers and agencies who requested the Admobi media kit."
       apiPath="/api/media-kit"
       initialData={initialData}
+      getRecordTitle={(row) => row.name}
       columns={[
         {
           key: "created_at",

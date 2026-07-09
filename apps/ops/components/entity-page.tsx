@@ -18,6 +18,7 @@ import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -33,7 +34,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 
-import { downloadCsv, toCsv } from "@/lib/format"
+import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 
 export type ColumnDef<T> = {
@@ -41,6 +42,12 @@ export type ColumnDef<T> = {
   header: string
   render: (row: T) => React.ReactNode
   csv?: (row: T) => string | number | null
+}
+
+export type DetailFieldDef<T> = {
+  key: string
+  label: string
+  render: (row: T) => React.ReactNode
 }
 
 type Paginated<T> = {
@@ -58,6 +65,8 @@ type EntityPageProps<T extends { id: number }> = {
   columns: ColumnDef<T>[]
   emptyMessage?: string
   initialData?: Paginated<T>
+  detailFields?: DetailFieldDef<T>[]
+  getRecordTitle?: (row: T) => string
   renderForm: (props: {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -75,6 +84,8 @@ export function EntityPage<T extends { id: number }>({
   columns,
   emptyMessage = "No records yet.",
   initialData,
+  detailFields,
+  getRecordTitle,
   renderForm,
   getCsvRow,
 }: EntityPageProps<T>) {
@@ -84,9 +95,18 @@ export function EntityPage<T extends { id: number }>({
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
+  const [viewing, setViewing] = useState<T | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const detailRows =
+    detailFields ??
+    columns.map((column) => ({
+      key: column.key,
+      label: column.header,
+      render: column.render,
+    }))
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -129,6 +149,7 @@ export function EntityPage<T extends { id: number }>({
       toast.success(editing ? "Updated" : "Created")
       setFormOpen(false)
       setEditing(null)
+      setViewing(null)
       void fetchData()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed")
@@ -145,6 +166,7 @@ export function EntityPage<T extends { id: number }>({
       if (!res.ok) throw new Error("Delete failed")
       toast.success("Deleted")
       setDeleteId(null)
+      setViewing(null)
       void fetchData()
     } catch {
       toast.error("Delete failed")
@@ -224,11 +246,15 @@ export function EntityPage<T extends { id: number }>({
               </TableRow>
             ) : (
               data.items.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setViewing(row)}
+                >
                   {columns.map((col) => (
                     <TableCell key={col.key}>{col.render(row)}</TableCell>
                   ))}
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -293,6 +319,68 @@ export function EntityPage<T extends { id: number }>({
         onSubmit: handleSubmit,
         saving,
       })}
+
+      <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          {viewing && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {getRecordTitle?.(viewing) ?? `Record #${viewing.id}`}
+                </DialogTitle>
+                {"created_at" in viewing && (
+                  <DialogDescription>
+                    Submitted{" "}
+                    {formatDateTime(
+                      (viewing as T & { created_at?: string }).created_at,
+                    )}
+                  </DialogDescription>
+                )}
+              </DialogHeader>
+              <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(0,7rem)_1fr]">
+                {detailRows.map((field) => (
+                  <div key={field.key} className="contents">
+                    <dt className="text-muted-foreground">{field.label}</dt>
+                    <dd className="min-w-0 break-words font-medium">
+                      {field.render(viewing)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setViewing(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    setDeleteId(viewing.id)
+                    setViewing(null)
+                  }}
+                >
+                  <Trash2 data-icon="inline-start" />
+                  Delete
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setEditing(viewing)
+                    setFormOpen(true)
+                    setViewing(null)
+                  }}
+                >
+                  Edit
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
