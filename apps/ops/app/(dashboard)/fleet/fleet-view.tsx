@@ -75,6 +75,11 @@ export function FleetView({ initialData }: FleetViewProps) {
       apiPath="/api/fleet"
       initialData={initialData}
       getRecordTitle={(row) => row.company_name}
+      statusBulkOptions={[
+        { value: "pending", label: "Pending" },
+        { value: "verified", label: "Verified" },
+        { value: "active", label: "Active" },
+      ]}
       detailFields={[
         {
           key: "created_at",
