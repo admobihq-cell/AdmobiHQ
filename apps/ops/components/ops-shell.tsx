@@ -140,7 +140,7 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border p-3">
           <div className="flex items-center gap-2">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
             <span className="text-xs text-muted-foreground">@admobihq.com</span>
           </div>
         </SidebarFooter>

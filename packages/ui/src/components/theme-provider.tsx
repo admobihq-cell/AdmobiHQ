@@ -173,11 +173,11 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      if (isTypingTarget(event.target)) {
         return
       }
 
-      if (isTypingTarget(event.target)) {
+      if (!event.key || event.key.toLowerCase() !== "d") {
         return
       }
 
