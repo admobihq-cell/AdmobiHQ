@@ -78,6 +78,48 @@ export function LeadsView({ initialData }: LeadsViewProps) {
       description="Advertisers who submitted campaign briefs or were added manually."
       apiPath="/api/leads"
       initialData={initialData}
+      getRecordTitle={(row) => row.contact_name}
+      detailFields={[
+        {
+          key: "created_at",
+          label: "Submitted",
+          render: (r) => formatDateTime(r.created_at),
+        },
+        { key: "contact_name", label: "Contact", render: (r) => r.contact_name },
+        { key: "company_name", label: "Company", render: (r) => r.company_name },
+        { key: "email", label: "Email", render: (r) => r.email },
+        { key: "phone", label: "Phone", render: (r) => r.phone ?? "—" },
+        {
+          key: "cities",
+          label: "Cities",
+          render: (r) => (r.cities.length ? r.cities.join(", ") : "—"),
+        },
+        {
+          key: "ad_formats",
+          label: "Ad formats",
+          render: (r) => (r.ad_formats.length ? r.ad_formats.join(", ") : "—"),
+        },
+        {
+          key: "duration",
+          label: "Duration",
+          render: (r) => formatLabel(r.duration),
+        },
+        {
+          key: "budget_range",
+          label: "Budget",
+          render: (r) => formatLabel(r.budget_range),
+        },
+        {
+          key: "status",
+          label: "Status",
+          render: (r) => <StatusBadge status={r.status} />,
+        },
+        {
+          key: "additional_info",
+          label: "Brief / notes",
+          render: (r) => r.additional_info ?? "—",
+        },
+      ]}
       columns={[
         {
           key: "created_at",

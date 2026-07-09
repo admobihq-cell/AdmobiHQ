@@ -32,6 +32,7 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
       description="Early-interest emails from homepage and other CTAs."
       apiPath="/api/waitlist"
       initialData={initialData}
+      getRecordTitle={(row) => row.email}
       columns={[
         {
           key: "created_at",
