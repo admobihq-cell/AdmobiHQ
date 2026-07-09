@@ -24,7 +24,6 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -35,6 +34,7 @@ import {
 } from "@workspace/ui/components/table"
 
 import { downloadCsv, toCsv } from "@/lib/format"
+import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 
 export type ColumnDef<T> = {
   key: string
@@ -57,6 +57,7 @@ type EntityPageProps<T extends { id: number }> = {
   apiPath: string
   columns: ColumnDef<T>[]
   emptyMessage?: string
+  initialData?: Paginated<T>
   renderForm: (props: {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -73,11 +74,12 @@ export function EntityPage<T extends { id: number }>({
   apiPath,
   columns,
   emptyMessage = "No records yet.",
+  initialData,
   renderForm,
   getCsvRow,
 }: EntityPageProps<T>) {
-  const [data, setData] = useState<Paginated<T> | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<Paginated<T> | null>(initialData ?? null)
+  const [loading, setLoading] = useState(!initialData)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
@@ -105,8 +107,11 @@ export function EntityPage<T extends { id: number }>({
   }, [apiPath, page, search])
 
   useEffect(() => {
+    if (initialData && page === 1 && !search) {
+      return
+    }
     void fetchData()
-  }, [fetchData])
+  }, [fetchData, initialData, page, search])
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     setSaving(true)
@@ -210,18 +215,7 @@ export function EntityPage<T extends { id: number }>({
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((col) => (
-                    <TableCell key={col.key}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                  <TableCell>
-                    <Skeleton className="h-8 w-16" />
-                  </TableCell>
-                </TableRow>
-              ))
+              <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly />
             ) : !data?.items.length ? (
               <TableRow>
                 <TableCell colSpan={columns.length + 1} className="h-24 text-center text-muted-foreground">
