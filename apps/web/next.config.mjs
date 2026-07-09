@@ -2,6 +2,9 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { withPayload } from "@payloadcms/next/withPayload"
+import { withSentryConfig } from "@sentry/nextjs"
+
+import { getSentryBuildPluginOptions } from "@workspace/sentry-config/build-options"
 
 import { CONTENT_SIGNAL_HEADER } from "./lib/seo/robots-content-signals.js"
 
@@ -67,7 +70,7 @@ const CLIENT_NODE_FALLBACKS = {
 const nextConfig = {
   // Monorepo root: avoids Next picking C:\Users\victo\package-lock.json and breaking CSS traces.
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ["@workspace/ui", "@payload-bites/image-search"],
+  transpilePackages: ["@workspace/ui", "@workspace/sentry-config", "@payload-bites/image-search"],
   images: {
     remotePatterns: mediaImagePatterns,
   },
@@ -147,4 +150,4 @@ const nextConfig = {
   },
 }
 
-export default withPayload(nextConfig)
+export default withSentryConfig(withPayload(nextConfig), getSentryBuildPluginOptions())
