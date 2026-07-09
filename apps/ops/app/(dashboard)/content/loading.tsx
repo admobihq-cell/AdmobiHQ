@@ -1,14 +1,10 @@
 import Link from "next/link"
-import { Suspense } from "react"
 
-import { ContentOverview } from "@/components/content-overview"
 import { ContentOverviewSkeleton } from "@/components/content-overview-skeleton"
 import { cmsAdminLabel, cmsAdminUrl } from "@/lib/site-urls"
 import { Button } from "@workspace/ui/components/button"
 
-export const metadata = { title: "Content" }
-
-export default function ContentPage() {
+export default function ContentLoading() {
   const adminUrl = cmsAdminUrl()
   const adminLabel = cmsAdminLabel()
 
@@ -28,9 +24,7 @@ export default function ContentPage() {
         </Button>
       </div>
 
-      <Suspense fallback={<ContentOverviewSkeleton />}>
-        <ContentOverview />
-      </Suspense>
+      <ContentOverviewSkeleton />
     </div>
   )
 }

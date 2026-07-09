@@ -1,46 +1,34 @@
-import { OpsHome } from "@/components/ops-home"
-import { getOpsUser } from "@/lib/auth"
-import { getOverviewStats } from "@/lib/queries/stats"
+import { Suspense } from "react"
+
+import { HomeStatsSection } from "@/components/home-stats-section"
+import { HomeStatsSkeleton } from "@/components/home-stats-skeleton"
+import { HomeWelcome } from "@/components/home-welcome"
+import { HomeModules } from "@/components/home-modules"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 export const metadata = { title: "Home" }
 
-export default async function HomePage() {
-  const user = await getOpsUser()
-  const rawName =
-    user?.user?.firstName?.trim() ||
-    user?.email.split("@")[0] ||
-    "there"
-  const displayName =
-    rawName.charAt(0).toUpperCase() + rawName.slice(1)
-
-  let stats: {
-    leads: number
-    fleet: number
-    drivers: number
-    waitlist: number
-    mediaKit: number
-    total: number
-  } | null = null
-
-  try {
-    const overview = await getOverviewStats("30d")
-    stats = {
-      leads: overview.totals.leads,
-      fleet: overview.totals.fleet,
-      drivers: overview.totals.drivers,
-      waitlist: overview.totals.waitlist,
-      mediaKit: overview.totals.mediaKit,
-      total: overview.totals.all,
-    }
-  } catch {
-    stats = null
-  }
-
+export default function HomePage() {
   return (
-    <OpsHome
-      displayName={displayName}
-      email={user?.email ?? "@admobihq.com"}
-      stats={stats}
-    />
+    <div className="flex flex-col gap-8">
+      <Suspense
+        fallback={
+          <section className="relative overflow-hidden rounded-xl border bg-card p-6 md:p-8">
+            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+              Welcome back
+            </h1>
+            <Skeleton className="mt-3 h-4 w-full max-w-2xl" />
+          </section>
+        }
+      >
+        <HomeWelcome />
+      </Suspense>
+
+      <Suspense fallback={<HomeStatsSkeleton />}>
+        <HomeStatsSection />
+      </Suspense>
+
+      <HomeModules />
+    </div>
   )
 }
