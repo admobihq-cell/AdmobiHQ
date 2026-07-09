@@ -23,6 +23,7 @@
   },
   "packageManager": "npm@11.12.1",
   "overrides": {
+    "@sentry/nextjs": "^10.64.0",
     "zod": "3.25.76",
     "react": "19.2.4",
     "react-dom": "19.2.4"

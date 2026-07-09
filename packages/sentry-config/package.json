@@ -1,0 +1,22 @@
+{
+  "name": "@workspace/sentry-config",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./build-options": "./build-options.mjs",
+    "./constants": "./constants.mjs",
+    "./environment": "./environment.mjs",
+    "./client": "./client.mjs",
+    "./server": "./src/server.ts",
+    "./edge": "./src/edge.ts"
+  },
+  "peerDependencies": {
+    "@sentry/nextjs": "^10.64.0"
+  },
+  "devDependencies": {
+    "@sentry/nextjs": "^10.64.0",
+    "@workspace/typescript-config": "*",
+    "typescript": "^5.9.3"
+  }
+}
