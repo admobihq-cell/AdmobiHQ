@@ -74,6 +74,40 @@ export function FleetView({ initialData }: FleetViewProps) {
       description="Fleet operators applying to join the Admobi network."
       apiPath="/api/fleet"
       initialData={initialData}
+      getRecordTitle={(row) => row.company_name}
+      detailFields={[
+        {
+          key: "created_at",
+          label: "Submitted",
+          render: (r) => formatDateTime(r.created_at),
+        },
+        { key: "company_name", label: "Company", render: (r) => r.company_name },
+        {
+          key: "primary_contact_name",
+          label: "Contact",
+          render: (r) => r.primary_contact_name,
+        },
+        { key: "email", label: "Email", render: (r) => r.email },
+        { key: "phone", label: "Phone", render: (r) => r.phone },
+        { key: "city", label: "City", render: (r) => r.city },
+        {
+          key: "fleet_types",
+          label: "Fleet types",
+          render: (r) => (r.fleet_types.length ? r.fleet_types.join(", ") : "—"),
+        },
+        { key: "fleet_size", label: "Fleet size", render: (r) => r.fleet_size ?? "—" },
+        {
+          key: "vehicles_active",
+          label: "Vehicles active",
+          render: (r) => formatLabel(r.vehicles_active),
+        },
+        {
+          key: "status",
+          label: "Status",
+          render: (r) => <StatusBadge status={r.status} />,
+        },
+        { key: "notes", label: "Notes", render: (r) => r.notes ?? "—" },
+      ]}
       columns={[
         {
           key: "created_at",
