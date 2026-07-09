@@ -79,6 +79,12 @@ export function LeadsView({ initialData }: LeadsViewProps) {
       apiPath="/api/leads"
       initialData={initialData}
       getRecordTitle={(row) => row.contact_name}
+      statusBulkOptions={[
+        { value: "new", label: "New" },
+        { value: "contacted", label: "Contacted" },
+        { value: "qualified", label: "Qualified" },
+        { value: "closed", label: "Closed" },
+      ]}
       detailFields={[
         {
           key: "created_at",

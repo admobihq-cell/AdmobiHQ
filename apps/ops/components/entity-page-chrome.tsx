@@ -51,6 +51,7 @@ export function EntityPageChrome({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10" />
               {columns.map((column) => (
                 <TableHead key={column}>{column}</TableHead>
               ))}
@@ -59,7 +60,7 @@ export function EntityPageChrome({
           </TableHeader>
           <TableBody>
             {loading || !children ? (
-              <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly />
+              <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly selectable />
             ) : (
               children
             )}
