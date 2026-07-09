@@ -1,0 +1,58 @@
+"use client"
+
+import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
+import { formatDateTime } from "@/lib/format"
+
+type MediaKitRequest = {
+  id: number
+  name: string
+  email: string
+  created_at: string
+}
+
+const mediaKitFields = [
+  { name: "name", label: "Name", required: true },
+  { name: "email", label: "Email", type: "email", required: true },
+]
+
+type MediaKitViewProps = {
+  initialData: {
+    items: MediaKitRequest[]
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+  }
+}
+
+export function MediaKitView({ initialData }: MediaKitViewProps) {
+  return (
+    <EntityPage<MediaKitRequest>
+      title="Media Kit Requests"
+      description="Marketers and agencies who requested the Admobi media kit."
+      apiPath="/api/media-kit"
+      initialData={initialData}
+      columns={[
+        {
+          key: "created_at",
+          header: "Date",
+          render: (r) => formatDateTime(r.created_at),
+          csv: (r) => r.created_at,
+        },
+        { key: "name", header: "Name", render: (r) => r.name, csv: (r) => r.name },
+        { key: "email", header: "Email", render: (r) => r.email, csv: (r) => r.email },
+      ]}
+      renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
+        <SimpleFormDialog
+          open={open}
+          onOpenChange={onOpenChange}
+          title={initial ? "Edit request" : "Add request"}
+          fields={mediaKitFields}
+          initial={initial}
+          saving={saving}
+          onSubmit={onSubmit}
+        />
+      )}
+    />
+  )
+}

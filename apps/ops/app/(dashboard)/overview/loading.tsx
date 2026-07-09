@@ -1,11 +1,8 @@
 import Link from "next/link"
-import { Suspense } from "react"
 
 import { OverviewDashboardSkeleton } from "@/components/overview-dashboard-skeleton"
 import { OverviewRangePicker } from "@/components/overview-range-picker"
-import { OverviewStats } from "@/components/overview-stats"
 import { Button } from "@workspace/ui/components/button"
-import type { DateRangeKey } from "@/lib/queries/stats"
 
 const QUICK_LINKS = [
   { href: "/leads", label: "Campaign Leads" },
@@ -15,21 +12,7 @@ const QUICK_LINKS = [
   { href: "/media-kit", label: "Media Kit" },
 ] as const
 
-function parseRange(value: string | undefined): DateRangeKey {
-  if (value === "7d" || value === "30d" || value === "90d" || value === "all") {
-    return value
-  }
-  return "30d"
-}
-
-type OverviewPageProps = {
-  searchParams: Promise<{ range?: string }>
-}
-
-export default async function OverviewPage({ searchParams }: OverviewPageProps) {
-  const { range: rawRange } = await searchParams
-  const range = parseRange(rawRange)
-
+export default function OverviewLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -39,12 +22,10 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
             Operational pulse across leads, fleet, drivers, and signups.
           </p>
         </div>
-        <OverviewRangePicker range={range} />
+        <OverviewRangePicker range="30d" />
       </div>
 
-      <Suspense fallback={<OverviewDashboardSkeleton />} key={range}>
-        <OverviewStats range={range} />
-      </Suspense>
+      <OverviewDashboardSkeleton />
 
       <div className="flex flex-wrap gap-2">
         {QUICK_LINKS.map((link) => (
