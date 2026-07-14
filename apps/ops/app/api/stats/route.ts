@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import { z } from "zod"
+
+import { statsRangeSchema } from "@workspace/ops-contracts"
 
 import { requireOpsUser } from "@/lib/auth"
 import { jsonError } from "@/lib/api-utils"
 import { getContentStats } from "@/lib/queries/content"
 import { getOverviewStats, getSubmissionsOverTime } from "@/lib/queries/stats"
-
-const querySchema = z.object({
-  range: z.enum(["7d", "30d", "90d", "all"]).default("30d"),
-})
 
 export async function GET(req: Request) {
   try {
@@ -19,7 +16,7 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url)
-  const { range } = querySchema.parse({
+  const { range } = statsRangeSchema.parse({
     range: searchParams.get("range") ?? "30d",
   })
 
