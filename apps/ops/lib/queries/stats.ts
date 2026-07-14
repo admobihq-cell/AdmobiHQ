@@ -1,9 +1,11 @@
 import { subDays } from "date-fns"
 
+import type { DateRangeKey } from "@workspace/ops-contracts"
+
 import { prisma } from "@/lib/prisma"
 import { getPgPool } from "@/lib/pg"
 
-export type DateRangeKey = "7d" | "30d" | "90d" | "all"
+export type { DateRangeKey }
 
 export function getDateRangeStart(range: DateRangeKey): Date | null {
   const now = new Date()

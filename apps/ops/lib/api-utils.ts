@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import {
+  paginatedResponse,
+  paginationSchema,
+  parseId,
+  type PaginationParams,
+} from "@workspace/ops-contracts"
+
+export { paginatedResponse, paginationSchema, parseId }
+export type { PaginationParams }
+
 export function jsonError(message: string, status: number, issues?: unknown) {
   return NextResponse.json({ error: message, issues }, { status })
-}
-
-export function parseId(raw: string): number | null {
-  const id = Number.parseInt(raw, 10)
-  return Number.isFinite(id) && id > 0 ? id : null
 }
 
 export async function parseJsonBody<T>(
@@ -29,29 +34,4 @@ export async function parseJsonBody<T>(
   }
 
   return { data: parsed.data }
-}
-
-export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  search: z.string().optional(),
-  sortBy: z.string().optional(),
-  sortDir: z.enum(["asc", "desc"]).optional().default("desc"),
-})
-
-export type PaginationParams = z.infer<typeof paginationSchema>
-
-export function paginatedResponse<T>(
-  items: T[],
-  total: number,
-  page: number,
-  pageSize: number,
-) {
-  return {
-    items,
-    total,
-    page,
-    pageSize,
-    totalPages: Math.ceil(total / pageSize),
-  }
 }

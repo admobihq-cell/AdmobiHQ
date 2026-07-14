@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e .env.local -e ../web/.env.local -- next dev --port 3001 --webpack",
+    "dev": "prisma generate --schema=../web/prisma/schema.prisma && dotenv -e .env.local -e ../web/.env.local -- next dev --port 3001 --webpack",
     "build": "prisma generate --schema=../web/prisma/schema.prisma && next build --webpack",
     "start": "next start --port 3001",
     "lint": "eslint",
@@ -21,6 +21,8 @@
     "@sentry/nextjs": "^10.64.0",
     "@tanstack/react-table": "^8.21.3",
     "@vercel/analytics": "^2.0.1",
+    "@workspace/ops-api-client": "*",
+    "@workspace/ops-contracts": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "date-fns": "^4.1.0",
