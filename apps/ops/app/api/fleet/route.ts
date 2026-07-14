@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import type { Prisma } from "@prisma/client"
+
+import { paginationSchema } from "@workspace/ops-contracts"
 
 import { requireOpsUser } from "@/lib/auth"
-import {
-  jsonError,
-  paginatedResponse,
-  paginationSchema,
-  parseJsonBody,
-} from "@/lib/api-utils"
+import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { listFleetPartners } from "@/lib/queries/entities"
 import { fleetCreateSchema } from "@/lib/validation/schemas"
 
 export async function GET(req: Request) {
@@ -28,32 +25,20 @@ export async function GET(req: Request) {
     sortDir: searchParams.get("sortDir") ?? "desc",
   })
 
-  const where: Prisma.FleetPartnerWhereInput = {}
-  if (params.search) {
-    where.OR = [
-      { company_name: { contains: params.search, mode: "insensitive" } },
-      { email: { contains: params.search, mode: "insensitive" } },
-      { primary_contact_name: { contains: params.search, mode: "insensitive" } },
-    ]
+  try {
+    const result = await listFleetPartners({
+      ...params,
+      city: searchParams.get("city") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+    })
+    return NextResponse.json(result)
+  } catch (error: unknown) {
+    console.error("[ops /api/fleet GET]", error)
+    return jsonError(
+      error instanceof Error ? error.message : "Database query failed",
+      503,
+    )
   }
-
-  const city = searchParams.get("city")
-  if (city) where.city = city
-
-  const status = searchParams.get("status")
-  if (status) where.status = status
-
-  const [items, total] = await Promise.all([
-    prisma.fleetPartner.findMany({
-      where,
-      orderBy: { created_at: params.sortDir },
-      skip: (params.page - 1) * params.pageSize,
-      take: params.pageSize,
-    }),
-    prisma.fleetPartner.count({ where }),
-  ])
-
-  return NextResponse.json(paginatedResponse(items, total, params.page, params.pageSize))
 }
 
 export async function POST(req: Request) {

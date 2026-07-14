@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import type { Prisma } from "@prisma/client"
+
+import { paginationSchema } from "@workspace/ops-contracts"
 
 import { requireOpsUser } from "@/lib/auth"
-import {
-  jsonError,
-  paginatedResponse,
-  paginationSchema,
-  parseJsonBody,
-} from "@/lib/api-utils"
+import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { listWaitlist } from "@/lib/queries/entities"
 import { waitlistCreateSchema } from "@/lib/validation/schemas"
 
 export async function GET(req: Request) {
@@ -27,22 +24,16 @@ export async function GET(req: Request) {
     sortDir: searchParams.get("sortDir") ?? "desc",
   })
 
-  const where: Prisma.WaitlistEntryWhereInput = {}
-  if (params.search) {
-    where.email = { contains: params.search, mode: "insensitive" }
+  try {
+    const result = await listWaitlist(params)
+    return NextResponse.json(result)
+  } catch (error: unknown) {
+    console.error("[ops /api/waitlist GET]", error)
+    return jsonError(
+      error instanceof Error ? error.message : "Database query failed",
+      503,
+    )
   }
-
-  const [items, total] = await Promise.all([
-    prisma.waitlistEntry.findMany({
-      where,
-      orderBy: { created_at: params.sortDir },
-      skip: (params.page - 1) * params.pageSize,
-      take: params.pageSize,
-    }),
-    prisma.waitlistEntry.count({ where }),
-  ])
-
-  return NextResponse.json(paginatedResponse(items, total, params.page, params.pageSize))
 }
 
 export async function POST(req: Request) {

@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client"
 import {
   paginationSchema,
   type PaginationParams,
-} from "@/lib/api-utils"
+} from "@workspace/ops-contracts"
 import { prisma } from "@/lib/prisma"
 
 type PaginatedResult<T> = {

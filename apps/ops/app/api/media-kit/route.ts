@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import type { Prisma } from "@prisma/client"
+
+import { paginationSchema } from "@workspace/ops-contracts"
 
 import { requireOpsUser } from "@/lib/auth"
-import {
-  jsonError,
-  paginatedResponse,
-  paginationSchema,
-  parseJsonBody,
-} from "@/lib/api-utils"
+import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { listMediaKitRequests } from "@/lib/queries/entities"
 import { mediaKitCreateSchema } from "@/lib/validation/schemas"
 
 export async function GET(req: Request) {
@@ -27,25 +24,16 @@ export async function GET(req: Request) {
     sortDir: searchParams.get("sortDir") ?? "desc",
   })
 
-  const where: Prisma.MediaKitRequestWhereInput = {}
-  if (params.search) {
-    where.OR = [
-      { name: { contains: params.search, mode: "insensitive" } },
-      { email: { contains: params.search, mode: "insensitive" } },
-    ]
+  try {
+    const result = await listMediaKitRequests(params)
+    return NextResponse.json(result)
+  } catch (error: unknown) {
+    console.error("[ops /api/media-kit GET]", error)
+    return jsonError(
+      error instanceof Error ? error.message : "Database query failed",
+      503,
+    )
   }
-
-  const [items, total] = await Promise.all([
-    prisma.mediaKitRequest.findMany({
-      where,
-      orderBy: { created_at: params.sortDir },
-      skip: (params.page - 1) * params.pageSize,
-      take: params.pageSize,
-    }),
-    prisma.mediaKitRequest.count({ where }),
-  ])
-
-  return NextResponse.json(paginatedResponse(items, total, params.page, params.pageSize))
 }
 
 export async function POST(req: Request) {
