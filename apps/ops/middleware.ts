@@ -1,17 +1,36 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
+import { corsHeaders, isAllowedCorsOrigin } from "@/lib/cors"
+
 const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)"])
 const isApiRoute = createRouteMatcher(["/api(.*)", "/trpc(.*)"])
 
 export default clerkMiddleware(async (auth, request) => {
+  const origin = request.headers.get("origin")
+
+  if (request.method === "OPTIONS" && isApiRoute(request)) {
+    if (!isAllowedCorsOrigin(origin)) {
+      return new NextResponse(null, { status: 403 })
+    }
+    return new NextResponse(null, {
+      status: 204,
+      headers: corsHeaders(origin),
+    })
+  }
+
   if (isPublicRoute(request)) {
     return
   }
 
   if (isApiRoute(request)) {
     await auth.protect()
-    return
+    const response = NextResponse.next()
+    const headers = corsHeaders(origin)
+    for (const [key, value] of Object.entries(headers)) {
+      response.headers.set(key, value)
+    }
+    return response
   }
 
   const { userId } = await auth()

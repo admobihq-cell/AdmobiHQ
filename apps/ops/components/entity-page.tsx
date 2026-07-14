@@ -42,6 +42,7 @@ import {
 } from "@workspace/ui/components/table"
 
 import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
+import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 
 export type ColumnDef<T> = {
@@ -116,6 +117,11 @@ export function EntityPage<T extends { id: number }>({
   renderForm,
   getCsvRow,
 }: EntityPageProps<T>) {
+  const opsClient = useOpsClient()
+  const resource = useMemo(
+    () => resolveOpsResource(opsClient, apiPath),
+    [opsClient, apiPath],
+  )
   const [data, setData] = useState<Paginated<T> | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
   const [search, setSearch] = useState("")
@@ -159,20 +165,18 @@ export function EntityPage<T extends { id: number }>({
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: "20",
+      const result = await resource.list({
+        page,
+        pageSize: 20,
         ...(search ? { search } : {}),
       })
-      const res = await fetch(`${apiPath}?${params}`)
-      if (!res.ok) throw new Error("Failed to load")
-      setData(await res.json())
+      setData(result as unknown as Paginated<T>)
     } catch {
       toast.error("Failed to load data")
     } finally {
       setLoading(false)
     }
-  }, [apiPath, page, search])
+  }, [resource, page, search])
 
   useEffect(() => {
     if (initialData && page === 1 && !search) {
@@ -208,16 +212,7 @@ export function EntityPage<T extends { id: number }>({
   const clearSelection = () => setSelectedIds(new Set())
 
   const postBulk = async (body: Record<string, unknown>) => {
-    const res = await fetch(`${apiPath}/bulk`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.error ?? "Bulk action failed")
-    }
-    return res.json() as Promise<{ count: number }>
+    return resource.bulk(body as never)
   }
 
   const runBulkAction = async (action: () => Promise<void>) => {
@@ -278,15 +273,10 @@ export function EntityPage<T extends { id: number }>({
   const handleSubmit = async (values: Record<string, unknown>) => {
     setSaving(true)
     try {
-      const url = editing ? `${apiPath}/${editing.id}` : apiPath
-      const res = await fetch(url, {
-        method: editing ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error ?? "Save failed")
+      if (editing) {
+        await resource.update(editing.id, values as never)
+      } else {
+        await resource.create(values as never)
       }
       toast.success(editing ? "Updated" : "Created")
       setFormOpen(false)
@@ -304,8 +294,7 @@ export function EntityPage<T extends { id: number }>({
     if (!deleteId) return
     setDeleting(true)
     try {
-      const res = await fetch(`${apiPath}/${deleteId}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Delete failed")
+      await resource.delete(deleteId)
       toast.success("Deleted")
       setDeleteId(null)
       setViewing(null)

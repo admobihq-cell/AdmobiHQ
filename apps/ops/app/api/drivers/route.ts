@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import type { Prisma } from "@prisma/client"
+
+import { paginationSchema } from "@workspace/ops-contracts"
 
 import { requireOpsUser } from "@/lib/auth"
-import {
-  jsonError,
-  paginatedResponse,
-  paginationSchema,
-  parseJsonBody,
-} from "@/lib/api-utils"
+import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { listDrivers } from "@/lib/queries/entities"
 import { driverCreateSchema } from "@/lib/validation/schemas"
 
 export async function GET(req: Request) {
@@ -27,35 +24,21 @@ export async function GET(req: Request) {
     sortDir: searchParams.get("sortDir") ?? "desc",
   })
 
-  const where: Prisma.DriverWhereInput = {}
-  if (params.search) {
-    where.OR = [
-      { name: { contains: params.search, mode: "insensitive" } },
-      { email: { contains: params.search, mode: "insensitive" } },
-      { phone: { contains: params.search, mode: "insensitive" } },
-    ]
+  try {
+    const result = await listDrivers({
+      ...params,
+      city: searchParams.get("city") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+      vehicleType: searchParams.get("vehicleType") ?? undefined,
+    })
+    return NextResponse.json(result)
+  } catch (error: unknown) {
+    console.error("[ops /api/drivers GET]", error)
+    return jsonError(
+      error instanceof Error ? error.message : "Database query failed",
+      503,
+    )
   }
-
-  const city = searchParams.get("city")
-  if (city) where.city = city
-
-  const status = searchParams.get("status")
-  if (status) where.status = status
-
-  const vehicleType = searchParams.get("vehicleType")
-  if (vehicleType) where.vehicle_type = vehicleType
-
-  const [items, total] = await Promise.all([
-    prisma.driver.findMany({
-      where,
-      orderBy: { created_at: params.sortDir },
-      skip: (params.page - 1) * params.pageSize,
-      take: params.pageSize,
-    }),
-    prisma.driver.count({ where }),
-  ])
-
-  return NextResponse.json(paginatedResponse(items, total, params.page, params.pageSize))
 }
 
 export async function POST(req: Request) {
