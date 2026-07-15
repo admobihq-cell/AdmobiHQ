@@ -24,7 +24,7 @@ ${includes}${notes}`
 }
 
 export function buildPricingMarkdown(): string {
-  return `# Pricing — Admobi (Kenya digital OOH)
+  return `# Pricing: Admobi (Kenya digital OOH)
 
 > ${PRICING_DISCLAIMER}
 >

@@ -24,10 +24,15 @@ jobs:
       ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
       TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_OPS_URL: ${{ secrets.NEXT_PUBLIC_OPS_URL != '' && secrets.NEXT_PUBLIC_OPS_URL || 'https://ops.admobihq.com' }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL != '' && secrets.NEXT_PUBLIC_APP_URL || 'https://app.admobihq.com' }}
+      NEXT_PUBLIC_WEB_URL: ${{ secrets.NEXT_PUBLIC_WEB_URL != '' && secrets.NEXT_PUBLIC_WEB_URL || 'https://admobihq.com' }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -37,20 +42,16 @@ jobs:
           node-version: 20
           cache: "npm"
 
-      - name: Verify required secrets
+      - name: Check database secrets
+        id: db_secrets
         run: |
-          set -e
-          missing=0
-          for key in DATABASE_URL PAYLOAD_SECRET; do
-            if [ -z "${!key}" ]; then
-              echo "::error::GitHub Actions secret '$key' is not set. Add it under Settings → Secrets and variables → Actions."
-              missing=1
-            fi
-          done
-          if [ "$missing" -ne 0 ]; then
-            exit 1
+          if [ -n "${DATABASE_URL}" ] && [ -n "${PAYLOAD_SECRET}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Database secrets present — CMS bootstrap enabled."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DATABASE_URL or PAYLOAD_SECRET is not set. Skipping CMS bootstrap; lint, typecheck, and build will still run."
           fi
-          echo "Required secrets present."
 
       - name: Install dependencies
         run: npm ci
@@ -59,11 +60,11 @@ jobs:
         run: cd apps/web && npx prisma generate
 
       - name: Bootstrap CMS (migrate + seed)
-        if: ${{ vars.SKIP_CMS_BOOTSTRAP != 'true' }}
+        if: ${{ steps.db_secrets.outputs.available == 'true' && vars.SKIP_CMS_BOOTSTRAP != 'true' }}
         run: npm run cms:bootstrap:ci -w web
 
       - name: Cache Turbo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
@@ -88,7 +89,7 @@ jobs:
   #
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v6
+  #       uses: actions/checkout@v7
   #
   #     - name: Deploy to Vercel
   #       run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}

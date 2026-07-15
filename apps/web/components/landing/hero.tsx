@@ -27,7 +27,7 @@ export function HeroSection() {
             Nairobi · Digital taxi-top screens
           </p>
           <h1 className="mx-auto mt-5 text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem]">
-            <span className="block">Taxi-top advertising in Nairobi —</span>
+            <span className="block">Taxi-top advertising in Nairobi</span>
             <span className="block">LED screens that move with the city</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-[58ch] text-pretty text-base leading-relaxed sm:text-lg">
@@ -45,7 +45,7 @@ export function HeroSection() {
 
         <div className="mx-auto mt-14 max-w-[52rem] text-center sm:mt-16">
           <p className="text-muted-foreground text-[0.65rem] font-medium uppercase tracking-[0.24em] sm:text-[0.7rem]">
-            In rotation across campaigns for
+            Brands we&apos;re built for
           </p>
           <ul className="mt-5 grid grid-cols-3 items-center justify-items-center gap-x-6 gap-y-5 sm:grid-cols-6 sm:gap-x-8">
             {heroLogos.map((logo) => (

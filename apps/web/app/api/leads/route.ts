@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
 import { leadBodySchema } from "@/lib/validation/lead-schemas"
-import { sendEmail } from "@/lib/email/send-email"
+import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import { CampaignConfirmation } from "@/lib/email/templates/CampaignConfirmation"
 import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConfirmation"
@@ -31,10 +31,14 @@ export async function POST(req: Request) {
     if (parsed.data.audience === 'campaign') {
       const data = await prisma.lead.create({
         data: {
+          contact_name: parsed.data.name,
           email: parsed.data.email,
           company_name: parsed.data.company,
           phone: parsed.data.phone || '',
           audience: parsed.data.audience,
+          cities: parsed.data.cities,
+          ad_formats: parsed.data.adFormats,
+          duration: parsed.data.duration,
           budget_range: parsed.data.budget,
           campaign_start_date: null,
           additional_info: parsed.data.brief || '',
@@ -65,8 +69,7 @@ export async function POST(req: Request) {
           campaignHtml
         )
 
-        await sendEmail(
-          process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+        await sendAdminEmail(
           `New Campaign Submission: ${parsed.data.company}`,
           adminHtml
         )
@@ -117,8 +120,7 @@ export async function POST(req: Request) {
           fleetHtml
         )
 
-        await sendEmail(
-          process.env.ADMIN_EMAIL || 'admobihq@gmail.com',
+        await sendAdminEmail(
           `New Fleet Partnership Application: ${parsed.data.fleetOrCompanyName}`,
           adminFleetHtml
         )

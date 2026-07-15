@@ -22,7 +22,7 @@ export function BlogIndex({ posts }: BlogIndexProps) {
               Stories from Kenya&apos;s moving media network
             </h1>
             <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed">
-              Campaign playbooks, OOH insights, and product updates from the Admobi team — with
+              Campaign playbooks, OOH insights, and product updates from the Admobi team, with
               photography from the streets we serve.
             </p>
           </div>

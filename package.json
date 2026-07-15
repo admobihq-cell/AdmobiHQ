@@ -8,6 +8,8 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
+    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w mobile",
+    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w mobile",
     "postinstall": "patch-package"
   },
   "devDependencies": {
@@ -21,7 +23,24 @@
   },
   "packageManager": "npm@11.12.1",
   "overrides": {
-    "zod": "3.25.76"
+    "@sentry/nextjs": "^10.64.0",
+    "zod": "3.25.76",
+    "web": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4"
+    },
+    "ops": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4"
+    },
+    "app": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4"
+    },
+    "mobile": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    }
   },
   "engines": {
     "node": ">=20"
@@ -32,6 +51,11 @@
   ],
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0"
+    "@vercel/speed-insights": "^2.0.0",
+    "expo": "~54.0.35",
+    "expo-router": "~6.0.23",
+    "metro": "^0.83.3",
+    "metro-config": "^0.83.3",
+    "metro-runtime": "^0.83.3"
   }
 }

@@ -45,6 +45,13 @@ function startProcessor(queue: any) {
     const { to, subject, html } = job.data as { to: string; subject: string; html: string }
 
     try {
+      const { getSenderEmail, resolveRecipients } = await import("./config")
+      const recipients = resolveRecipients(to)
+      if (recipients.length === 0) {
+        console.warn(`[Email Queue] Skipped job ${job.id}: no recipient address`)
+        return { success: false, skipped: true }
+      }
+
       const result = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -52,8 +59,8 @@ function startProcessor(queue: any) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.SENDER_EMAIL || "onboarding@resend.dev",
-          to,
+          from: getSenderEmail(),
+          to: recipients.length === 1 ? recipients[0] : recipients,
           subject,
           html,
         }),
@@ -64,8 +71,8 @@ function startProcessor(queue: any) {
         throw new Error(`Resend error: ${error}`)
       }
 
-      console.log(`[Email Queue] Email sent to ${to}`)
-      return { success: true, to }
+      console.log(`[Email Queue] Email sent to ${recipients.join(", ")}`)
+      return { success: true, to: recipients }
     } catch (error) {
       console.error(`[Email Queue] Processing failed for job ${job.id}:`, error)
       throw error

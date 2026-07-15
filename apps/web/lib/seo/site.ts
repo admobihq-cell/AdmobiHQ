@@ -7,6 +7,19 @@ export const DEFAULT_OG_IMAGE_PATH = "/opengraph-image"
 /** Absolute URL for og:image and twitter:image crawlers. */
 export const DEFAULT_OG_IMAGE = `${SITE_URL}${DEFAULT_OG_IMAGE_PATH}`
 
+export const SITE_ICON_PATH = "/icon"
+export const SITE_ICON_URL = `${SITE_URL}${SITE_ICON_PATH}`
+
+/** 512×512 square logo for schema.org Organization.logo (≥112×112 for rich results). */
+export const SITE_LOGO_PATH = "/logo"
+export const SITE_LOGO_URL = `${SITE_URL}${SITE_LOGO_PATH}`
+
+/** Explicit index/follow for Googlebot (layout + per-page metadata). */
+export const INDEXABLE_ROBOTS: Metadata["robots"] = {
+  index: true,
+  follow: true,
+}
+
 const GEO_META = {
   "geo.region": "KE-110",
   "geo.placename": "Nairobi",
@@ -72,9 +85,9 @@ export function pageMetadata({ title, description, path }: PageMetadataInput): M
   return {
     title: { absolute: title },
     description,
+    robots: INDEXABLE_ROBOTS,
     alternates: {
       canonical,
-      languages: { "en-ke": `${SITE_URL}/` },
     },
     other: GEO_META,
     openGraph: {
@@ -89,7 +102,7 @@ export function pageMetadata({ title, description, path }: PageMetadataInput): M
           url: DEFAULT_OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: `${SITE_NAME} — Digital taxi-top OOH in Kenya`,
+          alt: `${SITE_NAME}: Digital taxi-top OOH in Kenya`,
         },
       ],
     },

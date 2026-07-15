@@ -128,7 +128,7 @@ export default function StartCampaignPage() {
               Advertise on taxi tops across Nairobi
             </h2>
             <p className="text-muted-foreground text-base leading-relaxed">
-              Fill in the brief below and we&apos;ll come back with availability, pricing, and a flight plan within 48 hours. Campaigns start from one day — no long-term contracts, no minimum fleet commitment. Outdoor advertising in Nairobi doesn&apos;t have to mean locking into a 6-month billboard. Admobi taxi-top screens let you run bursts around events, launches, and promotions, then pause when you don&apos;t need the air.
+              Fill in the brief below and we&apos;ll come back with availability, pricing, and a flight plan within 48 hours. Campaigns start from one day, no long-term contracts, no minimum fleet commitment. Outdoor advertising in Nairobi doesn&apos;t have to mean locking into a 6-month billboard. Admobi taxi-top screens let you run bursts around events, launches, and promotions, then pause when you don&apos;t need the air.
             </p>
           </div>
         </div>
@@ -294,7 +294,7 @@ export default function StartCampaignPage() {
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-foreground">Campaigns start from one day</h3>
               <p className="text-muted-foreground text-base leading-relaxed">
-                Book a single day around a product launch, event, or promotion — then pause when the moment passes. No minimum fleet commitment or multi-month lock-in required to test taxi-top OOH in Nairobi.
+                Book a single day around a product launch, event, or promotion, then pause when the moment passes. No minimum fleet commitment or multi-month lock-in required to test taxi-top OOH in Nairobi.
               </p>
             </div>
             <div className="space-y-2">

@@ -8,11 +8,30 @@ const LEGAL_PATHS = new Set(["/privacy", "/terms"])
 
 const AI_SEO_STATIC_PATHS = ["/pricing", "/llms.txt", "/pricing.md"]
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SERVER_URL?.replace(/\/$/, "") || "https://admobihq.com"
+
+const allowIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING !== "false"
+
 /** @type {import('next-sitemap').IConfig} */
 export default {
-  siteUrl: "https://admobihq.com",
-  generateRobotsTxt: true,
-  exclude: ["/api/*", "/opengraph-image", "/admin", "/admin/*"],
+  siteUrl,
+  generateRobotsTxt: allowIndexing,
+  exclude: [
+    "/api/*",
+    "/opengraph-image",
+    "/opengraph-image.png",
+    "/logo",
+    "/logo.png",
+    "/icon",
+    "/icon.png",
+    "/apple-icon",
+    "/apple-icon.png",
+    "/twitter-image",
+    "/twitter-image.png",
+    "/admin",
+    "/admin/*",
+  ],
   additionalPaths: async () => {
     const now = new Date().toISOString()
     const aiSeoPaths = AI_SEO_STATIC_PATHS.map((path) => ({

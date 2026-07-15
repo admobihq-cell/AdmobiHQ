@@ -9,7 +9,7 @@
     "generate:ai-seo": "tsx scripts/generate-ai-seo-static.ts",
     "prebuild": "npm run generate:ai-seo && tsx scripts/fix-importmap.ts",
     "build": "prisma generate && next build --webpack",
-    "postbuild": "next-sitemap",
+    "postbuild": "node scripts/run-sitemap.mjs",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
@@ -17,6 +17,7 @@
     "verify:importmap": "tsx scripts/verify-importmap.ts",
     "prisma": "prisma",
     "db:push": "dotenv -e .env.local -- prisma db push",
+    "db:ops-schema": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/ops-schema-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "payload": "dotenv -e .env.local -- cross-env NODE_OPTIONS=--no-deprecation payload",
@@ -31,7 +32,8 @@
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
     "seed:help": "dotenv -e .env.local -- tsx scripts/seed-help.ts",
     "seed:blog": "dotenv -e .env.local -- tsx scripts/seed-blog.ts",
-    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local"
+    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
+    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -43,8 +45,11 @@
     "@payloadcms/ui": "^3.85.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@sentry/nextjs": "^10.64.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/functions": "^3.7.5",
     "@vercel/speed-insights": "^2.0.0",
+    "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "bull": "^4.16.5",
     "dotenv": "^16.6.1",
@@ -58,7 +63,7 @@
     "react-dom": "^19.2.4",
     "react-email": "^6.3.0",
     "react-hook-form": "^7.71.1",
-    "redis": "^5.12.1",
+    "redis": "^6.0.0",
     "resend": "^6.12.3",
     "sharp": "^0.34.5",
     "zod": "3.25.76"

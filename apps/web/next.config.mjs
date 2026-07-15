@@ -2,6 +2,9 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { withPayload } from "@payloadcms/next/withPayload"
+import { withSentryConfig } from "@sentry/nextjs"
+
+import { getSentryBuildPluginOptions } from "@workspace/sentry-config/build-options"
 
 import { CONTENT_SIGNAL_HEADER } from "./lib/seo/robots-content-signals.js"
 
@@ -19,12 +22,25 @@ const cloudStorageClientUtilities = webpackPath(
   "lib/payload/cloud-storage-client-utilities.js",
 )
 
+function mediaHostnamesFromEnv() {
+  const hosts = new Set(["admobihq.com", "staging.admobihq.com"])
+  const fromEnv = process.env.NEXT_PUBLIC_SERVER_URL?.trim()
+  if (fromEnv) {
+    try {
+      hosts.add(new URL(fromEnv.replace(/\/$/, "")).hostname)
+    } catch {
+      // ignore invalid URL
+    }
+  }
+  return [...hosts]
+}
+
 const mediaImagePatterns = [
-  {
+  ...mediaHostnamesFromEnv().map((hostname) => ({
     protocol: "https",
-    hostname: "admobihq.com",
+    hostname,
     pathname: "/api/media/**",
-  },
+  })),
   {
     protocol: "http",
     hostname: "localhost",
@@ -38,6 +54,8 @@ const mediaImagePatterns = [
   },
 ]
 
+const allowSiteIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING !== "false"
+
 /** Node built-ins that must never ship in the Payload admin client bundle. */
 const CLIENT_NODE_FALLBACKS = {
   worker_threads: false,
@@ -50,9 +68,9 @@ const CLIENT_NODE_FALLBACKS = {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Monorepo root — avoids Next picking C:\Users\victo\package-lock.json and breaking CSS traces.
+  // Monorepo root: avoids Next picking C:\Users\victo\package-lock.json and breaking CSS traces.
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ["@workspace/ui", "@payload-bites/image-search"],
+  transpilePackages: ["@workspace/ui", "@workspace/sentry-config", "@payload-bites/image-search"],
   images: {
     remotePatterns: mediaImagePatterns,
   },
@@ -76,10 +94,22 @@ const nextConfig = {
     },
   },
   async headers() {
+    const stagingNoIndex = allowSiteIndexing
+      ? []
+      : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
+
     return [
       {
+        source: "/opengraph-image",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
+      {
+        source: "/logo",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+      },
+      {
         source: "/:path*",
-        headers: [CONTENT_SIGNAL_HEADER],
+        headers: [CONTENT_SIGNAL_HEADER, ...stagingNoIndex],
       },
     ]
   },
@@ -120,4 +150,4 @@ const nextConfig = {
   },
 }
 
-export default withPayload(nextConfig)
+export default withSentryConfig(withPayload(nextConfig), getSentryBuildPluginOptions())
