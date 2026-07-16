@@ -16,9 +16,20 @@ export default function MediaKitDetailScreen() {
       load={load}
       remove={remove}
       title={(item) => item.name}
-      fields={(item) => [
-        { label: "Email", value: item.email },
-        { label: "Created", value: detailValue(item.created_at) },
+      sections={(item) => [
+        {
+          title: "Contact",
+          fields: [
+            { label: "Email", value: item.email, copyable: true },
+          ],
+        },
+        {
+          title: "Metadata",
+          fields: [
+            { label: "Created", value: detailValue(item.created_at) },
+            { label: "Updated", value: detailValue(item.updated_at) },
+          ],
+        },
       ]}
     />
   )

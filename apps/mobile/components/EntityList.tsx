@@ -1,18 +1,20 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
-  ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
-import { ChevronRight, Inbox } from "@/components/icons"
+import { Inbox, Search } from "@/components/icons"
 import type { PaginatedResponse } from "@workspace/ops-contracts"
 import { formatDateTime } from "@workspace/ops-contracts"
 
+import { FilterChips, type FilterChipOption } from "@/components/app/filter-chips"
+import { ListRow } from "@/components/app/list-row"
+import { SkeletonListRows } from "@/components/app/skeleton"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { OPS_URL } from "@/lib/ops-client"
@@ -23,7 +25,11 @@ type EntityListProps<T extends { id: number }> = {
   loadPage: (page: number) => Promise<PaginatedResponse<T>>
   getTitle: (item: T) => string
   getSubtitle?: (item: T) => string
+  getInitials?: (item: T) => string
+  getFilterValue?: (item: T) => string | null | undefined
+  filterOptions?: FilterChipOption[]
   detailHref: (id: number) => string
+  searchKeys?: Array<(item: T) => string | null | undefined>
 }
 
 export function EntityList<T extends { id: number; created_at?: string }>({
@@ -31,7 +37,11 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   loadPage,
   getTitle,
   getSubtitle,
+  getInitials,
+  getFilterValue,
+  filterOptions,
   detailHref,
+  searchKeys,
 }: EntityListProps<T>) {
   const router = useRouter()
   const [items, setItems] = useState<T[]>([])
@@ -40,6 +50,8 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState<string | null>(null)
 
   const fetchPage = useCallback(
     async (nextPage: number, replace = false) => {
@@ -76,26 +88,69 @@ export function EntityList<T extends { id: number; created_at?: string }>({
     void fetchPage(page + 1)
   }
 
+  const filteredItems = useMemo(() => {
+    let result = items
+
+    if (filter && getFilterValue) {
+      result = result.filter((item) => getFilterValue(item) === filter)
+    }
+
+    if (search.trim() && searchKeys?.length) {
+      const query = search.trim().toLowerCase()
+      result = result.filter((item) =>
+        searchKeys.some((keyFn) =>
+          (keyFn(item) ?? "").toLowerCase().includes(query),
+        ),
+      )
+    }
+
+    return result
+  }, [items, filter, search, getFilterValue, searchKeys])
+
+  const listHeader = (
+    <View style={styles.header}>
+      <Text style={styles.heading}>{title}</Text>
+      <View style={styles.searchBox}>
+        <Search color={colors.mutedForeground} size={18} strokeWidth={2} />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search"
+          placeholderTextColor={colors.mutedForeground}
+          style={styles.searchInput}
+          autoCapitalize="none"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
+      </View>
+      {filterOptions?.length ? (
+        <FilterChips
+          options={filterOptions}
+          selected={filter}
+          onSelect={setFilter}
+        />
+      ) : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+    </View>
+  )
+
   if (loading && items.length === 0) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={styles.container}>
+        {listHeader}
+        <View style={styles.grouped}>
+          <SkeletonListRows count={6} />
+        </View>
       </View>
     )
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.heading}>{title}</Text>
-        <Text style={styles.headerDescription}>
-          Pull down to refresh. Tap a row for details.
-        </Text>
-      </View>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
-        data={items}
+        data={filteredItems}
         keyExtractor={(item) => String(item.id)}
+        ListHeaderComponent={listHeader}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -114,28 +169,27 @@ export function EntityList<T extends { id: number; created_at?: string }>({
             description="New submissions will appear here."
           />
         }
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            onPress={() => router.push(detailHref(item.id) as never)}
+        renderItem={({ item, index }) => (
+          <View
+            style={[
+              styles.rowWrapper,
+              index === 0 && styles.rowFirst,
+              index === filteredItems.length - 1 && styles.rowLast,
+            ]}
           >
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{getTitle(item)}</Text>
-              {getSubtitle ? (
-                <Text style={styles.cardSubtitle}>{getSubtitle(item)}</Text>
-              ) : null}
-              {item.created_at ? (
-                <Text style={styles.cardMeta}>
-                  {formatDateTime(item.created_at)}
-                </Text>
-              ) : null}
-            </View>
-            <ChevronRight
-              color={colors.mutedForeground}
-              size={18}
-              strokeWidth={2}
+            <ListRow
+              title={getTitle(item)}
+              subtitle={getSubtitle?.(item)}
+              meta={
+                item.created_at ? formatDateTime(item.created_at) : undefined
+              }
+              initials={getInitials?.(item) ?? getTitle(item)}
+              onPress={() => router.push(detailHref(item.id) as never)}
             />
-          </Pressable>
+            {index < filteredItems.length - 1 ? (
+              <View style={styles.separator} />
+            ) : null}
+          </View>
         )}
       />
     </View>
@@ -147,67 +201,62 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-  },
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   heading: {
-    ...typography.title,
+    ...typography.largeTitle,
     color: colors.text,
   },
-  headerDescription: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-  list: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
-    flexGrow: 1,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+  searchBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
-  cardPressed: {
-    backgroundColor: colors.accent,
-  },
-  cardContent: {
+  searchInput: {
     flex: 1,
-  },
-  cardTitle: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 16,
-    fontWeight: "600",
+    paddingVertical: 10,
   },
-  cardSubtitle: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-    marginTop: 4,
+  grouped: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: "hidden",
   },
-  cardMeta: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: spacing.sm,
+  list: {
+    paddingBottom: spacing.xl,
+    flexGrow: 1,
+  },
+  rowWrapper: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
+  },
+  rowFirst: {
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+  },
+  rowLast: {
+    borderBottomLeftRadius: radius.lg,
+    borderBottomRightRadius: radius.lg,
+    marginBottom: spacing.md,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: 68,
   },
   error: {
     color: colors.danger,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
     ...typography.bodySm,
   },
 })

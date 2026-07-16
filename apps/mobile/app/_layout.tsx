@@ -39,7 +39,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     if (isStaff) {
       if (inAuthGroup || inCustomerGroup || !inOpsGroup) {
-        router.replace("/(ops)/home")
+        router.replace("/(ops)/dashboard")
       }
       return
     }
