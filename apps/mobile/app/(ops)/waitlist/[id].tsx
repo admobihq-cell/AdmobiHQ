@@ -16,9 +16,26 @@ export default function WaitlistDetailScreen() {
       load={load}
       remove={remove}
       title={(item) => item.email}
-      fields={(item) => [
-        { label: "Source", value: item.source },
-        { label: "Created", value: detailValue(item.created_at) },
+      chips={(item) =>
+        item.source
+          ? [{ label: detailValue(item.source), variant: "muted" as const }]
+          : []
+      }
+      sections={(item) => [
+        {
+          title: "Details",
+          fields: [
+            { label: "Email", value: item.email, copyable: true },
+            { label: "Source", value: item.source },
+          ],
+        },
+        {
+          title: "Metadata",
+          fields: [
+            { label: "Created", value: detailValue(item.created_at) },
+            { label: "Updated", value: detailValue(item.updated_at) },
+          ],
+        },
       ]}
     />
   )

@@ -12,5 +12,21 @@ export const entityStackOptions = {
 }
 
 export function EntityStackLayout() {
-  return <Stack screenOptions={entityStackOptions} />
+  return (
+    <Stack screenOptions={entityStackOptions}>
+      <Stack.Screen
+        name="index"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="[id]"
+        options={{
+          title: "Details",
+          headerLargeTitle: false,
+        }}
+      />
+    </Stack>
+  )
 }

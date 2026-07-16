@@ -1,38 +1,56 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useState } from "react"
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native"
-import { useLocalSearchParams, useRouter } from "expo-router"
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router"
+import * as Clipboard from "expo-clipboard"
+import * as Haptics from "expo-haptics"
+import { Platform } from "react-native"
 import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
 
-import { DestructiveButton } from "@/components/ui"
+import { GroupedSection } from "@/components/app/grouped-list"
+import { StatusChip } from "@/components/app/status-chip"
+import { Trash } from "@/components/icons"
 import { formatOpsError } from "@/lib/format-error"
 import { OPS_URL } from "@/lib/ops-client"
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { colors, spacing, typography } from "@/lib/theme"
 
 type DetailField = {
   label: string
   value: string | null | undefined
+  copyable?: boolean
+  callable?: boolean
+}
+
+export type DetailSection = {
+  title: string
+  fields: DetailField[]
 }
 
 type EntityDetailProps<T> = {
   load: (id: number) => Promise<T>
   remove?: (id: number) => Promise<unknown>
   title: (item: T) => string
-  fields: (item: T) => DetailField[]
+  chips?: (item: T) => Array<{ label: string; variant?: "default" | "primary" | "muted" }>
+  sections: (item: T) => DetailSection[]
 }
 
 export function EntityDetail<T>({
   load,
   remove,
   title,
-  fields,
+  chips,
+  sections,
 }: EntityDetailProps<T>) {
   const router = useRouter()
+  const navigation = useNavigation()
   const { id: rawId } = useLocalSearchParams<{ id: string }>()
   const id = Number.parseInt(rawId ?? "", 10)
   const [item, setItem] = useState<T | null>(null)
@@ -59,17 +77,69 @@ export function EntityDetail<T>({
     void fetchItem()
   }, [fetchItem])
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(() => {
     if (!remove || !item) return
-    setDeleting(true)
-    try {
-      await remove(id)
-      router.back()
-    } catch (err) {
-      setError(formatOpsError(err, OPS_URL))
-    } finally {
-      setDeleting(false)
+
+    Alert.alert(
+      "Delete record",
+      "This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setDeleting(true)
+            void (async () => {
+              try {
+                await remove(id)
+                if (Platform.OS !== "web") {
+                  void Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success,
+                  )
+                }
+                router.back()
+              } catch (err) {
+                setError(formatOpsError(err, OPS_URL))
+              } finally {
+                setDeleting(false)
+              }
+            })()
+          },
+        },
+      ],
+    )
+  }, [remove, item, id, router])
+
+  useLayoutEffect(() => {
+    if (!item) return
+
+    navigation.setOptions({
+      title: title(item),
+      headerRight: remove
+        ? () => (
+            <Pressable
+              onPress={handleDelete}
+              disabled={deleting}
+              hitSlop={12}
+              style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+            >
+              <Trash color={colors.destructive} size={22} strokeWidth={2} />
+            </Pressable>
+          )
+        : undefined,
+    })
+  }, [navigation, remove, item, deleting, handleDelete, title])
+
+  const handleCopy = async (value: string) => {
+    await Clipboard.setStringAsync(value)
+    if (Platform.OS !== "web") {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     }
+  }
+
+  const handleCall = (value: string) => {
+    void Linking.openURL(`tel:${value}`)
   }
 
   if (loading) {
@@ -88,38 +158,77 @@ export function EntityDetail<T>({
     )
   }
 
+  const chipItems = chips?.(item) ?? []
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{title(item)}</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <View style={styles.fieldList}>
-        {fields(item).map((field, index, allFields) => (
-          <View
-            key={field.label}
-            style={[
-              styles.row,
-              index < allFields.length - 1 && styles.rowBorder,
-            ]}
-          >
-            <Text style={styles.label}>{field.label}</Text>
-            <Text style={styles.value}>{field.value || "—"}</Text>
+      <View style={styles.hero}>
+        <Text style={styles.title}>{title(item)}</Text>
+        {chipItems.length > 0 ? (
+          <View style={styles.chips}>
+            {chipItems.map((chip) => (
+              <StatusChip
+                key={chip.label}
+                label={chip.label}
+                variant={chip.variant}
+              />
+            ))}
           </View>
-        ))}
+        ) : null}
       </View>
-      {remove ? (
-        <DestructiveButton
-          label={deleting ? "Deleting…" : "Delete record"}
-          onPress={() => void handleDelete()}
-          disabled={deleting}
-        />
-      ) : null}
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {sections(item).map((section) => (
+        <GroupedSection key={section.title} title={section.title}>
+          <View style={styles.fieldList}>
+            {section.fields.map((field, index) => {
+              const value = field.value || "—"
+              const hasCopy = field.copyable && field.value
+              const hasCall = field.callable && field.value
+
+              return (
+                <View key={field.label}>
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>{field.label}</Text>
+                    <Text style={styles.fieldValue}>{value}</Text>
+                    {hasCopy || hasCall ? (
+                      <View style={styles.fieldActions}>
+                        {hasCopy ? (
+                          <Pressable
+                            onPress={() => void handleCopy(field.value!)}
+                            style={styles.actionButton}
+                          >
+                            <Text style={styles.actionText}>Copy</Text>
+                          </Pressable>
+                        ) : null}
+                        {hasCall ? (
+                          <Pressable
+                            onPress={() => handleCall(field.value!)}
+                            style={styles.actionButton}
+                          >
+                            <Text style={styles.actionText}>Call</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+                  {index < section.fields.length - 1 ? (
+                    <View style={styles.fieldSeparator} />
+                  ) : null}
+                </View>
+              )
+            })}
+          </View>
+        </GroupedSection>
+      ))}
     </ScrollView>
   )
 }
 
 export function detailValue(value: unknown): string {
   if (value == null) return "—"
-  if (Array.isArray(value)) return value.join(", ") || "—"
+  if (Array.isArray(value)) return value.map(formatLabel).join(", ") || "—"
   if (typeof value === "string") {
     if (/^\d{4}-\d{2}-\d{2}/.test(value)) return formatDateTime(value)
     return formatLabel(value)
@@ -135,6 +244,7 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
   centered: {
     flex: 1,
@@ -143,36 +253,53 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     padding: spacing.lg,
   },
+  hero: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   title: {
     ...typography.title,
     color: colors.text,
-    marginBottom: spacing.lg,
   },
-  fieldList: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    overflow: "hidden",
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
-  row: {
+  fieldRow: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  fieldList: {
+    overflow: "hidden",
   },
-  label: {
+  fieldSeparator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.md,
+  },
+  fieldLabel: {
     ...typography.label,
     color: colors.mutedForeground,
     marginBottom: spacing.xs,
   },
-  value: {
+  fieldValue: {
+    ...typography.body,
     color: colors.text,
-    fontSize: 16,
     fontWeight: "500",
-    lineHeight: 22,
+  },
+  fieldActions: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  actionButton: {
+    paddingVertical: 4,
+  },
+  actionText: {
+    ...typography.caption,
+    fontWeight: "600",
+    color: colors.primary,
   },
   error: {
     color: colors.danger,

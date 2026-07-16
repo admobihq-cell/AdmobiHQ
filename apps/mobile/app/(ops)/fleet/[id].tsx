@@ -13,17 +13,37 @@ export default function FleetDetailScreen() {
       load={load}
       remove={remove}
       title={(item) => item.company_name}
-      fields={(item) => [
-        { label: "Contact", value: item.primary_contact_name },
-        { label: "Email", value: item.email },
-        { label: "Phone", value: item.phone },
-        { label: "City", value: item.city },
-        { label: "Status", value: detailValue(item.status) },
-        { label: "Fleet types", value: detailValue(item.fleet_types) },
-        { label: "Fleet size", value: item.fleet_size },
-        { label: "Vehicles active", value: detailValue(item.vehicles_active) },
-        { label: "Notes", value: item.notes },
-        { label: "Created", value: detailValue(item.created_at) },
+      chips={(item) =>
+        item.status
+          ? [{ label: detailValue(item.status), variant: "primary" as const }]
+          : []
+      }
+      sections={(item) => [
+        {
+          title: "Contact",
+          fields: [
+            { label: "Primary contact", value: item.primary_contact_name },
+            { label: "Email", value: item.email, copyable: true },
+            { label: "Phone", value: item.phone, copyable: true, callable: true },
+          ],
+        },
+        {
+          title: "Fleet details",
+          fields: [
+            { label: "City", value: item.city },
+            { label: "Fleet types", value: detailValue(item.fleet_types) },
+            { label: "Fleet size", value: item.fleet_size },
+            { label: "Vehicles active", value: detailValue(item.vehicles_active) },
+            { label: "Notes", value: item.notes },
+          ],
+        },
+        {
+          title: "Metadata",
+          fields: [
+            { label: "Created", value: detailValue(item.created_at) },
+            { label: "Updated", value: detailValue(item.updated_at) },
+          ],
+        },
       ]}
     />
   )
