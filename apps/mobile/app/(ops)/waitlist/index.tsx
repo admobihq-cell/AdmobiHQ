@@ -15,7 +15,9 @@ export default function WaitlistScreen() {
       title="Waitlist"
       loadPage={loadPage}
       getTitle={(item) => item.email}
-      getSubtitle={(item) => item.source ?? "unknown source"}
+      getSubtitle={(item) => item.source ?? "Unknown source"}
+      getInitials={(item) => item.email}
+      searchKeys={[(item) => item.email, (item) => item.source]}
       detailHref={(id) => `/(ops)/waitlist/${id}`}
     />
   )

@@ -1,9 +1,9 @@
 import { Tabs } from "expo-router"
 import {
-  BarChart3,
   Car,
-  Home,
+  LayoutDashboard,
   Megaphone,
+  MoreHorizontal,
   Truck,
 } from "@/components/icons"
 
@@ -15,8 +15,7 @@ export default function OpsLayout() {
       screenOptions={{
         headerStyle: {
           backgroundColor: colors.bg,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          borderBottomWidth: 0,
         },
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: "600" },
@@ -34,24 +33,16 @@ export default function OpsLayout() {
           fontSize: 11,
           fontWeight: "600",
         },
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="dashboard"
         options={{
-          title: "Home",
+          title: "Dashboard",
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Home color={color} size={size - 2} strokeWidth={2.25} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="overview"
-        options={{
-          title: "Overview",
-          tabBarIcon: ({ color, size }) => (
-            <BarChart3 color={color} size={size - 2} strokeWidth={2.25} />
+            <LayoutDashboard color={color} size={size - 2} strokeWidth={2.25} />
           ),
         }}
       />
@@ -82,6 +73,16 @@ export default function OpsLayout() {
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Car color={color} size={size - 2} strokeWidth={2.25} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "More",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <MoreHorizontal color={color} size={size - 2} strokeWidth={2.25} />
           ),
         }}
       />

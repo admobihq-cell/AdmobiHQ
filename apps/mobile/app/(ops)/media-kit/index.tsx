@@ -12,10 +12,12 @@ export default function MediaKitScreen() {
 
   return (
     <EntityList
-      title="Media kit requests"
+      title="Media kit"
       loadPage={loadPage}
       getTitle={(item) => item.name}
       getSubtitle={(item) => item.email}
+      getInitials={(item) => item.name}
+      searchKeys={[(item) => item.name, (item) => item.email]}
       detailHref={(id) => `/(ops)/media-kit/${id}`}
     />
   )
