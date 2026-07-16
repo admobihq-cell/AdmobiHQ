@@ -1,6 +1,7 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo"
 import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import { Stack, useRouter, useSegments } from "expo-router"
+import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import { useEffect } from "react"
 import { SafeAreaProvider } from "react-native-safe-area-context"
@@ -11,14 +12,25 @@ import { colors } from "@/lib/theme"
 
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Splash may already be hidden on fast refresh
+})
+
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
   const segments = useSegments()
   const router = useRouter()
+  const authReady = isLoaded && userLoaded
 
   useEffect(() => {
-    if (!isLoaded || !userLoaded) return
+    if (!authReady) return
+
+    void SplashScreen.hideAsync()
+  }, [authReady])
+
+  useEffect(() => {
+    if (!authReady) return
 
     const inAuthGroup = segments[0] === "sign-in"
     const inCustomerGroup = segments[0] === "(customer)"
@@ -47,10 +59,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (inAuthGroup || inOpsGroup || !inCustomerGroup) {
       router.replace("/(customer)")
     }
-  }, [isLoaded, isSignedIn, userLoaded, user, segments, router])
+  }, [authReady, isSignedIn, user, segments, router])
 
-  if (!isLoaded || !userLoaded) {
-    return <LoadingScreen />
+  if (!authReady) {
+    return <LoadingScreen message="Checking your session" />
   }
 
   return <>{children}</>

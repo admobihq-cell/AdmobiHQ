@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react"
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Pressable,
@@ -15,6 +14,7 @@ import * as Haptics from "expo-haptics"
 import { Platform } from "react-native"
 import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
 
+import { AppLoader } from "@/components/app/app-loader"
 import { GroupedSection } from "@/components/app/grouped-list"
 import { StatusChip } from "@/components/app/status-chip"
 import { Trash } from "@/components/icons"
@@ -145,7 +145,7 @@ export function EntityDetail<T>({
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
+        <AppLoader message="Loading record" compact />
       </View>
     )
   }
