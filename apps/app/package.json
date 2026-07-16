@@ -13,26 +13,26 @@
     "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
   "dependencies": {
-    "@sentry/nextjs": "^10.64.0",
+    "@sentry/nextjs": "^10.65.0",
     "@vercel/analytics": "^2.0.1",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "dotenv": "^16.6.1",
-    "lucide-react": "^1.12.0",
-    "next": "^16.2.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "lucide-react": "^1.24.0",
+    "next": "^16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^25.1.0",
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.39.2",
-    "tsx": "^4.21.0",
+    "eslint": "^9.39.5",
+    "tsx": "^4.23.1",
     "typescript": "^5.9.3"
   }
 }
