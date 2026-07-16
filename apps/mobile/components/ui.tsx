@@ -1,5 +1,4 @@
 import type { AppIcon } from "@/components/icons"
-import { ArrowRight } from "@/components/icons"
 import {
   Pressable,
   StyleSheet,
@@ -90,47 +89,6 @@ export function IconBox({
   return (
     <View style={styles.iconBox}>
       <Icon color={colors.primary} size={size} strokeWidth={2} />
-    </View>
-  )
-}
-
-export function ModuleCard({
-  icon: Icon,
-  title,
-  description,
-  onPress,
-}: {
-  icon: AppIcon
-  title: string
-  description: string
-  onPress?: () => void
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.moduleCard, pressed && styles.pressed]}
-    >
-      <View style={styles.moduleCardTop}>
-        <IconBox icon={Icon} />
-        <ArrowRight color={colors.mutedForeground} size={16} strokeWidth={2} />
-      </View>
-      <Text style={styles.moduleTitle}>{title}</Text>
-      <Text style={styles.moduleDescription}>{description}</Text>
-    </Pressable>
-  )
-}
-
-export function StatCard({
-  value,
-  label,
-}: {
-  value: string | number
-  label: string
-}) {
-  return (
-    <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   )
 }
@@ -310,50 +268,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
-  },
-  moduleCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.md + 4,
-  },
-  moduleCardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  moduleTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: spacing.md,
-  },
-  moduleDescription: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: "46%",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-  },
-  statValue: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "700",
-    fontVariant: ["tabular-nums"],
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-    textTransform: "capitalize",
   },
   emptyState: {
     alignItems: "center",

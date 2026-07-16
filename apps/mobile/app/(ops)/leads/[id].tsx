@@ -13,17 +13,41 @@ export default function LeadDetailScreen() {
       load={load}
       remove={remove}
       title={(item) => item.company_name}
-      fields={(item) => [
-        { label: "Contact", value: item.contact_name },
-        { label: "Email", value: item.email },
-        { label: "Phone", value: item.phone },
-        { label: "Status", value: detailValue(item.status) },
-        { label: "Budget", value: detailValue(item.budget_range) },
-        { label: "Cities", value: detailValue(item.cities) },
-        { label: "Formats", value: detailValue(item.ad_formats) },
-        { label: "Duration", value: detailValue(item.duration) },
-        { label: "Notes", value: item.additional_info },
-        { label: "Created", value: detailValue(item.created_at) },
+      chips={(item) => [
+        ...(item.status
+          ? [{ label: detailValue(item.status), variant: "primary" as const }]
+          : []),
+        ...(item.budget_range
+          ? [{ label: detailValue(item.budget_range), variant: "muted" as const }]
+          : []),
+      ]}
+      sections={(item) => [
+        {
+          title: "Contact",
+          fields: [
+            { label: "Contact name", value: item.contact_name },
+            { label: "Email", value: item.email, copyable: true },
+            { label: "Phone", value: item.phone, copyable: true, callable: true },
+          ],
+        },
+        {
+          title: "Campaign",
+          fields: [
+            { label: "Audience", value: item.audience },
+            { label: "Cities", value: detailValue(item.cities) },
+            { label: "Formats", value: detailValue(item.ad_formats) },
+            { label: "Duration", value: detailValue(item.duration) },
+            { label: "Start date", value: detailValue(item.campaign_start_date) },
+            { label: "Notes", value: item.additional_info },
+          ],
+        },
+        {
+          title: "Metadata",
+          fields: [
+            { label: "Created", value: detailValue(item.created_at) },
+            { label: "Updated", value: detailValue(item.updated_at) },
+          ],
+        },
       ]}
     />
   )
