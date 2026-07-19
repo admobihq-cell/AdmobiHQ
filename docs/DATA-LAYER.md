@@ -9,9 +9,10 @@
 | **Role** | Main backend stack — forms, leads, operational data | CMS — help articles, blog posts, media, admin users |
 | **ORM** | Prisma Client 7 (`@prisma/adapter-pg`) | Drizzle (via `@payloadcms/db-postgres`) |
 | **Schema** | [`apps/web/prisma/schema.prisma`](../apps/web/prisma/schema.prisma) | [`apps/web/collections/`](../apps/web/collections/) + [`apps/web/migrations/`](../apps/web/migrations/) |
-| **Client** | [`apps/web/lib/prisma.ts`](../apps/web/lib/prisma.ts) | [`apps/web/lib/payload/get-payload.ts`](../apps/web/lib/payload/get-payload.ts) |
-| **HTTP APIs** | [`apps/web/app/api/`](../apps/web/app/api/) | [`apps/web/app/(payload)/api/`](../apps/web/app/(payload)/api/) |
-| **Admin UI** | None (use SQL/Prisma Studio if needed) | [`/admin`](../apps/web/app/(payload)/admin/) |
+| **Prisma client** | [`apps/web/lib/prisma.ts`](../apps/web/lib/prisma.ts), [`apps/api/lib/prisma.ts`](../apps/api/lib/prisma.ts), [`apps/ops/lib/prisma.ts`](../apps/ops/lib/prisma.ts) | — |
+| **Payload client** | — | [`apps/web/lib/payload/get-payload.ts`](../apps/web/lib/payload/get-payload.ts) |
+| **HTTP APIs** | [`apps/api/app/v1/`](../apps/api/app/v1/) (public + admin) | [`apps/web/app/(payload)/api/`](../apps/web/app/(payload)/api/) |
+| **Admin UI** | Ops console at `ops.admobihq.com` (via API) | [`/admin`](../apps/web/app/(payload)/admin/) |
 
 New **business logic**, **integrations**, and **persistent app data** should go through **Prisma** unless the work is explicitly editorial content managed by marketers in Payload.
 
@@ -21,17 +22,16 @@ Tables (see Prisma schema):
 
 | Table | Model | Used by |
 |-------|--------|---------|
-| `leads` | `Lead` | Campaign briefs (`POST /api/leads`, audience `campaign`) |
-| `fleet_partners` | `FleetPartner` | Fleet partner inquiries (`POST /api/leads`, audience `fleet`) |
-| `drivers` | `Driver` | Driver onboarding (`POST /api/drivers`) |
+| `leads` | `Lead` | Campaign briefs (`POST /v1/public/leads`, audience `campaign`) |
+| `fleet_partners` | `FleetPartner` | Fleet inquiries (`POST /v1/public/leads`, audience `fleet`) |
+| `drivers` | `Driver` | Driver onboarding (`POST /v1/public/drivers`) |
+| `waitlist`, `media_kit_requests`, etc. | — | Public + ops admin routes under `/v1/*` |
 
-Implementation pattern:
+Implementation pattern (in `apps/api`):
 
-1. Zod validation in [`apps/web/lib/validation/`](../apps/web/lib/validation/).
-2. `prisma.*.create()` in the route handler.
-3. Optional side effects (e.g. Resend via [`apps/web/lib/email/`](../apps/web/lib/email/)).
-
-**Not yet on Prisma:** media-kit and waitlist routes still validate and log only. When those are persisted, use Prisma (new models + migration or `db push` per team process), not Payload collections.
+1. Zod validation in [`apps/api/lib/validation/`](../apps/api/lib/validation/) or [`@workspace/ops-contracts`](../packages/ops-contracts/).
+2. `prisma.*.create()` / CRUD in route handlers.
+3. Optional side effects (Resend via [`apps/api/lib/email/`](../apps/api/lib/email/)).
 
 ## What Payload owns
 
@@ -53,12 +53,12 @@ Both stacks usually share the same Postgres URL (`DATABASE_URL`). Table names ar
 
 | Environment variable | Used by |
 |---------------------|---------|
-| `DATABASE_URL` | Prisma (required for form APIs) |
+| `DATABASE_URL` | Prisma in web, api, ops (required for form APIs and ops server stats) |
 | `PAYLOAD_DATABASE_URL` | Optional; Payload only. If unset, Payload falls back to `DATABASE_URL`. |
-| `PAYLOAD_SECRET` | Payload admin and API |
+| `PAYLOAD_SECRET` | Payload admin and API (web only) |
 | `BLOB_READ_WRITE_TOKEN` | Payload media (Vercel Blob), optional locally |
 
-[`apps/web/lib/load-env.ts`](../apps/web/lib/load-env.ts) normalizes common Infisical key names into `DATABASE_URL` for local scripts.
+[`apps/web/lib/load-env.ts`](../apps/web/lib/load-env.ts) and [`apps/api/lib/load-env.ts`](../apps/api/lib/load-env.ts) normalize common Infisical key names into `DATABASE_URL` for local scripts.
 
 ### Migration rules (read before touching the DB)
 
@@ -77,23 +77,26 @@ For maximum isolation in production, point `PAYLOAD_DATABASE_URL` at a separate 
 ## Request routing (do not mix these)
 
 ```
-Marketing forms     →  POST /api/drivers | /api/leads | …     →  Prisma
-Help / blog pages   →  Server components                    →  getPayloadClient()
-Content editors     →  /admin                               →  Payload UI
-Headless CMS API    →  /api/... (under app/(payload)/api)   →  Payload REST
+Marketing forms     →  POST api…/v1/public/leads | /drivers | …  →  Prisma (apps/api)
+Ops admin CRUD      →  api…/v1/leads | /fleet | … + Clerk JWT    →  Prisma (apps/api)
+Help / blog pages   →  Server components (apps/web)              →  getPayloadClient()
+Content editors     →  /admin (apps/web)                         →  Payload UI
+Headless CMS API    →  admobihq.com/api/… (payload route group)  →  Payload REST
 ```
 
-Do not call `getPayloadClient()` from form API routes for lead capture. Do not add Prisma models for help/blog articles unless we deliberately migrate off Payload for that content.
+Do not call `getPayloadClient()` from business API routes for lead capture. Do not add Prisma models for help/blog articles unless we deliberately migrate off Payload for that content.
 
 ## Code conventions
 
-- **Imports:** `@/lib/prisma` for app data; `@/lib/payload/get-payload` or `*-queries.ts` for CMS reads; `@/payload-types` for Payload document types only.
+- **Imports:** `@/lib/prisma` in api/ops/web; `@/lib/payload/get-payload` or `*-queries.ts` for CMS reads in web only.
 - **Types:** Prisma types from `@prisma/client`; Payload types from `payload-types.ts` (regenerate with `npm run generate:types -w web`).
-- **New features:** Ask “Is this marketer-edited content?” → Payload. “Is this product/ops data?” → Prisma.
+- **HTTP client:** `@workspace/ops-api-client` for ops/mobile; `publicApiUrl()` for web forms.
+- **New features:** Ask “Is this marketer-edited content?” → Payload. “Is this product/ops data?” → Prisma in `apps/api`.
 
 ## Related docs
 
+- [API.md](./API.md) — business API routes and deployment
 - [DEV-SETUP.md](./DEV-SETUP.md) — **local dev commands**, Infisical, when to run migrations/seeds
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — repo layout and routing
-- [HELP-CMS.md](./HELP-CMS.md) — help center setup, env, Payload migrations, admin webpack notes
+- [HELP-CMS.md](./HELP-CMS.md) — help center setup, env, Payload migrations
 - [BLOG-CMS.md](./BLOG-CMS.md) — blog and media

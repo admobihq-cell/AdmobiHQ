@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+const apiEnvPath = resolve(mobileRoot, "../api/.env.local")
 const opsEnvPath = resolve(mobileRoot, "../ops/.env.local")
 const envPath = resolve(mobileRoot, ".env.local")
 const infisicalEnv = process.argv[2] ?? "dev"
@@ -59,7 +60,7 @@ function detectLanIp() {
   return fallback ?? candidates[0] ?? null
 }
 
-function rewriteLocalOpsUrl(value) {
+function rewriteLocalApiUrl(value) {
   if (!value) return value
   const lanIp = detectLanIp()
   if (!lanIp) return value
@@ -84,14 +85,15 @@ function rewriteLocalOpsUrl(value) {
 function writeMappedEnv(sourceVars, header) {
   const mappings = [
     ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
+    ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
     ["EXPO_PUBLIC_OPS_URL", "NEXT_PUBLIC_OPS_URL"],
   ]
 
   const lines = [header]
   for (const [expoKey, sourceKey] of mappings) {
     let value = sourceVars[expoKey] ?? sourceVars[sourceKey]
-    if (expoKey === "EXPO_PUBLIC_OPS_URL") {
-      value = rewriteLocalOpsUrl(value)
+    if (expoKey === "EXPO_PUBLIC_API_URL" || expoKey === "EXPO_PUBLIC_OPS_URL") {
+      value = rewriteLocalApiUrl(value)
     }
     if (value?.trim()) {
       lines.push(`${expoKey}=${value.trim()}`)
@@ -111,25 +113,27 @@ try {
   sourceVars = parseEnv(readFileSync(envPath, "utf8"))
   console.log("[mobile env:pull] Pulled from Infisical")
 } catch {
-  if (existsSync(opsEnvPath)) {
-    sourceVars = parseEnv(readFileSync(opsEnvPath, "utf8"))
+  const fallbackPath = existsSync(apiEnvPath) ? apiEnvPath : opsEnvPath
+  if (existsSync(fallbackPath)) {
+    sourceVars = parseEnv(readFileSync(fallbackPath, "utf8"))
     writeMappedEnv(
       sourceVars,
-      "# Generated from apps/ops/.env.local — run `npm run env:pull -w ops` to refresh ops first",
+      `# Generated from ${fallbackPath} — run npm run env:pull -w api to refresh first`,
     )
     console.log(
-      "[mobile env:pull] Infisical unavailable — mapped from apps/ops/.env.local",
+      `[mobile env:pull] Infisical unavailable — mapped from ${fallbackPath}`,
     )
   } else {
     console.error("[mobile env:pull] Failed to pull from Infisical.")
     console.error("  Run: infisical login && infisical init")
-    console.error("  Or pull ops first: npm run env:pull -w ops")
+    console.error("  Or pull api first: npm run env:pull -w api")
     process.exit(1)
   }
 }
 
 const mappings = [
   ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
+  ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
   ["EXPO_PUBLIC_OPS_URL", "NEXT_PUBLIC_OPS_URL"],
 ]
 
@@ -137,17 +141,17 @@ let additions = ""
 for (const [expoKey, sourceKey] of mappings) {
   if (!sourceVars[expoKey]?.trim() && sourceVars[sourceKey]?.trim()) {
     let value = sourceVars[sourceKey]
-    if (expoKey === "EXPO_PUBLIC_OPS_URL") {
-      value = rewriteLocalOpsUrl(value)
+    if (expoKey === "EXPO_PUBLIC_API_URL" || expoKey === "EXPO_PUBLIC_OPS_URL") {
+      value = rewriteLocalApiUrl(value)
     }
     additions += `${expoKey}=${value}\n`
   }
 }
 
-if (!sourceVars.EXPO_PUBLIC_OPS_URL?.trim() && !additions.includes("EXPO_PUBLIC_OPS_URL")) {
+if (!sourceVars.EXPO_PUBLIC_API_URL?.trim() && !additions.includes("EXPO_PUBLIC_API_URL")) {
   const lanIp = detectLanIp()
   if (lanIp) {
-    additions += `EXPO_PUBLIC_OPS_URL=http://${lanIp}:3001\n`
+    additions += `EXPO_PUBLIC_API_URL=http://${lanIp}:3003\n`
   }
 }
 

@@ -72,7 +72,7 @@ export function FleetView({ initialData }: FleetViewProps) {
     <EntityPage<FleetPartner>
       title="Fleet Partners"
       description="Fleet operators applying to join the Admobi network."
-      apiPath="/api/fleet"
+      apiPath="/v1/fleet"
       initialData={initialData}
       getRecordTitle={(row) => row.company_name}
       statusBulkOptions={[

@@ -90,7 +90,7 @@ export function DriversView({ initialData }: DriversViewProps) {
     <EntityPage<Driver>
       title="Drivers"
       description="Driver onboarding applications and walk-in registrations."
-      apiPath="/api/drivers"
+      apiPath="/v1/drivers"
       initialData={initialData}
       getRecordTitle={(row) => row.name}
       statusBulkOptions={[

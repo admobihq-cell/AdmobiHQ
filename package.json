@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
-    "dev": "turbo dev",
+    "dev": "node scripts/dev-with-env.mjs",
+    "dev:all": "node scripts/dev-with-env.mjs --mobile",
+    "dev:skip-pull": "node scripts/dev-with-env.mjs --skip-pull",
+    "dev:staging": "node scripts/dev-with-env.mjs --staging",
+    "dev:turbo": "turbo dev --filter=web --filter=api --filter=ops --filter=app",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w mobile",
-    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w mobile",
+    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w api && npm run env:pull -w mobile",
+    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w api && npm run env:pull:staging -w mobile",
     "postinstall": "patch-package"
   },
   "devDependencies": {
@@ -30,6 +34,10 @@
       "react-dom": "19.2.4"
     },
     "ops": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4"
+    },
+    "api": {
       "react": "19.2.4",
       "react-dom": "19.2.4"
     },

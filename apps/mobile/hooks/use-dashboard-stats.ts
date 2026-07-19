@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import type { DateRangeKey, StatsResponseDto } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
-import { OPS_URL, useOpsClient } from "@/lib/ops-client"
+import { API_URL, useOpsClient } from "@/lib/ops-client"
 
 export function useDashboardStats(initialRange: DateRangeKey = "30d") {
   const client = useOpsClient()
@@ -21,7 +21,7 @@ export function useDashboardStats(initialRange: DateRangeKey = "30d") {
         const data = await client.stats.get({ range })
         if (!cancelled) setStats(data)
       } catch (err) {
-        if (!cancelled) setError(formatOpsError(err, OPS_URL))
+        if (!cancelled) setError(formatOpsError(err, API_URL))
       } finally {
         if (!cancelled) setLoading(false)
       }
