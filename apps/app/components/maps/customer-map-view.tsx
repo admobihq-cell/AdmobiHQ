@@ -17,15 +17,22 @@ import {
   MapRoute,
 } from "@workspace/ui/components/map"
 import { Button } from "@workspace/ui/components/button"
+import { Card, CardContent } from "@workspace/ui/components/card"
 import { cn } from "@workspace/ui/lib/utils"
 
 type LayerKey = "corridors" | "coverage" | "plays"
 
 const LAYER_LABELS: Record<LayerKey, string> = {
-  corridors: "Booked corridors",
-  coverage: "Coverage zones",
-  plays: "Proof-of-play",
+  corridors: "Corridors",
+  coverage: "Coverage",
+  plays: "Plays",
 }
+
+const MAP_STATS = [
+  { value: "3", label: "Corridors" },
+  { value: "12.4k", label: "Plays today" },
+  { value: "84%", label: "Delivery" },
+] as const
 
 export function CustomerMapView() {
   const corridors = useMemo(() => getCustomerBookedCorridors(), [])
@@ -41,14 +48,34 @@ export function CustomerMapView() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight">Map</h1>
-        <p className="text-sm text-muted-foreground">
-          Campaign corridors, coverage, and GPS proof-of-play density across
-          Nairobi. Demo data — live inventory will connect later.
-        </p>
+    <div className="flex flex-1 flex-col gap-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            Live coverage
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">Campaign map</h1>
+          <p className="max-w-xl text-sm text-muted-foreground">
+            Booked corridors, coverage zones, and proof-of-play across Nairobi.
+            Demo data — live inventory will connect later.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 self-start rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold">
+          <span className="size-2 rounded-full bg-primary" aria-hidden />
+          Demo
+        </div>
       </div>
+
+      <Card className="shadow-none">
+        <CardContent className="grid grid-cols-3 divide-x p-0">
+          {MAP_STATS.map((stat) => (
+            <div key={stat.label} className="px-4 py-3 text-center">
+              <p className="text-base font-semibold">{stat.value}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(LAYER_LABELS) as LayerKey[]).map((key) => (
@@ -65,7 +92,7 @@ export function CustomerMapView() {
         ))}
       </div>
 
-      <div className="relative min-h-[480px] flex-1 overflow-hidden rounded-xl border bg-muted/30">
+      <div className="relative min-h-[520px] flex-1 overflow-hidden rounded-xl border bg-muted/30">
         <Map
           center={NAIROBI_CENTER}
           zoom={NAIROBI_DEFAULT_ZOOM}

@@ -19,10 +19,10 @@
     "env:check": "node ./scripts/check-env.mjs",
     "assets:sync": "node ../../scripts/sync-mobile-brand-assets.mjs",
     "prebuild:android": "expo prebuild --platform android --clean",
-    "build:android:preview": "eas build --platform android --profile preview --non-interactive",
-    "build:android:production": "eas build --platform android --profile production --non-interactive",
-    "update:preview": "eas update --channel preview --non-interactive",
-    "update:production": "eas update --channel production --non-interactive"
+    "build:android:preview": "npx eas-cli build --platform android --profile preview --non-interactive",
+    "build:android:production": "npx eas-cli build --platform android --profile production --non-interactive",
+    "update:preview": "npx eas-cli update --channel preview --non-interactive",
+    "update:production": "npx eas-cli update --channel production --non-interactive"
   },
   "dependencies": {
     "@maplibre/maplibre-react-native": "^10.4.2",
