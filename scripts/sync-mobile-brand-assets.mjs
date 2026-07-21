@@ -44,9 +44,49 @@ async function canvas(size, background) {
   })
 }
 
-async function compositeLogo(size, { background, logoScale, logoPath, tint }) {
+async function cropLogoToContent(logoPath) {
+  const { data, info } = await sharp(logoPath)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+
+  let minX = info.width
+  let minY = info.height
+  let maxX = 0
+  let maxY = 0
+
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const index = (y * info.width + x) * info.channels
+      const alpha = data[index + 3]
+      const red = data[index]
+      const green = data[index + 1]
+      const blue = data[index + 2]
+
+      if (alpha > 10 && (red > 30 || green > 30 || blue > 30)) {
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x)
+        maxY = Math.max(maxY, y)
+      }
+    }
+  }
+
+  if (maxX < minX) {
+    return sharp(logoPath).ensureAlpha()
+  }
+
+  return sharp(logoPath).extract({
+    left: minX,
+    top: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+  })
+}
+
+async function compositeLogo(size, { background, logoScale, croppedLogo, tint }) {
   const logoSize = Math.round(size * logoScale)
-  let logo = sharp(logoPath).resize(logoSize, logoSize, {
+  let logo = croppedLogo.clone().resize(logoSize, logoSize, {
     fit: "contain",
     background: { r: 0, g: 0, b: 0, alpha: 0 },
   })
@@ -67,27 +107,27 @@ async function writeAsset(dir, filename, pipeline) {
   console.log(`  wrote ${path.relative(ROOT, target)}`)
 }
 
-async function syncAppAssets(dir) {
+async function syncAppAssets(dir, croppedLogo) {
   console.log(`\n${path.relative(ROOT, dir)}`)
 
   await writeAsset(dir, "icon.png", await compositeLogo(1024, {
     background: BRAND_BG,
-    logoScale: 0.52,
-    logoPath: LOGO_MARK,
+    logoScale: 0.68,
+    croppedLogo,
   }))
 
   await writeAsset(dir, "android-icon-foreground.png", await compositeLogo(1024, {
     background: "transparent",
-    logoScale: 0.42,
-    logoPath: LOGO_MARK,
+    logoScale: 0.58,
+    croppedLogo,
   }))
 
   await writeAsset(dir, "android-icon-background.png", await canvas(1024, BRAND_BG))
 
   await writeAsset(dir, "android-icon-monochrome.png", await compositeLogo(1024, {
     background: "transparent",
-    logoScale: 0.42,
-    logoPath: LOGO_MARK,
+    logoScale: 0.58,
+    croppedLogo,
     tint: "#3A3834",
   }))
 
@@ -107,8 +147,8 @@ async function syncAppAssets(dir) {
 
   const favicon = await compositeLogo(48, {
     background: BRAND_BG,
-    logoScale: 0.62,
-    logoPath: LOGO_MARK,
+    logoScale: 0.78,
+    croppedLogo,
   })
   await writeAsset(dir, "favicon.png", favicon)
 }
@@ -118,9 +158,11 @@ async function main() {
     await fs.access(file)
   }
 
+  const croppedLogo = await cropLogoToContent(LOGO_MARK)
+
   for (const dir of APP_DIRS) {
     await fs.mkdir(dir, { recursive: true })
-    await syncAppAssets(dir)
+    await syncAppAssets(dir, croppedLogo)
   }
 
   console.log("\nDone. Rebuild native apps so Android mipmaps pick up the new icons:")
