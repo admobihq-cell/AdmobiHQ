@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 
+import { PageHero } from "@/components/ui/page-hero"
 import {
   ACTIVE_UNIT_POINTS,
   CITY_ANCHORS,
@@ -43,14 +44,12 @@ export function OpsMapView() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight">Network map</h1>
-        <p className="text-sm text-muted-foreground">
-          Operational view of corridors, equipped units, and market anchors.
-          Demo positions — live GPS will replace fixtures later.
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col gap-8">
+      <PageHero
+        eyebrow="Network"
+        title="Network map"
+        description="Operational view of corridors, equipped units, and market anchors. Demo positions — live GPS will replace fixtures later."
+      />
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(LAYER_LABELS) as LayerKey[]).map((key) => (
@@ -60,14 +59,17 @@ export function OpsMapView() {
             size="sm"
             variant={layers[key] ? "default" : "outline"}
             onClick={() => toggle(key)}
-            className={cn(!layers[key] && "text-muted-foreground")}
+            className={cn(
+              "rounded-full",
+              !layers[key] && "text-muted-foreground",
+            )}
           >
             {LAYER_LABELS[key]}
           </Button>
         ))}
       </div>
 
-      <div className="relative min-h-[520px] flex-1 overflow-hidden rounded-xl border bg-muted/30">
+      <div className="relative min-h-[520px] flex-1 overflow-hidden rounded-xl border bg-muted/20 shadow-none">
         <Map
           center={NAIROBI_CENTER}
           zoom={NAIROBI_DEFAULT_ZOOM}

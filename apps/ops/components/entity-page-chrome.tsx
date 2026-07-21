@@ -1,6 +1,7 @@
 import { Download, Plus, Search } from "lucide-react"
 
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
+import { PageHero } from "@/components/ui/page-hero"
 import type { EntityPageMeta } from "@/lib/entity-pages"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -26,11 +27,8 @@ export function EntityPageChrome({
   loading = false,
 }: EntityPageChromeProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+    <div className="flex flex-1 flex-col gap-8">
+      <PageHero eyebrow="Operations" title={title} description={description} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
@@ -47,7 +45,7 @@ export function EntityPageChrome({
         </Button>
       </div>
 
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-none">
         <Table>
           <TableHeader>
             <TableRow>

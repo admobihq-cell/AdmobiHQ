@@ -124,10 +124,10 @@ export function SignInForm() {
       <View style={styles.iconWrap}>
         <IconBox icon={ShieldCheck} size={22} />
       </View>
-      <Eyebrow>Admobi</Eyebrow>
-      <Title>Ops Console</Title>
+      <Eyebrow>Admobi Ops</Eyebrow>
+      <Title>Sign in to Ops Console</Title>
       <Subtitle>
-        Sign in with your @admobihq.com email. We will send a one-time code.
+        Use your @admobihq.com email. We will send a one-time verification code.
       </Subtitle>
       <Card style={styles.formCard}>
         <Label>Work email</Label>
