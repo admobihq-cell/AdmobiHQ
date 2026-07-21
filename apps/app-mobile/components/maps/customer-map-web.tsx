@@ -7,25 +7,15 @@ import {
   type Corridor,
 } from "@workspace/geo"
 import { useMemo, useState } from "react"
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from "react-native"
+import { StyleSheet, View, useColorScheme } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { WebView } from "react-native-webview"
 
-import { colors, spacing, typography } from "@/lib/theme"
-
-type LayerKey = "corridors" | "coverage" | "plays"
-
-const LAYER_LABELS: Record<LayerKey, string> = {
-  corridors: "Corridors",
-  coverage: "Coverage",
-  plays: "Plays",
-}
+import {
+  CustomerMapHeader,
+  type MapLayerKey,
+} from "@/components/maps/customer-map-header"
+import { colors, spacing } from "@/lib/theme"
 
 function corridorsToGeoJSON(corridors: Corridor[]) {
   return {
@@ -48,7 +38,7 @@ function corridorsToGeoJSON(corridors: Corridor[]) {
 
 function buildMapHtml(opts: {
   dark: boolean
-  layers: Record<LayerKey, boolean>
+  layers: Record<MapLayerKey, boolean>
   corridors: ReturnType<typeof corridorsToGeoJSON>
   coverage: typeof COVERAGE_ZONES
   plays: ReturnType<typeof getCustomerPlayPoints>
@@ -180,7 +170,7 @@ export function CustomerMapWeb() {
   const corridors = useMemo(() => getCustomerBookedCorridors(), [])
   const corridorGeo = useMemo(() => corridorsToGeoJSON(corridors), [corridors])
   const plays = useMemo(() => getCustomerPlayPoints(), [])
-  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
+  const [layers, setLayers] = useState<Record<MapLayerKey, boolean>>({
     corridors: true,
     coverage: true,
     plays: true,
@@ -198,34 +188,17 @@ export function CustomerMapWeb() {
     [scheme, layers, corridorGeo, plays],
   )
 
-  function toggle(key: LayerKey) {
+  function toggle(key: MapLayerKey) {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Text style={styles.title}>Map</Text>
-        <Text style={styles.subtitle}>
-          Booked corridors, coverage, and proof-of-play (demo · Expo Go WebView).
-        </Text>
-        <View style={styles.toggles}>
-          {(Object.keys(LAYER_LABELS) as LayerKey[]).map((key) => {
-            const on = layers[key]
-            return (
-              <Pressable
-                key={key}
-                onPress={() => toggle(key)}
-                style={[styles.chip, on ? styles.chipOn : styles.chipOff]}
-              >
-                <Text style={[styles.chipText, on && styles.chipTextOn]}>
-                  {LAYER_LABELS[key]}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </View>
-      </View>
+      <CustomerMapHeader
+        paddingTop={insets.top + spacing.sm}
+        layers={layers}
+        onToggle={toggle}
+      />
       <View style={styles.mapWrap}>
         <WebView
           originWhitelist={["*"]}
@@ -243,49 +216,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
-  },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    gap: spacing.xs,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-  },
-  toggles: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  chipOn: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipOff: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  chipText: {
-    ...typography.label,
-    color: colors.mutedForeground,
-  },
-  chipTextOn: {
-    color: colors.primaryForeground,
   },
   mapWrap: {
     flex: 1,
