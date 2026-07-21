@@ -38,7 +38,8 @@ export function useOtaUpdates() {
         if (!update.isAvailable) return
 
         await Updates.fetchUpdateAsync()
-        await Updates.reloadAsync()
+        // Fetch only on launch — apply on next cold start. Immediate reloadAsync()
+        // after splash often looks like a crash when the OTA bundle is bad.
       } catch {
         // OTA is best-effort; offline or misconfigured EAS Update should not block launch.
       }

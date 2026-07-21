@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import { useEffect } from "react"
+import { StyleSheet, Text, View } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { LoadingScreen } from "@/components/LoadingScreen"
@@ -15,6 +16,39 @@ import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
+})
+
+function MissingConfigScreen({ message }: { message: string }) {
+  useEffect(() => {
+    void SplashScreen.hideAsync()
+  }, [])
+
+  return (
+    <View style={configStyles.container}>
+      <Text style={configStyles.title}>Configuration required</Text>
+      <Text style={configStyles.body}>{message}</Text>
+    </View>
+  )
+}
+
+const configStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: colors.bg,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  body: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.mutedForeground,
+  },
 })
 
 function AuthGate({ children }: { children: React.ReactNode }) {
@@ -67,12 +101,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const clerkKey = CLERK_PUBLISHABLE_KEY?.trim()
+
+  if (!clerkKey?.startsWith("pk_")) {
+    return (
+      <SafeAreaProvider>
+        <MissingConfigScreen message="EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY was not set when this APK was built. In the Expo dashboard, open the admobihq-ops project → Environment variables → preview, add the Clerk publishable key, then run eas build again." />
+      </SafeAreaProvider>
+    )
+  }
+
   return (
     <SafeAreaProvider>
-      <ClerkProvider
-        publishableKey={CLERK_PUBLISHABLE_KEY ?? ""}
-        tokenCache={tokenCache}
-      >
+      <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
         <StatusBar style="dark" />
         <AuthGate>
           <Stack
