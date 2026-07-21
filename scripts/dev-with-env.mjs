@@ -66,7 +66,7 @@ if (!skipPull) {
 
 const filters = [...coreApps]
 if (includeMobile) {
-  filters.push("mobile")
+  filters.push("mobile", "app-mobile")
 }
 
 const turboArgs = ["turbo", "dev", ...filters.flatMap((name) => ["--filter", name])]
@@ -74,7 +74,7 @@ const turboArgs = ["turbo", "dev", ...filters.flatMap((name) => ["--filter", nam
 console.log(`[dev] Starting ${filters.join(", ")}…`)
 console.log(
   "      web :3000 | api :3003 | ops :3001 | app :3002" +
-    (includeMobile ? " | mobile (Expo)" : ""),
+    (includeMobile ? " | mobile + app-mobile (Expo)" : ""),
 )
 
 const child = spawn("npx", turboArgs, {

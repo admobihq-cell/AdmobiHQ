@@ -17,7 +17,9 @@ Monorepo for **Admobi**: the public marketing site, business API, internal ops c
 | `apps/ops` | Internal ops console (Clerk, UI only) | `:3001` |
 | `apps/app` | Customer product scaffold | `:3002` |
 | `apps/mobile` | Expo ops mobile app | Expo |
-| `packages/ui` | Shared design system (Tailwind v4, shadcn/Radix) |
+| `apps/app-mobile` | Expo customer app (no Clerk) | Expo |
+| `packages/ui` | Shared design system (Tailwind v4, shadcn/Radix, mapcn) |
+| `packages/geo` | Nairobi corridor / coverage map fixtures |
 | `packages/ops-api-client` | Typed HTTP client for admin + public API URLs |
 | `packages/ops-contracts` | Shared Zod schemas and DTOs |
 | `packages/eslint-config` | Workspace ESLint presets |
@@ -54,7 +56,7 @@ Skip Infisical pull if `.env.local` files already exist: `npm run dev:skip-pull`
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Pull Infisical dev secrets + start web, api, ops, app |
-| `npm run dev:all` | Same + mobile (Expo) |
+| `npm run dev:all` | Same + ops mobile + customer mobile (Expo) |
 | `npm run dev:skip-pull` | Start apps without re-pulling secrets |
 | `npm run dev -w web` | Single app (replace `web` with `api`, `ops`, `app`) |
 | `npm run build` | Production build (Turbo, all workspaces) |
@@ -91,6 +93,8 @@ Pull requests to **`master`** run install, typecheck, lint, and build (`.github/
 | [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | Local dev, Infisical, database, seeds |
 | [docs/API.md](docs/API.md) | Business API routes and deployment |
 | [docs/OPS-ADMIN.md](docs/OPS-ADMIN.md) | Ops console |
+| [docs/APP.md](docs/APP.md) | Customer web app |
+| [docs/APP-MOBILE.md](docs/APP-MOBILE.md) | Customer Expo app (no Clerk) |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel, Infisical, domains |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Repo layout and conventions |
 | [docs/DATA-LAYER.md](docs/DATA-LAYER.md) | Prisma vs Payload |

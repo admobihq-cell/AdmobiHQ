@@ -1,13 +1,15 @@
-import { useAuth } from "@clerk/clerk-expo"
 import { Clock } from "@/components/icons"
 import { StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { Card, Eyebrow, IconBox, SecondaryButton } from "@/components/ui"
+import { Card, Eyebrow, IconBox } from "@/components/ui"
 import { colors, spacing, typography } from "@/lib/theme"
 
+/**
+ * Stub for non-staff Clerk sessions on the Ops Expo app.
+ * Customer product lives in apps/app-mobile (no Clerk).
+ */
 export default function CustomerComingSoonScreen() {
-  const { signOut } = useAuth()
   const insets = useSafeAreaInsets()
 
   return (
@@ -19,14 +21,14 @@ export default function CustomerComingSoonScreen() {
     >
       <IconBox icon={Clock} size={22} />
       <Eyebrow>Admobi</Eyebrow>
-      <Text style={styles.title}>Customer app coming soon</Text>
+      <Text style={styles.title}>Use the customer app</Text>
       <Card style={styles.card}>
         <Text style={styles.body}>
-          Campaigns, reports, and settings will land here once the web product is
-          live. Staff ops lives in the ops stack for @admobihq.com accounts.
+          Campaigns, maps, and settings ship in the separate customer Expo app
+          (`apps/app-mobile`) and on the web at app.admobihq.com. This Ops app is
+          for @admobihq.com staff only.
         </Text>
       </Card>
-      <SecondaryButton label="Sign out" onPress={() => void signOut()} />
     </View>
   )
 }

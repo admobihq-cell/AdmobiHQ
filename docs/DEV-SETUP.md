@@ -40,10 +40,16 @@ Skip the pull if you already have fresh `.env.local` files:
 npm run dev:skip-pull
 ```
 
-Include Expo mobile:
+Include Expo apps (ops mobile + customer mobile):
 
 ```bash
 npm run dev:all
+```
+
+Customer Expo only:
+
+```bash
+npm run dev -w app-mobile
 ```
 
 Pull staging secrets locally:
@@ -79,7 +85,7 @@ Run a single app: `npm run dev -w api`, `npm run dev -w ops`, etc. See [OPS-ADMI
 
 ## Environment variables
 
-Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/api/.env.local`**, **`apps/ops/.env.local`**, **`apps/app/.env.local`**, and **`apps/mobile/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/api/.env.example`](../apps/api/.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/app/.env.example`](../apps/app/.env.example).
+Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/api/.env.local`**, **`apps/ops/.env.local`**, **`apps/app/.env.local`**, **`apps/mobile/.env.local`**, and **`apps/app-mobile/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/api/.env.example`](../apps/api/.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/app/.env.example`](../apps/app/.env.example), [`apps/app-mobile/.env.example`](../apps/app-mobile/.env.example).
 
 ### Pull from Infisical (recommended on Windows)
 
@@ -89,6 +95,7 @@ npm run env:pull -w api          # apps/api/.env.local
 npm run env:pull -w ops          # apps/ops/.env.local
 npm run env:pull -w app          # apps/app/.env.local
 npm run env:pull -w mobile       # apps/mobile/.env.local (maps EXPO_PUBLIC_*)
+npm run env:pull -w app-mobile   # apps/app-mobile/.env.local (no Clerk)
 npm run env:pull:staging -w api  # staging env
 # or all workspaces:
 npm run env:pull
@@ -230,7 +237,7 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | `npm install` | Clone, after pulling `package.json` dependency changes |
 | `npm run dev` | **Every day** — pull Infisical dev secrets + start web, api, ops, app |
 | `npm run dev:skip-pull` | Start apps without re-pulling secrets |
-| `npm run dev:all` | Pull secrets + start web, api, ops, app, and mobile (Expo) |
+| `npm run dev:all` | Pull secrets + start web, api, ops, app, mobile, and app-mobile (Expo) |
 | `npm run dev:staging` | Pull staging secrets + start apps |
 | `npm run dev:turbo` | Start apps without pull (turbo only) |
 | `npm run dev -w web` | Same, explicit workspace |
@@ -247,7 +254,8 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | `npm run env:pull -w ops` | Same, for ops console secrets |
 | `npm run env:pull -w app` | Same, for customer app URL vars |
 | `npm run env:pull -w api` | Same, for business API secrets |
-| `npm run env:pull -w mobile` | Maps `EXPO_PUBLIC_*` for Expo |
+| `npm run env:pull -w mobile` | Maps `EXPO_PUBLIC_*` for Expo ops |
+| `npm run env:pull -w app-mobile` | Maps `EXPO_PUBLIC_*` for customer Expo (no Clerk) |
 | `npm run env:pull` | Pull all workspaces in one command |
 | `npm run env:check -w api` | Verify Clerk + DATABASE_URL + API vars |
 | `npm run env:check -w web` | Debug “DATABASE_URL not set”, before migrate/seed |

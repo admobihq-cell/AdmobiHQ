@@ -15,10 +15,12 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 
 ## Current scope (scaffold only)
 
-- Sidebar app shell (Overview, Campaigns, Reports, Settings)
-- Each route shows a **Coming soon** empty state
+- Sidebar app shell (Overview, Campaigns, **Map**, Reports, Settings)
+- Overview / Campaigns / Reports / Settings show a **Coming soon** empty state
+- **Map** (`/map`) — mapcn (MapLibre) with booked corridors, coverage zones, and proof-of-play clusters (demo Nairobi data via `@workspace/geo`)
 - **No authentication** — login ships in a later phase
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
+- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/app-mobile`, no Clerk)
 
 ## Secrets (Infisical)
 

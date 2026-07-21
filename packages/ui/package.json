@@ -12,6 +12,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.12.0",
+    "maplibre-gl": "^5.24.0",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
     "react": "^19.2.4",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",

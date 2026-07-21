@@ -12,8 +12,8 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w api && npm run env:pull -w mobile",
-    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w api && npm run env:pull:staging -w mobile",
+    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w api && npm run env:pull -w mobile && npm run env:pull -w app-mobile",
+    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w api && npm run env:pull:staging -w mobile && npm run env:pull:staging -w app-mobile",
     "postinstall": "patch-package"
   },
   "devDependencies": {
@@ -46,6 +46,10 @@
       "react-dom": "19.2.4"
     },
     "mobile": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    },
+    "app-mobile": {
       "react": "19.1.0",
       "react-dom": "19.1.0"
     }

@@ -11,7 +11,11 @@ const repoRoot = path.join(appDir, "../..")
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ["@workspace/ui", "@workspace/sentry-config"],
+  transpilePackages: [
+    "@workspace/ui",
+    "@workspace/sentry-config",
+    "@workspace/geo",
+  ],
   turbopack: {
     root: repoRoot,
   },

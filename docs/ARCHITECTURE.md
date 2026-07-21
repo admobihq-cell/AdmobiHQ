@@ -4,7 +4,7 @@ How the codebase is laid out, what each part does, and how to extend it without 
 
 ## 1. What this is
 
-Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../PRODUCT.md). The visual system lives in [DESIGN.md](../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer app scaffold**, and **mobile ops app**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md).
+Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../PRODUCT.md). The visual system lives in [DESIGN.md](../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer web app**, **ops mobile**, and **customer mobile**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## 2. Stack at a glance
 
@@ -29,9 +29,11 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 │   ├── api/                         Business REST API (:3003)
 │   ├── ops/                         Internal ops console UI (:3001, Clerk)
 │   ├── app/                         Customer app scaffold (:3002)
-│   └── mobile/                      Expo ops mobile app
+│   ├── mobile/                      Expo ops mobile app
+│   └── app-mobile/                  Expo customer app (no Clerk)
 ├── packages/
-│   ├── ui/                          Shared UI primitives + design tokens
+│   ├── ui/                          Shared UI primitives + design tokens + mapcn
+│   ├── geo/                         Nairobi map fixtures (corridors, coverage, plays)
 │   ├── ops-api-client/              Typed client for /v1 admin + public API
 │   ├── ops-contracts/               Shared Zod schemas and DTOs
 │   ├── sentry-config/               Shared Sentry init helpers
@@ -58,10 +60,11 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 | **Web** | `apps/web` | Public marketing, Payload CMS at `/admin` |
 | **API** | `apps/api` | Business REST at `api.admobihq.com` — public forms + ops CRUD |
 | **Ops** | `apps/ops` | Staff console UI at `ops.admobihq.com` — calls API, Clerk `@admobihq.com` |
-| **App** | `apps/app` | Future customer product at `app.admobihq.com` — scaffold only |
+| **App** | `apps/app` | Customer product at `app.admobihq.com` — scaffold + Map |
 | **Mobile** | `apps/mobile` | Expo app for ops staff — calls API with Clerk JWT |
+| **App mobile** | `apps/app-mobile` | Expo customer app — no Clerk; Map tab with MapLibre |
 
-See [API.md](./API.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
+See [API.md](./API.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md), [APP-MOBILE.md](./APP-MOBILE.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 Workspaces are declared in [package.json](../package.json):
 
