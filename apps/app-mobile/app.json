@@ -2,15 +2,18 @@
   "expo": {
     "name": "Admobi",
     "slug": "admobihq-app",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "orientation": "portrait",
-    "runtimeVersion": "0.0.1",
+    "runtimeVersion": "0.0.2",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq-app",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.admobihq.app"
+      "bundleIdentifier": "com.admobihq.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +23,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.admobihq.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -30,7 +39,9 @@
     "plugins": [
       "expo-router",
       "expo-dev-client",
+      "expo-secure-store",
       "@maplibre/maplibre-react-native",
+      "expo-web-browser",
       [
         "expo-splash-screen",
         {
@@ -51,7 +62,31 @@
           }
         }
       ],
-      "expo-updates"
+      "expo-updates",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Admobi to use your location to show nearby corridors on the map.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0B6E4F",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Admobi to access photos for campaign creatives.",
+          "cameraPermission": "Allow Admobi to take photos for campaign creatives."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
