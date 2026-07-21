@@ -4,8 +4,14 @@ import { usePathname, useRouter } from "next/navigation"
 
 import type { DateRangeKey } from "@/lib/queries/stats"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
-const RANGE_OPTIONS: DateRangeKey[] = ["7d", "30d", "90d", "all"]
+const RANGE_OPTIONS: { value: DateRangeKey; label: string }[] = [
+  { value: "7d", label: "7D" },
+  { value: "30d", label: "30D" },
+  { value: "90d", label: "90D" },
+  { value: "all", label: "All time" },
+]
 
 type OverviewRangePickerProps = {
   range: DateRangeKey
@@ -17,22 +23,27 @@ export function OverviewRangePicker({ range, pending }: OverviewRangePickerProps
   const pathname = usePathname()
 
   return (
-    <div className="flex gap-1 rounded-lg border p-1">
-      {RANGE_OPTIONS.map((option) => (
-        <Button
-          key={option}
-          variant={range === option ? "default" : "ghost"}
-          size="sm"
-          disabled={pending}
-          onClick={() => {
-            const params = new URLSearchParams()
-            params.set("range", option)
-            router.push(`${pathname}?${params.toString()}`)
-          }}
-        >
-          {option === "all" ? "All time" : option.toUpperCase()}
-        </Button>
-      ))}
+    <div className="flex flex-wrap gap-2">
+      {RANGE_OPTIONS.map((option) => {
+        const active = range === option.value
+        return (
+          <Button
+            key={option.value}
+            type="button"
+            size="sm"
+            variant={active ? "default" : "outline"}
+            disabled={pending}
+            className={cn("rounded-full", !active && "text-muted-foreground")}
+            onClick={() => {
+              const params = new URLSearchParams()
+              params.set("range", option.value)
+              router.push(`${pathname}?${params.toString()}`)
+            }}
+          >
+            {option.label}
+          </Button>
+        )
+      })}
     </div>
   )
 }

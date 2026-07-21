@@ -1,8 +1,10 @@
 import Link from "next/link"
 import { Suspense } from "react"
+import { ExternalLink } from "lucide-react"
 
 import { ContentOverview } from "@/components/content-overview"
 import { ContentOverviewSkeleton } from "@/components/content-overview-skeleton"
+import { PageHero } from "@/components/ui/page-hero"
 import { cmsAdminLabel, cmsAdminUrl } from "@/lib/site-urls"
 import { Button } from "@workspace/ui/components/button"
 
@@ -13,20 +15,20 @@ export default function ContentPage() {
   const adminLabel = cmsAdminLabel()
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Content Overview</h1>
-          <p className="text-sm text-muted-foreground">
-            Read-only CMS snapshot. Edit content at {adminLabel}.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href={adminUrl} target="_blank" rel="noopener noreferrer">
-            Open CMS Editor →
-          </Link>
-        </Button>
-      </div>
+    <div className="flex flex-1 flex-col gap-8">
+      <PageHero
+        eyebrow="Content"
+        title="CMS overview"
+        description={`Read-only snapshot of blog, help, and media content. Edit at ${adminLabel}.`}
+        actions={
+          <Button asChild className="h-11 gap-2">
+            <Link href={adminUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-4" />
+              Open CMS editor
+            </Link>
+          </Button>
+        }
+      />
 
       <Suspense fallback={<ContentOverviewSkeleton />}>
         <ContentOverview />

@@ -44,10 +44,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.caption,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.mutedForeground,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     marginBottom: spacing.sm,
     marginLeft: spacing.xs,
   },
@@ -59,12 +59,16 @@ const styles = StyleSheet.create({
   },
   group: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
     overflow: "hidden",
   },
   list: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
     overflow: "hidden",
   },
   separator: {

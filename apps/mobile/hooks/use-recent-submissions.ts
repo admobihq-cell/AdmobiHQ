@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { formatDateTime } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
@@ -18,6 +18,9 @@ export function useRecentSubmissions(limit = 8) {
   const [items, setItems] = useState<RecentSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
+
+  const refetch = useCallback(() => setTick((n) => n + 1), [])
 
   useEffect(() => {
     let cancelled = false
@@ -76,7 +79,7 @@ export function useRecentSubmissions(limit = 8) {
     return () => {
       cancelled = true
     }
-  }, [client, limit])
+  }, [client, limit, tick])
 
-  return { items, loading, error }
+  return { items, loading, error, refetch }
 }

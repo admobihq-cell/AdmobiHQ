@@ -10,11 +10,14 @@ export const metadata = { title: "Home" }
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-8">
       <Suspense
         fallback={
-          <section className="relative overflow-hidden rounded-xl border bg-card p-6 md:p-8">
-            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+          <section className="relative overflow-hidden rounded-xl border bg-card p-6 shadow-none md:p-8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Operations
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
               Welcome back
             </h1>
             <Skeleton className="mt-3 h-4 w-full max-w-2xl" />

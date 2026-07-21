@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router"
+import { Text } from "react-native"
 import {
   Car,
   LayoutDashboard,
@@ -8,6 +9,12 @@ import {
 } from "@/components/icons"
 
 import { colors } from "@/lib/theme"
+
+function TabLabel({ label, color }: { label: string; color: string }) {
+  return (
+    <Text style={{ fontSize: 11, fontWeight: "600", color }}>{label}</Text>
+  )
+}
 
 export default function OpsLayout() {
   return (
@@ -29,10 +36,6 @@ export default function OpsLayout() {
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
-        },
         tabBarHideOnKeyboard: true,
       }}
     >
@@ -41,6 +44,9 @@ export default function OpsLayout() {
         options={{
           title: "Dashboard",
           headerShown: false,
+          tabBarLabel: ({ color }) => (
+            <TabLabel label="Dashboard" color={color} />
+          ),
           tabBarIcon: ({ color, size }) => (
             <LayoutDashboard color={color} size={size - 2} strokeWidth={2.25} />
           ),
@@ -51,6 +57,7 @@ export default function OpsLayout() {
         options={{
           title: "Leads",
           headerShown: false,
+          tabBarLabel: ({ color }) => <TabLabel label="Leads" color={color} />,
           tabBarIcon: ({ color, size }) => (
             <Megaphone color={color} size={size - 2} strokeWidth={2.25} />
           ),
@@ -61,6 +68,7 @@ export default function OpsLayout() {
         options={{
           title: "Fleet",
           headerShown: false,
+          tabBarLabel: ({ color }) => <TabLabel label="Fleet" color={color} />,
           tabBarIcon: ({ color, size }) => (
             <Truck color={color} size={size - 2} strokeWidth={2.25} />
           ),
@@ -71,6 +79,9 @@ export default function OpsLayout() {
         options={{
           title: "Drivers",
           headerShown: false,
+          tabBarLabel: ({ color }) => (
+            <TabLabel label="Drivers" color={color} />
+          ),
           tabBarIcon: ({ color, size }) => (
             <Car color={color} size={size - 2} strokeWidth={2.25} />
           ),
@@ -81,6 +92,7 @@ export default function OpsLayout() {
         options={{
           title: "More",
           headerShown: false,
+          tabBarLabel: ({ color }) => <TabLabel label="More" color={color} />,
           tabBarIcon: ({ color, size }) => (
             <MoreHorizontal color={color} size={size - 2} strokeWidth={2.25} />
           ),

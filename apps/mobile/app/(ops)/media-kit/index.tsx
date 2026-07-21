@@ -13,6 +13,7 @@ export default function MediaKitScreen() {
   return (
     <EntityList
       title="Media kit"
+      description="Marketers and agencies who requested the Admobi media kit."
       loadPage={loadPage}
       getTitle={(item) => item.name}
       getSubtitle={(item) => item.email}

@@ -1,9 +1,10 @@
+import { BookOpen, FileImage, HelpCircle } from "lucide-react"
+
+import { StatCard } from "@/components/ui/stat-card"
+import { SectionHeading } from "@/components/ui/section-heading"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@workspace/ui/components/card"
 import {
   Table,
@@ -22,7 +23,7 @@ export async function ContentOverview() {
 
   if (!content) {
     return (
-      <Card>
+      <Card className="shadow-none">
         <CardContent className="py-12 text-center text-muted-foreground">
           CMS stats unavailable — check DATABASE_URL and Payload tables.
         </CardContent>
@@ -33,65 +34,60 @@ export async function ContentOverview() {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardDescription>Blog posts</CardDescription>
-            <CardTitle className="text-2xl">{content.blog.total}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {content.blog.published} published · {content.blog.draft} draft
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Help articles</CardDescription>
-            <CardTitle className="text-2xl">{content.help.total}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {content.help.published} published · {content.help.draft} draft
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Media library</CardDescription>
-            <CardTitle className="text-2xl">{content.media.total} files</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {formatBytes(content.media.totalSize)} total
+        <StatCard
+          icon={BookOpen}
+          label="Blog posts"
+          value={content.blog.total}
+          hint={`${content.blog.published} published · ${content.blog.draft} draft`}
+        />
+        <StatCard
+          icon={HelpCircle}
+          label="Help articles"
+          value={content.help.total}
+          hint={`${content.help.published} published · ${content.help.draft} draft`}
+        />
+        <StatCard
+          icon={FileImage}
+          label="Media library"
+          value={`${content.media.total} files`}
+          hint={formatBytes(content.media.totalSize)}
+        />
+      </div>
+
+      <div className="space-y-4">
+        <SectionHeading
+          title="Recent drafts"
+          description="Latest unpublished blog and help content"
+        />
+        <Card className="shadow-none">
+          <CardContent className="p-0">
+            {content.recentDrafts.length === 0 ? (
+              <p className="p-6 text-sm text-muted-foreground">No drafts.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {content.recentDrafts.map((draft) => (
+                    <TableRow key={`${draft.type}-${draft.id}`}>
+                      <TableCell className="font-medium">{draft.title}</TableCell>
+                      <TableCell className="capitalize">{draft.type}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDateTime(draft.updatedAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent drafts</CardTitle>
-          <CardDescription>Latest unpublished blog and help content</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {content.recentDrafts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No drafts.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Updated</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {content.recentDrafts.map((draft) => (
-                  <TableRow key={`${draft.type}-${draft.id}`}>
-                    <TableCell>{draft.title}</TableCell>
-                    <TableCell className="capitalize">{draft.type}</TableCell>
-                    <TableCell>{formatDateTime(draft.updatedAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
     </>
   )
 }

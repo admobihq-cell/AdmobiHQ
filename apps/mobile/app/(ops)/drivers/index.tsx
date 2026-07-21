@@ -15,6 +15,7 @@ export default function DriversScreen() {
   return (
     <EntityList
       title="Drivers"
+      description="Monitor driver signups, city distribution, and onboarding status."
       loadPage={loadPage}
       getTitle={(item) => item.name}
       getSubtitle={(item) => `${item.phone} · ${item.city}`}
