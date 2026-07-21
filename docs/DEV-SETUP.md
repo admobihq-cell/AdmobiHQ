@@ -46,7 +46,16 @@ Include Expo apps (ops mobile + customer mobile):
 npm run dev:all
 ```
 
-Customer Expo only:
+**Mobile + API only** (no web, ops, or customer web — pulls secrets for `api`, `mobile`, `app-mobile` only):
+
+```bash
+npm run dev:stack:mobile              # api + both Expo apps
+npm run dev:stack:mobile:ops          # api + ops Expo (:8081)
+npm run dev:stack:mobile:customer     # api + customer Expo (:8082)
+npm run dev:stack:mobile:skip-pull    # same stack, skip Infisical pull
+```
+
+Customer Expo only (Metro already running elsewhere, or API not needed):
 
 ```bash
 npm run dev -w app-mobile
@@ -240,6 +249,10 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | `npm run dev` | **Every day** — pull Infisical dev secrets + start web, api, ops, app |
 | `npm run dev:skip-pull` | Start apps without re-pulling secrets |
 | `npm run dev:all` | Pull secrets + start web, api, ops, app, mobile, and app-mobile (Expo) |
+| `npm run dev:stack:mobile` | Pull **api + mobile secrets only**; start api + both Expo apps |
+| `npm run dev:stack:mobile:ops` | Pull api + mobile secrets; start api + ops Expo (:8081) |
+| `npm run dev:stack:mobile:customer` | Pull api + app-mobile secrets; start api + customer Expo (:8082) |
+| `npm run env:pull:mobile-stack` | Pull secrets for api, mobile, app-mobile only (no web/ops/app) |
 | `npm run dev:staging` | Pull staging secrets + start apps |
 | `npm run dev:turbo` | Start apps without pull (turbo only) |
 | `npm run dev -w web` | Same, explicit workspace |

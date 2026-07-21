@@ -57,6 +57,9 @@ Skip Infisical pull if `.env.local` files already exist: `npm run dev:skip-pull`
 |---------|---------|
 | `npm run dev` | Pull Infisical dev secrets + start web, api, ops, app |
 | `npm run dev:all` | Same + ops mobile + customer mobile (Expo) |
+| `npm run dev:stack:mobile` | API + both Expo apps only (pulls api/mobile secrets) |
+| `npm run dev:stack:mobile:ops` | API + ops Expo only |
+| `npm run dev:stack:mobile:customer` | API + customer Expo only |
 | `npm run dev:mobile` | Ops Expo with cleared Metro cache (:8081) |
 | `npm run dev:mobile:customer` | Customer Expo with cleared Metro cache (:8082) |
 | `npm run mobile:apk:eas` | Build both preview APKs on EAS (shareable, no Metro) |

@@ -222,8 +222,11 @@ For internal team distribution, use **`preview`**.
 
 | Command | App |
 |---------|-----|
-| `npm run dev -w mobile` | Ops — Metro :8081 |
-| `npm run dev -w app-mobile` | Customer — Metro :8082 |
+| `npm run dev:stack:mobile` | **API :3003 + both Expo apps** — pulls api/mobile secrets only |
+| `npm run dev:stack:mobile:ops` | API + ops Expo (:8081) |
+| `npm run dev:stack:mobile:customer` | API + customer Expo (:8082) |
+| `npm run dev -w mobile` | Ops Metro only (:8081) — start API separately |
+| `npm run dev -w app-mobile` | Customer Metro only (:8082) |
 | `npm run dev:clear -w mobile` | Ops — clear Metro cache |
 | `npm run run:android -w mobile` | Ops — install dev build on connected device/emulator |
 
