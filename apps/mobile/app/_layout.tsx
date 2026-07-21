@@ -3,8 +3,9 @@ import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import { Stack, useRouter, useSegments } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { StyleSheet, Text, View } from "react-native"
+import Animated, { FadeIn } from "react-native-reanimated"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { LoadingScreen } from "@/components/LoadingScreen"
@@ -57,32 +58,46 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const segments = useSegments()
   const router = useRouter()
   const authReady = isLoaded && userLoaded
+  const [handoffVisible, setHandoffVisible] = useState(false)
+  const handoffStarted = useRef(false)
 
   useSplashBootstrap(authReady)
   useOtaUpdates()
 
+  const email = getPrimaryEmail(
+    user?.emailAddresses,
+    user?.primaryEmailAddressId,
+  )
+  const isStaff = isOpsStaffEmail(email)
+
+  const inAuthGroup = segments[0] === "sign-in"
+  const inCustomerGroup = segments[0] === "(customer)"
+  const inOpsGroup = segments[0] === "(ops)"
+
+  const needsOpsRedirect =
+    Boolean(isSignedIn && isStaff && (inAuthGroup || inCustomerGroup || !inOpsGroup))
+  const needsCustomerRedirect =
+    Boolean(isSignedIn && !isStaff && (inAuthGroup || inOpsGroup || !inCustomerGroup))
+  const isRedirecting = needsOpsRedirect || needsCustomerRedirect
+
   useEffect(() => {
     if (!authReady) return
 
-    const inAuthGroup = segments[0] === "sign-in"
-    const inCustomerGroup = segments[0] === "(customer)"
-    const inOpsGroup = segments[0] === "(ops)"
-
     if (!isSignedIn) {
+      handoffStarted.current = false
+      setHandoffVisible(false)
       if (!inAuthGroup) {
         router.replace("/sign-in")
       }
       return
     }
 
-    const email = getPrimaryEmail(
-      user?.emailAddresses,
-      user?.primaryEmailAddressId,
-    )
-    const isStaff = isOpsStaffEmail(email)
-
     if (isStaff) {
       if (inAuthGroup || inCustomerGroup || !inOpsGroup) {
+        if (!handoffStarted.current) {
+          handoffStarted.current = true
+          setHandoffVisible(true)
+        }
         router.replace("/(ops)/dashboard")
       }
       return
@@ -91,14 +106,52 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (inAuthGroup || inOpsGroup || !inCustomerGroup) {
       router.replace("/(customer)")
     }
-  }, [authReady, isSignedIn, user, segments, router])
+  }, [
+    authReady,
+    isSignedIn,
+    isStaff,
+    inAuthGroup,
+    inCustomerGroup,
+    inOpsGroup,
+    router,
+  ])
+
+  useEffect(() => {
+    if (!handoffVisible) return
+    if (inOpsGroup && !inAuthGroup) {
+      const timer = setTimeout(() => setHandoffVisible(false), 280)
+      return () => clearTimeout(timer)
+    }
+  }, [handoffVisible, inOpsGroup, inAuthGroup])
 
   if (!authReady) {
     return <LoadingScreen />
   }
 
+  // Returning staff session: skip auth UI, brief cream handoff into dashboard.
+  if (isSignedIn && isStaff && (isRedirecting || handoffVisible)) {
+    return (
+      <LoadingScreen splash={false} message="Opening Ops…" />
+    )
+  }
+
+  if (!isSignedIn) {
+    return (
+      <Animated.View entering={FadeIn.duration(380)} style={styles.authShell}>
+        {children}
+      </Animated.View>
+    )
+  }
+
   return <>{children}</>
 }
+
+const styles = StyleSheet.create({
+  authShell: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+})
 
 export default function RootLayout() {
   const clerkKey = CLERK_PUBLISHABLE_KEY?.trim()
@@ -125,6 +178,7 @@ export default function RootLayout() {
               headerTitleStyle: { color: colors.text, fontWeight: "600" },
               headerShadowVisible: false,
               contentStyle: { backgroundColor: colors.bg },
+              animation: "fade",
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
