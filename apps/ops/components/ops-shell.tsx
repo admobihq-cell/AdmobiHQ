@@ -8,6 +8,7 @@ import {
   FileText,
   Home,
   Mail,
+  Map,
   Megaphone,
   Truck,
   Users,
@@ -43,6 +44,7 @@ import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 const navItems = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/overview", label: "Overview", icon: BarChart3 },
+  { href: "/map", label: "Map", icon: Map },
   { href: "/leads", label: "Campaign Leads", icon: Megaphone },
   { href: "/fleet", label: "Fleet Partners", icon: Truck },
   { href: "/drivers", label: "Drivers", icon: Car },
@@ -154,7 +156,9 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</main>
+        <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )

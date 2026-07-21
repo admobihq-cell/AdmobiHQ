@@ -1,8 +1,8 @@
 # Deployment guide
 
-Production and staging deployment for **Admobi** (`apps/web`), **API** (`apps/api`), **Ops console** (`apps/ops`), and **Customer app** (`apps/app`).
+Production and staging deployment for **Admobi** (`apps/web`), **API** (`apps/api`), **Ops console** (`apps/ops`), **Customer app** (`apps/app`), and **Expo mobile apps** (`apps/mobile`, `apps/app-mobile`).
 
-**Related:** [DEPLOYMENT.md](./DEPLOYMENT.md), [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [API.md](./API.md), [APP.md](./APP.md)
+**Related:** [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [API.md](./API.md), [APP.md](./APP.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ---
 
@@ -259,6 +259,65 @@ Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DE
 2. Smoke test staging (see below).
 3. Merge to **`master`** → production deploy on `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, and `app.admobihq.com`.
 
+Mobile apps (Android APK) are **not** deployed on Vercel — they use **EAS Build** on [expo.dev](https://expo.dev). See [Mobile distribution](#mobile-distribution-eas) below.
+
+---
+
+## Mobile distribution (EAS)
+
+Android APKs for ops and customer Expo apps are built and distributed via **Expo Application Services (EAS)**, not Vercel.
+
+| App | Folder | EAS slug | Android package |
+|-----|--------|----------|-----------------|
+| Admobi Ops | `apps/mobile` | `admobihq-ops` | `com.admobihq.ops` |
+| Admobi (customer) | `apps/app-mobile` | `admobihq-app` | `com.admobihq.app` |
+
+**Full guide:** [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
+
+### Build preview APK (team install)
+
+Run from each app directory:
+
+```powershell
+cd apps\mobile
+npx eas-cli build -p android --profile preview
+
+cd apps\app-mobile
+npx eas-cli build -p android --profile preview
+```
+
+Share the **APK download URL** from the EAS dashboard. Preview builds bundle JS — recipients do **not** need a dev machine running Metro.
+
+### OTA updates (no reinstall)
+
+After the first EAS build, configure updates once per app:
+
+```powershell
+npx eas-cli update:configure
+```
+
+Push JS-only changes to installed preview apps:
+
+```powershell
+npx eas-cli update --channel preview --message "Describe change"
+```
+
+Native changes (new Expo plugins, permissions, `runtimeVersion` bump) require a new `eas build`.
+
+### Mobile env vars (Infisical → EAS)
+
+| Variable | Ops | Customer | Notes |
+|----------|-----|----------|-------|
+| `EXPO_PUBLIC_API_URL` | ✓ | ✓ | Inlined at EAS build; set in EAS project env or build from pulled `.env.local` |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✓ | — | Ops staff auth |
+| `EXPO_PUBLIC_OPS_URL` | Optional | Optional | Cross-links |
+
+For EAS Build, configure **preview** (and **production**) environment variables in the [Expo dashboard](https://expo.dev) per project, or ensure secrets are present in the uploaded archive via Infisical pull before building.
+
+### Signing
+
+First Android build generates a **keystore stored on Expo** (remote credentials). Keep the Expo org/account access — it controls signing for all future APK updates.
+
 ---
 
 ## Smoke tests
@@ -288,6 +347,17 @@ Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DE
 - [ ] Routes `/`, `/campaigns`, `/reports`, `/settings` show coming-soon states
 - [ ] `GET /api/health` returns `{ ok: true }`
 
+### Mobile (preview APK)
+
+After a new EAS preview build or OTA update:
+
+- [ ] Ops APK installs and Clerk sign-in works against production/staging API
+- [ ] Customer APK installs and opens without Metro
+- [ ] Admobi splash and launcher icon show correctly (not Expo Go defaults)
+- [ ] OTA: push `eas update --channel preview`, reopen app, change is visible
+
+See [MOBILE-BUILDS.md](./MOBILE-BUILDS.md).
+
 ### Staging
 
 Repeat on `staging.admobihq.com`, `api.staging.admobihq.com`, `ops.staging.admobihq.com`, and `app.staging.admobihq.com` against the staging database.
@@ -305,6 +375,7 @@ Use this when going live:
 - [ ] **Clerk:** Ops + API URLs in allowed origins; live keys in prod
 - [ ] **Neon:** `ops-schema-additive.sql` applied on prod (and staging)
 - [ ] **GitHub:** Clerk + URL secrets added for CI
+- [ ] **Expo / EAS:** Logged in; both mobile projects linked (`admobihq-ops`, `admobihq-app`); preview APKs built for team testing
 
 ---
 

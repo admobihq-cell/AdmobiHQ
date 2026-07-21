@@ -24,7 +24,11 @@ export function StatusBadge({
   return (
     <Badge
       variant="secondary"
-      className={cn("capitalize", statusStyles[status] ?? "", className)}
+      className={cn(
+        "uppercase tracking-wide",
+        statusStyles[status] ?? "",
+        className,
+      )}
     >
       {status.replace(/_/g, " ")}
     </Badge>
