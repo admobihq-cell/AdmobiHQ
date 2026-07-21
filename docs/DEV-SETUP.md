@@ -1,8 +1,8 @@
 # Local development setup
 
-Command reference for running **Admobi** locally: Next.js marketing site, **Prisma** (leads/drivers/fleet), and **Payload** CMS (help, blog, `/admin`). Run commands from the **repository root** unless noted.
+Command reference for running **Admobi** locally: marketing site (`apps/web`), business API (`apps/api`), ops console (`apps/ops`), customer app (`apps/app`), and **Payload** CMS. Run commands from the **repository root** unless noted.
 
-**Related:** [DATA-LAYER.md](./DATA-LAYER.md) (Prisma vs Payload), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md) (prod/staging Vercel + domains).
+**Related:** [API.md](./API.md), [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ---
 
@@ -29,11 +29,35 @@ infisical init   # links to workspace in .infisical.json at repo root
 
 ```bash
 npm install
-npm run env:pull                 # web + ops + app .env.local from Infisical dev
+npm run dev                      # pulls Infisical dev secrets, then starts web + api + ops + app
+```
+
+`npm run dev` **automatically runs `env:pull`** before starting servers. Secrets land in each app's `.env.local`; Next.js loads them via `dotenv` in each workspace's `dev` script.
+
+Skip the pull if you already have fresh `.env.local` files:
+
+```bash
+npm run dev:skip-pull
+```
+
+Include Expo mobile:
+
+```bash
+npm run dev:all
+```
+
+Pull staging secrets locally:
+
+```bash
+npm run dev:staging
+```
+
+Optional checks after first setup:
+
+```bash
 npm run env:check -w web
-npm run env:check -w ops         # optional until ops secrets exist in Infisical
-npm run env:check -w app         # optional until app secrets exist in Infisical
-npm run dev                      # turbo → web (3000) + ops (3001) + app (3002)
+npm run env:check -w api
+npm run env:check -w ops
 ```
 
 Open:
@@ -42,33 +66,35 @@ Open:
 |-----|------|
 | http://localhost:3000 | Marketing site |
 | http://localhost:3000/admin | Payload CMS |
-| http://localhost:3000/help | Help center |
-| http://localhost:3000/blog | Blog |
+| http://localhost:3003 | **Business API** (`/v1`, `/v1/public`) |
+| http://localhost:3003 | **Business API** (`/v1`, `/v1/public`, `/v1/health`) |
 | http://localhost:3001 | **Ops console** (Clerk auth, @admobihq.com) |
 | http://localhost:3002 | **Customer app** (sidebar shell, no auth yet) |
 
 **Prefer `npm run dev`** (webpack). Use `npm run dev:turbo -w web` only if you accept less-tested Payload + Turbopack behaviour.
 
-Run ops alone: `npm run dev -w ops`. Run app alone: `npm run dev -w app`. See [OPS-ADMIN.md](./OPS-ADMIN.md).
+Run a single app: `npm run dev -w api`, `npm run dev -w ops`, etc. See [OPS-ADMIN.md](./OPS-ADMIN.md).
 
 ---
 
 ## Environment variables
 
-Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/ops/.env.local`**, and **`apps/app/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/app/.env.example`](../apps/app/.env.example).
+Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/api/.env.local`**, **`apps/ops/.env.local`**, **`apps/app/.env.local`**, and **`apps/mobile/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/api/.env.example`](../apps/api/.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/app/.env.example`](../apps/app/.env.example).
 
 ### Pull from Infisical (recommended on Windows)
 
 ```bash
 npm run env:pull -w web          # apps/web/.env.local
+npm run env:pull -w api          # apps/api/.env.local
 npm run env:pull -w ops          # apps/ops/.env.local
 npm run env:pull -w app          # apps/app/.env.local
-npm run env:pull:staging -w ops  # staging env
-# or all three:
+npm run env:pull -w mobile       # apps/mobile/.env.local (maps EXPO_PUBLIC_*)
+npm run env:pull:staging -w api  # staging env
+# or all workspaces:
 npm run env:pull
 ```
 
-Writes `apps/web/.env.local` from Infisical **dev** environment.
+`npm run dev` runs **`env:pull` automatically** before starting servers (see [Quick start](#quick-start-daily)).
 
 ### Infisical one-off commands (PowerShell)
 
@@ -90,8 +116,10 @@ Copy `.env.example` → `apps/web/.env.local` and fill from Infisical dashboard.
 | `DATABASE_URL` | Prisma forms, Payload (default) | Always locally |
 | `PAYLOAD_SECRET` | Payload admin + CMS pages | Always (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_SERVER_URL` | Admin links, metadata | `http://localhost:3000` locally |
+| `NEXT_PUBLIC_API_URL` | Marketing forms → API | `http://localhost:3003` locally |
 | `BLOB_READ_WRITE_TOKEN` | Media uploads in `/admin` | Optional locally; needed for real uploads |
-| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL` | Driver/lead confirmation emails | Form testing with email |
+| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL` | Form confirmation emails | Set on **api** app (not web) |
+| `API_CORS_ORIGINS` | Cross-origin API access | Set on **api** app |
 | `TEST_RECIPIENT_EMAIL` | Dev email redirect | Optional |
 | `API_KEY_PEXELS` | Stock image search in admin | Optional |
 | `PAYLOAD_DATABASE_URL` | Payload-only DB | Production split DB only |
@@ -118,13 +146,15 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `PAYLOAD_DATABASE_URL` | No | Only if you split CMS DB in staging |
 | `BLOB_READ_WRITE_TOKEN` | No | Omit if you do not need Blob plugin paths in CI build |
 | `API_KEY_PEXELS` | No | Admin image search only |
-| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | No | Email routes; not required for build |
-| `REDIS_URL` | No | Email queue; not required for build |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Ops / Clerk | Ops console (`apps/ops`) |
-| `CLERK_SECRET_KEY` | Ops / Clerk | Ops console; server-only |
-| `NEXT_PUBLIC_OPS_URL` | No | Ops metadata; defaults to `https://ops.admobihq.com` in CI |
-| `NEXT_PUBLIC_APP_URL` | No | App metadata; defaults to `https://app.admobihq.com` in CI |
-| `NEXT_PUBLIC_WEB_URL` | No | Cross-app links; defaults to marketing URL |
+| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | api | Form emails; not required for build |
+| `REDIS_URL` | api | Email queue; not required for build |
+| `API_CORS_ORIGINS` | api | CORS allowlist |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | api + ops + mobile | Clerk |
+| `CLERK_SECRET_KEY` | api + ops | Clerk server |
+| `NEXT_PUBLIC_API_URL` | web, api, ops, app, mobile | Business API origin |
+| `NEXT_PUBLIC_OPS_URL` | ops, app | Ops UI links |
+| `NEXT_PUBLIC_APP_URL` | app | Customer app origin |
+| `NEXT_PUBLIC_WEB_URL` | ops, app | Marketing links |
 
 If `DATABASE_URL` or `PAYLOAD_SECRET` is missing, CI logs a **warning** and skips CMS bootstrap; lint, typecheck, and build still run (Dependabot PRs do not need a database).
 
@@ -198,7 +228,11 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | Command | When to run |
 |---------|-------------|
 | `npm install` | Clone, after pulling `package.json` dependency changes |
-| `npm run dev` | **Every day** — from repo root (Turbo → web) |
+| `npm run dev` | **Every day** — pull Infisical dev secrets + start web, api, ops, app |
+| `npm run dev:skip-pull` | Start apps without re-pulling secrets |
+| `npm run dev:all` | Pull secrets + start web, api, ops, app, and mobile (Expo) |
+| `npm run dev:staging` | Pull staging secrets + start apps |
+| `npm run dev:turbo` | Start apps without pull (turbo only) |
 | `npm run dev -w web` | Same, explicit workspace |
 | `npm run dev:turbo -w web` | Faster HMR experiments; not the default for Payload |
 | `npm run build` | Before release, CI parity, production check |
@@ -212,11 +246,15 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | `npm run env:pull -w web` | First setup, after Infisical secret changes, new machine |
 | `npm run env:pull -w ops` | Same, for ops console secrets |
 | `npm run env:pull -w app` | Same, for customer app URL vars |
-| `npm run env:pull` | Pull web + ops + app in one command |
+| `npm run env:pull -w api` | Same, for business API secrets |
+| `npm run env:pull -w mobile` | Maps `EXPO_PUBLIC_*` for Expo |
+| `npm run env:pull` | Pull all workspaces in one command |
+| `npm run env:check -w api` | Verify Clerk + DATABASE_URL + API vars |
 | `npm run env:check -w web` | Debug “DATABASE_URL not set”, before migrate/seed |
 | `npm run env:check -w ops` | Verify Clerk + DATABASE_URL for ops |
 | `npm run env:check -w app` | Verify URL env vars for app (optional keys) |
-| `npm run dev -w ops` | Ops console only (port 3001) |
+| `npm run dev -w api` | Business API only (port 3003) |
+| `npm run dev -w ops` | Ops console only (port 3001) — start api too for CRUD |
 | `npm run dev -w app` | Customer app only (port 3002) |
 | `infisical secrets --env=dev` | Inspect secrets without writing `.env.local` |
 
@@ -288,16 +326,17 @@ npm run build -w web
 
 | Situation | Commands |
 |-----------|----------|
-| **New engineer, existing team DB** | `env:pull` → `env:check` → `dev` |
+| **New engineer, existing team DB** | `npm run dev` (pulls secrets + starts all core apps) |
 | **New empty Neon database** | Scenario A above |
 | **Pulled git with new `apps/web/migrations/`** | `payload:migrate` → `dev` |
 | **Changed Payload collection fields** | `payload:migrate:create` → `payload:migrate` → `generate:types` → `generate:importmap` |
 | **Changed Prisma models** | Team process for `db:push` vs `migrate` — do not destroy CMS tables |
 | **Admin webpack error (`worker_threads`)** | `generate:importmap` → restart `dev` |
 | **Blog/help empty locally** | `seed:blog`, `seed:help` |
-| **Form saves fail** | Check `DATABASE_URL`, Prisma tables exist, `env:check` |
-| **Media upload fails in admin** | Set `BLOB_READ_WRITE_TOKEN` |
-| **Emails not sending** | `RESEND_API_KEY`, `SENDER_EMAIL`, `TEST_RECIPIENT_EMAIL` |
+| **Form saves fail** | API running on `:3003`? Check `NEXT_PUBLIC_API_URL`, `npm run env:check -w api` |
+| **Ops CRUD fails** | API + Clerk keys on api Vercel project; `NEXT_PUBLIC_API_URL` on ops build |
+| **CORS errors on forms** | `API_CORS_ORIGINS` includes `http://localhost:3000` |
+| **Emails not sending** | `RESEND_API_KEY` on **api** app, not web |
 | **Before opening a PR** | `typecheck`, `lint`, `build -w web` |
 | **Deploy to Vercel** | Set env vars; run `payload:migrate` against production DB once per schema release |
 
@@ -318,8 +357,11 @@ npm run build -w web
 
 | Path | Stack |
 |------|--------|
-| `/api/drivers`, `/api/leads`, `/api/media-kit`, `/api/waitlist` | **Prisma** + Zod ([`app/api/`](../apps/web/app/api/)) |
-| `/api/*` under Payload route group | **Payload REST** ([`app/(payload)/api/`](../apps/web/app/(payload)/api/)) |
+| `api.admobihq.com/v1/public/*` | **Business API** — marketing form POSTs (Prisma + Resend) |
+| `api.admobihq.com/v1/*` | **Business API** — ops admin CRUD (Clerk + Prisma) |
+| `admobihq.com/api/*` under Payload route group | **Payload REST** — CMS only |
+
+See [API.md](./API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 
 ---
 
@@ -335,6 +377,11 @@ npm run build -w web
 | Import map reverted in git | Run `generate:importmap`; commit stub import if intentional |
 | Next “wrong workspace root” warning | Extra `package-lock.json` outside repo — see `outputFileTracingRoot` in `next.config.mjs` |
 | Prisma client out of date | `cd apps/web && npx prisma generate` |
+| **Form saves fail** | API running on `:3003`? Check `NEXT_PUBLIC_API_URL`, `npm run env:check -w api` |
+| **Ops CRUD fails** | API running; `NEXT_PUBLIC_API_URL` set on ops; Clerk on api project |
+| **CORS errors on forms** | `API_CORS_ORIGINS` includes `http://localhost:3000` on api |
+| **Emails not sending** | `RESEND_API_KEY` on **api** app, not web |
+| **Media upload fails in admin** | Set `BLOB_READ_WRITE_TOKEN` on web |
 
 ---
 
@@ -342,7 +389,11 @@ npm run build -w web
 
 | Doc | Contents |
 |-----|----------|
+| [API.md](./API.md) | Business API routes, Infisical, deployment |
 | [DATA-LAYER.md](./DATA-LAYER.md) | Prisma = backend, Payload = CMS; migration rules |
+| [OPS-ADMIN.md](./OPS-ADMIN.md) | Ops console |
+| [APP.md](./APP.md) | Customer app scaffold |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Vercel, Infisical, four projects |
 | [HELP-CMS.md](./HELP-CMS.md) | Help center, Payload migrations, admin build |
 | [BLOG-CMS.md](./BLOG-CMS.md) | Blog subdomain, media, seed posts |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Repo layout, apps (web / ops / app), CI |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Repo layout, all apps, CI |

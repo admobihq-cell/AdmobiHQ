@@ -1,6 +1,7 @@
 const DEFAULT_APP_URL = "http://localhost:3002"
 const DEFAULT_WEB_URL = "http://localhost:3000"
 const DEFAULT_OPS_URL = "http://localhost:3001"
+const DEFAULT_API_URL = "http://localhost:3003"
 
 function normalizeOrigin(raw: string | undefined, fallback: string): string {
   const value = raw?.trim()
@@ -30,6 +31,11 @@ export function webPublicUrl(): string {
 /** Ops console public origin. */
 export function opsPublicUrl(): string {
   return normalizeOrigin(process.env.NEXT_PUBLIC_OPS_URL, DEFAULT_OPS_URL)
+}
+
+/** Business API public origin (api.admobihq.com). */
+export function apiPublicUrl(): string {
+  return normalizeOrigin(process.env.NEXT_PUBLIC_API_URL, DEFAULT_API_URL)
 }
 
 /** Host label for UI, e.g. app.admobihq.com */

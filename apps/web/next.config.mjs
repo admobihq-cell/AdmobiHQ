@@ -70,7 +70,7 @@ const CLIENT_NODE_FALLBACKS = {
 const nextConfig = {
   // Monorepo root: avoids Next picking C:\Users\victo\package-lock.json and breaking CSS traces.
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ["@workspace/ui", "@workspace/sentry-config", "@payload-bites/image-search"],
+  transpilePackages: ["@workspace/ui", "@workspace/sentry-config", "@workspace/ops-api-client", "@payload-bites/image-search"],
   images: {
     remotePatterns: mediaImagePatterns,
   },

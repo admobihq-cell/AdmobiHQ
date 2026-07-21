@@ -264,7 +264,7 @@ export function EntityPage<T extends { id: number }>({
       )
     })
     downloadCsv(
-      `${apiPath.replace("/api/", "")}-selected.csv`,
+      `${apiPath.replace(/^\/v1\//, "")}-selected.csv`,
       toCsv(rows, csvColumns),
     )
     toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
@@ -317,7 +317,7 @@ export function EntityPage<T extends { id: number }>({
           .map((c) => [c.key, c.csv!(row)]),
       )
     })
-    downloadCsv(`${apiPath.replace("/api/", "")}.csv`, toCsv(rows, csvColumns))
+    downloadCsv(`${apiPath.replace(/^\/v1\//, "")}.csv`, toCsv(rows, csvColumns))
   }
 
   return (

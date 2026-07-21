@@ -33,8 +33,8 @@ const clerk =
   vars.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ??
   vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
   ""
-const ops =
-  vars.EXPO_PUBLIC_OPS_URL ?? vars.NEXT_PUBLIC_OPS_URL ?? ""
+const apiUrl =
+  vars.EXPO_PUBLIC_API_URL ?? vars.NEXT_PUBLIC_API_URL ?? ""
 
 let failed = false
 
@@ -56,13 +56,13 @@ if (!clerk) {
   failed = true
 }
 
-if (!ops) {
+if (!apiUrl) {
   console.warn(
-    "[mobile env:check] EXPO_PUBLIC_OPS_URL not set — defaulting to http://localhost:3001",
+    "[mobile env:check] EXPO_PUBLIC_API_URL not set — defaulting to http://localhost:3003",
   )
-} else if (ops.includes("localhost") || ops.includes("127.0.0.1")) {
+} else if (apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1")) {
   console.warn(
-    "[mobile env:check] OPS URL uses localhost — use your LAN IP (e.g. http://192.168.x.x:3001) when testing on a physical device",
+    "[mobile env:check] API URL uses localhost — use your LAN IP (e.g. http://192.168.x.x:3003) when testing on a physical device",
   )
 }
 
