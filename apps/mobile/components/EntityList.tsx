@@ -17,7 +17,7 @@ import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
-import { OPS_URL } from "@/lib/ops-client"
+import { API_URL } from "@/lib/ops-client"
 import { colors, radius, spacing, typography } from "@/lib/theme"
 
 type EntityListProps<T extends { id: number }> = {
@@ -64,7 +64,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         setPage(result.page)
         setTotalPages(result.totalPages)
       } catch (err) {
-        setError(formatOpsError(err, OPS_URL))
+        setError(formatOpsError(err, API_URL))
       } finally {
         setLoading(false)
         setRefreshing(false)

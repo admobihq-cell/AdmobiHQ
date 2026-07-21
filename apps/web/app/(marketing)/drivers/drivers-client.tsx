@@ -13,6 +13,8 @@ import { Label } from "@workspace/ui/components/label"
 import type { DriverJoinInput } from "@/lib/validation/lead-schemas"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 
+import { publicApiUrl } from "@workspace/ops-api-client"
+
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { driverFaqItems } from "@/lib/seo/faq-data"
@@ -107,7 +109,7 @@ export default function DriversClient() {
   const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
 
   async function onSubmit(data: DriverJoinInput) {
-    const res = await fetch("/api/drivers", {
+    const res = await fetch(publicApiUrl("/drivers"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

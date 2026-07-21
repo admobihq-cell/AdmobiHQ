@@ -13,6 +13,8 @@ import { Label } from "@workspace/ui/components/label"
 import type { FleetLeadInput } from "@/lib/validation/lead-schemas"
 import { fleetLeadSchema } from "@/lib/validation/lead-schemas"
 
+import { publicApiUrl } from "@workspace/ops-api-client"
+
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { fleetFaqItems } from "@/lib/seo/faq-data"
@@ -130,7 +132,7 @@ export default function PartnerFleetClient() {
   }
 
   async function onSubmit(data: FleetLeadInput) {
-    const res = await fetch("/api/leads", {
+    const res = await fetch(publicApiUrl("/leads"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

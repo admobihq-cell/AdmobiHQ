@@ -1,0 +1,45 @@
+{
+  "name": "api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "prisma generate --schema=../web/prisma/schema.prisma && dotenv -e .env.local -e ../web/.env.local -- next dev --port 3003 --webpack",
+    "build": "prisma generate --schema=../web/prisma/schema.prisma && next build --webpack",
+    "start": "next start --port 3003",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
+    "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
+    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.36.5",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@sentry/nextjs": "^10.64.0",
+    "@workspace/ops-contracts": "*",
+    "@workspace/sentry-config": "^0.0.0",
+    "bull": "^4.16.5",
+    "dotenv": "^16.6.1",
+    "next": "^16.2.6",
+    "pg": "^8.21.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-email": "^6.3.0",
+    "redis": "^6.0.0",
+    "resend": "^6.12.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@workspace/eslint-config": "*",
+    "@workspace/typescript-config": "*",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "^9.39.2",
+    "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

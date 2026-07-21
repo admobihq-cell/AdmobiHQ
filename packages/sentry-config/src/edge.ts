@@ -4,7 +4,7 @@ import { resolveSentryDsn } from "@workspace/sentry-config/constants"
 import { getSentryEnvironment, getTracesSampleRate } from "@workspace/sentry-config/environment"
 
 type EdgeSentryOptions = {
-  appName: "web" | "app" | "ops"
+  appName: "web" | "app" | "ops" | "api"
 }
 
 export function initEdgeSentry({ appName }: EdgeSentryOptions): void {

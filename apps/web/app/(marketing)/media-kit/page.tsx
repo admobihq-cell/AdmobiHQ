@@ -11,6 +11,8 @@ import { Label } from "@workspace/ui/components/label"
 import type { MediaKitInput } from "@/lib/validation/lead-schemas"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 
+import { publicApiUrl } from "@workspace/ops-api-client"
+
 import { Container } from "@/components/landing/container"
 
 export default function MediaKitPage() {
@@ -26,7 +28,7 @@ export default function MediaKitPage() {
   })
 
   async function onSubmit(data: MediaKitInput) {
-    const res = await fetch("/api/media-kit", {
+    const res = await fetch(publicApiUrl("/media-kit"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

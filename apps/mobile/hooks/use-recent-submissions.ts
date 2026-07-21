@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { formatDateTime } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
-import { OPS_URL, useOpsClient } from "@/lib/ops-client"
+import { API_URL, useOpsClient } from "@/lib/ops-client"
 
 export type RecentSubmission = {
   id: number
@@ -66,7 +66,7 @@ export function useRecentSubmissions(limit = 8) {
 
         if (!cancelled) setItems(merged.slice(0, limit))
       } catch (err) {
-        if (!cancelled) setError(formatOpsError(err, OPS_URL))
+        if (!cancelled) setError(formatOpsError(err, API_URL))
       } finally {
         if (!cancelled) setLoading(false)
       }

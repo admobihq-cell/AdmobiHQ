@@ -30,7 +30,7 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
     <EntityPage<WaitlistEntry>
       title="Waitlist"
       description="Early-interest emails from homepage and other CTAs."
-      apiPath="/api/waitlist"
+      apiPath="/v1/waitlist"
       initialData={initialData}
       getRecordTitle={(row) => row.email}
       columns={[

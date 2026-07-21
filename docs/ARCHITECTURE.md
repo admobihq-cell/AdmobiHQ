@@ -4,7 +4,7 @@ How the codebase is laid out, what each part does, and how to extend it without 
 
 ## 1. What this is
 
-Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../PRODUCT.md). The visual system lives in [DESIGN.md](../DESIGN.md). This monorepo hosts the **marketing site**, **internal ops console**, and a **customer app scaffold** (product UI ships in a later phase). Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md).
+Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../PRODUCT.md). The visual system lives in [DESIGN.md](../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer app scaffold**, and **mobile ops app**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## 2. Stack at a glance
 
@@ -26,10 +26,15 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 .
 ├── apps/
 │   ├── web/                         Marketing site + Payload CMS (:3000)
-│   ├── ops/                         Internal ops console (:3001, Clerk)
-│   └── app/                         Customer app scaffold (:3002, no auth yet)
+│   ├── api/                         Business REST API (:3003)
+│   ├── ops/                         Internal ops console UI (:3001, Clerk)
+│   ├── app/                         Customer app scaffold (:3002)
+│   └── mobile/                      Expo ops mobile app
 ├── packages/
 │   ├── ui/                          Shared UI primitives + design tokens
+│   ├── ops-api-client/              Typed client for /v1 admin + public API
+│   ├── ops-contracts/               Shared Zod schemas and DTOs
+│   ├── sentry-config/               Shared Sentry init helpers
 │   ├── eslint-config/               Flat-config ESLint presets
 │   └── typescript-config/           Base and Next-flavoured tsconfigs
 ├── .agents/
@@ -50,11 +55,13 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 
 | App | Path | Role |
 |-----|------|------|
-| **Web** | `apps/web` | Public marketing, Prisma form APIs, Payload CMS at `/admin` |
-| **Ops** | `apps/ops` | Staff console at `ops.admobihq.com` — CRUD on Prisma data, Clerk `@admobihq.com` |
-| **App** | `apps/app` | Future customer product at `app.admobihq.com` — sidebar shell + coming-soon routes only |
+| **Web** | `apps/web` | Public marketing, Payload CMS at `/admin` |
+| **API** | `apps/api` | Business REST at `api.admobihq.com` — public forms + ops CRUD |
+| **Ops** | `apps/ops` | Staff console UI at `ops.admobihq.com` — calls API, Clerk `@admobihq.com` |
+| **App** | `apps/app` | Future customer product at `app.admobihq.com` — scaffold only |
+| **Mobile** | `apps/mobile` | Expo app for ops staff — calls API with Clerk JWT |
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for Vercel projects, Infisical secrets per project, and domains.
+See [API.md](./API.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 Workspaces are declared in [package.json](../package.json):
 
@@ -80,9 +87,9 @@ App Router. Two top-level groupings:
 
 - [`app/(payload)/`](../apps/web/app/(payload)/) — Payload admin and REST API (not wrapped by marketing header):
   - `/admin` — content admin UI
-  - `/api/*` — Payload REST handlers (distinct from [`app/api/`](../apps/web/app/api/) form routes)
+  - `/api/*` — Payload REST handlers only (CMS content)
 
-Help and blog content are defined in [`apps/web/collections/`](../apps/web/collections/) and fetched via [`lib/payload/`](../apps/web/lib/payload/). **Prisma remains the main backend** for leads, drivers, and fleet data; Payload is CMS-only. See [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](./HELP-CMS.md), and [BLOG-CMS.md](./BLOG-CMS.md).
+Help and blog content are defined in [`apps/web/collections/`](../apps/web/collections/) and fetched via [`lib/payload/`](../apps/web/lib/payload/). **Prisma** owns leads, drivers, and fleet data; **Payload** is CMS-only. Business form POST handlers live in [`apps/api`](../apps/api/) — see [API.md](./API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 
 Every page is either fully static (SSR/SSG) or a client component for forms. Help and blog routes use ISR (`revalidate = 3600`). Form API routes are server-rendered on demand.
 
@@ -95,18 +102,26 @@ Every page is either fully static (SSR/SSG) or a client component for forms. Hel
 3. Wraps children in `<ThemeProvider>` (light / dark toggle) and mounts `<WhatsappFab />` so the floating WhatsApp button shows on every route.
 4. Sets `<html lang="en" className="scroll-smooth antialiased font-sans">` and global metadata (title template, OG defaults, `locale: "en_KE"`).
 
-### 4.3 API routes
+### 4.3 Business API (`apps/api`)
 
-Marketing form handlers live under [`app/api/`](../apps/web/app/api/). They are POST-only, validate with Zod, and persist through **Prisma** where implemented. Payload’s REST API is separate under [`app/(payload)/api/`](../apps/web/app/(payload)/api/) — see [DATA-LAYER.md](./DATA-LAYER.md).
+Marketing forms and ops admin CRUD are served by the dedicated API app — not from `apps/web` or `apps/ops`.
 
-| Route | Purpose | Persistence |
-|---|---|---|
-| [`/api/drivers`](../apps/web/app/api/drivers/route.ts) | Driver program enrollment | Prisma `drivers` + Resend |
-| [`/api/leads`](../apps/web/app/api/leads/route.ts) | Campaign leads or fleet partners | Prisma `leads` / `fleet_partners` + Resend |
-| [`/api/media-kit`](../apps/web/app/api/media-kit/route.ts) | Media kit request | Validates only (not persisted yet) |
-| [`/api/waitlist`](../apps/web/app/api/waitlist/route.ts) | Waitlist signup | Validates only (not persisted yet) |
+| Route | Purpose | Auth |
+|-------|---------|------|
+| `POST /v1/public/leads` | Campaign + fleet partner forms | Public (CORS) |
+| `POST /v1/public/drivers` | Driver enrollment | Public |
+| `POST /v1/public/waitlist` | Waitlist signup | Public |
+| `POST /v1/public/media-kit` | Media kit request | Public |
+| `/v1/leads`, `/v1/fleet`, `/v1/drivers`, `/v1/waitlist`, `/v1/media-kit` | Ops CRUD (+ `[id]`, `bulk`) | Clerk JWT |
+| `GET /v1/stats` | Dashboard metrics | Clerk JWT |
+| `GET /v1/health` | Smoke test | Public |
 
-When adding persistence to media-kit or waitlist, use **Prisma** (new models in [`prisma/schema.prisma`](../apps/web/prisma/schema.prisma)), not Payload collections.
+Clients use [`@workspace/ops-api-client`](../packages/ops-api-client/src/index.ts):
+
+- Web forms: `publicApiUrl("/leads")` etc.
+- Ops + mobile: `createOpsClient({ baseUrl: getApiBaseUrl(), getToken })`
+
+Email (Resend) runs in the API app after public form POSTs. Full reference: [API.md](./API.md).
 
 ### 4.4 Components
 
@@ -213,8 +228,8 @@ Every form follows the same pattern:
 
 1. **Client component** declares a Zod schema.
 2. Uses `useForm({ resolver: zodResolver(schema) })` from `react-hook-form`.
-3. On submit, `fetch` the matching `/api/<route>` with `JSON.stringify(values)`.
-4. API handler validates the body with the **same shape** of schema (defined again in the route file), returns `{ ok: true }` or a 400 with the Zod error.
+3. On submit, `fetch(publicApiUrl("/<resource>"), …)` via `@workspace/ops-api-client` — targets `NEXT_PUBLIC_API_URL/v1/public/*`.
+4. API handler in `apps/api` validates, persists via Prisma, sends email where configured.
 5. The client flips into a success state in local React state. No global form store, no toast library.
 
 Forms live in the page files themselves: [`drivers/page.tsx`](../apps/web/app/(marketing)/drivers/page.tsx), [`partner-fleet/page.tsx`](../apps/web/app/(marketing)/partner-fleet/page.tsx), [`start-campaign/page.tsx`](../apps/web/app/(marketing)/start-campaign/page.tsx), [`media-kit/page.tsx`](../apps/web/app/(marketing)/media-kit/page.tsx), plus the waitlist form inline in [`get-started-section.tsx`](../apps/web/components/landing/get-started-section.tsx).
@@ -226,11 +241,12 @@ The `zod` version is pinned to `3.25.76` via a workspace-root [package.json](../
 All orchestrated by Turbo. Run from the repo root:
 
 ```bash
-npm run dev        # turbo dev — web uses webpack + Payload import map fix
-npm run build      # turbo build — production build, depends on ^build for packages
-npm run lint       # turbo lint
-npm run typecheck  # turbo typecheck
-npm run format     # prettier + tailwind plugin
+npm run dev              # pull Infisical secrets + start web, api, ops, app
+npm run dev:skip-pull    # start without re-pulling secrets
+npm run build            # turbo build — production build, depends on ^build for packages
+npm run lint             # turbo lint
+npm run typecheck        # turbo typecheck
+npm run format           # prettier + tailwind plugin
 ```
 
 Full local setup (Infisical, database, Payload, seeds): [DEV-SETUP.md](./DEV-SETUP.md).
@@ -274,13 +290,20 @@ Other skill folders present: `brandkit`, `design-taste-frontend`, `find-skills`,
 
 ## 12. Environment
 
-[apps/web/.env.local](../apps/web/.env.local) — local-only, gitignored. Keys currently defined (values not in this doc):
+Each app has its own **`apps/<app>/.env.local`** (gitignored), pulled from Infisical via `npm run env:pull` or automatically at the start of `npm run dev`.
 
-- `INFISICAL_CLIENT_ID` / `INFISICAL_CLIENT_SECRET` / `INFISICAL_PROJECT_ID` — Infisical secret manager credentials.
-- `RESEND_FROM_EMAIL` — the From address for transactional email (Resend integration is wired or in progress).
-- `NODE_ENV` — standard.
+Key cross-app variables:
 
-There are no public `NEXT_PUBLIC_*` env vars yet; nothing leaks to the client at runtime.
+| Variable | Used by |
+|----------|---------|
+| `NEXT_PUBLIC_API_URL` | web, api, ops, app (build-time) — business API origin |
+| `EXPO_PUBLIC_API_URL` | mobile (mapped from `NEXT_PUBLIC_API_URL` on env pull) |
+| `DATABASE_URL` | web, api, ops (ops uses direct Prisma for server-rendered stats) |
+| `CLERK_*` | api, ops, mobile |
+| `PAYLOAD_SECRET` | web only |
+| `RESEND_*`, `REDIS_URL` | api only (form emails) |
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the Vercel sync matrix.
 
 ## 13. Design constraints (don't drift)
 
@@ -315,8 +338,8 @@ From the impeccable shared design laws:
 ### 14.2 New marketing page
 
 1. Create `apps/web/app/(marketing)/<route>/page.tsx`. It picks up the marketing layout (which renders `SiteHeader`) automatically.
-2. If it's a form page, follow the existing pattern: Zod schema + `react-hook-form` + POST to `/api/<endpoint>`.
-3. If it needs new server logic, add `apps/web/app/api/<endpoint>/route.ts` exporting a `POST` function. Re-declare the Zod schema there; validate inside the handler.
+2. If it's a form page, follow the existing pattern: Zod schema + `react-hook-form` + `fetch(publicApiUrl("/<resource>"), …)`.
+3. If it needs new server logic, add `apps/api/app/v1/public/<resource>/route.ts` and wire validation in `apps/api/lib/validation/`. For ops CRUD, add under `apps/api/app/v1/<resource>/`.
 
 ### 14.3 New shared primitive
 
