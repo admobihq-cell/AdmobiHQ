@@ -2,14 +2,18 @@
   "expo": {
     "name": "Admobi Ops",
     "slug": "admobihq-ops",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "orientation": "portrait",
+    "runtimeVersion": "0.0.2",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.admobihq.ops"
+      "bundleIdentifier": "com.admobihq.ops",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +23,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.admobihq.ops",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -28,18 +38,67 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       "expo-secure-store",
+      "@maplibre/maplibre-react-native",
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#FAF9F7"
+          "backgroundColor": "#000000",
+          "imageWidth": 200,
+          "ios": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain"
+          },
+          "android": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain",
+            "imageWidth": 200
+          }
+        }
+      ],
+      "expo-updates",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Admobi Ops to use your location to center the fleet map.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0B6E4F",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Admobi Ops to access photos for media kit and campaign assets.",
+          "cameraPermission": "Allow Admobi Ops to take photos for media kit and proof of play."
         }
       ]
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8c3d6d8e-f5e8-4945-90be-f4ad5311ca54"
+      }
+    },
+    "owner": "victormnz",
+    "updates": {
+      "url": "https://u.expo.dev/8c3d6d8e-f5e8-4945-90be-f4ad5311ca54"
     }
   }
 }

@@ -15,6 +15,7 @@ export default function FleetScreen() {
   return (
     <EntityList
       title="Fleet partners"
+      description="Onboard and track fleet partner applications across cities."
       loadPage={loadPage}
       getTitle={(item) => item.company_name}
       getSubtitle={(item) => `${item.primary_contact_name} · ${item.city}`}

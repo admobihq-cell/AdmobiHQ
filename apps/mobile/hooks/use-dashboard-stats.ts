@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { DateRangeKey, StatsResponseDto } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
@@ -10,6 +10,9 @@ export function useDashboardStats(initialRange: DateRangeKey = "30d") {
   const [stats, setStats] = useState<StatsResponseDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
+
+  const refetch = useCallback(() => setTick((n) => n + 1), [])
 
   useEffect(() => {
     let cancelled = false
@@ -31,7 +34,7 @@ export function useDashboardStats(initialRange: DateRangeKey = "30d") {
     return () => {
       cancelled = true
     }
-  }, [client, range])
+  }, [client, range, tick])
 
-  return { stats, loading, error, range, setRange }
+  return { stats, loading, error, range, setRange, refetch }
 }

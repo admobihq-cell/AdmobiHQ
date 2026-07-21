@@ -6,14 +6,30 @@
     "build": "turbo build",
     "dev": "node scripts/dev-with-env.mjs",
     "dev:all": "node scripts/dev-with-env.mjs --mobile",
+    "dev:stack:mobile": "node scripts/dev-with-env.mjs --mobile-stack",
+    "dev:stack:mobile:ops": "node scripts/dev-with-env.mjs --mobile-stack --ops-only",
+    "dev:stack:mobile:customer": "node scripts/dev-with-env.mjs --mobile-stack --customer-only",
+    "dev:stack:mobile:skip-pull": "node scripts/dev-with-env.mjs --mobile-stack --skip-pull",
+    "dev:mobile": "npm run dev:clear -w mobile",
+    "dev:mobile:customer": "npm run dev:clear -w app-mobile",
     "dev:skip-pull": "node scripts/dev-with-env.mjs --skip-pull",
     "dev:staging": "node scripts/dev-with-env.mjs --staging",
     "dev:turbo": "turbo dev --filter=web --filter=api --filter=ops --filter=app",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w api && npm run env:pull -w mobile",
-    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w api && npm run env:pull:staging -w mobile",
+    "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w app && npm run env:pull -w api && npm run env:pull -w mobile && npm run env:pull -w app-mobile",
+    "env:pull:mobile-stack": "npm run env:pull -w api && npm run env:pull -w mobile && npm run env:pull -w app-mobile",
+    "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w app && npm run env:pull:staging -w api && npm run env:pull:staging -w mobile && npm run env:pull:staging -w app-mobile",
+    "env:pull:mobile-stack:staging": "npm run env:pull:staging -w api && npm run env:pull:staging -w mobile && npm run env:pull:staging -w app-mobile",
+    "mobile:assets:sync": "node scripts/sync-mobile-brand-assets.mjs",
+    "mobile:prebuild": "npm run prebuild:android -w mobile && npm run prebuild:android -w app-mobile",
+    "mobile:apk:local": "node scripts/build-apk-local.mjs all",
+    "mobile:apk:local:ops": "node scripts/build-apk-local.mjs mobile",
+    "mobile:apk:local:customer": "node scripts/build-apk-local.mjs app-mobile",
+    "mobile:apk:eas:ops": "npm run build:android:preview -w mobile",
+    "mobile:apk:eas:customer": "npm run build:android:preview -w app-mobile",
+    "mobile:apk:eas": "npm run mobile:apk:eas:ops && npm run mobile:apk:eas:customer",
     "postinstall": "patch-package"
   },
   "devDependencies": {
@@ -46,6 +62,10 @@
       "react-dom": "19.2.4"
     },
     "mobile": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    },
+    "app-mobile": {
       "react": "19.1.0",
       "react-dom": "19.1.0"
     }

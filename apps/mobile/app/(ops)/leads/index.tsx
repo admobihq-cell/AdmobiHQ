@@ -15,6 +15,7 @@ export default function LeadsScreen() {
   return (
     <EntityList
       title="Campaign leads"
+      description="Review and manage inbound campaign interest from advertisers."
       loadPage={loadPage}
       getTitle={(item) => item.company_name}
       getSubtitle={(item) => `${item.contact_name} · ${item.email}`}

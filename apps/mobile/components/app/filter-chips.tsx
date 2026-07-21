@@ -13,6 +13,7 @@ type FilterChipsProps = {
   selected: string | null
   onSelect: (key: string | null) => void
   showAll?: boolean
+  embedded?: boolean
 }
 
 export function FilterChips({
@@ -20,6 +21,7 @@ export function FilterChips({
   selected,
   onSelect,
   showAll = true,
+  embedded = false,
 }: FilterChipsProps) {
   const handleSelect = (key: string | null) => {
     if (Platform.OS !== "web") {
@@ -32,7 +34,10 @@ export function FilterChips({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[
+        styles.scroll,
+        embedded && styles.scrollEmbedded,
+      ]}
     >
       {showAll ? (
         <Pressable
@@ -67,6 +72,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
     paddingBottom: spacing.sm,
+  },
+  scrollEmbedded: {
+    paddingHorizontal: 0,
   },
   chip: {
     paddingHorizontal: 14,

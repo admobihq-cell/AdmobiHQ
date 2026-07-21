@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Inbox, Search } from "@/components/icons"
 import type { PaginatedResponse } from "@workspace/ops-contracts"
 import { formatDateTime } from "@workspace/ops-contracts"
@@ -15,6 +16,7 @@ import { formatDateTime } from "@workspace/ops-contracts"
 import { FilterChips, type FilterChipOption } from "@/components/app/filter-chips"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
+import { PageHero } from "@/components/ui/page-hero"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
@@ -22,6 +24,8 @@ import { colors, radius, spacing, typography } from "@/lib/theme"
 
 type EntityListProps<T extends { id: number }> = {
   title: string
+  description?: string
+  eyebrow?: string
   loadPage: (page: number) => Promise<PaginatedResponse<T>>
   getTitle: (item: T) => string
   getSubtitle?: (item: T) => string
@@ -34,6 +38,8 @@ type EntityListProps<T extends { id: number }> = {
 
 export function EntityList<T extends { id: number; created_at?: string }>({
   title,
+  description,
+  eyebrow = "Operations",
   loadPage,
   getTitle,
   getSubtitle,
@@ -44,6 +50,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   searchKeys,
 }: EntityListProps<T>) {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [items, setItems] = useState<T[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -108,8 +115,15 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   }, [items, filter, search, getFilterValue, searchKeys])
 
   const listHeader = (
-    <View style={styles.header}>
-      <Text style={styles.heading}>{title}</Text>
+    <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+      <PageHero
+        eyebrow={eyebrow}
+        title={title}
+        compact
+        description={
+          description ?? "Search, filter, and tap a row to view details."
+        }
+      />
       <View style={styles.searchBox}>
         <Search color={colors.mutedForeground} size={18} strokeWidth={2} />
         <TextInput
@@ -128,6 +142,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
           options={filterOptions}
           selected={filter}
           onSelect={setFilter}
+          embedded
         />
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -203,13 +218,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
     gap: spacing.sm,
-  },
-  heading: {
-    ...typography.largeTitle,
-    color: colors.text,
   },
   searchBox: {
     flexDirection: "row",
@@ -240,12 +250,17 @@ const styles = StyleSheet.create({
   rowWrapper: {
     marginHorizontal: spacing.lg,
     backgroundColor: colors.surface,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   rowFirst: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
   },
   rowLast: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: radius.lg,
     marginBottom: spacing.md,

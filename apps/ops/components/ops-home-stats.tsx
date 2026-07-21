@@ -1,6 +1,16 @@
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import {
+  ArrowRight,
+  Car,
+  FileText,
+  Layers,
+  Mail,
+  Megaphone,
+  Truck,
+} from "lucide-react"
 
+import { SectionHeading } from "@/components/ui/section-heading"
+import { StatCard } from "@/components/ui/stat-card"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -20,25 +30,24 @@ type OpsHomeStatsProps = {
   } | null
 }
 
-export function OpsHomeStats({ stats }: OpsHomeStatsProps) {
-  const statItems = stats
-    ? [
-        { label: "Total (30d)", value: stats.total },
-        { label: "Campaign leads", value: stats.leads },
-        { label: "Fleet partners", value: stats.fleet },
-        { label: "Drivers", value: stats.drivers },
-        { label: "Waitlist", value: stats.waitlist },
-        { label: "Media kit", value: stats.mediaKit },
-      ]
-    : null
+const STAT_CONFIG = [
+  { key: "total", label: "Total submissions", icon: Layers },
+  { key: "leads", label: "Campaign leads", icon: Megaphone },
+  { key: "fleet", label: "Fleet partners", icon: Truck },
+  { key: "drivers", label: "Drivers", icon: Car },
+  { key: "waitlist", label: "Waitlist", icon: Mail },
+  { key: "mediaKit", label: "Media kit", icon: FileText },
+] as const
 
-  if (!statItems) {
+export function OpsHomeStats({ stats }: OpsHomeStatsProps) {
+  if (!stats) {
     return (
-      <Card className="border-dashed">
+      <Card className="border-dashed shadow-none">
         <CardHeader>
           <CardTitle>Stats unavailable</CardTitle>
           <CardDescription>
-            Could not load the 30-day snapshot. Check database connectivity or run{" "}
+            Could not load the 30-day snapshot. Check database connectivity or
+            run{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
               npm run env:pull -w ops
             </code>
@@ -51,28 +60,27 @@ export function OpsHomeStats({ stats }: OpsHomeStatsProps) {
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Last 30 days</h2>
-          <p className="text-sm text-muted-foreground">
-            Quick snapshot across all submission types.
-          </p>
-        </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/overview">
-            Full overview
-            <ArrowRight />
-          </Link>
-        </Button>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {statItems.map((item) => (
-          <Card key={item.label}>
-            <CardHeader className="pb-2">
-              <CardDescription>{item.label}</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{item.value}</CardTitle>
-            </CardHeader>
-          </Card>
+      <SectionHeading
+        title="Last 30 days"
+        description="Quick snapshot across all submission types."
+        action={
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/overview">
+              Full overview
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+        }
+      />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {STAT_CONFIG.map((item) => (
+          <StatCard
+            key={item.key}
+            icon={item.icon}
+            label={item.label}
+            value={stats[item.key]}
+            hint={item.key === "total" ? "All types" : undefined}
+          />
         ))}
       </div>
     </section>
