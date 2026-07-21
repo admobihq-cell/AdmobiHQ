@@ -20,7 +20,7 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 - **Map** (`/map`) — mapcn (MapLibre) with booked corridors, coverage zones, and proof-of-play clusters (demo Nairobi data via `@workspace/geo`)
 - **No authentication** — login ships in a later phase
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
-- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/app-mobile`, no Clerk)
+- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/app-mobile`, no Clerk). Builds & APKs: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ## Secrets (Infisical)
 

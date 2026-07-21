@@ -2,7 +2,7 @@
 
 Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 
-**Deployment:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **API it calls:** [API.md](./API.md)
+**Deployment:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **API it calls:** [API.md](./API.md) · **Ops mobile app:** [MOBILE-OPS.md](./MOBILE-OPS.md) · **APK / OTA:** [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ## URLs
 

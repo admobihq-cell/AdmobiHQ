@@ -8,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { LoadingScreen } from "@/components/LoadingScreen"
 import { getPrimaryEmail, isOpsStaffEmail } from "@/lib/auth"
+import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { colors } from "@/lib/theme"
 
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
@@ -23,11 +24,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const authReady = isLoaded && userLoaded
 
-  useEffect(() => {
-    if (!authReady) return
-
-    void SplashScreen.hideAsync()
-  }, [authReady])
+  useSplashBootstrap(authReady)
+  useOtaUpdates()
 
   useEffect(() => {
     if (!authReady) return
@@ -62,7 +60,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }, [authReady, isSignedIn, user, segments, router])
 
   if (!authReady) {
-    return <LoadingScreen message="Checking your session" />
+    return <LoadingScreen />
   }
 
   return <>{children}</>

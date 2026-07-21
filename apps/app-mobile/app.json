@@ -4,6 +4,7 @@
     "slug": "admobihq-app",
     "version": "0.0.1",
     "orientation": "portrait",
+    "runtimeVersion": "0.0.1",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq-app",
     "userInterfaceStyle": "automatic",
@@ -28,6 +29,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       "@maplibre/maplibre-react-native",
       [
         "expo-splash-screen",
@@ -35,12 +37,34 @@
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#000000",
-          "imageWidth": 200
+          "imageWidth": 280,
+          "ios": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain"
+          },
+          "android": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain",
+            "imageWidth": 280
+          }
         }
-      ]
+      ],
+      "expo-updates"
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "17e31060-6e4d-4b1a-8e85-37464fd2b159"
+      }
+    },
+    "owner": "victormnz",
+    "updates": {
+      "url": "https://u.expo.dev/17e31060-6e4d-4b1a-8e85-37464fd2b159"
     }
   }
 }

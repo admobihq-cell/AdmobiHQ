@@ -4,6 +4,7 @@
     "slug": "admobihq-ops",
     "version": "0.0.1",
     "orientation": "portrait",
+    "runtimeVersion": "0.0.1",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq",
     "userInterfaceStyle": "light",
@@ -28,6 +29,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       "expo-secure-store",
       [
         "expo-splash-screen",
@@ -35,12 +37,34 @@
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#000000",
-          "imageWidth": 200
+          "imageWidth": 280,
+          "ios": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain"
+          },
+          "android": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain",
+            "imageWidth": 280
+          }
         }
-      ]
+      ],
+      "expo-updates"
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8c3d6d8e-f5e8-4945-90be-f4ad5311ca54"
+      }
+    },
+    "owner": "victormnz",
+    "updates": {
+      "url": "https://u.expo.dev/8c3d6d8e-f5e8-4945-90be-f4ad5311ca54"
     }
   }
 }

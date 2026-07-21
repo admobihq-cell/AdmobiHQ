@@ -2,7 +2,7 @@
 
 Command reference for running **Admobi** locally: marketing site (`apps/web`), business API (`apps/api`), ops console (`apps/ops`), customer app (`apps/app`), and **Payload** CMS. Run commands from the **repository root** unless noted.
 
-**Related:** [API.md](./API.md), [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md).
+**Related:** [API.md](./API.md), [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ---
 
@@ -51,6 +51,8 @@ Customer Expo only:
 ```bash
 npm run dev -w app-mobile
 ```
+
+**Installable APKs and OTA** (team phones, no Metro): see [MOBILE-BUILDS.md](./MOBILE-BUILDS.md).
 
 Pull staging secrets locally:
 
@@ -289,6 +291,29 @@ Schema: [`apps/web/prisma/schema.prisma`](../apps/web/prisma/schema.prisma). Con
 | `npm run payload -w web -- <args>` | Advanced CLI (`migrate`, `generate:types`, etc.) |
 
 `dev` and `prebuild` run `fix-importmap` automatically. If admin shows `worker_threads` / `child_process` errors, run `npm run generate:importmap -w web` and restart dev. Details: [HELP-CMS.md](./HELP-CMS.md#payload-admin-build-worker_threads--child_process).
+
+### Mobile (Expo)
+
+Full guide: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md) — local dev, debug APKs, EAS preview APKs, OTA updates, keystores.
+
+| Command | When to run |
+|---------|-------------|
+| `npm run dev -w mobile` | Daily ops mobile dev (Metro :8081) |
+| `npm run dev -w app-mobile` | Daily customer mobile dev (Metro :8082) |
+| `npm run dev:all` | Web stack + both Expo apps (Turbo TUI) |
+| `npm run env:pull -w mobile` | Clerk + API vars for ops Expo |
+| `npm run env:pull -w app-mobile` | API vars for customer Expo |
+| `npm run mobile:assets:sync` | Regenerate icons/splash from `assets/brand/` |
+| `npm run mobile:apk:local:ops` | Local debug APK for ops (needs Metro — dev only) |
+| `npm run mobile:apk:local:customer` | Local debug APK for customer (needs Metro — dev only) |
+| `npm run mobile:apk:eas:ops` | **EAS cloud preview APK** for ops — share with team |
+| `npm run mobile:apk:eas:customer` | **EAS cloud preview APK** for customer — share with team |
+| `npm run update:preview -w mobile` | Push OTA JS update to ops preview installs |
+| `npm run update:preview -w app-mobile` | Push OTA JS update to customer preview installs |
+
+**Team APK workflow:** `npx eas-cli login` → `cd apps/mobile` or `apps/app-mobile` → `npx eas-cli build -p android --profile preview` → share download link. After first build: `npx eas-cli update:configure`, then `eas update --channel preview` for JS-only changes (no reinstall).
+
+Per-app docs: [MOBILE-OPS.md](./MOBILE-OPS.md) · [APP-MOBILE.md](./APP-MOBILE.md)
 
 ### Seed content
 

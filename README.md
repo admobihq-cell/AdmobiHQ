@@ -57,6 +57,9 @@ Skip Infisical pull if `.env.local` files already exist: `npm run dev:skip-pull`
 |---------|---------|
 | `npm run dev` | Pull Infisical dev secrets + start web, api, ops, app |
 | `npm run dev:all` | Same + ops mobile + customer mobile (Expo) |
+| `npm run dev:mobile` | Ops Expo with cleared Metro cache (:8081) |
+| `npm run dev:mobile:customer` | Customer Expo with cleared Metro cache (:8082) |
+| `npm run mobile:apk:eas` | Build both preview APKs on EAS (shareable, no Metro) |
 | `npm run dev:skip-pull` | Start apps without re-pulling secrets |
 | `npm run dev -w web` | Single app (replace `web` with `api`, `ops`, `app`) |
 | `npm run build` | Production build (Turbo, all workspaces) |
@@ -95,7 +98,9 @@ Pull requests to **`master`** run install, typecheck, lint, and build (`.github/
 | [docs/OPS-ADMIN.md](docs/OPS-ADMIN.md) | Ops console |
 | [docs/APP.md](docs/APP.md) | Customer web app |
 | [docs/APP-MOBILE.md](docs/APP-MOBILE.md) | Customer Expo app (no Clerk) |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel, Infisical, domains |
+| [docs/MOBILE-OPS.md](docs/MOBILE-OPS.md) | Ops Expo app (Clerk) |
+| [docs/MOBILE-BUILDS.md](docs/MOBILE-BUILDS.md) | APK builds, EAS, OTA updates |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel, Infisical, domains, EAS mobile |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Repo layout and conventions |
 | [docs/DATA-LAYER.md](docs/DATA-LAYER.md) | Prisma vs Payload |
 | [PRODUCT.md](PRODUCT.md) | Audience, positioning, tone |

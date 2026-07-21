@@ -61,10 +61,10 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 | **API** | `apps/api` | Business REST at `api.admobihq.com` — public forms + ops CRUD |
 | **Ops** | `apps/ops` | Staff console UI at `ops.admobihq.com` — calls API, Clerk `@admobihq.com` |
 | **App** | `apps/app` | Customer product at `app.admobihq.com` — scaffold + Map |
-| **Mobile** | `apps/mobile` | Expo app for ops staff — calls API with Clerk JWT |
-| **App mobile** | `apps/app-mobile` | Expo customer app — no Clerk; Map tab with MapLibre |
+| **Mobile** | `apps/mobile` | Expo app for ops staff — calls API with Clerk JWT. See [MOBILE-OPS.md](./MOBILE-OPS.md) |
+| **App mobile** | `apps/app-mobile` | Expo customer app — no Clerk; Map tab with MapLibre. See [APP-MOBILE.md](./APP-MOBILE.md) |
 
-See [API.md](./API.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md), [APP-MOBILE.md](./APP-MOBILE.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
+See [API.md](./API.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md), [APP-MOBILE.md](./APP-MOBILE.md), [MOBILE-OPS.md](./MOBILE-OPS.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 Workspaces are declared in [package.json](../package.json):
 
