@@ -19,7 +19,7 @@ import { GroupedSection } from "@/components/app/grouped-list"
 import { StatusChip } from "@/components/app/status-chip"
 import { Trash } from "@/components/icons"
 import { formatOpsError } from "@/lib/format-error"
-import { OPS_URL } from "@/lib/ops-client"
+import { API_URL } from "@/lib/ops-client"
 import { colors, spacing, typography } from "@/lib/theme"
 
 type DetailField = {
@@ -67,7 +67,7 @@ export function EntityDetail<T>({
     try {
       setItem(await load(id))
     } catch (err) {
-      setError(formatOpsError(err, OPS_URL))
+      setError(formatOpsError(err, API_URL))
     } finally {
       setLoading(false)
     }
@@ -100,7 +100,7 @@ export function EntityDetail<T>({
                 }
                 router.back()
               } catch (err) {
-                setError(formatOpsError(err, OPS_URL))
+                setError(formatOpsError(err, API_URL))
               } finally {
                 setDeleting(false)
               }

@@ -49,6 +49,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^3.7.5",
     "@vercel/speed-insights": "^2.0.0",
+    "@workspace/ops-api-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "bull": "^4.16.5",

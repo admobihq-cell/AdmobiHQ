@@ -2,6 +2,7 @@ const optional = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_WEB_URL",
   "NEXT_PUBLIC_OPS_URL",
+  "NEXT_PUBLIC_API_URL",
 ] as const
 
 let warned = false

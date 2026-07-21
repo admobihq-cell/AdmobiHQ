@@ -8,6 +8,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
+import { publicApiUrl } from "@workspace/ops-api-client"
+
 import { Container } from "./container"
 
 export function GetStartedSection() {
@@ -22,7 +24,7 @@ export function GetStartedSection() {
     setStatus("loading")
     setErrorMessage(null)
     try {
-      const res = await fetch("/api/waitlist", {
+      const res = await fetch(publicApiUrl("/waitlist"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

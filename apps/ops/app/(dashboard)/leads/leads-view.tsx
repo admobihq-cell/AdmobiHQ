@@ -76,7 +76,7 @@ export function LeadsView({ initialData }: LeadsViewProps) {
     <EntityPage<Lead>
       title="Campaign Leads"
       description="Advertisers who submitted campaign briefs or were added manually."
-      apiPath="/api/leads"
+      apiPath="/v1/leads"
       initialData={initialData}
       getRecordTitle={(row) => row.contact_name}
       statusBulkOptions={[
