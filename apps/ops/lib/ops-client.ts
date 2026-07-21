@@ -2,7 +2,11 @@
 
 import { useMemo } from "react"
 import { useAuth } from "@clerk/nextjs"
-import { createOpsClient, type OpsClient } from "@workspace/ops-api-client"
+import {
+  createOpsClient,
+  getApiBaseUrl,
+  type OpsClient,
+} from "@workspace/ops-api-client"
 
 export function useOpsClient(): OpsClient {
   const { getToken } = useAuth()
@@ -10,7 +14,7 @@ export function useOpsClient(): OpsClient {
   return useMemo(
     () =>
       createOpsClient({
-        baseUrl: "",
+        baseUrl: getApiBaseUrl(),
         getToken: async () => getToken(),
       }),
     [getToken],
@@ -19,15 +23,15 @@ export function useOpsClient(): OpsClient {
 
 export function resolveOpsResource(client: OpsClient, apiPath: string) {
   switch (apiPath) {
-    case "/api/leads":
+    case "/v1/leads":
       return client.leads
-    case "/api/fleet":
+    case "/v1/fleet":
       return client.fleet
-    case "/api/drivers":
+    case "/v1/drivers":
       return client.drivers
-    case "/api/waitlist":
+    case "/v1/waitlist":
       return client.waitlist
-    case "/api/media-kit":
+    case "/v1/media-kit":
       return client.mediaKit
     default:
       throw new Error(`Unknown ops API path: ${apiPath}`)

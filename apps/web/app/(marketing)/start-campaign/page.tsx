@@ -12,6 +12,8 @@ import { Label } from "@workspace/ui/components/label"
 import type { CampaignLeadInput } from "@/lib/validation/lead-schemas"
 import { campaignLeadSchema } from "@/lib/validation/lead-schemas"
 
+import { publicApiUrl } from "@workspace/ops-api-client"
+
 import { Container } from "@/components/landing/container"
 
 const selectClass =
@@ -88,7 +90,7 @@ export default function StartCampaignPage() {
       ...data,
       phone: data.phone?.trim() || undefined,
     }
-    const res = await fetch("/api/leads", {
+    const res = await fetch(publicApiUrl("/leads"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

@@ -30,7 +30,7 @@ export function MediaKitView({ initialData }: MediaKitViewProps) {
     <EntityPage<MediaKitRequest>
       title="Media Kit Requests"
       description="Marketers and agencies who requested the Admobi media kit."
-      apiPath="/api/media-kit"
+      apiPath="/v1/media-kit"
       initialData={initialData}
       getRecordTitle={(row) => row.name}
       columns={[

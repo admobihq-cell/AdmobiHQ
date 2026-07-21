@@ -42,8 +42,10 @@ export class OpsApiError extends Error {
 }
 
 export type OpsClientOptions = {
-  /** Base URL for the ops API, e.g. `https://ops.admobihq.com` or `http://localhost:3001`. Empty string for same-origin. */
+  /** Base URL for the API, e.g. `https://api.admobihq.com` or `http://localhost:3003`. */
   baseUrl: string
+  /** API path prefix. Defaults to `/v1`. */
+  apiPrefix?: string
   /** Returns a Clerk session JWT, or null if unauthenticated. */
   getToken: () => Promise<string | null>
   /** Optional fetch implementation (defaults to global fetch). */
@@ -108,6 +110,21 @@ function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/$/, "")
 }
 
+const DEFAULT_API_BASE_URL = "http://localhost:3003"
+
+export function getApiBaseUrl(): string {
+  return normalizeBaseUrl(
+    process.env.NEXT_PUBLIC_API_URL ??
+      process.env.EXPO_PUBLIC_API_URL ??
+      DEFAULT_API_BASE_URL,
+  )
+}
+
+export function publicApiUrl(resource: string): string {
+  const path = resource.startsWith("/") ? resource : `/${resource}`
+  return `${getApiBaseUrl()}/v1/public${path}`
+}
+
 async function parseError(res: Response): Promise<OpsApiError> {
   let body: ApiErrorResponse | undefined
   try {
@@ -124,6 +141,7 @@ async function parseError(res: Response): Promise<OpsApiError> {
 
 export function createOpsClient(options: OpsClientOptions): OpsClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl)
+  const apiPrefix = options.apiPrefix ?? "/v1"
   const fetchImpl = options.fetch ?? fetch
 
   async function request<T>(
@@ -202,16 +220,16 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   }
 
   return {
-    leads: createEntityResource("/api/leads"),
-    fleet: createEntityResource("/api/fleet"),
-    drivers: createEntityResource("/api/drivers"),
-    waitlist: createEntityResource("/api/waitlist"),
-    mediaKit: createEntityResource("/api/media-kit"),
+    leads: createEntityResource(`${apiPrefix}/leads`),
+    fleet: createEntityResource(`${apiPrefix}/fleet`),
+    drivers: createEntityResource(`${apiPrefix}/drivers`),
+    waitlist: createEntityResource(`${apiPrefix}/waitlist`),
+    mediaKit: createEntityResource(`${apiPrefix}/media-kit`),
     stats: {
       get: (params) => {
         const query = buildListQueryParams({ range: params?.range })
         const qs = query.toString()
-        return request<StatsResponseDto>(`/api/stats${qs ? `?${qs}` : ""}`)
+        return request<StatsResponseDto>(`${apiPrefix}/stats${qs ? `?${qs}` : ""}`)
       },
     },
   }
