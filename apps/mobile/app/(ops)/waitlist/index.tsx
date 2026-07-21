@@ -13,6 +13,7 @@ export default function WaitlistScreen() {
   return (
     <EntityList
       title="Waitlist"
+      description="Early-interest emails from homepage and other launch CTAs."
       loadPage={loadPage}
       getTitle={(item) => item.email}
       getSubtitle={(item) => item.source ?? "Unknown source"}

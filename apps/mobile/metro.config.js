@@ -8,10 +8,22 @@ const mobileModules = path.resolve(projectRoot, "node_modules")
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(projectRoot)
 
-config.watchFolders = [workspaceRoot]
+// Only watch packages this app imports — not the whole monorepo (avoids
+// ENOENT spam from sibling Next.js apps writing under apps/*/.next).
+config.watchFolders = [
+  path.resolve(workspaceRoot, "packages/ops-api-client"),
+  path.resolve(workspaceRoot, "packages/ops-contracts"),
+]
 config.resolver.nodeModulesPaths = [
   mobileModules,
   path.resolve(workspaceRoot, "node_modules"),
+]
+
+const appsDir = path.resolve(workspaceRoot, "apps").replace(/\\/g, "/")
+config.resolver.blockList = [
+  new RegExp(
+    `${appsDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/[^/]+/\\.next/.*`,
+  ),
 ]
 
 function resolveFromMobile(moduleName) {

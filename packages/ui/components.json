@@ -17,6 +17,9 @@
     "lib": "@workspace/ui/lib",
     "ui": "@workspace/ui/components"
   },
+  "registries": {
+    "@mapcn": "https://mapcn.dev/r/{name}.json"
+  },
   "rtl": false,
   "menuColor": "default",
   "menuAccent": "subtle"

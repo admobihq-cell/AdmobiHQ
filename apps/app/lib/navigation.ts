@@ -1,6 +1,7 @@
 import {
   BarChart3,
   LayoutDashboard,
+  Map,
   Megaphone,
   Settings,
   type LucideIcon,
@@ -25,6 +26,13 @@ export const appNavItems: AppNavItem[] = [
     label: "Campaigns",
     icon: Megaphone,
     description: "Create and manage out-of-home campaigns from this workspace.",
+  },
+  {
+    href: "/map",
+    label: "Map",
+    icon: Map,
+    description:
+      "Campaign corridors, coverage zones, and proof-of-play across Nairobi.",
   },
   {
     href: "/reports",

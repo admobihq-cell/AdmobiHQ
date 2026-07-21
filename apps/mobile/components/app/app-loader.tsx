@@ -78,19 +78,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    width: 220,
+    height: 120,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.lg,
   },
   logo: {
-    width: 44,
-    height: 44,
+    width: 200,
+    height: 100,
   },
   title: {
     ...typography.headline,

@@ -162,7 +162,8 @@ export function EntityDetail<T>({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.hero}>
+      <View style={styles.heroCard}>
+        <Text style={styles.eyebrow}>Record</Text>
         <Text style={styles.title}>{title(item)}</Text>
         {chipItems.length > 0 ? (
           <View style={styles.chips}>
@@ -253,13 +254,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     padding: spacing.lg,
   },
-  hero: {
+  heroCard: {
     gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  eyebrow: {
+    ...typography.caption,
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontWeight: "700",
   },
   title: {
-    ...typography.title,
+    fontSize: 22,
+    fontWeight: "700",
     color: colors.text,
+    letterSpacing: -0.3,
   },
   chips: {
     flexDirection: "row",

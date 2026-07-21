@@ -44,6 +44,7 @@ import {
 import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
 import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
+import { PageHero } from "@/components/ui/page-hero"
 
 export type ColumnDef<T> = {
   key: string
@@ -321,11 +322,8 @@ export function EntityPage<T extends { id: number }>({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+    <div className="flex flex-1 flex-col gap-8">
+      <PageHero eyebrow="Operations" title={title} description={description} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
@@ -436,7 +434,7 @@ export function EntityPage<T extends { id: number }>({
         </div>
       )}
 
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-none">
         <Table>
           <TableHeader>
             <TableRow>
@@ -461,8 +459,11 @@ export function EntityPage<T extends { id: number }>({
               <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly selectable />
             ) : !data?.items.length ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 2} className="h-24 text-center text-muted-foreground">
-                  {emptyMessage}
+                <TableCell colSpan={columns.length + 2} className="h-32 text-center">
+                  <p className="text-sm font-medium text-foreground">{emptyMessage}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Try adjusting your search or add a new record.
+                  </p>
                 </TableCell>
               </TableRow>
             ) : (

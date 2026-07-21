@@ -221,13 +221,18 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
   },
   eyebrow: {
-    ...typography.eyebrow,
+    ...typography.caption,
     color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontWeight: "700",
     marginBottom: spacing.xs,
   },
   title: {
-    ...typography.display,
+    fontSize: 26,
+    fontWeight: "700",
     color: colors.text,
+    letterSpacing: -0.4,
     marginBottom: spacing.sm,
   },
   subtitle: {
@@ -256,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radius.lg,
+    borderRadius: 14,
     padding: spacing.lg,
   },
   iconBox: {
@@ -316,7 +321,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: 999,
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",

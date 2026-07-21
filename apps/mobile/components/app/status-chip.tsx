@@ -45,8 +45,10 @@ const styles = StyleSheet.create({
   },
   text: {
     ...typography.caption,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.text,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   textPrimary: {
     color: colors.primary,

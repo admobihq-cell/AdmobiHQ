@@ -1,18 +1,27 @@
 import Link from "next/link"
 import { Suspense } from "react"
+import {
+  Car,
+  FileText,
+  Mail,
+  Megaphone,
+  Truck,
+} from "lucide-react"
 
 import { OverviewDashboardSkeleton } from "@/components/overview-dashboard-skeleton"
 import { OverviewRangePicker } from "@/components/overview-range-picker"
 import { OverviewStats } from "@/components/overview-stats"
+import { PageHero } from "@/components/ui/page-hero"
+import { SectionHeading } from "@/components/ui/section-heading"
 import { Button } from "@workspace/ui/components/button"
 import type { DateRangeKey } from "@/lib/queries/stats"
 
 const QUICK_LINKS = [
-  { href: "/leads", label: "Campaign Leads" },
-  { href: "/fleet", label: "Fleet Partners" },
-  { href: "/drivers", label: "Drivers" },
-  { href: "/waitlist", label: "Waitlist" },
-  { href: "/media-kit", label: "Media Kit" },
+  { href: "/leads", label: "Campaign Leads", icon: Megaphone },
+  { href: "/fleet", label: "Fleet Partners", icon: Truck },
+  { href: "/drivers", label: "Drivers", icon: Car },
+  { href: "/waitlist", label: "Waitlist", icon: Mail },
+  { href: "/media-kit", label: "Media Kit", icon: FileText },
 ] as const
 
 function parseRange(value: string | undefined): DateRangeKey {
@@ -31,27 +40,36 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
   const range = parseRange(rawRange)
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-          <p className="text-sm text-muted-foreground">
-            Operational pulse across leads, fleet, drivers, and signups.
-          </p>
-        </div>
-        <OverviewRangePicker range={range} />
-      </div>
+    <div className="flex flex-1 flex-col gap-8">
+      <PageHero
+        eyebrow="Analytics"
+        title="Operational overview"
+        description="Operational pulse across leads, fleet, drivers, and signups."
+        actions={<OverviewRangePicker range={range} />}
+      />
 
       <Suspense fallback={<OverviewDashboardSkeleton />} key={range}>
         <OverviewStats range={range} />
       </Suspense>
 
-      <div className="flex flex-wrap gap-2">
-        {QUICK_LINKS.map((link) => (
-          <Button key={link.href} variant="outline" size="sm" asChild>
-            <Link href={link.href}>{link.label} →</Link>
-          </Button>
-        ))}
+      <div className="space-y-3">
+        <SectionHeading title="Quick links" />
+        <div className="flex flex-wrap gap-2">
+          {QUICK_LINKS.map((link) => (
+            <Button
+              key={link.href}
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2"
+              asChild
+            >
+              <Link href={link.href}>
+                <link.icon className="size-3.5" />
+                {link.label}
+              </Link>
+            </Button>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 
-**Deployment:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **API it calls:** [API.md](./API.md)
+**Deployment:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **API it calls:** [API.md](./API.md) · **Ops mobile app:** [MOBILE-OPS.md](./MOBILE-OPS.md) · **APK / OTA:** [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ## URLs
 
@@ -16,6 +16,10 @@ Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 | Payload CMS | `https://admobihq.com/admin` |
 
 Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC_API_URL/v1/*` via `@workspace/ops-api-client`. Server-rendered home/overview stats still read Postgres directly through Prisma in `apps/ops`.
+
+### Routes (dashboard)
+
+Home, Overview, **Map** (network corridors / active units / city anchors via mapcn), Campaign Leads, Fleet Partners, Drivers, Waitlist, Media Kit, Content (CMS).
 
 ## Secrets (Infisical)
 
