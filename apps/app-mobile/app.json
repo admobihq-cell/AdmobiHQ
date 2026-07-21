@@ -37,7 +37,7 @@
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#000000",
-          "imageWidth": 280,
+          "imageWidth": 200,
           "ios": {
             "backgroundColor": "#000000",
             "image": "./assets/images/splash-icon.png",
@@ -47,7 +47,7 @@
             "backgroundColor": "#000000",
             "image": "./assets/images/splash-icon.png",
             "resizeMode": "contain",
-            "imageWidth": 280
+            "imageWidth": 200
           }
         }
       ],

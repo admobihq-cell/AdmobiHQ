@@ -110,15 +110,16 @@ async function writeAsset(dir, filename, pipeline) {
 async function syncAppAssets(dir, croppedLogo) {
   console.log(`\n${path.relative(ROOT, dir)}`)
 
+  // Adaptive icons crop the outer ~18%; keep the mark inside the safe zone.
   await writeAsset(dir, "icon.png", await compositeLogo(1024, {
     background: BRAND_BG,
-    logoScale: 0.68,
+    logoScale: 0.52,
     croppedLogo,
   }))
 
   await writeAsset(dir, "android-icon-foreground.png", await compositeLogo(1024, {
     background: "transparent",
-    logoScale: 0.58,
+    logoScale: 0.42,
     croppedLogo,
   }))
 
@@ -126,7 +127,7 @@ async function syncAppAssets(dir, croppedLogo) {
 
   await writeAsset(dir, "android-icon-monochrome.png", await compositeLogo(1024, {
     background: "transparent",
-    logoScale: 0.58,
+    logoScale: 0.42,
     croppedLogo,
     tint: "#3A3834",
   }))
