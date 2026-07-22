@@ -11,7 +11,7 @@ const CARTO_LIGHT =
 const CARTO_DARK =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
 
-export function buildMapHtml(opts: {
+export function buildOpsMapHtml(opts: {
   dark: boolean
   basemap?: BasemapId
 }) {
@@ -60,14 +60,12 @@ export function buildMapHtml(opts: {
   <script>
     (function () {
       if (!window.maplibregl) {
-        document.body.innerHTML = '<p style="padding:16px;font:14px system-ui;color:#666">Map failed to load. Check your network connection.</p>';
+        document.body.innerHTML = '<p style="padding:16px;font:14px system-ui;color:#666">Map failed to load.</p>';
         return;
       }
-
       var cfg = ${payload};
       var ready = false;
       var usedFallback = false;
-
       var map = new maplibregl.Map({
         container: 'map',
         style: cfg.styleUrl,
@@ -79,9 +77,7 @@ export function buildMapHtml(opts: {
       });
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: !!cfg.pitch }), 'bottom-right');
 
-      function resize() {
-        try { map.resize(); } catch (e) {}
-      }
+      function resize() { try { map.resize(); } catch (e) {} }
 
       function addBuildings() {
         if (!cfg.buildings) return;

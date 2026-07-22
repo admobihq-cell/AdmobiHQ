@@ -4,13 +4,14 @@ const path = require("node:path")
 const projectRoot = __dirname
 const workspaceRoot = path.resolve(projectRoot, "../..")
 const mobileModules = path.resolve(projectRoot, "node_modules")
+const geoPackage = path.resolve(workspaceRoot, "packages/geo")
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(projectRoot)
 
 // Only watch packages this app imports — not the whole monorepo (avoids
 // ENOENT spam from sibling Next.js apps writing under apps/*/.next).
-config.watchFolders = [path.resolve(workspaceRoot, "packages/geo")]
+config.watchFolders = [geoPackage]
 config.resolver.nodeModulesPaths = [
   mobileModules,
   path.resolve(workspaceRoot, "node_modules"),
@@ -30,6 +31,7 @@ function resolveFromMobile(moduleName) {
 config.resolver.extraNodeModules = {
   react: path.dirname(resolveFromMobile("react/package.json")),
   "react-dom": path.dirname(resolveFromMobile("react-dom/package.json")),
+  "@workspace/geo": geoPackage,
 }
 
 const reactAliases = new Set([
@@ -44,6 +46,13 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (reactAliases.has(moduleName) || moduleName.startsWith("react-dom/")) {
     return {
       filePath: resolveFromMobile(moduleName),
+      type: "sourceFile",
+    }
+  }
+
+  if (moduleName === "@workspace/geo") {
+    return {
+      filePath: path.join(geoPackage, "src/index.ts"),
       type: "sourceFile",
     }
   }
