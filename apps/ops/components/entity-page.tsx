@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ChevronDown, Download, Loader2, Plus, Search, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
+import { formatApiError, getApiBaseUrl } from "@workspace/ops-api-client"
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,6 +128,7 @@ export function EntityPage<T extends { id: number }>({
   )
   const [data, setData] = useState<Paginated<T> | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
@@ -165,6 +169,7 @@ export function EntityPage<T extends { id: number }>({
 
   const fetchData = useCallback(async () => {
     setLoading(true)
+    setFetchError(null)
     try {
       const result = await resource.list({
         page,
@@ -172,8 +177,12 @@ export function EntityPage<T extends { id: number }>({
         ...(search ? { search } : {}),
       })
       setData(result as unknown as Paginated<T>)
-    } catch {
-      toast.error("Failed to load data")
+    } catch (err) {
+      const message = formatApiError(err, {
+        apiUrl: getApiBaseUrl(),
+        networkHint: `Cannot reach the ops API. Run \`npm run env:pull -w ops\` and confirm the API is running.`,
+      })
+      setFetchError(message)
     } finally {
       setLoading(false)
     }
@@ -223,7 +232,7 @@ export function EntityPage<T extends { id: number }>({
       clearSelection()
       void fetchData()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bulk action failed")
+      toast.error(formatApiError(e))
     } finally {
       setBulkPending(false)
       setBulkConfirm(null)
@@ -285,7 +294,7 @@ export function EntityPage<T extends { id: number }>({
       setViewing(null)
       void fetchData()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed")
+      toast.error(formatApiError(e))
     } finally {
       setSaving(false)
     }
@@ -300,8 +309,8 @@ export function EntityPage<T extends { id: number }>({
       setDeleteId(null)
       setViewing(null)
       void fetchData()
-    } catch {
-      toast.error("Delete failed")
+    } catch (e) {
+      toast.error(formatApiError(e))
     } finally {
       setDeleting(false)
     }
@@ -353,6 +362,14 @@ export function EntityPage<T extends { id: number }>({
           Add
         </Button>
       </div>
+
+      {fetchError ? (
+        <ApiErrorBanner
+          message={fetchError}
+          onRetry={() => void fetchData()}
+          onDismiss={() => setFetchError(null)}
+        />
+      ) : null}
 
       {selectedCount > 0 && (
         <div className="bg-muted/50 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2">
@@ -457,6 +474,17 @@ export function EntityPage<T extends { id: number }>({
           <TableBody>
             {loading ? (
               <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly selectable />
+            ) : fetchError ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + 2} className="h-32 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    Couldn&apos;t load records
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Your previous data may still be visible after a successful load.
+                  </p>
+                </TableCell>
+              </TableRow>
             ) : !data?.items.length ? (
               <TableRow>
                 <TableCell colSpan={columns.length + 2} className="h-32 text-center">

@@ -9,15 +9,10 @@ import {
   Truck,
 } from "lucide-react"
 
-import { SectionHeading } from "@/components/ui/section-heading"
 import { StatCard } from "@/components/ui/stat-card"
+import { SectionHeading } from "@/components/ui/section-heading"
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
 
 type OpsHomeStatsProps = {
   stats: {
@@ -28,6 +23,7 @@ type OpsHomeStatsProps = {
     mediaKit: number
     total: number
   } | null
+  error?: string | null
 }
 
 const STAT_CONFIG = [
@@ -39,27 +35,10 @@ const STAT_CONFIG = [
   { key: "mediaKit", label: "Media kit", icon: FileText },
 ] as const
 
-export function OpsHomeStats({ stats }: OpsHomeStatsProps) {
-  if (!stats) {
-    return (
-      <Card className="border-dashed shadow-none">
-        <CardHeader>
-          <CardTitle>Stats unavailable</CardTitle>
-          <CardDescription>
-            Could not load the 30-day snapshot. Check database connectivity or
-            run{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-              npm run env:pull -w ops
-            </code>
-            .
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    )
-  }
-
+export function OpsHomeStats({ stats, error }: OpsHomeStatsProps) {
   return (
     <section className="flex flex-col gap-4">
+      {error ? <ApiErrorBanner message={error} /> : null}
       <SectionHeading
         title="Last 30 days"
         description="Quick snapshot across all submission types."
@@ -78,7 +57,7 @@ export function OpsHomeStats({ stats }: OpsHomeStatsProps) {
             key={item.key}
             icon={item.icon}
             label={item.label}
-            value={stats[item.key]}
+            value={stats?.[item.key] ?? "—"}
             hint={item.key === "total" ? "All types" : undefined}
           />
         ))}

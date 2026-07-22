@@ -17,6 +17,7 @@ import { FilterChips, type FilterChipOption } from "@/components/app/filter-chip
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
@@ -145,7 +146,16 @@ export function EntityList<T extends { id: number; created_at?: string }>({
           embedded
         />
       ) : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <ApiErrorBanner
+          message={error}
+          onRetry={() => {
+            setLoading(true)
+            void fetchPage(1, true)
+          }}
+          onDismiss={() => setError(null)}
+        />
+      ) : null}
     </View>
   )
 
@@ -178,11 +188,19 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         onEndReachedThreshold={0.4}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <EmptyState
-            icon={Inbox}
-            title="No records yet"
-            description="New submissions will appear here."
-          />
+          error ? (
+            <EmptyState
+              icon={Inbox}
+              title="Couldn't load records"
+              description="Check your connection and try again."
+            />
+          ) : (
+            <EmptyState
+              icon={Inbox}
+              title="No records yet"
+              description="New submissions will appear here."
+            />
+          )
         }
         renderItem={({ item, index }) => (
           <View
@@ -269,9 +287,5 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginLeft: 68,
-  },
-  error: {
-    color: colors.danger,
-    ...typography.bodySm,
   },
 })

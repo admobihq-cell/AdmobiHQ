@@ -11,12 +11,14 @@ import { Label } from "@workspace/ui/components/label"
 import type { MediaKitInput } from "@/lib/validation/lead-schemas"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 
-import { publicApiUrl } from "@workspace/ops-api-client"
+import { publicApiFetch } from "@workspace/ops-api-client"
 
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Container } from "@/components/landing/container"
 
 export default function MediaKitPage() {
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const {
     register,
@@ -28,14 +30,16 @@ export default function MediaKitPage() {
   })
 
   async function onSubmit(data: MediaKitInput) {
-    const res = await fetch(publicApiUrl("/media-kit"), {
+    setSubmitError(null)
+    const result = await publicApiFetch<{ success?: boolean }>("/media-kit", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    const json = (await res.json()) as { success?: boolean }
-    if (!res.ok) return
-    if (json.success) setSubmitted(true)
+    if (!result.ok) {
+      setSubmitError(result.message)
+      return
+    }
+    if (result.data.success) setSubmitted(true)
   }
 
   return (
@@ -78,6 +82,12 @@ export default function MediaKitPage() {
                 </p>
               ) : null}
             </div>
+            {submitError ? (
+              <ApiErrorBanner
+                message={submitError}
+                onDismiss={() => setSubmitError(null)}
+              />
+            ) : null}
             <Button type="submit" size="lg" disabled={isSubmitting}>
               {isSubmitting ? "Sending…" : "Send me the kit"}
             </Button>

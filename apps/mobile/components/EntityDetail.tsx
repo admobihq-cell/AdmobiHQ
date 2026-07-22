@@ -17,6 +17,7 @@ import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
 import { AppLoader } from "@/components/app/app-loader"
 import { GroupedSection } from "@/components/app/grouped-list"
 import { StatusChip } from "@/components/app/status-chip"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { Trash } from "@/components/icons"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
@@ -64,6 +65,7 @@ export function EntityDetail<T>({
       setLoading(false)
       return
     }
+    setError(null)
     try {
       setItem(await load(id))
     } catch (err) {
@@ -72,6 +74,11 @@ export function EntityDetail<T>({
       setLoading(false)
     }
   }, [id, load])
+
+  const handleRetry = () => {
+    setLoading(true)
+    void fetchItem()
+  }
 
   useEffect(() => {
     void fetchItem()
@@ -142,7 +149,7 @@ export function EntityDetail<T>({
     void Linking.openURL(`tel:${value}`)
   }
 
-  if (loading) {
+  if (loading && !item) {
     return (
       <View style={styles.centered}>
         <AppLoader message="Loading record" compact />
@@ -150,21 +157,22 @@ export function EntityDetail<T>({
     )
   }
 
-  if (!item) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>{error ?? "Not found"}</Text>
-      </View>
-    )
-  }
-
-  const chipItems = chips?.(item) ?? []
+  const chipItems = item ? (chips?.(item) ?? []) : []
+  const detailSections = item ? sections(item) : []
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {error ? (
+        <ApiErrorBanner
+          message={error}
+          onRetry={handleRetry}
+          onDismiss={() => setError(null)}
+        />
+      ) : null}
+
       <View style={styles.heroCard}>
         <Text style={styles.eyebrow}>Record</Text>
-        <Text style={styles.title}>{title(item)}</Text>
+        <Text style={styles.title}>{item ? title(item) : "—"}</Text>
         {chipItems.length > 0 ? (
           <View style={styles.chips}>
             {chipItems.map((chip) => (
@@ -178,51 +186,59 @@ export function EntityDetail<T>({
         ) : null}
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {item ? (
+        detailSections.map((section) => (
+          <GroupedSection key={section.title} title={section.title}>
+            <View style={styles.fieldList}>
+              {section.fields.map((field, index) => {
+                const value = field.value || "—"
+                const hasCopy = field.copyable && field.value
+                const hasCall = field.callable && field.value
 
-      {sections(item).map((section) => (
-        <GroupedSection key={section.title} title={section.title}>
-          <View style={styles.fieldList}>
-            {section.fields.map((field, index) => {
-              const value = field.value || "—"
-              const hasCopy = field.copyable && field.value
-              const hasCall = field.callable && field.value
-
-              return (
-                <View key={field.label}>
-                  <View style={styles.fieldRow}>
-                    <Text style={styles.fieldLabel}>{field.label}</Text>
-                    <Text style={styles.fieldValue}>{value}</Text>
-                    {hasCopy || hasCall ? (
-                      <View style={styles.fieldActions}>
-                        {hasCopy ? (
-                          <Pressable
-                            onPress={() => void handleCopy(field.value!)}
-                            style={styles.actionButton}
-                          >
-                            <Text style={styles.actionText}>Copy</Text>
-                          </Pressable>
-                        ) : null}
-                        {hasCall ? (
-                          <Pressable
-                            onPress={() => handleCall(field.value!)}
-                            style={styles.actionButton}
-                          >
-                            <Text style={styles.actionText}>Call</Text>
-                          </Pressable>
-                        ) : null}
-                      </View>
+                return (
+                  <View key={field.label}>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>{field.label}</Text>
+                      <Text style={styles.fieldValue}>{value}</Text>
+                      {hasCopy || hasCall ? (
+                        <View style={styles.fieldActions}>
+                          {hasCopy ? (
+                            <Pressable
+                              onPress={() => void handleCopy(field.value!)}
+                              style={styles.actionButton}
+                            >
+                              <Text style={styles.actionText}>Copy</Text>
+                            </Pressable>
+                          ) : null}
+                          {hasCall ? (
+                            <Pressable
+                              onPress={() => handleCall(field.value!)}
+                              style={styles.actionButton}
+                            >
+                              <Text style={styles.actionText}>Call</Text>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                    {index < section.fields.length - 1 ? (
+                      <View style={styles.fieldSeparator} />
                     ) : null}
                   </View>
-                  {index < section.fields.length - 1 ? (
-                    <View style={styles.fieldSeparator} />
-                  ) : null}
-                </View>
-              )
-            })}
+                )
+              })}
+            </View>
+          </GroupedSection>
+        ))
+      ) : (
+        <GroupedSection title="Details">
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>
+              Record details are unavailable right now.
+            </Text>
           </View>
         </GroupedSection>
-      ))}
+      )}
     </ScrollView>
   )
 }
@@ -316,9 +332,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.primary,
   },
-  error: {
-    color: colors.danger,
-    marginBottom: spacing.md,
+  placeholder: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
+  },
+  placeholderText: {
     ...typography.bodySm,
+    color: colors.mutedForeground,
+    textAlign: "center",
   },
 })

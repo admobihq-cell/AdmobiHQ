@@ -22,6 +22,7 @@ import {
 } from "@/components/icons"
 
 import { ActionCard } from "@/components/ui/action-card"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { PageHero } from "@/components/ui/page-hero"
 import { StatCard } from "@/components/ui/stat-card"
 import { FilterChips } from "@/components/app/filter-chips"
@@ -121,59 +122,61 @@ export default function DashboardScreen() {
       </View>
 
       {error ? (
-        <Text style={[styles.error, styles.padded]}>{error}</Text>
+        <View style={styles.padded}>
+          <ApiErrorBanner message={error} onRetry={refetch} />
+        </View>
       ) : null}
 
       <View style={styles.padded}>
         <Text style={styles.sectionLabel}>Overview</Text>
         <View style={styles.statsGrid}>
-          {loading && !totals ? (
+          {loading && !totals && !error ? (
             <>
               <StatCard icon={BarChart3} label="Total" value="—" />
               <StatCard icon={Megaphone} label="Leads" value="—" />
               <StatCard icon={Truck} label="Fleet" value="—" />
               <StatCard icon={Car} label="Drivers" value="—" />
             </>
-          ) : totals ? (
+          ) : (
             <>
               <StatCard
                 icon={BarChart3}
                 label="Total submissions"
-                value={totals.all}
+                value={totals?.all ?? "—"}
                 hint="All types"
               />
               <StatCard
                 icon={Megaphone}
                 label="Campaign leads"
-                value={totals.leads}
+                value={totals?.leads ?? "—"}
                 onPress={() => router.push("/(ops)/leads")}
               />
               <StatCard
                 icon={Truck}
                 label="Fleet partners"
-                value={totals.fleet}
+                value={totals?.fleet ?? "—"}
                 onPress={() => router.push("/(ops)/fleet")}
               />
               <StatCard
                 icon={Car}
                 label="Drivers"
-                value={totals.drivers}
+                value={totals?.drivers ?? "—"}
                 onPress={() => router.push("/(ops)/drivers")}
               />
               <StatCard
                 icon={Mail}
                 label="Waitlist"
-                value={totals.waitlist}
+                value={totals?.waitlist ?? "—"}
                 onPress={() => router.push("/(ops)/waitlist")}
               />
               <StatCard
                 icon={FileText}
                 label="Media kit"
-                value={totals.mediaKit}
+                value={totals?.mediaKit ?? "—"}
                 onPress={() => router.push("/(ops)/media-kit")}
               />
             </>
-          ) : null}
+          )}
         </View>
       </View>
 
@@ -225,11 +228,17 @@ export default function DashboardScreen() {
 
       <View style={styles.padded}>
         <Text style={styles.sectionLabel}>Recent activity</Text>
+        {recentError ? (
+          <View style={styles.recentError}>
+            <ApiErrorBanner
+              message={recentError}
+              onRetry={refetchRecent}
+            />
+          </View>
+        ) : null}
         <View style={styles.group}>
           {recentLoading ? (
             <SkeletonListRows count={4} />
-          ) : recentError ? (
-            <Text style={styles.errorInline}>{recentError}</Text>
           ) : recentItems.length === 0 ? (
             <View style={styles.emptyRecent}>
               <Text style={styles.emptyText}>No recent submissions</Text>
@@ -274,6 +283,9 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: -spacing.sm,
+  },
+  recentError: {
+    marginBottom: spacing.sm,
   },
   sectionLabel: {
     ...typography.caption,
@@ -333,15 +345,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginLeft: spacing.md + 10 + spacing.md,
-  },
-  error: {
-    color: colors.danger,
-    ...typography.bodySm,
-  },
-  errorInline: {
-    color: colors.danger,
-    ...typography.bodySm,
-    padding: spacing.md,
   },
   emptyRecent: {
     padding: spacing.lg,

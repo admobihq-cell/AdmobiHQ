@@ -29,17 +29,13 @@ import {
   type WaitlistUpdateInput,
 } from "@workspace/ops-contracts"
 
-export class OpsApiError extends Error {
-  readonly status: number
-  readonly issues?: unknown
+import { getApiBaseUrl, publicApiUrl } from "./base-url.js"
+import { OpsApiError } from "./errors.js"
+import { formatApiError, formatApiErrorResponse } from "./format-error.js"
+import { publicApiFetch, type PublicApiResult } from "./public-fetch.js"
 
-  constructor(message: string, status: number, issues?: unknown) {
-    super(message)
-    this.name = "OpsApiError"
-    this.status = status
-    this.issues = issues
-  }
-}
+export { OpsApiError, getApiBaseUrl, publicApiUrl, formatApiError, formatApiErrorResponse, publicApiFetch }
+export type { PublicApiResult }
 
 export type OpsClientOptions = {
   /** Base URL for the API, e.g. `https://api.admobihq.com` or `http://localhost:3003`. */
@@ -110,21 +106,6 @@ function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/$/, "")
 }
 
-const DEFAULT_API_BASE_URL = "http://localhost:3003"
-
-export function getApiBaseUrl(): string {
-  return normalizeBaseUrl(
-    process.env.NEXT_PUBLIC_API_URL ??
-      process.env.EXPO_PUBLIC_API_URL ??
-      DEFAULT_API_BASE_URL,
-  )
-}
-
-export function publicApiUrl(resource: string): string {
-  const path = resource.startsWith("/") ? resource : `/${resource}`
-  return `${getApiBaseUrl()}/v1/public${path}`
-}
-
 async function parseError(res: Response): Promise<OpsApiError> {
   let body: ApiErrorResponse | undefined
   try {
@@ -133,7 +114,7 @@ async function parseError(res: Response): Promise<OpsApiError> {
     body = undefined
   }
   return new OpsApiError(
-    body?.error ?? `Request failed (${res.status})`,
+    formatApiErrorResponse(body, res.status),
     res.status,
     body?.issues,
   )

@@ -13,8 +13,9 @@ import { Label } from "@workspace/ui/components/label"
 import type { FleetLeadInput } from "@/lib/validation/lead-schemas"
 import { fleetLeadSchema } from "@/lib/validation/lead-schemas"
 
-import { publicApiUrl } from "@workspace/ops-api-client"
+import { publicApiFetch } from "@workspace/ops-api-client"
 
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { fleetFaqItems } from "@/lib/seo/faq-data"
@@ -90,6 +91,7 @@ const eligibility = [
 
 export default function PartnerFleetClient() {
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const form = useForm<FleetLeadInput>({
     resolver: zodResolver(fleetLeadSchema),
@@ -132,14 +134,16 @@ export default function PartnerFleetClient() {
   }
 
   async function onSubmit(data: FleetLeadInput) {
-    const res = await fetch(publicApiUrl("/leads"), {
+    setSubmitError(null)
+    const result = await publicApiFetch<{ success?: boolean }>("/leads", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    const json = (await res.json()) as { success?: boolean }
-    if (!res.ok) return
-    if (json.success) setSubmitted(true)
+    if (!result.ok) {
+      setSubmitError(result.message)
+      return
+    }
+    if (result.data.success) setSubmitted(true)
   }
 
   if (submitted) {
@@ -413,6 +417,13 @@ export default function PartnerFleetClient() {
               <p className="text-destructive text-xs font-medium" role="alert">
                 {formState.errors.consent.message}
               </p>
+            ) : null}
+
+            {submitError ? (
+              <ApiErrorBanner
+                message={submitError}
+                onDismiss={() => setSubmitError(null)}
+              />
             ) : null}
 
             <Button type="submit" className="w-full" disabled={formState.isSubmitting} size="lg">

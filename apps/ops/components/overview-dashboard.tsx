@@ -13,6 +13,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { CmsHealthCard } from "@/components/cms-health-card"
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import {
   Card,
   CardContent,
@@ -67,25 +68,77 @@ const KPI_CONFIG = [
   { key: "mediaKit", label: "Media kit", icon: FileText },
 ] as const
 
-export function OverviewDashboard({ data }: { data: OverviewData }) {
+const EMPTY_OVERVIEW_DATA: OverviewData = {
+  overview: {
+    totals: {
+      all: 0,
+      leads: 0,
+      fleet: 0,
+      drivers: 0,
+      waitlist: 0,
+      mediaKit: 0,
+    },
+    byType: [],
+    budgetMix: [],
+    driversByCity: [],
+    fleetByCity: [],
+    driversByHeard: [],
+  },
+  timeline: [],
+  content: null,
+}
+
+export function OverviewDashboard({
+  data = EMPTY_OVERVIEW_DATA,
+  error,
+}: {
+  data?: OverviewData
+  error?: string | null
+}) {
   const { overview, timeline, content } = data
   const { totals } = overview
+  const showPlaceholder = Boolean(error)
 
   return (
     <div className="flex flex-col gap-8">
+      {error ? <ApiErrorBanner message={error} /> : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {KPI_CONFIG.map((kpi) => (
           <StatCard
             key={kpi.key}
             icon={kpi.icon}
             label={kpi.label}
-            value={totals[kpi.key]}
+            value={showPlaceholder ? "—" : totals[kpi.key]}
           />
         ))}
       </div>
 
       <div className="space-y-4">
         <SectionHeading title="Trends & breakdown" />
+        {showPlaceholder ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">Submissions over time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Chart data is unavailable right now.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">By type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Breakdown data is unavailable right now.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="shadow-none">
             <CardHeader>
@@ -182,6 +235,7 @@ export function OverviewDashboard({ data }: { data: OverviewData }) {
             </Card>
           )}
         </div>
+        )}
       </div>
 
       {content ? <CmsHealthCard content={content} /> : null}
