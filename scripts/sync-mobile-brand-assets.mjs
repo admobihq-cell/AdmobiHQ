@@ -18,8 +18,8 @@ const BRAND_BG = "#FAF9F7"
 const SPLASH_BG = "#000000"
 
 const APP_DIRS = [
-  path.join(ROOT, "apps", "mobile", "assets", "images"),
-  path.join(ROOT, "apps", "app-mobile", "assets", "images"),
+  path.join(ROOT, "apps", "ops-mobile", "assets", "images"),
+  path.join(ROOT, "apps", "customer-mobile", "assets", "images"),
 ]
 
 async function canvas(size, background) {
@@ -167,8 +167,8 @@ async function main() {
   }
 
   console.log("\nDone. Rebuild native apps so Android mipmaps pick up the new icons:")
-  console.log("  npm run prebuild:android -w mobile")
-  console.log("  npm run prebuild:android -w app-mobile")
+  console.log("  npm run prebuild:android -w ops-mobile")
+  console.log("  npm run prebuild:android -w customer-mobile")
 }
 
 main().catch((error) => {

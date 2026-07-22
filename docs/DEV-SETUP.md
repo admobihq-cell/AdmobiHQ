@@ -1,6 +1,6 @@
 # Local development setup
 
-Command reference for running **Admobi** locally: marketing site (`apps/web`), business API (`apps/api`), ops console (`apps/ops`), customer app (`apps/app`), and **Payload** CMS. Run commands from the **repository root** unless noted.
+Command reference for running **Admobi** locally: marketing site (`apps/web`), business API (`apps/api`), ops console (`apps/ops`), customer app (`apps/customer-web`), and **Payload** CMS. Run commands from the **repository root** unless noted.
 
 **Related:** [API.md](./API.md), [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](./HELP-CMS.md), [BLOG-CMS.md](./BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
@@ -46,7 +46,7 @@ Include Expo apps (ops mobile + customer mobile):
 npm run dev:all
 ```
 
-**Mobile + API only** (no web, ops, or customer web — pulls secrets for `api`, `mobile`, `app-mobile` only):
+**Mobile + API only** (no web, ops, or customer web — pulls secrets for `api`, `ops-mobile`, `customer-mobile` only):
 
 ```bash
 npm run dev:stack:mobile              # api + both Expo apps
@@ -58,7 +58,7 @@ npm run dev:stack:mobile:skip-pull    # same stack, skip Infisical pull
 Customer Expo only (Metro already running elsewhere, or API not needed):
 
 ```bash
-npm run dev -w app-mobile
+npm run dev -w customer-mobile
 ```
 
 **Installable APKs and OTA** (team phones, no Metro): see [MOBILE-BUILDS.md](./MOBILE-BUILDS.md).
@@ -96,7 +96,7 @@ Run a single app: `npm run dev -w api`, `npm run dev -w ops`, etc. See [OPS-ADMI
 
 ## Environment variables
 
-Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/api/.env.local`**, **`apps/ops/.env.local`**, **`apps/app/.env.local`**, **`apps/mobile/.env.local`**, and **`apps/app-mobile/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/api/.env.example`](../apps/api/.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/app/.env.example`](../apps/app/.env.example), [`apps/app-mobile/.env.example`](../apps/app-mobile/.env.example).
+Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.local`**, **`apps/api/.env.local`**, **`apps/ops/.env.local`**, **`apps/customer-web/.env.local`**, **`apps/ops-mobile/.env.local`**, and **`apps/customer-mobile/.env.local`** (never commit). Template: [`.env.example`](../.env.example), [`apps/api/.env.example`](../apps/api/.env.example), [`apps/ops/.env.example`](../apps/ops/.env.example), [`apps/customer-web/.env.example`](../apps/customer-web/.env.example), [`apps/customer-mobile/.env.example`](../apps/customer-mobile/.env.example).
 
 ### Pull from Infisical (recommended on Windows)
 
@@ -104,9 +104,9 @@ Secrets live in **Infisical**; locally they are exported to **`apps/web/.env.loc
 npm run env:pull -w web          # apps/web/.env.local
 npm run env:pull -w api          # apps/api/.env.local
 npm run env:pull -w ops          # apps/ops/.env.local
-npm run env:pull -w app          # apps/app/.env.local
-npm run env:pull -w mobile       # apps/mobile/.env.local (maps EXPO_PUBLIC_*)
-npm run env:pull -w app-mobile   # apps/app-mobile/.env.local (no Clerk)
+npm run env:pull -w customer-web          # apps/customer-web/.env.local
+npm run env:pull -w ops-mobile       # apps/ops-mobile/.env.local (maps EXPO_PUBLIC_*)
+npm run env:pull -w customer-mobile   # apps/customer-mobile/.env.local (no Clerk)
 npm run env:pull:staging -w api  # staging env
 # or all workspaces:
 npm run env:pull
@@ -169,7 +169,7 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `API_CORS_ORIGINS` | api | CORS allowlist |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | api + ops + mobile | Clerk |
 | `CLERK_SECRET_KEY` | api + ops | Clerk server |
-| `NEXT_PUBLIC_API_URL` | web, api, ops, app, mobile | Business API origin |
+| `NEXT_PUBLIC_API_URL` | web, api, ops, customer-web, ops-mobile | Business API origin |
 | `NEXT_PUBLIC_OPS_URL` | ops, app | Ops UI links |
 | `NEXT_PUBLIC_APP_URL` | app | Customer app origin |
 | `NEXT_PUBLIC_WEB_URL` | ops, app | Marketing links |
@@ -248,11 +248,11 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 | `npm install` | Clone, after pulling `package.json` dependency changes |
 | `npm run dev` | **Every day** — pull Infisical dev secrets + start web, api, ops, app |
 | `npm run dev:skip-pull` | Start apps without re-pulling secrets |
-| `npm run dev:all` | Pull secrets + start web, api, ops, app, mobile, and app-mobile (Expo) |
+| `npm run dev:all` | Pull secrets + start web, api, ops, customer-web, ops-mobile, and customer-mobile (Expo) |
 | `npm run dev:stack:mobile` | Pull **api + mobile secrets only**; start api + both Expo apps |
-| `npm run dev:stack:mobile:ops` | Pull api + mobile secrets; start api + ops Expo (:8081) |
-| `npm run dev:stack:mobile:customer` | Pull api + app-mobile secrets; start api + customer Expo (:8082) |
-| `npm run env:pull:mobile-stack` | Pull secrets for api, mobile, app-mobile only (no web/ops/app) |
+| `npm run dev:stack:mobile:ops` | Pull api + ops-mobile secrets; start api + ops Expo (:8081) |
+| `npm run dev:stack:mobile:customer` | Pull api + customer-mobile secrets; start api + customer Expo (:8082) |
+| `npm run env:pull:mobile-stack` | Pull secrets for api, ops-mobile, customer-mobile only (no web/ops/customer-web) |
 | `npm run dev:staging` | Pull staging secrets + start apps |
 | `npm run dev:turbo` | Start apps without pull (turbo only) |
 | `npm run dev -w web` | Same, explicit workspace |
@@ -267,18 +267,18 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 |---------|-------------|
 | `npm run env:pull -w web` | First setup, after Infisical secret changes, new machine |
 | `npm run env:pull -w ops` | Same, for ops console secrets |
-| `npm run env:pull -w app` | Same, for customer app URL vars |
+| `npm run env:pull -w customer-web` | Same, for customer app URL vars |
 | `npm run env:pull -w api` | Same, for business API secrets |
-| `npm run env:pull -w mobile` | Maps `EXPO_PUBLIC_*` for Expo ops |
-| `npm run env:pull -w app-mobile` | Maps `EXPO_PUBLIC_*` for customer Expo (no Clerk) |
+| `npm run env:pull -w ops-mobile` | Maps `EXPO_PUBLIC_*` for Expo ops |
+| `npm run env:pull -w customer-mobile` | Maps `EXPO_PUBLIC_*` for customer Expo (no Clerk) |
 | `npm run env:pull` | Pull all workspaces in one command |
 | `npm run env:check -w api` | Verify Clerk + DATABASE_URL + API vars |
 | `npm run env:check -w web` | Debug “DATABASE_URL not set”, before migrate/seed |
 | `npm run env:check -w ops` | Verify Clerk + DATABASE_URL for ops |
-| `npm run env:check -w app` | Verify URL env vars for app (optional keys) |
+| `npm run env:check -w customer-web` | Verify URL env vars for app (optional keys) |
 | `npm run dev -w api` | Business API only (port 3003) |
 | `npm run dev -w ops` | Ops console only (port 3001) — start api too for CRUD |
-| `npm run dev -w app` | Customer app only (port 3002) |
+| `npm run dev -w customer-web` | Customer app only (port 3002) |
 | `infisical secrets --env=dev` | Inspect secrets without writing `.env.local` |
 
 ### Prisma (main backend — forms)
@@ -311,20 +311,20 @@ Full guide: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md) — local dev, debug APKs, EA
 
 | Command | When to run |
 |---------|-------------|
-| `npm run dev -w mobile` | Daily ops mobile dev (Metro :8081) |
-| `npm run dev -w app-mobile` | Daily customer mobile dev (Metro :8082) |
+| `npm run dev -w ops-mobile` | Daily ops mobile dev (Metro :8081) |
+| `npm run dev -w customer-mobile` | Daily customer mobile dev (Metro :8082) |
 | `npm run dev:all` | Web stack + both Expo apps (Turbo TUI) |
-| `npm run env:pull -w mobile` | Clerk + API vars for ops Expo |
-| `npm run env:pull -w app-mobile` | API vars for customer Expo |
+| `npm run env:pull -w ops-mobile` | Clerk + API vars for ops Expo |
+| `npm run env:pull -w customer-mobile` | API vars for customer Expo |
 | `npm run mobile:assets:sync` | Regenerate icons/splash from `assets/brand/` |
 | `npm run mobile:apk:local:ops` | Local debug APK for ops (needs Metro — dev only) |
 | `npm run mobile:apk:local:customer` | Local debug APK for customer (needs Metro — dev only) |
 | `npm run mobile:apk:eas:ops` | **EAS cloud preview APK** for ops — share with team |
 | `npm run mobile:apk:eas:customer` | **EAS cloud preview APK** for customer — share with team |
-| `npm run update:preview -w mobile` | Push OTA JS update to ops preview installs |
-| `npm run update:preview -w app-mobile` | Push OTA JS update to customer preview installs |
+| `npm run update:preview -w ops-mobile` | Push OTA JS update to ops preview installs |
+| `npm run update:preview -w customer-mobile` | Push OTA JS update to customer preview installs |
 
-**Team APK workflow:** `npx eas-cli login` → `cd apps/mobile` or `apps/app-mobile` → `npx eas-cli build -p android --profile preview` → share download link. After first build: `npx eas-cli update:configure`, then `eas update --channel preview` for JS-only changes (no reinstall).
+**Team APK workflow:** `npx eas-cli login` → `cd apps/ops-mobile` or `apps/customer-mobile` → `npx eas-cli build -p android --profile preview` → share download link. After first build: `npx eas-cli update:configure`, then `eas update --channel preview` for JS-only changes (no reinstall).
 
 Per-app docs: [MOBILE-OPS.md](./MOBILE-OPS.md) · [APP-MOBILE.md](./APP-MOBILE.md)
 

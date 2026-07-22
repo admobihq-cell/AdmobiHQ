@@ -10,20 +10,20 @@ Guide for **Expo** apps in this monorepo: local dev, installable APKs, team dist
 
 | | **Ops** | **Customer** |
 |---|---------|--------------|
-| Folder | `apps/mobile` | `apps/app-mobile` |
+| Folder | `apps/ops-mobile` | `apps/customer-mobile` |
 | Display name | Admobi Ops | Admobi |
 | Android package | `com.admobihq.ops` | `com.admobihq.app` |
 | EAS slug | `admobihq-ops` | `admobihq-app` |
-| EAS project | `@victormnz/admobihq-ops` | `@victormnz/admobihq-app` |
+| EAS project | `@admobimedia/admobihq-ops` | `@admobimedia/admobihq-app` |
 | Metro port | **8081** | **8082** |
 | Auth | Clerk (ops staff) | None |
-| Config | [`apps/mobile/app.json`](../apps/mobile/app.json) | [`apps/app-mobile/app.json`](../apps/app-mobile/app.json) |
-| EAS profiles | [`apps/mobile/eas.json`](../apps/mobile/eas.json) | [`apps/app-mobile/eas.json`](../apps/app-mobile/eas.json) |
+| Config | [`apps/ops-mobile/app.json`](../apps/ops-mobile/app.json) | [`apps/customer-mobile/app.json`](../apps/customer-mobile/app.json) |
+| EAS profiles | [`apps/ops-mobile/eas.json`](../apps/ops-mobile/eas.json) | [`apps/customer-mobile/eas.json`](../apps/customer-mobile/eas.json) |
 
 Always run **`eas` commands from the app folder**, not the repo root. On PowerShell use `;` instead of `&&`:
 
 ```powershell
-cd apps\app-mobile; npx eas-cli build -p android --profile preview
+cd apps\customer-mobile; npx eas-cli build -p android --profile preview
 ```
 
 ---
@@ -39,8 +39,8 @@ cd apps\app-mobile; npx eas-cli build -p android --profile preview
 ### Expo Go (fastest for UI work)
 
 ```bash
-npm run dev -w mobile          # ops, port 8081
-npm run dev -w app-mobile      # customer, port 8082
+npm run dev -w ops-mobile          # ops, port 8081
+npm run dev -w customer-mobile      # customer, port 8082
 npm run dev:all                # both + web stack (Turbo TUI — press `i` on a task to send keys to Expo)
 npm run dev:mobile             # ops, clears Metro cache
 npm run dev:mobile:customer    # customer, clears Metro cache
@@ -61,8 +61,8 @@ npm run mobile:apk:local:customer  # customer only
 Output:
 
 ```
-apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
-apps/app-mobile/android/app/build/outputs/apk/debug/app-debug.apk
+apps/ops-mobile/android/app/build/outputs/apk/debug/app-debug.apk
+apps/customer-mobile/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 **Requires:** Android SDK (Android Studio), `JAVA_HOME` pointing at Android Studio JBR, network for Gradle deps.
@@ -82,17 +82,17 @@ npx eas-cli login
 **One-time per app** (already done if `app.json` contains `extra.eas.projectId`):
 
 ```powershell
-cd apps\mobile; npx eas-cli init
-cd apps\app-mobile; npx eas-cli init
+cd apps\ops-mobile; npx eas-cli init
+cd apps\customer-mobile; npx eas-cli init
 ```
 
 **Build shareable APKs:**
 
 ```powershell
-cd apps\mobile
+cd apps\ops-mobile
 npx eas-cli build -p android --profile preview
 
-cd apps\app-mobile
+cd apps\customer-mobile
 npx eas-cli build -p android --profile preview
 ```
 
@@ -141,8 +141,8 @@ OTA pushes **JavaScript and assets** to installed apps without reinstalling the 
 ### Setup (once per app, after first successful EAS build)
 
 ```powershell
-cd apps\mobile; npx eas-cli update:configure
-cd apps\app-mobile; npx eas-cli update:configure
+cd apps\ops-mobile; npx eas-cli update:configure
+cd apps\customer-mobile; npx eas-cli update:configure
 ```
 
 This adds `updates.url` to `app.json` (if missing) and links the app to EAS Update.
@@ -152,18 +152,18 @@ This adds `updates.url` to `app.json` (if missing) and links the app to EAS Upda
 Apps built with the `preview` profile listen on the **`preview`** channel:
 
 ```powershell
-cd apps\app-mobile
+cd apps\customer-mobile
 npx eas-cli update --channel preview --message "Describe the change"
 
-cd apps\mobile
+cd apps\ops-mobile
 npx eas-cli update --channel preview --message "Describe the change"
 ```
 
 Or use workspace scripts:
 
 ```bash
-npm run update:preview -w app-mobile
-npm run update:preview -w mobile
+npm run update:preview -w customer-mobile
+npm run update:preview -w ops-mobile
 ```
 
 On launch, production/preview builds check for updates (see `lib/bootstrap-splash.ts` → `useOtaUpdates`). Users get the new JS on next open — **same APK, no reinstall**.
@@ -225,10 +225,10 @@ For internal team distribution, use **`preview`**.
 | `npm run dev:stack:mobile` | **API :3003 + both Expo apps** — pulls api/mobile secrets only |
 | `npm run dev:stack:mobile:ops` | API + ops Expo (:8081) |
 | `npm run dev:stack:mobile:customer` | API + customer Expo (:8082) |
-| `npm run dev -w mobile` | Ops Metro only (:8081) — start API separately |
-| `npm run dev -w app-mobile` | Customer Metro only (:8082) |
-| `npm run dev:clear -w mobile` | Ops — clear Metro cache |
-| `npm run run:android -w mobile` | Ops — install dev build on connected device/emulator |
+| `npm run dev -w ops-mobile` | Ops Metro only (:8081) — start API separately |
+| `npm run dev -w customer-mobile` | Customer Metro only (:8082) |
+| `npm run dev:clear -w ops-mobile` | Ops — clear Metro cache |
+| `npm run run:android -w ops-mobile` | Ops — install dev build on connected device/emulator |
 
 ### APK builds
 
@@ -244,15 +244,15 @@ For internal team distribution, use **`preview`**.
 | Command | When |
 |---------|------|
 | `npx eas-cli update:configure` | Once per app after first EAS build |
-| `npm run update:preview -w mobile` | After JS/UI changes to ops app |
-| `npm run update:preview -w app-mobile` | After JS/UI changes to customer app |
+| `npm run update:preview -w ops-mobile` | After JS/UI changes to ops app |
+| `npm run update:preview -w customer-mobile` | After JS/UI changes to customer app |
 
 ### Env
 
 | Command | Notes |
 |---------|--------|
-| `npm run env:pull -w mobile` | Maps `EXPO_PUBLIC_*` + Clerk for ops |
-| `npm run env:pull -w app-mobile` | Maps `EXPO_PUBLIC_*` (no Clerk) |
+| `npm run env:pull -w ops-mobile` | Maps `EXPO_PUBLIC_*` + Clerk for ops |
+| `npm run env:pull -w customer-mobile` | Maps `EXPO_PUBLIC_*` (no Clerk) |
 
 ---
 
@@ -261,7 +261,7 @@ For internal team distribution, use **`preview`**.
 1. **Build once:** `eas build -p android --profile preview` in each app folder.
 2. **Share** the EAS download links; team installs APK on Android phones.
 3. **Run** `eas update:configure` once per app.
-4. **Develop** with `npm run dev -w mobile` / `app-mobile` as usual.
+4. **Develop** with `npm run dev -w ops-mobile` / `customer-mobile` as usual.
 5. **Ship JS changes:** `eas update --channel preview` — team gets updates without reinstalling.
 6. **New native dependency?** Bump `version` + `runtimeVersion`, run `eas build` again.
 
@@ -271,11 +271,11 @@ For internal team distribution, use **`preview`**.
 
 | Problem | Fix |
 |---------|-----|
-| `eas build` from repo root targets wrong project | `cd apps/mobile` or `apps/app-mobile` first |
-| PowerShell `&&` error | Use `;` — e.g. `cd apps\mobile; npx eas-cli init` |
+| `eas build` from repo root targets wrong project | `cd apps/ops-mobile` or `apps/customer-mobile` first |
+| PowerShell `&&` error | Use `;` — e.g. `cd apps\ops-mobile; npx eas-cli init` |
 | `runtimeVersion` policy error on EAS | Use `"runtimeVersion": "0.0.1"` string, not `{ "policy": "appVersion" }` |
 | Expo Go shows no custom splash | Expected — use EAS preview APK or dev build |
-| Debug APK opens but blank / “could not connect” | Start Metro: `npm run dev -w mobile` on same network |
+| Debug APK opens but blank / “could not connect” | Start Metro: `npm run dev -w ops-mobile` on same network |
 | Turbo dev swallows `a` / `r` keys | Select task, press **`i`** to interact, or run Expo in a separate terminal |
 | Gradle `JAVA_HOME` not set | Point at Android Studio JBR: `C:\Program Files\Android\Android Studio\jbr` |
 | Local Gradle network errors | Retry when online, or use EAS Build (cloud) |
@@ -284,7 +284,7 @@ For internal team distribution, use **`preview`**.
 
 ## Dashboard links
 
-- Ops: [expo.dev/accounts/victormnz/projects/admobihq-ops](https://expo.dev/accounts/victormnz/projects/admobihq-ops)
-- Customer: [expo.dev/accounts/victormnz/projects/admobihq-app](https://expo.dev/accounts/victormnz/projects/admobihq-app)
+- Ops: [expo.dev/accounts/admobimedia/projects/admobihq-ops](https://expo.dev/accounts/admobimedia/projects/admobihq-ops)
+- Customer: [expo.dev/accounts/admobimedia/projects/admobihq-app](https://expo.dev/accounts/admobimedia/projects/admobihq-app)
 
-Replace `victormnz` if the Expo org/account changes — update `owner` in each `app.json`.
+Expo org account: **`admobimedia`** (`owner` in each `app.json`).
