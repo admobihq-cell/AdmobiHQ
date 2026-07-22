@@ -1,30 +1,81 @@
-import { auth, currentUser } from "@clerk/nextjs/server"
+import { verifyToken } from "@clerk/backend"
+import { auth, clerkClient, currentUser } from "@clerk/nextjs/server"
+import { headers } from "next/headers"
 
 import { isAdmobiEmail } from "@/lib/allowed-email"
 
 export { ALLOWED_DOMAIN, getAdmobiEmailError, isAdmobiEmail } from "@/lib/allowed-email"
 
+type ClerkEmailUser = {
+  primaryEmailAddressId: string | null
+  emailAddresses: ReadonlyArray<{ id: string; emailAddress: string }>
+}
+
 export type OpsAccess =
   | { status: "unauthenticated" }
   | { status: "forbidden"; email: string | null }
-  | { status: "authorized"; userId: string; email: string; user: NonNullable<Awaited<ReturnType<typeof currentUser>>> }
+  | {
+      status: "authorized"
+      userId: string
+      email: string
+      user: NonNullable<Awaited<ReturnType<typeof currentUser>>>
+    }
 
-function resolvePrimaryEmail(
-  user: NonNullable<Awaited<ReturnType<typeof currentUser>>>,
-): string | null {
+function resolvePrimaryEmail(user: ClerkEmailUser): string | null {
   return (
     user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
       ?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? null
   )
 }
 
-export async function getOpsAccess(): Promise<OpsAccess> {
+async function resolveUserId(): Promise<string | null> {
   const { userId } = await auth()
+  if (userId) {
+    return userId
+  }
+
+  const authHeader = (await headers()).get("authorization")
+  const bearer = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length).trim()
+    : null
+  if (!bearer) {
+    return null
+  }
+
+  try {
+    const payload = await verifyToken(bearer, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    })
+    return payload.sub ?? null
+  } catch {
+    return null
+  }
+}
+
+async function resolveClerkUser(
+  userId: string,
+): Promise<NonNullable<Awaited<ReturnType<typeof currentUser>>> | null> {
+  const fromSession = await currentUser()
+  if (fromSession?.id === userId) {
+    return fromSession
+  }
+
+  try {
+    return (await (await clerkClient()).users.getUser(userId)) as NonNullable<
+      Awaited<ReturnType<typeof currentUser>>
+    >
+  } catch {
+    return null
+  }
+}
+
+export async function getOpsAccess(): Promise<OpsAccess> {
+  const userId = await resolveUserId()
   if (!userId) {
     return { status: "unauthenticated" }
   }
 
-  const user = await currentUser()
+  const user = await resolveClerkUser(userId)
   if (!user) {
     return { status: "unauthenticated" }
   }
