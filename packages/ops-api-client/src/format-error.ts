@@ -19,6 +19,9 @@ export function formatApiError(
     if (err.status === 403) {
       return "Access denied. Use your @admobihq.com account."
     }
+    if (err.status === 404) {
+      return "API route not found. Check EXPO_PUBLIC_API_URL points to https://api.admobihq.com and redeploy the API."
+    }
     return err.message
   }
 
