@@ -8,15 +8,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { DEFAULT_BASEMAP, type BasemapId } from "@workspace/geo"
-import { CustomerMapHeader } from "@/components/maps/customer-map-header"
-import { buildMapHtml } from "@/components/maps/customer-map-html"
+import { OpsMapHeader } from "@/components/maps/ops-map-header"
+import { buildOpsMapHtml } from "@/components/maps/ops-map-html"
 import { spacing, useThemedStyles } from "@/lib/theme"
 
-/**
- * Expo web cannot use react-native-webview or @maplibre/maplibre-react-native.
- * Render MapLibre GL JS in a browser iframe instead.
- */
-export function CustomerMap() {
+export function OpsMap() {
   const insets = useSafeAreaInsets()
   const scheme = useColorScheme()
   const { height: windowHeight } = useWindowDimensions()
@@ -39,7 +35,7 @@ export function CustomerMap() {
 
   const html = useMemo(
     () =>
-      buildMapHtml({
+      buildOpsMapHtml({
         dark: scheme === "dark",
         basemap,
       }),
@@ -73,7 +69,7 @@ export function CustomerMap() {
   return (
     <View style={styles.root}>
       <View onLayout={onHeaderLayout}>
-        <CustomerMapHeader
+        <OpsMapHeader
           paddingTop={insets.top + spacing.sm}
           basemap={basemap}
           onBasemapChange={setBasemap}
@@ -82,7 +78,7 @@ export function CustomerMap() {
       <View style={[styles.mapWrap, { height: mapHeight }]}>
         <iframe
           key={`${basemap}-${scheme}`}
-          title="Admobi coverage map"
+          title="Admobi ops network map"
           src={iframeSrc ?? undefined}
           srcDoc={iframeSrc ? undefined : html}
           style={{
