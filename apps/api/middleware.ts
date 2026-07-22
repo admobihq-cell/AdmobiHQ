@@ -37,7 +37,13 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   if (isAdminApi(request)) {
-    await auth.protect()
+    const { userId } = await auth()
+    if (!userId) {
+      return withCors(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        origin,
+      )
+    }
     return withCors(NextResponse.next(), origin)
   }
 
