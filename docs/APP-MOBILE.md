@@ -1,8 +1,8 @@
-# Customer mobile (`apps/app-mobile`)
+# Customer mobile (`apps/customer-mobile`)
 
 Expo customer product twin of the web app at **`app.admobihq.com`**.
 
-**No Clerk** — this scaffold has no authentication. Ops staff mobile is at [`apps/mobile`](../apps/mobile) (Clerk).
+**No Clerk** — this scaffold has no authentication. Ops staff mobile is at [`apps/ops-mobile`](../apps/ops-mobile) (Clerk).
 
 **Builds, APKs, OTA:** [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
@@ -12,12 +12,12 @@ Expo customer product twin of the web app at **`app.admobihq.com`**.
 
 ```bash
 npm install
-npm run env:pull -w app-mobile   # optional; falls back to local defaults
-npm run dev -w app-mobile        # Metro on port 8082
-npm run dev:clear -w app-mobile  # same, clears Metro cache
+npm run env:pull -w customer-mobile   # optional; falls back to local defaults
+npm run dev -w customer-mobile        # Metro on port 8082
+npm run dev:clear -w customer-mobile  # same, clears Metro cache
 ```
 
-Or with the rest of the stack: `npm run dev:all` (starts ops `mobile` and `app-mobile`).
+Or with the rest of the stack: `npm run dev:all` (starts ops `ops-mobile` and `customer-mobile`).
 
 Metro for this app listens on **port 8082** (ops mobile uses **8081**) so `npm run dev:all` can run both. Dev scripts use `--offline` to skip Expo’s online native-module version check (avoids a flaky `Body is unusable` crash).
 
@@ -55,7 +55,7 @@ No `CLERK_*` keys.
 
 ## Building an APK for the team
 
-From **`apps/app-mobile`** (not repo root):
+From **`apps/customer-mobile`** (not repo root):
 
 ```powershell
 npx eas-cli login

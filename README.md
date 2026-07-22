@@ -15,9 +15,9 @@ Monorepo for **Admobi**: the public marketing site, business API, internal ops c
 | `apps/web` | Next.js marketing site + Payload CMS | `:3000` |
 | `apps/api` | Business REST API (`/v1`, `/v1/public`) | `:3003` |
 | `apps/ops` | Internal ops console (Clerk, UI only) | `:3001` |
-| `apps/app` | Customer product scaffold | `:3002` |
-| `apps/mobile` | Expo ops mobile app | Expo |
-| `apps/app-mobile` | Expo customer app (no Clerk) | Expo |
+| `apps/customer-web` | Customer product scaffold | `:3002` |
+| `apps/ops-mobile` | Expo ops mobile app | Expo |
+| `apps/customer-mobile` | Expo customer app (no Clerk) | Expo |
 | `packages/ui` | Shared design system (Tailwind v4, shadcn/Radix, mapcn) |
 | `packages/geo` | Nairobi corridor / coverage map fixtures |
 | `packages/ops-api-client` | Typed HTTP client for admin + public API URLs |
@@ -38,7 +38,7 @@ From the repository root:
 ```bash
 npm ci
 infisical login && cd apps/web && infisical init   # one-time
-npm run dev                                        # pull secrets + start web, api, ops, app
+npm run dev                                        # pull secrets + start web, api, ops, customer-web
 ```
 
 | URL | What |
