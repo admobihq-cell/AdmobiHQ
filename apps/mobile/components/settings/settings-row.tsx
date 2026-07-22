@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 
 import { ChevronRight, type AppIcon } from "@/components/icons"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type SettingsRowProps = {
   label: string
@@ -20,6 +20,43 @@ export function SettingsRow({
   destructive = false,
   showChevron = !!onPress,
 }: SettingsRowProps) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    row: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+    },
+    rowPressed: {
+      opacity: 0.7,
+    },
+    iconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: c.secondary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    copy: {
+      flex: 1,
+      gap: 2,
+    },
+    label: {
+      ...typography.section,
+      color: c.text,
+    },
+    description: {
+      ...typography.caption,
+      color: c.mutedForeground,
+    },
+    destructive: {
+      color: c.destructive,
+    },
+  }))
+
   const content = (
     <>
       <View style={styles.iconWrap}>
@@ -52,39 +89,3 @@ export function SettingsRow({
     </Pressable>
   )
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  rowPressed: {
-    opacity: 0.7,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  copy: {
-    flex: 1,
-    gap: 2,
-  },
-  label: {
-    ...typography.section,
-    color: colors.text,
-  },
-  description: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-  },
-  destructive: {
-    color: colors.destructive,
-  },
-})

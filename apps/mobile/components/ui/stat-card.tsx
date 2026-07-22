@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 
 import type { AppIcon } from "@/components/icons"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type StatCardProps = {
   label: string
@@ -18,6 +18,48 @@ export function StatCard({
   icon: Icon,
   onPress,
 }: StatCardProps) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    card: {
+      flex: 1,
+      minWidth: "46%" as const,
+      padding: spacing.md,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      gap: 4,
+    },
+    cardPressed: {
+      opacity: 0.85,
+    },
+    iconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: c.secondary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: spacing.xs,
+    },
+    value: {
+      fontSize: 20,
+      fontWeight: "700" as const,
+      color: c.text,
+      letterSpacing: -0.3,
+    },
+    label: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+    },
+    hint: {
+      ...typography.caption,
+      color: c.primary,
+      fontWeight: "600" as const,
+    },
+  }))
+
   const content = (
     <>
       <View style={styles.iconWrap}>
@@ -42,44 +84,3 @@ export function StatCard({
 
   return <View style={styles.card}>{content}</View>
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    minWidth: "46%",
-    padding: spacing.md,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    gap: 4,
-  },
-  cardPressed: {
-    opacity: 0.85,
-  },
-  iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.xs,
-  },
-  value: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  label: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  hint: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: "600",
-  },
-})

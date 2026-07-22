@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from "react-native"
+import { Text, View } from "react-native"
 
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type PageHeroProps = {
   eyebrow?: string
@@ -17,6 +17,41 @@ export function PageHero({
   trailing,
   compact = false,
 }: PageHeroProps) {
+  const styles = useThemedStyles((c) => ({
+    root: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    rootCompact: {
+      marginBottom: spacing.sm,
+    },
+    copy: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    eyebrow: {
+      ...typography.caption,
+      color: c.primary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      fontWeight: "700" as const,
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: "700" as const,
+      color: c.text,
+      letterSpacing: -0.4,
+    },
+    description: {
+      ...typography.body,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+    },
+  }))
+
   return (
     <View style={[styles.root, compact && styles.rootCompact]}>
       <View style={styles.copy}>
@@ -28,38 +63,3 @@ export function PageHero({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  rootCompact: {
-    marginBottom: spacing.sm,
-  },
-  copy: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  eyebrow: {
-    ...typography.caption,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  description: {
-    ...typography.body,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-})

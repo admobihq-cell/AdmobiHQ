@@ -1,7 +1,7 @@
-import { ScrollView, StyleSheet, Text, View, type RefreshControlProps } from "react-native"
+import { ScrollView, Text, View, type RefreshControlProps } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type LargeTitleScreenProps = {
   title: string
@@ -19,6 +19,35 @@ export function LargeTitleScreen({
   refreshControl,
 }: LargeTitleScreenProps) {
   const insets = useSafeAreaInsets()
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    content: {
+      paddingBottom: spacing.xl,
+    },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+      gap: spacing.md,
+    },
+    headerText: {
+      flex: 1,
+    },
+    title: {
+      ...typography.largeTitle,
+      color: c.text,
+    },
+    subtitle: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+    },
+  }))
 
   return (
     <ScrollView
@@ -41,33 +70,3 @@ export function LargeTitleScreen({
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    paddingBottom: spacing.xl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    ...typography.largeTitle,
-    color: colors.text,
-  },
-  subtitle: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-})
