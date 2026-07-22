@@ -62,7 +62,7 @@ export default function HomeLoading() {
             <Link
               key={module.href}
               href={module.href}
-              className="group rounded-xl border bg-card p-5 transition-colors hover:border-primary/30 hover:bg-accent/30"
+              className="group rounded-xl border bg-card p-5 transition-transform hover:border-primary/30 hover:bg-accent/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex size-10 items-center justify-center rounded-lg border bg-background">
