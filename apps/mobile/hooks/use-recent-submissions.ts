@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { formatDateTime } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
-import { API_URL, useOpsClient } from "@/lib/ops-client"
+import { API_URL, useOpsAuthReady, useOpsClient } from "@/lib/ops-client"
 
 export type RecentSubmission = {
   id: number
@@ -14,6 +14,7 @@ export type RecentSubmission = {
 }
 
 export function useRecentSubmissions(limit = 8) {
+  const authReady = useOpsAuthReady()
   const client = useOpsClient()
   const [items, setItems] = useState<RecentSubmission[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,6 +24,10 @@ export function useRecentSubmissions(limit = 8) {
   const refetch = useCallback(() => setTick((n) => n + 1), [])
 
   useEffect(() => {
+    if (!authReady) {
+      return
+    }
+
     let cancelled = false
 
     async function fetchRecent() {
@@ -79,7 +84,7 @@ export function useRecentSubmissions(limit = 8) {
     return () => {
       cancelled = true
     }
-  }, [client, limit, tick])
+  }, [authReady, client, limit, tick])
 
   return { items, loading, error, refetch }
 }

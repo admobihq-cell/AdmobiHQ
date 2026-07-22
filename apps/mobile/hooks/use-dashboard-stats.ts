@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react"
 import type { DateRangeKey, StatsResponseDto } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
-import { API_URL, useOpsClient } from "@/lib/ops-client"
+import { API_URL, useOpsAuthReady, useOpsClient } from "@/lib/ops-client"
 
 export function useDashboardStats(initialRange: DateRangeKey = "30d") {
+  const authReady = useOpsAuthReady()
   const client = useOpsClient()
   const [range, setRange] = useState<DateRangeKey>(initialRange)
   const [stats, setStats] = useState<StatsResponseDto | null>(null)
@@ -15,6 +16,10 @@ export function useDashboardStats(initialRange: DateRangeKey = "30d") {
   const refetch = useCallback(() => setTick((n) => n + 1), [])
 
   useEffect(() => {
+    if (!authReady) {
+      return
+    }
+
     let cancelled = false
 
     async function fetchStats() {
@@ -34,7 +39,7 @@ export function useDashboardStats(initialRange: DateRangeKey = "30d") {
     return () => {
       cancelled = true
     }
-  }, [client, range, tick])
+  }, [authReady, client, range, tick])
 
   return { stats, loading, error, range, setRange, refetch }
 }
