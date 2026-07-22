@@ -12,8 +12,9 @@ import { Label } from "@workspace/ui/components/label"
 import type { CampaignLeadInput } from "@/lib/validation/lead-schemas"
 import { campaignLeadSchema } from "@/lib/validation/lead-schemas"
 
-import { publicApiUrl } from "@workspace/ops-api-client"
+import { publicApiFetch } from "@workspace/ops-api-client"
 
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Container } from "@/components/landing/container"
 
 const selectClass =
@@ -23,6 +24,7 @@ const cityOptions = ["Nairobi", "Mombasa", "Kisumu", "All"] as const
 
 export default function StartCampaignPage() {
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const form = useForm<CampaignLeadInput>({
     resolver: zodResolver(campaignLeadSchema),
@@ -86,18 +88,20 @@ export default function StartCampaignPage() {
   }
 
   async function onSubmit(data: CampaignLeadInput) {
+    setSubmitError(null)
     const body = {
       ...data,
       phone: data.phone?.trim() || undefined,
     }
-    const res = await fetch(publicApiUrl("/leads"), {
+    const result = await publicApiFetch<{ success?: boolean }>("/leads", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     })
-    const json = (await res.json()) as { success?: boolean }
-    if (!res.ok) return
-    if (json.success) setSubmitted(true)
+    if (!result.ok) {
+      setSubmitError(result.message)
+      return
+    }
+    if (result.data.success) setSubmitted(true)
   }
 
   if (submitted) {
@@ -281,6 +285,13 @@ export default function StartCampaignPage() {
               <p className="text-destructive text-xs font-medium" role="alert">
                 {errors.consent.message}
               </p>
+            ) : null}
+
+            {submitError ? (
+              <ApiErrorBanner
+                message={submitError}
+                onDismiss={() => setSubmitError(null)}
+              />
             ) : null}
 
             <Button type="submit" className="w-full" disabled={isSubmitting} size="lg">

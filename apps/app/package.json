@@ -16,6 +16,7 @@
     "@sentry/nextjs": "^10.64.0",
     "@vercel/analytics": "^2.0.1",
     "@workspace/geo": "*",
+    "@workspace/ops-api-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "dotenv": "^16.6.1",

@@ -8,7 +8,9 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { publicApiUrl } from "@workspace/ops-api-client"
+import { publicApiFetch } from "@workspace/ops-api-client"
+
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 
 import { Container } from "./container"
 
@@ -23,29 +25,16 @@ export function GetStartedSection() {
     e.preventDefault()
     setStatus("loading")
     setErrorMessage(null)
-    try {
-      const res = await fetch(publicApiUrl("/waitlist"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      })
-      const data = (await res.json()) as {
-        success?: boolean
-        error?: string
-        issues?: { fieldErrors?: Record<string, string[]> }
-      }
-      if (!res.ok) {
-        const first =
-          data.issues?.fieldErrors?.email?.[0] ?? data.error ?? "Something went wrong."
-        setErrorMessage(first)
-        setStatus("error")
-        return
-      }
-      setStatus("success")
-    } catch {
-      setErrorMessage("Network error. Try again.")
+    const result = await publicApiFetch<{ success?: boolean }>("/waitlist", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
+    if (!result.ok) {
+      setErrorMessage(result.message)
       setStatus("error")
+      return
     }
+    setStatus("success")
   }
 
   return (
@@ -126,9 +115,13 @@ export function GetStartedSection() {
             </Button>
           </div>
           {errorMessage ? (
-            <p id="notify-email-error" className="text-destructive text-sm font-medium" role="alert">
-              {errorMessage}
-            </p>
+            <ApiErrorBanner
+              message={errorMessage}
+              onDismiss={() => {
+                setErrorMessage(null)
+                setStatus("idle")
+              }}
+            />
           ) : null}
           {status === "success" ? (
             <p className="text-foreground text-sm" role="status">
