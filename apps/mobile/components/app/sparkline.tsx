@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native"
 
 import { BarChart3 } from "@/components/icons"
 import { SkeletonBlock } from "@/components/app/skeleton"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type ActivityChartProps = {
   data: Array<{ day: string; count: number }>
@@ -34,9 +34,95 @@ export function ActivityChart({
   loading,
   height = 120,
 }: ActivityChartProps) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: spacing.sm,
+    },
+    emptyCard: {
+      minHeight: 100,
+      justifyContent: "center" as const,
+    },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      gap: spacing.sm,
+    },
+    iconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: c.secondary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    headerCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      ...typography.section,
+      color: c.text,
+      fontSize: 16,
+    },
+    subtitle: {
+      ...typography.caption,
+      color: c.mutedForeground,
+    },
+    totalBlock: {
+      alignItems: "flex-end" as const,
+    },
+    totalValue: {
+      fontSize: 22,
+      fontWeight: "700" as const,
+      color: c.text,
+      letterSpacing: -0.3,
+      fontVariant: ["tabular-nums"] as const,
+    },
+    totalLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+    },
+    chartWrap: {
+      marginTop: spacing.xs,
+      alignItems: "center" as const,
+    },
+    footer: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      paddingTop: spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    footerLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+    },
+    footerValue: {
+      ...typography.caption,
+      color: c.text,
+      fontWeight: "600" as const,
+    },
+    skeletonGap: {
+      marginTop: 6,
+    },
+  }))
   const { width: windowWidth } = useWindowDimensions()
   const chartOuterWidth = Math.max(windowWidth - spacing.lg * 2 - spacing.md * 2, 280)
   const points = normalizeTimeline(data)
+  const areaFill = `${colors.primary}24`
 
   if (loading) {
     return (
@@ -143,7 +229,7 @@ export function ActivityChart({
               strokeWidth={1}
             />
           ))}
-          <Path d={areaPath} fill="rgba(155, 69, 37, 0.14)" />
+          <Path d={areaPath} fill={areaFill} />
           <Polyline
             points={linePoints}
             fill="none"
@@ -175,88 +261,3 @@ export function ActivityChart({
 
 /** @deprecated Use ActivityChart */
 export const Sparkline = ActivityChart
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  emptyCard: {
-    minHeight: 100,
-    justifyContent: "center",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    ...typography.section,
-    color: colors.text,
-    fontSize: 16,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-  },
-  totalBlock: {
-    alignItems: "flex-end",
-  },
-  totalValue: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.3,
-    fontVariant: ["tabular-nums"],
-  },
-  totalLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  chartWrap: {
-    marginTop: spacing.xs,
-    alignItems: "center",
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  footerLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  footerValue: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: "600",
-  },
-  skeletonGap: {
-    marginTop: 6,
-  },
-})

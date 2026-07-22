@@ -1,7 +1,7 @@
 {
   "name": "app-mobile",
   "main": "expo-router/entry",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "scripts": {
     "dev": "expo start --port 8082 --offline",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.42",
     "@maplibre/maplibre-react-native": "^10.4.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@workspace/geo": "*",
     "expo": "~54.0.35",
     "expo-auth-session": "~7.0.11",

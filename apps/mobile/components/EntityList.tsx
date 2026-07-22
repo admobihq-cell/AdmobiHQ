@@ -3,7 +3,6 @@ import {
   FlatList,
   RefreshControl,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native"
@@ -21,7 +20,7 @@ import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type EntityListProps<T extends { id: number }> = {
   title: string
@@ -52,6 +51,67 @@ export function EntityList<T extends { id: number; created_at?: string }>({
 }: EntityListProps<T>) {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.sm,
+      gap: spacing.sm,
+    },
+    searchBox: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      backgroundColor: c.surface,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    searchInput: {
+      flex: 1,
+      ...typography.body,
+      color: c.text,
+      paddingVertical: 10,
+    },
+    grouped: {
+      marginHorizontal: spacing.lg,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      overflow: "hidden" as const,
+    },
+    list: {
+      paddingBottom: spacing.xl,
+      flexGrow: 1,
+    },
+    rowWrapper: {
+      marginHorizontal: spacing.lg,
+      backgroundColor: c.surface,
+      borderLeftWidth: StyleSheet.hairlineWidth,
+      borderRightWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    rowFirst: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+    },
+    rowLast: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomLeftRadius: radius.lg,
+      borderBottomRightRadius: radius.lg,
+      marginBottom: spacing.md,
+    },
+    separator: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginLeft: 68,
+    },
+  }))
   const [items, setItems] = useState<T[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -228,64 +288,3 @@ export function EntityList<T extends { id: number; created_at?: string }>({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.text,
-    paddingVertical: 10,
-  },
-  grouped: {
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    overflow: "hidden",
-  },
-  list: {
-    paddingBottom: spacing.xl,
-    flexGrow: 1,
-  },
-  rowWrapper: {
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  rowFirst: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-  },
-  rowLast: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
-    marginBottom: spacing.md,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: 68,
-  },
-})

@@ -2,7 +2,7 @@ import { Tabs } from "expo-router"
 import { Text } from "react-native"
 
 import { Campaigns, Map, Overview, Settings } from "@/components/icons"
-import { colors } from "@/lib/theme"
+import { useNavigationTheme } from "@/lib/theme"
 
 function TabLabel({
   label,
@@ -17,24 +17,25 @@ function TabLabel({
 }
 
 export default function TabsLayout() {
+  const {
+    screenOptions,
+    tabBarStyle,
+    tabBarActiveTintColor,
+    tabBarInactiveTintColor,
+  } = useNavigationTheme()
+
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.bg,
-        },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: "600" },
-        headerShadowVisible: false,
+        ...screenOptions,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          ...tabBarStyle,
           height: 60,
           paddingBottom: 8,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor,
+        tabBarInactiveTintColor,
         tabBarHideOnKeyboard: true,
       }}
     >

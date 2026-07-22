@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 export type MapLayerKey = "corridors" | "coverage" | "plays"
 
@@ -21,6 +21,113 @@ export function CustomerMapHeader({
   layers,
   onToggle,
 }: CustomerMapHeaderProps) {
+  const styles = useThemedStyles((c) => ({
+    header: {
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+      gap: spacing.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+      backgroundColor: c.bg,
+    },
+    titleRow: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.md,
+    },
+    titleCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    eyebrow: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      fontWeight: "700" as const,
+    },
+    title: {
+      ...typography.title,
+      color: c.text,
+    },
+    livePill: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: c.secondary,
+    },
+    liveDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: c.primary,
+    },
+    liveText: {
+      ...typography.caption,
+      color: c.text,
+      fontWeight: "700" as const,
+    },
+    stats: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      padding: spacing.sm,
+      borderRadius: 12,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    stat: {
+      flex: 1,
+      alignItems: "center" as const,
+      gap: 2,
+    },
+    statValue: {
+      fontSize: 16,
+      fontWeight: "700" as const,
+      color: c.text,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      textAlign: "center" as const,
+    },
+    statDivider: {
+      width: StyleSheet.hairlineWidth,
+      height: 28,
+      backgroundColor: c.border,
+    },
+    toggles: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      gap: spacing.sm,
+    },
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    chipOn: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    chipOff: {
+      backgroundColor: c.surface,
+      borderColor: c.border,
+    },
+    chipText: {
+      ...typography.label,
+      color: c.mutedForeground,
+    },
+    chipTextOn: {
+      color: c.primaryForeground,
+    },
+  }))
+
   return (
     <View style={[styles.header, { paddingTop }]}>
       <View style={styles.titleRow}>
@@ -70,110 +177,3 @@ export function CustomerMapHeader({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  titleCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  eyebrow: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-  },
-  livePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: colors.secondary,
-  },
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-  },
-  liveText: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: "700",
-  },
-  stats: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing.sm,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  stat: {
-    flex: 1,
-    alignItems: "center",
-    gap: 2,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textAlign: "center",
-  },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 28,
-    backgroundColor: colors.border,
-  },
-  toggles: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  chipOn: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipOff: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  chipText: {
-    ...typography.label,
-    color: colors.mutedForeground,
-  },
-  chipTextOn: {
-    color: colors.primaryForeground,
-  },
-})

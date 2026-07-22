@@ -1,8 +1,11 @@
 "use client"
 
 import * as Sentry from "@sentry/nextjs"
-import NextError from "next/error"
 import { useEffect } from "react"
+
+import { GlobalErrorFallback } from "@workspace/ui/components/global-error-fallback"
+
+import "@workspace/ui/globals.css"
 
 export default function GlobalError({
   error,
@@ -16,7 +19,10 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body>
-        <NextError statusCode={0} />
+        <GlobalErrorFallback
+          title="Ops console error"
+          description="Something went wrong loading this page. Try again, or return to the console home."
+        />
       </body>
     </html>
   )

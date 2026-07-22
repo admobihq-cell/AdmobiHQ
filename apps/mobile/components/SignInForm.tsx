@@ -31,7 +31,7 @@ import {
   Subtitle,
   Title,
 } from "@/components/ui"
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN_SEC = 30
@@ -48,8 +48,81 @@ function clerkErrorMessage(err: unknown, fallback: string) {
   return fallback
 }
 
+const layoutStyles = StyleSheet.create({
+  welcomeRoot: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
+  welcomeHero: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    gap: spacing.md,
+  },
+  welcomeMark: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    marginBottom: spacing.sm,
+  },
+  welcomeCtaPressed: {
+    opacity: 0.9,
+  },
+  iconWrap: {
+    marginBottom: spacing.md,
+  },
+  formCard: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+})
+
 export function SignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn()
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    welcomeBrand: {
+      ...typography.largeTitle,
+      color: c.text,
+    },
+    welcomeLine: {
+      ...typography.body,
+      color: c.mutedForeground,
+      maxWidth: 320,
+    },
+    welcomeCta: {
+      backgroundColor: c.primary,
+      borderRadius: radius.full,
+      paddingVertical: 16,
+      paddingHorizontal: spacing.lg,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      flexDirection: "row" as const,
+      gap: spacing.sm,
+    },
+    welcomeCtaLabel: {
+      color: c.primaryForeground,
+      fontSize: 16,
+      fontWeight: "600" as const,
+    },
+    welcomeFooter: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      textAlign: "center" as const,
+      marginTop: spacing.md,
+    },
+    emailHighlight: {
+      color: c.text,
+      fontWeight: "600" as const,
+    },
+    footerNote: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      textAlign: "center" as const,
+    },
+  }))
   const [step, setStep] = useState<Step>("welcome")
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -169,12 +242,12 @@ export function SignInForm() {
       <Screen>
         <Animated.View
           entering={FadeIn.duration(420)}
-          style={styles.welcomeRoot}
+          style={layoutStyles.welcomeRoot}
         >
-          <View style={styles.welcomeHero}>
+          <View style={layoutStyles.welcomeHero}>
             <Image
               source={require("@/assets/images/icon.png")}
-              style={styles.welcomeMark}
+              style={layoutStyles.welcomeMark}
               resizeMode="contain"
               accessibilityLabel="Admobi"
             />
@@ -204,7 +277,7 @@ export function SignInForm() {
               }}
               style={({ pressed }) => [
                 styles.welcomeCta,
-                pressed && styles.welcomeCtaPressed,
+                pressed && layoutStyles.welcomeCtaPressed,
               ]}
             >
               <Mail color={colors.primaryForeground} size={18} strokeWidth={2.25} />
@@ -222,7 +295,7 @@ export function SignInForm() {
     return (
       <Screen>
         <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
-          <View style={styles.iconWrap}>
+          <View style={layoutStyles.iconWrap}>
             <IconBox icon={Mail} size={22} />
           </View>
           <Title>Check your email</Title>
@@ -230,7 +303,7 @@ export function SignInForm() {
             Enter the 6-digit code sent to{" "}
             <Text style={styles.emailHighlight}>{email.trim()}</Text>
           </Subtitle>
-          <Card style={styles.formCard}>
+          <Card style={layoutStyles.formCard}>
             <Label>Verification code</Label>
             <OtpCodeInput
               value={code}
@@ -277,7 +350,7 @@ export function SignInForm() {
   return (
     <Screen>
       <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
-        <View style={styles.iconWrap}>
+        <View style={layoutStyles.iconWrap}>
           <IconBox icon={ShieldCheck} size={22} />
         </View>
         <Title>Work email</Title>
@@ -285,7 +358,7 @@ export function SignInForm() {
           We will send a one-time verification code to your @admobihq.com
           address.
         </Subtitle>
-        <Card style={styles.formCard}>
+        <Card style={layoutStyles.formCard}>
           <Label>Email</Label>
           <Field
             value={email}
@@ -322,73 +395,3 @@ export function SignInForm() {
     </Screen>
   )
 }
-
-const styles = StyleSheet.create({
-  welcomeRoot: {
-    flex: 1,
-    justifyContent: "space-between",
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-  },
-  welcomeHero: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    gap: spacing.md,
-  },
-  welcomeMark: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.lg,
-    marginBottom: spacing.sm,
-  },
-  welcomeBrand: {
-    ...typography.largeTitle,
-    color: colors.text,
-  },
-  welcomeLine: {
-    ...typography.body,
-    color: colors.mutedForeground,
-    maxWidth: 320,
-  },
-  welcomeCta: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.full,
-    paddingVertical: 16,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  welcomeCtaPressed: {
-    opacity: 0.9,
-  },
-  welcomeCtaLabel: {
-    color: colors.primaryForeground,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  welcomeFooter: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textAlign: "center",
-    marginTop: spacing.md,
-  },
-  iconWrap: {
-    marginBottom: spacing.md,
-  },
-  formCard: {
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  emailHighlight: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  footerNote: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textAlign: "center",
-  },
-})
