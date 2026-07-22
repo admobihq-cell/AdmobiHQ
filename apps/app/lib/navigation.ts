@@ -32,7 +32,7 @@ export const appNavItems: AppNavItem[] = [
     label: "Map",
     icon: Map,
     description:
-      "Campaign corridors, coverage zones, and proof-of-play across Nairobi.",
+      "Explore Nairobi on Clean, Streets, or 3D basemaps.",
   },
   {
     href: "/reports",

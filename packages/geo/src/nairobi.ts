@@ -19,7 +19,7 @@ export const NAIROBI_CORRIDORS: Corridor[] = [
   {
     id: "mombasa-rd",
     name: "Mombasa Road",
-    color: "#0F766E",
+    color: "#0B6E4F",
     coordinates: [
       [36.8219, -1.2921],
       [36.835, -1.31],
@@ -31,7 +31,7 @@ export const NAIROBI_CORRIDORS: Corridor[] = [
   {
     id: "waiyaki-way",
     name: "Waiyaki Way",
-    color: "#C2410C",
+    color: "#9B4525",
     coordinates: [
       [36.8172, -1.2864],
       [36.79, -1.27],
@@ -43,7 +43,7 @@ export const NAIROBI_CORRIDORS: Corridor[] = [
   {
     id: "thika-rd",
     name: "Thika Road",
-    color: "#1D4ED8",
+    color: "#3D5A80",
     coordinates: [
       [36.828, -1.28],
       [36.845, -1.25],
@@ -55,7 +55,7 @@ export const NAIROBI_CORRIDORS: Corridor[] = [
   {
     id: "langata-rd",
     name: "Langata Road",
-    color: "#7C3AED",
+    color: "#5B4B8A",
     coordinates: [
       [36.8172, -1.292],
       [36.8, -1.31],

@@ -114,6 +114,14 @@ export default function OpsLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: "Map",
+          headerShown: false,
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }

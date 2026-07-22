@@ -22,8 +22,8 @@ import { X, Minus, Plus, Locate, Maximize, Loader2 } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
 
 const defaultStyles = {
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/liberty",
 };
 
 // A tile-less, dependency-free style with a transparent background. Use it for
@@ -300,8 +300,43 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     const styleLoadHandler = () => {
       styleSwapInFlightRef.current = false;
       setIsStyleLoaded(true);
+      // Flex/absolute parents can settle after first paint — force a resize.
+      requestAnimationFrame(() => {
+        try {
+          map.resize();
+        } catch {
+          // ignore
+        }
+      });
     };
-    const loadHandler = () => setIsLoaded(true);
+    const loadHandler = () => {
+      setIsLoaded(true);
+      requestAnimationFrame(() => {
+        try {
+          map.resize();
+        } catch {
+          // ignore
+        }
+      });
+    };
+    const errorHandler = (event: { error?: Error; message?: string }) => {
+      const message = event.error?.message ?? event.message ?? "";
+      // If the requested basemap style fails, fall back to Carto so the map isn't blank.
+      if (
+        typeof currentStyleRef.current === "string" &&
+        currentStyleRef.current.includes("openfreemap") &&
+        /style|fetch|network|failed|load/i.test(message)
+      ) {
+        const fallback =
+          resolvedTheme === "dark"
+            ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+            : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+        if (currentStyleRef.current !== fallback) {
+          currentStyleRef.current = fallback;
+          map.setStyle(fallback, { diff: false });
+        }
+      }
+    };
 
     // Viewport change handler - skip if triggered by internal update
     const handleMove = () => {
@@ -311,12 +346,14 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
     map.on("load", loadHandler);
     map.on("style.load", styleLoadHandler);
+    map.on("error", errorHandler);
     map.on("move", handleMove);
     setMapInstance(map);
 
     return () => {
       map.off("load", loadHandler);
       map.off("style.load", styleLoadHandler);
+      map.off("error", errorHandler);
       map.off("move", handleMove);
       map.remove();
       setIsLoaded(false);
@@ -397,13 +434,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
   return (
     <MapContext.Provider value={contextValue}>
-      <div
-        ref={containerRef}
-        className={cn("relative h-full w-full", className)}
-      >
+      <div className={cn("relative h-full w-full", className)}>
+        {/* MapLibre must own an empty node — overlays stay as siblings. */}
+        <div ref={containerRef} className="absolute inset-0 h-full w-full" />
         {(!isLoaded || loading) && <DefaultLoader />}
-        {/* SSR-safe: children render only when map is loaded on client */}
-        {mapInstance && children}
+        {mapInstance ? children : null}
       </div>
     </MapContext.Provider>
   );
@@ -1102,12 +1137,20 @@ type MapRouteProps = {
   id?: string;
   /** Array of [longitude, latitude] coordinate pairs defining the route */
   coordinates: [number, number][];
-  /** Line color as CSS color value (default: "#4285F4") */
+  /** Line color as CSS color value (default: "#0B6E4F") */
   color?: string;
-  /** Line width in pixels (default: 3) */
+  /** Line width in pixels (default: 4) */
   width?: number;
-  /** Line opacity from 0 to 1 (default: 0.8) */
+  /** Line opacity from 0 to 1 (default: 0.95) */
   opacity?: number;
+  /** Soft underlay stroke for contrast on busy basemaps */
+  casing?: boolean;
+  /** Casing width in pixels (default: width + 4) */
+  casingWidth?: number;
+  /** Casing color (default: darkened line color / near-black) */
+  casingColor?: string;
+  /** Casing opacity (default: 0.28) */
+  casingOpacity?: number;
   /** Dash pattern [dash length, gap length] for dashed lines */
   dashArray?: [number, number];
   /** Callback when the route line is clicked */
@@ -1123,9 +1166,13 @@ type MapRouteProps = {
 function MapRoute({
   id: propId,
   coordinates,
-  color = "#4285F4",
-  width = 3,
-  opacity = 0.8,
+  color = "#0B6E4F",
+  width = 4,
+  opacity = 0.95,
+  casing = true,
+  casingWidth,
+  casingColor = "#0a0a0a",
+  casingOpacity = 0.28,
   dashArray,
   onClick,
   onMouseEnter,
@@ -1136,7 +1183,9 @@ function MapRoute({
   const autoId = useId();
   const id = propId ?? autoId;
   const sourceId = `route-source-${id}`;
+  const casingLayerId = `route-casing-${id}`;
   const layerId = `route-layer-${id}`;
+  const resolvedCasingWidth = casingWidth ?? width + 4;
 
   // Add source and layer on mount
   useEffect(() => {
@@ -1150,6 +1199,21 @@ function MapRoute({
         geometry: { type: "LineString", coordinates: [] },
       },
     });
+
+    if (casing) {
+      map.addLayer({
+        id: casingLayerId,
+        type: "line",
+        source: sourceId,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": casingColor,
+          "line-width": resolvedCasingWidth,
+          "line-opacity": casingOpacity,
+          "line-blur": 0.5,
+        },
+      });
+    }
 
     map.addLayer({
       id: layerId,
@@ -1167,6 +1231,7 @@ function MapRoute({
     return () => {
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
+        if (map.getLayer(casingLayerId)) map.removeLayer(casingLayerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
       } catch {
         // ignore
@@ -1195,8 +1260,25 @@ function MapRoute({
     map.setPaintProperty(layerId, "line-color", color);
     map.setPaintProperty(layerId, "line-width", width);
     map.setPaintProperty(layerId, "line-opacity", opacity);
-    map.setPaintProperty(layerId, "line-dasharray", dashArray);
-  }, [isLoaded, map, layerId, color, width, opacity, dashArray]);
+    map.setPaintProperty(layerId, "line-dasharray", dashArray ?? null);
+    if (map.getLayer(casingLayerId)) {
+      map.setPaintProperty(casingLayerId, "line-color", casingColor);
+      map.setPaintProperty(casingLayerId, "line-width", resolvedCasingWidth);
+      map.setPaintProperty(casingLayerId, "line-opacity", casingOpacity);
+    }
+  }, [
+    isLoaded,
+    map,
+    layerId,
+    casingLayerId,
+    color,
+    width,
+    opacity,
+    dashArray,
+    casingColor,
+    resolvedCasingWidth,
+    casingOpacity,
+  ]);
 
   // Handle click and hover events
   useEffect(() => {
@@ -1227,10 +1309,10 @@ function MapRoute({
     isLoaded,
     map,
     layerId,
+    interactive,
     onClick,
     onMouseEnter,
     onMouseLeave,
-    interactive,
   ]);
 
   return null;
@@ -1890,6 +1972,8 @@ type MapClusterLayerProps<
   clusterThresholds?: [number, number];
   /** Color for unclustered individual points (default: "#3b82f6") */
   pointColor?: string;
+  /** Fontstack for cluster count labels (must exist on the active basemap) */
+  textFont?: string[];
   /** Callback when an unclustered point is clicked */
   onPointClick?: (
     feature: GeoJSON.Feature<GeoJSON.Point, P>,
@@ -1904,9 +1988,9 @@ type MapClusterLayerProps<
 };
 
 const DEFAULT_CLUSTER_COLORS: [string, string, string] = [
-  "#3b82f6",
-  "#1d4ed8",
-  "#1e3a8a",
+  "#0B6E4F",
+  "#C2783E",
+  "#9B4525",
 ];
 const DEFAULT_CLUSTER_THRESHOLDS: [number, number] = [100, 750];
 
@@ -1918,7 +2002,8 @@ function MapClusterLayer<
   clusterRadius = 50,
   clusterColors = DEFAULT_CLUSTER_COLORS,
   clusterThresholds = DEFAULT_CLUSTER_THRESHOLDS,
-  pointColor = "#3b82f6",
+  pointColor = "#0B6E4F",
+  textFont = ["Noto Sans Bold", "Noto Sans Regular"],
   onPointClick,
   onClusterClick,
 }: MapClusterLayerProps<P>) {
@@ -1979,21 +2064,26 @@ function MapClusterLayer<
       },
     });
 
-    // Add cluster count text layer
-    map.addLayer({
-      id: clusterCountLayerId,
-      type: "symbol",
-      source: sourceId,
-      filter: ["has", "point_count"],
-      layout: {
-        "text-field": "{point_count_abbreviated}",
-        "text-font": ["Open Sans Semibold"],
-        "text-size": 12,
-      },
-      paint: {
-        "text-color": "#fff",
-      },
-    });
+    // Add cluster count text layer — skip if the basemap lacks the fontstack.
+    try {
+      map.addLayer({
+        id: clusterCountLayerId,
+        type: "symbol",
+        source: sourceId,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": "{point_count_abbreviated}",
+          "text-font": textFont,
+          "text-size": 12,
+          "text-allow-overlap": true,
+        },
+        paint: {
+          "text-color": "#fff",
+        },
+      });
+    } catch {
+      // Basemap may not include the requested fonts; circles still render.
+    }
 
     // Add unclustered point layer
     map.addLayer({
@@ -2187,6 +2277,92 @@ function MapClusterLayer<
   return null;
 }
 
+/** Extrude OpenMapTiles / Carto building footprints when the basemap supports them. */
+function MapBuildings3D({ enabled = true }: { enabled?: boolean }) {
+  const { map, isLoaded, resolvedTheme } = useMap();
+
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const layerId = "admobi-3d-buildings";
+
+    const remove = () => {
+      try {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+      } catch {
+        // ignore
+      }
+    };
+
+    if (!enabled) {
+      remove();
+      return;
+    }
+
+    const add = () => {
+      remove();
+      const style = map.getStyle();
+      if (!style?.sources) return;
+
+      const sourceId = ["openmaptiles", "carto", "protomaps"].find(
+        (id) => style.sources?.[id],
+      );
+      if (!sourceId) return;
+
+      try {
+        map.addLayer({
+          id: layerId,
+          source: sourceId,
+          "source-layer": "building",
+          type: "fill-extrusion",
+          minzoom: 13,
+          paint: {
+            "fill-extrusion-color":
+              resolvedTheme === "dark" ? "#4a4654" : "#c8c2b8",
+            "fill-extrusion-height": [
+              "coalesce",
+              ["get", "render_height"],
+              ["get", "height"],
+              12,
+            ],
+            "fill-extrusion-base": [
+              "coalesce",
+              ["get", "render_min_height"],
+              ["get", "min_height"],
+              0,
+            ],
+            "fill-extrusion-opacity": 0.7,
+          },
+        });
+      } catch {
+        // Style may lack a building source-layer.
+      }
+    };
+
+    add();
+    map.on("style.load", add);
+    return () => {
+      map.off("style.load", add);
+      remove();
+    };
+  }, [map, isLoaded, enabled, resolvedTheme]);
+
+  return null;
+}
+
+/** Ease camera pitch when switching flat ↔ 3D basemaps. */
+function MapPitch({ pitch }: { pitch: number }) {
+  const { map, isLoaded } = useMap();
+
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+    map.setMaxPitch(Math.max(68, pitch + 12));
+    map.easeTo({ pitch, duration: 650 });
+  }, [map, isLoaded, pitch]);
+
+  return null;
+}
+
 export {
   Map,
   useMap,
@@ -2201,6 +2377,8 @@ export {
   MapArc,
   MapGeoJSON,
   MapClusterLayer,
+  MapBuildings3D,
+  MapPitch,
 };
 
 export type {

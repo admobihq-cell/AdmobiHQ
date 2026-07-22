@@ -14,10 +14,10 @@ import { useState } from "react"
 import { StyleSheet, View, useColorScheme } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { CustomerMapHeader } from "@/components/maps/customer-map-header"
+import { OpsMapHeader } from "@/components/maps/ops-map-header"
 import { spacing, useThemedStyles } from "@/lib/theme"
 
-export function CustomerMapNative() {
+export function OpsMapNative() {
   const insets = useSafeAreaInsets()
   const scheme = useColorScheme()
   const dark = scheme === "dark"
@@ -38,7 +38,7 @@ export function CustomerMapNative() {
 
   return (
     <View style={styles.root}>
-      <CustomerMapHeader
+      <OpsMapHeader
         paddingTop={insets.top + spacing.sm}
         basemap={basemap}
         onBasemapChange={setBasemap}
@@ -51,7 +51,6 @@ export function CustomerMapNative() {
           mapStyle={mapStyle}
           logoEnabled={false}
           attributionPosition={{ bottom: 8, right: 8 }}
-          compassEnabled
         >
           <Camera
             defaultSettings={{

@@ -5,15 +5,24 @@ const projectRoot = __dirname
 const workspaceRoot = path.resolve(projectRoot, "../..")
 const mobileModules = path.resolve(projectRoot, "node_modules")
 
+const workspacePackages = {
+  "@workspace/geo": path.resolve(workspaceRoot, "packages/geo"),
+  "@workspace/ops-api-client": path.resolve(
+    workspaceRoot,
+    "packages/ops-api-client",
+  ),
+  "@workspace/ops-contracts": path.resolve(
+    workspaceRoot,
+    "packages/ops-contracts",
+  ),
+}
+
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(projectRoot)
 
 // Only watch packages this app imports — not the whole monorepo (avoids
 // ENOENT spam from sibling Next.js apps writing under apps/*/.next).
-config.watchFolders = [
-  path.resolve(workspaceRoot, "packages/ops-api-client"),
-  path.resolve(workspaceRoot, "packages/ops-contracts"),
-]
+config.watchFolders = Object.values(workspacePackages)
 config.resolver.nodeModulesPaths = [
   mobileModules,
   path.resolve(workspaceRoot, "node_modules"),
@@ -31,9 +40,11 @@ function resolveFromMobile(moduleName) {
 }
 
 // Web workspaces hoist react@19.2.x at the root; mobile pins react@19.1.x.
+// Also pin workspace packages so Metro (especially web) resolves them.
 config.resolver.extraNodeModules = {
   react: path.dirname(resolveFromMobile("react/package.json")),
   "react-dom": path.dirname(resolveFromMobile("react-dom/package.json")),
+  ...workspacePackages,
 }
 
 const reactAliases = new Set([
@@ -48,6 +59,32 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (reactAliases.has(moduleName) || moduleName.startsWith("react-dom/")) {
     return {
       filePath: resolveFromMobile(moduleName),
+      type: "sourceFile",
+    }
+  }
+
+  // Explicit entry for workspace packages (Expo web often fails on exports-only).
+  if (moduleName === "@workspace/geo") {
+    return {
+      filePath: path.join(workspacePackages["@workspace/geo"], "src/index.ts"),
+      type: "sourceFile",
+    }
+  }
+  if (moduleName === "@workspace/ops-api-client") {
+    return {
+      filePath: path.join(
+        workspacePackages["@workspace/ops-api-client"],
+        "src/index.ts",
+      ),
+      type: "sourceFile",
+    }
+  }
+  if (moduleName === "@workspace/ops-contracts") {
+    return {
+      filePath: path.join(
+        workspacePackages["@workspace/ops-contracts"],
+        "src/index.ts",
+      ),
       type: "sourceFile",
     }
   }
