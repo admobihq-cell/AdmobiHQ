@@ -1,6 +1,6 @@
 # Deployment guide
 
-Production and staging deployment for **Admobi** (`apps/web`), **API** (`apps/api`), **Ops console** (`apps/ops`), **Customer app** (`apps/app`), and **Expo mobile apps** (`apps/mobile`, `apps/app-mobile`).
+Production and staging deployment for **Admobi** (`apps/web`), **API** (`apps/api`), **Ops console** (`apps/ops`), **Customer app** (`apps/customer-web`), and **Expo mobile apps** (`apps/ops-mobile`, `apps/customer-mobile`).
 
 **Related:** [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [API.md](./API.md), [APP.md](./APP.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
@@ -12,7 +12,7 @@ Four **separate Vercel projects** from one GitHub repo. Each project has its own
 
 | | **Web** | **API** | **Ops** | **App** |
 |---|---------|---------|---------|---------|
-| **Repo path** | `apps/web` | `apps/api` | `apps/ops` | `apps/app` |
+| **Repo path** | `apps/web` | `apps/api` | `apps/ops` | `apps/customer-web` |
 | **Purpose** | Marketing site + Payload CMS | Business REST API (`/v1`) | Internal admin UI | Customer product (scaffold) |
 | **Production** | [admobihq.com](https://admobihq.com) | [api.admobihq.com](https://api.admobihq.com) | [ops.admobihq.com](https://ops.admobihq.com) | [app.admobihq.com](https://app.admobihq.com) |
 | **Staging** (`staging` branch) | staging.admobihq.com | api.staging.admobihq.com | ops.staging.admobihq.com | app.staging.admobihq.com |
@@ -34,7 +34,7 @@ Four **separate Vercel projects** from one GitHub repo. Each project has its own
 | Marketing + CMS | `apps/web` | `admobihq.com` | `staging.admobihq.com` | `:3000` |
 | Business API | `apps/api` | `api.admobihq.com` | `api.staging.admobihq.com` | `:3003` |
 | Ops console | `apps/ops` | `ops.admobihq.com` | `ops.staging.admobihq.com` | `:3001` |
-| Customer app | `apps/app` | `app.admobihq.com` | `app.staging.admobihq.com` | `:3002` |
+| Customer app | `apps/customer-web` | `app.admobihq.com` | `app.staging.admobihq.com` | `:3002` |
 
 Payload CMS REST stays on the web app (`admobihq.com/api/*`). Business APIs live on `api.admobihq.com/v1/*` (admin) and `/v1/public/*` (marketing forms).
 
@@ -175,14 +175,14 @@ Smoke check: `GET /v1/health` → `{ "ok": true, "service": "admobi-api", "versi
 
 Ops is UI-only; CRUD calls go to `NEXT_PUBLIC_API_URL/v1/*`.
 
-### Project 4: App (`apps/app`)
+### Project 4: App (`apps/customer-web`)
 
 | Setting | Value |
 |---------|--------|
-| Root Directory | `apps/app` |
+| Root Directory | `apps/customer-web` |
 | Include files outside root | **Enabled** |
 | Production Branch | `master` |
-| Build Command | `cd ../.. && npm run build -w app` if default fails |
+| Build Command | `cd ../.. && npm run build -w customer-web` if default fails |
 
 **Domains**
 
@@ -223,7 +223,7 @@ App: **`app_3GALZRS50nwbrWeiFLZXxsgDIid`**
 
 Cross-origin Bearer JWT from ops and mobile validates against the API subdomain.
 
-The customer app (`apps/app`) has **no auth yet** — add app URLs here when login ships.
+The customer app (`apps/customer-web`) has **no auth yet** — add app URLs here when login ships.
 
 **Restrictions:** `@admobihq.com` email domain only (ops).
 
@@ -269,8 +269,8 @@ Android APKs for ops and customer Expo apps are built and distributed via **Expo
 
 | App | Folder | EAS slug | Android package |
 |-----|--------|----------|-----------------|
-| Admobi Ops | `apps/mobile` | `admobihq-ops` | `com.admobihq.ops` |
-| Admobi (customer) | `apps/app-mobile` | `admobihq-app` | `com.admobihq.app` |
+| Admobi Ops | `apps/ops-mobile` | `admobihq-ops` | `com.admobihq.ops` |
+| Admobi (customer) | `apps/customer-mobile` | `admobihq-app` | `com.admobihq.app` |
 
 **Full guide:** [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
@@ -279,10 +279,10 @@ Android APKs for ops and customer Expo apps are built and distributed via **Expo
 Run from each app directory:
 
 ```powershell
-cd apps\mobile
+cd apps\ops-mobile
 npx eas-cli build -p android --profile preview
 
-cd apps\app-mobile
+cd apps\customer-mobile
 npx eas-cli build -p android --profile preview
 ```
 
@@ -370,7 +370,7 @@ Verify staging returns `X-Robots-Tag: noindex` and does not generate a public si
 
 Use this when going live:
 
-- [ ] **Vercel:** Four projects configured (`apps/web`, `apps/api`, `apps/ops`, `apps/app`) with domains above
+- [ ] **Vercel:** Four projects configured (`apps/web`, `apps/api`, `apps/ops`, `apps/customer-web`) with domains above
 - [ ] **Infisical:** `staging` + `prod` envs synced to all four Vercel projects
 - [ ] **Clerk:** Ops + API URLs in allowed origins; live keys in prod
 - [ ] **Neon:** `ops-schema-additive.sql` applied on prod (and staging)
