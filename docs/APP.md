@@ -1,4 +1,4 @@
-# Customer app (`apps/app`)
+# Customer web app (`apps/customer-web`)
 
 Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 
@@ -20,7 +20,7 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 - **Map** (`/map`) — mapcn (MapLibre) with booked corridors, coverage zones, and proof-of-play clusters (demo Nairobi data via `@workspace/geo`)
 - **No authentication** — login ships in a later phase
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
-- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/app-mobile`, no Clerk). Builds & APKs: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
+- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/customer-mobile`, no Clerk). Builds & APKs: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ## Secrets (Infisical)
 
@@ -36,9 +36,9 @@ No Clerk or database vars until the product phase.
 ### Pull locally
 
 ```bash
-npm run env:pull -w app
-npm run env:check -w app
-npm run dev -w app
+npm run env:pull -w customer-web
+npm run env:check -w customer-web
+npm run dev -w customer-web
 ```
 
 Or start with all core apps: `npm run dev`.
@@ -49,10 +49,10 @@ Separate Vercel project (third customer-facing app; fourth in the monorepo):
 
 | Setting | Value |
 |---------|--------|
-| Root Directory | `apps/app` |
+| Root Directory | `apps/customer-web` |
 | Include files outside root | **Enabled** |
 | Production Branch | `master` |
-| Build | `cd ../.. && npm run build -w app` if default fails |
+| Build | `cd ../.. && npm run build -w customer-web` if default fails |
 
 Sync **only app env vars** from Infisical — not the full web secret set.
 

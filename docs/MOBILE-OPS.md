@@ -1,4 +1,4 @@
-# Ops mobile (`apps/mobile`)
+# Ops mobile (`apps/ops-mobile`)
 
 Expo app for **Admobi ops staff** — Clerk auth, calls the business API with session JWT.
 
@@ -11,9 +11,9 @@ Expo app for **Admobi ops staff** — Clerk auth, calls the business API with se
 ## Local development
 
 ```bash
-npm run env:pull -w mobile   # maps EXPO_PUBLIC_* + Clerk from Infisical
-npm run dev -w mobile        # Metro on port 8081
-npm run dev:clear -w mobile  # same, clears Metro cache
+npm run env:pull -w ops-mobile   # maps EXPO_PUBLIC_* + Clerk from Infisical
+npm run dev -w ops-mobile        # Metro on port 8081
+npm run dev:clear -w ops-mobile  # same, clears Metro cache
 ```
 
 Staff must sign in with an **`@admobihq.com`** Clerk account (same restriction as the ops web console).
@@ -43,7 +43,7 @@ Staff must sign in with an **`@admobihq.com`** Clerk account (same restriction a
 
 ## Building an APK for the team
 
-From **`apps/mobile`** (not repo root):
+From **`apps/ops-mobile`** (not repo root):
 
 ```powershell
 npx eas-cli login

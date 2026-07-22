@@ -3,7 +3,7 @@
  * Output: apps/<app>/android/app/build/outputs/apk/debug/app-debug.apk
  *
  * Requires Android SDK + Android Studio JBR (Java).
- * Usage: node scripts/build-apk-local.mjs [mobile|app-mobile|all]
+ * Usage: node scripts/build-apk-local.mjs [ops-mobile|customer-mobile|all]
  */
 import { spawnSync } from "node:child_process"
 import { existsSync } from "node:fs"
@@ -19,13 +19,15 @@ const javaHome =
 const target = process.argv[2] ?? "all"
 const apps =
   target === "all"
-    ? ["mobile", "app-mobile"]
-    : target === "mobile" || target === "app-mobile"
+    ? ["ops-mobile", "customer-mobile"]
+    : target === "ops-mobile" || target === "customer-mobile"
       ? [target]
       : null
 
 if (!apps) {
-  console.error("Usage: node scripts/build-apk-local.mjs [mobile|app-mobile|all]")
+  console.error(
+    "Usage: node scripts/build-apk-local.mjs [ops-mobile|customer-mobile|all]",
+  )
   process.exit(1)
 }
 

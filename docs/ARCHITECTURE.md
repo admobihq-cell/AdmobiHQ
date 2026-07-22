@@ -29,8 +29,8 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 │   ├── api/                         Business REST API (:3003)
 │   ├── ops/                         Internal ops console UI (:3001, Clerk)
 │   ├── app/                         Customer app scaffold (:3002)
-│   ├── mobile/                      Expo ops mobile app
-│   └── app-mobile/                  Expo customer app (no Clerk)
+│   ├── ops-mobile/                  Expo ops mobile app
+│   └── customer-mobile/             Expo customer app (no Clerk)
 ├── packages/
 │   ├── ui/                          Shared UI primitives + design tokens + mapcn
 │   ├── geo/                         Nairobi map fixtures (corridors, coverage, plays)
@@ -60,9 +60,9 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 | **Web** | `apps/web` | Public marketing, Payload CMS at `/admin` |
 | **API** | `apps/api` | Business REST at `api.admobihq.com` — public forms + ops CRUD |
 | **Ops** | `apps/ops` | Staff console UI at `ops.admobihq.com` — calls API, Clerk `@admobihq.com` |
-| **App** | `apps/app` | Customer product at `app.admobihq.com` — scaffold + Map |
-| **Mobile** | `apps/mobile` | Expo app for ops staff — calls API with Clerk JWT. See [MOBILE-OPS.md](./MOBILE-OPS.md) |
-| **App mobile** | `apps/app-mobile` | Expo customer app — no Clerk; Map tab with MapLibre. See [APP-MOBILE.md](./APP-MOBILE.md) |
+| **App** | `apps/customer-web` | Customer product at `app.admobihq.com` — scaffold + Map |
+| **Ops mobile** | `apps/ops-mobile` | Expo app for ops staff — calls API with Clerk JWT. See [MOBILE-OPS.md](./MOBILE-OPS.md) |
+| **Customer mobile** | `apps/customer-mobile` | Expo customer app — no Clerk; Map tab with MapLibre. See [APP-MOBILE.md](./APP-MOBILE.md) |
 
 See [API.md](./API.md), [OPS-ADMIN.md](./OPS-ADMIN.md), [APP.md](./APP.md), [APP-MOBILE.md](./APP-MOBILE.md), [MOBILE-OPS.md](./MOBILE-OPS.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
@@ -299,10 +299,10 @@ Key cross-app variables:
 
 | Variable | Used by |
 |----------|---------|
-| `NEXT_PUBLIC_API_URL` | web, api, ops, app (build-time) — business API origin |
-| `EXPO_PUBLIC_API_URL` | mobile (mapped from `NEXT_PUBLIC_API_URL` on env pull) |
+| `NEXT_PUBLIC_API_URL` | web, api, ops, customer-web (build-time) — business API origin |
+| `EXPO_PUBLIC_API_URL` | ops-mobile (mapped from `NEXT_PUBLIC_API_URL` on env pull) |
 | `DATABASE_URL` | web, api, ops (ops uses direct Prisma for server-rendered stats) |
-| `CLERK_*` | api, ops, mobile |
+| `CLERK_*` | api, ops, ops-mobile |
 | `PAYLOAD_SECRET` | web only |
 | `RESEND_*`, `REDIS_URL` | api only (form emails) |
 
