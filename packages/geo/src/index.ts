@@ -20,3 +20,13 @@ export {
   getCustomerBookedCorridors,
   getCustomerPlayPoints,
 } from "./nairobi"
+
+export type { BasemapId, BasemapPreset } from "./map-theme"
+export {
+  BASEMAP_ORDER,
+  BASEMAP_PRESETS,
+  DEFAULT_BASEMAP,
+  MAP_OVERLAY,
+  coverageFillExpression,
+  resolveBasemapStyleUrl,
+} from "./map-theme"

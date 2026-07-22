@@ -7,17 +7,17 @@ import {
 } from "@workspace/geo"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
-type CustomerMapHeaderProps = {
+type OpsMapHeaderProps = {
   paddingTop: number
   basemap: BasemapId
   onBasemapChange: (id: BasemapId) => void
 }
 
-export function CustomerMapHeader({
+export function OpsMapHeader({
   paddingTop,
   basemap,
   onBasemapChange,
-}: CustomerMapHeaderProps) {
+}: OpsMapHeaderProps) {
   const styles = useThemedStyles((c) => ({
     header: {
       paddingHorizontal: spacing.md,
@@ -98,7 +98,7 @@ export function CustomerMapHeader({
   return (
     <View style={styles.header}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>Campaign map</Text>
+        <Text style={styles.title}>Ops map</Text>
         <View style={styles.livePill}>
           <View style={styles.liveDot} />
           <Text style={styles.liveText}>Demo</Text>

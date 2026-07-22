@@ -4,12 +4,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { WebView } from "react-native-webview"
 
 import { DEFAULT_BASEMAP, type BasemapId } from "@workspace/geo"
-import { CustomerMapHeader } from "@/components/maps/customer-map-header"
-import { buildMapHtml } from "@/components/maps/customer-map-html"
+import { OpsMapHeader } from "@/components/maps/ops-map-header"
+import { buildOpsMapHtml } from "@/components/maps/ops-map-html"
 import { spacing, useThemedStyles } from "@/lib/theme"
 
-/** MapLibre GL JS in a WebView — works in Expo Go without native MapLibre. */
-export function CustomerMapWeb() {
+export function OpsMapWeb() {
   const insets = useSafeAreaInsets()
   const scheme = useColorScheme()
   const [basemap, setBasemap] = useState<BasemapId>(DEFAULT_BASEMAP)
@@ -28,7 +27,7 @@ export function CustomerMapWeb() {
 
   const html = useMemo(
     () =>
-      buildMapHtml({
+      buildOpsMapHtml({
         dark: scheme === "dark",
         basemap,
       }),
@@ -37,7 +36,7 @@ export function CustomerMapWeb() {
 
   return (
     <View style={styles.root}>
-      <CustomerMapHeader
+      <OpsMapHeader
         paddingTop={insets.top + spacing.sm}
         basemap={basemap}
         onBasemapChange={setBasemap}

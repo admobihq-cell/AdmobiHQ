@@ -6,7 +6,7 @@ import { useMemo } from "react"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { DateRangeKey } from "@workspace/ops-contracts"
-import { FileText, LogOut, Mail, Person } from "@/components/icons"
+import { FileText, LogOut, Mail, Map, Person } from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
@@ -172,6 +172,13 @@ export default function MoreScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Modules</Text>
         <View style={styles.group}>
+          <SettingsRow
+            icon={Map}
+            label="Network map"
+            description="Corridors and city view"
+            onPress={() => router.push("/(ops)/map")}
+          />
+          <View style={styles.divider} />
           <SettingsRow
             icon={Mail}
             label="Waitlist"
