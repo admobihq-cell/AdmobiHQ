@@ -14,7 +14,12 @@ export async function HomeStatsSection() {
     }
 
     return <OpsHomeStats stats={stats} />
-  } catch {
-    return <OpsHomeStats stats={null} />
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not load the 30-day snapshot. Check database connectivity or run `npm run env:pull -w ops`."
+
+    return <OpsHomeStats stats={null} error={message} />
   }
 }
