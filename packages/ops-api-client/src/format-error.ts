@@ -14,7 +14,7 @@ export function formatApiError(
 ): string {
   if (err instanceof OpsApiError) {
     if (err.status === 401) {
-      return "Session expired. Sign out and sign in again."
+      return "Could not verify your session with the API. Sign out, sign in again, and confirm the app uses production Clerk keys."
     }
     if (err.status === 403) {
       return "Access denied. Use your @admobihq.com account."

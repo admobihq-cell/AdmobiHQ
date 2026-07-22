@@ -1,11 +1,24 @@
 import { useMemo, useRef } from "react"
 import { useAuth } from "@clerk/clerk-expo"
-import { createOpsClient, OpsApiError, type OpsClient } from "@workspace/ops-api-client"
+import { createOpsClient, type OpsClient } from "@workspace/ops-api-client"
 
 import { API_URL } from "@/lib/env"
 
+async function resolveSessionToken(
+  getToken: () => Promise<string | null>,
+): Promise<string | null> {
+  const token = await getToken()
+  if (token) {
+    return token
+  }
+
+  // Clerk may need a moment to attach the session right after setActive().
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  return getToken()
+}
+
 export function useOpsClient(): OpsClient {
-  const { getToken, isLoaded, isSignedIn } = useAuth()
+  const { getToken } = useAuth()
   const getTokenRef = useRef(getToken)
   getTokenRef.current = getToken
 
@@ -13,23 +26,9 @@ export function useOpsClient(): OpsClient {
     () =>
       createOpsClient({
         baseUrl: API_URL,
-        getToken: async () => {
-          if (!isLoaded) {
-            throw new OpsApiError("Auth is still loading. Try again in a moment.", 401)
-          }
-          if (!isSignedIn) {
-            throw new OpsApiError("Session expired. Sign out and sign in again.", 401)
-          }
-
-          const token = await getTokenRef.current()
-          if (!token) {
-            throw new OpsApiError("Session expired. Sign out and sign in again.", 401)
-          }
-
-          return token
-        },
+        getToken: () => resolveSessionToken(() => getTokenRef.current()),
       }),
-    [isLoaded, isSignedIn],
+    [],
   )
 }
 

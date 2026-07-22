@@ -37,13 +37,9 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   if (isAdminApi(request)) {
-    const { userId } = await auth()
-    if (!userId) {
-      return withCors(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-        origin,
-      )
-    }
+    // Staff auth is enforced in route handlers via requireOpsUser().
+    // Do not call auth.protect() or gate on userId here — Edge middleware
+    // rejects valid Expo Bearer tokens; route-level auth() handles them.
     return withCors(NextResponse.next(), origin)
   }
 
