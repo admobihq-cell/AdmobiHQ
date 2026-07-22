@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics"
 import { Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native"
 
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 export type FilterChipOption = {
   key: string
@@ -23,6 +23,37 @@ export function FilterChips({
   showAll = true,
   embedded = false,
 }: FilterChipsProps) {
+  const styles = useThemedStyles((c) => ({
+    scroll: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
+    scrollEmbedded: {
+      paddingHorizontal: 0,
+    },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: radius.full,
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    chipActive: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    chipText: {
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.mutedForeground,
+    },
+    chipTextActive: {
+      color: c.primaryForeground,
+    },
+  }))
+
   const handleSelect = (key: string | null) => {
     if (Platform.OS !== "web") {
       void Haptics.selectionAsync()
@@ -66,34 +97,3 @@ export function FilterChips({
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  scrollEmbedded: {
-    paddingHorizontal: 0,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    ...typography.caption,
-    fontWeight: "600",
-    color: colors.mutedForeground,
-  },
-  chipTextActive: {
-    color: colors.primaryForeground,
-  },
-})

@@ -1,7 +1,7 @@
 import Svg, { G, Path } from "react-native-svg"
 import { StyleSheet, Text, View } from "react-native"
 
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 export type PieSlice = {
   name: string
@@ -66,6 +66,38 @@ export function PieChart({
   centerLabel = "total",
   centerValue,
 }: PieChartProps) {
+  const styles = useThemedStyles((c) => ({
+    wrap: {
+      alignSelf: "center" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    center: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    centerValue: {
+      fontSize: 22,
+      fontWeight: "700" as const,
+      color: c.text,
+      letterSpacing: -0.3,
+      fontVariant: ["tabular-nums"] as const,
+    },
+    centerLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+      marginTop: 2,
+    },
+    emptyRing: {
+      borderWidth: 14,
+      borderColor: c.muted,
+      position: "absolute" as const,
+    },
+  }))
   const cx = size / 2
   const cy = size / 2
   const total = slices.reduce((sum, slice) => sum + slice.value, 0)
@@ -119,6 +151,55 @@ type PieLegendProps = {
 }
 
 export function PieLegend({ slices, total }: PieLegendProps) {
+  const styles = useThemedStyles((c) => ({
+    legend: {
+      gap: spacing.sm,
+    },
+    legendRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+    },
+    legendLeft: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      minWidth: 0,
+    },
+    swatch: {
+      width: 10,
+      height: 10,
+      borderRadius: 999,
+    },
+    legendLabel: {
+      ...typography.bodySm,
+      color: c.text,
+      fontWeight: "600" as const,
+      flex: 1,
+    },
+    legendRight: {
+      flexDirection: "row" as const,
+      alignItems: "baseline" as const,
+      gap: spacing.sm,
+    },
+    legendValue: {
+      ...typography.section,
+      fontSize: 14,
+      color: c.text,
+      fontVariant: ["tabular-nums"] as const,
+    },
+    legendPercent: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+      fontVariant: ["tabular-nums"] as const,
+      minWidth: 32,
+      textAlign: "right" as const,
+    },
+  }))
+
   return (
     <View style={styles.legend}>
       {slices.map((slice) => {
@@ -141,82 +222,3 @@ export function PieLegend({ slices, total }: PieLegendProps) {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  center: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  centerValue: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.3,
-    fontVariant: ["tabular-nums"],
-  },
-  centerLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  emptyRing: {
-    borderWidth: 14,
-    borderColor: colors.muted,
-    position: "absolute",
-  },
-  legend: {
-    gap: spacing.sm,
-  },
-  legendRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  legendLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    minWidth: 0,
-  },
-  swatch: {
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-  },
-  legendLabel: {
-    ...typography.bodySm,
-    color: colors.text,
-    fontWeight: "600",
-    flex: 1,
-  },
-  legendRight: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: spacing.sm,
-  },
-  legendValue: {
-    ...typography.section,
-    fontSize: 14,
-    color: colors.text,
-    fontVariant: ["tabular-nums"],
-  },
-  legendPercent: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-    fontVariant: ["tabular-nums"],
-    minWidth: 32,
-    textAlign: "right",
-  },
-})

@@ -11,7 +11,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { LoadingScreen } from "@/components/LoadingScreen"
 import { getPrimaryEmail, isOpsStaffEmail } from "@/lib/auth"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
-import { colors } from "@/lib/theme"
+import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 
@@ -36,25 +36,26 @@ const configStyles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: colors.bg,
+    backgroundColor: "#FAF9F7",
     paddingHorizontal: 24,
     gap: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.text,
+    color: "#3A3834",
   },
   body: {
     fontSize: 15,
     lineHeight: 22,
-    color: colors.mutedForeground,
+    color: "#6B6760",
   },
 })
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
+  const { colors } = useNavigationTheme()
   const segments = useSegments()
   const router = useRouter()
   const authReady = isLoaded && userLoaded
@@ -137,7 +138,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!isSignedIn) {
     return (
-      <Animated.View entering={FadeIn.duration(380)} style={styles.authShell}>
+      <Animated.View
+        entering={FadeIn.duration(380)}
+        style={[styles.authShell, { backgroundColor: colors.bg }]}
+      >
         {children}
       </Animated.View>
     )
@@ -149,9 +153,29 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   authShell: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
 })
+
+function RootNavigator() {
+  const { screenOptions, statusBarStyle } = useNavigationTheme()
+
+  return (
+    <>
+      <StatusBar style={statusBarStyle} />
+      <AuthGate>
+        <Stack screenOptions={{ ...screenOptions, animation: "fade" }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="sign-in"
+            options={{ title: "Sign in", headerShown: false }}
+          />
+          <Stack.Screen name="(ops)" options={{ headerShown: false }} />
+          <Stack.Screen name="(customer)" options={{ headerShown: false }} />
+        </Stack>
+      </AuthGate>
+    </>
+  )
+}
 
 export default function RootLayout() {
   const clerkKey = CLERK_PUBLISHABLE_KEY?.trim()
@@ -166,31 +190,11 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
-        <StatusBar style="dark" />
-        <AuthGate>
-          <Stack
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: colors.bg,
-              },
-              headerTintColor: colors.primary,
-              headerTitleStyle: { color: colors.text, fontWeight: "600" },
-              headerShadowVisible: false,
-              contentStyle: { backgroundColor: colors.bg },
-              animation: "fade",
-            }}
-          >
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="sign-in"
-              options={{ title: "Sign in", headerShown: false }}
-            />
-            <Stack.Screen name="(ops)" options={{ headerShown: false }} />
-            <Stack.Screen name="(customer)" options={{ headerShown: false }} />
-          </Stack>
-        </AuthGate>
-      </ClerkProvider>
+      <ThemeProvider>
+        <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
+          <RootNavigator />
+        </ClerkProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   )
 }

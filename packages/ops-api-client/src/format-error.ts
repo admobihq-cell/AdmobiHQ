@@ -1,7 +1,7 @@
 import type { ApiErrorResponse } from "@workspace/ops-contracts"
 
-import { OpsApiError } from "./errors.js"
-import { getApiBaseUrl } from "./base-url.js"
+import { OpsApiError } from "./errors"
+import { getApiBaseUrl } from "./base-url"
 
 export type FormatApiErrorOptions = {
   apiUrl?: string

@@ -8,7 +8,7 @@ import {
   Truck,
 } from "@/components/icons"
 
-import { colors } from "@/lib/theme"
+import { useNavigationTheme } from "@/lib/theme"
 
 function TabLabel({ label, color }: { label: string; color: string }) {
   return (
@@ -17,25 +17,25 @@ function TabLabel({ label, color }: { label: string; color: string }) {
 }
 
 export default function OpsLayout() {
+  const {
+    screenOptions,
+    tabBarStyle,
+    tabBarActiveTintColor,
+    tabBarInactiveTintColor,
+  } = useNavigationTheme()
+
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.bg,
-          borderBottomWidth: 0,
-        },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: "600" },
-        headerShadowVisible: false,
+        ...screenOptions,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          ...tabBarStyle,
           height: 60,
           paddingBottom: 8,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor,
+        tabBarInactiveTintColor,
         tabBarHideOnKeyboard: true,
       }}
     >

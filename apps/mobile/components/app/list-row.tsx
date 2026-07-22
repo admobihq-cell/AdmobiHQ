@@ -1,13 +1,13 @@
 import { ChevronRight } from "@/components/icons"
 import * as Haptics from "expo-haptics"
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native"
+import { Platform, Pressable, Text, View } from "react-native"
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated"
 
-import { colors, typography } from "@/lib/theme"
+import { typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -30,6 +30,22 @@ function getInitials(text: string): string {
 }
 
 export function AvatarInitials({ name }: { name: string }) {
+  const styles = useThemedStyles((c) => ({
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.accent,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    avatarText: {
+      ...typography.caption,
+      fontWeight: "700" as const,
+      color: c.primary,
+    },
+  }))
+
   return (
     <View style={styles.avatar}>
       <Text style={styles.avatarText}>{getInitials(name)}</Text>
@@ -47,6 +63,39 @@ export function ListRow({
   rightElement,
   destructive = false,
 }: ListRowProps) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    row: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      minHeight: 56,
+    },
+    content: {
+      flex: 1,
+      minWidth: 0,
+    },
+    title: {
+      ...typography.headline,
+      fontSize: 16,
+      color: c.text,
+    },
+    subtitle: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+      marginTop: 2,
+    },
+    meta: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      marginTop: 4,
+    },
+    destructiveText: {
+      color: c.destructive,
+    },
+  }))
   const scale = useSharedValue(1)
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -107,49 +156,3 @@ export function ListRow({
     </AnimatedPressable>
   )
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 56,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    ...typography.caption,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  content: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    ...typography.headline,
-    fontSize: 16,
-    color: colors.text,
-  },
-  subtitle: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-    marginTop: 2,
-  },
-  meta: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: 4,
-  },
-  destructiveText: {
-    color: colors.destructive,
-  },
-})

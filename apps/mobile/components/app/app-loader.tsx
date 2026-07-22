@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Image, StyleSheet, Text, View } from "react-native"
+import { Image, Text, View } from "react-native"
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type AppLoaderProps = {
   message?: string
@@ -20,6 +20,51 @@ export function AppLoader({
   message = "Starting up",
   compact = false,
 }: AppLoaderProps) {
+  const styles = useThemedStyles((c) => ({
+    container: {
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: spacing.xl,
+    },
+    compact: {
+      paddingVertical: spacing.xl,
+    },
+    logoWrap: {
+      width: 220,
+      height: 120,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: spacing.lg,
+    },
+    logo: {
+      width: 200,
+      height: 100,
+    },
+    title: {
+      ...typography.headline,
+      fontSize: 20,
+      color: c.text,
+    },
+    message: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    track: {
+      width: 120,
+      height: 3,
+      backgroundColor: c.muted,
+      borderRadius: radius.full,
+      overflow: "hidden" as const,
+      marginTop: spacing.lg,
+    },
+    bar: {
+      width: 48,
+      height: "100%" as const,
+      backgroundColor: c.primary,
+      borderRadius: radius.full,
+    },
+  }))
   const logoScale = useSharedValue(1)
   const barProgress = useSharedValue(0)
 
@@ -67,49 +112,3 @@ export function AppLoader({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.xl,
-  },
-  compact: {
-    paddingVertical: spacing.xl,
-  },
-  logoWrap: {
-    width: 220,
-    height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  logo: {
-    width: 200,
-    height: 100,
-  },
-  title: {
-    ...typography.headline,
-    fontSize: 20,
-    color: colors.text,
-  },
-  message: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-  track: {
-    width: 120,
-    height: 3,
-    backgroundColor: colors.muted,
-    borderRadius: radius.full,
-    overflow: "hidden",
-    marginTop: spacing.lg,
-  },
-  bar: {
-    width: 48,
-    height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: radius.full,
-  },
-})

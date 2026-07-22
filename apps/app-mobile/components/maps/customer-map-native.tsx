@@ -22,7 +22,7 @@ import {
   CustomerMapHeader,
   type MapLayerKey,
 } from "@/components/maps/customer-map-header"
-import { colors, spacing } from "@/lib/theme"
+import { spacing, useThemedStyles } from "@/lib/theme"
 
 const LIGHT_STYLE =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
@@ -59,6 +59,16 @@ export function CustomerMapNative() {
     coverage: true,
     plays: true,
   })
+  const styles = useThemedStyles((c) => ({
+    root: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    mapWrap: {
+      flex: 1,
+      overflow: "hidden" as const,
+    },
+  }))
 
   function toggle(key: MapLayerKey) {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -181,14 +191,3 @@ export function CustomerMapNative() {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  mapWrap: {
-    flex: 1,
-    overflow: "hidden",
-  },
-})

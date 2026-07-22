@@ -29,10 +29,10 @@ import {
   type WaitlistUpdateInput,
 } from "@workspace/ops-contracts"
 
-import { getApiBaseUrl, publicApiUrl } from "./base-url.js"
-import { OpsApiError } from "./errors.js"
-import { formatApiError, formatApiErrorResponse } from "./format-error.js"
-import { publicApiFetch, type PublicApiResult } from "./public-fetch.js"
+import { getApiBaseUrl, publicApiUrl } from "./base-url"
+import { OpsApiError } from "./errors"
+import { formatApiError, formatApiErrorResponse } from "./format-error"
+import { publicApiFetch, type PublicApiResult } from "./public-fetch"
 
 export { OpsApiError, getApiBaseUrl, publicApiUrl, formatApiError, formatApiErrorResponse, publicApiFetch }
 export type { PublicApiResult }

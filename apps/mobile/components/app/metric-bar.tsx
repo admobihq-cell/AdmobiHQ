@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { Text, View } from "react-native"
 
 import { PieChart, PieLegend, type PieSlice } from "@/components/app/pie-chart"
 import { SkeletonBlock } from "@/components/app/skeleton"
 import { ViewDropdown } from "@/components/ui/view-dropdown"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-const SLICE_COLORS = [
-  colors.primary,
+const SLICE_COLOR_FALLBACKS = [
   "#B85A38",
   "#C96E4A",
   "#D4825C",
@@ -16,6 +15,10 @@ const SLICE_COLORS = [
   "#E0966E",
   "#6B6760",
 ]
+
+function getSliceColors(primary: string) {
+  return [primary, ...SLICE_COLOR_FALLBACKS]
+}
 
 export type BreakdownView = {
   key: string
@@ -34,12 +37,15 @@ function normalizeItems(items: Array<{ name: string; value: number }>) {
     .filter((item) => item.name.length > 0 && item.value > 0)
 }
 
-function toPieSlices(items: Array<{ name: string; value: number }>): PieSlice[] {
+function toPieSlices(
+  items: Array<{ name: string; value: number }>,
+  sliceColors: string[],
+): PieSlice[] {
   const sorted = [...items].sort((a, b) => b.value - a.value)
   return sorted.map((item, index) => ({
     name: item.name,
     value: item.value,
-    color: SLICE_COLORS[index % SLICE_COLORS.length]!,
+    color: sliceColors[index % sliceColors.length]!,
   }))
 }
 
@@ -85,6 +91,45 @@ export function BreakdownPieSwitcher({
   views,
   loading,
 }: BreakdownPieSwitcherProps) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: spacing.md,
+    },
+    headerRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+    },
+    cardTitle: {
+      ...typography.section,
+      color: c.text,
+      fontSize: 16,
+      flex: 1,
+    },
+    cardSubtitle: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      marginTop: -spacing.sm,
+    },
+    pieSkeleton: {
+      alignSelf: "center" as const,
+    },
+    skeletonGap: {
+      marginTop: 6,
+    },
+  }))
+  const sliceColors = useMemo(
+    () => getSliceColors(colors.primary),
+    [colors.primary],
+  )
+
   const availableViews = useMemo(
     () => views.filter((view) => loading || viewHasData(view)),
     [views, loading],
@@ -131,7 +176,7 @@ export function BreakdownPieSwitcher({
   }
 
   const normalized = normalizeItems(currentView.items)
-  const slices = toPieSlices(normalized)
+  const slices = toPieSlices(normalized, sliceColors)
   const total = normalized.reduce((sum, item) => sum + item.value, 0)
 
   return (
@@ -173,37 +218,3 @@ export function MetricBar(_props: {
 }) {
   return null
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.md,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    ...typography.section,
-    color: colors.text,
-    fontSize: 16,
-    flex: 1,
-  },
-  cardSubtitle: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: -spacing.sm,
-  },
-  pieSkeleton: {
-    alignSelf: "center",
-  },
-  skeletonGap: {
-    marginTop: 6,
-  },
-})

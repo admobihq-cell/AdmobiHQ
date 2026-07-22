@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, Text } from "react-native"
 
 import type { AppIcon } from "@/components/icons"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type ActionCardProps = {
   label: string
@@ -10,6 +10,29 @@ type ActionCardProps = {
 }
 
 export function ActionCard({ label, icon: Icon, onPress }: ActionCardProps) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    card: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    cardPressed: {
+      opacity: 0.75,
+    },
+    label: {
+      ...typography.section,
+      color: c.text,
+    },
+  }))
+
   return (
     <Pressable
       onPress={onPress}
@@ -20,25 +43,3 @@ export function ActionCard({ label, icon: Icon, onPress }: ActionCardProps) {
     </Pressable>
   )
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  cardPressed: {
-    opacity: 0.75,
-  },
-  label: {
-    ...typography.section,
-    color: colors.text,
-  },
-})

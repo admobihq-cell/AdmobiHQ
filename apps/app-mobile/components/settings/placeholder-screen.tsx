@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from "react-native"
+import { Text, View } from "react-native"
 
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type PlaceholderScreenProps = {
   title: string
@@ -8,6 +8,38 @@ type PlaceholderScreenProps = {
 }
 
 export function PlaceholderScreen({ title, body }: PlaceholderScreenProps) {
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+      padding: spacing.lg,
+    },
+    card: {
+      padding: spacing.lg,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      gap: spacing.sm,
+    },
+    badge: {
+      alignSelf: "flex-start" as const,
+      ...typography.caption,
+      color: c.primary,
+      fontWeight: "700" as const,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+    },
+    title: {
+      ...typography.title,
+      color: c.text,
+    },
+    body: {
+      ...typography.body,
+      color: c.mutedForeground,
+    },
+  }))
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -18,35 +50,3 @@ export function PlaceholderScreen({ title, body }: PlaceholderScreenProps) {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    padding: spacing.lg,
-  },
-  card: {
-    padding: spacing.lg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
-  },
-  badge: {
-    alignSelf: "flex-start",
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-  },
-  body: {
-    ...typography.body,
-    color: colors.mutedForeground,
-  },
-})

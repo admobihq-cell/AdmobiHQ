@@ -1,25 +1,33 @@
 import { StyleSheet, Text, View } from "react-native"
 
-import { colors, typography } from "@/lib/theme"
+import { typography, useThemeColors } from "@/lib/theme"
 
 export type CampaignStatus = "active" | "scheduled" | "draft" | "completed"
-
-const STATUS_STYLES: Record<
-  CampaignStatus,
-  { bg: string; text: string; label: string }
-> = {
-  active: { bg: "#E8F5E9", text: "#2E7D32", label: "Active" },
-  scheduled: { bg: "#FFF3E0", text: "#E65100", label: "Scheduled" },
-  draft: { bg: colors.secondary, text: colors.mutedForeground, label: "Draft" },
-  completed: { bg: colors.muted, text: colors.mutedForeground, label: "Completed" },
-}
 
 type StatusBadgeProps = {
   status: CampaignStatus
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const palette = STATUS_STYLES[status]
+  const colors = useThemeColors()
+  const statusStyles: Record<
+    CampaignStatus,
+    { bg: string; text: string; label: string }
+  > = {
+    active: { bg: "#E8F5E9", text: "#2E7D32", label: "Active" },
+    scheduled: { bg: "#FFF3E0", text: "#E65100", label: "Scheduled" },
+    draft: {
+      bg: colors.secondary,
+      text: colors.mutedForeground,
+      label: "Draft",
+    },
+    completed: {
+      bg: colors.muted,
+      text: colors.mutedForeground,
+      label: "Completed",
+    },
+  }
+  const palette = statusStyles[status]
 
   return (
     <View style={[styles.badge, { backgroundColor: palette.bg }]}>
