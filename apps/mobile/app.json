@@ -2,12 +2,12 @@
   "expo": {
     "name": "Admobi Ops",
     "slug": "admobihq-ops",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "orientation": "portrait",
-    "runtimeVersion": "0.0.2",
+    "runtimeVersion": "0.0.3",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.admobihq.ops",

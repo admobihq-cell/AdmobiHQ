@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { useRouter } from "expo-router"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 
@@ -10,15 +11,102 @@ import {
   Shield,
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
+import { ThemeSettingsSection } from "@/components/theme-settings-section"
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_APP_URL } from "@/lib/env"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors } from "@/lib/theme"
 
 export default function SettingsScreen() {
+  const colors = useThemeColors()
   const router = useRouter()
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        scroll: { flex: 1 },
+        content: {
+          padding: spacing.lg,
+          gap: spacing.lg,
+          paddingBottom: spacing.xl,
+        },
+        hero: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.md,
+          padding: spacing.lg,
+          borderRadius: 16,
+          backgroundColor: colors.primary,
+        },
+        avatar: {
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          backgroundColor: colors.primaryForeground,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        heroCopy: { flex: 1, gap: 4 },
+        heroTitle: {
+          fontSize: 18,
+          fontWeight: "700",
+          color: colors.primaryForeground,
+        },
+        heroSubtitle: {
+          ...typography.caption,
+          color: "rgba(250, 249, 247, 0.85)",
+          lineHeight: 18,
+        },
+        section: { gap: spacing.sm },
+        sectionLabel: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          textTransform: "uppercase",
+          letterSpacing: 0.8,
+          fontWeight: "700",
+          marginLeft: spacing.xs,
+        },
+        group: {
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          overflow: "hidden",
+        },
+        divider: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: colors.border,
+          marginLeft: 60,
+        },
+        footer: {
+          padding: spacing.md,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.muted,
+          gap: 4,
+        },
+        footerLabel: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+        },
+        footerValue: {
+          ...typography.body,
+          color: colors.text,
+        },
+        footerHint: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          marginTop: spacing.xs,
+        },
+      }),
+    [colors],
+  )
 
   return (
     <ScrollView
-      style={styles.scroll}
+      style={[styles.scroll, { backgroundColor: colors.bg }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
@@ -72,6 +160,8 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <ThemeSettingsSection />
+
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Support</Text>
         <View style={styles.group}>
@@ -101,92 +191,3 @@ export default function SettingsScreen() {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primaryForeground,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  heroTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.primaryForeground,
-  },
-  heroSubtitle: {
-    ...typography.caption,
-    color: "rgba(250, 249, 247, 0.85)",
-    lineHeight: 18,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-    marginLeft: spacing.xs,
-  },
-  group: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    overflow: "hidden",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: 60,
-  },
-  footer: {
-    padding: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.muted,
-    gap: 4,
-  },
-  footerLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  footerValue: {
-    ...typography.body,
-    color: colors.text,
-  },
-  footerHint: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-})

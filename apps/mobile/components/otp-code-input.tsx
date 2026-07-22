@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native"
 
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 const DEFAULT_LENGTH = 6
 
@@ -31,6 +31,48 @@ export function OtpCodeInput({
   const inputRef = useRef<TextInput>(null)
   const digits = Array.from({ length }, (_, index) => value[index] ?? "")
   const activeIndex = Math.min(value.length, length - 1)
+  const styles = useThemedStyles((c) => ({
+    wrap: {
+      position: "relative" as const,
+      marginBottom: spacing.md,
+    },
+    row: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+    },
+    box: {
+      flex: 1,
+      aspectRatio: 0.85,
+      maxWidth: 52,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    boxFilled: {
+      borderColor: c.primary,
+      backgroundColor: c.accent,
+    },
+    boxActive: {
+      borderColor: c.ring,
+    },
+    boxDisabled: {
+      opacity: 0.55,
+    },
+    digit: {
+      ...typography.title,
+      fontSize: 22,
+      color: c.text,
+    },
+    hiddenInput: {
+      ...StyleSheet.absoluteFillObject,
+      opacity: 0.02,
+      color: "transparent",
+    },
+  }))
 
   useEffect(() => {
     if (autoFocus && !disabled) {
@@ -89,46 +131,3 @@ export function OtpCodeInput({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    position: "relative",
-    marginBottom: spacing.md,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  box: {
-    flex: 1,
-    aspectRatio: 0.85,
-    maxWidth: 52,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  boxFilled: {
-    borderColor: colors.primary,
-    backgroundColor: colors.accent,
-  },
-  boxActive: {
-    borderColor: colors.ring,
-  },
-  boxDisabled: {
-    opacity: 0.55,
-  },
-  digit: {
-    ...typography.title,
-    fontSize: 22,
-    color: colors.text,
-  },
-  hiddenInput: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.02,
-    color: "transparent",
-  },
-})

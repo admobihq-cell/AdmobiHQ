@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics"
 import { Platform } from "react-native"
 
 import { SkeletonBlock } from "@/components/app/skeleton"
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 export type KpiItem = {
   key: string
@@ -19,6 +19,39 @@ type KpiScrollerProps = {
 }
 
 export function KpiScroller({ items, loading }: KpiScrollerProps) {
+  const styles = useThemedStyles((c) => ({
+    scroll: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    card: {
+      width: 108,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    cardPressed: {
+      backgroundColor: c.accent,
+    },
+    value: {
+      fontSize: 28,
+      fontWeight: "700" as const,
+      color: c.text,
+      fontVariant: ["tabular-nums"] as const,
+    },
+    label: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+      fontWeight: "600" as const,
+    },
+    skeletonLabel: {
+      marginTop: spacing.sm,
+    },
+  }))
+
   if (loading) {
     return (
       <ScrollView
@@ -62,36 +95,3 @@ export function KpiScroller({ items, loading }: KpiScrollerProps) {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  card: {
-    width: 108,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  cardPressed: {
-    backgroundColor: colors.accent,
-  },
-  value: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.text,
-    fontVariant: ["tabular-nums"],
-  },
-  label: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-    fontWeight: "600",
-  },
-  skeletonLabel: {
-    marginTop: spacing.sm,
-  },
-})

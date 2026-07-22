@@ -1,10 +1,12 @@
+import { useMemo } from "react"
 import { useRouter } from "expo-router"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Campaigns, Eye, Map, Radio, TrendingUp } from "@/components/icons"
+import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { StatCard } from "@/components/ui/stat-card"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors } from "@/lib/theme"
 
 const RECENT_ACTIVITY = [
   {
@@ -28,12 +30,124 @@ const RECENT_ACTIVITY = [
 ] as const
 
 export default function OverviewScreen() {
+  const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        scroll: { flex: 1 },
+        content: { gap: spacing.lg, paddingHorizontal: spacing.lg },
+        hero: { gap: spacing.sm },
+        heroTop: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: spacing.md,
+        },
+        heroEyebrow: {
+          ...typography.caption,
+          color: colors.primary,
+          textTransform: "uppercase",
+          letterSpacing: 0.8,
+          fontWeight: "700",
+        },
+        heroTitle: {
+          ...typography.title,
+          color: colors.text,
+        },
+        heroBody: {
+          ...typography.body,
+          color: colors.mutedForeground,
+        },
+        sectionLabel: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          textTransform: "uppercase",
+          letterSpacing: 0.8,
+          fontWeight: "700",
+          marginLeft: spacing.xs,
+        },
+        statsGrid: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: spacing.sm,
+        },
+        section: { gap: spacing.sm },
+        actions: {
+          flexDirection: "row",
+          gap: spacing.sm,
+        },
+        action: {
+          flex: 1,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: spacing.sm,
+          paddingVertical: spacing.md,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+        },
+        actionPressed: {
+          opacity: 0.75,
+        },
+        actionLabel: {
+          ...typography.section,
+          color: colors.text,
+        },
+        group: {
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          overflow: "hidden",
+        },
+        activityRow: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: spacing.md,
+          padding: spacing.md,
+        },
+        activityDot: {
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: colors.primary,
+          marginTop: 5,
+        },
+        activityCopy: {
+          flex: 1,
+          gap: 2,
+        },
+        activityTitle: {
+          ...typography.section,
+          color: colors.text,
+        },
+        activityDetail: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          lineHeight: 18,
+        },
+        activityTime: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          fontWeight: "600",
+        },
+        divider: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: colors.border,
+          marginLeft: spacing.md + 10 + spacing.md,
+        },
+      }),
+    [colors],
+  )
+
   return (
     <ScrollView
-      style={styles.scroll}
+      style={[styles.scroll, { backgroundColor: colors.bg }]}
       contentContainerStyle={[
         styles.content,
         { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.lg },
@@ -41,8 +155,13 @@ export default function OverviewScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
-        <Text style={styles.heroEyebrow}>Good afternoon</Text>
-        <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
+        <View style={styles.heroTop}>
+          <View style={{ flex: 1, gap: spacing.sm }}>
+            <Text style={styles.heroEyebrow}>Good afternoon</Text>
+            <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
+          </View>
+          <ThemeToggleButton />
+        </View>
         <Text style={styles.heroBody}>
           Placeholder dashboard — live metrics and reporting will connect to
           your Admobi account here.
@@ -97,117 +216,3 @@ export default function OverviewScreen() {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  hero: {
-    gap: spacing.xs,
-  },
-  heroEyebrow: {
-    ...typography.caption,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  heroBody: {
-    ...typography.body,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-    marginLeft: spacing.xs,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  action: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  actionPressed: {
-    opacity: 0.75,
-  },
-  actionLabel: {
-    ...typography.section,
-    color: colors.text,
-  },
-  group: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    overflow: "hidden",
-  },
-  activityRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  activityDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    marginTop: 5,
-  },
-  activityCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  activityTitle: {
-    ...typography.section,
-    color: colors.text,
-  },
-  activityDetail: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-  },
-  activityTime: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: spacing.md + 10 + spacing.md,
-  },
-})

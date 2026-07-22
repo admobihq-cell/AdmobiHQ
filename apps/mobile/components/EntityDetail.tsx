@@ -21,7 +21,7 @@ import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { Trash } from "@/components/icons"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type DetailField = {
   label: string
@@ -52,6 +52,96 @@ export function EntityDetail<T>({
 }: EntityDetailProps<T>) {
   const router = useRouter()
   const navigation = useNavigation()
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    content: {
+      padding: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.md,
+    },
+    centered: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: c.bg,
+      padding: spacing.lg,
+    },
+    heroCard: {
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+      padding: spacing.lg,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    eyebrow: {
+      ...typography.caption,
+      color: c.primary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      fontWeight: "700" as const,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: "700" as const,
+      color: c.text,
+      letterSpacing: -0.3,
+    },
+    chips: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      gap: spacing.sm,
+    },
+    fieldRow: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    fieldList: {
+      overflow: "hidden" as const,
+    },
+    fieldSeparator: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginLeft: spacing.md,
+    },
+    fieldLabel: {
+      ...typography.label,
+      color: c.mutedForeground,
+      marginBottom: spacing.xs,
+    },
+    fieldValue: {
+      ...typography.body,
+      color: c.text,
+      fontWeight: "500" as const,
+    },
+    fieldActions: {
+      flexDirection: "row" as const,
+      gap: spacing.md,
+      marginTop: spacing.sm,
+    },
+    actionButton: {
+      paddingVertical: 4,
+    },
+    actionText: {
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.primary,
+    },
+    placeholder: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.lg,
+    },
+    placeholderText: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+      textAlign: "center" as const,
+    },
+  }))
   const { id: rawId } = useLocalSearchParams<{ id: string }>()
   const id = Number.parseInt(rawId ?? "", 10)
   const [item, setItem] = useState<T | null>(null)
@@ -136,7 +226,7 @@ export function EntityDetail<T>({
           )
         : undefined,
     })
-  }, [navigation, remove, item, deleting, handleDelete, title])
+  }, [navigation, remove, item, deleting, handleDelete, title, colors.destructive])
 
   const handleCopy = async (value: string) => {
     await Clipboard.setStringAsync(value)
@@ -252,93 +342,3 @@ export function detailValue(value: unknown): string {
   }
   return String(value)
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-    padding: spacing.lg,
-  },
-  heroCard: {
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  eyebrow: {
-    ...typography.caption,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  fieldRow: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  fieldList: {
-    overflow: "hidden",
-  },
-  fieldSeparator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: spacing.md,
-  },
-  fieldLabel: {
-    ...typography.label,
-    color: colors.mutedForeground,
-    marginBottom: spacing.xs,
-  },
-  fieldValue: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: "500",
-  },
-  fieldActions: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  actionButton: {
-    paddingVertical: 4,
-  },
-  actionText: {
-    ...typography.caption,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  placeholder: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
-  },
-  placeholderText: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-    textAlign: "center",
-  },
-})

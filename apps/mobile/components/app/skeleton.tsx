@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 
-import { colors, radius } from "@/lib/theme"
+import { radius, useThemedStyles } from "@/lib/theme"
 
 type SkeletonBlockProps = {
   width?: number | `${number}%`
@@ -22,6 +22,11 @@ export function SkeletonBlock({
   style,
   borderRadius = radius.sm,
 }: SkeletonBlockProps) {
+  const styles = useThemedStyles((c) => ({
+    block: {
+      backgroundColor: c.muted,
+    },
+  }))
   const opacity = useSharedValue(0.4)
 
   useEffect(() => {
@@ -46,13 +51,13 @@ export function SkeletonBlock({
 
 export function SkeletonListRows({ count = 6 }: { count?: number }) {
   return (
-    <View style={styles.list}>
+    <View style={staticStyles.list}>
       {Array.from({ length: count }).map((_, index) => (
-        <View key={index} style={styles.row}>
+        <View key={index} style={staticStyles.row}>
           <SkeletonBlock width={40} height={40} borderRadius={20} />
-          <View style={styles.rowContent}>
+          <View style={staticStyles.rowContent}>
             <SkeletonBlock width="70%" height={14} />
-            <SkeletonBlock width="45%" height={12} style={styles.rowGap} />
+            <SkeletonBlock width="45%" height={12} style={staticStyles.rowGap} />
           </View>
         </View>
       ))}
@@ -60,10 +65,7 @@ export function SkeletonListRows({ count = 6 }: { count?: number }) {
   )
 }
 
-const styles = StyleSheet.create({
-  block: {
-    backgroundColor: colors.muted,
-  },
+const staticStyles = StyleSheet.create({
   list: {
     gap: 0,
   },

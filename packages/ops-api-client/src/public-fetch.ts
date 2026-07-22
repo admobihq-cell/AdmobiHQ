@@ -1,7 +1,7 @@
 import type { ApiErrorResponse } from "@workspace/ops-contracts"
 
-import { publicApiUrl } from "./base-url.js"
-import { formatApiError, formatApiErrorResponse } from "./format-error.js"
+import { publicApiUrl } from "./base-url"
+import { formatApiError, formatApiErrorResponse } from "./format-error"
 
 export type PublicApiResult<T> =
   | { ok: true; data: T }

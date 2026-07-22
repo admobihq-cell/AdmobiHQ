@@ -7,7 +7,7 @@ import {
   StatusBadge,
   type CampaignStatus,
 } from "@/components/ui/status-badge"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type Campaign = {
   id: string
@@ -62,8 +62,150 @@ const FILTERS = ["All", "Active", "Scheduled", "Draft"] as const
 type Filter = (typeof FILTERS)[number]
 
 export default function CampaignsScreen() {
+  const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [filter, setFilter] = useState<Filter>("All")
+  const styles = useThemedStyles((c) => ({
+    root: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.lg,
+    },
+    hero: {
+      gap: spacing.xs,
+    },
+    eyebrow: {
+      ...typography.caption,
+      color: c.primary,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      fontWeight: "700" as const,
+    },
+    title: {
+      ...typography.title,
+      color: c.text,
+      fontSize: 26,
+    },
+    subtitle: {
+      ...typography.body,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    filters: {
+      gap: spacing.sm,
+      paddingRight: spacing.lg,
+    },
+    filterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    filterChipActive: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    filterText: {
+      ...typography.label,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+    },
+    filterTextActive: {
+      color: c.primaryForeground,
+    },
+    list: {
+      gap: spacing.md,
+    },
+    card: {
+      padding: spacing.md,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      gap: spacing.sm,
+    },
+    cardPressed: {
+      opacity: 0.85,
+    },
+    cardHeader: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+    },
+    cardTitle: {
+      flex: 1,
+      ...typography.section,
+      fontSize: 17,
+      color: c.text,
+    },
+    metaRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+    },
+    metaText: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      flex: 1,
+    },
+    metrics: {
+      flexDirection: "row" as const,
+      marginTop: spacing.xs,
+      paddingTop: spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    metric: {
+      flex: 1,
+      gap: 2,
+    },
+    metricLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+    },
+    metricValue: {
+      ...typography.section,
+      color: c.text,
+    },
+    metricDivider: {
+      width: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginHorizontal: spacing.md,
+    },
+    fab: {
+      position: "absolute" as const,
+      right: spacing.lg,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: 999,
+      backgroundColor: c.primary,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    fabPressed: {
+      opacity: 0.9,
+    },
+    fabLabel: {
+      ...typography.section,
+      color: c.primaryForeground,
+    },
+  }))
 
   const visible = CAMPAIGNS.filter((campaign) => {
     if (filter === "All") return true
@@ -164,145 +306,3 @@ export default function CampaignsScreen() {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  hero: {
-    gap: spacing.xs,
-  },
-  eyebrow: {
-    ...typography.caption,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-    fontSize: 26,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-  filters: {
-    gap: spacing.sm,
-    paddingRight: spacing.lg,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterText: {
-    ...typography.label,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  filterTextActive: {
-    color: colors.primaryForeground,
-  },
-  list: {
-    gap: spacing.md,
-  },
-  card: {
-    padding: spacing.md,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
-  },
-  cardPressed: {
-    opacity: 0.85,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    flex: 1,
-    ...typography.section,
-    fontSize: 17,
-    color: colors.text,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  metaText: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    flex: 1,
-  },
-  metrics: {
-    flexDirection: "row",
-    marginTop: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  metric: {
-    flex: 1,
-    gap: 2,
-  },
-  metricLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  metricValue: {
-    ...typography.section,
-    color: colors.text,
-  },
-  metricDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.md,
-  },
-  fab: {
-    position: "absolute",
-    right: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  fabPressed: {
-    opacity: 0.9,
-  },
-  fabLabel: {
-    ...typography.section,
-    color: colors.primaryForeground,
-  },
-})

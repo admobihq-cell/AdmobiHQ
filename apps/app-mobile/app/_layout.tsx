@@ -7,11 +7,28 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
-import { colors } from "@/lib/theme"
+import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
 })
+
+function RootNavigator({ ready }: { ready: boolean }) {
+  const { screenOptions, statusBarStyle } = useNavigationTheme()
+
+  if (!ready) {
+    return <BrandedSplashScreen />
+  }
+
+  return (
+    <>
+      <StatusBar style={statusBarStyle} />
+      <Stack screenOptions={screenOptions}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </>
+  )
+}
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false)
@@ -27,24 +44,13 @@ export default function RootLayout() {
     return () => task.cancel()
   }, [])
 
-  if (!appReady) {
-    return <BrandedSplashScreen />
-  }
-
+  // ThemeProvider must wrap every screen — including during splash — so hooks
+  // like useThemeColors never run outside context (Expo Router / Fast Refresh).
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.primary,
-          headerTitleStyle: { color: colors.text, fontWeight: "600" },
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+      <ThemeProvider>
+        <RootNavigator ready={appReady} />
+      </ThemeProvider>
     </SafeAreaProvider>
   )
 }

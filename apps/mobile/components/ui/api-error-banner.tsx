@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 
-import { colors, radius, spacing, typography } from "@/lib/theme"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type ApiErrorBannerProps = {
   message: string
@@ -13,6 +13,43 @@ export function ApiErrorBanner({
   onDismiss,
   onRetry,
 }: ApiErrorBannerProps) {
+  const styles = useThemedStyles((c) => ({
+    banner: {
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: c.danger,
+      backgroundColor: c.destructiveMuted,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    message: {
+      ...typography.bodySm,
+      color: c.danger,
+      lineHeight: 20,
+    },
+    actions: {
+      flexDirection: "row" as const,
+      gap: spacing.md,
+    },
+    action: {
+      paddingVertical: 2,
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+    retryText: {
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.danger,
+    },
+    dismissText: {
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.mutedForeground,
+    },
+  }))
+
   return (
     <View
       style={styles.banner}
@@ -47,40 +84,3 @@ export function ApiErrorBanner({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  banner: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    backgroundColor: "rgba(192, 74, 47, 0.08)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-  },
-  message: {
-    ...typography.bodySm,
-    color: colors.danger,
-    lineHeight: 20,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  action: {
-    paddingVertical: 2,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  retryText: {
-    ...typography.caption,
-    fontWeight: "600",
-    color: colors.danger,
-  },
-  dismissText: {
-    ...typography.caption,
-    fontWeight: "600",
-    color: colors.mutedForeground,
-  },
-})

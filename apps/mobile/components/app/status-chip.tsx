@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from "react-native"
+import { Text, View } from "react-native"
 
-import { colors, radius, typography } from "@/lib/theme"
+import { radius, typography, useThemedStyles } from "@/lib/theme"
 
 type StatusChipProps = {
   label: string
@@ -8,6 +8,35 @@ type StatusChipProps = {
 }
 
 export function StatusChip({ label, variant = "default" }: StatusChipProps) {
+  const styles = useThemedStyles((c) => ({
+    chip: {
+      alignSelf: "flex-start" as const,
+      backgroundColor: c.accent,
+      borderRadius: radius.full,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    chipPrimary: {
+      backgroundColor: `${c.primary}1F`,
+    },
+    chipMuted: {
+      backgroundColor: c.muted,
+    },
+    text: {
+      ...typography.caption,
+      fontWeight: "700" as const,
+      color: c.text,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
+    },
+    textPrimary: {
+      color: c.primary,
+    },
+    textMuted: {
+      color: c.mutedForeground,
+    },
+  }))
+
   return (
     <View
       style={[
@@ -28,32 +57,3 @@ export function StatusChip({ label, variant = "default" }: StatusChipProps) {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  chip: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.accent,
-    borderRadius: radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  chipPrimary: {
-    backgroundColor: "rgba(155, 69, 37, 0.12)",
-  },
-  chipMuted: {
-    backgroundColor: colors.muted,
-  },
-  text: {
-    ...typography.caption,
-    fontWeight: "700",
-    color: colors.text,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  textPrimary: {
-    color: colors.primary,
-  },
-  textMuted: {
-    color: colors.mutedForeground,
-  },
-})

@@ -1,9 +1,9 @@
 import { Clock } from "@/components/icons"
-import { StyleSheet, Text, View } from "react-native"
+import { Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Card, Eyebrow, IconBox } from "@/components/ui"
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 /**
  * Stub for non-staff Clerk sessions on the Ops Expo app.
@@ -11,6 +11,26 @@ import { colors, spacing, typography } from "@/lib/theme"
  */
 export default function CustomerComingSoonScreen() {
   const insets = useSafeAreaInsets()
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+      paddingHorizontal: spacing.lg,
+      justifyContent: "center" as const,
+      gap: spacing.md,
+    },
+    title: {
+      ...typography.display,
+      color: c.text,
+    },
+    card: {
+      marginVertical: spacing.sm,
+    },
+    body: {
+      ...typography.body,
+      color: c.mutedForeground,
+    },
+  }))
 
   return (
     <View
@@ -32,24 +52,3 @@ export default function CustomerComingSoonScreen() {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    paddingHorizontal: spacing.lg,
-    justifyContent: "center",
-    gap: spacing.md,
-  },
-  title: {
-    ...typography.display,
-    color: colors.text,
-  },
-  card: {
-    marginVertical: spacing.sm,
-  },
-  body: {
-    ...typography.body,
-    color: colors.mutedForeground,
-  },
-})

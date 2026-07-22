@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Image, StyleSheet, Text, View } from "react-native"
+import { Image, Text, View } from "react-native"
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 
-import { colors, spacing, typography } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type AppLoaderProps = {
   message?: string
@@ -22,6 +22,52 @@ export function AppLoader({
 }: AppLoaderProps) {
   const logoScale = useSharedValue(1)
   const barProgress = useSharedValue(0)
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: spacing.xl,
+      backgroundColor: c.bg,
+    },
+    compact: {
+      paddingVertical: spacing.xl,
+    },
+    logoWrap: {
+      width: 220,
+      height: 120,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: spacing.lg,
+    },
+    logo: {
+      width: 200,
+      height: 100,
+    },
+    title: {
+      ...typography.title,
+      color: c.text,
+    },
+    message: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    track: {
+      width: 120,
+      height: 3,
+      backgroundColor: c.muted,
+      borderRadius: 999,
+      overflow: "hidden" as const,
+      marginTop: spacing.lg,
+    },
+    bar: {
+      width: 48,
+      height: "100%" as const,
+      backgroundColor: c.primary,
+      borderRadius: 999,
+    },
+  }))
 
   useEffect(() => {
     logoScale.value = withRepeat(
@@ -67,50 +113,3 @@ export function AppLoader({
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.xl,
-    backgroundColor: colors.bg,
-  },
-  compact: {
-    paddingVertical: spacing.xl,
-  },
-  logoWrap: {
-    width: 220,
-    height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  logo: {
-    width: 200,
-    height: 100,
-  },
-  title: {
-    ...typography.title,
-    color: colors.text,
-  },
-  message: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    marginTop: spacing.xs,
-  },
-  track: {
-    width: 120,
-    height: 3,
-    backgroundColor: colors.muted,
-    borderRadius: 999,
-    overflow: "hidden",
-    marginTop: spacing.lg,
-  },
-  bar: {
-    width: 48,
-    height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-  },
-})

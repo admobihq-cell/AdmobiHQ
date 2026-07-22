@@ -1,19 +1,21 @@
 import { Stack } from "expo-router"
 
-import { colors } from "@/lib/theme"
-
-export const entityStackOptions = {
-  headerStyle: { backgroundColor: colors.bg },
-  headerTintColor: colors.primary,
-  headerTitleStyle: { color: colors.text, fontWeight: "600" as const },
-  headerShadowVisible: false,
-  headerBackTitle: "Back",
-  contentStyle: { backgroundColor: colors.bg },
-}
+import { useThemeColors } from "@/lib/theme"
 
 export function EntityStackLayout() {
+  const colors = useThemeColors()
+
   return (
-    <Stack screenOptions={entityStackOptions}>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.primary,
+        headerTitleStyle: { color: colors.text, fontWeight: "600" as const },
+        headerShadowVisible: false,
+        headerBackTitle: "Back",
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       <Stack.Screen
         name="index"
         options={{

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useUser } from "@clerk/clerk-expo"
 import { useRouter } from "expo-router"
 import {
@@ -33,7 +33,8 @@ import { ActivityChart } from "@/components/app/sparkline"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
-import { colors, spacing, typography } from "@/lib/theme"
+import { ThemeToggleButton } from "@/components/theme-toggle-button"
+import { useThemeColors, spacing, typography } from "@/lib/theme"
 
 const RANGES: Array<{ key: DateRangeKey; label: string }> = [
   { key: "7d", label: "7 days" },
@@ -50,6 +51,7 @@ function getGreeting(): string {
 }
 
 export default function DashboardScreen() {
+  const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { user } = useUser()
@@ -76,6 +78,100 @@ export default function DashboardScreen() {
   const driversByCity = stats?.overview?.driversByCity ?? []
   const [refreshing, setRefreshing] = useState(false)
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        scroll: {
+          flex: 1,
+        },
+        content: {
+          gap: spacing.lg,
+        },
+        padded: {
+          paddingHorizontal: spacing.lg,
+        },
+        section: {
+          marginTop: -spacing.sm,
+        },
+        recentError: {
+          marginBottom: spacing.sm,
+        },
+        heroTrailing: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.sm,
+        },
+        sectionLabel: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          textTransform: "uppercase",
+          letterSpacing: 0.8,
+          fontWeight: "700",
+          marginBottom: spacing.sm,
+          marginLeft: spacing.xs,
+        },
+        statsGrid: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: spacing.sm,
+        },
+        group: {
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          overflow: "hidden",
+        },
+        actions: {
+          flexDirection: "row",
+          gap: spacing.sm,
+        },
+        activityRow: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: spacing.md,
+          padding: spacing.md,
+        },
+        activityPressed: {
+          opacity: 0.75,
+        },
+        activityDot: {
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: colors.primary,
+          marginTop: 5,
+        },
+        activityCopy: {
+          flex: 1,
+          gap: 2,
+        },
+        activityTitle: {
+          ...typography.section,
+          color: colors.text,
+        },
+        activityDetail: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          lineHeight: 18,
+        },
+        divider: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: colors.border,
+          marginLeft: spacing.md + 10 + spacing.md,
+        },
+        emptyRecent: {
+          padding: spacing.lg,
+          alignItems: "center",
+        },
+        emptyText: {
+          ...typography.bodySm,
+          color: colors.mutedForeground,
+        },
+      }),
+    [colors],
+  )
+
   const onRefresh = async () => {
     setRefreshing(true)
     refetch()
@@ -85,7 +181,7 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView
-      style={styles.scroll}
+      style={[styles.scroll, { backgroundColor: colors.bg }]}
       contentContainerStyle={[
         styles.content,
         {
@@ -108,7 +204,12 @@ export default function DashboardScreen() {
           eyebrow={getGreeting()}
           title={`Welcome back, ${displayName}`}
           description="Operational pulse across leads, fleet, drivers, and signups."
-          trailing={<AvatarInitials name={displayName} />}
+          trailing={
+            <View style={styles.heroTrailing}>
+              <AvatarInitials name={displayName} />
+              <ThemeToggleButton />
+            </View>
+          }
         />
       </View>
 
@@ -269,89 +370,3 @@ export default function DashboardScreen() {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    gap: spacing.lg,
-  },
-  padded: {
-    paddingHorizontal: spacing.lg,
-  },
-  section: {
-    marginTop: -spacing.sm,
-  },
-  recentError: {
-    marginBottom: spacing.sm,
-  },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  group: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    overflow: "hidden",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  activityRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  activityPressed: {
-    opacity: 0.75,
-  },
-  activityDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    marginTop: 5,
-  },
-  activityCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  activityTitle: {
-    ...typography.section,
-    color: colors.text,
-  },
-  activityDetail: {
-    ...typography.caption,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: spacing.md + 10 + spacing.md,
-  },
-  emptyRecent: {
-    padding: spacing.lg,
-    alignItems: "center",
-  },
-  emptyText: {
-    ...typography.bodySm,
-    color: colors.mutedForeground,
-  },
-})

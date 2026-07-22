@@ -1,8 +1,8 @@
-import { StyleSheet, View } from "react-native"
+import { View } from "react-native"
 
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { AppLoader } from "@/components/app/app-loader"
-import { colors } from "@/lib/theme"
+import { useThemedStyles } from "@/lib/theme"
 
 type LoadingScreenProps = {
   message?: string
@@ -11,6 +11,15 @@ type LoadingScreenProps = {
 }
 
 export function LoadingScreen({ message, splash = true }: LoadingScreenProps) {
+  const styles = useThemedStyles((c) => ({
+    container: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: c.bg,
+    },
+  }))
+
   if (splash) {
     return <BrandedSplashScreen />
   }
@@ -21,12 +30,3 @@ export function LoadingScreen({ message, splash = true }: LoadingScreenProps) {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bg,
-  },
-})
