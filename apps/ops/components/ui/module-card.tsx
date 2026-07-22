@@ -23,7 +23,7 @@ export function ModuleCard({
     <Link
       href={href}
       className={cn(
-        "group rounded-xl border bg-card p-5 shadow-none transition-colors hover:border-primary/30 hover:bg-muted/20 active:scale-[0.99]",
+        "group rounded-xl border bg-card p-5 shadow-none transition-transform hover:border-primary/30 hover:bg-muted/20 active:scale-[0.99]",
         className,
       )}
     >
