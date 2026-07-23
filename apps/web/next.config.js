@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['sharp'],
   outputFileTracingExcludes: {
     '*': [
       'node_modules/@prisma/engines/**',
