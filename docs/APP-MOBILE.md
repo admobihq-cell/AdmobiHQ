@@ -19,7 +19,7 @@ npm run dev:clear -w customer-mobile  # same, clears Metro cache
 
 Or with the rest of the stack: `npm run dev:all` (starts ops `ops-mobile` and `customer-mobile`).
 
-Metro for this app listens on **port 8082** (ops mobile uses **8081**) so `npm run dev:all` can run both. Dev scripts use `--offline` to skip Expo’s online native-module version check (avoids a flaky `Body is unusable` crash).
+Metro for this app listens on **port 8082** (ops mobile uses **8081**) so `npm run dev:all` can run both. Dev scripts use `--host lan` so physical devices on the same Wi‑Fi can load the dev client (scan QR or open the network URL). If Expo CLI crashes on startup with `Body is unusable`, retry with `expo start --port 8082 --offline` (disables LAN).
 
 ---
 
