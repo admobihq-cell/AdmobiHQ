@@ -35,3 +35,16 @@ CREATE TABLE IF NOT EXISTS media_kit_requests (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ops mobile: Expo push tokens for @admobihq.com staff alerts
+CREATE TABLE IF NOT EXISTS ops_push_tokens (
+  id SERIAL PRIMARY KEY,
+  clerk_user_id TEXT NOT NULL,
+  expo_push_token TEXT NOT NULL,
+  platform TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT ops_push_tokens_expo_push_token_key UNIQUE (expo_push_token)
+);
+
+CREATE INDEX IF NOT EXISTS ops_push_tokens_clerk_user_id_idx ON ops_push_tokens (clerk_user_id);

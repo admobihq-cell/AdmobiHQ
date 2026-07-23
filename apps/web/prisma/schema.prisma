@@ -83,3 +83,15 @@ model MediaKitRequest {
 
   @@map("media_kit_requests")
 }
+
+model OpsPushToken {
+  id              Int      @id @default(autoincrement())
+  clerk_user_id   String
+  expo_push_token String   @unique
+  platform        String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([clerk_user_id])
+  @@map("ops_push_tokens")
+}

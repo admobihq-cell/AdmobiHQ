@@ -133,6 +133,7 @@ OTA pushes **JavaScript and assets** to installed apps without reinstalling the 
 | Change | OTA? | Action |
 |--------|------|--------|
 | Screens, copy, styles, business logic | Yes | `eas update` |
+| Ops push token registration & tap handlers | Yes | `eas update` |
 | Images bundled in JS | Yes | `eas update` |
 | New native module / Expo plugin | No | New `eas build` |
 | `runtimeVersion` change | No | New `eas build` |
