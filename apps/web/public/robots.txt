@@ -75,4 +75,4 @@ Disallow: /api/
 
 
 # Sitemaps
-Sitemap: http://localhost:3000/sitemap.xml
+Sitemap: https://admobihq.com/sitemap.xml
