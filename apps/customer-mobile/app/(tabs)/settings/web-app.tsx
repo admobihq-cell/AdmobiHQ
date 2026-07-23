@@ -1,7 +1,10 @@
 import { Stack } from "expo-router"
+import * as WebBrowser from "expo-web-browser"
 
 import { PlaceholderScreen } from "@/components/settings/placeholder-screen"
 import { EXPO_PUBLIC_APP_URL } from "@/lib/env"
+
+const WEB_APP_URL = EXPO_PUBLIC_APP_URL ?? "https://app.admobihq.com"
 
 export default function WebAppSettingsScreen() {
   return (
@@ -9,7 +12,9 @@ export default function WebAppSettingsScreen() {
       <Stack.Screen options={{ title: "Web app" }} />
       <PlaceholderScreen
         title="Open web app"
-        body={`Deep links to ${EXPO_PUBLIC_APP_URL ?? "the customer web app"} will open here. For now this confirms navigation works after an OTA update.`}
+        body={`Campaign creation, billing, and reporting are available now at ${WEB_APP_URL}.`}
+        actionLabel="Open in browser"
+        onAction={() => void WebBrowser.openBrowserAsync(WEB_APP_URL)}
       />
     </>
   )

@@ -8,6 +8,13 @@ import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { StatCard } from "@/components/ui/stat-card"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good morning"
+  if (hour < 18) return "Good afternoon"
+  return "Good evening"
+}
+
 const RECENT_ACTIVITY = [
   {
     id: "1",
@@ -157,7 +164,7 @@ export default function OverviewScreen() {
       <View style={styles.hero}>
         <View style={styles.heroTop}>
           <View style={{ flex: 1, gap: spacing.sm }}>
-            <Text style={styles.heroEyebrow}>Good afternoon</Text>
+            <Text style={styles.heroEyebrow}>{getGreeting()}</Text>
             <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
           </View>
           <ThemeToggleButton />

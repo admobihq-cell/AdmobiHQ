@@ -1,13 +1,20 @@
-import { Text, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 
-import { spacing, typography, useThemedStyles } from "@/lib/theme"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type PlaceholderScreenProps = {
   title: string
   body: string
+  actionLabel?: string
+  onAction?: () => void
 }
 
-export function PlaceholderScreen({ title, body }: PlaceholderScreenProps) {
+export function PlaceholderScreen({
+  title,
+  body,
+  actionLabel,
+  onAction,
+}: PlaceholderScreenProps) {
   const styles = useThemedStyles((c) => ({
     container: {
       flex: 1,
@@ -38,6 +45,22 @@ export function PlaceholderScreen({ title, body }: PlaceholderScreenProps) {
       ...typography.body,
       color: c.mutedForeground,
     },
+    action: {
+      marginTop: spacing.sm,
+      alignSelf: "flex-start" as const,
+      backgroundColor: c.primary,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 12,
+    },
+    actionPressed: {
+      opacity: 0.85,
+    },
+    actionText: {
+      ...typography.body,
+      fontWeight: "700" as const,
+      color: c.primaryForeground,
+    },
   }))
 
   return (
@@ -46,6 +69,15 @@ export function PlaceholderScreen({ title, body }: PlaceholderScreenProps) {
         <Text style={styles.badge}>Coming soon</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>
+        {actionLabel && onAction ? (
+          <Pressable
+            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+            onPress={onAction}
+            accessibilityRole="button"
+          >
+            <Text style={styles.actionText}>{actionLabel}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   )

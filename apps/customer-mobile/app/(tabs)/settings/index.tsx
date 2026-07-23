@@ -181,13 +181,15 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerLabel}>Environment</Text>
-        <Text style={styles.footerValue}>
-          API: {EXPO_PUBLIC_API_URL ?? "not set"}
-        </Text>
-        <Text style={styles.footerHint}>Customer app · OTA test build</Text>
-      </View>
+      {__DEV__ ? (
+        <View style={styles.footer}>
+          <Text style={styles.footerLabel}>Environment</Text>
+          <Text style={styles.footerValue}>
+            API: {EXPO_PUBLIC_API_URL ?? "not set"}
+          </Text>
+          <Text style={styles.footerHint}>Customer app · OTA test build</Text>
+        </View>
+      ) : null}
     </ScrollView>
   )
 }
