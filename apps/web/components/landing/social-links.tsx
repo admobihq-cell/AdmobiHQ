@@ -12,7 +12,7 @@ export const socialLinks = [
     icon: TikTokIcon,
   },
   {
-    href: "https://www.linkedin.com/in/admobi-media/",
+    href: "https://www.linkedin.com/company/admobi-hq/",
     label: "Admobi on LinkedIn",
     icon: LinkedInIcon,
   },
