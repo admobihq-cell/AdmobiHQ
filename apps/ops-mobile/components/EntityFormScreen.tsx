@@ -10,10 +10,11 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { FormFieldDef } from "@workspace/ops-contracts"
-import { formatLabel } from "@workspace/ops-contracts"
+import { formatLabel, splitCsv } from "@workspace/ops-contracts"
 
 import { AppLoader } from "@/components/app/app-loader"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
+import { CheckboxOff, CheckboxOn } from "@/components/icons"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type EntityFormScreenProps = {
@@ -47,6 +48,7 @@ export function EntityFormScreen({
     return next
   })
   const [selectField, setSelectField] = useState<FormFieldDef | null>(null)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const styles = useThemedStyles((c) => ({
     container: {
@@ -83,6 +85,13 @@ export function EntityFormScreen({
       paddingHorizontal: spacing.md,
       paddingVertical: 12,
       minHeight: 48,
+    },
+    inputError: {
+      borderColor: c.danger,
+    },
+    fieldError: {
+      ...typography.caption,
+      color: c.danger,
     },
     multiline: {
       minHeight: 120,
@@ -155,17 +164,40 @@ export function EntityFormScreen({
       color: c.primary,
       fontWeight: "700" as const,
     },
+    optionRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+    },
+    doneButton: {
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+      backgroundColor: c.primary,
+      borderRadius: radius.md,
+      paddingVertical: 12,
+      alignItems: "center" as const,
+    },
+    doneButtonText: {
+      ...typography.body,
+      fontWeight: "700" as const,
+      color: c.primaryForeground,
+    },
   }))
 
-  const fieldErrors = useMemo(() => {
-    const missing = fields
-      .filter((field) => field.required && !values[field.name]?.trim())
-      .map((field) => field.label)
-    return missing
+  const missingFields = useMemo(() => {
+    return fields.filter((field) => field.required && !values[field.name]?.trim())
   }, [fields, values])
+  const missingFieldNames = useMemo(
+    () => new Set(missingFields.map((field) => field.name)),
+    [missingFields],
+  )
 
   const handleSubmit = () => {
-    if (fieldErrors.length > 0 || saving) return
+    if (saving) return
+    if (missingFields.length > 0) {
+      setSubmitAttempted(true)
+      return
+    }
     void onSubmit(values)
   }
 
@@ -181,11 +213,21 @@ export function EntityFormScreen({
           />
         ) : null}
 
+        {submitAttempted && missingFields.length > 0 ? (
+          <ApiErrorBanner
+            message={`Please fill in: ${missingFields.map((field) => field.label).join(", ")}.`}
+          />
+        ) : null}
+
         {fields.map((field) => {
           const value = values[field.name] ?? ""
+          const showError = submitAttempted && missingFieldNames.has(field.name)
 
           if (field.options?.length) {
-            const selected = field.options.find((option) => option.value === value)
+            const selectedValues = field.multi ? splitCsv(value) : value ? [value] : []
+            const selectedLabels = selectedValues.map(
+              (v) => field.options?.find((option) => option.value === v)?.label ?? formatLabel(v),
+            )
             return (
               <View key={field.name} style={styles.field}>
                 <Text style={styles.label}>
@@ -193,19 +235,25 @@ export function EntityFormScreen({
                   {field.required ? " *" : ""}
                 </Text>
                 <Pressable
-                  style={[styles.input, styles.select]}
+                  style={[styles.input, styles.select, showError && styles.inputError]}
                   onPress={() => setSelectField(field)}
                 >
                   <Text
                     style={[
                       styles.selectValue,
-                      !selected && styles.selectPlaceholder,
+                      selectedLabels.length === 0 && styles.selectPlaceholder,
                     ]}
+                    numberOfLines={1}
                   >
-                    {selected?.label ?? `Select ${field.label.toLowerCase()}`}
+                    {selectedLabels.length > 0
+                      ? selectedLabels.join(", ")
+                      : `Select ${field.label.toLowerCase()}`}
                   </Text>
                   <Text style={styles.selectPlaceholder}>▾</Text>
                 </Pressable>
+                {showError ? (
+                  <Text style={styles.fieldError}>{field.label} is required.</Text>
+                ) : null}
               </View>
             )
           }
@@ -230,8 +278,12 @@ export function EntityFormScreen({
                 style={[
                   styles.input,
                   field.type === "multiline" && styles.multiline,
+                  showError && styles.inputError,
                 ]}
               />
+              {showError ? (
+                <Text style={styles.fieldError}>{field.label} is required.</Text>
+              ) : null}
             </View>
           )
         })}
@@ -240,9 +292,9 @@ export function EntityFormScreen({
           style={({ pressed }) => [
             styles.submit,
             (pressed || saving) && styles.submitPressed,
-            (saving || fieldErrors.length > 0) && styles.submitDisabled,
+            saving && styles.submitDisabled,
           ]}
-          disabled={saving || fieldErrors.length > 0}
+          disabled={saving}
           onPress={handleSubmit}
         >
           {saving ? (
@@ -264,31 +316,60 @@ export function EntityFormScreen({
             <Text style={styles.modalTitle}>{selectField?.label}</Text>
             <ScrollView>
               {selectField?.options?.map((option) => {
-                const selected = values[selectField.name] === option.value
+                const currentValue = selectField ? values[selectField.name] ?? "" : ""
+                const currentValues = selectField?.multi
+                  ? splitCsv(currentValue)
+                  : [currentValue]
+                const selected = currentValues.includes(option.value)
                 return (
                   <Pressable
                     key={option.value}
                     style={[styles.option, selected && styles.optionSelected]}
                     onPress={() => {
-                      setValues((current) => ({
-                        ...current,
-                        [selectField.name]: option.value,
-                      }))
-                      setSelectField(null)
+                      if (!selectField) return
+                      if (selectField.multi) {
+                        const next = selected
+                          ? currentValues.filter((v) => v !== option.value)
+                          : [...currentValues, option.value]
+                        setValues((current) => ({
+                          ...current,
+                          [selectField.name]: next.join(", "),
+                        }))
+                      } else {
+                        setValues((current) => ({
+                          ...current,
+                          [selectField.name]: option.value,
+                        }))
+                        setSelectField(null)
+                      }
                     }}
                   >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selected && styles.optionTextSelected,
-                      ]}
-                    >
-                      {option.label || formatLabel(option.value)}
-                    </Text>
+                    <View style={styles.optionRow}>
+                      {selectField?.multi ? (
+                        selected ? (
+                          <CheckboxOn size={20} color={colors.primary} />
+                        ) : (
+                          <CheckboxOff size={20} color={colors.mutedForeground} />
+                        )
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.optionText,
+                          selected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {option.label || formatLabel(option.value)}
+                      </Text>
+                    </View>
                   </Pressable>
                 )
               })}
             </ScrollView>
+            {selectField?.multi ? (
+              <Pressable style={styles.doneButton} onPress={() => setSelectField(null)}>
+                <Text style={styles.doneButtonText}>Done</Text>
+              </Pressable>
+            ) : null}
           </Pressable>
         </Pressable>
       </Modal>
