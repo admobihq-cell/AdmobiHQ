@@ -1,6 +1,11 @@
 "use client"
 
 import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
+import {
+  MEDIA_KIT_FORM_FIELDS,
+  mediaKitFormFromRecord,
+  mediaKitFormToPayload,
+} from "@workspace/ops-contracts"
 import { formatDateTime } from "@/lib/format"
 
 type MediaKitRequest = {
@@ -10,10 +15,7 @@ type MediaKitRequest = {
   created_at: string
 }
 
-const mediaKitFields = [
-  { name: "name", label: "Name", required: true },
-  { name: "email", label: "Email", type: "email", required: true },
-]
+const mediaKitFields = MEDIA_KIT_FORM_FIELDS
 
 type MediaKitViewProps = {
   initialData: {
@@ -49,9 +51,11 @@ export function MediaKitView({ initialData }: MediaKitViewProps) {
           onOpenChange={onOpenChange}
           title={initial ? "Edit request" : "Add request"}
           fields={mediaKitFields}
-          initial={initial}
+          initial={initial ? mediaKitFormFromRecord(initial as never) : null}
           saving={saving}
-          onSubmit={onSubmit}
+          onSubmit={async (values) => {
+            await onSubmit(mediaKitFormToPayload(values as Record<string, string>))
+          }}
         />
       )}
     />

@@ -2,6 +2,12 @@
 
 import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
 import { StatusBadge } from "@/components/status-badge"
+import {
+  FLEET_FORM_FIELDS,
+  FLEET_STATUS_OPTIONS,
+  fleetFormFromRecord,
+  fleetFormToPayload,
+} from "@workspace/ops-contracts"
 import { formatDateTime, formatLabel } from "@/lib/format"
 
 type FleetPartner = {
@@ -19,43 +25,7 @@ type FleetPartner = {
   created_at: string
 }
 
-const fleetFields = [
-  { name: "company_name", label: "Company", required: true },
-  { name: "primary_contact_name", label: "Contact name", required: true },
-  { name: "email", label: "Email", type: "email", required: true },
-  { name: "phone", label: "Phone", required: true },
-  {
-    name: "city",
-    label: "City",
-    required: true,
-    options: [
-      { value: "Nairobi", label: "Nairobi" },
-      { value: "Mombasa", label: "Mombasa" },
-      { value: "Kisumu", label: "Kisumu" },
-    ],
-  },
-  { name: "fleet_types", label: "Fleet types (comma-separated: taxi, delivery_bike)" },
-  { name: "fleet_size", label: "Fleet size" },
-  {
-    name: "vehicles_active",
-    label: "Vehicles active",
-    options: [
-      { value: "yes", label: "Yes" },
-      { value: "no", label: "No" },
-      { value: "some", label: "Some" },
-    ],
-  },
-  {
-    name: "status",
-    label: "Status",
-    options: [
-      { value: "pending", label: "Pending" },
-      { value: "verified", label: "Verified" },
-      { value: "active", label: "Active" },
-    ],
-  },
-  { name: "notes", label: "Notes" },
-]
+const fleetFields = FLEET_FORM_FIELDS
 
 type FleetViewProps = {
   initialData: {
@@ -75,11 +45,8 @@ export function FleetView({ initialData }: FleetViewProps) {
       apiPath="/v1/fleet"
       initialData={initialData}
       getRecordTitle={(row) => row.company_name}
-      statusBulkOptions={[
-        { value: "pending", label: "Pending" },
-        { value: "verified", label: "Verified" },
-        { value: "active", label: "Active" },
-      ]}
+      statusBulkOptions={FLEET_STATUS_OPTIONS}
+      statusFilterOptions={FLEET_STATUS_OPTIONS}
       detailFields={[
         {
           key: "created_at",
@@ -157,20 +124,10 @@ export function FleetView({ initialData }: FleetViewProps) {
           onOpenChange={onOpenChange}
           title={initial ? "Edit fleet partner" : "Add fleet partner"}
           fields={fleetFields}
-          initial={
-            initial
-              ? { ...initial, fleet_types: initial.fleet_types.join(", ") }
-              : null
-          }
+          initial={initial ? fleetFormFromRecord(initial as never) : null}
           saving={saving}
           onSubmit={async (values) => {
-            await onSubmit({
-              ...values,
-              fleet_types: String(values.fleet_types ?? "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-            })
+            await onSubmit(fleetFormToPayload(values as Record<string, string>))
           }}
         />
       )}
