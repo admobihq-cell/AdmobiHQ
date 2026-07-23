@@ -2,6 +2,12 @@
 
 import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
 import { StatusBadge } from "@/components/status-badge"
+import {
+  LEAD_FORM_FIELDS,
+  LEAD_STATUS_OPTIONS,
+  leadFormFromRecord,
+  leadFormToPayload,
+} from "@workspace/ops-contracts"
 import { formatDateTime, formatLabel, truncate } from "@/lib/format"
 
 type Lead = {
@@ -19,47 +25,7 @@ type Lead = {
   created_at: string
 }
 
-const leadFields = [
-  { name: "contact_name", label: "Contact name", required: true },
-  { name: "email", label: "Email", type: "email", required: true },
-  { name: "company_name", label: "Company", required: true },
-  { name: "phone", label: "Phone" },
-  { name: "cities", label: "Cities (comma-separated)" },
-  { name: "ad_formats", label: "Ad formats (comma-separated)" },
-  {
-    name: "duration",
-    label: "Duration",
-    options: [
-      { value: "1_day", label: "1 day" },
-      { value: "1_week", label: "1 week" },
-      { value: "2_weeks", label: "2 weeks" },
-      { value: "1_month", label: "1 month" },
-      { value: "ongoing", label: "Ongoing" },
-    ],
-  },
-  {
-    name: "budget_range",
-    label: "Budget",
-    options: [
-      { value: "under_50k", label: "Under 50k" },
-      { value: "50k_150k", label: "50k – 150k" },
-      { value: "150k_500k", label: "150k – 500k" },
-      { value: "500k_plus", label: "500k+" },
-      { value: "not_sure", label: "Not sure" },
-    ],
-  },
-  {
-    name: "status",
-    label: "Status",
-    options: [
-      { value: "new", label: "New" },
-      { value: "contacted", label: "Contacted" },
-      { value: "qualified", label: "Qualified" },
-      { value: "closed", label: "Closed" },
-    ],
-  },
-  { name: "additional_info", label: "Brief / notes" },
-]
+const leadFields = LEAD_FORM_FIELDS
 
 type LeadsViewProps = {
   initialData: {
@@ -79,12 +45,8 @@ export function LeadsView({ initialData }: LeadsViewProps) {
       apiPath="/v1/leads"
       initialData={initialData}
       getRecordTitle={(row) => row.contact_name}
-      statusBulkOptions={[
-        { value: "new", label: "New" },
-        { value: "contacted", label: "Contacted" },
-        { value: "qualified", label: "Qualified" },
-        { value: "closed", label: "Closed" },
-      ]}
+      statusBulkOptions={LEAD_STATUS_OPTIONS}
+      statusFilterOptions={LEAD_STATUS_OPTIONS}
       detailFields={[
         {
           key: "created_at",
@@ -177,27 +139,11 @@ export function LeadsView({ initialData }: LeadsViewProps) {
           title={initial ? "Edit lead" : "Add lead"}
           fields={leadFields}
           initial={
-            initial
-              ? {
-                  ...initial,
-                  cities: initial.cities.join(", "),
-                  ad_formats: initial.ad_formats.join(", "),
-                }
-              : null
+            initial ? leadFormFromRecord(initial as never) : null
           }
           saving={saving}
           onSubmit={async (values) => {
-            await onSubmit({
-              ...values,
-              cities: String(values.cities ?? "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-              ad_formats: String(values.ad_formats ?? "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-            })
+            await onSubmit(leadFormToPayload(values as Record<string, string>))
           }}
         />
       )}

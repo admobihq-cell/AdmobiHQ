@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { FLEET_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
 import { detailValue, EntityDetail } from "@/components/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
@@ -12,12 +13,13 @@ export default function FleetDetailScreen() {
     <EntityDetail
       load={load}
       remove={remove}
-      title={(item) => item.company_name}
-      chips={(item) =>
-        item.status
-          ? [{ label: detailValue(item.status), variant: "primary" as const }]
-          : []
+      editHref={(recordId) => `/(ops)/fleet/edit/${recordId}`}
+      statusOptions={FLEET_STATUS_OPTIONS}
+      getStatus={(item) => item.status}
+      onStatusChange={(recordId, status) =>
+        client.fleet.update(recordId, { status: status as never })
       }
+      title={(item) => item.company_name}
       sections={(item) => [
         {
           title: "Contact",

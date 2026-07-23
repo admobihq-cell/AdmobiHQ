@@ -1,6 +1,5 @@
 import { useCallback } from "react"
-import { FLEET_STATUSES } from "@workspace/ops-contracts"
-import { formatLabel } from "@workspace/ops-contracts"
+import { FLEET_STATUSES, formatLabel } from "@workspace/ops-contracts"
 
 import { EntityList } from "@/components/EntityList"
 import { useOpsClient } from "@/lib/ops-client"
@@ -8,7 +7,12 @@ import { useOpsClient } from "@/lib/ops-client"
 export default function FleetScreen() {
   const client = useOpsClient()
   const loadPage = useCallback(
-    (page: number) => client.fleet.list({ page, pageSize: 20 }),
+    (page: number, options?: { status?: string | null }) =>
+      client.fleet.list({
+        page,
+        pageSize: 20,
+        status: options?.status ?? undefined,
+      }),
     [client],
   )
 
@@ -17,6 +21,7 @@ export default function FleetScreen() {
       title="Fleet partners"
       description="Onboard and track fleet partner applications across cities."
       loadPage={loadPage}
+      addHref="/(ops)/fleet/new"
       getTitle={(item) => item.company_name}
       getSubtitle={(item) => `${item.primary_contact_name} · ${item.city}`}
       getInitials={(item) => item.company_name}

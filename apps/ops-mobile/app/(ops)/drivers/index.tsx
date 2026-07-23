@@ -1,6 +1,5 @@
 import { useCallback } from "react"
-import { DRIVER_STATUSES } from "@workspace/ops-contracts"
-import { formatLabel } from "@workspace/ops-contracts"
+import { DRIVER_STATUSES, formatLabel } from "@workspace/ops-contracts"
 
 import { EntityList } from "@/components/EntityList"
 import { useOpsClient } from "@/lib/ops-client"
@@ -8,7 +7,12 @@ import { useOpsClient } from "@/lib/ops-client"
 export default function DriversScreen() {
   const client = useOpsClient()
   const loadPage = useCallback(
-    (page: number) => client.drivers.list({ page, pageSize: 20 }),
+    (page: number, options?: { status?: string | null }) =>
+      client.drivers.list({
+        page,
+        pageSize: 20,
+        status: options?.status ?? undefined,
+      }),
     [client],
   )
 
@@ -17,6 +21,7 @@ export default function DriversScreen() {
       title="Drivers"
       description="Monitor driver signups, city distribution, and onboarding status."
       loadPage={loadPage}
+      addHref="/(ops)/drivers/new"
       getTitle={(item) => item.name}
       getSubtitle={(item) => `${item.phone} · ${item.city}`}
       getInitials={(item) => item.name}

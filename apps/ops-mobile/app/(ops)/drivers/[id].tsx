@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { DRIVER_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
 import { detailValue, EntityDetail } from "@/components/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
@@ -15,13 +16,14 @@ export default function DriverDetailScreen() {
     <EntityDetail
       load={load}
       remove={remove}
+      editHref={(recordId) => `/(ops)/drivers/edit/${recordId}`}
+      statusOptions={DRIVER_STATUS_OPTIONS}
+      getStatus={(item) => item.status}
+      onStatusChange={(recordId, status) =>
+        client.drivers.update(recordId, { status: status as never })
+      }
       title={(item) => item.name}
-      chips={(item) => [
-        ...(item.status
-          ? [{ label: detailValue(item.status), variant: "primary" as const }]
-          : []),
-        { label: item.city, variant: "muted" as const },
-      ]}
+      chips={(item) => [{ label: item.city, variant: "muted" as const }]}
       sections={(item) => [
         {
           title: "Contact",

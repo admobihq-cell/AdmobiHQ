@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import { LEAD_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
 import { detailValue, EntityDetail } from "@/components/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
@@ -12,11 +13,14 @@ export default function LeadDetailScreen() {
     <EntityDetail
       load={load}
       remove={remove}
+      editHref={(recordId) => `/(ops)/leads/edit/${recordId}`}
+      statusOptions={LEAD_STATUS_OPTIONS}
+      getStatus={(item) => item.status}
+      onStatusChange={(recordId, status) =>
+        client.leads.update(recordId, { status: status as never })
+      }
       title={(item) => item.company_name}
       chips={(item) => [
-        ...(item.status
-          ? [{ label: detailValue(item.status), variant: "primary" as const }]
-          : []),
         ...(item.budget_range
           ? [{ label: detailValue(item.budget_range), variant: "muted" as const }]
           : []),

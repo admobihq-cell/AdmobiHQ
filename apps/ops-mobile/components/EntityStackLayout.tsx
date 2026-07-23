@@ -23,6 +23,20 @@ export function EntityStackLayout() {
         }}
       />
       <Stack.Screen
+        name="new"
+        options={{
+          title: "Add",
+          presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="edit/[id]"
+        options={{
+          title: "Edit",
+          presentation: "modal",
+        }}
+      />
+      <Stack.Screen
         name="[id]"
         options={{
           title: "Details",

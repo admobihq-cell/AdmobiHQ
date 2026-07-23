@@ -2,6 +2,12 @@
 
 import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
 import { StatusBadge } from "@/components/status-badge"
+import {
+  DRIVER_FORM_FIELDS,
+  DRIVER_STATUS_OPTIONS,
+  driverFormFromRecord,
+  driverFormToPayload,
+} from "@workspace/ops-contracts"
 import { formatDateTime, formatLabel } from "@/lib/format"
 
 type Driver = {
@@ -18,62 +24,7 @@ type Driver = {
   created_at: string
 }
 
-const driverFields = [
-  { name: "name", label: "Name", required: true },
-  { name: "phone", label: "Phone", required: true },
-  { name: "email", label: "Email", type: "email" },
-  {
-    name: "city",
-    label: "City",
-    required: true,
-    options: [
-      { value: "Nairobi", label: "Nairobi" },
-      { value: "Mombasa", label: "Mombasa" },
-      { value: "Kisumu", label: "Kisumu" },
-    ],
-  },
-  {
-    name: "vehicle_type",
-    label: "Vehicle type",
-    options: [
-      { value: "taxi", label: "Taxi" },
-      { value: "delivery_bike", label: "Delivery bike" },
-      { value: "three_wheeler", label: "Three wheeler" },
-      { value: "other", label: "Other" },
-    ],
-  },
-  {
-    name: "days_per_week",
-    label: "Days per week",
-    options: [
-      { value: "1_2", label: "1–2" },
-      { value: "3_4", label: "3–4" },
-      { value: "5_6", label: "5–6" },
-      { value: "daily", label: "Daily" },
-    ],
-  },
-  {
-    name: "heard_about",
-    label: "Heard about",
-    options: [
-      { value: "whatsapp", label: "WhatsApp" },
-      { value: "facebook", label: "Facebook" },
-      { value: "friend", label: "Friend" },
-      { value: "roadside", label: "Roadside" },
-      { value: "other", label: "Other" },
-    ],
-  },
-  {
-    name: "status",
-    label: "Status",
-    options: [
-      { value: "pending", label: "Pending" },
-      { value: "verified", label: "Verified" },
-      { value: "active", label: "Active" },
-    ],
-  },
-  { name: "notes", label: "Internal notes" },
-]
+const driverFields = DRIVER_FORM_FIELDS
 
 type DriversViewProps = {
   initialData: {
@@ -93,11 +44,8 @@ export function DriversView({ initialData }: DriversViewProps) {
       apiPath="/v1/drivers"
       initialData={initialData}
       getRecordTitle={(row) => row.name}
-      statusBulkOptions={[
-        { value: "pending", label: "Pending" },
-        { value: "verified", label: "Verified" },
-        { value: "active", label: "Active" },
-      ]}
+      statusBulkOptions={DRIVER_STATUS_OPTIONS}
+      statusFilterOptions={DRIVER_STATUS_OPTIONS}
       detailFields={[
         {
           key: "created_at",
@@ -165,9 +113,11 @@ export function DriversView({ initialData }: DriversViewProps) {
           onOpenChange={onOpenChange}
           title={initial ? "Edit driver" : "Add driver"}
           fields={driverFields}
-          initial={initial}
+          initial={initial ? driverFormFromRecord(initial as never) : null}
           saving={saving}
-          onSubmit={onSubmit}
+          onSubmit={async (values) => {
+            await onSubmit(driverFormToPayload(values as Record<string, string>))
+          }}
         />
       )}
     />

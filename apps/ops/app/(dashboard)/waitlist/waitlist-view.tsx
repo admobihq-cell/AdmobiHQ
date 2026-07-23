@@ -1,6 +1,11 @@
 "use client"
 
 import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
+import {
+  WAITLIST_FORM_FIELDS,
+  waitlistFormFromRecord,
+  waitlistFormToPayload,
+} from "@workspace/ops-contracts"
 import { formatDateTime } from "@/lib/format"
 
 type WaitlistEntry = {
@@ -10,10 +15,7 @@ type WaitlistEntry = {
   created_at: string
 }
 
-const waitlistFields = [
-  { name: "email", label: "Email", type: "email", required: true },
-  { name: "source", label: "Source" },
-]
+const waitlistFields = WAITLIST_FORM_FIELDS
 
 type WaitlistViewProps = {
   initialData: {
@@ -54,9 +56,11 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
           onOpenChange={onOpenChange}
           title={initial ? "Edit waitlist entry" : "Add to waitlist"}
           fields={waitlistFields}
-          initial={initial}
+          initial={initial ? waitlistFormFromRecord(initial as never) : null}
           saving={saving}
-          onSubmit={onSubmit}
+          onSubmit={async (values) => {
+            await onSubmit(waitlistFormToPayload(values as Record<string, string>))
+          }}
         />
       )}
     />

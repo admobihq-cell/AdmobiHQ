@@ -15,6 +15,7 @@ export default function WaitlistDetailScreen() {
     <EntityDetail
       load={load}
       remove={remove}
+      editHref={(recordId) => `/(ops)/waitlist/edit/${recordId}`}
       title={(item) => item.email}
       chips={(item) =>
         item.source

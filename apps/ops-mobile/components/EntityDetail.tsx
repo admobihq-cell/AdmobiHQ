@@ -13,12 +13,14 @@ import * as Clipboard from "expo-clipboard"
 import * as Haptics from "expo-haptics"
 import { Platform } from "react-native"
 import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
+import type { FormFieldOption } from "@workspace/ops-contracts"
 
 import { AppLoader } from "@/components/app/app-loader"
 import { GroupedSection } from "@/components/app/grouped-list"
 import { StatusChip } from "@/components/app/status-chip"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
-import { Trash } from "@/components/icons"
+import { Pencil, Trash } from "@/components/icons"
+import { StatusPicker } from "@/components/StatusPicker"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
@@ -41,6 +43,10 @@ type EntityDetailProps<T> = {
   title: (item: T) => string
   chips?: (item: T) => Array<{ label: string; variant?: "default" | "primary" | "muted" }>
   sections: (item: T) => DetailSection[]
+  editHref?: (id: number) => string
+  statusOptions?: FormFieldOption[]
+  onStatusChange?: (id: number, status: string) => Promise<T>
+  getStatus?: (item: T) => string | null | undefined
 }
 
 export function EntityDetail<T>({
@@ -49,6 +55,10 @@ export function EntityDetail<T>({
   title,
   chips,
   sections,
+  editHref,
+  statusOptions,
+  onStatusChange,
+  getStatus,
 }: EntityDetailProps<T>) {
   const router = useRouter()
   const navigation = useNavigation()
@@ -213,8 +223,18 @@ export function EntityDetail<T>({
 
     navigation.setOptions({
       title: title(item),
-      headerRight: remove
-        ? () => (
+      headerRight: () => (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          {editHref ? (
+            <Pressable
+              onPress={() => router.push(editHref(id) as never)}
+              hitSlop={12}
+              style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+            >
+              <Pencil color={colors.primary} size={22} strokeWidth={2} />
+            </Pressable>
+          ) : null}
+          {remove ? (
             <Pressable
               onPress={handleDelete}
               disabled={deleting}
@@ -223,10 +243,23 @@ export function EntityDetail<T>({
             >
               <Trash color={colors.destructive} size={22} strokeWidth={2} />
             </Pressable>
-          )
-        : undefined,
+          ) : null}
+        </View>
+      ),
     })
-  }, [navigation, remove, item, deleting, handleDelete, title, colors.destructive])
+  }, [
+    navigation,
+    remove,
+    editHref,
+    item,
+    deleting,
+    handleDelete,
+    title,
+    colors.primary,
+    colors.destructive,
+    router,
+    id,
+  ])
 
   const handleCopy = async (value: string) => {
     await Clipboard.setStringAsync(value)
@@ -263,6 +296,17 @@ export function EntityDetail<T>({
       <View style={styles.heroCard}>
         <Text style={styles.eyebrow}>Record</Text>
         <Text style={styles.title}>{item ? title(item) : "—"}</Text>
+        {statusOptions?.length && item && onStatusChange ? (
+          <StatusPicker
+            label="Status"
+            value={getStatus?.(item) ?? null}
+            options={statusOptions}
+            onChange={async (status) => {
+              const updated = await onStatusChange(id, status)
+              setItem(updated)
+            }}
+          />
+        ) : null}
         {chipItems.length > 0 ? (
           <View style={styles.chips}>
             {chipItems.map((chip) => (
