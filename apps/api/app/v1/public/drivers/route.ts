@@ -6,6 +6,7 @@ import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
+import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 
 export async function POST(req: Request) {
   let body: unknown
@@ -66,6 +67,12 @@ export async function POST(req: Request) {
         `New Driver Application: ${parsed.data.name}`,
         adminDriverHtml
       )
+
+      void notifyOpsStaffAlert({
+        type: "driver",
+        entityId: data.id,
+        submitterName: parsed.data.name,
+      })
 
       console.log("[Admobi API drivers] Driver emails queued")
     } catch (emailError) {

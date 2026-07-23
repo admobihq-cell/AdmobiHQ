@@ -100,6 +100,13 @@ export type OpsClient = {
   stats: {
     get: (params?: { range?: DateRangeKey }) => Promise<StatsResponseDto>
   }
+  pushTokens: {
+    register: (body: {
+      expoPushToken: string
+      platform?: "android" | "ios" | "web"
+    }) => Promise<SuccessResponse>
+    unregister: (body: { expoPushToken: string }) => Promise<SuccessResponse>
+  }
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
@@ -212,6 +219,18 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         const qs = query.toString()
         return request<StatsResponseDto>(`${apiPrefix}/stats${qs ? `?${qs}` : ""}`)
       },
+    },
+    pushTokens: {
+      register: (body) =>
+        request<SuccessResponse>(`${apiPrefix}/push-tokens`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      unregister: (body) =>
+        request<SuccessResponse>(`${apiPrefix}/push-tokens`, {
+          method: "DELETE",
+          body: JSON.stringify(body),
+        }),
     },
   }
 }

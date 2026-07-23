@@ -7,6 +7,7 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { CampaignConfirmation } from "@/lib/email/templates/CampaignConfirmation"
 import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
+import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 
 // Database: Neon PostgreSQL with Prisma ORM
 // Email: Resend with Bull queue for reliability
@@ -74,6 +75,13 @@ export async function POST(req: Request) {
           adminHtml
         )
 
+        void notifyOpsStaffAlert({
+          type: "campaign",
+          entityId: data.id,
+          submitterName: parsed.data.name,
+          submitterCompany: parsed.data.company,
+        })
+
         console.log("[Admobi API leads] Campaign emails queued")
       } catch (emailError) {
         console.error("[Admobi API leads] Failed to queue emails:", emailError)
@@ -124,6 +132,13 @@ export async function POST(req: Request) {
           `New Fleet Partnership Application: ${parsed.data.fleetOrCompanyName}`,
           adminFleetHtml
         )
+
+        void notifyOpsStaffAlert({
+          type: "fleet",
+          entityId: data.id,
+          submitterName: parsed.data.primaryContactName,
+          submitterCompany: parsed.data.fleetOrCompanyName,
+        })
 
         console.log("[Admobi API leads] Fleet emails queued")
       } catch (emailError) {
