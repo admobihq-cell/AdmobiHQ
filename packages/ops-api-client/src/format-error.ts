@@ -1,4 +1,5 @@
 import type { ApiErrorResponse } from "@workspace/ops-contracts"
+import { fieldKeyToLabel, humanizeZodMessage } from "@workspace/ops-contracts"
 
 import { OpsApiError } from "./errors"
 import { getApiBaseUrl } from "./base-url"
@@ -40,15 +41,17 @@ export function formatApiError(
   return err instanceof Error ? err.message : "Request failed"
 }
 
-function firstFieldError(issues: unknown): string | undefined {
+function formatFieldErrors(issues: unknown): string | undefined {
   if (!issues || typeof issues !== "object") return undefined
   const fieldErrors = (issues as { fieldErrors?: Record<string, string[]> })
     .fieldErrors
   if (!fieldErrors) return undefined
-  for (const messages of Object.values(fieldErrors)) {
-    if (messages[0]) return messages[0]
-  }
-  return undefined
+
+  const lines = Object.entries(fieldErrors)
+    .filter((entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].length > 0)
+    .map(([key, messages]) => `${fieldKeyToLabel(key)}: ${humanizeZodMessage(messages[0])}`)
+
+  return lines.length > 0 ? lines.join("\n") : undefined
 }
 
 export function formatApiErrorResponse(
@@ -56,7 +59,7 @@ export function formatApiErrorResponse(
   status: number,
 ): string {
   return (
-    firstFieldError(body?.issues) ??
+    formatFieldErrors(body?.issues) ??
     body?.error ??
     `Request failed (${status})`
   )
