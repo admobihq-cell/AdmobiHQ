@@ -15,6 +15,7 @@ export default function MediaKitScreen() {
       title="Media kit"
       description="Marketers and agencies who requested the Admobi media kit."
       loadPage={loadPage}
+      addHref="/(ops)/media-kit/new"
       getTitle={(item) => item.name}
       getSubtitle={(item) => item.email}
       getInitials={(item) => item.name}

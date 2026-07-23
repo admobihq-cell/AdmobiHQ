@@ -96,6 +96,7 @@ type EntityPageProps<T extends { id: number }> = {
   detailFields?: DetailFieldDef<T>[]
   getRecordTitle?: (row: T) => string
   statusBulkOptions?: StatusBulkOption[]
+  statusFilterOptions?: StatusBulkOption[]
   bulkActions?: BulkActionDef<T>[]
   renderForm: (props: {
     open: boolean
@@ -117,6 +118,7 @@ export function EntityPage<T extends { id: number }>({
   detailFields,
   getRecordTitle,
   statusBulkOptions,
+  statusFilterOptions,
   bulkActions = [],
   renderForm,
   getCsvRow,
@@ -130,6 +132,7 @@ export function EntityPage<T extends { id: number }>({
   const [loading, setLoading] = useState(!initialData)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
@@ -175,6 +178,7 @@ export function EntityPage<T extends { id: number }>({
         page,
         pageSize: 20,
         ...(search ? { search } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
       })
       setData(result as unknown as Paginated<T>)
     } catch (err) {
@@ -186,7 +190,7 @@ export function EntityPage<T extends { id: number }>({
     } finally {
       setLoading(false)
     }
-  }, [resource, page, search])
+  }, [resource, page, search, statusFilter])
 
   useEffect(() => {
     if (initialData && page === 1 && !search) {
@@ -330,6 +334,21 @@ export function EntityPage<T extends { id: number }>({
     downloadCsv(`${apiPath.replace(/^\/v1\//, "")}.csv`, toCsv(rows, csvColumns))
   }
 
+  const handleQuickStatusChange = async (status: string) => {
+    if (!viewing) return
+    setSaving(true)
+    try {
+      await resource.update(viewing.id, { status } as never)
+      toast.success("Status updated")
+      setViewing({ ...viewing, status } as T)
+      void fetchData()
+    } catch (e) {
+      toast.error(formatApiError(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-8">
       <PageHero eyebrow="Operations" title={title} description={description} />
@@ -351,6 +370,23 @@ export function EntityPage<T extends { id: number }>({
           <Download data-icon="inline-start" />
           Export CSV
         </Button>
+        {statusFilterOptions?.length ? (
+          <select
+            className="border-input bg-background h-8 rounded-md border px-2 text-sm"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setPage(1)
+            }}
+          >
+            <option value="">All statuses</option>
+            {statusFilterOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : null}
         <Button
           size="sm"
           onClick={() => {
@@ -605,6 +641,29 @@ export function EntityPage<T extends { id: number }>({
                   </div>
                 ))}
               </dl>
+              {statusBulkOptions?.length &&
+              "status" in viewing &&
+              viewing.status != null ? (
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <span className="text-muted-foreground text-sm">Quick status</span>
+                  {statusBulkOptions.map((option) => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      size="sm"
+                      variant={
+                        (viewing as T & { status?: string }).status === option.value
+                          ? "default"
+                          : "outline"
+                      }
+                      disabled={saving}
+                      onClick={() => void handleQuickStatusChange(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   type="button"

@@ -15,6 +15,7 @@ export default function WaitlistScreen() {
       title="Waitlist"
       description="Early-interest emails from homepage and other launch CTAs."
       loadPage={loadPage}
+      addHref="/(ops)/waitlist/new"
       getTitle={(item) => item.email}
       getSubtitle={(item) => item.source ?? "Unknown source"}
       getInitials={(item) => item.email}
