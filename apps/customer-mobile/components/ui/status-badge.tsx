@@ -14,8 +14,16 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     CampaignStatus,
     { bg: string; text: string; label: string }
   > = {
-    active: { bg: "#E8F5E9", text: "#2E7D32", label: "Active" },
-    scheduled: { bg: "#FFF3E0", text: "#E65100", label: "Scheduled" },
+    active: {
+      bg: `${colors.success}1A`,
+      text: colors.success,
+      label: "Active",
+    },
+    scheduled: {
+      bg: `${colors.primary}1A`,
+      text: colors.primary,
+      label: "Scheduled",
+    },
     draft: {
       bg: colors.secondary,
       text: colors.mutedForeground,

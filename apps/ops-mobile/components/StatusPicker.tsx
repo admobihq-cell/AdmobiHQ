@@ -1,19 +1,12 @@
 import { useState } from "react"
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native"
+import { Pressable, Text, View } from "react-native"
 import * as Haptics from "expo-haptics"
 import { Platform } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { FormFieldOption } from "@workspace/ops-contracts"
 
 import { StatusChip } from "@/components/app/status-chip"
-import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
+import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type StatusPickerProps = {
   label: string
@@ -30,7 +23,6 @@ export function StatusPicker({
   onChange,
   disabled = false,
 }: StatusPickerProps) {
-  const insets = useSafeAreaInsets()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -46,40 +38,6 @@ export function StatusPicker({
       color: c.mutedForeground,
       textTransform: "uppercase" as const,
       letterSpacing: 0.4,
-    },
-    modalBackdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      justifyContent: "flex-end" as const,
-    },
-    modalSheet: {
-      backgroundColor: c.surface,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      paddingBottom: insets.bottom + spacing.md,
-    },
-    modalTitle: {
-      ...typography.section,
-      color: c.text,
-      padding: spacing.lg,
-      paddingBottom: spacing.sm,
-    },
-    option: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: 14,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.border,
-    },
-    optionSelected: {
-      backgroundColor: `${c.primary}12`,
-    },
-    optionText: {
-      ...typography.body,
-      color: c.text,
-    },
-    optionTextSelected: {
-      color: c.primary,
-      fontWeight: "700" as const,
     },
   }))
 
@@ -112,6 +70,9 @@ export function StatusPicker({
           disabled={disabled || saving}
           onPress={() => setOpen(true)}
           style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityState={{ disabled: disabled || saving }}
         >
           <StatusChip
             label={current?.label ?? value ?? "Set status"}
@@ -120,39 +81,14 @@ export function StatusPicker({
         </Pressable>
       </View>
 
-      <Modal
+      <BottomSheetPicker
         visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)}>
-          <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
-            <Text style={styles.modalTitle}>Change status</Text>
-            <ScrollView>
-              {options.map((option) => {
-                const selected = option.value === value
-                return (
-                  <Pressable
-                    key={option.value}
-                    style={[styles.option, selected && styles.optionSelected]}
-                    onPress={() => handleSelect(option.value)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selected && styles.optionTextSelected,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setOpen(false)}
+        title="Change status"
+        options={options}
+        value={value ?? ""}
+        onSelect={handleSelect}
+      />
     </>
   )
 }

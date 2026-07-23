@@ -1,20 +1,12 @@
 import { useMemo, useState } from "react"
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native"
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { FormFieldDef } from "@workspace/ops-contracts"
 import { formatLabel, splitCsv } from "@workspace/ops-contracts"
 
 import { AppLoader } from "@/components/app/app-loader"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
-import { CheckboxOff, CheckboxOn } from "@/components/icons"
+import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type EntityFormScreenProps = {
@@ -129,59 +121,6 @@ export function EntityFormScreen({
       fontWeight: "700" as const,
       color: c.primaryForeground,
     },
-    modalBackdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      justifyContent: "flex-end" as const,
-    },
-    modalSheet: {
-      backgroundColor: c.surface,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      paddingBottom: insets.bottom + spacing.md,
-      maxHeight: "70%" as const,
-    },
-    modalTitle: {
-      ...typography.section,
-      color: c.text,
-      padding: spacing.lg,
-      paddingBottom: spacing.sm,
-    },
-    option: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: 14,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.border,
-    },
-    optionSelected: {
-      backgroundColor: `${c.primary}12`,
-    },
-    optionText: {
-      ...typography.body,
-      color: c.text,
-    },
-    optionTextSelected: {
-      color: c.primary,
-      fontWeight: "700" as const,
-    },
-    optionRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: spacing.sm,
-    },
-    doneButton: {
-      marginHorizontal: spacing.lg,
-      marginTop: spacing.sm,
-      backgroundColor: c.primary,
-      borderRadius: radius.md,
-      paddingVertical: 12,
-      alignItems: "center" as const,
-    },
-    doneButtonText: {
-      ...typography.body,
-      fontWeight: "700" as const,
-      color: c.primaryForeground,
-    },
   }))
 
   const missingFields = useMemo(() => {
@@ -237,6 +176,8 @@ export function EntityFormScreen({
                 <Pressable
                   style={[styles.input, styles.select, showError && styles.inputError]}
                   onPress={() => setSelectField(field)}
+                  accessibilityRole="button"
+                  accessibilityLabel={field.label}
                 >
                   <Text
                     style={[
@@ -305,74 +246,33 @@ export function EntityFormScreen({
         </Pressable>
       </View>
 
-      <Modal
+      <BottomSheetPicker
         visible={selectField != null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectField(null)}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={() => setSelectField(null)}>
-          <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
-            <Text style={styles.modalTitle}>{selectField?.label}</Text>
-            <ScrollView>
-              {selectField?.options?.map((option) => {
-                const currentValue = selectField ? values[selectField.name] ?? "" : ""
-                const currentValues = selectField?.multi
-                  ? splitCsv(currentValue)
-                  : [currentValue]
-                const selected = currentValues.includes(option.value)
-                return (
-                  <Pressable
-                    key={option.value}
-                    style={[styles.option, selected && styles.optionSelected]}
-                    onPress={() => {
-                      if (!selectField) return
-                      if (selectField.multi) {
-                        const next = selected
-                          ? currentValues.filter((v) => v !== option.value)
-                          : [...currentValues, option.value]
-                        setValues((current) => ({
-                          ...current,
-                          [selectField.name]: next.join(", "),
-                        }))
-                      } else {
-                        setValues((current) => ({
-                          ...current,
-                          [selectField.name]: option.value,
-                        }))
-                        setSelectField(null)
-                      }
-                    }}
-                  >
-                    <View style={styles.optionRow}>
-                      {selectField?.multi ? (
-                        selected ? (
-                          <CheckboxOn size={20} color={colors.primary} />
-                        ) : (
-                          <CheckboxOff size={20} color={colors.mutedForeground} />
-                        )
-                      ) : null}
-                      <Text
-                        style={[
-                          styles.optionText,
-                          selected && styles.optionTextSelected,
-                        ]}
-                      >
-                        {option.label || formatLabel(option.value)}
-                      </Text>
-                    </View>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
-            {selectField?.multi ? (
-              <Pressable style={styles.doneButton} onPress={() => setSelectField(null)}>
-                <Text style={styles.doneButtonText}>Done</Text>
-              </Pressable>
-            ) : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setSelectField(null)}
+        title={selectField?.label}
+        options={selectField?.options ?? []}
+        multi={selectField?.multi}
+        value={
+          selectField?.multi
+            ? splitCsv(selectField ? values[selectField.name] ?? "" : "")
+            : selectField
+              ? values[selectField.name] ?? ""
+              : ""
+        }
+        onSelect={(optionValue) => {
+          if (!selectField) return
+          if (selectField.multi) {
+            const current = splitCsv(values[selectField.name] ?? "")
+            const next = current.includes(optionValue)
+              ? current.filter((v) => v !== optionValue)
+              : [...current, optionValue]
+            setValues((prev) => ({ ...prev, [selectField.name]: next.join(", ") }))
+          } else {
+            setValues((prev) => ({ ...prev, [selectField.name]: optionValue }))
+            setSelectField(null)
+          }
+        }}
+      />
     </ScrollView>
   )
 }

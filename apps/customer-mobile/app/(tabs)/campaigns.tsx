@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Add, Calendar, Location } from "@/components/icons"
@@ -58,7 +58,7 @@ const CAMPAIGNS: Campaign[] = [
   },
 ]
 
-const FILTERS = ["All", "Active", "Scheduled", "Draft"] as const
+const FILTERS = ["All", "Active", "Scheduled", "Draft", "Completed"] as const
 type Filter = (typeof FILTERS)[number]
 
 export default function CampaignsScreen() {
@@ -262,6 +262,14 @@ export default function CampaignsScreen() {
                 styles.card,
                 pressed && styles.cardPressed,
               ]}
+              onPress={() =>
+                Alert.alert(
+                  campaign.name,
+                  "Campaign details are coming soon in a future update.",
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`${campaign.name}, ${campaign.status}`}
             >
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{campaign.name}</Text>
@@ -299,6 +307,14 @@ export default function CampaignsScreen() {
           { bottom: insets.bottom + spacing.lg },
           pressed && styles.fabPressed,
         ]}
+        onPress={() =>
+          Alert.alert(
+            "New campaign",
+            "Creating campaigns from the app is coming soon.",
+          )
+        }
+        accessibilityRole="button"
+        accessibilityLabel="New campaign"
       >
         <Add color={colors.primaryForeground} size={24} />
         <Text style={styles.fabLabel}>New campaign</Text>

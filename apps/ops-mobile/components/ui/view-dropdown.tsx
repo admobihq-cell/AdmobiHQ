@@ -1,15 +1,9 @@
 import { useState } from "react"
 import * as Haptics from "expo-haptics"
-import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native"
+import { Platform, Pressable, Text, View } from "react-native"
 
 import { ChevronDown } from "@/components/icons"
+import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 export type DropdownOption = {
@@ -57,40 +51,6 @@ export function ViewDropdown({ options, value, onChange }: ViewDropdownProps) {
       color: c.text,
       fontWeight: "600" as const,
     },
-    backdrop: {
-      flex: 1,
-      backgroundColor: "rgba(58, 56, 52, 0.35)",
-      justifyContent: "center" as const,
-      padding: spacing.lg,
-    },
-    menu: {
-      backgroundColor: c.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: c.border,
-      overflow: "hidden" as const,
-    },
-    menuItem: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: c.border,
-    },
-    menuItemActive: {
-      backgroundColor: c.secondary,
-    },
-    menuItemPressed: {
-      opacity: 0.85,
-    },
-    menuItemText: {
-      ...typography.body,
-      color: c.text,
-      fontWeight: "500" as const,
-    },
-    menuItemTextActive: {
-      color: c.primary,
-      fontWeight: "600" as const,
-    },
   }))
   const selected = options.find((option) => option.key === value)
 
@@ -115,42 +75,20 @@ export function ViewDropdown({ options, value, onChange }: ViewDropdownProps) {
       <Pressable
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={selected?.label ?? "Select view"}
       >
         <Text style={styles.triggerText}>{selected?.label ?? "Select view"}</Text>
         <ChevronDown color={colors.primary} size={16} />
       </Pressable>
 
-      <Modal
+      <BottomSheetPicker
         visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <View style={styles.menu}>
-            {options.map((option) => {
-              const active = option.key === value
-              return (
-                <Pressable
-                  key={option.key}
-                  onPress={() => select(option.key)}
-                  style={({ pressed }) => [
-                    styles.menuItem,
-                    active && styles.menuItemActive,
-                    pressed && styles.menuItemPressed,
-                  ]}
-                >
-                  <Text
-                    style={[styles.menuItemText, active && styles.menuItemTextActive]}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </View>
-        </Pressable>
-      </Modal>
+        onClose={() => setOpen(false)}
+        options={options.map((option) => ({ value: option.key, label: option.label }))}
+        value={value}
+        onSelect={select}
+      />
     </>
   )
 }
