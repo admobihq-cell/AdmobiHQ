@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   TextInput,
@@ -8,7 +9,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Inbox, Search } from "@/components/icons"
+import { Inbox, Plus, Search } from "@/components/icons"
 import type { PaginatedResponse } from "@workspace/ops-contracts"
 import { formatDateTime } from "@workspace/ops-contracts"
 
@@ -22,17 +23,22 @@ import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
+type EntityListLoadOptions = {
+  status?: string | null
+}
+
 type EntityListProps<T extends { id: number }> = {
   title: string
   description?: string
   eyebrow?: string
-  loadPage: (page: number) => Promise<PaginatedResponse<T>>
+  loadPage: (page: number, options?: EntityListLoadOptions) => Promise<PaginatedResponse<T>>
   getTitle: (item: T) => string
   getSubtitle?: (item: T) => string
   getInitials?: (item: T) => string
   getFilterValue?: (item: T) => string | null | undefined
   filterOptions?: FilterChipOption[]
   detailHref: (id: number) => string
+  addHref?: string
   searchKeys?: Array<(item: T) => string | null | undefined>
 }
 
@@ -47,6 +53,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   getFilterValue,
   filterOptions,
   detailHref,
+  addHref,
   searchKeys,
 }: EntityListProps<T>) {
   const router = useRouter()
@@ -61,6 +68,21 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       paddingHorizontal: spacing.lg,
       paddingBottom: spacing.sm,
       gap: spacing.sm,
+    },
+    headerTop: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+    },
+    addButton: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.full,
+      backgroundColor: c.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginTop: spacing.xs,
     },
     searchBox: {
       flexDirection: "row" as const,
@@ -122,10 +144,13 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const [filter, setFilter] = useState<string | null>(null)
 
   const fetchPage = useCallback(
-    async (nextPage: number, replace = false) => {
+    async (nextPage: number, replace = false, statusOverride?: string | null) => {
       try {
         setError(null)
-        const result = await loadPage(nextPage)
+        const activeStatus = statusOverride === undefined ? filter : statusOverride
+        const result = await loadPage(nextPage, {
+          status: activeStatus ?? undefined,
+        })
         setItems((current) =>
           replace ? result.items : [...current, ...result.items],
         )
@@ -138,12 +163,13 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         setRefreshing(false)
       }
     },
-    [loadPage],
+    [loadPage, filter],
   )
 
   useEffect(() => {
-    void fetchPage(1, true)
-  }, [fetchPage])
+    setLoading(true)
+    void fetchPage(1, true, filter)
+  }, [fetchPage, filter])
 
   const onRefresh = () => {
     setRefreshing(true)
@@ -177,14 +203,30 @@ export function EntityList<T extends { id: number; created_at?: string }>({
 
   const listHeader = (
     <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-      <PageHero
-        eyebrow={eyebrow}
-        title={title}
-        compact
-        description={
-          description ?? "Search, filter, and tap a row to view details."
-        }
-      />
+      <View style={styles.headerTop}>
+        <View style={{ flex: 1 }}>
+          <PageHero
+            eyebrow={eyebrow}
+            title={title}
+            compact
+            description={
+              description ?? "Search, filter, and tap a row to view details."
+            }
+          />
+        </View>
+        {addHref ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButton,
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={() => router.push(addHref as never)}
+            accessibilityLabel="Add record"
+          >
+            <Plus color={colors.primaryForeground} size={22} strokeWidth={2.5} />
+          </Pressable>
+        ) : null}
+      </View>
       <View style={styles.searchBox}>
         <Search color={colors.mutedForeground} size={18} strokeWidth={2} />
         <TextInput

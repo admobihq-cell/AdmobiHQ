@@ -15,6 +15,7 @@ export default function MediaKitDetailScreen() {
     <EntityDetail
       load={load}
       remove={remove}
+      editHref={(recordId) => `/(ops)/media-kit/edit/${recordId}`}
       title={(item) => item.name}
       sections={(item) => [
         {

@@ -9,8 +9,13 @@ const BRAND_COLOR = "#0B6E4F"
 
 let handlerConfigured = false
 
+/** Push is native-only; expo-notifications APIs throw on web. */
+export function isPushSupported(): boolean {
+  return Platform.OS === "ios" || Platform.OS === "android"
+}
+
 export function configurePushNotificationHandler() {
-  if (handlerConfigured) return
+  if (!isPushSupported() || handlerConfigured) return
   handlerConfigured = true
 
   Notifications.setNotificationHandler({
@@ -40,6 +45,8 @@ async function ensureAndroidChannel() {
 }
 
 export async function requestOpsPushPermissions(): Promise<boolean> {
+  if (!isPushSupported()) return false
+
   configurePushNotificationHandler()
   await ensureAndroidChannel()
 
@@ -53,7 +60,7 @@ export async function requestOpsPushPermissions(): Promise<boolean> {
 }
 
 export async function getOpsExpoPushToken(): Promise<string | null> {
-  if (!Constants.isDevice) {
+  if (!isPushSupported() || !Constants.isDevice) {
     return null
   }
 
@@ -73,6 +80,8 @@ export async function getOpsExpoPushToken(): Promise<string | null> {
 }
 
 export async function registerOpsPushToken(client: OpsClient): Promise<void> {
+  if (!isPushSupported()) return
+
   configurePushNotificationHandler()
 
   const granted = await requestOpsPushPermissions()
@@ -85,15 +94,14 @@ export async function registerOpsPushToken(client: OpsClient): Promise<void> {
     return
   }
 
-  const platform =
-    Platform.OS === "ios" || Platform.OS === "android" || Platform.OS === "web"
-      ? Platform.OS
-      : undefined
+  const platform = Platform.OS === "ios" || Platform.OS === "android" ? Platform.OS : undefined
 
   await client.pushTokens.register({ expoPushToken, platform })
 }
 
 export async function unregisterOpsPushToken(client: OpsClient): Promise<void> {
+  if (!isPushSupported()) return
+
   const expoPushToken = await getOpsExpoPushToken()
   if (!expoPushToken) {
     return
@@ -120,6 +128,8 @@ export function readPushDeepLink(
 }
 
 export async function getColdStartPushDeepLink(): Promise<OpsPushDeepLink | null> {
+  if (!isPushSupported()) return null
+
   const response = await Notifications.getLastNotificationResponseAsync()
   if (!response) return null
   return readPushDeepLink(
@@ -130,6 +140,10 @@ export async function getColdStartPushDeepLink(): Promise<OpsPushDeepLink | null
 export function addPushResponseListener(
   onNavigate: (link: OpsPushDeepLink) => void,
 ) {
+  if (!isPushSupported()) {
+    return () => {}
+  }
+
   const subscription = Notifications.addNotificationResponseReceivedListener(
     (response) => {
       const link = readPushDeepLink(

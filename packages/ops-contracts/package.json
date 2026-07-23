@@ -24,6 +24,7 @@
     "./types": "./src/types.ts",
     "./enums": "./src/enums.ts",
     "./allowed-email": "./src/allowed-email.ts",
-    "./format": "./src/format.ts"
+    "./format": "./src/format.ts",
+    "./form-fields": "./src/form-fields.ts"
   }
 }

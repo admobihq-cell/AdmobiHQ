@@ -7,6 +7,7 @@ import { useOpsClient } from "@/lib/ops-client"
 import {
   addPushResponseListener,
   getColdStartPushDeepLink,
+  isPushSupported,
   registerOpsPushToken,
   unregisterOpsPushToken,
 } from "@/lib/push-notifications"
@@ -19,9 +20,10 @@ export function useOpsPushNotifications(enabled: boolean) {
   const client = useOpsClient()
   const { isSignedIn } = useAuth()
   const router = useRouter()
+  const pushSupported = isPushSupported()
 
   useEffect(() => {
-    if (!enabled || !isSignedIn) return
+    if (!pushSupported || !enabled || !isSignedIn) return
 
     void registerOpsPushToken(client).catch((error) => {
       console.warn("[push] register failed:", error)
@@ -34,10 +36,10 @@ export function useOpsPushNotifications(enabled: boolean) {
 
     const sub = AppState.addEventListener("change", onAppState)
     return () => sub.remove()
-  }, [enabled, isSignedIn, client])
+  }, [pushSupported, enabled, isSignedIn, client])
 
   useEffect(() => {
-    if (!enabled) return
+    if (!pushSupported || !enabled) return
 
     void getColdStartPushDeepLink().then((link) => {
       if (link) {
@@ -48,10 +50,10 @@ export function useOpsPushNotifications(enabled: boolean) {
     return addPushResponseListener((link) => {
       router.push(link.href as never)
     })
-  }, [enabled, router])
+  }, [pushSupported, enabled, router])
 
   useEffect(() => {
-    if (enabled && isSignedIn) return
+    if (!pushSupported || (enabled && isSignedIn)) return
     void unregisterOpsPushToken(client).catch(() => {})
-  }, [enabled, isSignedIn, client])
+  }, [pushSupported, enabled, isSignedIn, client])
 }
