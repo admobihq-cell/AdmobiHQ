@@ -1,6 +1,13 @@
 export const CITIES = ["Nairobi", "Mombasa", "Kisumu"] as const
 export type City = (typeof CITIES)[number]
 
+// Campaign leads can request "All" cities in addition to a specific one.
+export const LEAD_CITIES = [...CITIES, "All"] as const
+export type LeadCity = (typeof LEAD_CITIES)[number]
+
+export const AD_FORMATS = ["taxi_top", "delivery_bike"] as const
+export type AdFormat = (typeof AD_FORMATS)[number]
+
 export const LEAD_STATUSES = ["new", "contacted", "qualified", "closed"] as const
 export type LeadStatus = (typeof LEAD_STATUSES)[number]
 

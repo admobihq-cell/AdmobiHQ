@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import {
+  AD_FORMATS,
   BUDGET_RANGES,
   CITIES,
   DATE_RANGE_KEYS,
@@ -9,6 +10,7 @@ import {
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
+  LEAD_CITIES,
   LEAD_STATUSES,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
@@ -19,8 +21,8 @@ export const leadCreateSchema = z.object({
   email: z.string().trim().email(),
   company_name: z.string().trim().min(1),
   phone: z.string().trim().optional(),
-  cities: z.array(z.string()).default([]),
-  ad_formats: z.array(z.string()).default([]),
+  cities: z.array(z.enum(LEAD_CITIES)).default([]),
+  ad_formats: z.array(z.enum(AD_FORMATS)).default([]),
   duration: z.string().optional(),
   budget_range: z.enum(BUDGET_RANGES).optional(),
   additional_info: z.string().optional(),
@@ -35,7 +37,7 @@ export const fleetCreateSchema = z.object({
   primary_contact_name: z.string().trim().min(1),
   phone: z.string().trim().min(1),
   city: z.enum(CITIES),
-  fleet_types: z.array(z.enum(FLEET_TYPES)).min(1),
+  fleet_types: z.array(z.enum(FLEET_TYPES)).min(1, "Select at least one fleet type."),
   fleet_size: z.string().optional(),
   vehicles_active: z.enum(VEHICLES_ACTIVE).optional(),
   notes: z.string().optional(),

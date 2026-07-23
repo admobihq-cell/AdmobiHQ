@@ -1,4 +1,5 @@
 import {
+  AD_FORMATS,
   BUDGET_RANGES,
   CITIES,
   DAYS_PER_WEEK,
@@ -6,6 +7,7 @@ import {
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
+  LEAD_CITIES,
   LEAD_STATUSES,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
@@ -39,6 +41,8 @@ export type FormFieldDef = {
   type?: "text" | "email" | "multiline"
   required?: boolean
   options?: FormFieldOption[]
+  /** When true, the field stores a comma-separated list of `options` values and the picker allows multiple selections. */
+  multi?: boolean
   placeholder?: string
 }
 
@@ -46,7 +50,7 @@ function enumOptions(values: readonly string[]): FormFieldOption[] {
   return values.map((value) => ({ value, label: formatLabel(value) }))
 }
 
-function splitCsv(value: string | undefined): string[] {
+export function splitCsv(value: string | undefined): string[] {
   return String(value ?? "")
     .split(",")
     .map((part) => part.trim())
@@ -60,13 +64,18 @@ export const LEAD_FORM_FIELDS: FormFieldDef[] = [
   { name: "phone", label: "Phone" },
   {
     name: "cities",
-    label: "Cities (comma-separated)",
-    placeholder: "Nairobi, Mombasa",
+    label: "Cities",
+    multi: true,
+    options: enumOptions(LEAD_CITIES),
   },
   {
     name: "ad_formats",
-    label: "Ad formats (comma-separated)",
-    placeholder: "wrap, digital",
+    label: "Ad formats",
+    multi: true,
+    options: [
+      { value: "taxi_top", label: "Taxi-top screens" },
+      { value: "delivery_bike", label: "Delivery bike boxes" },
+    ],
   },
   {
     name: "duration",
@@ -138,8 +147,13 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
   },
   {
     name: "fleet_types",
-    label: "Fleet types (comma-separated)",
-    placeholder: "taxi, delivery_bike",
+    label: "Fleet types",
+    required: true,
+    multi: true,
+    options: [
+      { value: "taxi", label: "Taxi" },
+      { value: "delivery_bike", label: "Delivery bike" },
+    ],
   },
   { name: "fleet_size", label: "Fleet size" },
   {
@@ -172,13 +186,20 @@ export const FLEET_STATUS_OPTIONS = enumOptions(FLEET_STATUSES)
 export function leadFormToPayload(
   values: Record<string, string>,
 ): LeadCreateInput | LeadUpdateInput {
+  const cities = splitCsv(values.cities).filter((city) =>
+    (LEAD_CITIES as readonly string[]).includes(city),
+  )
+  const adFormats = splitCsv(values.ad_formats).filter((format) =>
+    (AD_FORMATS as readonly string[]).includes(format),
+  )
+
   return {
     contact_name: values.contact_name?.trim(),
     email: values.email?.trim(),
     company_name: values.company_name?.trim(),
     phone: values.phone?.trim() || undefined,
-    cities: splitCsv(values.cities),
-    ad_formats: splitCsv(values.ad_formats),
+    cities: cities as LeadCreateInput["cities"],
+    ad_formats: adFormats as LeadCreateInput["ad_formats"],
     duration: values.duration?.trim() || undefined,
     budget_range: (values.budget_range?.trim() || undefined) as LeadCreateInput["budget_range"],
     additional_info: values.additional_info?.trim() || undefined,
