@@ -15,6 +15,9 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
+      # Pinned to 0.34.5 across the workspace; hold off on 0.35+ for now.
+      - dependency-name: "sharp"
+        versions: [">=0.35.0"]
     groups:
       npm-minor-patch:
         patterns: ["*"]
