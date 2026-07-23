@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { InteractionManager } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
+import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
@@ -49,7 +50,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <RootNavigator ready={appReady} />
+        <AppErrorBoundary>
+          <RootNavigator ready={appReady} />
+        </AppErrorBoundary>
       </ThemeProvider>
     </SafeAreaProvider>
   )
