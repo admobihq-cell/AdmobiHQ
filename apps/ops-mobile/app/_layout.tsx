@@ -13,7 +13,11 @@ import { getPrimaryEmail, isOpsStaffEmail } from "@/lib/auth"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 
+import { useOpsPushNotifications } from "@/lib/use-ops-push"
+import { configurePushNotificationHandler } from "@/lib/push-notifications"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
+
+configurePushNotificationHandler()
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
@@ -70,6 +74,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     user?.primaryEmailAddressId,
   )
   const isStaff = isOpsStaffEmail(email)
+
+  useOpsPushNotifications(Boolean(isSignedIn && isStaff))
 
   const inAuthGroup = segments[0] === "sign-in"
   const inCustomerGroup = segments[0] === "(customer)"
