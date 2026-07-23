@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { useTheme } from "@/lib/theme/provider"
 import { type ThemeOption } from "@/lib/theme/palettes"
@@ -60,9 +60,11 @@ export function ThemeSettingsSection() {
           )
         })}
       </View>
-      <Text style={[styles.hotkeyHint, { color: colors.mutedForeground }]}>
-        On web, press D to toggle light and dark.
-      </Text>
+      {Platform.OS === "web" ? (
+        <Text style={[styles.hotkeyHint, { color: colors.mutedForeground }]}>
+          On web, press D to toggle light and dark.
+        </Text>
+      ) : null}
     </View>
   )
 }

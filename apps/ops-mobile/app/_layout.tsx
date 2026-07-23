@@ -4,14 +4,16 @@ import { Stack, useRouter, useSegments } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import { useEffect, useRef, useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, useColorScheme, View } from "react-native"
 import Animated, { FadeIn } from "react-native-reanimated"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
+import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { LoadingScreen } from "@/components/LoadingScreen"
 import { getPrimaryEmail, isOpsStaffEmail } from "@/lib/auth"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
+import { darkColors, lightColors } from "@/lib/theme/palettes"
 
 import { useOpsPushNotifications } from "@/lib/use-ops-push"
 import { configurePushNotificationHandler } from "@/lib/push-notifications"
@@ -24,14 +26,21 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 })
 
 function MissingConfigScreen({ message }: { message: string }) {
+  const scheme = useColorScheme()
+  const colors = scheme === "dark" ? darkColors : lightColors
+
   useEffect(() => {
     void SplashScreen.hideAsync()
   }, [])
 
   return (
-    <View style={configStyles.container}>
-      <Text style={configStyles.title}>Configuration required</Text>
-      <Text style={configStyles.body}>{message}</Text>
+    <View style={[configStyles.container, { backgroundColor: colors.bg }]}>
+      <Text style={[configStyles.title, { color: colors.text }]}>
+        Configuration required
+      </Text>
+      <Text style={[configStyles.body, { color: colors.mutedForeground }]}>
+        {message}
+      </Text>
     </View>
   )
 }
@@ -40,19 +49,16 @@ const configStyles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "#FAF9F7",
     paddingHorizontal: 24,
     gap: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#3A3834",
   },
   body: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#6B6760",
   },
 })
 
@@ -197,9 +203,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
-          <RootNavigator />
-        </ClerkProvider>
+        <AppErrorBoundary>
+          <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
+            <RootNavigator />
+          </ClerkProvider>
+        </AppErrorBoundary>
       </ThemeProvider>
     </SafeAreaProvider>
   )

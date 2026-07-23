@@ -3,7 +3,7 @@ import Constants from "expo-constants"
 import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { useMemo } from "react"
-import { ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 import { FileText, LogOut, Mail, Map, Person } from "@/components/icons"
@@ -60,6 +60,17 @@ export default function MoreScreen() {
   }, [client])
 
   const version = Constants.expoConfig?.version ?? "0.0.1"
+
+  const handleSignOut = () => {
+    Alert.alert("Sign out", "You'll need to sign in again to access the ops console.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign out",
+        style: "destructive",
+        onPress: () => void signOut(),
+      },
+    ])
+  }
 
   const styles = useMemo(
     () =>
@@ -204,7 +215,7 @@ export default function MoreScreen() {
             icon={LogOut}
             label="Sign out"
             description="End your ops session"
-            onPress={() => void signOut()}
+            onPress={handleSignOut}
             destructive
             showChevron={false}
           />

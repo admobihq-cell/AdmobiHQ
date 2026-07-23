@@ -174,9 +174,11 @@ export default function DashboardScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true)
-    refetch()
-    refetchRecent()
-    setRefreshing(false)
+    try {
+      await Promise.all([refetch(), refetchRecent()])
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   return (

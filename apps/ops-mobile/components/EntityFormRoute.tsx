@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { View } from "react-native"
+import { Text, View } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 
 import { AppLoader } from "@/components/app/app-loader"
@@ -7,7 +7,7 @@ import { EntityFormScreen } from "@/components/EntityFormScreen"
 import { getEntityFormConfig, type EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { useOpsClient, API_URL } from "@/lib/ops-client"
-import { spacing, useThemedStyles } from "@/lib/theme"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type EntityFormRouteProps = {
   entity: EntityKey
@@ -34,6 +34,16 @@ export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
       backgroundColor: c.bg,
       padding: spacing.lg,
     },
+    errorTitle: {
+      ...typography.section,
+      color: c.text,
+      marginBottom: spacing.xs,
+    },
+    errorBody: {
+      ...typography.body,
+      color: c.mutedForeground,
+      textAlign: "center" as const,
+    },
   }))
 
   useEffect(() => {
@@ -57,7 +67,14 @@ export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
   }, [mode, config, client, id])
 
   if (!config) {
-    return null
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorTitle}>Screen not found</Text>
+        <Text style={styles.errorBody}>
+          {`"${entity}" isn't a recognized record type. Go back and try again.`}
+        </Text>
+      </View>
+    )
   }
 
   if (loading || initialValues == null) {
