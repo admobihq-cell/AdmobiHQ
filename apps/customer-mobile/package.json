@@ -31,7 +31,7 @@
     "@workspace/geo": "*",
     "expo": "~54.0.35",
     "expo-auth-session": "~7.0.11",
-    "expo-clipboard": "~8.0.8",
+    "expo-clipboard": "~57.0.1",
     "expo-constants": "~18.0.13",
     "expo-crypto": "~15.0.9",
     "expo-dev-client": "~6.0.20",
