@@ -154,13 +154,15 @@ Apps built with the `preview` profile listen on the **`preview`** channel:
 
 ```powershell
 cd apps\customer-mobile
-npx eas-cli update --channel preview --message "Describe the change"
+npx eas-cli update --channel preview --environment preview --message "Describe the change"
 
 cd apps\ops-mobile
-npx eas-cli update --channel preview --message "Describe the change"
+npx eas-cli update --channel preview --environment preview --message "Describe the change"
 ```
 
-Or use workspace scripts:
+**Important:** Always pass `--environment preview` (or `production`) when publishing OTA from a dev machine. Without it, Expo bundles your local `.env.local` values — e.g. `http://192.168.x.x:3003` — into the update, and preview APKs on team phones will stop reaching the deployed API.
+
+Or use workspace scripts (they include `--environment`):
 
 ```bash
 npm run update:preview -w customer-mobile

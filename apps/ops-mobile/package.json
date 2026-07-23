@@ -21,8 +21,8 @@
     "prebuild:android": "expo prebuild --platform android --clean",
     "build:android:preview": "npx eas-cli build --platform android --profile preview --non-interactive",
     "build:android:production": "npx eas-cli build --platform android --profile production --non-interactive",
-    "update:preview": "npx eas-cli update --channel preview --non-interactive",
-    "update:production": "npx eas-cli update --channel production --non-interactive"
+    "update:preview": "npx eas-cli update --channel preview --environment preview --non-interactive --auto",
+    "update:production": "npx eas-cli update --channel production --environment production --non-interactive --auto"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.42",
