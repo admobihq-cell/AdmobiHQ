@@ -136,7 +136,7 @@ Copy `.env.example` → `apps/web/.env.local` and fill from Infisical dashboard.
 | `NEXT_PUBLIC_SERVER_URL` | Admin links, metadata | `http://localhost:3000` locally |
 | `NEXT_PUBLIC_API_URL` | Marketing forms → API | `http://localhost:3003` locally |
 | `BLOB_READ_WRITE_TOKEN` | Media uploads in `/admin` | Optional locally; needed for real uploads |
-| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL` | Form confirmation emails | Set on **api** app (not web) |
+| `resend_api_key`, `SENDER_EMAIL`, `ADMIN_EMAIL` | Form confirmation emails | Set on **api** app (not web) |
 | `API_CORS_ORIGINS` | Cross-origin API access | Set on **api** app |
 | `TEST_RECIPIENT_EMAIL` | Dev email redirect | Optional |
 | `API_KEY_PEXELS` | Stock image search in admin | Optional |
@@ -164,7 +164,7 @@ Use the **same names** as `.env.example` (values can come from Infisical dev or 
 | `PAYLOAD_DATABASE_URL` | No | Only if you split CMS DB in staging |
 | `BLOB_READ_WRITE_TOKEN` | No | Omit if you do not need Blob plugin paths in CI build |
 | `API_KEY_PEXELS` | No | Admin image search only |
-| `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | api | Form emails; not required for build |
+| `resend_api_key`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `TEST_RECIPIENT_EMAIL` | api | Form emails; not required for build |
 | `REDIS_URL` | api | Email queue; not required for build |
 | `API_CORS_ORIGINS` | api | CORS allowlist |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | api + ops + mobile | Clerk |
@@ -382,7 +382,7 @@ npm run build -w web
 | **Form saves fail** | API running on `:3003`? Check `NEXT_PUBLIC_API_URL`, `npm run env:check -w api` |
 | **Ops CRUD fails** | API + Clerk keys on api Vercel project; `NEXT_PUBLIC_API_URL` on ops build |
 | **CORS errors on forms** | `API_CORS_ORIGINS` includes `http://localhost:3000` |
-| **Emails not sending** | `RESEND_API_KEY` on **api** app, not web |
+| **Emails not sending** | `resend_api_key` on **api** app, not web |
 | **Before opening a PR** | `typecheck`, `lint`, `build -w web` |
 | **Deploy to Vercel** | Set env vars; run `payload:migrate` against production DB once per schema release |
 
@@ -426,7 +426,7 @@ See [API.md](./API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 | **Form saves fail** | API running on `:3003`? Check `NEXT_PUBLIC_API_URL`, `npm run env:check -w api` |
 | **Ops CRUD fails** | API running; `NEXT_PUBLIC_API_URL` set on ops; Clerk on api project |
 | **CORS errors on forms** | `API_CORS_ORIGINS` includes `http://localhost:3000` on api |
-| **Emails not sending** | `RESEND_API_KEY` on **api** app, not web |
+| **Emails not sending** | `resend_api_key` on **api** app, not web |
 | **Media upload fails in admin** | Set `BLOB_READ_WRITE_TOKEN` on web |
 
 ---

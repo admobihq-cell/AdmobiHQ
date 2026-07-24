@@ -9,7 +9,7 @@ const keys = [
   "NEXT_PUBLIC_API_URL",
   "BLOB_READ_WRITE_TOKEN",
   "API_KEY_PEXELS",
-  "RESEND_API_KEY",
+  "resend_api_key",
   "SENDER_EMAIL",
   "ADMIN_EMAIL",
   "TEST_RECIPIENT_EMAIL",

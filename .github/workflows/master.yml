@@ -19,7 +19,7 @@ jobs:
       PAYLOAD_DATABASE_URL: ${{ secrets.PAYLOAD_DATABASE_URL }}
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
       API_KEY_PEXELS: ${{ secrets.API_KEY_PEXELS }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      resend_api_key: ${{ secrets.RESEND_API_KEY }}
       SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
       ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
       TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}

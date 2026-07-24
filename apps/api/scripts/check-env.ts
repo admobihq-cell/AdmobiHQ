@@ -7,7 +7,7 @@ const required = [
 const optional = [
   "NEXT_PUBLIC_API_URL",
   "API_CORS_ORIGINS",
-  "RESEND_API_KEY",
+  "resend_api_key",
   "SENDER_EMAIL",
   "ADMIN_EMAIL",
 ] as const
