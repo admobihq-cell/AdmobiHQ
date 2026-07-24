@@ -153,7 +153,7 @@ After first prod deploy: run Payload migrate + seed once if CMS is empty ([BLOG-
 - Production: `api.admobihq.com`
 - Staging: `api.staging.admobihq.com` → **`staging` branch**
 
-**API env vars:** `DATABASE_URL`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_API_URL`, `API_CORS_ORIGINS`, `RESEND_API_KEY`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `REDIS_URL`.
+**API env vars:** `DATABASE_URL`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_API_URL`, `API_CORS_ORIGINS`, `resend_api_key`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `REDIS_URL`.
 
 Smoke check: `GET /v1/health` → `{ "ok": true, "service": "admobi-api", "version": "v1" }`.
 
