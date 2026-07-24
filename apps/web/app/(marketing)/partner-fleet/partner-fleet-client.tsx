@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
+import { Check, ClipboardList, Cpu, Handshake, Smartphone, Wallet } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -16,6 +16,7 @@ import { fleetLeadSchema } from "@/lib/validation/lead-schemas"
 import { publicApiFetch } from "@workspace/ops-api-client"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { fleetFaqItems } from "@/lib/seo/faq-data"
@@ -146,16 +147,10 @@ export default function PartnerFleetClient() {
     if (result.data.success) setSubmitted(true)
   }
 
-  if (submitted) {
-    return (
-      <div className="min-h-[60vh] border-b border-border py-14 sm:py-20">
-        <Container className="max-w-3xl space-y-4">
-          <h1 className="text-foreground text-xl font-semibold leading-snug sm:text-2xl">
-            Thanks. We&apos;ll send over the partnership deck and follow up within 48 hours.
-          </h1>
-        </Container>
-      </div>
-    )
+  function handleReset() {
+    form.reset()
+    setSubmitError(null)
+    setSubmitted(false)
   }
 
   return (
@@ -254,6 +249,16 @@ export default function PartnerFleetClient() {
             </p>
           </div>
 
+          {submitted ? (
+            <div className="mt-10">
+              <SubmissionSuccess
+                icon={Handshake}
+                title="Deck's on its way"
+                message="We'll send over the partnership deck and follow up within 48 hours with onboarding steps and commercial terms sized to your fleet."
+                onReset={handleReset}
+              />
+            </div>
+          ) : (
           <form className="mt-10 max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-2">
               <Label htmlFor="pf-co">Fleet or company name *</Label>
@@ -430,6 +435,7 @@ export default function PartnerFleetClient() {
               {formState.isSubmitting ? "Sending…" : "Request partnership deck"}
             </Button>
           </form>
+          )}
 
           <p className="text-muted-foreground mt-10 max-w-2xl text-xs leading-relaxed">
             Admobi contracts with licensed fleet partners. Final economics sit in your signed agreement, not on this

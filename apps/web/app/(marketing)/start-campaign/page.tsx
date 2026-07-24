@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Rocket } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -15,6 +16,7 @@ import { campaignLeadSchema } from "@/lib/validation/lead-schemas"
 import { publicApiFetch } from "@workspace/ops-api-client"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { Container } from "@/components/landing/container"
 
 const selectClass =
@@ -104,19 +106,10 @@ export default function StartCampaignPage() {
     if (result.data.success) setSubmitted(true)
   }
 
-  if (submitted) {
-    return (
-      <div className="min-h-[60vh] border-b border-border py-14 sm:py-20">
-        <Container className="max-w-3xl space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-            We&apos;ve got your brief.
-          </h1>
-          <p className="text-muted-foreground max-w-[55ch] text-base leading-relaxed">
-            Someone from Admobi will reach out within 24 hours.
-          </p>
-        </Container>
-      </div>
-    )
+  function handleReset() {
+    form.reset()
+    setSubmitError(null)
+    setSubmitted(false)
   }
 
   return (
@@ -139,6 +132,14 @@ export default function StartCampaignPage() {
           </div>
         </div>
 
+        {submitted ? (
+          <SubmissionSuccess
+            icon={Rocket}
+            title="Brief received"
+            message="Someone from Admobi will reach out within 24 hours with availability, pricing, and a flight plan tailored to your brief."
+            onReset={handleReset}
+          />
+        ) : (
         <form className="max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-2">
               <Label htmlFor="sc-name">Your name *</Label>
@@ -298,6 +299,7 @@ export default function StartCampaignPage() {
               {isSubmitting ? "Sending…" : "Send brief"}
             </Button>
           </form>
+        )}
 
         <section className="mt-14 max-w-2xl space-y-8 sm:mt-16">
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
