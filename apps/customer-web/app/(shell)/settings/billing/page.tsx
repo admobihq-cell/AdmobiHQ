@@ -1,12 +1,7 @@
-import { PlaceholderPanel } from "@/components/placeholder-panel"
+import { WalletView } from "@/components/wallet/wallet-view"
 
-export const metadata = { title: "Billing" }
+export const metadata = { title: "Wallet" }
 
 export default function BillingSettingsPage() {
-  return (
-    <PlaceholderPanel
-      title="Billing"
-      body="View invoices, update payment methods, and download receipts for your Admobi campaigns."
-    />
-  )
+  return <WalletView />
 }
