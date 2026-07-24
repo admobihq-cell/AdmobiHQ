@@ -48,7 +48,7 @@ Shared typed client: [`packages/ops-api-client`](../packages/ops-api-client/src/
 | `CLERK_SECRET_KEY` | Yes | Validates admin routes |
 | `NEXT_PUBLIC_API_URL` | Yes | Canonical API origin (no trailing slash) |
 | `API_CORS_ORIGINS` | Yes | Comma-separated allowed browser/Expo origins |
-| `RESEND_API_KEY` | For emails | Moved from web |
+| `resend_api_key` | For emails | Moved from web |
 | `SENDER_EMAIL`, `ADMIN_EMAIL` | For emails | Form confirmation + alerts |
 | `REDIS_URL` | Optional | Bull email queue |
 
