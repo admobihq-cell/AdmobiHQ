@@ -16,7 +16,6 @@ import {
   Warning,
   type AppIcon,
 } from "@/components/icons"
-import { BackLink } from "@/components/settings/back-link"
 import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import { formatCurrency, WALLET_CARD_BG, WALLET_CARD_FG } from "@/lib/wallet"
@@ -221,8 +220,6 @@ export default function BillingSettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <BackLink />
-
         <View style={styles.hero}>
           <Text style={styles.eyebrow}>Workspace</Text>
           <Text style={styles.title}>Wallet</Text>
