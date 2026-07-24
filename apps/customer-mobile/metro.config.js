@@ -1,4 +1,6 @@
 const { getDefaultConfig } = require("expo/metro-config")
+const { FileStore } = require("metro-cache")
+const os = require("node:os")
 const path = require("node:path")
 
 const projectRoot = __dirname
@@ -8,6 +10,15 @@ const geoPackage = path.resolve(workspaceRoot, "packages/geo")
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(projectRoot)
+
+// Metro's default cache dir (os.tmpdir()/metro-cache) is shared across every
+// project on the machine. Give this app its own so concurrent builds of
+// ops-mobile and customer-mobile don't race each other's cache-clear (EPERM).
+config.cacheStores = [
+  new FileStore({
+    root: path.join(os.tmpdir(), "metro-cache-customer-mobile"),
+  }),
+]
 
 // Only watch packages this app imports — not the whole monorepo (avoids
 // ENOENT spam from sibling Next.js apps writing under apps/*/.next).
