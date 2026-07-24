@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Campaigns, Eye, Map, Radio, TrendingUp } from "@/components/icons"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { StatCard } from "@/components/ui/stat-card"
+import { WalletPreviewCard } from "@/components/wallet/wallet-preview-card"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
 function getGreeting(): string {
@@ -174,6 +175,8 @@ export default function OverviewScreen() {
           your Admobi account here.
         </Text>
       </View>
+
+      <WalletPreviewCard />
 
       <View style={styles.statsGrid}>
         <StatCard icon={Radio} label="Active campaigns" value="3" hint="+1 this week" />

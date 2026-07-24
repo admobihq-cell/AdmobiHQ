@@ -47,4 +47,27 @@ export function useOtaUpdates() {
   }, [])
 }
 
+export type ManualUpdateCheckResult =
+  | { status: "unsupported" }
+  | { status: "up-to-date" }
+  | { status: "downloaded" }
+  | { status: "error"; message: string }
+
+export async function checkForUpdateManually(): Promise<ManualUpdateCheckResult> {
+  if (__DEV__ || isExpoGo) return { status: "unsupported" }
+
+  try {
+    const update = await Updates.checkForUpdateAsync()
+    if (!update.isAvailable) return { status: "up-to-date" }
+
+    await Updates.fetchUpdateAsync()
+    return { status: "downloaded" }
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Unknown error",
+    }
+  }
+}
+
 export { isExpoGo }

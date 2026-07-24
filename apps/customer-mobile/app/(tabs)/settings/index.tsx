@@ -1,23 +1,57 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import * as Updates from "expo-updates"
 
 import {
   Bell,
   Globe,
   HelpCircle,
   Person,
+  RefreshCcw,
   Shield,
   Wallet,
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
+import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_APP_URL } from "@/lib/env"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
 export default function SettingsScreen() {
   const colors = useThemeColors()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+
+  async function handleCheckForUpdates() {
+    if (checkingUpdate) return
+    setCheckingUpdate(true)
+    const result = await checkForUpdateManually()
+    setCheckingUpdate(false)
+
+    switch (result.status) {
+      case "unsupported":
+        Alert.alert("Not available", "Update checks aren't available in this build.")
+        return
+      case "up-to-date":
+        Alert.alert("You're up to date", "You're running the latest version of the app.")
+        return
+      case "error":
+        Alert.alert("Couldn't check for updates", "Check your connection and try again.")
+        return
+      case "downloaded":
+        Alert.alert(
+          "Update ready",
+          "A new version has been downloaded. Restart now to apply it?",
+          [
+            { text: "Later", style: "cancel" },
+            { text: "Restart now", onPress: () => void Updates.reloadAsync() },
+          ],
+        )
+    }
+  }
 
   const styles = useMemo(
     () =>
@@ -107,7 +141,7 @@ export default function SettingsScreen() {
   return (
     <ScrollView
       style={[styles.scroll, { backgroundColor: colors.bg }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
@@ -177,6 +211,13 @@ export default function SettingsScreen() {
             label="Open web app"
             description={EXPO_PUBLIC_APP_URL ?? "http://localhost:3002"}
             onPress={() => router.push("/settings/web-app")}
+          />
+          <View style={styles.divider} />
+          <SettingsRow
+            icon={RefreshCcw}
+            label="Check for updates"
+            description={checkingUpdate ? "Checking…" : "Get the latest version now"}
+            onPress={handleCheckForUpdates}
           />
         </View>
       </View>

@@ -5,7 +5,7 @@ import {
   Car,
   LayoutDashboard,
   Megaphone,
-  MoreHorizontal,
+  Person,
   Truck,
 } from "@/components/icons"
 
@@ -90,13 +90,13 @@ export default function OpsLayout() {
         }}
       />
       <Tabs.Screen
-        name="more"
+        name="profile"
         options={{
-          title: "More",
+          title: "Profile",
           headerShown: false,
-          tabBarLabel: ({ color }) => <TabLabel label="More" color={color} />,
+          tabBarLabel: ({ color }) => <TabLabel label="Profile" color={color} />,
           tabBarIcon: ({ color, size }) => (
-            <MoreHorizontal color={color} size={size - 2} strokeWidth={2.25} />
+            <Person color={color} size={size - 2} strokeWidth={2.25} />
           ),
         }}
       />
