@@ -16,8 +16,10 @@ import {
   Warning,
   type AppIcon,
 } from "@/components/icons"
+import { BackLink } from "@/components/settings/back-link"
 import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { formatCurrency, WALLET_CARD_BG, WALLET_CARD_FG } from "@/lib/wallet"
 
 type Transaction = {
   id: string
@@ -63,15 +65,6 @@ const ACTIONS: Array<{ key: string; label: string; icon: AppIcon; body: string }
 ]
 
 const LOW_BALANCE_THRESHOLD = 20000
-
-// Deep, muted rust for the wallet hero card — deliberately darker/less
-// saturated than c.primary so it reads as calm rather than a bright pop.
-const WALLET_CARD_BG = "#6B3018"
-const WALLET_CARD_FG = "#FAF9F7"
-
-function formatCurrency(value: number) {
-  return `KES ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`
-}
 
 export default function BillingSettingsScreen() {
   const colors = useThemeColors()
@@ -228,6 +221,8 @@ export default function BillingSettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <BackLink />
+
         <View style={styles.hero}>
           <Text style={styles.eyebrow}>Workspace</Text>
           <Text style={styles.title}>Wallet</Text>

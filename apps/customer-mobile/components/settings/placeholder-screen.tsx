@@ -1,5 +1,7 @@
-import { Pressable, Text, View } from "react-native"
+import { Pressable, ScrollView, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { BackLink } from "@/components/settings/back-link"
 import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type PlaceholderScreenProps = {
@@ -15,11 +17,16 @@ export function PlaceholderScreen({
   actionLabel,
   onAction,
 }: PlaceholderScreenProps) {
+  const insets = useSafeAreaInsets()
+
   const styles = useThemedStyles((c) => ({
-    container: {
+    scroll: {
       flex: 1,
       backgroundColor: c.bg,
+    },
+    container: {
       padding: spacing.lg,
+      gap: spacing.sm,
     },
     card: {
       padding: spacing.lg,
@@ -64,7 +71,12 @@ export function PlaceholderScreen({
   }))
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <BackLink />
       <View style={styles.card}>
         <Text style={styles.badge}>Coming soon</Text>
         <Text style={styles.title}>{title}</Text>
@@ -79,6 +91,6 @@ export function PlaceholderScreen({
           </Pressable>
         ) : null}
       </View>
-    </View>
+    </ScrollView>
   )
 }

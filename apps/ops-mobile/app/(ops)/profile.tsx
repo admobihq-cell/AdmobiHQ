@@ -1,21 +1,23 @@
 import { useAuth, useUser } from "@clerk/clerk-expo"
 import Constants from "expo-constants"
 import { useRouter } from "expo-router"
+import * as Updates from "expo-updates"
 import { useEffect, useState } from "react"
 import { useMemo } from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { DateRangeKey } from "@workspace/ops-contracts"
-import { Bell, FileText, LogOut, Mail, Map, Person, Wallet } from "@/components/icons"
+import { Bell, FileText, LogOut, Mail, Map, Person, RefreshCcw, Wallet } from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
 import { getPrimaryEmail } from "@/lib/auth"
+import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { API_URL } from "@/lib/ops-client"
 import { useOpsClient } from "@/lib/ops-client"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
-export default function MoreScreen() {
+export default function ProfileScreen() {
   const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()
@@ -60,6 +62,36 @@ export default function MoreScreen() {
   }, [client])
 
   const version = Constants.expoConfig?.version ?? "0.0.1"
+
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+
+  async function handleCheckForUpdates() {
+    if (checkingUpdate) return
+    setCheckingUpdate(true)
+    const result = await checkForUpdateManually()
+    setCheckingUpdate(false)
+
+    switch (result.status) {
+      case "unsupported":
+        Alert.alert("Not available", "Update checks aren't available in this build.")
+        return
+      case "up-to-date":
+        Alert.alert("You're up to date", "You're running the latest version of the app.")
+        return
+      case "error":
+        Alert.alert("Couldn't check for updates", "Check your connection and try again.")
+        return
+      case "downloaded":
+        Alert.alert(
+          "Update ready",
+          "A new version has been downloaded. Restart now to apply it?",
+          [
+            { text: "Later", style: "cancel" },
+            { text: "Restart now", onPress: () => void Updates.reloadAsync() },
+          ],
+        )
+    }
+  }
 
   const handleSignOut = () => {
     Alert.alert("Sign out", "You'll need to sign in again to access the ops console.", [
@@ -231,6 +263,18 @@ export default function MoreScreen() {
       </View>
 
       <ThemeSettingsSection />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>App</Text>
+        <View style={styles.group}>
+          <SettingsRow
+            icon={RefreshCcw}
+            label="Check for updates"
+            description={checkingUpdate ? "Checking…" : "Get the latest version now"}
+            onPress={handleCheckForUpdates}
+          />
+        </View>
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Account</Text>

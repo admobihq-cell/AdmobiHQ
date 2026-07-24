@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 
 import { Bell, Gift, Megaphone, Send, Warning, type AppIcon } from "@/components/icons"
+import { BackLink } from "@/components/settings/back-link"
 import {
   getNotificationPermissionStatus,
   NOTIFICATION_STYLES,
@@ -193,6 +194,8 @@ export default function NotificationsSettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <BackLink />
+
         <View style={styles.hero}>
           <Text style={styles.title}>Preview notifications</Text>
           <Text style={styles.body}>
