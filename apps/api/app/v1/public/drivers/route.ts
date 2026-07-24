@@ -39,6 +39,14 @@ export async function POST(req: Request) {
 
     console.log("[Admobi API drivers] Saved:", parsed.data)
 
+    // Push notifies ops staff independently of email — must not be
+    // skipped just because Resend fails (e.g. invalid API key).
+    void notifyOpsStaffAlert({
+      type: "driver",
+      entityId: data.id,
+      submitterName: parsed.data.name,
+    })
+
     // Queue confirmation and admin emails (fire-and-forget)
     try {
       const driverHtml = await renderTemplate(DriverConfirmation, {
@@ -67,12 +75,6 @@ export async function POST(req: Request) {
         `New Driver Application: ${parsed.data.name}`,
         adminDriverHtml
       )
-
-      void notifyOpsStaffAlert({
-        type: "driver",
-        entityId: data.id,
-        submitterName: parsed.data.name,
-      })
 
       console.log("[Admobi API drivers] Driver emails queued")
     } catch (emailError) {
