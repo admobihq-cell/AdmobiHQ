@@ -6,7 +6,7 @@ import { useMemo } from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { DateRangeKey } from "@workspace/ops-contracts"
-import { FileText, LogOut, Mail, Map, Person } from "@/components/icons"
+import { Bell, FileText, LogOut, Mail, Map, Person } from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
@@ -202,6 +202,18 @@ export default function MoreScreen() {
             label="Media kit"
             description={`${counts.mediaKit} requests`}
             onPress={() => router.push("/(ops)/media-kit")}
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Preferences</Text>
+        <View style={styles.group}>
+          <SettingsRow
+            icon={Bell}
+            label="Notifications"
+            description="Preview alert styles"
+            onPress={() => router.push("/(ops)/notifications")}
           />
         </View>
       </View>
