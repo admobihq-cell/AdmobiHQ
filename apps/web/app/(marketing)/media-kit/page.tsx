@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { FileDown } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -14,6 +15,7 @@ import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 import { publicApiFetch } from "@workspace/ops-api-client"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { Container } from "@/components/landing/container"
 
 export default function MediaKitPage() {
@@ -23,6 +25,7 @@ export default function MediaKitPage() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<MediaKitInput>({
     resolver: zodResolver(mediaKitSchema),
@@ -42,6 +45,12 @@ export default function MediaKitPage() {
     if (result.data.success) setSubmitted(true)
   }
 
+  function handleReset() {
+    reset()
+    setSubmitError(null)
+    setSubmitted(false)
+  }
+
   return (
     <div className="border-b border-border py-12 sm:py-20">
       <Container className="max-w-2xl">
@@ -59,9 +68,14 @@ export default function MediaKitPage() {
         </p>
 
         {submitted ? (
-          <p className="text-foreground mt-10 text-base leading-relaxed" role="status">
-            Check your inbox for the downloadable media kit shortly.
-          </p>
+          <div className="mt-10">
+            <SubmissionSuccess
+              icon={FileDown}
+              title="Kit's in your inbox"
+              message="Check your inbox for the downloadable media kit — specs, reach data, and creative guidance ready to drop into your next brief."
+              onReset={handleReset}
+            />
+          </div>
         ) : (
           <form className="mt-10 grid max-w-md gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-2">

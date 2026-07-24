@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
+import { Car, Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -16,6 +16,7 @@ import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 import { publicApiFetch } from "@workspace/ops-api-client"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { driverFaqItems } from "@/lib/seo/faq-data"
@@ -107,7 +108,7 @@ export default function DriversClient() {
     },
   })
 
-  const { register, handleSubmit, formState } = form
+  const { register, handleSubmit, formState, reset } = form
   const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
 
   async function onSubmit(data: DriverJoinInput) {
@@ -121,6 +122,12 @@ export default function DriversClient() {
       return
     }
     if (result.data.success) setSubmitted(true)
+  }
+
+  function handleReset() {
+    reset()
+    setSubmitError(null)
+    setSubmitted(false)
   }
 
   return (
@@ -220,10 +227,14 @@ export default function DriversClient() {
           </div>
 
           {submitted ? (
-            <p className="text-foreground mt-10 max-w-xl text-base font-medium leading-relaxed" role="status">
-              We&apos;ve got your details. Someone from our driver team will call or WhatsApp you within 3
-              business days.
-            </p>
+            <div className="mt-10">
+              <SubmissionSuccess
+                icon={Car}
+                title="You're in the queue"
+                message="We've got your details. Someone from our driver team will call or WhatsApp you within 3 business days to confirm eligibility and schedule your install."
+                onReset={handleReset}
+              />
+            </div>
           ) : (
             <form className="mt-10 max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-2">

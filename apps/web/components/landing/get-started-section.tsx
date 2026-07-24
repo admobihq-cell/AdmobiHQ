@@ -4,6 +4,8 @@ import Link from "next/link"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
+import { Sparkles } from "lucide-react"
+
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -11,6 +13,7 @@ import { Label } from "@workspace/ui/components/label"
 import { publicApiFetch } from "@workspace/ops-api-client"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { SubmissionSuccess } from "@/components/forms/submission-success"
 
 import { Container } from "./container"
 
@@ -35,6 +38,12 @@ export function GetStartedSection() {
       return
     }
     setStatus("success")
+  }
+
+  function handleReset() {
+    setEmail("")
+    setErrorMessage(null)
+    setStatus("idle")
   }
 
   return (
@@ -84,51 +93,53 @@ export function GetStartedSection() {
           </div>
         </div>
 
-        <form
-          id="waitlist"
-          className="mt-14 max-w-xl scroll-mt-20 space-y-4 border-t border-border pt-10"
-          onSubmit={onNotify}
-          noValidate
-        >
-          <Label htmlFor="notify-email" className="text-foreground">
-            Stay updated on city launches and network news.
-          </Label>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-            <Input
-              id="notify-email"
-              type="email"
-              name="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={status === "loading" || status === "success"}
-              className="sm:min-w-0 sm:flex-1"
-              aria-invalid={!!errorMessage}
-              aria-describedby={errorMessage ? "notify-email-error" : undefined}
+        {status === "success" ? (
+          <div id="waitlist" className="mt-14 max-w-xl scroll-mt-20 border-t border-border pt-10">
+            <SubmissionSuccess
+              icon={Sparkles}
+              title="You're on the radar"
+              message="We'll only email when there's real network news — new cities, launches, or milestones worth knowing about. No noise in between."
+              onReset={handleReset}
             />
-            <Button
-              type="submit"
-              disabled={status === "loading" || status === "success"}
-              className="sm:shrink-0"
-            >
-              {status === "loading" ? "Sending…" : "Notify me"}
-            </Button>
           </div>
-          {errorMessage ? (
-            <ApiErrorBanner
-              message={errorMessage}
-              onDismiss={() => {
-                setErrorMessage(null)
-                setStatus("idle")
-              }}
-            />
-          ) : null}
-          {status === "success" ? (
-            <p className="text-foreground text-sm" role="status">
-              You are on the list. We will only email when we have real network news.
-            </p>
-          ) : null}
-        </form>
+        ) : (
+          <form
+            id="waitlist"
+            className="mt-14 max-w-xl scroll-mt-20 space-y-4 border-t border-border pt-10"
+            onSubmit={onNotify}
+            noValidate
+          >
+            <Label htmlFor="notify-email" className="text-foreground">
+              Stay updated on city launches and network news.
+            </Label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+              <Input
+                id="notify-email"
+                type="email"
+                name="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={status === "loading"}
+                className="sm:min-w-0 sm:flex-1"
+                aria-invalid={!!errorMessage}
+                aria-describedby={errorMessage ? "notify-email-error" : undefined}
+              />
+              <Button type="submit" disabled={status === "loading"} className="sm:shrink-0">
+                {status === "loading" ? "Sending…" : "Notify me"}
+              </Button>
+            </div>
+            {errorMessage ? (
+              <ApiErrorBanner
+                message={errorMessage}
+                onDismiss={() => {
+                  setErrorMessage(null)
+                  setStatus("idle")
+                }}
+              />
+            ) : null}
+          </form>
+        )}
       </Container>
     </section>
   )
