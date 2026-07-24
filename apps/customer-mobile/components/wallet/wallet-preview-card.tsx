@@ -46,22 +46,6 @@ export function WalletPreviewCard() {
       ...typography.caption,
       color: "rgba(250, 249, 247, 0.75)",
     },
-    footerRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "space-between" as const,
-      marginTop: spacing.xs,
-    },
-    detailsLink: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 2,
-    },
-    detailsLinkText: {
-      ...typography.caption,
-      color: WALLET_CARD_FG,
-      fontWeight: "700" as const,
-    },
   }))
 
   return (
@@ -79,19 +63,7 @@ export function WalletPreviewCard() {
         <ChevronRight color={WALLET_CARD_FG} size={18} />
       </View>
       <Text style={styles.balance}>{formatCurrency(PREVIEW_BALANCE)}</Text>
-      <View style={styles.footerRow}>
-        <Text style={styles.hint}>3 active campaigns · auto-reload off</Text>
-        <Pressable
-          onPress={() => router.push("/settings/billing")}
-          hitSlop={8}
-          style={styles.detailsLink}
-          accessibilityRole="button"
-          accessibilityLabel="See full wallet details"
-        >
-          <Text style={styles.detailsLinkText}>See full details</Text>
-          <ChevronRight color={WALLET_CARD_FG} size={14} />
-        </Pressable>
-      </View>
+      <Text style={styles.hint}>3 active campaigns · auto-reload off</Text>
     </Pressable>
   )
 }

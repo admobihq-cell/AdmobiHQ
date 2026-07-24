@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Bell, Car, Mail, Megaphone, Send, Warning, type AppIcon } from "@/components/icons"
 import {
@@ -20,6 +21,7 @@ const STYLE_ICONS: Record<string, AppIcon> = {
 
 export default function NotificationsTestScreen() {
   const colors = useThemeColors()
+  const insets = useSafeAreaInsets()
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(
     null,
   )
@@ -188,7 +190,10 @@ export default function NotificationsTestScreen() {
     <>
       <ScrollView
         style={styles.root}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
