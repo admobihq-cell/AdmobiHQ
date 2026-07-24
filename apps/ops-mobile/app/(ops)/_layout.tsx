@@ -122,6 +122,14 @@ export default function OpsLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          headerShown: false,
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }
