@@ -130,6 +130,14 @@ export default function OpsLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="finances"
+        options={{
+          title: "Finances",
+          headerShown: false,
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }

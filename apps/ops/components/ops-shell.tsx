@@ -12,6 +12,7 @@ import {
   Megaphone,
   Truck,
   Users,
+  Wallet,
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 
@@ -48,6 +49,7 @@ const navItems = [
   { href: "/leads", label: "Campaign Leads", icon: Megaphone },
   { href: "/fleet", label: "Fleet Partners", icon: Truck },
   { href: "/drivers", label: "Drivers", icon: Car },
+  { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/waitlist", label: "Waitlist", icon: Mail },
   { href: "/media-kit", label: "Media Kit", icon: FileText },
 ]
