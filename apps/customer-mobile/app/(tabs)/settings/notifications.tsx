@@ -1,9 +1,9 @@
 import { Stack } from "expo-router"
 import { useEffect, useState } from "react"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Bell, Gift, Megaphone, Send, Warning, type AppIcon } from "@/components/icons"
-import { BackLink } from "@/components/settings/back-link"
 import {
   getNotificationPermissionStatus,
   NOTIFICATION_STYLES,
@@ -22,6 +22,7 @@ const STYLE_ICONS: Record<string, AppIcon> = {
 
 export default function NotificationsSettingsScreen() {
   const colors = useThemeColors()
+  const insets = useSafeAreaInsets()
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(
     null,
   )
@@ -191,11 +192,9 @@ export default function NotificationsSettingsScreen() {
       <Stack.Screen options={{ title: "Notifications" }} />
       <ScrollView
         style={styles.root}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
         showsVerticalScrollIndicator={false}
       >
-        <BackLink />
-
         <View style={styles.hero}>
           <Text style={styles.title}>Preview notifications</Text>
           <Text style={styles.body}>
