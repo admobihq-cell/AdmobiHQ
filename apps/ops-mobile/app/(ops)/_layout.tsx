@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router"
 import { Text } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   Car,
   LayoutDashboard,
@@ -23,6 +24,7 @@ export default function OpsLayout() {
     tabBarActiveTintColor,
     tabBarInactiveTintColor,
   } = useNavigationTheme()
+  const insets = useSafeAreaInsets()
 
   return (
     <Tabs
@@ -30,8 +32,8 @@ export default function OpsLayout() {
         ...screenOptions,
         tabBarStyle: {
           ...tabBarStyle,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 6,
         },
         tabBarActiveTintColor,
