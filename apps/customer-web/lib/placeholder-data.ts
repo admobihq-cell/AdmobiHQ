@@ -70,6 +70,61 @@ export const RECENT_ACTIVITY = [
   },
 ] as const
 
+export type WalletTransaction = {
+  id: string
+  label: string
+  meta: string
+  amount: number
+  kind: "credit" | "debit"
+}
+
+export const WALLET_BALANCE = 18400
+export const WALLET_LOW_BALANCE_THRESHOLD = 20000
+
+export const WALLET_TRANSACTIONS: WalletTransaction[] = [
+  {
+    id: "1",
+    label: "Wallet top-up · M-Pesa",
+    meta: "Today, 9:14 AM",
+    amount: 50000,
+    kind: "credit",
+  },
+  {
+    id: "2",
+    label: "Nairobi CBD Summer — daily spend",
+    meta: "Today",
+    amount: 6200,
+    kind: "debit",
+  },
+  {
+    id: "3",
+    label: "Westlands Retail Push — daily spend",
+    meta: "Yesterday",
+    amount: 4800,
+    kind: "debit",
+  },
+  {
+    id: "4",
+    label: "Wallet top-up · Visa •• 4821",
+    meta: "3 days ago",
+    amount: 30000,
+    kind: "credit",
+  },
+  {
+    id: "5",
+    label: "Karen Estate Awareness — daily spend",
+    meta: "4 days ago",
+    amount: 3100,
+    kind: "debit",
+  },
+]
+
+export const SPEND_BY_CAMPAIGN = [
+  { id: "1", name: "Nairobi CBD Summer", spend: 62400 },
+  { id: "2", name: "Westlands Retail Push", spend: 41200 },
+  { id: "3", name: "Karen Estate Awareness", spend: 12300 },
+]
+
 export const OVERVIEW_STATS = [
   {
     label: "Active campaigns",
