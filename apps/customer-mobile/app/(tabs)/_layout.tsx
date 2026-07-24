@@ -86,6 +86,16 @@ export default function TabsLayout() {
             <Settings color={color} size={size - 2} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Deep links into this tab's stack (e.g. the wallet card jumping
+            // straight to /settings/billing from the Overview tab) leave
+            // billing as the remembered screen. Always reset to the settings
+            // list when the tab icon itself is pressed.
+            e.preventDefault()
+            navigation.navigate("settings", { screen: "index" })
+          },
+        })}
       />
     </Tabs>
   )
