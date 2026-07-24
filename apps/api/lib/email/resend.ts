@@ -2,7 +2,7 @@ import { Resend } from "resend"
 
 import { getSenderEmail, resolveRecipients } from "@/lib/email/config"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.resend_api_key)
 
 export async function sendEmail({
   to,
