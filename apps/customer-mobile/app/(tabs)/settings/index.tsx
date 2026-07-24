@@ -4,11 +4,11 @@ import { ScrollView, StyleSheet, Text, View } from "react-native"
 
 import {
   Bell,
-  Card,
   Globe,
   HelpCircle,
   Person,
   Shield,
+  Wallet,
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
@@ -152,9 +152,9 @@ export default function SettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsRow
-            icon={Card}
-            label="Billing"
-            description="Invoices and payment methods"
+            icon={Wallet}
+            label="Wallet & billing"
+            description="Balance, top-ups, and invoices"
             onPress={() => router.push("/settings/billing")}
           />
         </View>

@@ -1,4 +1,4 @@
-import { Car, FileText, Mail, Megaphone, Truck, Users } from "lucide-react"
+import { Car, FileText, Mail, Megaphone, Truck, Users, Wallet } from "lucide-react"
 
 import { ModuleCard } from "@/components/ui/module-card"
 import { SectionHeading } from "@/components/ui/section-heading"
@@ -22,6 +22,12 @@ const MODULES = [
     label: "Drivers",
     description: "Monitor driver signups and city distribution.",
     icon: Car,
+  },
+  {
+    href: "/finances",
+    label: "Finances",
+    description: "Platform wallet, campaign top-ups, and driver payouts.",
+    icon: Wallet,
   },
   {
     href: "/waitlist",

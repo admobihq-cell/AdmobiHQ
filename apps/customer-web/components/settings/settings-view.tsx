@@ -1,10 +1,10 @@
 import type { ReactNode } from "react"
 import {
   Bell,
-  CreditCard,
   HelpCircle,
   Shield,
   UserCircle,
+  Wallet,
 } from "lucide-react"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { Card, CardContent } from "@workspace/ui/components/card"
@@ -55,9 +55,9 @@ export function SettingsView() {
         <Separator />
         <SettingsRow
           href="/settings/billing"
-          icon={CreditCard}
-          label="Billing"
-          description="Invoices and payment methods"
+          icon={Wallet}
+          label="Wallet & billing"
+          description="Balance, top-ups, and invoices"
         />
       </SettingsSection>
 
