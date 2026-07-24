@@ -64,6 +64,11 @@ const ACTIONS: Array<{ key: string; label: string; icon: AppIcon; body: string }
 
 const LOW_BALANCE_THRESHOLD = 20000
 
+// Deep, muted rust for the wallet hero card — deliberately darker/less
+// saturated than c.primary so it reads as calm rather than a bright pop.
+const WALLET_CARD_BG = "#6B3018"
+const WALLET_CARD_FG = "#FAF9F7"
+
 function formatCurrency(value: number) {
   return `KES ${value.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`
 }
@@ -97,7 +102,7 @@ export default function BillingSettingsScreen() {
     walletCard: {
       borderRadius: 20,
       padding: spacing.lg,
-      backgroundColor: c.primary,
+      backgroundColor: WALLET_CARD_BG,
       gap: spacing.md,
     },
     walletHeaderRow: {
@@ -119,7 +124,7 @@ export default function BillingSettingsScreen() {
     balance: {
       fontSize: 34,
       fontWeight: "700" as const,
-      color: c.primaryForeground,
+      color: WALLET_CARD_FG,
       letterSpacing: -0.6,
     },
     walletHint: {
@@ -142,7 +147,7 @@ export default function BillingSettingsScreen() {
     },
     actionLabel: {
       ...typography.caption,
-      color: c.primaryForeground,
+      color: WALLET_CARD_FG,
       fontWeight: "600" as const,
     },
     lowBalanceBanner: {
@@ -235,14 +240,14 @@ export default function BillingSettingsScreen() {
         <View style={styles.walletCard}>
           <View style={styles.walletHeaderRow}>
             <View style={styles.walletLabelRow}>
-              <Wallet color={colors.primaryForeground} size={16} />
+              <Wallet color={WALLET_CARD_FG} size={16} />
               <Text style={styles.walletLabel}>Campaign wallet balance</Text>
             </View>
             <Pressable onPress={() => setHidden((v) => !v)} hitSlop={8}>
               {hidden ? (
-                <EyeOff color={colors.primaryForeground} size={20} />
+                <EyeOff color={WALLET_CARD_FG} size={20} />
               ) : (
-                <Eye color={colors.primaryForeground} size={20} />
+                <Eye color={WALLET_CARD_FG} size={20} />
               )}
             </Pressable>
           </View>
@@ -260,7 +265,7 @@ export default function BillingSettingsScreen() {
                   onPress={() => setComingSoon({ title: action.label, body: action.body })}
                 >
                   <View style={styles.actionCircle}>
-                    <Icon color={colors.primaryForeground} size={20} />
+                    <Icon color={WALLET_CARD_FG} size={20} />
                   </View>
                   <Text style={styles.actionLabel}>{action.label}</Text>
                 </Pressable>
