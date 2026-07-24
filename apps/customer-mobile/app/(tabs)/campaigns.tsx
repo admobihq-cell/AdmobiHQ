@@ -1,8 +1,9 @@
 import { useState } from "react"
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Add, Calendar, Location } from "@/components/icons"
+import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import {
   StatusBadge,
   type CampaignStatus,
@@ -65,6 +66,10 @@ export default function CampaignsScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [filter, setFilter] = useState<Filter>("All")
+  const [comingSoon, setComingSoon] = useState<{
+    title: string
+    body: string
+  } | null>(null)
   const styles = useThemedStyles((c) => ({
     root: {
       flex: 1,
@@ -263,10 +268,10 @@ export default function CampaignsScreen() {
                 pressed && styles.cardPressed,
               ]}
               onPress={() =>
-                Alert.alert(
-                  campaign.name,
-                  "Campaign details are coming soon in a future update.",
-                )
+                setComingSoon({
+                  title: campaign.name,
+                  body: "Campaign details are coming soon in a future update.",
+                })
               }
               accessibilityRole="button"
               accessibilityLabel={`${campaign.name}, ${campaign.status}`}
@@ -308,10 +313,10 @@ export default function CampaignsScreen() {
           pressed && styles.fabPressed,
         ]}
         onPress={() =>
-          Alert.alert(
-            "New campaign",
-            "Creating campaigns from the app is coming soon.",
-          )
+          setComingSoon({
+            title: "New campaign",
+            body: "Creating campaigns from the app is coming soon.",
+          })
         }
         accessibilityRole="button"
         accessibilityLabel="New campaign"
@@ -319,6 +324,13 @@ export default function CampaignsScreen() {
         <Add color={colors.primaryForeground} size={24} />
         <Text style={styles.fabLabel}>New campaign</Text>
       </Pressable>
+
+      <ComingSoonModal
+        visible={comingSoon !== null}
+        title={comingSoon?.title ?? ""}
+        body={comingSoon?.body ?? ""}
+        onClose={() => setComingSoon(null)}
+      />
     </View>
   )
 }

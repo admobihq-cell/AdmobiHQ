@@ -47,6 +47,15 @@ export async function POST(req: Request) {
       })
       console.log("[Admobi API leads] Saved campaign lead:", parsed.data)
 
+      // Push notifies ops staff independently of email — must not be
+      // skipped just because Resend fails (e.g. invalid API key).
+      void notifyOpsStaffAlert({
+        type: "campaign",
+        entityId: data.id,
+        submitterName: parsed.data.name,
+        submitterCompany: parsed.data.company,
+      })
+
       // Queue confirmation and admin emails (fire-and-forget)
       try {
         const campaignHtml = await renderTemplate(CampaignConfirmation, {
@@ -75,13 +84,6 @@ export async function POST(req: Request) {
           adminHtml
         )
 
-        void notifyOpsStaffAlert({
-          type: "campaign",
-          entityId: data.id,
-          submitterName: parsed.data.name,
-          submitterCompany: parsed.data.company,
-        })
-
         console.log("[Admobi API leads] Campaign emails queued")
       } catch (emailError) {
         console.error("[Admobi API leads] Failed to queue emails:", emailError)
@@ -104,6 +106,15 @@ export async function POST(req: Request) {
         },
       })
       console.log("[Admobi API leads] Saved fleet partner:", parsed.data)
+
+      // Push notifies ops staff independently of email — must not be
+      // skipped just because Resend fails (e.g. invalid API key).
+      void notifyOpsStaffAlert({
+        type: "fleet",
+        entityId: data.id,
+        submitterName: parsed.data.primaryContactName,
+        submitterCompany: parsed.data.fleetOrCompanyName,
+      })
 
       // Queue confirmation and admin emails (fire-and-forget)
       try {
@@ -132,13 +143,6 @@ export async function POST(req: Request) {
           `New Fleet Partnership Application: ${parsed.data.fleetOrCompanyName}`,
           adminFleetHtml
         )
-
-        void notifyOpsStaffAlert({
-          type: "fleet",
-          entityId: data.id,
-          submitterName: parsed.data.primaryContactName,
-          submitterCompany: parsed.data.fleetOrCompanyName,
-        })
 
         console.log("[Admobi API leads] Fleet emails queued")
       } catch (emailError) {
