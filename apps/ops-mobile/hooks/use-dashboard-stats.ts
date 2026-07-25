@@ -1,36 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from "react"
-import type { DateRangeKey, StatsResponseDto } from "@workspace/ops-contracts"
+import { useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsAuthReady, useOpsClient } from "@/lib/ops-client"
+import { statsKeys } from "@/lib/query-keys"
 
 export function useDashboardStats(initialRange: DateRangeKey = "30d") {
   const authReady = useOpsAuthReady()
   const client = useOpsClient()
   const [range, setRange] = useState<DateRangeKey>(initialRange)
-  const [stats, setStats] = useState<StatsResponseDto | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const requestId = useRef(0)
 
-  const refetch = useCallback(async () => {
-    const id = ++requestId.current
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await client.stats.get({ range })
-      if (requestId.current === id) setStats(data)
-    } catch (err) {
-      if (requestId.current === id) setError(formatOpsError(err, API_URL))
-    } finally {
-      if (requestId.current === id) setLoading(false)
-    }
-  }, [client, range])
+  const query = useQuery({
+    queryKey: statsKeys.stats(range),
+    queryFn: () => client.stats.get({ range }),
+    enabled: authReady,
+    placeholderData: keepPreviousData,
+  })
 
-  useEffect(() => {
-    if (!authReady) return
-    void refetch()
-  }, [authReady, refetch])
-
-  return { stats, loading, error, range, setRange, refetch }
+  return {
+    stats: query.data ?? null,
+    loading: query.isPending || query.isFetching,
+    error: query.error ? formatOpsError(query.error, API_URL) : null,
+    range,
+    setRange,
+    refetch: async () => {
+      await query.refetch()
+    },
+  }
 }

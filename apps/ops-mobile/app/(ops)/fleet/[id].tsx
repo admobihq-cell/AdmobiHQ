@@ -11,6 +11,7 @@ export default function FleetDetailScreen() {
 
   return (
     <EntityDetail
+      entity="fleet"
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/fleet/edit/${recordId}`}

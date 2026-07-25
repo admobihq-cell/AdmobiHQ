@@ -14,6 +14,7 @@ export default function DriverDetailScreen() {
 
   return (
     <EntityDetail
+      entity="drivers"
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/drivers/edit/${recordId}`}

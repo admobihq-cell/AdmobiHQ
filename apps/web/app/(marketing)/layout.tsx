@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { cookies } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -19,9 +18,7 @@ import {
   SITE_URL,
 } from "@/lib/seo/site"
 import "@workspace/ui/globals.css"
-import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
 import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
-import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
 import { cn } from "@workspace/ui/lib/utils"
 
 const geist = Geist({
@@ -84,14 +81,11 @@ export const metadata: Metadata = {
 }
 
 /** Marketing site root layout (Payload admin uses its own root in app/(payload)/layout.tsx). */
-export default async function MarketingLayout({
+export default function MarketingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const cookieStore = await cookies()
-  const serverTheme = getServerThemeClass(cookieStore.get(THEME_STORAGE_KEY)?.value)
-
   return (
     <html
       lang="en"
@@ -101,7 +95,6 @@ export default async function MarketingLayout({
         fontMono.variable,
         "font-sans",
         geist.variable,
-        serverTheme,
       )}
     >
       <head>

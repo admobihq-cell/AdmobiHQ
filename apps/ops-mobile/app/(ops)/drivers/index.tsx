@@ -18,6 +18,7 @@ export default function DriversScreen() {
 
   return (
     <EntityList
+      entity="drivers"
       title="Drivers"
       description="Monitor driver signups, city distribution, and onboarding status."
       loadPage={loadPage}

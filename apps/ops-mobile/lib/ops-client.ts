@@ -39,6 +39,7 @@ export function useOpsClient(): OpsClient {
   getTokenRef.current = getToken
   const authRef = useRef({ isLoaded, isSignedIn })
   authRef.current = { isLoaded, isSignedIn }
+  const inFlightTokenRef = useRef<Promise<string | null> | null>(null)
 
   return useMemo(
     () =>
@@ -53,10 +54,17 @@ export function useOpsClient(): OpsClient {
             throw new OpsApiError("You are signed out.", 401)
           }
 
-          const token = await resolveSessionToken(
-            () => getTokenRef.current(),
-            signedIn,
-          )
+          // Concurrent callers (e.g. dashboard's parallel requests on mount) share one
+          // in-flight resolution instead of each independently walking the retry ladder.
+          if (!inFlightTokenRef.current) {
+            inFlightTokenRef.current = resolveSessionToken(
+              () => getTokenRef.current(),
+              signedIn,
+            ).finally(() => {
+              inFlightTokenRef.current = null
+            })
+          }
+          const token = await inFlightTokenRef.current
           if (!token) {
             throw new OpsApiError(
               "Could not read your Clerk session token. Sign out, sign in again, and confirm the app uses the same Clerk keys as the API.",
