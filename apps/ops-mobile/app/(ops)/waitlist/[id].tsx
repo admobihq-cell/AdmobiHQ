@@ -13,6 +13,7 @@ export default function WaitlistDetailScreen() {
 
   return (
     <EntityDetail
+      entity="waitlist"
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/waitlist/edit/${recordId}`}

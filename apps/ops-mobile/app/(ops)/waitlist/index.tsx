@@ -12,6 +12,7 @@ export default function WaitlistScreen() {
 
   return (
     <EntityList
+      entity="waitlist"
       title="Waitlist"
       description="Early-interest emails from homepage and other launch CTAs."
       loadPage={loadPage}

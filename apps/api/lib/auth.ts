@@ -52,18 +52,36 @@ async function resolveUserId(): Promise<string | null> {
   }
 }
 
-async function resolveClerkUser(
-  userId: string,
-): Promise<NonNullable<Awaited<ReturnType<typeof currentUser>>> | null> {
+type ClerkUser = NonNullable<Awaited<ReturnType<typeof currentUser>>>
+
+const CLERK_USER_CACHE_TTL_MS = 60_000
+const clerkUserCache = new Map<string, { user: ClerkUser; expiresAt: number }>()
+
+function getCachedClerkUser(userId: string): ClerkUser | null {
+  const entry = clerkUserCache.get(userId)
+  if (!entry) return null
+  if (entry.expiresAt < Date.now()) {
+    clerkUserCache.delete(userId)
+    return null
+  }
+  return entry.user
+}
+
+async function resolveClerkUser(userId: string): Promise<ClerkUser | null> {
   const fromSession = await currentUser()
   if (fromSession?.id === userId) {
     return fromSession
   }
 
+  const cached = getCachedClerkUser(userId)
+  if (cached) {
+    return cached
+  }
+
   try {
-    return (await (await clerkClient()).users.getUser(userId)) as NonNullable<
-      Awaited<ReturnType<typeof currentUser>>
-    >
+    const user = (await (await clerkClient()).users.getUser(userId)) as ClerkUser
+    clerkUserCache.set(userId, { user, expiresAt: Date.now() + CLERK_USER_CACHE_TTL_MS })
+    return user
   } catch {
     return null
   }

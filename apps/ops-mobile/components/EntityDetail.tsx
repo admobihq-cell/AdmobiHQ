@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from "react"
+import { useCallback, useLayoutEffect, useState } from "react"
 import {
   Alert,
   Linking,
@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native"
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as Clipboard from "expo-clipboard"
 import * as Haptics from "expo-haptics"
 import { Platform } from "react-native"
@@ -21,8 +22,10 @@ import { StatusChip } from "@/components/app/status-chip"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { Pencil, Trash } from "@/components/icons"
 import { StatusPicker } from "@/components/StatusPicker"
+import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
+import { entityKeys } from "@/lib/query-keys"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type DetailField = {
@@ -38,6 +41,7 @@ export type DetailSection = {
 }
 
 type EntityDetailProps<T> = {
+  entity: EntityKey
   load: (id: number) => Promise<T>
   remove?: (id: number) => Promise<unknown>
   title: (item: T) => string
@@ -50,6 +54,7 @@ type EntityDetailProps<T> = {
 }
 
 export function EntityDetail<T>({
+  entity,
   load,
   remove,
   title,
@@ -154,35 +159,57 @@ export function EntityDetail<T>({
   }))
   const { id: rawId } = useLocalSearchParams<{ id: string }>()
   const id = Number.parseInt(rawId ?? "", 10)
-  const [item, setItem] = useState<T | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const validId = Number.isFinite(id) && id > 0
+  const queryClient = useQueryClient()
+  const [dismissedError, setDismissedError] = useState<string | null>(null)
 
-  const fetchItem = useCallback(async () => {
-    if (!Number.isFinite(id) || id <= 0) {
-      setError("Invalid record id")
-      setLoading(false)
-      return
-    }
-    setError(null)
-    try {
-      setItem(await load(id))
-    } catch (err) {
-      setError(formatOpsError(err, API_URL))
-    } finally {
-      setLoading(false)
-    }
-  }, [id, load])
+  const itemQuery = useQuery({
+    queryKey: entityKeys.detail(entity, id),
+    queryFn: () => load(id),
+    enabled: validId,
+  })
+  const item = itemQuery.data ?? null
+  const loading = validId ? itemQuery.isPending : false
+
+  const statusMutation = useMutation({
+    mutationFn: (status: string) => {
+      if (!onStatusChange) throw new Error("onStatusChange not configured")
+      return onStatusChange(id, status)
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(entityKeys.detail(entity, id), updated)
+      void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => {
+      if (!remove) throw new Error("remove not configured")
+      return remove(id)
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: entityKeys.detail(entity, id) })
+      void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
+      if (Platform.OS !== "web") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      }
+      router.back()
+    },
+  })
+
+  const error = validId
+    ? itemQuery.error
+      ? formatOpsError(itemQuery.error, API_URL)
+      : deleteMutation.error
+        ? formatOpsError(deleteMutation.error, API_URL)
+        : null
+    : "Invalid record id"
+  const activeError = error && error !== dismissedError ? error : null
 
   const handleRetry = () => {
-    setLoading(true)
-    void fetchItem()
+    setDismissedError(null)
+    void itemQuery.refetch()
   }
-
-  useEffect(() => {
-    void fetchItem()
-  }, [fetchItem])
 
   const handleDelete = useCallback(() => {
     if (!remove || !item) return
@@ -195,28 +222,11 @@ export function EntityDetail<T>({
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setDeleting(true)
-            void (async () => {
-              try {
-                await remove(id)
-                if (Platform.OS !== "web") {
-                  void Haptics.notificationAsync(
-                    Haptics.NotificationFeedbackType.Success,
-                  )
-                }
-                router.back()
-              } catch (err) {
-                setError(formatOpsError(err, API_URL))
-              } finally {
-                setDeleting(false)
-              }
-            })()
-          },
+          onPress: () => deleteMutation.mutate(),
         },
       ],
     )
-  }, [remove, item, id, router])
+  }, [remove, item, deleteMutation])
 
   useLayoutEffect(() => {
     if (!item) return
@@ -237,7 +247,7 @@ export function EntityDetail<T>({
           {remove ? (
             <Pressable
               onPress={handleDelete}
-              disabled={deleting}
+              disabled={deleteMutation.isPending}
               hitSlop={12}
               style={({ pressed }) => [pressed && { opacity: 0.6 }]}
             >
@@ -252,7 +262,7 @@ export function EntityDetail<T>({
     remove,
     editHref,
     item,
-    deleting,
+    deleteMutation.isPending,
     handleDelete,
     title,
     colors.primary,
@@ -285,11 +295,11 @@ export function EntityDetail<T>({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {error ? (
+      {activeError ? (
         <ApiErrorBanner
-          message={error}
+          message={activeError}
           onRetry={handleRetry}
-          onDismiss={() => setError(null)}
+          onDismiss={() => setDismissedError(activeError)}
         />
       ) : null}
 
@@ -301,10 +311,7 @@ export function EntityDetail<T>({
             label="Status"
             value={getStatus?.(item) ?? null}
             options={statusOptions}
-            onChange={async (status) => {
-              const updated = await onStatusChange(id, status)
-              setItem(updated)
-            }}
+            onChange={(status) => statusMutation.mutate(status)}
           />
         ) : null}
         {chipItems.length > 0 ? (

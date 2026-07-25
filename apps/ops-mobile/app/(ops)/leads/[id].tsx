@@ -11,6 +11,7 @@ export default function LeadDetailScreen() {
 
   return (
     <EntityDetail
+      entity="leads"
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/leads/edit/${recordId}`}

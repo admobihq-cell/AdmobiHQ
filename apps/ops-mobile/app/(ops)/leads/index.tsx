@@ -18,6 +18,7 @@ export default function LeadsScreen() {
 
   return (
     <EntityList
+      entity="leads"
       title="Campaign leads"
       description="Review and manage inbound campaign interest from advertisers."
       loadPage={loadPage}

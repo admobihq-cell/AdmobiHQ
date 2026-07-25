@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   FlatList,
   Pressable,
@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Inbox, Plus, Search } from "@/components/icons"
 import type { PaginatedResponse } from "@workspace/ops-contracts"
@@ -19,8 +20,10 @@ import { SkeletonListRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
+import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
+import { entityKeys } from "@/lib/query-keys"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type EntityListLoadOptions = {
@@ -28,6 +31,7 @@ type EntityListLoadOptions = {
 }
 
 type EntityListProps<T extends { id: number }> = {
+  entity: EntityKey
   title: string
   description?: string
   eyebrow?: string
@@ -43,6 +47,7 @@ type EntityListProps<T extends { id: number }> = {
 }
 
 export function EntityList<T extends { id: number; created_at?: string }>({
+  entity,
   title,
   description,
   eyebrow = "Operations",
@@ -57,6 +62,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   searchKeys,
 }: EntityListProps<T>) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const styles = useThemedStyles((c) => ({
@@ -134,52 +140,45 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       marginLeft: 68,
     },
   }))
-  const [items, setItems] = useState<T[]>([])
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<string | null>(null)
+  const [errorDismissed, setErrorDismissed] = useState(false)
 
-  const fetchPage = useCallback(
-    async (nextPage: number, replace = false, statusOverride?: string | null) => {
-      try {
-        setError(null)
-        const activeStatus = statusOverride === undefined ? filter : statusOverride
-        const result = await loadPage(nextPage, {
-          status: activeStatus ?? undefined,
-        })
-        setItems((current) =>
-          replace ? result.items : [...current, ...result.items],
-        )
-        setPage(result.page)
-        setTotalPages(result.totalPages)
-      } catch (err) {
-        setError(formatOpsError(err, API_URL))
-      } finally {
-        setLoading(false)
-        setRefreshing(false)
-      }
-    },
-    [loadPage, filter],
+  const {
+    data,
+    error: queryError,
+    isPending,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteQuery({
+    queryKey: entityKeys.list(entity, filter),
+    queryFn: ({ pageParam }) => loadPage(pageParam, { status: filter ?? undefined }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+  })
+
+  const items = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data],
   )
-
-  useEffect(() => {
-    setLoading(true)
-    void fetchPage(1, true, filter)
-  }, [fetchPage, filter])
+  const loading = isPending
+  const refreshing = isRefetching && !isFetchingNextPage
+  const error = queryError && !errorDismissed ? formatOpsError(queryError, API_URL) : null
 
   const onRefresh = () => {
-    setRefreshing(true)
-    void fetchPage(1, true)
+    setErrorDismissed(false)
+    // Collapse back to page 1 (matches the pre-React-Query "pull to refresh
+    // resets pagination" behavior) rather than refetching every loaded page.
+    queryClient.resetQueries({ queryKey: entityKeys.list(entity, filter), exact: true })
   }
 
   const onEndReached = () => {
-    if (loading || refreshing || page >= totalPages) return
-    setLoading(true)
-    void fetchPage(page + 1)
+    if (isFetchingNextPage || isRefetching || !hasNextPage) return
+    void fetchNextPage()
   }
 
   const filteredItems = useMemo(() => {
@@ -244,7 +243,10 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         <FilterChips
           options={filterOptions}
           selected={filter}
-          onSelect={setFilter}
+          onSelect={(next) => {
+            setFilter(next)
+            setErrorDismissed(false)
+          }}
           embedded
         />
       ) : null}
@@ -252,10 +254,10 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         <ApiErrorBanner
           message={error}
           onRetry={() => {
-            setLoading(true)
-            void fetchPage(1, true)
+            setErrorDismissed(false)
+            void refetch()
           }}
-          onDismiss={() => setError(null)}
+          onDismiss={() => setErrorDismissed(true)}
         />
       ) : null}
     </View>

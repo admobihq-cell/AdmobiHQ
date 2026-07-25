@@ -3,12 +3,16 @@ import * as Sentry from "@sentry/nextjs"
 import { resolvePublicSentryDsn } from "./constants.mjs"
 import { getSentryEnvironment, getTracesSampleRate } from "./environment.mjs"
 
-export function initClientSentry({ appName, enableSessionReplay = false }) {
+export function initClientSentry({
+  appName,
+  enableSessionReplay = false,
+  replaysSessionSampleRate = 0.1,
+}) {
   Sentry.init({
     dsn: resolvePublicSentryDsn(),
     environment: getSentryEnvironment(),
     tracesSampleRate: getTracesSampleRate(),
-    replaysSessionSampleRate: enableSessionReplay ? 0.1 : 0,
+    replaysSessionSampleRate: enableSessionReplay ? replaysSessionSampleRate : 0,
     replaysOnErrorSampleRate: enableSessionReplay ? 1.0 : 0,
     enableLogs: true,
     integrations: enableSessionReplay ? [Sentry.replayIntegration()] : [],
