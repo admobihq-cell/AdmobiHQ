@@ -1,4 +1,4 @@
-const { getDefaultConfig } = require("expo/metro-config")
+const { getSentryExpoConfig } = require("@sentry/react-native/metro")
 const { FileStore } = require("metro-cache")
 const os = require("node:os")
 const path = require("node:path")
@@ -20,7 +20,7 @@ const workspacePackages = {
 }
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(projectRoot)
+const config = getSentryExpoConfig(projectRoot)
 
 // Metro's default cache dir (os.tmpdir()/metro-cache) is shared across every
 // project on the machine. Give this app its own so concurrent builds of
