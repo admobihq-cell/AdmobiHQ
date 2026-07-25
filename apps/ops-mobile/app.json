@@ -2,9 +2,9 @@
   "expo": {
     "name": "Admobi Ops",
     "slug": "admobihq-ops",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "orientation": "portrait",
-    "runtimeVersion": "0.0.3",
+    "runtimeVersion": "0.0.4",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq",
     "userInterfaceStyle": "automatic",
@@ -23,6 +23,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.admobihq.ops",
+      "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
