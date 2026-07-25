@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "155364698254",
+    "project_id": "admobi-media",
+    "storage_bucket": "admobi-media.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155364698254:android:81b8995eb3903c287b41df",
+        "android_client_info": {
+          "package_name": "com.admobihq.ops"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAkHsXcAfQN38ykAsiSbMEIy8Ra4S37rg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
