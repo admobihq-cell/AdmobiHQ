@@ -10,6 +10,7 @@ import {
   Mail,
   Map,
   Megaphone,
+  Radio,
   Truck,
   Users,
   Wallet,
@@ -52,6 +53,7 @@ const navItems = [
   { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/waitlist", label: "Waitlist", icon: Mail },
   { href: "/media-kit", label: "Media Kit", icon: FileText },
+  { href: "/announcements", label: "Announcements", icon: Radio },
 ]
 
 const secondaryItems = [

@@ -17,3 +17,5 @@ export const pushTokenRegisterSchema = z.object({
 export const pushTokenUnregisterSchema = z.object({
   expoPushToken: z.string().trim().min(1),
 })
+
+export const customerPushTokenRegisterSchema = pushTokenRegisterSchema

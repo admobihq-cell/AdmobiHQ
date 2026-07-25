@@ -9,6 +9,7 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
+import { usePushRegistration } from "@/lib/use-push-registration"
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
@@ -36,6 +37,7 @@ export default function RootLayout() {
 
   useSplashBootstrap(appReady)
   useOtaUpdates()
+  usePushRegistration()
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
