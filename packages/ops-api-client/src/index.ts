@@ -48,6 +48,8 @@ export type OpsClientOptions = {
   getToken: () => Promise<string | null>
   /** Optional fetch implementation (defaults to global fetch). */
   fetch?: typeof fetch
+  /** Abort a request if it hasn't completed within this many ms. Defaults to 12000. */
+  requestTimeoutMs?: number
 }
 
 type EntityResource<
@@ -140,6 +142,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl)
   const apiPrefix = options.apiPrefix ?? "/v1"
   const fetchImpl = options.fetch ?? fetch
+  const requestTimeoutMs = options.requestTimeoutMs ?? 12_000
 
   async function request<T>(
     path: string,
@@ -154,10 +157,34 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       headers.set("Authorization", `Bearer ${token}`)
     }
 
-    const res = await fetchImpl(`${baseUrl}${path}`, {
-      ...init,
-      headers,
-    })
+    const controller = new AbortController()
+    const callerSignal = init.signal
+    const onCallerAbort = () => controller.abort()
+    if (callerSignal) {
+      if (callerSignal.aborted) controller.abort()
+      else callerSignal.addEventListener("abort", onCallerAbort)
+    }
+    const timer = setTimeout(() => controller.abort(), requestTimeoutMs)
+
+    let res: Response
+    try {
+      res = await fetchImpl(`${baseUrl}${path}`, {
+        ...init,
+        headers,
+        signal: controller.signal,
+      })
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new OpsApiError(
+          "Request timed out. Check your connection and try again.",
+          408,
+        )
+      }
+      throw err
+    } finally {
+      clearTimeout(timer)
+      callerSignal?.removeEventListener("abort", onCallerAbort)
+    }
 
     if (!res.ok) {
       throw await parseError(res)

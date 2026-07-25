@@ -26,6 +26,9 @@ model Lead {
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
 
+  @@index([created_at])
+  @@index([status])
+  @@index([budget_range])
   @@map("leads")
 }
 
@@ -44,6 +47,10 @@ model FleetPartner {
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
 
+  @@index([created_at])
+  @@index([city])
+  @@index([status])
+  @@index([city, status])
   @@map("fleet_partners")
 }
 
@@ -61,6 +68,11 @@ model Driver {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
+  @@index([created_at])
+  @@index([city])
+  @@index([status])
+  @@index([vehicle_type])
+  @@index([city, status])
   @@map("drivers")
 }
 
@@ -71,6 +83,7 @@ model WaitlistEntry {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@index([created_at])
   @@map("waitlist_entries")
 }
 
@@ -81,6 +94,7 @@ model MediaKitRequest {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@index([created_at])
   @@map("media_kit_requests")
 }
 

@@ -1,6 +1,7 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo"
 import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import * as Sentry from "@sentry/react-native"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Stack, useRouter, useSegments } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -23,6 +24,15 @@ import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 
 initSentry()
 configurePushNotificationHandler()
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+})
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
@@ -208,7 +218,9 @@ function RootLayout() {
       <ThemeProvider>
         <AppErrorBoundary>
           <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
-            <RootNavigator />
+            <QueryClientProvider client={queryClient}>
+              <RootNavigator />
+            </QueryClientProvider>
           </ClerkProvider>
         </AppErrorBoundary>
       </ThemeProvider>

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
 import { Text, View } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
+import { useQueryClient } from "@tanstack/react-query"
 
 import { AppLoader } from "@/components/app/app-loader"
 import { EntityFormScreen } from "@/components/EntityFormScreen"
 import { getEntityFormConfig, type EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { useOpsClient, API_URL } from "@/lib/ops-client"
+import { entityKeys } from "@/lib/query-keys"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type EntityFormRouteProps = {
@@ -17,6 +19,7 @@ type EntityFormRouteProps = {
 export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
   const router = useRouter()
   const client = useOpsClient()
+  const queryClient = useQueryClient()
   const config = getEntityFormConfig(entity)
   const { id: rawId } = useLocalSearchParams<{ id: string }>()
   const id = Number.parseInt(rawId ?? "", 10)
@@ -107,6 +110,9 @@ export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
       } else {
         await config.update(client, id, payload)
       }
+      // The list/detail/dashboard screens we're returning to read from React
+      // Query's cache, which has no way to know this write happened.
+      void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
       router.back()
     } catch (err) {
       setError(formatOpsError(err, API_URL))

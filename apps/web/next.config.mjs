@@ -87,7 +87,15 @@ const nextConfig = {
     "esbuild",
     "pino",
     "pino-pretty",
+    "sharp",
   ],
+  outputFileTracingExcludes: {
+    "*": [
+      "node_modules/@prisma/engines/**",
+      "node_modules/.prisma/client/**",
+      "node_modules/@payloadcms/**/dist/admin/**",
+    ],
+  },
   // Mirror webpack aliases when using `npm run dev:turbo` (Turbopack ignores webpack config).
   turbopack: {
     resolveAlias: {
@@ -133,6 +141,8 @@ const nextConfig = {
         ...webpackConfig.resolve.fallback,
         ...CLIENT_NODE_FALLBACKS,
       }
+    } else {
+      webpackConfig.externals = [...(webpackConfig.externals || []), "bull", "redis"]
     }
 
     webpackConfig.plugins.push(
