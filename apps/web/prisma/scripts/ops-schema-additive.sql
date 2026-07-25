@@ -48,3 +48,29 @@ CREATE TABLE IF NOT EXISTS ops_push_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS ops_push_tokens_clerk_user_id_idx ON ops_push_tokens (clerk_user_id);
+
+-- customer mobile: anonymous Expo push tokens for broadcast announcements
+CREATE TABLE IF NOT EXISTS customer_push_tokens (
+  id SERIAL PRIMARY KEY,
+  expo_push_token TEXT NOT NULL,
+  platform TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT customer_push_tokens_expo_push_token_key UNIQUE (expo_push_token)
+);
+
+-- ops → customers: broadcast announcement send history
+CREATE TABLE IF NOT EXISTS announcement_broadcasts (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  sent_by_clerk_id TEXT NOT NULL,
+  sent_by_email TEXT NOT NULL,
+  target_count INTEGER NOT NULL DEFAULT 0,
+  delivered_count INTEGER NOT NULL DEFAULT 0,
+  invalid_count INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'sent',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS announcement_broadcasts_created_at_idx ON announcement_broadcasts (created_at);

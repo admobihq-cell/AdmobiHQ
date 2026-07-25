@@ -179,6 +179,11 @@ export const MEDIA_KIT_FORM_FIELDS: FormFieldDef[] = [
   { name: "email", label: "Email", type: "email", required: true },
 ]
 
+export const ANNOUNCEMENT_FORM_FIELDS: FormFieldDef[] = [
+  { name: "title", label: "Title", required: true, placeholder: "e.g. New payout schedule" },
+  { name: "body", label: "Message", type: "multiline", required: true },
+]
+
 export const LEAD_STATUS_OPTIONS = enumOptions(LEAD_STATUSES)
 export const DRIVER_STATUS_OPTIONS = enumOptions(DRIVER_STATUSES)
 export const FLEET_STATUS_OPTIONS = enumOptions(FLEET_STATUSES)
