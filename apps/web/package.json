@@ -69,13 +69,14 @@
     "sharp": "^0.34.5",
     "zod": "3.25.76"
   },
-  "devDependencies": {
+"devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
+    "cli-color": "^2.0.4",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.39.2",

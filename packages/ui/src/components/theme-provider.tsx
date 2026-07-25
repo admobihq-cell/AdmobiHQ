@@ -51,10 +51,14 @@ function applyThemeToDocument(resolved: "light" | "dark") {
 }
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<ThemeOption | undefined>(undefined)
-  const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark" | undefined>(
-    undefined,
-  )
+  const [theme, setThemeState] = React.useState<ThemeOption | undefined>(() => {
+    if (typeof window === "undefined") return undefined
+    return readStoredTheme()
+  })
+  const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark" | undefined>(() => {
+    if (typeof window === "undefined") return undefined
+    return resolveTheme(readStoredTheme())
+  })
 
   const themes = React.useMemo<ThemeOption[]>(
     () =>
@@ -77,15 +81,6 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
     },
     [],
   )
-
-  React.useEffect(() => {
-    const stored = readStoredTheme()
-    persistThemePreference(stored)
-    const resolved = resolveTheme(stored)
-    setThemeState(stored)
-    setResolvedTheme(resolved)
-    applyThemeToDocument(resolved)
-  }, [])
 
   React.useEffect(() => {
     if (!themeConfig.enableSystem || theme !== "system") {
