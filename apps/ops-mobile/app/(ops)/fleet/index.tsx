@@ -18,6 +18,7 @@ export default function FleetScreen() {
 
   return (
     <EntityList
+      entity="fleet"
       title="Fleet partners"
       description="Onboard and track fleet partner applications across cities."
       loadPage={loadPage}
