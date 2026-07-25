@@ -211,3 +211,22 @@ export async function listMediaKitRequests(
 
   return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
 }
+
+export async function listAnnouncementBroadcasts(
+  params: Partial<PaginationParams> = {},
+): Promise<
+  SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.announcementBroadcast.findMany>>[number]>
+> {
+  const parsed = parsePagination(params)
+
+  const [items, total] = await Promise.all([
+    prisma.announcementBroadcast.findMany({
+      orderBy: { created_at: parsed.sortDir },
+      skip: (parsed.page - 1) * parsed.pageSize,
+      take: parsed.pageSize,
+    }),
+    prisma.announcementBroadcast.count(),
+  ])
+
+  return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
+}

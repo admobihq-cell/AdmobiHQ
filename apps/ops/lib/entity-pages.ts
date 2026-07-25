@@ -33,3 +33,9 @@ export const MEDIA_KIT_PAGE: EntityPageMeta = {
   description: "Marketers and agencies who requested the Admobi media kit.",
   columns: ["Date", "Name", "Email"],
 }
+
+export const ANNOUNCEMENTS_PAGE: EntityPageMeta = {
+  title: "Announcements",
+  description: "Broadcast a message to every installed customer app.",
+  columns: ["Sent", "Title", "Message", "Delivered", "Status"],
+}

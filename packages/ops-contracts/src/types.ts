@@ -134,6 +134,18 @@ export type StatsResponseDto = {
   content: ContentStatsDto | null
 }
 
+export type AnnouncementDto = {
+  id: number
+  title: string
+  body: string
+  sent_by_email: string
+  target_count: number
+  delivered_count: number
+  invalid_count: number
+  status: string
+  created_at: string
+}
+
 export type ListQueryParams = Partial<PaginationParams> & {
   budget?: string
   status?: string

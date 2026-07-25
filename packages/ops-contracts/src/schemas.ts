@@ -122,6 +122,11 @@ export const statsRangeSchema = z.object({
   range: z.enum(DATE_RANGE_KEYS).default("30d"),
 })
 
+export const broadcastCreateSchema = z.object({
+  title: z.string().trim().min(1).max(65),
+  body: z.string().trim().min(1).max(178),
+})
+
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>
 export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>
 export type FleetCreateInput = z.infer<typeof fleetCreateSchema>
@@ -138,3 +143,4 @@ export type DriverBulkInput = z.infer<typeof driverBulkSchema>
 export type FleetBulkInput = z.infer<typeof fleetBulkSchema>
 export type WaitlistBulkInput = z.infer<typeof waitlistBulkSchema>
 export type MediaKitBulkInput = z.infer<typeof mediaKitBulkSchema>
+export type BroadcastCreateInput = z.infer<typeof broadcastCreateSchema>

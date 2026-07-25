@@ -1,4 +1,4 @@
-import { Car, FileText, Mail, Megaphone, Truck, Users, Wallet } from "lucide-react"
+import { Car, FileText, Mail, Megaphone, Radio, Truck, Users, Wallet } from "lucide-react"
 
 import { ModuleCard } from "@/components/ui/module-card"
 import { SectionHeading } from "@/components/ui/section-heading"
@@ -40,6 +40,12 @@ const MODULES = [
     label: "Media Kit",
     description: "Handle media kit download requests.",
     icon: FileText,
+  },
+  {
+    href: "/announcements",
+    label: "Announcements",
+    description: "Broadcast a message to every installed customer app.",
+    icon: Radio,
   },
   {
     href: "/content",

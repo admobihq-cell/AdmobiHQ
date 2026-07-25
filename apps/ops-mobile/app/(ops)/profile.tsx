@@ -7,7 +7,7 @@ import { useMemo } from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { DateRangeKey } from "@workspace/ops-contracts"
-import { Bell, FileText, LogOut, Mail, Map, Person, RefreshCcw, Wallet } from "@/components/icons"
+import { Bell, FileText, LogOut, Mail, Map, Person, Radio, RefreshCcw, Wallet } from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
@@ -234,6 +234,13 @@ export default function ProfileScreen() {
             label="Media kit"
             description={`${counts.mediaKit} requests`}
             onPress={() => router.push("/(ops)/media-kit")}
+          />
+          <View style={styles.divider} />
+          <SettingsRow
+            icon={Radio}
+            label="Announcements"
+            description="Broadcast to customer apps"
+            onPress={() => router.push("/(ops)/announcements")}
           />
         </View>
       </View>

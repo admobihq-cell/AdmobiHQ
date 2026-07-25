@@ -35,6 +35,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import { Textarea } from "@workspace/ui/components/textarea"
 import {
   Table,
   TableBody,
@@ -821,6 +822,16 @@ export function SimpleFormDialog({
                     </option>
                   ))}
                 </select>
+              ) : field.type === "multiline" ? (
+                <Textarea
+                  id={field.name}
+                  value={values[field.name] ?? ""}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, [field.name]: e.target.value }))
+                  }
+                  required={field.required}
+                  rows={4}
+                />
               ) : (
                 <Input
                   id={field.name}
