@@ -1,6 +1,8 @@
 import {
   buildListQueryParams,
+  type AnnouncementDto,
   type ApiErrorResponse,
+  type BroadcastCreateInput,
   type BulkResponse,
   type DateRangeKey,
   type DriverBulkInput,
@@ -106,6 +108,13 @@ export type OpsClient = {
       platform?: "android" | "ios" | "web"
     }) => Promise<SuccessResponse>
     unregister: (body: { expoPushToken: string }) => Promise<SuccessResponse>
+  }
+  notifications: {
+    broadcast: (body: BroadcastCreateInput) => Promise<AnnouncementDto>
+    list: (params?: {
+      page?: number
+      pageSize?: number
+    }) => Promise<PaginatedResponse<AnnouncementDto>>
   }
 }
 
@@ -231,6 +240,23 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           method: "DELETE",
           body: JSON.stringify(body),
         }),
+    },
+    notifications: {
+      broadcast: (body) =>
+        request<AnnouncementDto>(`${apiPrefix}/notifications/broadcast`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      list: (params) => {
+        const query = buildListQueryParams({
+          page: params?.page,
+          pageSize: params?.pageSize,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<AnnouncementDto>>(
+          `${apiPrefix}/notifications${qs ? `?${qs}` : ""}`,
+        )
+      },
     },
   }
 }

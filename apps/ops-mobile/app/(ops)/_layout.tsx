@@ -109,6 +109,14 @@ export default function OpsLayout() {
         }}
       />
       <Tabs.Screen
+        name="announcements"
+        options={{
+          title: "Announcements",
+          headerShown: false,
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="media-kit"
         options={{
           title: "Media kit",
