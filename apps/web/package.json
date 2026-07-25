@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@payload-bites/image-search": "^3.4.2",
+    "@payload-bites/image-search": "^3.5.0",
     "@payloadcms/db-postgres": "^3.85.0",
     "@payloadcms/next": "^3.85.0",
     "@payloadcms/richtext-lexical": "^3.85.0",
@@ -56,7 +56,7 @@
     "dotenv": "^16.6.1",
     "graphql": "^16.14.0",
     "lucide-react": "^1.12.0",
-    "next": "^16.2.6",
+    "next": "^16.2.11",
     "next-sitemap": "^4.2.3",
     "payload": "^3.85.0",
     "pg": "^8.21.0",
