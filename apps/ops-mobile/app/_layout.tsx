@@ -1,5 +1,6 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo"
 import { tokenCache } from "@clerk/clerk-expo/token-cache"
+import * as Sentry from "@sentry/react-native"
 import { Stack, useRouter, useSegments } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -17,8 +18,10 @@ import { darkColors, lightColors } from "@/lib/theme/palettes"
 
 import { useOpsPushNotifications } from "@/lib/use-ops-push"
 import { configurePushNotificationHandler } from "@/lib/push-notifications"
+import { initSentry } from "@/lib/sentry"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 
+initSentry()
 configurePushNotificationHandler()
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -189,7 +192,7 @@ function RootNavigator() {
   )
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const clerkKey = CLERK_PUBLISHABLE_KEY?.trim()
 
   if (!clerkKey?.startsWith("pk_")) {
@@ -212,3 +215,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   )
 }
+
+export default Sentry.wrap(RootLayout)

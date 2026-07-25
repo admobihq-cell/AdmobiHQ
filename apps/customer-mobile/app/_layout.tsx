@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -8,8 +9,11 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
+import { initSentry } from "@/lib/sentry"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 import { usePushRegistration } from "@/lib/use-push-registration"
+
+initSentry()
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
@@ -32,7 +36,7 @@ function RootNavigator({ ready }: { ready: boolean }) {
   )
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [appReady, setAppReady] = useState(false)
 
   useSplashBootstrap(appReady)
@@ -59,3 +63,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   )
 }
+
+export default Sentry.wrap(RootLayout)

@@ -12,7 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.admobihq.ops",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -85,6 +87,13 @@
         {
           "photosPermission": "Allow Admobi Ops to access photos for media kit and campaign assets.",
           "cameraPermission": "Allow Admobi Ops to take photos for media kit and proof of play."
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "admobi-media",
+          "project": "admobi-hq"
         }
       ]
     ],

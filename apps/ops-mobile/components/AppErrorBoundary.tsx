@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native"
 import { Component, type ReactNode } from "react"
 import { Pressable, StyleSheet, Text, useColorScheme, View } from "react-native"
 
@@ -39,6 +40,9 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: { componentStack?: string | null }) {
     console.error("[AppErrorBoundary]", error, info.componentStack)
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } },
+    })
   }
 
   reset = () => this.setState({ error: null })

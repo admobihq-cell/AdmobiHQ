@@ -139,6 +139,7 @@ try {
 const mappings = [
   ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
   ["EXPO_PUBLIC_APP_URL", "NEXT_PUBLIC_APP_URL"],
+  ["EXPO_PUBLIC_SENTRY_DSN", "NEXT_PUBLIC_SENTRY_DSN"],
 ]
 
 let additions = ""
