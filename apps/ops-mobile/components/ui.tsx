@@ -283,6 +283,64 @@ export function Field(props: TextInputProps) {
   )
 }
 
+export function EmailUsernameField({
+  value,
+  onChangeText,
+  domain,
+  autoFocus,
+  onSubmitEditing,
+}: {
+  value: string
+  onChangeText: (text: string) => void
+  domain: string
+  autoFocus?: boolean
+  onSubmitEditing?: () => void
+}) {
+  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    row: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: c.surface,
+      borderColor: c.input,
+      borderWidth: 1,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.md,
+    },
+    input: {
+      flex: 1,
+      color: c.text,
+      paddingVertical: 12,
+      fontSize: 16,
+    },
+    domain: {
+      color: c.mutedForeground,
+      fontSize: 16,
+      fontWeight: "500" as const,
+    },
+  }))
+  return (
+    <View style={styles.row}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="username"
+        placeholderTextColor={colors.mutedForeground}
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="off"
+        keyboardType="email-address"
+        returnKeyType="go"
+        autoFocus={autoFocus}
+        onSubmitEditing={onSubmitEditing}
+        style={styles.input}
+      />
+      <Text style={styles.domain}>{domain}</Text>
+    </View>
+  )
+}
+
 export function PrimaryButton({
   label,
   onPress,
