@@ -19,6 +19,7 @@
     "@workspace/ops-api-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
+    "antd": "^6.5.2",
     "dotenv": "^16.6.1",
     "lucide-react": "^1.12.0",
     "next": "^16.2.11",

@@ -1,5 +1,5 @@
 import { useWindowDimensions } from "react-native"
-import Svg, { Circle, Line, Path, Polyline } from "react-native-svg"
+import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg"
 import { StyleSheet, Text, View } from "react-native"
 
 import { BarChart3 } from "@/components/icons"
@@ -16,6 +16,32 @@ function formatShortDate(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
   return date.toLocaleDateString("en-KE", { month: "short", day: "numeric" })
+}
+
+function formatAxisCount(value: number): string {
+  if (value >= 1000) return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`
+  return String(Math.round(value))
+}
+
+/** Catmull-Rom to cubic Bezier so the line reads as one smooth curve. */
+function smoothPath(points: Array<{ x: number; y: number }>): string {
+  if (points.length === 0) return ""
+  if (points.length < 3) {
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x},${p.y}`).join(" ")
+  }
+  let d = `M ${points[0]!.x},${points[0]!.y}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? i : i - 1]!
+    const p1 = points[i]!
+    const p2 = points[i + 1]!
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1]!
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`
+  }
+  return d
 }
 
 function normalizeTimeline(
@@ -158,7 +184,7 @@ export function ActivityChart({
   }
 
   const width = chartOuterWidth
-  const padding = { top: 12, right: 12, bottom: 24, left: 12 }
+  const padding = { top: 12, right: 8, bottom: 22, left: 30 }
   const chartHeight = height
   const chartWidth = width - padding.left - padding.right
   const plotHeight = chartHeight - padding.top - padding.bottom
@@ -183,16 +209,25 @@ export function ActivityChart({
 
   const peakPoint = plotPoints.find((p) => p.day === peak.day && p.count === peak.count)
 
-  const linePoints = plotPoints.map((p) => `${p.x},${p.y}`).join(" ")
+  const curvePath = smoothPath(plotPoints)
   const areaPath = [
-    `M ${padding.left},${padding.top + plotHeight}`,
-    ...plotPoints.map((p) => `L ${p.x},${p.y}`),
+    curvePath,
     `L ${padding.left + chartWidth},${padding.top + plotHeight}`,
+    `L ${padding.left},${padding.top + plotHeight}`,
     "Z",
   ].join(" ")
 
+  const yAxisTicks = [0, 0.5, 1].map((fraction) => ({
+    y: padding.top + plotHeight * (1 - fraction),
+    value: maxCount * fraction,
+  }))
+
   const gridLines = [0.25, 0.5, 0.75].map(
     (fraction) => padding.top + plotHeight * (1 - fraction),
+  )
+
+  const xAxisLabelIndexes = Array.from(
+    new Set([0, Math.round((points.length - 1) / 2), points.length - 1]),
   )
 
   const rangeLabel =
@@ -229,9 +264,40 @@ export function ActivityChart({
               strokeWidth={1}
             />
           ))}
+          {yAxisTicks.map((tick, index) => (
+            <SvgText
+              key={`y-label-${index}`}
+              x={padding.left - 6}
+              y={tick.y + 3}
+              fontSize={9}
+              fill={colors.mutedForeground}
+              textAnchor="end"
+            >
+              {formatAxisCount(tick.value)}
+            </SvgText>
+          ))}
+          {xAxisLabelIndexes.map((pointIndex, index) => {
+            const point = plotPoints[pointIndex]
+            if (!point) return null
+            const isFirst = index === 0
+            const isLast = index === xAxisLabelIndexes.length - 1
+            const textAnchor = isFirst ? "start" : isLast ? "end" : "middle"
+            return (
+              <SvgText
+                key={`x-label-${pointIndex}`}
+                x={point.x}
+                y={chartHeight - 6}
+                fontSize={9}
+                fill={colors.mutedForeground}
+                textAnchor={textAnchor}
+              >
+                {formatShortDate(point.day)}
+              </SvgText>
+            )
+          })}
           <Path d={areaPath} fill={areaFill} />
-          <Polyline
-            points={linePoints}
+          <Path
+            d={curvePath}
             fill="none"
             stroke={colors.primary}
             strokeWidth={2.5}

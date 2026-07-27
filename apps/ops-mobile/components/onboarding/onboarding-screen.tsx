@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from "react"
 import {
   Image,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -10,7 +9,6 @@ import {
   type ImageSourcePropType,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  type TextStyle,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Animated, {
@@ -25,6 +23,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg"
 import { ChevronRight } from "@/components/icons"
 import { lightColors } from "@/lib/theme/palettes"
 import { radius, spacing, typography } from "@/lib/theme/tokens"
+import { textShadow } from "@/lib/text-shadow"
 
 type Slide = {
   key: string
@@ -71,21 +70,6 @@ const ACCENT = lightColors.primary
 const ACCENT_FOREGROUND = lightColors.primaryForeground
 const SCRIM = "20,16,13"
 const CHROME_RESERVE = 172
-
-// react-native-web wants the unified CSS `textShadow` string and warns on the
-// legacy split props; native (iOS/Android) only understands the split props
-// and doesn't recognize the shorthand at all. Branch per platform so both
-// render the shadow without either side warning.
-function textShadow(color: string, offsetY: number, radius: number): TextStyle {
-  if (Platform.OS === "web") {
-    return { textShadow: `0px ${offsetY}px ${radius}px ${color}` } as TextStyle
-  }
-  return {
-    textShadowColor: color,
-    textShadowOffset: { width: 0, height: offsetY },
-    textShadowRadius: radius,
-  }
-}
 
 type OnboardingScreenProps = {
   onDone: () => void

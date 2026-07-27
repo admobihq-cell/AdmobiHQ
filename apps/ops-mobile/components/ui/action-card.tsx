@@ -14,6 +14,7 @@ export function ActionCard({ label, icon: Icon, onPress }: ActionCardProps) {
   const styles = useThemedStyles((c) => ({
     card: {
       flex: 1,
+      minWidth: "46%" as const,
       flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "center" as const,
