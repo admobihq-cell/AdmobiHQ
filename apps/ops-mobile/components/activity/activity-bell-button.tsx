@@ -91,8 +91,8 @@ export function ActivityBellButton() {
 
   const styles = useThemedStyles((c) => ({
     button: {
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
       borderRadius: radius.md,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
@@ -198,7 +198,7 @@ export function ActivityBellButton() {
         hitSlop={10}
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       >
-        <Bell size={20} color={colors.text} />
+        <Bell size={18} color={colors.text} />
         {unreadCount > 0 ? <View style={styles.badge} /> : null}
       </Pressable>
 

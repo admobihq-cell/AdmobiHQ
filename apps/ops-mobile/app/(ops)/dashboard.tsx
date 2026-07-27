@@ -20,6 +20,7 @@ import {
   Mail,
   Megaphone,
   Truck,
+  type AppIcon,
 } from "@/components/icons"
 
 import { ActionCard } from "@/components/ui/action-card"
@@ -37,6 +38,7 @@ import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { useThemeColors, spacing, typography, radius } from "@/lib/theme"
+import type { RecentSubmission } from "@/hooks/use-recent-submissions"
 
 const RANGES: Array<{ key: DateRangeKey; label: string }> = [
   { key: "7d", label: "7 days" },
@@ -44,6 +46,12 @@ const RANGES: Array<{ key: DateRangeKey; label: string }> = [
   { key: "90d", label: "90 days" },
   { key: "all", label: "All time" },
 ]
+
+const RECENT_TYPE_ICON: Record<RecentSubmission["type"], AppIcon> = {
+  lead: Megaphone,
+  fleet: Truck,
+  driver: Car,
+}
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -170,12 +178,13 @@ export default function DashboardScreen() {
         activityPressed: {
           opacity: 0.75,
         },
-        activityDot: {
-          width: 10,
-          height: 10,
-          borderRadius: 5,
-          backgroundColor: colors.primary,
-          marginTop: 5,
+        activityIconWrap: {
+          width: 36,
+          height: 36,
+          borderRadius: radius.md,
+          backgroundColor: colors.accentSurface,
+          alignItems: "center",
+          justifyContent: "center",
         },
         activityCopy: {
           flex: 1,
@@ -193,7 +202,7 @@ export default function DashboardScreen() {
         divider: {
           height: StyleSheet.hairlineWidth,
           backgroundColor: colors.border,
-          marginLeft: spacing.md + 10 + spacing.md,
+          marginLeft: spacing.md + 36 + spacing.md,
         },
         emptyRecent: {
           padding: spacing.lg,
@@ -247,12 +256,13 @@ export default function DashboardScreen() {
           <Text style={styles.brandName}>Admobi Ops</Text>
         </View>
         <View style={styles.heroTrailing}>
+          <ActivityBellButton />
+          <ThemeToggleButton />
           <AvatarInitials
             name={displayName}
             onPress={() => router.push("/(ops)/profile")}
+            size={32}
           />
-          <ActivityBellButton />
-          <ThemeToggleButton />
         </View>
       </View>
 
@@ -388,25 +398,30 @@ export default function DashboardScreen() {
               <Text style={styles.emptyText}>No recent submissions</Text>
             </View>
           ) : (
-            recentItems.map((item, index) => (
-              <View key={`${item.type}-${item.id}`}>
-                {index > 0 ? <View style={styles.divider} /> : null}
-                <Pressable
-                  onPress={() => router.push(item.href as never)}
-                  style={({ pressed }) => [
-                    styles.activityRow,
-                    pressed && styles.activityPressed,
-                  ]}
-                >
-                  <View style={styles.activityDot} />
-                  <View style={styles.activityCopy}>
-                    <Text style={styles.activityTitle}>{item.title}</Text>
-                    <Text style={styles.activityDetail}>{item.subtitle}</Text>
-                  </View>
-                  <ChevronRight color={colors.mutedForeground} size={18} />
-                </Pressable>
-              </View>
-            ))
+            recentItems.map((item, index) => {
+              const Icon = RECENT_TYPE_ICON[item.type]
+              return (
+                <View key={`${item.type}-${item.id}`}>
+                  {index > 0 ? <View style={styles.divider} /> : null}
+                  <Pressable
+                    onPress={() => router.push(item.href as never)}
+                    style={({ pressed }) => [
+                      styles.activityRow,
+                      pressed && styles.activityPressed,
+                    ]}
+                  >
+                    <View style={styles.activityIconWrap}>
+                      <Icon color={colors.primary} size={16} />
+                    </View>
+                    <View style={styles.activityCopy}>
+                      <Text style={styles.activityTitle}>{item.title}</Text>
+                      <Text style={styles.activityDetail}>{item.subtitle}</Text>
+                    </View>
+                    <ChevronRight color={colors.mutedForeground} size={18} />
+                  </Pressable>
+                </View>
+              )
+            })
           )}
         </View>
       </View>
