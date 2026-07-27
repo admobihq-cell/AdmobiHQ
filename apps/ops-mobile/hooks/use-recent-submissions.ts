@@ -1,10 +1,26 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { formatDateTime } from "@workspace/ops-contracts"
+import { formatDate } from "@workspace/ops-contracts"
 
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsAuthReady, useOpsClient } from "@/lib/ops-client"
 import { entityKeys } from "@/lib/query-keys"
+
+function formatRelativeTime(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  const diffMs = Date.now() - date.getTime()
+  const minute = 60_000
+  const hour = 60 * minute
+  const day = 24 * hour
+
+  if (diffMs < minute) return "Just now"
+  if (diffMs < hour) return `${Math.floor(diffMs / minute)}m ago`
+  if (diffMs < day) return `${Math.floor(diffMs / hour)}h ago`
+  if (diffMs < 2 * day) return "Yesterday"
+  if (diffMs < 7 * day) return `${Math.floor(diffMs / day)}d ago`
+  return formatDate(iso)
+}
 
 export type RecentSubmission = {
   id: number
@@ -43,7 +59,7 @@ export function useRecentSubmissions(limit = 8) {
         id: item.id,
         type: "lead" as const,
         title: item.company_name,
-        subtitle: `${item.contact_name} · ${formatDateTime(item.created_at)}`,
+        subtitle: `${item.contact_name} · ${formatRelativeTime(item.created_at)}`,
         created_at: item.created_at,
         href: `/(ops)/leads/${item.id}`,
       })),
@@ -51,7 +67,7 @@ export function useRecentSubmissions(limit = 8) {
         id: item.id,
         type: "fleet" as const,
         title: item.company_name,
-        subtitle: `${item.primary_contact_name} · ${formatDateTime(item.created_at)}`,
+        subtitle: `${item.primary_contact_name} · ${formatRelativeTime(item.created_at)}`,
         created_at: item.created_at,
         href: `/(ops)/fleet/${item.id}`,
       })),
@@ -59,7 +75,7 @@ export function useRecentSubmissions(limit = 8) {
         id: item.id,
         type: "driver" as const,
         title: item.name,
-        subtitle: `${item.city} · ${formatDateTime(item.created_at)}`,
+        subtitle: `${item.city} · ${formatRelativeTime(item.created_at)}`,
         created_at: item.created_at,
         href: `/(ops)/drivers/${item.id}`,
       })),
