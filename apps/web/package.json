@@ -52,6 +52,7 @@
     "@workspace/ops-api-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
+    "antd": "^6.5.2",
     "bull": "^4.16.5",
     "dotenv": "^16.6.1",
     "graphql": "^16.14.0",
