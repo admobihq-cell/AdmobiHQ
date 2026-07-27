@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { useUser } from "@clerk/clerk-expo"
 import { useRouter } from "expo-router"
 import {
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -23,10 +24,10 @@ import {
 
 import { ActionCard } from "@/components/ui/action-card"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
-import { PageHero } from "@/components/ui/page-hero"
 import { StatCard } from "@/components/ui/stat-card"
-import { FilterChips } from "@/components/app/filter-chips"
+import { DashboardBanner } from "@/components/app/dashboard-banner"
 import { BreakdownPieSwitcher } from "@/components/app/metric-bar"
+import { RangeDropdown } from "@/components/app/range-dropdown"
 import { AvatarInitials } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { ActivityChart } from "@/components/app/sparkline"
@@ -35,7 +36,7 @@ import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
-import { useThemeColors, spacing, typography } from "@/lib/theme"
+import { useThemeColors, spacing, typography, radius } from "@/lib/theme"
 
 const RANGES: Array<{ key: DateRangeKey; label: string }> = [
   { key: "7d", label: "7 days" },
@@ -91,8 +92,31 @@ export default function DashboardScreen() {
         padded: {
           paddingHorizontal: spacing.lg,
         },
-        section: {
-          marginTop: -spacing.sm,
+        appHeader: {
+          paddingHorizontal: spacing.lg,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        },
+        brandLockup: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.sm,
+        },
+        brandMark: {
+          width: 28,
+          height: 28,
+          borderRadius: radius.sm,
+        },
+        brandName: {
+          fontSize: 16,
+          fontWeight: "700",
+          letterSpacing: -0.2,
+          color: colors.text,
+        },
+        bannerWrap: {
+          paddingHorizontal: spacing.lg,
+          marginTop: spacing.md,
         },
         recentError: {
           marginBottom: spacing.sm,
@@ -111,6 +135,15 @@ export default function DashboardScreen() {
           marginBottom: spacing.sm,
           marginLeft: spacing.xs,
         },
+        sectionLabelInline: {
+          marginBottom: 0,
+        },
+        sectionHeaderRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: spacing.sm,
+        },
         statsGrid: {
           flexDirection: "row",
           flexWrap: "wrap",
@@ -125,6 +158,7 @@ export default function DashboardScreen() {
         },
         actions: {
           flexDirection: "row",
+          flexWrap: "wrap",
           gap: spacing.sm,
         },
         activityRow: {
@@ -202,27 +236,31 @@ export default function DashboardScreen() {
         />
       }
     >
-      <View style={styles.padded}>
-        <PageHero
+      <View style={styles.appHeader}>
+        <View style={styles.brandLockup}>
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.brandMark}
+            resizeMode="contain"
+            accessibilityLabel="Admobi"
+          />
+          <Text style={styles.brandName}>Admobi Ops</Text>
+        </View>
+        <View style={styles.heroTrailing}>
+          <AvatarInitials
+            name={displayName}
+            onPress={() => router.push("/(ops)/profile")}
+          />
+          <ActivityBellButton />
+          <ThemeToggleButton />
+        </View>
+      </View>
+
+      <View style={styles.bannerWrap}>
+        <DashboardBanner
           eyebrow={getGreeting()}
           title={`Welcome back, ${displayName}`}
           description="Operational pulse across leads, fleet, drivers, and signups."
-          trailing={
-            <View style={styles.heroTrailing}>
-              <AvatarInitials name={displayName} />
-              <ActivityBellButton />
-              <ThemeToggleButton />
-            </View>
-          }
-        />
-      </View>
-
-      <View style={styles.section}>
-        <FilterChips
-          options={RANGES.map((r) => ({ key: r.key, label: r.label }))}
-          selected={range}
-          onSelect={(key) => key && setRange(key as DateRangeKey)}
-          showAll={false}
         />
       </View>
 
@@ -233,11 +271,14 @@ export default function DashboardScreen() {
       ) : null}
 
       <View style={styles.padded}>
-        <Text style={styles.sectionLabel}>Overview</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={[styles.sectionLabel, styles.sectionLabelInline]}>Overview</Text>
+          <RangeDropdown options={RANGES} selected={range} onSelect={setRange} />
+        </View>
         <View style={styles.statsGrid}>
           {loading && !totals && !error ? (
             <>
-              <StatCard icon={BarChart3} label="Total" value="—" />
+              <StatCard icon={BarChart3} label="Total" value="—" emphasis />
               <StatCard icon={Megaphone} label="Leads" value="—" />
               <StatCard icon={Truck} label="Fleet" value="—" />
               <StatCard icon={Car} label="Drivers" value="—" />
@@ -248,7 +289,7 @@ export default function DashboardScreen() {
                 icon={BarChart3}
                 label="Total submissions"
                 value={totals?.all ?? "—"}
-                hint="All types"
+                emphasis
               />
               <StatCard
                 icon={Megaphone}
@@ -267,18 +308,6 @@ export default function DashboardScreen() {
                 label="Drivers"
                 value={totals?.drivers ?? "—"}
                 onPress={() => router.push("/(ops)/drivers")}
-              />
-              <StatCard
-                icon={Mail}
-                label="Waitlist"
-                value={totals?.waitlist ?? "—"}
-                onPress={() => router.push("/(ops)/waitlist")}
-              />
-              <StatCard
-                icon={FileText}
-                label="Media kit"
-                value={totals?.mediaKit ?? "—"}
-                onPress={() => router.push("/(ops)/media-kit")}
               />
             </>
           )}
@@ -327,6 +356,16 @@ export default function DashboardScreen() {
             icon={Truck}
             label="View fleet"
             onPress={() => router.push("/(ops)/fleet")}
+          />
+          <ActionCard
+            icon={Mail}
+            label="Waitlist"
+            onPress={() => router.push("/(ops)/waitlist")}
+          />
+          <ActionCard
+            icon={FileText}
+            label="Media kit"
+            onPress={() => router.push("/(ops)/media-kit")}
           />
         </View>
       </View>

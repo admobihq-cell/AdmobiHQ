@@ -26,6 +26,7 @@
     "@workspace/ops-contracts": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
+    "antd": "^6.5.2",
     "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
     "lucide-react": "^1.12.0",
