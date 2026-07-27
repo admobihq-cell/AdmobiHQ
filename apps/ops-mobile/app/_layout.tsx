@@ -12,8 +12,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { LoadingScreen } from "@/components/LoadingScreen"
+import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
 import { getPrimaryEmail, isOpsStaffEmail } from "@/lib/auth"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
+import { useOnboarding } from "@/lib/onboarding"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 import { darkColors, lightColors } from "@/lib/theme/palettes"
 
@@ -84,6 +86,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const authReady = isLoaded && userLoaded
   const [handoffVisible, setHandoffVisible] = useState(false)
   const handoffStarted = useRef(false)
+  const {
+    checked: onboardingChecked,
+    completed: onboardingCompleted,
+    complete: completeOnboarding,
+  } = useOnboarding()
 
   useSplashBootstrap(authReady)
   useOtaUpdates()
@@ -96,7 +103,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   useOpsPushNotifications(Boolean(isSignedIn && isStaff))
 
-  const inAuthGroup = segments[0] === "sign-in"
+  const inAuthGroup = segments[0] === "sign-in" || segments[0] === "sign-up"
   const inCustomerGroup = segments[0] === "(customer)"
   const inOpsGroup = segments[0] === "(ops)"
 
@@ -119,6 +126,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     if (isStaff) {
+      // First-time staff onboarding takes over rendering below; hold off on
+      // the dashboard redirect until it's been checked and cleared.
+      if (!onboardingChecked || !onboardingCompleted) return
+
       if (inAuthGroup || inCustomerGroup || !inOpsGroup) {
         if (!handoffStarted.current) {
           handoffStarted.current = true
@@ -139,6 +150,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     inAuthGroup,
     inCustomerGroup,
     inOpsGroup,
+    onboardingChecked,
+    onboardingCompleted,
     router,
   ])
 
@@ -152,6 +165,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!authReady) {
     return <LoadingScreen />
+  }
+
+  if (isSignedIn && isStaff && !onboardingChecked) {
+    return <LoadingScreen />
+  }
+
+  // First staff sign-in on this device: a one-time orientation to the tool
+  // before landing on the dashboard.
+  if (isSignedIn && isStaff && !onboardingCompleted) {
+    return <OnboardingScreen onDone={completeOnboarding} />
   }
 
   // Returning staff session: skip auth UI, brief cream handoff into dashboard.
@@ -193,6 +216,10 @@ function RootNavigator() {
           <Stack.Screen
             name="sign-in"
             options={{ title: "Sign in", headerShown: false }}
+          />
+          <Stack.Screen
+            name="sign-up"
+            options={{ title: "Create account", headerShown: false }}
           />
           <Stack.Screen name="(ops)" options={{ headerShown: false }} />
           <Stack.Screen name="(customer)" options={{ headerShown: false }} />

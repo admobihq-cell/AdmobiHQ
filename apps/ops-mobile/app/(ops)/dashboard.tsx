@@ -30,6 +30,7 @@ import { BreakdownPieSwitcher } from "@/components/app/metric-bar"
 import { AvatarInitials } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { ActivityChart } from "@/components/app/sparkline"
+import { ActivityBellButton } from "@/components/activity/activity-bell-button"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
@@ -209,6 +210,7 @@ export default function DashboardScreen() {
           trailing={
             <View style={styles.heroTrailing}>
               <AvatarInitials name={displayName} />
+              <ActivityBellButton />
               <ThemeToggleButton />
             </View>
           }

@@ -11,6 +11,7 @@ import { Bell, FileText, LogOut, Mail, Map, Person, Radio, RefreshCcw, Wallet } 
 
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { getPrimaryEmail } from "@/lib/auth"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { API_URL } from "@/lib/ops-client"
@@ -93,15 +94,10 @@ export default function ProfileScreen() {
     }
   }
 
+  const [confirmSignOutVisible, setConfirmSignOutVisible] = useState(false)
+
   const handleSignOut = () => {
-    Alert.alert("Sign out", "You'll need to sign in again to access the ops console.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: () => void signOut(),
-      },
-    ])
+    setConfirmSignOutVisible(true)
   }
 
   const styles = useMemo(
@@ -189,119 +185,134 @@ export default function ProfileScreen() {
   )
 
   return (
-    <ScrollView
-      style={[styles.scroll, { backgroundColor: colors.bg }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: insets.bottom + spacing.lg,
-        },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.hero}>
-        <View style={styles.avatar}>
-          <Person color={colors.primary} size={36} />
+    <>
+      <ScrollView
+        style={[styles.scroll, { backgroundColor: colors.bg }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + spacing.lg,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.hero}>
+          <View style={styles.avatar}>
+            <Person color={colors.primary} size={36} />
+          </View>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroTitle}>{displayName}</Text>
+            <Text style={styles.heroSubtitle}>
+              {email ?? "Admobi Ops staff"} · internal console
+            </Text>
+          </View>
         </View>
-        <View style={styles.heroCopy}>
-          <Text style={styles.heroTitle}>{displayName}</Text>
-          <Text style={styles.heroSubtitle}>
-            {email ?? "Admobi Ops staff"} · internal console
-          </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Modules</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              icon={Map}
+              label="Network map"
+              description="Corridors and city view"
+              onPress={() => router.push("/(ops)/map")}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              icon={Mail}
+              label="Waitlist"
+              description={`${counts.waitlist} entries`}
+              onPress={() => router.push("/(ops)/waitlist")}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              icon={FileText}
+              label="Media kit"
+              description={`${counts.mediaKit} requests`}
+              onPress={() => router.push("/(ops)/media-kit")}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              icon={Radio}
+              label="Announcements"
+              description="Broadcast to customer apps"
+              onPress={() => router.push("/(ops)/announcements")}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Modules</Text>
-        <View style={styles.group}>
-          <SettingsRow
-            icon={Map}
-            label="Network map"
-            description="Corridors and city view"
-            onPress={() => router.push("/(ops)/map")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon={Mail}
-            label="Waitlist"
-            description={`${counts.waitlist} entries`}
-            onPress={() => router.push("/(ops)/waitlist")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon={FileText}
-            label="Media kit"
-            description={`${counts.mediaKit} requests`}
-            onPress={() => router.push("/(ops)/media-kit")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon={Radio}
-            label="Announcements"
-            description="Broadcast to customer apps"
-            onPress={() => router.push("/(ops)/announcements")}
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Finance</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              icon={Wallet}
+              label="Finances"
+              description="Wallet, top-ups & payouts"
+              onPress={() => router.push("/(ops)/finances")}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Finance</Text>
-        <View style={styles.group}>
-          <SettingsRow
-            icon={Wallet}
-            label="Finances"
-            description="Wallet, top-ups & payouts"
-            onPress={() => router.push("/(ops)/finances")}
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Preferences</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              icon={Bell}
+              label="Notifications"
+              description="Preview alert styles"
+              onPress={() => router.push("/(ops)/notifications")}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Preferences</Text>
-        <View style={styles.group}>
-          <SettingsRow
-            icon={Bell}
-            label="Notifications"
-            description="Preview alert styles"
-            onPress={() => router.push("/(ops)/notifications")}
-          />
+        <ThemeSettingsSection />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>App</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              icon={RefreshCcw}
+              label="Check for updates"
+              description={checkingUpdate ? "Checking…" : "Get the latest version now"}
+              onPress={handleCheckForUpdates}
+            />
+          </View>
         </View>
-      </View>
 
-      <ThemeSettingsSection />
-
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>App</Text>
-        <View style={styles.group}>
-          <SettingsRow
-            icon={RefreshCcw}
-            label="Check for updates"
-            description={checkingUpdate ? "Checking…" : "Get the latest version now"}
-            onPress={handleCheckForUpdates}
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Account</Text>
+          <View style={styles.group}>
+            <SettingsRow
+              icon={LogOut}
+              label="Sign out"
+              description="End your ops session"
+              onPress={handleSignOut}
+              destructive
+              showChevron={false}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Account</Text>
-        <View style={styles.group}>
-          <SettingsRow
-            icon={LogOut}
-            label="Sign out"
-            description="End your ops session"
-            onPress={handleSignOut}
-            destructive
-            showChevron={false}
-          />
+        <View style={styles.footer}>
+          <Text style={styles.footerLabel}>Environment</Text>
+          <Text style={styles.footerValue}>API: {API_URL}</Text>
+          <Text style={styles.footerHint}>Ops mobile · v{version}</Text>
         </View>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerLabel}>Environment</Text>
-        <Text style={styles.footerValue}>API: {API_URL}</Text>
-        <Text style={styles.footerHint}>Ops mobile · v{version}</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+      <ConfirmDialog
+        visible={confirmSignOutVisible}
+        title="Sign out"
+        message="You'll need to sign in again to access the ops console."
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={() => {
+          setConfirmSignOutVisible(false)
+          void signOut()
+        }}
+        onCancel={() => setConfirmSignOutVisible(false)}
+      />
+    </>
   )
 }

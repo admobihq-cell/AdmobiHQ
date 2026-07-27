@@ -13,16 +13,9 @@ type FilterChipsProps = {
   selected: string | null
   onSelect: (key: string | null) => void
   showAll?: boolean
-  embedded?: boolean
 }
 
-export function FilterChips({
-  options,
-  selected,
-  onSelect,
-  showAll = true,
-  embedded = false,
-}: FilterChipsProps) {
+export function FilterChips({ options, selected, onSelect, showAll = true }: FilterChipsProps) {
   const styles = useThemedStyles((c) => ({
     root: {
       flexGrow: 0,
@@ -32,9 +25,6 @@ export function FilterChips({
       paddingHorizontal: spacing.lg,
       gap: spacing.sm,
       paddingBottom: spacing.sm,
-    },
-    scrollEmbedded: {
-      paddingHorizontal: 0,
     },
     chip: {
       paddingHorizontal: 14,
@@ -70,19 +60,14 @@ export function FilterChips({
       horizontal
       showsHorizontalScrollIndicator={false}
       style={styles.root}
-      contentContainerStyle={[
-        styles.scroll,
-        embedded && styles.scrollEmbedded,
-      ]}
+      contentContainerStyle={styles.scroll}
     >
       {showAll ? (
         <Pressable
           onPress={() => handleSelect(null)}
           style={[styles.chip, !selected && styles.chipActive]}
         >
-          <Text style={[styles.chipText, !selected && styles.chipTextActive]}>
-            All
-          </Text>
+          <Text style={[styles.chipText, !selected && styles.chipTextActive]}>All</Text>
         </Pressable>
       ) : null}
       {options.map((option) => {
