@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Campaigns, Eye, Map, Radio, TrendingUp } from "@/components/icons"
+import { NotificationBellButton } from "@/components/notifications/notification-bell-button"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { StatCard } from "@/components/ui/stat-card"
 import { WalletPreviewCard } from "@/components/wallet/wallet-preview-card"
@@ -53,6 +54,10 @@ export default function OverviewScreen() {
           alignItems: "flex-start",
           justifyContent: "space-between",
           gap: spacing.md,
+        },
+        heroActions: {
+          flexDirection: "row",
+          gap: spacing.sm,
         },
         heroEyebrow: {
           ...typography.caption,
@@ -168,7 +173,10 @@ export default function OverviewScreen() {
             <Text style={styles.heroEyebrow}>{getGreeting()}</Text>
             <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
           </View>
-          <ThemeToggleButton />
+          <View style={styles.heroActions}>
+            <NotificationBellButton />
+            <ThemeToggleButton />
+          </View>
         </View>
         <Text style={styles.heroBody}>
           Placeholder dashboard — live metrics and reporting will connect to
