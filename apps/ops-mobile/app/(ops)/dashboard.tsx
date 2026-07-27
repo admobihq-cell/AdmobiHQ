@@ -19,6 +19,7 @@ import {
   FileText,
   Mail,
   Megaphone,
+  Send,
   Truck,
   type AppIcon,
 } from "@/components/icons"
@@ -32,6 +33,7 @@ import { RangeDropdown } from "@/components/app/range-dropdown"
 import { AvatarInitials } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { ActivityChart } from "@/components/app/sparkline"
+import { FabMenu, type FabMenuItem } from "@/components/app/fab-menu"
 import { ActivityBellButton } from "@/components/activity/activity-bell-button"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
@@ -52,6 +54,15 @@ const RECENT_TYPE_ICON: Record<RecentSubmission["type"], AppIcon> = {
   fleet: Truck,
   driver: Car,
 }
+
+const FAB_ITEMS: FabMenuItem[] = [
+  { key: "lead", label: "New lead", icon: Megaphone, href: "/(ops)/leads/new" },
+  { key: "fleet", label: "New fleet partner", icon: Truck, href: "/(ops)/fleet/new" },
+  { key: "driver", label: "New driver", icon: Car, href: "/(ops)/drivers/new" },
+  { key: "waitlist", label: "New waitlist entry", icon: Mail, href: "/(ops)/waitlist/new" },
+  { key: "media-kit", label: "New media kit request", icon: FileText, href: "/(ops)/media-kit/new" },
+  { key: "announcement", label: "New announcement", icon: Send, href: "/(ops)/announcements/new" },
+]
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -91,6 +102,9 @@ export default function DashboardScreen() {
   const styles = useMemo(
     () =>
       StyleSheet.create({
+        screen: {
+          flex: 1,
+        },
         scroll: {
           flex: 1,
         },
@@ -226,205 +240,209 @@ export default function DashboardScreen() {
   }
 
   return (
-    <ScrollView
-      style={[styles.scroll, { backgroundColor: colors.bg }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: insets.bottom + spacing.lg,
-        },
-      ]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void onRefresh()}
-          tintColor={colors.primary}
-          colors={[colors.primary]}
-        />
-      }
-    >
-      <View style={styles.appHeader}>
-        <View style={styles.brandLockup}>
-          <Image
-            source={require("@/assets/images/icon.png")}
-            style={styles.brandMark}
-            resizeMode="contain"
-            accessibilityLabel="Admobi"
+    <View style={styles.screen}>
+      <ScrollView
+        style={[styles.scroll, { backgroundColor: colors.bg }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + spacing.lg + 72,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
-          <Text style={styles.brandName}>Admobi Ops</Text>
+        }
+      >
+        <View style={styles.appHeader}>
+          <View style={styles.brandLockup}>
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={styles.brandMark}
+              resizeMode="contain"
+              accessibilityLabel="Admobi"
+            />
+            <Text style={styles.brandName}>Admobi Ops</Text>
+          </View>
+          <View style={styles.heroTrailing}>
+            <ActivityBellButton />
+            <ThemeToggleButton />
+            <AvatarInitials
+              name={displayName}
+              onPress={() => router.push("/(ops)/profile")}
+              size={32}
+            />
+          </View>
         </View>
-        <View style={styles.heroTrailing}>
-          <ActivityBellButton />
-          <ThemeToggleButton />
-          <AvatarInitials
-            name={displayName}
-            onPress={() => router.push("/(ops)/profile")}
-            size={32}
+
+        <View style={styles.bannerWrap}>
+          <DashboardBanner
+            eyebrow={getGreeting()}
+            title={`Welcome back, ${displayName}`}
+            description="Operational pulse across leads, fleet, drivers, and signups."
           />
         </View>
-      </View>
 
-      <View style={styles.bannerWrap}>
-        <DashboardBanner
-          eyebrow={getGreeting()}
-          title={`Welcome back, ${displayName}`}
-          description="Operational pulse across leads, fleet, drivers, and signups."
-        />
-      </View>
+        {error ? (
+          <View style={styles.padded}>
+            <ApiErrorBanner message={error} onRetry={refetch} />
+          </View>
+        ) : null}
 
-      {error ? (
         <View style={styles.padded}>
-          <ApiErrorBanner message={error} onRetry={refetch} />
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionLabel, styles.sectionLabelInline]}>Overview</Text>
+            <RangeDropdown options={RANGES} selected={range} onSelect={setRange} />
+          </View>
+          <View style={styles.statsGrid}>
+            {loading && !totals && !error ? (
+              <>
+                <StatCard icon={BarChart3} label="Total" value="—" emphasis />
+                <StatCard icon={Megaphone} label="Leads" value="—" />
+                <StatCard icon={Truck} label="Fleet" value="—" />
+                <StatCard icon={Car} label="Drivers" value="—" />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  icon={BarChart3}
+                  label="Total submissions"
+                  value={totals?.all ?? "—"}
+                  emphasis
+                />
+                <StatCard
+                  icon={Megaphone}
+                  label="Campaign leads"
+                  value={totals?.leads ?? "—"}
+                  onPress={() => router.push("/(ops)/leads")}
+                />
+                <StatCard
+                  icon={Truck}
+                  label="Fleet partners"
+                  value={totals?.fleet ?? "—"}
+                  onPress={() => router.push("/(ops)/fleet")}
+                />
+                <StatCard
+                  icon={Car}
+                  label="Drivers"
+                  value={totals?.drivers ?? "—"}
+                  onPress={() => router.push("/(ops)/drivers")}
+                />
+              </>
+            )}
+          </View>
         </View>
-      ) : null}
 
-      <View style={styles.padded}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={[styles.sectionLabel, styles.sectionLabelInline]}>Overview</Text>
-          <RangeDropdown options={RANGES} selected={range} onSelect={setRange} />
-        </View>
-        <View style={styles.statsGrid}>
-          {loading && !totals && !error ? (
-            <>
-              <StatCard icon={BarChart3} label="Total" value="—" emphasis />
-              <StatCard icon={Megaphone} label="Leads" value="—" />
-              <StatCard icon={Truck} label="Fleet" value="—" />
-              <StatCard icon={Car} label="Drivers" value="—" />
-            </>
-          ) : (
-            <>
-              <StatCard
-                icon={BarChart3}
-                label="Total submissions"
-                value={totals?.all ?? "—"}
-                emphasis
-              />
-              <StatCard
-                icon={Megaphone}
-                label="Campaign leads"
-                value={totals?.leads ?? "—"}
-                onPress={() => router.push("/(ops)/leads")}
-              />
-              <StatCard
-                icon={Truck}
-                label="Fleet partners"
-                value={totals?.fleet ?? "—"}
-                onPress={() => router.push("/(ops)/fleet")}
-              />
-              <StatCard
-                icon={Car}
-                label="Drivers"
-                value={totals?.drivers ?? "—"}
-                onPress={() => router.push("/(ops)/drivers")}
-              />
-            </>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.padded}>
-        <Text style={styles.sectionLabel}>Activity</Text>
-        <ActivityChart data={stats?.timeline ?? []} loading={loading} />
-      </View>
-
-      {(byType.length > 0 || driversByCity.length > 0 || loading) ? (
         <View style={styles.padded}>
-          <Text style={styles.sectionLabel}>Breakdown</Text>
-          <BreakdownPieSwitcher
-            loading={loading}
-            views={[
-              {
-                key: "type",
-                label: "By type",
-                title: "By type",
-                subtitle: "Share of submissions in this period",
-                items: byType,
-              },
-              {
-                key: "city",
-                label: "City distribution",
-                title: "City distribution",
-                subtitle: "Where driver signups are coming from",
-                items: driversByCity.slice(0, 6),
-              },
-            ]}
-          />
+          <Text style={styles.sectionLabel}>Activity</Text>
+          <ActivityChart data={stats?.timeline ?? []} loading={loading} />
         </View>
-      ) : null}
 
-      <View style={styles.padded}>
-        <Text style={styles.sectionLabel}>Quick actions</Text>
-        <View style={styles.actions}>
-          <ActionCard
-            icon={Megaphone}
-            label="Open leads"
-            onPress={() => router.push("/(ops)/leads")}
-          />
-          <ActionCard
-            icon={Truck}
-            label="View fleet"
-            onPress={() => router.push("/(ops)/fleet")}
-          />
-          <ActionCard
-            icon={Mail}
-            label="Waitlist"
-            onPress={() => router.push("/(ops)/waitlist")}
-          />
-          <ActionCard
-            icon={FileText}
-            label="Media kit"
-            onPress={() => router.push("/(ops)/media-kit")}
-          />
-        </View>
-      </View>
-
-      <View style={styles.padded}>
-        <Text style={styles.sectionLabel}>Recent activity</Text>
-        {recentError ? (
-          <View style={styles.recentError}>
-            <ApiErrorBanner
-              message={recentError}
-              onRetry={refetchRecent}
+        {(byType.length > 0 || driversByCity.length > 0 || loading) ? (
+          <View style={styles.padded}>
+            <Text style={styles.sectionLabel}>Breakdown</Text>
+            <BreakdownPieSwitcher
+              loading={loading}
+              views={[
+                {
+                  key: "type",
+                  label: "By type",
+                  title: "By type",
+                  subtitle: "Share of submissions in this period",
+                  items: byType,
+                },
+                {
+                  key: "city",
+                  label: "City distribution",
+                  title: "City distribution",
+                  subtitle: "Where driver signups are coming from",
+                  items: driversByCity.slice(0, 6),
+                },
+              ]}
             />
           </View>
         ) : null}
-        <View style={styles.group}>
-          {recentLoading ? (
-            <SkeletonListRows count={4} />
-          ) : recentItems.length === 0 ? (
-            <View style={styles.emptyRecent}>
-              <Text style={styles.emptyText}>No recent submissions</Text>
-            </View>
-          ) : (
-            recentItems.map((item, index) => {
-              const Icon = RECENT_TYPE_ICON[item.type]
-              return (
-                <View key={`${item.type}-${item.id}`}>
-                  {index > 0 ? <View style={styles.divider} /> : null}
-                  <Pressable
-                    onPress={() => router.push(item.href as never)}
-                    style={({ pressed }) => [
-                      styles.activityRow,
-                      pressed && styles.activityPressed,
-                    ]}
-                  >
-                    <View style={styles.activityIconWrap}>
-                      <Icon color={colors.primary} size={16} />
-                    </View>
-                    <View style={styles.activityCopy}>
-                      <Text style={styles.activityTitle}>{item.title}</Text>
-                      <Text style={styles.activityDetail}>{item.subtitle}</Text>
-                    </View>
-                    <ChevronRight color={colors.mutedForeground} size={18} />
-                  </Pressable>
-                </View>
-              )
-            })
-          )}
+
+        <View style={styles.padded}>
+          <Text style={styles.sectionLabel}>Quick actions</Text>
+          <View style={styles.actions}>
+            <ActionCard
+              icon={Megaphone}
+              label="Open leads"
+              onPress={() => router.push("/(ops)/leads")}
+            />
+            <ActionCard
+              icon={Truck}
+              label="View fleet"
+              onPress={() => router.push("/(ops)/fleet")}
+            />
+            <ActionCard
+              icon={Mail}
+              label="Waitlist"
+              onPress={() => router.push("/(ops)/waitlist")}
+            />
+            <ActionCard
+              icon={FileText}
+              label="Media kit"
+              onPress={() => router.push("/(ops)/media-kit")}
+            />
+          </View>
         </View>
-      </View>
-    </ScrollView>
+
+        <View style={styles.padded}>
+          <Text style={styles.sectionLabel}>Recent activity</Text>
+          {recentError ? (
+            <View style={styles.recentError}>
+              <ApiErrorBanner
+                message={recentError}
+                onRetry={refetchRecent}
+              />
+            </View>
+          ) : null}
+          <View style={styles.group}>
+            {recentLoading ? (
+              <SkeletonListRows count={4} />
+            ) : recentItems.length === 0 ? (
+              <View style={styles.emptyRecent}>
+                <Text style={styles.emptyText}>No recent submissions</Text>
+              </View>
+            ) : (
+              recentItems.map((item, index) => {
+                const Icon = RECENT_TYPE_ICON[item.type]
+                return (
+                  <View key={`${item.type}-${item.id}`}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <Pressable
+                      onPress={() => router.push(item.href as never)}
+                      style={({ pressed }) => [
+                        styles.activityRow,
+                        pressed && styles.activityPressed,
+                      ]}
+                    >
+                      <View style={styles.activityIconWrap}>
+                        <Icon color={colors.primary} size={16} />
+                      </View>
+                      <View style={styles.activityCopy}>
+                        <Text style={styles.activityTitle}>{item.title}</Text>
+                        <Text style={styles.activityDetail}>{item.subtitle}</Text>
+                      </View>
+                      <ChevronRight color={colors.mutedForeground} size={18} />
+                    </Pressable>
+                  </View>
+                )
+              })
+            )}
+          </View>
+        </View>
+      </ScrollView>
+
+      <FabMenu items={FAB_ITEMS} />
+    </View>
   )
 }
