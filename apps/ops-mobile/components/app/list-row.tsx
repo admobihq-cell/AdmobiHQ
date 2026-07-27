@@ -29,7 +29,13 @@ function getInitials(text: string): string {
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase()
 }
 
-export function AvatarInitials({ name }: { name: string }) {
+export function AvatarInitials({
+  name,
+  onPress,
+}: {
+  name: string
+  onPress?: () => void
+}) {
   const styles = useThemedStyles((c) => ({
     avatar: {
       width: 40,
@@ -39,6 +45,9 @@ export function AvatarInitials({ name }: { name: string }) {
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
+    avatarPressed: {
+      opacity: 0.75,
+    },
     avatarText: {
       ...typography.caption,
       fontWeight: "700" as const,
@@ -46,10 +55,22 @@ export function AvatarInitials({ name }: { name: string }) {
     },
   }))
 
+  const initials = <Text style={styles.avatarText}>{getInitials(name)}</Text>
+
+  if (!onPress) {
+    return <View style={styles.avatar}>{initials}</View>
+  }
+
   return (
-    <View style={styles.avatar}>
-      <Text style={styles.avatarText}>{getInitials(name)}</Text>
-    </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Open profile"
+      hitSlop={8}
+      style={({ pressed }) => [styles.avatar, pressed && styles.avatarPressed]}
+    >
+      {initials}
+    </Pressable>
   )
 }
 
