@@ -9,7 +9,7 @@ import Animated, {
 import Svg, { Circle, ClipPath, Defs, G, Path } from "react-native-svg"
 
 import { useTheme } from "@/lib/theme/provider"
-import { radius, spacing } from "@/lib/theme/tokens"
+import { radius } from "@/lib/theme/tokens"
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 const AnimatedG = Animated.createAnimatedComponent(G)
@@ -20,7 +20,7 @@ type ThemeToggleButtonProps = {
 }
 
 /** Sun rays retract into a crescent moon — same animation as the web toggle, rebuilt with react-native-svg + reanimated since Framer Motion can't run here. */
-export function ThemeToggleButton({ size = 22 }: ThemeToggleButtonProps) {
+export function ThemeToggleButton({ size = 18 }: ThemeToggleButtonProps) {
   const { colors, resolvedTheme, toggleTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const label = isDark ? "Switch to light mode" : "Switch to dark mode"
@@ -34,8 +34,8 @@ export function ThemeToggleButton({ size = 22 }: ThemeToggleButtonProps) {
   }, [isDark, progress])
 
   const clipProps = useAnimatedProps(() => ({
-    x: -12 * progress.value,
-    y: 10 * progress.value,
+    translateX: -12 * progress.value,
+    translateY: 10 * progress.value,
   }))
 
   const circleProps = useAnimatedProps(() => ({
@@ -92,13 +92,12 @@ export function ThemeToggleButton({ size = 22 }: ThemeToggleButtonProps) {
 
 const styles = StyleSheet.create({
   button: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
-    padding: spacing.xs,
   },
   pressed: {
     opacity: 0.75,

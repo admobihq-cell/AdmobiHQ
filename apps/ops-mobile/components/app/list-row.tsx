@@ -1,6 +1,6 @@
 import { ChevronRight } from "@/components/icons"
 import * as Haptics from "expo-haptics"
-import { Platform, Pressable, Text, View } from "react-native"
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native"
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -32,16 +32,20 @@ function getInitials(text: string): string {
 export function AvatarInitials({
   name,
   onPress,
+  size = 40,
 }: {
   name: string
   onPress?: () => void
+  size?: number
 }) {
   const styles = useThemedStyles((c) => ({
     avatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: size,
+      height: size,
+      borderRadius: size / 2,
       backgroundColor: c.accent,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
@@ -50,6 +54,7 @@ export function AvatarInitials({
     },
     avatarText: {
       ...typography.caption,
+      fontSize: Math.round(size * 0.32),
       fontWeight: "700" as const,
       color: c.primary,
     },
