@@ -14,15 +14,16 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated"
+import { useRouter } from "expo-router"
 import { useSignIn } from "@clerk/clerk-expo"
 import { Mail, ShieldCheck } from "@/components/icons"
-import { isAdmobiEmail } from "@workspace/ops-contracts"
+import { ALLOWED_DOMAIN } from "@workspace/ops-contracts"
 
 import { OtpCodeInput } from "@/components/otp-code-input"
 import {
   Card,
+  EmailUsernameField,
   ErrorText,
-  Field,
   IconBox,
   Label,
   PrimaryButton,
@@ -124,7 +125,7 @@ export function SignInForm() {
     },
   }))
   const [step, setStep] = useState<Step>("welcome")
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [code, setCode] = useState("")
   const [emailAddressId, setEmailAddressId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -133,8 +134,12 @@ export function SignInForm() {
   const verifyingRef = useRef(false)
   const welcomePress = useSharedValue(1)
 
-  const emailAllowed = isAdmobiEmail(email)
-  const domainBlocked = !!email && !emailAllowed && email.includes("@")
+  // Domain is fixed and appended automatically — staff only ever type the
+  // local part. Stripping anything after an "@" means pasting a full email
+  // out of habit still works instead of producing a mangled address.
+  const localPart = username.trim().toLowerCase().replace(/@.*$/, "")
+  const email = localPart ? `${localPart}${ALLOWED_DOMAIN}` : ""
+  const emailAllowed = localPart.length > 0
 
   useEffect(() => {
     if (resendIn <= 0) return
@@ -355,24 +360,20 @@ export function SignInForm() {
         </View>
         <Title>Work email</Title>
         <Subtitle>
-          We will send a one-time verification code to your @admobihq.com
-          address.
+          Enter your Admobi username — we&apos;ll email a one-time code to{" "}
+          <Text style={styles.emailHighlight}>{ALLOWED_DOMAIN}</Text> to
+          verify it&apos;s you.
         </Subtitle>
         <Card style={layoutStyles.formCard}>
-          <Label>Email</Label>
-          <Field
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoComplete="email"
+          <Label>Username</Label>
+          <EmailUsernameField
+            value={username}
+            onChangeText={setUsername}
+            domain={ALLOWED_DOMAIN}
             autoFocus
-            placeholder="you@admobihq.com"
+            onSubmitEditing={() => void handleSendCode()}
           />
-          {domainBlocked ? (
-            <ErrorText>Only @admobihq.com addresses are authorized.</ErrorText>
-          ) : (
-            <ErrorText>{error}</ErrorText>
-          )}
+          <ErrorText>{error}</ErrorText>
           <PrimaryButton
             label={submitting ? "Sending…" : "Send code"}
             onPress={() => void handleSendCode()}
