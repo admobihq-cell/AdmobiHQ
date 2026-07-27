@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import * as Haptics from "expo-haptics"
 import { useRouter } from "expo-router"
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native"
@@ -13,6 +13,11 @@ import Animated, {
 
 import { Plus, type AppIcon } from "@/components/icons"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+
+// Hoisted so it's a stable reference across renders — a fresh FadeOut instance
+// on every render can make Reanimated restart the exit animation mid-flight
+// if the parent re-renders (e.g. dashboard data refetch) while it's closing.
+const ITEM_EXITING = FadeOut.duration(120)
 
 export type FabMenuItem = {
   key: string
@@ -97,6 +102,12 @@ export function FabMenu({ items }: FabMenuProps) {
     },
   }))
 
+  // Indexed per item so identity stays stable across renders (see ITEM_EXITING).
+  const itemEntering = useMemo(
+    () => items.map((_, index) => FadeIn.delay(index * 25).duration(160)),
+    [items],
+  )
+
   const iconRotation = useAnimatedStyle(() => ({
     transform: [{ rotate: `${progress.value * 45}deg` }],
   }))
@@ -108,14 +119,17 @@ export function FabMenu({ items }: FabMenuProps) {
     const next = !open
     setOpen(next)
     progress.value = withTiming(next ? 1 : 0, {
-      duration: 200,
+      duration: 150,
       easing: Easing.out(Easing.quad),
     })
   }
 
   function handleSelect(href: string) {
     setOpen(false)
-    progress.value = withTiming(0, { duration: 160 })
+    // No animated close here — we're navigating away, so the menu won't be
+    // visible again until it's freshly mounted closed. Animating would just
+    // delay the tap-to-navigate feel for no visible benefit.
+    progress.value = 0
     router.push(href as never)
   }
 
@@ -135,8 +149,8 @@ export function FabMenu({ items }: FabMenuProps) {
           ? items.map((item, index) => (
               <Animated.View
                 key={item.key}
-                entering={FadeIn.delay(index * 25).duration(160)}
-                exiting={FadeOut.duration(100)}
+                entering={itemEntering[index]}
+                exiting={ITEM_EXITING}
                 style={styles.itemRow}
               >
                 <Text style={styles.itemLabel}>{item.label}</Text>
