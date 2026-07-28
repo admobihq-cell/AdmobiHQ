@@ -167,8 +167,10 @@ export default function DashboardScreen() {
           marginBottom: spacing.sm,
         },
         statsGrid: {
+          gap: spacing.sm,
+        },
+        statsRow: {
           flexDirection: "row",
-          flexWrap: "wrap",
           gap: spacing.sm,
         },
         group: {
@@ -303,37 +305,45 @@ export default function DashboardScreen() {
           <View style={styles.statsGrid}>
             {loading && !totals && !error ? (
               <>
-                <StatCard icon={BarChart3} label="Total" value="—" emphasis />
-                <StatCard icon={Megaphone} label="Leads" value="—" />
-                <StatCard icon={Truck} label="Fleet" value="—" />
-                <StatCard icon={Car} label="Drivers" value="—" />
+                <View style={styles.statsRow}>
+                  <StatCard icon={BarChart3} label="Total" value="—" emphasis />
+                  <StatCard icon={Megaphone} label="Leads" value="—" />
+                </View>
+                <View style={styles.statsRow}>
+                  <StatCard icon={Truck} label="Fleet" value="—" />
+                  <StatCard icon={Car} label="Drivers" value="—" />
+                </View>
               </>
             ) : (
               <>
-                <StatCard
-                  icon={BarChart3}
-                  label="Total submissions"
-                  value={totals?.all ?? "—"}
-                  emphasis
-                />
-                <StatCard
-                  icon={Megaphone}
-                  label="Campaign leads"
-                  value={totals?.leads ?? "—"}
-                  onPress={() => router.push("/(ops)/leads")}
-                />
-                <StatCard
-                  icon={Truck}
-                  label="Fleet partners"
-                  value={totals?.fleet ?? "—"}
-                  onPress={() => router.push("/(ops)/fleet")}
-                />
-                <StatCard
-                  icon={Car}
-                  label="Drivers"
-                  value={totals?.drivers ?? "—"}
-                  onPress={() => router.push("/(ops)/drivers")}
-                />
+                <View style={styles.statsRow}>
+                  <StatCard
+                    icon={BarChart3}
+                    label="Total submissions"
+                    value={totals?.all ?? "—"}
+                    emphasis
+                  />
+                  <StatCard
+                    icon={Megaphone}
+                    label="Campaign leads"
+                    value={totals?.leads ?? "—"}
+                    onPress={() => router.push("/(ops)/leads")}
+                  />
+                </View>
+                <View style={styles.statsRow}>
+                  <StatCard
+                    icon={Truck}
+                    label="Fleet partners"
+                    value={totals?.fleet ?? "—"}
+                    onPress={() => router.push("/(ops)/fleet")}
+                  />
+                  <StatCard
+                    icon={Car}
+                    label="Drivers"
+                    value={totals?.drivers ?? "—"}
+                    onPress={() => router.push("/(ops)/drivers")}
+                  />
+                </View>
               </>
             )}
           </View>
