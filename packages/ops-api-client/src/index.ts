@@ -2,6 +2,8 @@ import {
   buildListQueryParams,
   type AnnouncementDto,
   type ApiErrorResponse,
+  type AuditEventDto,
+  type AuditListQueryParams,
   type BroadcastCreateInput,
   type BulkResponse,
   type DateRangeKey,
@@ -117,6 +119,9 @@ export type OpsClient = {
       page?: number
       pageSize?: number
     }) => Promise<PaginatedResponse<AnnouncementDto>>
+  }
+  audit: {
+    list: (params?: AuditListQueryParams) => Promise<PaginatedResponse<AuditEventDto>>
   }
 }
 
@@ -282,6 +287,25 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         const qs = query.toString()
         return request<PaginatedResponse<AnnouncementDto>>(
           `${apiPrefix}/notifications${qs ? `?${qs}` : ""}`,
+        )
+      },
+    },
+    audit: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+          sortBy: params.sortBy,
+          sortDir: params.sortDir,
+          entity_type: params.entity_type,
+          actor_email: params.actor_email,
+          app: params.app,
+          action: params.action,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<AuditEventDto>>(
+          `${apiPrefix}/audit${qs ? `?${qs}` : ""}`,
         )
       },
     },

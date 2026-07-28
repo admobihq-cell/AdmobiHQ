@@ -74,3 +74,23 @@ CREATE TABLE IF NOT EXISTS announcement_broadcasts (
 );
 
 CREATE INDEX IF NOT EXISTS announcement_broadcasts_created_at_idx ON announcement_broadcasts (created_at);
+
+-- Cross-app audit trail (ops mutations, public submissions, future customer apps)
+CREATE TABLE IF NOT EXISTS audit_events (
+  id SERIAL PRIMARY KEY,
+  app TEXT NOT NULL,
+  actor_type TEXT NOT NULL,
+  actor_user_id TEXT,
+  actor_email TEXT,
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  summary TEXT NOT NULL,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS audit_events_created_at_idx ON audit_events (created_at);
+CREATE INDEX IF NOT EXISTS audit_events_entity_type_created_at_idx ON audit_events (entity_type, created_at);
+CREATE INDEX IF NOT EXISTS audit_events_actor_email_created_at_idx ON audit_events (actor_email, created_at);
+CREATE INDEX IF NOT EXISTS audit_events_app_created_at_idx ON audit_events (app, created_at);

@@ -54,3 +54,41 @@ export type VehiclesActive = (typeof VEHICLES_ACTIVE)[number]
 
 export const DATE_RANGE_KEYS = ["7d", "30d", "90d", "all"] as const
 export type DateRangeKey = (typeof DATE_RANGE_KEYS)[number]
+
+export const AUDIT_APPS = [
+  "api",
+  "ops",
+  "ops-mobile",
+  "web",
+  "customer-web",
+  "customer-mobile",
+] as const
+export type AuditApp = (typeof AUDIT_APPS)[number]
+
+export const AUDIT_ACTOR_TYPES = [
+  "ops_user",
+  "public",
+  "system",
+  "customer",
+] as const
+export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number]
+
+export const AUDIT_ACTIONS = [
+  "create",
+  "update",
+  "delete",
+  "bulk_delete",
+  "bulk_status",
+  "broadcast",
+] as const
+export type AuditAction = (typeof AUDIT_ACTIONS)[number]
+
+export const AUDIT_ENTITY_TYPES = [
+  "lead",
+  "fleet",
+  "driver",
+  "waitlist",
+  "media_kit",
+  "announcement",
+] as const
+export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]

@@ -26,12 +26,21 @@ Tables (see Prisma schema):
 | `fleet_partners` | `FleetPartner` | Fleet inquiries (`POST /v1/public/leads`, audience `fleet`) |
 | `drivers` | `Driver` | Driver onboarding (`POST /v1/public/drivers`) |
 | `waitlist`, `media_kit_requests`, etc. | — | Public + ops admin routes under `/v1/*` |
+| `audit_events` | `AuditEvent` | Cross-app activity trail (who did what, when, email) |
 
 Implementation pattern (in `apps/api`):
 
 1. Zod validation in [`apps/api/lib/validation/`](../apps/api/lib/validation/) or [`@workspace/ops-contracts`](../packages/ops-contracts/).
 2. `prisma.*.create()` / CRUD in route handlers.
 3. Optional side effects (Resend via [`apps/api/lib/email/`](../apps/api/lib/email/)).
+4. After successful mutations, `recordAuditEvent` / `auditFromOpsUser` / `auditPublic` in [`apps/api/lib/audit.ts`](../apps/api/lib/audit.ts) (failures are logged only and never block the primary write).
+
+### Audit events
+
+- **Table:** `audit_events` (additive SQL in [`apps/web/prisma/scripts/ops-schema-additive.sql`](../apps/web/prisma/scripts/ops-schema-additive.sql)). Apply with `npm run db:ops-schema -w web` — do **not** `db push`.
+- **Write path:** API route handlers only. Client apps (ops, customer, marketing) never insert rows themselves.
+- **Read path:** `GET /v1/audit` (ops staff via `requireOpsUser`). UI: ops web `/activity`, ops-mobile Activity.
+- **Future apps:** after a customer (or other) mutation succeeds, call `recordAuditEvent({ app: "customer-mobile", actor_type: "customer", actor_email, … })` from the API handler. Same table; filter with `?app=`.
 
 ## What Payload owns
 

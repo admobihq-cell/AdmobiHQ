@@ -146,6 +146,27 @@ export type AnnouncementDto = {
   created_at: string
 }
 
+export type AuditEventDto = {
+  id: number
+  app: string
+  actor_type: string
+  actor_user_id: string | null
+  actor_email: string | null
+  action: string
+  entity_type: string
+  entity_id: string | null
+  summary: string
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+export type AuditListQueryParams = Partial<PaginationParams> & {
+  entity_type?: string
+  actor_email?: string
+  app?: string
+  action?: string
+}
+
 export type ListQueryParams = Partial<PaginationParams> & {
   budget?: string
   status?: string

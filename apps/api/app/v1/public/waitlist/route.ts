@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { auditPublic } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { waitlistSchema } from "@/lib/validation/lead-schemas"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
@@ -36,6 +37,15 @@ export async function POST(req: Request) {
         type: "waitlist",
         entityId: data.id,
         submitterName: data.email,
+      })
+
+      await auditPublic({
+        app: "web",
+        actor_email: data.email,
+        action: "create",
+        entity_type: "waitlist",
+        entity_id: data.id,
+        summary: `Created waitlist #${data.id} (${data.email})`,
       })
     }
 

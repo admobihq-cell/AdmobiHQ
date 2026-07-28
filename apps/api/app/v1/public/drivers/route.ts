@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { auditPublic } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
@@ -45,6 +46,15 @@ export async function POST(req: Request) {
       type: "driver",
       entityId: data.id,
       submitterName: parsed.data.name,
+    })
+
+    await auditPublic({
+      app: "web",
+      actor_email: parsed.data.email || null,
+      action: "create",
+      entity_type: "driver",
+      entity_id: data.id,
+      summary: `Created driver #${data.id} (${data.name})`,
     })
 
     // Queue confirmation and admin emails (fire-and-forget)

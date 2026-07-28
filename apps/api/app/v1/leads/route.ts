@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { paginationSchema } from "@workspace/ops-contracts"
 
+import { auditFromOpsUser } from "@/lib/audit"
 import { requireOpsUser } from "@/lib/auth"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
@@ -42,8 +43,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  let access
   try {
-    await requireOpsUser()
+    access = await requireOpsUser()
   } catch (e) {
     if (e instanceof Response) return e
     return jsonError("Unauthorized", 401)
@@ -58,6 +60,13 @@ export async function POST(req: Request) {
       audience: "campaign",
       phone: parsed.data.phone ?? null,
     },
+  })
+
+  await auditFromOpsUser(access, {
+    action: "create",
+    entity_type: "lead",
+    entity_id: data.id,
+    summary: `Created lead #${data.id} (${data.company_name})`,
   })
 
   return NextResponse.json(data, { status: 201 })

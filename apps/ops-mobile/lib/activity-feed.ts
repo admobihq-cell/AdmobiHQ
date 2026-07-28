@@ -1,6 +1,20 @@
-import { Car, Megaphone, Send, Warning, type AppIcon } from "@/components/icons"
+import { Car, FileText, Mail, Megaphone, Send, Truck, type AppIcon } from "@/components/icons"
+import {
+  formatDateTime,
+  formatLabel,
+  formatRelativeTime,
+  type AuditEventDto,
+} from "@workspace/ops-contracts"
 
-export type ActivityCategory = "lead" | "driver" | "fleet" | "announcement"
+export type ActivityCategory =
+  | "lead"
+  | "driver"
+  | "fleet"
+  | "waitlist"
+  | "media_kit"
+  | "announcement"
+  | "other"
+
 export type ActivityGroup = "today" | "earlier"
 
 export type ActivityItem = {
@@ -11,58 +25,79 @@ export type ActivityItem = {
   time: string
   read: boolean
   group: ActivityGroup
+  href?: string
 }
 
 export const ACTIVITY_CATEGORY_ICONS: Record<ActivityCategory, AppIcon> = {
   lead: Megaphone,
   driver: Car,
-  fleet: Warning,
+  fleet: Truck,
+  waitlist: Mail,
+  media_kit: FileText,
   announcement: Send,
+  other: Megaphone,
 }
 
 export const ACTIVITY_CATEGORY_LABELS: Record<ActivityCategory, string> = {
   lead: "Leads",
   driver: "Drivers",
   fleet: "Fleet",
+  waitlist: "Waitlist",
+  media_kit: "Media kit",
   announcement: "Announcements",
+  other: "Other",
 }
 
 export const ACTIVITY_CATEGORY_ORDER: ActivityCategory[] = [
   "lead",
   "driver",
   "fleet",
+  "waitlist",
+  "media_kit",
   "announcement",
 ]
 
-// Local activity — no per-staff lead/driver/fleet event feed exists on the
-// backend yet, so these stand in until that's wired up. Announcements (see
-// activity.tsx) are real, fetched from the existing /notifications API.
-export const PLACEHOLDER_ACTIVITY: ActivityItem[] = [
-  {
-    id: "p1",
-    category: "lead",
-    title: "New lead assigned: Jane Doe",
-    body: "Nairobi CBD retail lead routed to you for follow-up.",
-    time: "30m ago",
-    read: false,
-    group: "today",
-  },
-  {
-    id: "p2",
-    category: "driver",
-    title: "Driver approved: John Otieno",
-    body: "Background check cleared — ready for unit assignment.",
-    time: "3h ago",
-    read: false,
-    group: "today",
-  },
-  {
-    id: "p3",
-    category: "fleet",
-    title: "Unit #482 offline",
-    body: "No heartbeat received in 6 hours — check installation.",
-    time: "Yesterday",
+function isToday(value: string): boolean {
+  const d = new Date(value)
+  const now = new Date()
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  )
+}
+
+export function entityTypeToCategory(entityType: string): ActivityCategory {
+  switch (entityType) {
+    case "lead":
+      return "lead"
+    case "driver":
+      return "driver"
+    case "fleet":
+      return "fleet"
+    case "waitlist":
+      return "waitlist"
+    case "media_kit":
+      return "media_kit"
+    case "announcement":
+      return "announcement"
+    default:
+      return "other"
+  }
+}
+
+export function auditEventToActivityItem(event: AuditEventDto): ActivityItem {
+  const category = entityTypeToCategory(event.entity_type)
+  const actor = event.actor_email ?? formatLabel(event.actor_type)
+  return {
+    id: `audit-${event.id}`,
+    category,
+    title: event.summary,
+    body: `${actor} · ${formatLabel(event.action)}`,
+    time: isToday(event.created_at)
+      ? formatRelativeTime(event.created_at)
+      : formatDateTime(event.created_at),
     read: true,
-    group: "earlier",
-  },
-]
+    group: isToday(event.created_at) ? "today" : "earlier",
+  }
+}

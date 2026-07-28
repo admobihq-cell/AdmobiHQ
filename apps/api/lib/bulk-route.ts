@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import type { z } from "zod"
+import type { AuditEntityType } from "@workspace/ops-contracts"
 
+import { auditFromOpsUser } from "@/lib/audit"
 import { requireOpsUser } from "@/lib/auth"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 
@@ -14,9 +16,11 @@ export async function handleBulkRequest(
     delete: (ids: number[]) => Promise<number>
     updateStatus?: (ids: number[], status: string) => Promise<number>
   },
+  entityType: AuditEntityType,
 ) {
+  let access
   try {
-    await requireOpsUser()
+    access = await requireOpsUser()
   } catch (e) {
     if (e instanceof Response) return e
     return jsonError("Unauthorized", 401)
@@ -30,6 +34,12 @@ export async function handleBulkRequest(
   try {
     if (action === "delete") {
       const count = await handlers.delete(ids)
+      await auditFromOpsUser(access, {
+        action: "bulk_delete",
+        entity_type: entityType,
+        summary: `Bulk deleted ${count} ${entityType} record${count === 1 ? "" : "s"}`,
+        metadata: { ids, count },
+      })
       return NextResponse.json({ success: true, count })
     }
 
@@ -38,6 +48,12 @@ export async function handleBulkRequest(
         return jsonError("Status updates are not supported", 400)
       }
       const count = await handlers.updateStatus(ids, parsed.data.status)
+      await auditFromOpsUser(access, {
+        action: "bulk_status",
+        entity_type: entityType,
+        summary: `Bulk set ${count} ${entityType} record${count === 1 ? "" : "s"} → ${parsed.data.status}`,
+        metadata: { ids, count, status: parsed.data.status },
+      })
       return NextResponse.json({ success: true, count })
     }
 

@@ -25,6 +25,7 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | `GET/POST/PATCH/DELETE /v1/leads` | Clerk JWT | Ops admin CRUD |
 | `/v1/fleet`, `/v1/drivers`, `/v1/waitlist`, `/v1/media-kit` | Clerk JWT | Same pattern (+ `[id]`, `bulk`) |
 | `GET /v1/stats` | Clerk JWT | Dashboard stats for ops/mobile |
+| `GET /v1/audit` | Clerk JWT | Cross-app activity trail (who did what) |
 
 **Payload CMS REST** stays on the web app: `admobihq.com/api/*` (catch-all under `app/(payload)/api/`).
 
