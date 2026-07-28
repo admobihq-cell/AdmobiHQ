@@ -7,6 +7,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 
+import {
+  StatusChip,
+  type StatusChipVariant,
+} from "@/components/app/status-chip"
 import { typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
@@ -16,6 +20,8 @@ type ListRowProps = {
   subtitle?: string
   meta?: string
   initials?: string
+  statusLabel?: string
+  statusVariant?: StatusChipVariant
   onPress?: () => void
   showChevron?: boolean
   rightElement?: React.ReactNode
@@ -84,6 +90,8 @@ export function ListRow({
   subtitle,
   meta,
   initials,
+  statusLabel,
+  statusVariant = "muted",
   onPress,
   showChevron = !!onPress,
   rightElement,
@@ -160,6 +168,9 @@ export function ListRow({
         ) : null}
         {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       </View>
+      {statusLabel ? (
+        <StatusChip label={statusLabel} variant={statusVariant} />
+      ) : null}
       {rightElement}
       {showChevron && !rightElement ? (
         <ChevronRight color={colors.mutedForeground} size={18} strokeWidth={2} />

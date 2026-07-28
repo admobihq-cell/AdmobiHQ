@@ -44,6 +44,11 @@ export type FormFieldDef = {
   /** When true, the field stores a comma-separated list of `options` values and the picker allows multiple selections. */
   multi?: boolean
   placeholder?: string
+  /**
+   * Optional group title for mobile (and future web) forms.
+   * Consecutive fields with the same section render as one grouped block.
+   */
+  section?: string
 }
 
 function enumOptions(values: readonly string[]): FormFieldOption[] {
@@ -58,15 +63,16 @@ export function splitCsv(value: string | undefined): string[] {
 }
 
 export const LEAD_FORM_FIELDS: FormFieldDef[] = [
-  { name: "contact_name", label: "Contact name", required: true },
-  { name: "email", label: "Email", type: "email", required: true },
-  { name: "company_name", label: "Company", required: true },
-  { name: "phone", label: "Phone" },
+  { name: "contact_name", label: "Contact name", required: true, section: "Contact" },
+  { name: "email", label: "Email", type: "email", required: true, section: "Contact" },
+  { name: "company_name", label: "Company", required: true, section: "Contact" },
+  { name: "phone", label: "Phone", section: "Contact" },
   {
     name: "cities",
     label: "Cities",
     multi: true,
     options: enumOptions(LEAD_CITIES),
+    section: "Campaign",
   },
   {
     name: "ad_formats",
@@ -76,6 +82,7 @@ export const LEAD_FORM_FIELDS: FormFieldDef[] = [
       { value: "taxi_top", label: "Taxi-top screens" },
       { value: "delivery_bike", label: "Delivery bike boxes" },
     ],
+    section: "Campaign",
   },
   {
     name: "duration",
@@ -87,63 +94,82 @@ export const LEAD_FORM_FIELDS: FormFieldDef[] = [
       { value: "1_month", label: "1 month" },
       { value: "ongoing", label: "Ongoing" },
     ],
+    section: "Campaign",
   },
   {
     name: "budget_range",
     label: "Budget",
     options: enumOptions(BUDGET_RANGES),
+    section: "Campaign",
   },
   {
     name: "status",
     label: "Status",
     options: enumOptions(LEAD_STATUSES),
+    section: "Campaign",
   },
-  { name: "additional_info", label: "Brief / notes", type: "multiline" },
+  {
+    name: "additional_info",
+    label: "Brief / notes",
+    type: "multiline",
+    section: "Notes",
+  },
 ]
 
 export const DRIVER_FORM_FIELDS: FormFieldDef[] = [
-  { name: "name", label: "Name", required: true },
-  { name: "phone", label: "Phone", required: true },
-  { name: "email", label: "Email", type: "email" },
+  { name: "name", label: "Name", required: true, section: "Contact" },
+  { name: "phone", label: "Phone", required: true, section: "Contact" },
+  { name: "email", label: "Email", type: "email", section: "Contact" },
   {
     name: "city",
     label: "City",
     required: true,
     options: enumOptions(CITIES),
+    section: "Details",
   },
   {
     name: "vehicle_type",
     label: "Vehicle type",
     options: enumOptions(VEHICLE_TYPES),
+    section: "Details",
   },
   {
     name: "days_per_week",
     label: "Days per week",
     options: enumOptions(DAYS_PER_WEEK),
+    section: "Details",
   },
   {
     name: "heard_about",
     label: "Heard about",
     options: enumOptions(HEARD_ABOUT),
+    section: "Details",
   },
   {
     name: "status",
     label: "Status",
     options: enumOptions(DRIVER_STATUSES),
+    section: "Details",
   },
-  { name: "notes", label: "Internal notes", type: "multiline" },
+  { name: "notes", label: "Internal notes", type: "multiline", section: "Notes" },
 ]
 
 export const FLEET_FORM_FIELDS: FormFieldDef[] = [
-  { name: "company_name", label: "Company", required: true },
-  { name: "primary_contact_name", label: "Contact name", required: true },
-  { name: "email", label: "Email", type: "email", required: true },
-  { name: "phone", label: "Phone", required: true },
+  { name: "company_name", label: "Company", required: true, section: "Contact" },
+  {
+    name: "primary_contact_name",
+    label: "Contact name",
+    required: true,
+    section: "Contact",
+  },
+  { name: "email", label: "Email", type: "email", required: true, section: "Contact" },
+  { name: "phone", label: "Phone", required: true, section: "Contact" },
   {
     name: "city",
     label: "City",
     required: true,
     options: enumOptions(CITIES),
+    section: "Fleet details",
   },
   {
     name: "fleet_types",
@@ -154,35 +180,61 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
       { value: "taxi", label: "Taxi" },
       { value: "delivery_bike", label: "Delivery bike" },
     ],
+    section: "Fleet details",
   },
-  { name: "fleet_size", label: "Fleet size" },
+  { name: "fleet_size", label: "Fleet size", section: "Fleet details" },
   {
     name: "vehicles_active",
     label: "Vehicles active",
     options: enumOptions(VEHICLES_ACTIVE),
+    section: "Fleet details",
   },
   {
     name: "status",
     label: "Status",
     options: enumOptions(FLEET_STATUSES),
+    section: "Fleet details",
   },
-  { name: "notes", label: "Notes", type: "multiline" },
+  { name: "notes", label: "Notes", type: "multiline", section: "Notes" },
 ]
 
 export const WAITLIST_FORM_FIELDS: FormFieldDef[] = [
-  { name: "email", label: "Email", type: "email", required: true },
-  { name: "source", label: "Source", placeholder: "homepage" },
+  { name: "email", label: "Email", type: "email", required: true, section: "Details" },
+  { name: "source", label: "Source", placeholder: "homepage", section: "Details" },
 ]
 
 export const MEDIA_KIT_FORM_FIELDS: FormFieldDef[] = [
-  { name: "name", label: "Name", required: true },
-  { name: "email", label: "Email", type: "email", required: true },
+  { name: "name", label: "Name", required: true, section: "Contact" },
+  { name: "email", label: "Email", type: "email", required: true, section: "Contact" },
 ]
 
 export const ANNOUNCEMENT_FORM_FIELDS: FormFieldDef[] = [
-  { name: "title", label: "Title", required: true, placeholder: "e.g. New payout schedule" },
-  { name: "body", label: "Message", type: "multiline", required: true },
+  {
+    name: "title",
+    label: "Title",
+    required: true,
+    placeholder: "e.g. New payout schedule",
+    section: "Message",
+  },
+  { name: "body", label: "Message", type: "multiline", required: true, section: "Message" },
 ]
+
+/** Group consecutive fields that share a section title (for sectioned mobile forms). */
+export function groupFormFieldsBySection(
+  fields: FormFieldDef[],
+): Array<{ title: string | null; fields: FormFieldDef[] }> {
+  const groups: Array<{ title: string | null; fields: FormFieldDef[] }> = []
+  for (const field of fields) {
+    const title = field.section ?? null
+    const last = groups[groups.length - 1]
+    if (last && last.title === title) {
+      last.fields.push(field)
+    } else {
+      groups.push({ title, fields: [field] })
+    }
+  }
+  return groups
+}
 
 export const LEAD_STATUS_OPTIONS = enumOptions(LEAD_STATUSES)
 export const DRIVER_STATUS_OPTIONS = enumOptions(DRIVER_STATUSES)
