@@ -16,7 +16,7 @@ import { Platform } from "react-native"
 import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
 import type { FormFieldOption } from "@workspace/ops-contracts"
 
-import { AppLoader } from "@/components/app/app-loader"
+import { SkeletonDetailRecord } from "@/components/app/skeleton"
 import { GroupedSection } from "@/components/app/grouped-list"
 import { StatusChip } from "@/components/app/status-chip"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
@@ -77,13 +77,6 @@ export function EntityDetail<T>({
       padding: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.md,
-    },
-    centered: {
-      flex: 1,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      backgroundColor: c.bg,
-      padding: spacing.lg,
     },
     heroCard: {
       gap: spacing.sm,
@@ -283,11 +276,7 @@ export function EntityDetail<T>({
   }
 
   if (loading && !item) {
-    return (
-      <View style={styles.centered}>
-        <AppLoader message="Loading record" compact />
-      </View>
-    )
+    return <SkeletonDetailRecord />
   }
 
   const chipItems = item ? (chips?.(item) ?? []) : []

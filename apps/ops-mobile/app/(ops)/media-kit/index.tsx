@@ -6,7 +6,12 @@ import { useOpsClient } from "@/lib/ops-client"
 export default function MediaKitScreen() {
   const client = useOpsClient()
   const loadPage = useCallback(
-    (page: number) => client.mediaKit.list({ page, pageSize: 20 }),
+    (page: number, options?: { search?: string | null }) =>
+      client.mediaKit.list({
+        page,
+        pageSize: 20,
+        search: options?.search ?? undefined,
+      }),
     [client],
   )
 
@@ -20,7 +25,6 @@ export default function MediaKitScreen() {
       getTitle={(item) => item.name}
       getSubtitle={(item) => item.email}
       getInitials={(item) => item.name}
-      searchKeys={[(item) => item.name, (item) => item.email]}
       detailHref={(id) => `/(ops)/media-kit/${id}`}
     />
   )

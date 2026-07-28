@@ -3,7 +3,7 @@ import { Text, View } from "react-native"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { AppLoader } from "@/components/app/app-loader"
+import { SkeletonFormRecord } from "@/components/app/skeleton"
 import { EntityFormScreen } from "@/components/EntityFormScreen"
 import { getEntityFormConfig, type EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
@@ -29,6 +29,7 @@ export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
   const [loading, setLoading] = useState(mode === "edit")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const styles = useThemedStyles((c) => ({
     centered: {
       flex: 1,
@@ -81,25 +82,23 @@ export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
   }
 
   if (loading || initialValues == null) {
-    return (
-      <View style={styles.centered}>
-        <AppLoader message={`Loading ${config.singular.toLowerCase()}`} compact />
-      </View>
-    )
+    return <SkeletonFormRecord />
   }
 
   const handleSubmit = async (values: Record<string, string>) => {
     setSaving(true)
     setError(null)
+    setFieldErrors({})
 
     const payload = config.toPayload(values)
-    const validationError =
+    const validation =
       mode === "create"
         ? config.validateCreate(payload)
         : config.validateUpdate(payload)
 
-    if (validationError) {
-      setError(validationError)
+    if (validation.message) {
+      setError(validation.message)
+      setFieldErrors(validation.fieldErrors)
       setSaving(false)
       return
     }
@@ -129,7 +128,11 @@ export function EntityFormRoute({ entity, mode }: EntityFormRouteProps) {
       submitLabel={mode === "create" ? "Create" : "Save changes"}
       saving={saving}
       error={error}
-      onDismissError={() => setError(null)}
+      fieldErrors={fieldErrors}
+      onDismissError={() => {
+        setError(null)
+        setFieldErrors({})
+      }}
       onSubmit={handleSubmit}
     />
   )
