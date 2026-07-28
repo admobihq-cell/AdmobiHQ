@@ -15,3 +15,13 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
 
   return (await res.json()) as T
 }
+
+export async function getJson<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`)
+
+  if (!res.ok) {
+    throw new Error(`Request to ${path} failed with status ${res.status}`)
+  }
+
+  return (await res.json()) as T
+}

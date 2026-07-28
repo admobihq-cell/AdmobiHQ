@@ -1,18 +1,22 @@
 import { prisma } from "@/lib/prisma"
 import { sendExpoPushMessages } from "@/lib/push/expo-push"
 
-export type OpsAlertType = "campaign" | "fleet" | "driver"
+export type OpsAlertType = "campaign" | "fleet" | "driver" | "waitlist" | "media-kit"
 
 const TYPE_LABELS: Record<OpsAlertType, string> = {
   campaign: "Campaign brief",
   fleet: "Fleet partnership",
   driver: "Driver application",
+  waitlist: "Waitlist signup",
+  "media-kit": "Media kit request",
 }
 
 const ROUTE_SEGMENT: Record<OpsAlertType, string> = {
   campaign: "leads",
   fleet: "fleet",
   driver: "drivers",
+  waitlist: "waitlist",
+  "media-kit": "media-kit",
 }
 
 export type OpsStaffAlertInput = {

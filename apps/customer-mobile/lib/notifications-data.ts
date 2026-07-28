@@ -37,6 +37,43 @@ export const NOTIFICATION_CATEGORY_ORDER: NotificationCategory[] = [
   "system",
 ]
 
+export type AnnouncementBroadcastDto = {
+  id: number
+  title: string
+  body: string
+  created_at: string
+}
+
+function startOfDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+}
+
+function dayDiff(iso: string): number {
+  return Math.round((startOfDay(new Date()) - startOfDay(new Date(iso))) / 86_400_000)
+}
+
+function formatRelativeTime(iso: string): string {
+  const diffDays = dayDiff(iso)
+  if (diffDays <= 0) {
+    const hours = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000)
+    return hours < 1 ? "Just now" : `${hours}h ago`
+  }
+  if (diffDays === 1) return "Yesterday"
+  return `${diffDays} days ago`
+}
+
+export function announcementToNotificationItem(dto: AnnouncementBroadcastDto): NotificationItem {
+  return {
+    id: `announcement-${dto.id}`,
+    category: "announcement",
+    title: dto.title,
+    body: dto.body,
+    time: formatRelativeTime(dto.created_at),
+    read: false,
+    group: dayDiff(dto.created_at) <= 0 ? "today" : "earlier",
+  }
+}
+
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "1",

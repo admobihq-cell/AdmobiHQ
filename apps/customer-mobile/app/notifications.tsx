@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react"
-import { Pressable, SectionList, StyleSheet, Text, View } from "react-native"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
 
 import { Bell } from "@/components/icons"
 import { NotificationRow } from "@/components/notifications/notification-row"
@@ -11,6 +11,7 @@ import {
   type NotificationCategory,
   type NotificationItem,
 } from "@/lib/notifications-data"
+import { useLiveAnnouncements } from "@/lib/use-live-announcements"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
@@ -21,7 +22,27 @@ const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
 export default function NotificationsScreen() {
   const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
   const [category, setCategory] = useState<NotificationCategory | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   const unreadCount = items.filter((item) => !item.read).length
+
+  const { items: liveItems, refetch: refetchLive } = useLiveAnnouncements()
+
+  // Merge newly-seen broadcasts in at the front, once per id, so read state
+  // on already-merged items (and the untouched mock seed data) is preserved.
+  useEffect(() => {
+    if (liveItems.length === 0) return
+    setItems((current) => {
+      const knownIds = new Set(current.map((item) => item.id))
+      const unseen = liveItems.filter((item) => !knownIds.has(item.id))
+      return unseen.length > 0 ? [...unseen, ...current] : current
+    })
+  }, [liveItems])
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await refetchLive()
+    setRefreshing(false)
+  }, [refetchLive])
 
   const markRead = useCallback((id: string) => {
     setItems((current) =>
@@ -128,6 +149,9 @@ export default function NotificationsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />
+        }
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{section.title}</Text>

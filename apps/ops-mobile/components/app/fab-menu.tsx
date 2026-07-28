@@ -67,7 +67,11 @@ export function FabMenu({ items }: FabMenuProps) {
       shadowOpacity: 0.1,
       shadowRadius: 6,
       shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
+      // Android elevation shadows are drawn on a separate compositing layer
+      // that doesn't fade with this row's Reanimated opacity — that left a
+      // ghost shadow "trail" behind on open/close, most visible in light
+      // mode. iOS's shadow* props fade correctly, so keep those.
+      elevation: Platform.OS === "android" ? 0 : 2,
     },
     itemIconWrap: {
       width: 44,
@@ -82,7 +86,7 @@ export function FabMenu({ items }: FabMenuProps) {
       shadowOpacity: 0.12,
       shadowRadius: 8,
       shadowOffset: { width: 0, height: 3 },
-      elevation: 3,
+      elevation: Platform.OS === "android" ? 0 : 3,
     },
     fab: {
       width: 56,

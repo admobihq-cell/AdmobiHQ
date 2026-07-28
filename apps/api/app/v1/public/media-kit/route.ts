@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
+import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 
 export async function POST(req: Request) {
   let body: unknown
@@ -28,6 +29,13 @@ export async function POST(req: Request) {
     })
 
     console.log("[Admobi API media-kit] Saved:", data.email)
+
+    void notifyOpsStaffAlert({
+      type: "media-kit",
+      entityId: data.id,
+      submitterName: data.name,
+    })
+
     return NextResponse.json({ success: true, data })
   } catch (error: unknown) {
     console.error("[Admobi API media-kit] Database error:", error)
