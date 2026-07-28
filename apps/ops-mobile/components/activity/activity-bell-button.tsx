@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "expo-router"
 import {
   Modal,
@@ -11,7 +11,12 @@ import {
 } from "react-native"
 
 import { Bell } from "@/components/icons"
-import { ACTIVITY_CATEGORY_ICONS, PLACEHOLDER_ACTIVITY, type ActivityItem } from "@/lib/activity-feed"
+import {
+  ACTIVITY_CATEGORY_ICONS,
+  auditEventToActivityItem,
+  type ActivityItem,
+} from "@/lib/activity-feed"
+import { useOpsClient } from "@/lib/ops-client"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const MAX_PREVIEW_ITEMS = 3
@@ -80,14 +85,26 @@ function PreviewRow({ item, onPress }: { item: ActivityItem; onPress: () => void
 /** Bell button that opens a compact preview popover instead of jumping straight to the full activity screen. */
 export function ActivityBellButton() {
   const router = useRouter()
+  const client = useOpsClient()
   const colors = useThemeColors()
   const { width: screenWidth } = useWindowDimensions()
   const triggerRef = useRef<RNView>(null)
   const [open, setOpen] = useState(false)
   const [anchor, setAnchor] = useState<Anchor | null>(null)
+  const [preview, setPreview] = useState<ActivityItem[]>([])
 
-  const unreadCount = PLACEHOLDER_ACTIVITY.filter((item) => !item.read).length
-  const preview = PLACEHOLDER_ACTIVITY.slice(0, MAX_PREVIEW_ITEMS)
+  const loadPreview = useCallback(async () => {
+    try {
+      const result = await client.audit.list({ page: 1, pageSize: MAX_PREVIEW_ITEMS })
+      setPreview(result.items.map(auditEventToActivityItem))
+    } catch {
+      setPreview([])
+    }
+  }, [client])
+
+  useEffect(() => {
+    void loadPreview()
+  }, [loadPreview])
 
   const styles = useThemedStyles((c) => ({
     button: {
@@ -102,17 +119,6 @@ export function ActivityBellButton() {
     },
     pressed: {
       opacity: 0.75,
-    },
-    badge: {
-      position: "absolute" as const,
-      top: 6,
-      right: 6,
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: c.primary,
-      borderWidth: 1.5,
-      borderColor: c.bg,
     },
     backdrop: {
       flex: 1,
@@ -148,11 +154,6 @@ export function ActivityBellButton() {
       letterSpacing: 0.6,
       fontWeight: "700" as const,
     },
-    headerCount: {
-      ...typography.caption,
-      color: c.primary,
-      fontWeight: "600" as const,
-    },
     empty: {
       paddingVertical: spacing.lg,
       alignItems: "center" as const,
@@ -175,6 +176,7 @@ export function ActivityBellButton() {
   }))
 
   function openMenu() {
+    void loadPreview()
     triggerRef.current?.measureInWindow((x, y, width, height) => {
       setAnchor({ x, y, width, height })
       setOpen(true)
@@ -192,14 +194,11 @@ export function ActivityBellButton() {
         ref={triggerRef}
         onPress={openMenu}
         accessibilityRole="button"
-        accessibilityLabel={
-          unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
-        }
+        accessibilityLabel="Activity"
         hitSlop={10}
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       >
         <Bell size={18} color={colors.text} />
-        {unreadCount > 0 ? <View style={styles.badge} /> : null}
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -215,15 +214,12 @@ export function ActivityBellButton() {
             ]}
           >
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>Notifications</Text>
-              {unreadCount > 0 ? (
-                <Text style={styles.headerCount}>{unreadCount} new</Text>
-              ) : null}
+              <Text style={styles.headerTitle}>Activity</Text>
             </View>
 
             {preview.length === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyText}>You&apos;re all caught up</Text>
+                <Text style={styles.emptyText}>No recent activity</Text>
               </View>
             ) : (
               preview.map((item) => (
@@ -235,7 +231,7 @@ export function ActivityBellButton() {
               onPress={goToActivity}
               style={({ pressed }) => [styles.footer, pressed && styles.pressed]}
             >
-              <Text style={styles.footerText}>See all notifications</Text>
+              <Text style={styles.footerText}>See all activity</Text>
             </Pressable>
           </View>
         ) : null}
@@ -243,4 +239,3 @@ export function ActivityBellButton() {
     </>
   )
 }
-

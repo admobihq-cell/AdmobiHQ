@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { auditPublic } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
@@ -34,6 +35,15 @@ export async function POST(req: Request) {
       type: "media-kit",
       entityId: data.id,
       submitterName: data.name,
+    })
+
+    await auditPublic({
+      app: "web",
+      actor_email: data.email,
+      action: "create",
+      entity_type: "media_kit",
+      entity_id: data.id,
+      summary: `Created media kit #${data.id} (${data.email})`,
     })
 
     return NextResponse.json({ success: true, data })

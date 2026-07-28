@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { paginationSchema } from "@workspace/ops-contracts"
 
+import { auditFromOpsUser } from "@/lib/audit"
 import { requireOpsUser } from "@/lib/auth"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
@@ -37,8 +38,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  let access
   try {
-    await requireOpsUser()
+    access = await requireOpsUser()
   } catch (e) {
     if (e instanceof Response) return e
     return jsonError("Unauthorized", 401)
@@ -52,6 +54,13 @@ export async function POST(req: Request) {
       email: parsed.data.email,
       source: parsed.data.source ?? "manual",
     },
+  })
+
+  await auditFromOpsUser(access, {
+    action: "create",
+    entity_type: "waitlist",
+    entity_id: data.id,
+    summary: `Created waitlist #${data.id} (${data.email})`,
   })
 
   return NextResponse.json(data, { status: 201 })

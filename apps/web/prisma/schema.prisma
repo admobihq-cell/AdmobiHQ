@@ -135,3 +135,24 @@ model AnnouncementBroadcast {
   @@index([created_at])
   @@map("announcement_broadcasts")
 }
+
+/// Cross-app activity trail: who did what, when (ops, public forms, future customer apps).
+model AuditEvent {
+  id            Int      @id @default(autoincrement())
+  app           String
+  actor_type    String
+  actor_user_id String?
+  actor_email   String?
+  action        String
+  entity_type   String
+  entity_id     String?
+  summary       String
+  metadata      Json?
+  created_at    DateTime @default(now())
+
+  @@index([created_at])
+  @@index([entity_type, created_at])
+  @@index([actor_email, created_at])
+  @@index([app, created_at])
+  @@map("audit_events")
+}
