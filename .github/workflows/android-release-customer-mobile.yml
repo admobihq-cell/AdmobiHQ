@@ -1,0 +1,160 @@
+name: Build Android Release APK (Customer)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "apps/customer-mobile/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/android-release-customer-mobile.yml"
+    tags:
+      - customer-v*
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "apps/customer-mobile/**"
+      - ".github/workflows/android-release-customer-mobile.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build signed release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      EXPO_PUBLIC_API_URL: ${{ secrets.CUSTOMER_EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_APP_URL: ${{ secrets.CUSTOMER_EXPO_PUBLIC_APP_URL }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.CUSTOMER_ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.CUSTOMER_ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.CUSTOMER_ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.CUSTOMER_ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Verify required secrets
+        run: |
+          missing=0
+          for key in EXPO_PUBLIC_API_URL EXPO_PUBLIC_APP_URL ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required secret: $key"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-customer-${{ runner.os }}-${{ hashFiles('apps/customer-mobile/android/**/*.gradle*', 'apps/customer-mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-customer-${{ runner.os }}-
+
+      - name: Tune Gradle for the runner
+        working-directory: apps/customer-mobile
+        run: |
+          sed -i '/org.gradle.jvmargs/d;/org.gradle.parallel/d;/org.gradle.workers.max/d;/org.gradle.caching/d' android/gradle.properties
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.parallel=true
+          org.gradle.workers.max=4
+          org.gradle.caching=true
+          EOF
+
+      - name: Write runtime env
+        working-directory: apps/customer-mobile
+        run: |
+          cat > .env.local <<EOF
+          EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
+          EXPO_PUBLIC_APP_URL=$EXPO_PUBLIC_APP_URL
+          EOF
+
+      - name: Decode release keystore
+        working-directory: apps/customer-mobile
+        run: printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
+      - name: Write keystore.properties
+        working-directory: apps/customer-mobile
+        run: |
+          cat > android/keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build release APK
+        working-directory: apps/customer-mobile/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: customer-mobile-release-apk
+          path: apps/customer-mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub Release
+    needs: build-android
+    runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: customer-mobile-release-apk
+          path: dist/
+
+      - name: Get short commit SHA
+        id: short-sha
+        run: echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK with short commit SHA
+        run: mv dist/app-release.apk dist/admobihq-customer-${{ steps.short-sha.outputs.value }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: customer-apk-${{ steps.short-sha.outputs.value }}
+          name: "Customer App APK - ${{ steps.short-sha.outputs.value }}"
+          body: |
+            Automated release from commit [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}).
+
+            Built from `master` on ${{ github.event.head_commit.timestamp }}.
+          files: dist/admobihq-customer-${{ steps.short-sha.outputs.value }}.apk
+          make_latest: false
