@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { auditPublic } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { leadBodySchema } from "@/lib/validation/lead-schemas"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
@@ -54,6 +55,15 @@ export async function POST(req: Request) {
         entityId: data.id,
         submitterName: parsed.data.name,
         submitterCompany: parsed.data.company,
+      })
+
+      await auditPublic({
+        app: "web",
+        actor_email: parsed.data.email,
+        action: "create",
+        entity_type: "lead",
+        entity_id: data.id,
+        summary: `Created lead #${data.id} (${data.company_name})`,
       })
 
       // Queue confirmation and admin emails (fire-and-forget)
@@ -114,6 +124,15 @@ export async function POST(req: Request) {
         entityId: data.id,
         submitterName: parsed.data.primaryContactName,
         submitterCompany: parsed.data.fleetOrCompanyName,
+      })
+
+      await auditPublic({
+        app: "web",
+        actor_email: parsed.data.email,
+        action: "create",
+        entity_type: "fleet",
+        entity_id: data.id,
+        summary: `Created fleet #${data.id} (${data.company_name})`,
       })
 
       // Queue confirmation and admin emails (fire-and-forget)

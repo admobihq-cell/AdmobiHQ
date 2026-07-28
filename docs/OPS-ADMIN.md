@@ -19,7 +19,16 @@ Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC
 
 ### Routes (dashboard)
 
-Home, Overview, **Map** (network corridors / active units / city anchors via mapcn), Campaign Leads, Fleet Partners, Drivers, Waitlist, Media Kit, Content (CMS).
+Home, Overview, **Map** (network corridors / active units / city anchors via mapcn), Campaign Leads, Fleet Partners, Drivers, Waitlist, Media Kit, Announcements, **Activity** (audit trail), Content (CMS).
+
+### Activity / audit
+
+Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET /v1/audit`.
+
+- Rows are written by the API after successful mutations (ops CRUD, bulk, broadcasts) and public form submissions.
+- Each event stores `app`, `actor_type`, `actor_email`, `action`, `entity_type`, `summary`, and `created_at`.
+- Apply the table with `npm run db:ops-schema -w web` (see [`ops-schema-additive.sql`](../apps/web/prisma/scripts/ops-schema-additive.sql)).
+- Future customer apps: record from API handlers via `recordAuditEvent` — never from the client. Details in [DATA-LAYER.md](./DATA-LAYER.md).
 
 ## Secrets (Infisical)
 

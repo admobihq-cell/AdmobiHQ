@@ -7,6 +7,7 @@ import {
   Car,
   FileText,
   Home,
+  History,
   Mail,
   Map,
   Megaphone,
@@ -54,6 +55,7 @@ const navItems = [
   { href: "/waitlist", label: "Waitlist", icon: Mail },
   { href: "/media-kit", label: "Media Kit", icon: FileText },
   { href: "/announcements", label: "Announcements", icon: Radio },
+  { href: "/activity", label: "Activity", icon: History },
 ]
 
 const secondaryItems = [
