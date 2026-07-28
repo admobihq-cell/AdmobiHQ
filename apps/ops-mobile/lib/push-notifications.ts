@@ -1,4 +1,5 @@
 import Constants from "expo-constants"
+import * as Device from "expo-device"
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 
@@ -60,7 +61,11 @@ export async function requestOpsPushPermissions(): Promise<boolean> {
 }
 
 export async function getOpsExpoPushToken(): Promise<string | null> {
-  if (!isPushSupported() || !Constants.isDevice) {
+  // expo-constants' Constants.isDevice is deprecated and comes back
+  // `undefined` (not `false`) on real hardware on this SDK — it silently
+  // skipped every physical device. expo-device's Device.isDevice is the
+  // maintained replacement.
+  if (!isPushSupported() || !Device.isDevice) {
     return null
   }
 
