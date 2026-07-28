@@ -96,8 +96,7 @@
           "organization": "admobi-media",
           "project": "admobi-hq"
         }
-      ],
-      "expo-sharing"
+      ]
     ],
     "experiments": {
       "typedRoutes": false
