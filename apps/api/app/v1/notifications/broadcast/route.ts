@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { broadcastCreateSchema } from "@workspace/ops-contracts"
 
+import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { requireOpsUser } from "@/lib/auth"
 import { broadcastToCustomers } from "@/lib/push/broadcast-customers"
@@ -25,6 +26,14 @@ export async function POST(req: Request) {
       clerkUserId: access.userId,
       email: access.email,
     })
+
+    await auditFromOpsUser(access, {
+      action: "broadcast",
+      entity_type: "announcement",
+      entity_id: broadcast.id,
+      summary: `Broadcast "${broadcast.title}" to ${broadcast.target_count} devices`,
+    })
+
     return NextResponse.json(broadcast, { status: 201 })
   } catch (error) {
     console.error("[notifications/broadcast]", error)

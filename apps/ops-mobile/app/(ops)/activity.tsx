@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Pressable, SectionList, StyleSheet, Text, View } from "react-native"
+import { SectionList, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import type { AnnouncementDto } from "@workspace/ops-contracts"
-import { formatDateTime } from "@workspace/ops-contracts"
 
 import { ActivityRow } from "@/components/activity/activity-row"
 import { FilterChips } from "@/components/app/filter-chips"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
+import { EmptyState } from "@/components/ui"
+import { Inbox } from "@/components/icons"
 import { PageHero } from "@/components/ui/page-hero"
 import {
   ACTIVITY_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_ORDER,
-  PLACEHOLDER_ACTIVITY,
+  auditEventToActivityItem,
   type ActivityCategory,
-  type ActivityGroup,
   type ActivityItem,
 } from "@/lib/activity-feed"
 import { formatOpsError } from "@/lib/format-error"
@@ -25,72 +24,41 @@ const CATEGORY_OPTIONS = ACTIVITY_CATEGORY_ORDER.map((key) => ({
   label: ACTIVITY_CATEGORY_LABELS[key],
 }))
 
-function isToday(value: string): boolean {
-  const d = new Date(value)
-  const now = new Date()
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  )
-}
-
 export default function ActivityScreen() {
   const client = useOpsClient()
   const insets = useSafeAreaInsets()
-  const [placeholderItems, setPlaceholderItems] = useState<ActivityItem[]>(PLACEHOLDER_ACTIVITY)
-  const [announcements, setAnnouncements] = useState<ActivityItem[]>([])
+  const [items, setItems] = useState<ActivityItem[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState<ActivityCategory | null>(null)
 
-  const fetchAnnouncements = useCallback(async () => {
+  const fetchActivity = useCallback(async () => {
     try {
       setError(null)
-      const result = await client.notifications.list({ page: 1, pageSize: 10 })
-      setAnnouncements(
-        result.items.map((dto: AnnouncementDto) => {
-          const group: ActivityGroup = isToday(dto.created_at) ? "today" : "earlier"
-          return {
-            id: `a-${dto.id}`,
-            category: "announcement" as const,
-            title: dto.title,
-            body: dto.body,
-            time: formatDateTime(dto.created_at),
-            read: true,
-            group,
-          }
-        }),
-      )
+      setLoading(true)
+      const result = await client.audit.list({ page: 1, pageSize: 50 })
+      setItems(result.items.map(auditEventToActivityItem))
     } catch (err) {
       setError(formatOpsError(err, API_URL))
+    } finally {
+      setLoading(false)
     }
   }, [client])
 
   useEffect(() => {
-    void fetchAnnouncements()
-  }, [fetchAnnouncements])
-
-  const markRead = useCallback((id: string) => {
-    setPlaceholderItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, read: true } : item)),
-    )
-  }, [])
-
-  const markAllRead = useCallback(() => {
-    setPlaceholderItems((current) => current.map((item) => ({ ...item, read: true })))
-  }, [])
-
-  const items = useMemo(
-    () => [...placeholderItems, ...announcements],
-    [placeholderItems, announcements],
-  )
-  const unreadCount = placeholderItems.filter((item) => !item.read).length
+    void fetchActivity()
+  }, [fetchActivity])
 
   const sections = useMemo(() => {
-    const filtered = category ? items.filter((item) => item.category === category) : items
+    const filtered = category
+      ? items.filter((item) => item.category === category)
+      : items
     return [
       { title: "Today", data: filtered.filter((item) => item.group === "today") },
-      { title: "Earlier", data: filtered.filter((item) => item.group === "earlier") },
+      {
+        title: "Earlier",
+        data: filtered.filter((item) => item.group === "earlier"),
+      },
     ].filter((section) => section.data.length > 0)
   }, [items, category])
 
@@ -106,12 +74,7 @@ export default function ActivityScreen() {
       paddingTop: spacing.sm,
       paddingBottom: spacing.xs,
     },
-    unreadLabel: { ...typography.caption, color: c.mutedForeground },
-    markAllText: {
-      ...typography.label,
-      color: c.primary,
-      fontWeight: "700" as const,
-    },
+    countLabel: { ...typography.caption, color: c.mutedForeground },
     sectionHeader: {
       backgroundColor: c.bg,
       paddingHorizontal: spacing.lg,
@@ -126,7 +89,7 @@ export default function ActivityScreen() {
     divider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: c.border,
-      marginLeft: 68,
+      marginLeft: spacing.lg,
     },
     list: { flexGrow: 1, paddingBottom: spacing.xl },
   }))
@@ -138,7 +101,7 @@ export default function ActivityScreen() {
           eyebrow="Operations"
           title="Activity"
           compact
-          description="Leads, drivers, fleet alerts, and announcements you've sent."
+          description="Who changed what — ops edits, public submissions, and broadcasts."
         />
       </View>
 
@@ -146,21 +109,20 @@ export default function ActivityScreen() {
         <View style={styles.errorWrap}>
           <ApiErrorBanner
             message={error}
-            onRetry={() => void fetchAnnouncements()}
+            onRetry={() => void fetchActivity()}
             onDismiss={() => setError(null)}
           />
         </View>
       ) : null}
 
       <View style={styles.listHeader}>
-        <Text style={styles.unreadLabel}>
-          {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+        <Text style={styles.countLabel}>
+          {loading
+            ? "Loading…"
+            : items.length > 0
+              ? `${items.length} recent events`
+              : "No events yet"}
         </Text>
-        {unreadCount > 0 ? (
-          <Pressable onPress={markAllRead} hitSlop={8}>
-            <Text style={styles.markAllText}>Mark all as read</Text>
-          </Pressable>
-        ) : null}
       </View>
 
       <FilterChips
@@ -174,18 +136,22 @@ export default function ActivityScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled={false}
+        ListEmptyComponent={
+          loading ? null : (
+            <EmptyState
+              icon={Inbox}
+              title="No activity yet"
+              description="Ops edits and public form submissions will show up here."
+            />
+          )
+        }
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
           </View>
         )}
         ItemSeparatorComponent={() => <View style={styles.divider} />}
-        renderItem={({ item }) => (
-          <ActivityRow
-            item={item}
-            onPress={() => item.category !== "announcement" && markRead(item.id)}
-          />
-        )}
+        renderItem={({ item }) => <ActivityRow item={item} onPress={() => {}} />}
       />
     </View>
   )
