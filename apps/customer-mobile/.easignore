@@ -42,3 +42,20 @@ yarn-error.*
 
 # machine-specific Android SDK path, must be generated on the build server
 android/local.properties
+
+# Local Android/Gradle build artifacts. EAS archives the whole monorepo for
+# either app's build, so these must be excluded here even though they belong
+# to android/.gitignore, since .easignore replaces .gitignore entirely and
+# an uncommitted, actively-locked local Gradle cache breaks the upload.
+**/android/build/
+**/android/app/build/
+**/android/.gradle/
+**/android/.idea/
+**/android/.cxx/
+**/android/*.iml
+**/android/*.hprof
+**/android/keystore.properties
+**/android/app/release.keystore
+**/ios/build/
+**/ios/Pods/
+**/ios/DerivedData/
