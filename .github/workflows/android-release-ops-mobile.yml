@@ -3,21 +3,8 @@ name: Build Android Release APK (Ops)
 on:
   workflow_dispatch:
   push:
-    branches:
-      - master
-    paths:
-      - "apps/ops-mobile/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/android-release-ops-mobile.yml"
     tags:
       - ops-v*
-  pull_request:
-    branches:
-      - master
-    paths:
-      - "apps/ops-mobile/**"
-      - ".github/workflows/android-release-ops-mobile.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -131,7 +118,7 @@ jobs:
     name: Publish GitHub Release
     needs: build-android
     runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
 

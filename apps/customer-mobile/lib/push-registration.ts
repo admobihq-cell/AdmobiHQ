@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react-native"
 import Constants from "expo-constants"
+import * as Device from "expo-device"
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 
@@ -30,15 +31,11 @@ export async function requestPushPermissions(): Promise<boolean> {
 }
 
 export async function getCustomerExpoPushToken(): Promise<string | null> {
-  const supported = isNotificationsSupported()
-  if (!supported || !Constants.isDevice) {
-    // Temporary diagnostic: 0 customer_push_tokens rows despite permission
-    // being granted on a real device — need to see which branch is actually
-    // hit at runtime instead of guessing further.
-    Sentry.captureMessage(
-      `[push] Token generation skipped (supported=${supported}, isDevice=${Constants.isDevice})`,
-      "warning",
-    )
+  // expo-constants' Constants.isDevice is deprecated and comes back
+  // `undefined` (not `false`) on real hardware on this SDK — it silently
+  // skipped every physical device. expo-device's Device.isDevice is the
+  // maintained replacement.
+  if (!isNotificationsSupported() || !Device.isDevice) {
     return null
   }
 
@@ -72,7 +69,6 @@ export async function registerCustomerPushToken(): Promise<void> {
 
   const expoPushToken = await getCustomerExpoPushToken()
   if (!expoPushToken) {
-    // Failure already reported inside getCustomerExpoPushToken.
     return
   }
 
