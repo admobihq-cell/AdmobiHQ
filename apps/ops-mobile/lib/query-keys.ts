@@ -10,8 +10,8 @@ import type { EntityKey } from "@/lib/entity-form-config"
  */
 export const entityKeys = {
   all: (entity: EntityKey) => ["entities", entity] as const,
-  list: (entity: EntityKey, filter?: string | null) =>
-    ["entities", entity, "list", filter ?? null] as const,
+  list: (entity: EntityKey, filter?: string | null, search?: string | null) =>
+    ["entities", entity, "list", filter ?? null, search ?? null] as const,
   recent: (entity: EntityKey) => ["entities", entity, "recent"] as const,
   detail: (entity: EntityKey, id: number) =>
     ["entities", entity, "detail", id] as const,

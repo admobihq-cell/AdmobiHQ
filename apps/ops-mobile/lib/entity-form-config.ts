@@ -41,6 +41,11 @@ export type EntityKey =
   | "waitlist"
   | "mediaKit"
 
+export type FormValidationResult = {
+  message: string | null
+  fieldErrors: Record<string, string>
+}
+
 export type EntityFormConfig = {
   key: EntityKey
   singular: string
@@ -49,8 +54,8 @@ export type EntityFormConfig = {
   defaultValues?: Record<string, string>
   fromRecord: (record: never) => Record<string, string>
   toPayload: (values: Record<string, string>) => Record<string, unknown>
-  validateCreate: (payload: Record<string, unknown>) => string | null
-  validateUpdate: (payload: Record<string, unknown>) => string | null
+  validateCreate: (payload: Record<string, unknown>) => FormValidationResult
+  validateUpdate: (payload: Record<string, unknown>) => FormValidationResult
   create: (client: OpsClient, payload: Record<string, unknown>) => Promise<unknown>
   update: (
     client: OpsClient,
@@ -66,18 +71,34 @@ function validationError(
     error?: { issues: Array<{ message: string; path: Array<string | number> }> }
   },
   fields: FormFieldDef[],
-): string | null {
-  if (result.success) return null
+): FormValidationResult {
+  if (result.success) return { message: null, fieldErrors: {} }
   const issues = result.error?.issues ?? []
-  if (issues.length === 0) return "Please check the form and try again."
+  if (issues.length === 0) {
+    return {
+      message: "Please check the form and try again.",
+      fieldErrors: {},
+    }
+  }
 
   const labelByName = new Map(fields.map((field) => [field.name, field.label]))
-  const messages = issues.map((issue) => {
-    const label = labelByName.get(String(issue.path[0] ?? ""))
+  const fieldErrors: Record<string, string> = {}
+  const messages: string[] = []
+
+  for (const issue of issues) {
+    const name = String(issue.path[0] ?? "")
     const humanized = humanizeZodMessage(issue.message)
-    return label ? `${label}: ${humanized}` : humanized
-  })
-  return Array.from(new Set(messages)).join("\n")
+    if (name && !fieldErrors[name]) {
+      fieldErrors[name] = humanized
+    }
+    const label = labelByName.get(name)
+    messages.push(label ? `${label}: ${humanized}` : humanized)
+  }
+
+  return {
+    message: Array.from(new Set(messages)).join("\n"),
+    fieldErrors,
+  }
 }
 
 export const ENTITY_FORM_CONFIGS: Record<EntityKey, EntityFormConfig> = {

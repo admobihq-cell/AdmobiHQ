@@ -1,8 +1,17 @@
 import { useMemo, useState } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { FormFieldDef } from "@workspace/ops-contracts"
-import { formatLabel, splitCsv } from "@workspace/ops-contracts"
+import { formatLabel, groupFormFieldsBySection, splitCsv } from "@workspace/ops-contracts"
 
 import { AppLoader } from "@/components/app/app-loader"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
@@ -16,6 +25,7 @@ type EntityFormScreenProps = {
   submitLabel?: string
   saving?: boolean
   error?: string | null
+  fieldErrors?: Record<string, string>
   onDismissError?: () => void
   onSubmit: (values: Record<string, string>) => Promise<void>
 }
@@ -27,6 +37,7 @@ export function EntityFormScreen({
   submitLabel = "Save",
   saving = false,
   error,
+  fieldErrors = {},
   onDismissError,
   onSubmit,
 }: EntityFormScreenProps) {
@@ -49,13 +60,24 @@ export function EntityFormScreen({
     },
     content: {
       padding: spacing.lg,
-      paddingBottom: spacing.xl + insets.bottom,
+      paddingBottom: spacing.lg,
       gap: spacing.md,
     },
     title: {
       ...typography.section,
       color: c.text,
       marginBottom: spacing.xs,
+    },
+    section: {
+      gap: spacing.md,
+    },
+    sectionTitle: {
+      ...typography.caption,
+      fontWeight: "700" as const,
+      color: c.mutedForeground,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.8,
+      marginLeft: spacing.xs,
     },
     field: {
       gap: spacing.xs,
@@ -103,8 +125,15 @@ export function EntityFormScreen({
     selectPlaceholder: {
       color: c.mutedForeground,
     },
+    footer: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+      backgroundColor: c.bg,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      gap: spacing.sm,
+    },
     submit: {
-      marginTop: spacing.sm,
       backgroundColor: c.primary,
       borderRadius: radius.md,
       paddingVertical: 14,
@@ -123,6 +152,8 @@ export function EntityFormScreen({
     },
   }))
 
+  const sections = useMemo(() => groupFormFieldsBySection(fields), [fields])
+
   const missingFields = useMemo(() => {
     return fields.filter((field) => field.required && !values[field.name]?.trim())
   }, [fields, values])
@@ -140,16 +171,94 @@ export function EntityFormScreen({
     void onSubmit(values)
   }
 
+  const renderField = (field: FormFieldDef) => {
+    const value = values[field.name] ?? ""
+    const requiredError =
+      submitAttempted && missingFieldNames.has(field.name)
+        ? `${field.label} is required.`
+        : null
+    const serverError = fieldErrors[field.name]
+    const showError = requiredError ?? serverError
+    const hasError = Boolean(showError)
+
+    if (field.options?.length) {
+      const selectedValues = field.multi ? splitCsv(value) : value ? [value] : []
+      const selectedLabels = selectedValues.map(
+        (v) => field.options?.find((option) => option.value === v)?.label ?? formatLabel(v),
+      )
+      return (
+        <View key={field.name} style={styles.field}>
+          <Text style={styles.label}>
+            {field.label}
+            {field.required ? " *" : ""}
+          </Text>
+          <Pressable
+            style={[styles.input, styles.select, hasError && styles.inputError]}
+            onPress={() => setSelectField(field)}
+            accessibilityRole="button"
+            accessibilityLabel={field.label}
+          >
+            <Text
+              style={[
+                styles.selectValue,
+                selectedLabels.length === 0 && styles.selectPlaceholder,
+              ]}
+              numberOfLines={1}
+            >
+              {selectedLabels.length > 0
+                ? selectedLabels.join(", ")
+                : `Select ${field.label.toLowerCase()}`}
+            </Text>
+            <Text style={styles.selectPlaceholder}>▾</Text>
+          </Pressable>
+          {showError ? <Text style={styles.fieldError}>{showError}</Text> : null}
+        </View>
+      )
+    }
+
+    return (
+      <View key={field.name} style={styles.field}>
+        <Text style={styles.label}>
+          {field.label}
+          {field.required ? " *" : ""}
+        </Text>
+        <TextInput
+          value={value}
+          onChangeText={(text) =>
+            setValues((current) => ({ ...current, [field.name]: text }))
+          }
+          placeholder={field.placeholder ?? field.label}
+          placeholderTextColor={colors.mutedForeground}
+          keyboardType={field.type === "email" ? "email-address" : "default"}
+          autoCapitalize={field.type === "email" ? "none" : "sentences"}
+          autoCorrect={field.type !== "email"}
+          multiline={field.type === "multiline"}
+          style={[
+            styles.input,
+            field.type === "multiline" && styles.multiline,
+            hasError && styles.inputError,
+          ]}
+        />
+        {showError ? <Text style={styles.fieldError}>{showError}</Text> : null}
+      </View>
+    )
+  }
+
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+    >
+      <ScrollView
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.content}
+      >
         <Text style={styles.title}>{title}</Text>
 
         {error ? (
-          <ApiErrorBanner
-            message={error}
-            onDismiss={onDismissError}
-          />
+          <ApiErrorBanner message={error} onDismiss={onDismissError} />
         ) : null}
 
         {submitAttempted && missingFields.length > 0 ? (
@@ -158,77 +267,17 @@ export function EntityFormScreen({
           />
         ) : null}
 
-        {fields.map((field) => {
-          const value = values[field.name] ?? ""
-          const showError = submitAttempted && missingFieldNames.has(field.name)
+        {sections.map((section, index) => (
+          <View key={`${section.title ?? "fields"}-${index}`} style={styles.section}>
+            {section.title ? (
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            ) : null}
+            {section.fields.map(renderField)}
+          </View>
+        ))}
+      </ScrollView>
 
-          if (field.options?.length) {
-            const selectedValues = field.multi ? splitCsv(value) : value ? [value] : []
-            const selectedLabels = selectedValues.map(
-              (v) => field.options?.find((option) => option.value === v)?.label ?? formatLabel(v),
-            )
-            return (
-              <View key={field.name} style={styles.field}>
-                <Text style={styles.label}>
-                  {field.label}
-                  {field.required ? " *" : ""}
-                </Text>
-                <Pressable
-                  style={[styles.input, styles.select, showError && styles.inputError]}
-                  onPress={() => setSelectField(field)}
-                  accessibilityRole="button"
-                  accessibilityLabel={field.label}
-                >
-                  <Text
-                    style={[
-                      styles.selectValue,
-                      selectedLabels.length === 0 && styles.selectPlaceholder,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {selectedLabels.length > 0
-                      ? selectedLabels.join(", ")
-                      : `Select ${field.label.toLowerCase()}`}
-                  </Text>
-                  <Text style={styles.selectPlaceholder}>▾</Text>
-                </Pressable>
-                {showError ? (
-                  <Text style={styles.fieldError}>{field.label} is required.</Text>
-                ) : null}
-              </View>
-            )
-          }
-
-          return (
-            <View key={field.name} style={styles.field}>
-              <Text style={styles.label}>
-                {field.label}
-                {field.required ? " *" : ""}
-              </Text>
-              <TextInput
-                value={value}
-                onChangeText={(text) =>
-                  setValues((current) => ({ ...current, [field.name]: text }))
-                }
-                placeholder={field.placeholder ?? field.label}
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType={field.type === "email" ? "email-address" : "default"}
-                autoCapitalize={field.type === "email" ? "none" : "sentences"}
-                autoCorrect={field.type !== "email"}
-                multiline={field.type === "multiline"}
-                style={[
-                  styles.input,
-                  field.type === "multiline" && styles.multiline,
-                  showError && styles.inputError,
-                ]}
-              />
-              {showError ? (
-                <Text style={styles.fieldError}>{field.label} is required.</Text>
-              ) : null}
-            </View>
-          )
-        })}
-
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <Pressable
           style={({ pressed }) => [
             styles.submit,
@@ -273,6 +322,6 @@ export function EntityFormScreen({
           }
         }}
       />
-    </ScrollView>
+    </KeyboardAvoidingView>
   )
 }

@@ -6,7 +6,12 @@ import { useOpsClient } from "@/lib/ops-client"
 export default function WaitlistScreen() {
   const client = useOpsClient()
   const loadPage = useCallback(
-    (page: number) => client.waitlist.list({ page, pageSize: 20 }),
+    (page: number, options?: { search?: string | null }) =>
+      client.waitlist.list({
+        page,
+        pageSize: 20,
+        search: options?.search ?? undefined,
+      }),
     [client],
   )
 
@@ -20,7 +25,6 @@ export default function WaitlistScreen() {
       getTitle={(item) => item.email}
       getSubtitle={(item) => item.source ?? "Unknown source"}
       getInitials={(item) => item.email}
-      searchKeys={[(item) => item.email, (item) => item.source]}
       detailHref={(id) => `/(ops)/waitlist/${id}`}
     />
   )
