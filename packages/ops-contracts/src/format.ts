@@ -25,6 +25,40 @@ export function formatDateTime(value: Date | string | null | undefined): string 
   })
 }
 
+/** Compact relative time for list rows (phone triage). Falls back to a short date. */
+export function formatRelativeTime(
+  value: Date | string | null | undefined,
+  now: Date = new Date(),
+): string {
+  if (!value) return "—"
+  const d = typeof value === "string" ? new Date(value) : value
+  if (Number.isNaN(d.getTime())) return "—"
+
+  const diffMs = now.getTime() - d.getTime()
+  const future = diffMs < 0
+  const absMs = Math.abs(diffMs)
+  const minute = 60_000
+  const hour = 60 * minute
+  const day = 24 * hour
+
+  if (absMs < minute) return "Just now"
+  if (absMs < hour) {
+    const mins = Math.floor(absMs / minute)
+    return future ? `In ${mins}m` : `${mins}m ago`
+  }
+  if (absMs < day) {
+    const hours = Math.floor(absMs / hour)
+    return future ? `In ${hours}h` : `${hours}h ago`
+  }
+  if (absMs < 7 * day) {
+    const days = Math.floor(absMs / day)
+    if (days === 1 && !future) return "Yesterday"
+    return future ? `In ${days}d` : `${days}d ago`
+  }
+
+  return formatDate(d)
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B"
   const k = 1024

@@ -3,7 +3,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-nat
 import { useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
-import { formatDateTime } from "@workspace/ops-contracts"
+import { formatRelativeTime } from "@workspace/ops-contracts"
 
 import { Inbox, Plus } from "@/components/icons"
 import { ListRow } from "@/components/app/list-row"
@@ -201,7 +201,7 @@ export default function AnnouncementsScreen() {
             <ListRow
               title={item.title}
               subtitle={`${item.delivered_count}/${item.target_count} delivered`}
-              meta={formatDateTime(item.created_at)}
+              meta={formatRelativeTime(item.created_at)}
               initials={item.title}
             />
             {index < items.length - 1 ? <View style={styles.separator} /> : null}

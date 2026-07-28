@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   FlatList,
   Pressable,
@@ -12,11 +12,15 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Inbox, Plus, Search } from "@/components/icons"
 import type { PaginatedResponse } from "@workspace/ops-contracts"
-import { formatDateTime } from "@workspace/ops-contracts"
+import { formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
 import { FilterChips, type FilterChipOption } from "@/components/app/filter-chips"
 import { ListRow } from "@/components/app/list-row"
-import { SkeletonListRows } from "@/components/app/skeleton"
+import type { StatusChipVariant } from "@/components/app/status-chip"
+import {
+  SkeletonListRows,
+  SkeletonTriageRows,
+} from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
@@ -28,6 +32,7 @@ import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/
 
 type EntityListLoadOptions = {
   status?: string | null
+  search?: string | null
 }
 
 type EntityListProps<T extends { id: number }> = {
@@ -36,15 +41,22 @@ type EntityListProps<T extends { id: number }> = {
   description?: string
   eyebrow?: string
   loadPage: (page: number, options?: EntityListLoadOptions) => Promise<PaginatedResponse<T>>
-  getTitle: (item: T) => string
+  /** Required unless `renderRow` is provided. */
+  getTitle?: (item: T) => string
   getSubtitle?: (item: T) => string
   getInitials?: (item: T) => string
-  getFilterValue?: (item: T) => string | null | undefined
+  getStatus?: (item: T) => string | null | undefined
+  getStatusVariant?: (item: T) => StatusChipVariant
+  renderRow?: (
+    item: T,
+    ctx: { onPress: () => void; index: number },
+  ) => ReactNode
   filterOptions?: FilterChipOption[]
   detailHref: (id: number) => string
   addHref?: string
-  searchKeys?: Array<(item: T) => string | null | undefined>
 }
+
+const SEARCH_DEBOUNCE_MS = 300
 
 export function EntityList<T extends { id: number; created_at?: string }>({
   entity,
@@ -55,11 +67,12 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   getTitle,
   getSubtitle,
   getInitials,
-  getFilterValue,
+  getStatus,
+  getStatusVariant,
+  renderRow,
   filterOptions,
   detailHref,
   addHref,
-  searchKeys,
 }: EntityListProps<T>) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -139,10 +152,23 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       backgroundColor: c.border,
       marginLeft: 68,
     },
+    separatorFlush: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginLeft: 16,
+    },
   }))
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [filter, setFilter] = useState<string | null>(null)
   const [errorDismissed, setErrorDismissed] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim())
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const {
     data,
@@ -154,8 +180,12 @@ export function EntityList<T extends { id: number; created_at?: string }>({
     refetch,
     isRefetching,
   } = useInfiniteQuery({
-    queryKey: entityKeys.list(entity, filter),
-    queryFn: ({ pageParam }) => loadPage(pageParam, { status: filter ?? undefined }),
+    queryKey: entityKeys.list(entity, filter, debouncedSearch),
+    queryFn: ({ pageParam }) =>
+      loadPage(pageParam, {
+        status: filter ?? undefined,
+        search: debouncedSearch || undefined,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -173,32 +203,16 @@ export function EntityList<T extends { id: number; created_at?: string }>({
     setErrorDismissed(false)
     // Collapse back to page 1 (matches the pre-React-Query "pull to refresh
     // resets pagination" behavior) rather than refetching every loaded page.
-    queryClient.resetQueries({ queryKey: entityKeys.list(entity, filter), exact: true })
+    queryClient.resetQueries({
+      queryKey: entityKeys.list(entity, filter, debouncedSearch),
+      exact: true,
+    })
   }
 
   const onEndReached = () => {
     if (isFetchingNextPage || isRefetching || !hasNextPage) return
     void fetchNextPage()
   }
-
-  const filteredItems = useMemo(() => {
-    let result = items
-
-    if (filter && getFilterValue) {
-      result = result.filter((item) => getFilterValue(item) === filter)
-    }
-
-    if (search.trim() && searchKeys?.length) {
-      const query = search.trim().toLowerCase()
-      result = result.filter((item) =>
-        searchKeys.some((keyFn) =>
-          (keyFn(item) ?? "").toLowerCase().includes(query),
-        ),
-      )
-    }
-
-    return result
-  }, [items, filter, search, getFilterValue, searchKeys])
 
   const listHeader = (
     <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
@@ -268,7 +282,11 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       <View style={styles.container}>
         {listHeader}
         <View style={styles.grouped}>
-          <SkeletonListRows count={6} />
+          {renderRow ? (
+            <SkeletonTriageRows count={6} />
+          ) : (
+            <SkeletonListRows count={6} />
+          )}
         </View>
       </View>
     )
@@ -277,7 +295,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   return (
     <View style={styles.container}>
       <FlatList
-        data={filteredItems}
+        data={items}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={listHeader}
         refreshControl={
@@ -298,6 +316,12 @@ export function EntityList<T extends { id: number; created_at?: string }>({
               title="Couldn't load records"
               description="Check your connection and try again."
             />
+          ) : debouncedSearch || filter ? (
+            <EmptyState
+              icon={Inbox}
+              title="No matches"
+              description="Try a different search or clear filters."
+            />
           ) : (
             <EmptyState
               icon={Inbox}
@@ -306,28 +330,47 @@ export function EntityList<T extends { id: number; created_at?: string }>({
             />
           )
         }
-        renderItem={({ item, index }) => (
-          <View
-            style={[
-              styles.rowWrapper,
-              index === 0 && styles.rowFirst,
-              index === filteredItems.length - 1 && styles.rowLast,
-            ]}
-          >
+        renderItem={({ item, index }) => {
+          const openDetail = () => router.push(detailHref(item.id) as never)
+          const status = getStatus?.(item)
+          const rowContent = renderRow ? (
+            renderRow(item, { onPress: openDetail, index })
+          ) : (
             <ListRow
-              title={getTitle(item)}
+              title={getTitle?.(item) ?? String(item.id)}
               subtitle={getSubtitle?.(item)}
               meta={
-                item.created_at ? formatDateTime(item.created_at) : undefined
+                item.created_at
+                  ? formatRelativeTime(item.created_at)
+                  : undefined
               }
-              initials={getInitials?.(item) ?? getTitle(item)}
-              onPress={() => router.push(detailHref(item.id) as never)}
+              initials={
+                getInitials?.(item) ?? getTitle?.(item) ?? String(item.id)
+              }
+              statusLabel={status ? formatLabel(status) : undefined}
+              statusVariant={getStatusVariant?.(item) ?? "muted"}
+              onPress={openDetail}
             />
-            {index < filteredItems.length - 1 ? (
-              <View style={styles.separator} />
-            ) : null}
-          </View>
-        )}
+          )
+          return (
+            <View
+              style={[
+                styles.rowWrapper,
+                index === 0 && styles.rowFirst,
+                index === items.length - 1 && styles.rowLast,
+              ]}
+            >
+              {rowContent}
+              {index < items.length - 1 ? (
+                <View
+                  style={
+                    renderRow ? styles.separatorFlush : styles.separator
+                  }
+                />
+              ) : null}
+            </View>
+          )
+        }}
       />
     </View>
   )
