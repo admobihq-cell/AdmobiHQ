@@ -1,0 +1,20 @@
+# OSX
+#
+.DS_Store
+
+# Android/IntelliJ
+#
+build/
+.idea
+.gradle
+local.properties
+*.iml
+*.hprof
+.cxx/
+
+# Release signing (written by CI, must never be committed)
+release.keystore
+keystore.properties
+
+# Bundle artifacts
+*.jsbundle
