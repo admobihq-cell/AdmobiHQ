@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native"
 import Constants from "expo-constants"
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
@@ -29,13 +30,22 @@ export async function requestPushPermissions(): Promise<boolean> {
 }
 
 export async function getCustomerExpoPushToken(): Promise<string | null> {
-  if (!isNotificationsSupported() || !Constants.isDevice) {
+  const supported = isNotificationsSupported()
+  if (!supported || !Constants.isDevice) {
+    // Temporary diagnostic: 0 customer_push_tokens rows despite permission
+    // being granted on a real device — need to see which branch is actually
+    // hit at runtime instead of guessing further.
+    Sentry.captureMessage(
+      `[push] Token generation skipped (supported=${supported}, isDevice=${Constants.isDevice})`,
+      "warning",
+    )
     return null
   }
 
   const projectId = getEasProjectId()
   if (!projectId) {
     console.warn("[push] Missing EAS projectId in app config")
+    Sentry.captureMessage("[push] Missing EAS projectId in app config", "warning")
     return null
   }
 
@@ -44,6 +54,7 @@ export async function getCustomerExpoPushToken(): Promise<string | null> {
     return token.data
   } catch (error) {
     console.warn("[push] getExpoPushTokenAsync failed:", error)
+    Sentry.captureException(error, { tags: { flow: "push-token-generation" } })
     return null
   }
 }
@@ -55,15 +66,22 @@ export async function registerCustomerPushToken(): Promise<void> {
 
   const granted = await requestPushPermissions()
   if (!granted) {
+    Sentry.captureMessage("[push] Registration aborted — permission not granted", "warning")
     return
   }
 
   const expoPushToken = await getCustomerExpoPushToken()
   if (!expoPushToken) {
+    // Failure already reported inside getCustomerExpoPushToken.
     return
   }
 
   const platform = Platform.OS === "ios" || Platform.OS === "android" ? Platform.OS : undefined
 
-  await postJson("/v1/public/push-tokens", { expoPushToken, platform })
+  try {
+    await postJson("/v1/public/push-tokens", { expoPushToken, platform })
+  } catch (error) {
+    Sentry.captureException(error, { tags: { flow: "push-token-post" } })
+    throw error
+  }
 }
