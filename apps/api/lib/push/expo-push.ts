@@ -60,8 +60,23 @@ export async function sendExpoPushMessages(
   return { outcomes, invalidTokens }
 }
 
+/**
+ * Expo's validator only accepts `#rrggbb` in lowercase — `#0B6E4F` is rejected
+ * with a VALIDATION_ERROR that fails the whole batch.
+ */
+function normalizeColor(color: string | undefined): string | undefined {
+  if (!color) return undefined
+  const hex = color.trim().toLowerCase()
+  return /^#[0-9a-f]{6}$/.test(hex) ? hex : undefined
+}
+
 async function sendChunk(chunk: ExpoPushPayload[]): Promise<ExpoSendOutcome[]> {
   let body: ExpoSendResponse
+
+  const payloads = chunk.map((message) => ({
+    ...message,
+    color: normalizeColor(message.color),
+  }))
 
   try {
     const response = await fetch(EXPO_PUSH_URL, {
@@ -71,17 +86,18 @@ async function sendChunk(chunk: ExpoPushPayload[]): Promise<ExpoSendOutcome[]> {
         "Accept-Encoding": "gzip, deflate",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(chunk),
+      body: JSON.stringify(payloads),
     })
 
     if (!response.ok) {
       const text = await response.text().catch(() => "")
       console.error("[push] Expo Push API error:", response.status, text)
+      const parsed = parseErrorBody(text)
       return chunk.map((message) => ({
         status: "error" as const,
         token: message.to,
-        errorCode: "RequestFailed",
-        errorMessage: `HTTP ${response.status}`,
+        errorCode: parsed?.code ?? "RequestFailed",
+        errorMessage: parsed?.message ?? `HTTP ${response.status}`,
       }))
     }
 
@@ -132,6 +148,16 @@ async function sendChunk(chunk: ExpoPushPayload[]): Promise<ExpoSendOutcome[]> {
       errorMessage: ticket.message,
     }
   })
+}
+
+function parseErrorBody(text: string): { code?: string; message?: string } | null {
+  try {
+    const body = JSON.parse(text) as ExpoSendResponse
+    const first = body.errors?.[0]
+    return first ? { code: first.code, message: first.message } : null
+  } catch {
+    return null
+  }
 }
 
 export type ExpoReceipt =
