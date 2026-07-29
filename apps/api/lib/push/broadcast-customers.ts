@@ -39,7 +39,7 @@ export async function broadcastToCustomers(
     body: input.body,
     sound: "default" as const,
     channelId: "default",
-    color: "#0B6E4F",
+    color: "#0b6e4f",
     // High priority wakes doze-mode Android devices so the tray banner shows promptly.
     priority: "high" as const,
     data: { type: "announcement", category: input.category },
