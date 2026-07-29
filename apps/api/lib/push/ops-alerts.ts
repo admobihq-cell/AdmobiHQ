@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { sendExpoPushMessages } from "@/lib/push/expo-push"
+import { recordPushTickets } from "@/lib/push/receipts"
 
 export type OpsAlertType = "campaign" | "fleet" | "driver" | "waitlist" | "media-kit"
 
@@ -57,7 +58,9 @@ export async function notifyOpsStaffAlert(input: OpsStaffAlertInput) {
       },
     }))
 
-    const { invalidTokens } = await sendExpoPushMessages(messages)
+    const { outcomes, invalidTokens } = await sendExpoPushMessages(messages)
+
+    await recordPushTickets({ audience: "ops", outcomes })
 
     if (invalidTokens.length > 0) {
       await prisma.opsPushToken.deleteMany({
@@ -65,8 +68,9 @@ export async function notifyOpsStaffAlert(input: OpsStaffAlertInput) {
       })
     }
 
+    const queued = outcomes.filter((outcome) => outcome.status === "queued").length
     console.log(
-      `[push] Ops alert sent (${input.type} #${input.entityId}) to ${tokens.length} device(s)`,
+      `[push] Ops alert queued (${input.type} #${input.entityId}) for ${queued}/${tokens.length} device(s)`,
     )
   } catch (error) {
     console.error("[push] Failed to notify ops staff:", error)
