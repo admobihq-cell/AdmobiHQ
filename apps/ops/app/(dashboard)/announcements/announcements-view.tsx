@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, Plus, Radio } from "lucide-react"
+import { Loader2, Plus, Radio, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 
 import { ANNOUNCEMENT_FORM_FIELDS, type AnnouncementDto } from "@workspace/ops-contracts"
@@ -41,6 +41,12 @@ type Paginated<T> = {
   totalPages: number
 }
 
+type PendingBroadcast = {
+  title: string
+  body: string
+  mode: "new" | "resend"
+}
+
 type AnnouncementsViewProps = {
   initialData: Paginated<AnnouncementDto>
 }
@@ -49,7 +55,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const client = useOpsClient()
   const [data, setData] = useState(initialData)
   const [formOpen, setFormOpen] = useState(false)
-  const [pending, setPending] = useState<{ title: string; body: string } | null>(null)
+  const [pending, setPending] = useState<PendingBroadcast | null>(null)
   const [saving, setSaving] = useState(false)
 
   const refresh = async () => {
@@ -61,8 +67,11 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     if (!pending) return
     setSaving(true)
     try {
-      await client.notifications.broadcast(pending)
-      toast.success("Announcement sent")
+      await client.notifications.broadcast({
+        title: pending.title,
+        body: pending.body,
+      })
+      toast.success(pending.mode === "resend" ? "Announcement resent" : "Announcement sent")
       setPending(null)
       setFormOpen(false)
       await refresh()
@@ -97,12 +106,13 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
               <TableHead>Message</TableHead>
               <TableHead>Delivered</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="w-[1%] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!data.items.length ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center">
+                <TableCell colSpan={6} className="h-32 text-center">
                   <p className="text-sm font-medium text-foreground">No announcements yet.</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Sent broadcasts will appear here.
@@ -126,6 +136,23 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                       {row.status}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={saving}
+                      onClick={() =>
+                        setPending({
+                          title: row.title,
+                          body: row.body,
+                          mode: "resend",
+                        })
+                      }
+                    >
+                      <RotateCcw data-icon="inline-start" />
+                      Resend
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -147,6 +174,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           setPending({
             title: String(values.title ?? ""),
             body: String(values.body ?? ""),
+            mode: "new",
           })
         }}
       />
@@ -156,17 +184,32 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Radio className="size-4" />
-              Send to all customers?
+              {pending?.mode === "resend" ? "Resend to all customers?" : "Send to all customers?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This sends a real push notification to every installed customer app. This can&apos;t
-              be undone.
+              {pending?.mode === "resend" ? (
+                <>
+                  This sends &ldquo;{pending.title}&rdquo; again as a new push to every installed
+                  customer app. This can&apos;t be undone.
+                </>
+              ) : (
+                <>
+                  This sends a real push notification to every installed customer app. This
+                  can&apos;t be undone.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={(e) => { e.preventDefault(); void handleSend() }} disabled={saving}>
-              {saving ? <Loader2 className="size-4 animate-spin" /> : "Send"}
+              {saving ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : pending?.mode === "resend" ? (
+                "Resend"
+              ) : (
+                "Send"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
