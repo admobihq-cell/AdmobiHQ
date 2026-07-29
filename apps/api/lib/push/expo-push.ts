@@ -15,6 +15,8 @@ export type ExpoPushPayload = {
   sound?: "default" | null
   channelId?: string
   color?: string
+  priority?: "default" | "normal" | "high"
+  ttl?: number
   data?: Record<string, string>
 }
 

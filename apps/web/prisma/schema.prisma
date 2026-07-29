@@ -124,6 +124,7 @@ model AnnouncementBroadcast {
   id               Int      @id @default(autoincrement())
   title            String
   body             String
+  category         String   @default("announcement")
   sent_by_clerk_id String
   sent_by_email    String
   target_count     Int      @default(0)
