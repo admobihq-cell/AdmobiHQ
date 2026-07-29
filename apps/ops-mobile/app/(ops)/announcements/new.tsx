@@ -17,6 +17,7 @@ export default function NewAnnouncementScreen() {
     const parsed = broadcastCreateSchema.safeParse({
       title: values.title,
       body: values.body,
+      category: values.category || "announcement",
     })
 
     if (!parsed.success) {
@@ -38,7 +39,11 @@ export default function NewAnnouncementScreen() {
     )
   }
 
-  const submit = async (data: { title: string; body: string }) => {
+  const submit = async (data: {
+    title: string
+    body: string
+    category: "announcement" | "campaign" | "billing" | "promo" | "system"
+  }) => {
     setSaving(true)
     setError(null)
     try {
@@ -55,6 +60,7 @@ export default function NewAnnouncementScreen() {
     <EntityFormScreen
       title="New announcement"
       fields={ANNOUNCEMENT_FORM_FIELDS}
+      initialValues={{ category: "announcement" }}
       submitLabel="Send to all customers"
       saving={saving}
       error={error}

@@ -138,6 +138,7 @@ export type AnnouncementDto = {
   id: number
   title: string
   body: string
+  category: string
   sent_by_email: string
   target_count: number
   delivered_count: number

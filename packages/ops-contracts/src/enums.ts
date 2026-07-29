@@ -55,6 +55,16 @@ export type VehiclesActive = (typeof VEHICLES_ACTIVE)[number]
 export const DATE_RANGE_KEYS = ["7d", "30d", "90d", "all"] as const
 export type DateRangeKey = (typeof DATE_RANGE_KEYS)[number]
 
+/** Categories shown in the customer notifications filter chips. */
+export const ANNOUNCEMENT_CATEGORIES = [
+  "announcement",
+  "campaign",
+  "billing",
+  "promo",
+  "system",
+] as const
+export type AnnouncementCategory = (typeof ANNOUNCEMENT_CATEGORIES)[number]
+
 export const AUDIT_APPS = [
   "api",
   "ops",

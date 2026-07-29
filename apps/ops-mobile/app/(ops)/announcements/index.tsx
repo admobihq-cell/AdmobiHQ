@@ -140,6 +140,12 @@ export default function AnnouncementsScreen() {
       await client.notifications.broadcast({
         title: resendTarget.title,
         body: resendTarget.body,
+        category: (resendTarget.category ?? "announcement") as
+          | "announcement"
+          | "campaign"
+          | "billing"
+          | "promo"
+          | "system",
       })
       setResendTarget(null)
       setRefreshing(true)
@@ -237,7 +243,7 @@ export default function AnnouncementsScreen() {
           >
             <ListRow
               title={item.title}
-              subtitle={`${item.delivered_count}/${item.target_count} delivered`}
+              subtitle={`${item.category ?? "announcement"} · ${item.delivered_count}/${item.target_count} delivered`}
               meta={formatRelativeTime(item.created_at)}
               initials={item.title}
               showChevron={false}

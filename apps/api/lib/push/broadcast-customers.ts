@@ -21,6 +21,7 @@ export async function broadcastToCustomers(
     data: {
       title: input.title,
       body: input.body,
+      category: input.category,
       sent_by_clerk_id: sender.clerkUserId,
       sent_by_email: sender.email,
       target_count: tokens.length,
@@ -39,7 +40,9 @@ export async function broadcastToCustomers(
     sound: "default" as const,
     channelId: "default",
     color: "#0B6E4F",
-    data: { type: "announcement" },
+    // High priority wakes doze-mode Android devices so the tray banner shows promptly.
+    priority: "high" as const,
+    data: { type: "announcement", category: input.category },
   }))
 
   let queued = 0

@@ -210,13 +210,33 @@ export const MEDIA_KIT_FORM_FIELDS: FormFieldDef[] = [
 
 export const ANNOUNCEMENT_FORM_FIELDS: FormFieldDef[] = [
   {
+    name: "category",
+    label: "Type",
+    required: true,
+    options: [
+      { value: "announcement", label: "Announcements" },
+      { value: "campaign", label: "Campaigns" },
+      { value: "billing", label: "Billing" },
+      { value: "promo", label: "Offers" },
+      { value: "system", label: "System" },
+    ],
+    section: "Type",
+  },
+  {
     name: "title",
     label: "Title",
     required: true,
     placeholder: "e.g. New payout schedule",
     section: "Message",
   },
-  { name: "body", label: "Message", type: "multiline", required: true, section: "Message" },
+  {
+    name: "body",
+    label: "Message",
+    type: "multiline",
+    required: true,
+    placeholder: "Write the notification customers will see…",
+    section: "Message",
+  },
 ]
 
 /** Group consecutive fields that share a section title (for sectioned mobile forms). */
