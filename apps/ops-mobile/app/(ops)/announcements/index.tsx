@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native"
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
 import { formatRelativeTime } from "@workspace/ops-contracts"
 
-import { Inbox, Plus } from "@/components/icons"
+import { Inbox, Plus, RefreshCcw } from "@/components/icons"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
-import { radius, spacing, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 export default function AnnouncementsScreen() {
   const client = useOpsClient()
@@ -72,6 +73,21 @@ export default function AnnouncementsScreen() {
       backgroundColor: c.border,
       marginLeft: 68,
     },
+    resendButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+    },
+    resendLabel: {
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.primary,
+    },
   }))
 
   const [items, setItems] = useState<AnnouncementDto[]>([])
@@ -80,6 +96,8 @@ export default function AnnouncementsScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [resendTarget, setResendTarget] = useState<AnnouncementDto | null>(null)
+  const [resending, setResending] = useState(false)
 
   const fetchPage = useCallback(
     async (nextPage: number, replace = false) => {
@@ -113,6 +131,25 @@ export default function AnnouncementsScreen() {
     if (loading || refreshing || page >= totalPages) return
     setLoading(true)
     void fetchPage(page + 1)
+  }
+
+  const handleResend = async () => {
+    if (!resendTarget || resending) return
+    setResending(true)
+    try {
+      await client.notifications.broadcast({
+        title: resendTarget.title,
+        body: resendTarget.body,
+      })
+      setResendTarget(null)
+      setRefreshing(true)
+      await fetchPage(1, true)
+    } catch (err) {
+      setError(formatOpsError(err, API_URL))
+      setResendTarget(null)
+    } finally {
+      setResending(false)
+    }
   }
 
   const listHeader = (
@@ -203,10 +240,39 @@ export default function AnnouncementsScreen() {
               subtitle={`${item.delivered_count}/${item.target_count} delivered`}
               meta={formatRelativeTime(item.created_at)}
               initials={item.title}
+              showChevron={false}
+              rightElement={
+                <Pressable
+                  style={({ pressed }) => [styles.resendButton, pressed && { opacity: 0.7 }]}
+                  onPress={() => setResendTarget(item)}
+                  disabled={resending}
+                  accessibilityLabel={`Resend ${item.title}`}
+                  hitSlop={8}
+                >
+                  <RefreshCcw color={colors.primary} size={14} />
+                  <Text style={styles.resendLabel}>Resend</Text>
+                </Pressable>
+              }
             />
             {index < items.length - 1 ? <View style={styles.separator} /> : null}
           </View>
         )}
+      />
+
+      <ConfirmDialog
+        visible={resendTarget !== null}
+        title="Resend to all customers?"
+        message={
+          resendTarget
+            ? `This sends "${resendTarget.title}" again as a new push to every installed customer app. This can't be undone.`
+            : undefined
+        }
+        confirmLabel={resending ? "Sending…" : "Resend"}
+        destructive
+        onConfirm={() => void handleResend()}
+        onCancel={() => {
+          if (!resending) setResendTarget(null)
+        }}
       />
     </View>
   )

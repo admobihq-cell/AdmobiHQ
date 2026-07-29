@@ -2,6 +2,7 @@ import type { BroadcastCreateInput } from "@workspace/ops-contracts"
 
 import { prisma } from "@/lib/prisma"
 import { sendExpoPushMessages } from "@/lib/push/expo-push"
+import { recordPushTickets } from "@/lib/push/receipts"
 
 export type BroadcastSender = {
   clerkUserId: string
@@ -41,28 +42,40 @@ export async function broadcastToCustomers(
     data: { type: "announcement" },
   }))
 
-  let invalidTokens: string[] = []
-  let status = "sent"
+  let queued = 0
+  let status = "sending"
 
   try {
-    const result = await sendExpoPushMessages(messages)
-    invalidTokens = result.invalidTokens
+    const { outcomes, invalidTokens } = await sendExpoPushMessages(messages)
+    queued = outcomes.filter((outcome) => outcome.status === "queued").length
+
+    await recordPushTickets({
+      audience: "customer",
+      broadcastId: broadcast.id,
+      outcomes,
+    })
 
     if (invalidTokens.length > 0) {
       await prisma.customerPushToken.deleteMany({
         where: { expo_push_token: { in: invalidTokens } },
       })
     }
+
+    if (queued === 0) {
+      status = "failed"
+    }
   } catch (error) {
     console.error("[push] Failed to broadcast to customers:", error)
     status = "failed"
   }
 
+  // delivered_count stays 0 until receipts land — a queued message is not a
+  // delivered one. checkPendingPushReceipts() fills these in.
   return prisma.announcementBroadcast.update({
     where: { id: broadcast.id },
     data: {
-      delivered_count: tokens.length - invalidTokens.length,
-      invalid_count: invalidTokens.length,
+      delivered_count: 0,
+      invalid_count: tokens.length - queued,
       status,
     },
   })

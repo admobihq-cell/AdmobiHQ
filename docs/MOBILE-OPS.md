@@ -62,7 +62,22 @@ When someone submits a **driver application**, **fleet partnership**, or **campa
 |-------|----------|
 | Token registration (after Clerk sign-in) | `apps/ops-mobile/lib/push-notifications.ts` |
 | API store + send | `apps/api/app/v1/push-tokens`, `apps/api/lib/push/ops-alerts.ts` |
-| DB table | `ops_push_tokens` (see `apps/web/prisma/scripts/ops-schema-additive.sql`) |
+| Delivery receipts | `apps/api/lib/push/receipts.ts`, `apps/api/app/v1/push-receipts/check` |
+| DB tables | `ops_push_tokens`, `push_tickets` (see `apps/web/prisma/scripts/ops-schema-additive.sql`) |
+
+### Tickets vs receipts
+
+Expo answers a send with a **ticket**, which only means it queued the message. Whether FCM or APNs actually accepted it is in the **delivery receipt**, available a few minutes later and kept for 24 hours.
+
+Every message is written to `push_tickets` as `pending`. A cron hits `/v1/push-receipts/check` every 15 minutes, resolves those rows to `ok` or `error`, deletes tokens that came back `DeviceNotRegistered` / `InvalidCredentials`, and recomputes `delivered_count` on `announcement_broadcasts`.
+
+So the `delivered_count / target_count` shown in the ops console is **0 right after sending** and fills in once receipts arrive. A broadcast stuck at `0/N` with a `MismatchSenderId` error means the FCM V1 key and `google-services.json` belong to different Firebase senders.
+
+The endpoint accepts either an ops session or `Authorization: Bearer $CRON_SECRET`. Set `CRON_SECRET` in the API environment.
+
+### Resend
+
+Ops web and ops-mobile list past broadcasts with a **Resend** action. It reuses `POST /v1/notifications/broadcast` with the same title/body, so a resend creates a **new** `announcement_broadcasts` row and a fresh fan-out — it does not mutate the original send.
 
 ### One-time setup
 

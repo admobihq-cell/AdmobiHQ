@@ -75,6 +75,24 @@ CREATE TABLE IF NOT EXISTS announcement_broadcasts (
 
 CREATE INDEX IF NOT EXISTS announcement_broadcasts_created_at_idx ON announcement_broadcasts (created_at);
 
+-- push delivery audit: one row per message handed to Expo, resolved by receipt
+CREATE TABLE IF NOT EXISTS push_tickets (
+  id SERIAL PRIMARY KEY,
+  ticket_id TEXT,
+  expo_push_token TEXT NOT NULL,
+  audience TEXT NOT NULL,
+  broadcast_id INTEGER REFERENCES announcement_broadcasts (id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  error_code TEXT,
+  error_message TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT push_tickets_ticket_id_key UNIQUE (ticket_id)
+);
+
+CREATE INDEX IF NOT EXISTS push_tickets_status_created_at_idx ON push_tickets (status, created_at);
+CREATE INDEX IF NOT EXISTS push_tickets_broadcast_id_idx ON push_tickets (broadcast_id);
+
 -- Cross-app audit trail (ops mutations, public submissions, future customer apps)
 CREATE TABLE IF NOT EXISTS audit_events (
   id SERIAL PRIMARY KEY,

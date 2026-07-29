@@ -15,11 +15,11 @@ model Lead {
   email               String
   company_name        String
   phone               String?
-  audience            String    // "campaign"
+  audience            String // "campaign"
   cities              String[]  @default([])
   ad_formats          String[]  @default([])
   duration            String?
-  budget_range        String?   // "under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"
+  budget_range        String? // "under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"
   campaign_start_date DateTime?
   additional_info     String?
   status              String?   @default("new") // new, contacted, qualified, closed
@@ -33,12 +33,12 @@ model Lead {
 }
 
 model FleetPartner {
-  id                   Int     @id @default(autoincrement())
+  id                   Int      @id @default(autoincrement())
   email                String
   company_name         String
   primary_contact_name String
   phone                String
-  city                 String  // "Nairobi", "Mombasa", "Kisumu"
+  city                 String // "Nairobi", "Mombasa", "Kisumu"
   fleet_types          String[]
   fleet_size           String?
   vehicles_active      String? // "yes", "no", "some"
@@ -55,18 +55,18 @@ model FleetPartner {
 }
 
 model Driver {
-  id              Int     @id @default(autoincrement())
-  name            String
-  phone           String
-  email           String?
-  city            String  // "Nairobi", "Mombasa", "Kisumu"
-  vehicle_type    String? // "taxi", "delivery_bike", "three_wheeler", "other"
-  days_per_week   String? // "1_2", "3_4", "5_6", "daily"
-  heard_about     String? // "whatsapp", "facebook", "friend", "roadside", "other"
-  status          String?  @default("pending") // "pending", "verified", "active"
-  notes           String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  name          String
+  phone         String
+  email         String?
+  city          String // "Nairobi", "Mombasa", "Kisumu"
+  vehicle_type  String? // "taxi", "delivery_bike", "three_wheeler", "other"
+  days_per_week String? // "1_2", "3_4", "5_6", "daily"
+  heard_about   String? // "whatsapp", "facebook", "friend", "roadside", "other"
+  status        String?  @default("pending") // "pending", "verified", "active"
+  notes         String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   @@index([created_at])
   @@index([city])
@@ -132,8 +132,31 @@ model AnnouncementBroadcast {
   status           String   @default("sent")
   created_at       DateTime @default(now())
 
+  tickets PushTicket[]
+
   @@index([created_at])
   @@map("announcement_broadcasts")
+}
+
+/// One row per push message handed to Expo. A ticket only means Expo queued the
+/// message; the delivery receipt fetched later is what proves FCM/APNs took it.
+model PushTicket {
+  id              Int      @id @default(autoincrement())
+  ticket_id       String?  @unique
+  expo_push_token String
+  audience        String // "customer" | "ops"
+  broadcast_id    Int?
+  status          String   @default("pending") // pending | ok | error | expired
+  error_code      String?
+  error_message   String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  broadcast AnnouncementBroadcast? @relation(fields: [broadcast_id], references: [id], onDelete: Cascade)
+
+  @@index([status, created_at])
+  @@index([broadcast_id])
+  @@map("push_tickets")
 }
 
 /// Cross-app activity trail: who did what, when (ops, public forms, future customer apps).
