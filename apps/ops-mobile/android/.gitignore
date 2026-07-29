@@ -12,9 +12,5 @@ local.properties
 *.hprof
 .cxx/
 
-# Release signing (written by CI, must never be committed)
-release.keystore
-keystore.properties
-
 # Bundle artifacts
 *.jsbundle
