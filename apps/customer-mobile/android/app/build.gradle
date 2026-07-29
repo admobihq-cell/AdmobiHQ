@@ -81,6 +81,8 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+apply from: new File(["node", "--print", "require('path').dirname(require.resolve('@sentry/react-native/package.json'))"].execute().text.trim(), "sentry.gradle")
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -93,14 +95,9 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "0.0.2"
+        versionName "0.0.5"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
-    }
-    def releaseKeystorePropertiesFile = rootProject.file('keystore.properties')
-    def releaseKeystoreProperties = new Properties()
-    if (releaseKeystorePropertiesFile.exists()) {
-        releaseKeystoreProperties.load(new FileInputStream(releaseKeystorePropertiesFile))
     }
     signingConfigs {
         debug {
@@ -109,23 +106,15 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        if (releaseKeystorePropertiesFile.exists()) {
-            release {
-                storeFile file(releaseKeystoreProperties['storeFile'])
-                storePassword releaseKeystoreProperties['storePassword']
-                keyAlias releaseKeystoreProperties['keyAlias']
-                keyPassword releaseKeystoreProperties['keyPassword']
-            }
-        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Falls back to the debug keystore when android/keystore.properties is absent
-            // (e.g. local builds); CI provides keystore.properties for real release signing.
-            signingConfig releaseKeystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
+            signingConfig signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -193,3 +182,5 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+apply plugin: 'com.google.gms.google-services'
