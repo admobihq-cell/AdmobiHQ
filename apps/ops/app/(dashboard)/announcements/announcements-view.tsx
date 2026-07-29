@@ -44,6 +44,7 @@ type Paginated<T> = {
 type PendingBroadcast = {
   title: string
   body: string
+  category: string
   mode: "new" | "resend"
 }
 
@@ -70,6 +71,12 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
       await client.notifications.broadcast({
         title: pending.title,
         body: pending.body,
+        category: pending.category as
+          | "announcement"
+          | "campaign"
+          | "billing"
+          | "promo"
+          | "system",
       })
       toast.success(pending.mode === "resend" ? "Announcement resent" : "Announcement sent")
       setPending(null)
@@ -103,6 +110,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
             <TableRow>
               <TableHead>Sent</TableHead>
               <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Message</TableHead>
               <TableHead>Delivered</TableHead>
               <TableHead>Status</TableHead>
@@ -112,7 +120,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           <TableBody>
             {!data.items.length ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
+                <TableCell colSpan={7} className="h-32 text-center">
                   <p className="text-sm font-medium text-foreground">No announcements yet.</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Sent broadcasts will appear here.
@@ -124,6 +132,9 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                 <TableRow key={row.id}>
                   <TableCell>{formatDateTime(row.created_at)}</TableCell>
                   <TableCell className="font-medium">{row.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{row.category ?? "announcement"}</Badge>
+                  </TableCell>
                   <TableCell className="max-w-sm text-muted-foreground">
                     {truncate(row.body, 80)}
                   </TableCell>
@@ -145,6 +156,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                         setPending({
                           title: row.title,
                           body: row.body,
+                          category: row.category ?? "announcement",
                           mode: "resend",
                         })
                       }
@@ -169,11 +181,13 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         title="New announcement"
         fields={ANNOUNCEMENT_FORM_FIELDS}
         saving={saving}
+        initial={{ category: "announcement" }}
         onSubmit={async (values) => {
           setFormOpen(false)
           setPending({
             title: String(values.title ?? ""),
             body: String(values.body ?? ""),
+            category: String(values.category ?? "announcement"),
             mode: "new",
           })
         }}

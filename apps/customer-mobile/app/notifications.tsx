@@ -23,18 +23,34 @@ export default function NotificationsScreen() {
   const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
   const [category, setCategory] = useState<NotificationCategory | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  // Tick so relative timestamps (5m ago → 6m ago) refresh while the screen is open.
+  const [, setClock] = useState(0)
   const unreadCount = items.filter((item) => !item.read).length
 
   const { items: liveItems, refetch: refetchLive } = useLiveAnnouncements()
 
-  // Merge newly-seen broadcasts in at the front, once per id, so read state
-  // on already-merged items (and the untouched mock seed data) is preserved.
+  useEffect(() => {
+    const id = setInterval(() => setClock((n) => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Merge live broadcasts in at the front. New ids are prepended; known ids keep
+  // read state but pick up category/title/body/time updates from the API.
   useEffect(() => {
     if (liveItems.length === 0) return
     setItems((current) => {
-      const knownIds = new Set(current.map((item) => item.id))
-      const unseen = liveItems.filter((item) => !knownIds.has(item.id))
-      return unseen.length > 0 ? [...unseen, ...current] : current
+      const byId = new Map(current.map((item) => [item.id, item]))
+      const mergedLive = liveItems.map((live) => {
+        const existing = byId.get(live.id)
+        if (!existing) return live
+        return {
+          ...live,
+          read: existing.read,
+        }
+      })
+      const liveIds = new Set(liveItems.map((item) => item.id))
+      const rest = current.filter((item) => !liveIds.has(item.id))
+      return [...mergedLive, ...rest]
     })
   }, [liveItems])
 

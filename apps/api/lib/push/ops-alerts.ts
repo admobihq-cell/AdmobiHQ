@@ -51,6 +51,7 @@ export async function notifyOpsStaffAlert(input: OpsStaffAlertInput) {
       sound: "default" as const,
       channelId: "default",
       color: "#0B6E4F",
+      priority: "high" as const,
       data: {
         type: input.type,
         id: String(input.entityId),
