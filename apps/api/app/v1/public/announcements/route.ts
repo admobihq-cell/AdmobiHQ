@@ -10,7 +10,7 @@ export async function GET() {
     const items = await prisma.announcementBroadcast.findMany({
       orderBy: { created_at: "desc" },
       take: MAX_ITEMS,
-      select: { id: true, title: true, body: true, created_at: true },
+      select: { id: true, title: true, body: true, category: true, created_at: true },
     })
 
     return NextResponse.json({ items })

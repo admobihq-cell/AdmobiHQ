@@ -1,6 +1,11 @@
 import { Pressable, Text, View } from "react-native"
 
-import { NOTIFICATION_CATEGORY_ICONS, type NotificationItem } from "@/lib/notifications-data"
+import {
+  formatRelativeTime,
+  NOTIFICATION_CATEGORY_ICONS,
+  NOTIFICATION_CATEGORY_LABELS,
+  type NotificationItem,
+} from "@/lib/notifications-data"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 type NotificationRowProps = {
@@ -52,10 +57,20 @@ export function NotificationRow({ item, onPress }: NotificationRowProps) {
       color: c.mutedForeground,
       lineHeight: 18,
     },
+    metaRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      marginTop: 2,
+    },
+    category: {
+      ...typography.caption,
+      color: c.primary,
+      fontWeight: "600" as const,
+    },
     time: {
       ...typography.caption,
       color: c.mutedForeground,
-      marginTop: 2,
     },
   }))
 
@@ -79,7 +94,10 @@ export function NotificationRow({ item, onPress }: NotificationRowProps) {
         <Text style={styles.body} numberOfLines={2}>
           {item.body}
         </Text>
-        <Text style={styles.time}>{item.time}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.category}>{NOTIFICATION_CATEGORY_LABELS[item.category]}</Text>
+          <Text style={styles.time}>· {formatRelativeTime(item.createdAt)}</Text>
+        </View>
       </View>
     </Pressable>
   )

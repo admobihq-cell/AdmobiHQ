@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import {
   AD_FORMATS,
+  ANNOUNCEMENT_CATEGORIES,
   BUDGET_RANGES,
   CITIES,
   DATE_RANGE_KEYS,
@@ -125,6 +126,7 @@ export const statsRangeSchema = z.object({
 export const broadcastCreateSchema = z.object({
   title: z.string().trim().min(1).max(65),
   body: z.string().trim().min(1).max(178),
+  category: z.enum(ANNOUNCEMENT_CATEGORIES),
 })
 
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>
