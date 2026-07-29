@@ -57,8 +57,13 @@ export type ReceiptCheckSummary = {
 /**
  * Resolves pending tickets against Expo's delivery receipts, drops tokens the
  * push services rejected, and refreshes the counters shown in the ops console.
+ *
+ * Cheap when there is nothing to do: the initial lookup is a single indexed
+ * query that returns no rows, so this is safe to call on read paths.
  */
-export async function checkPendingPushReceipts(): Promise<ReceiptCheckSummary> {
+export async function checkPendingPushReceipts(
+  options: { limit?: number } = {},
+): Promise<ReceiptCheckSummary> {
   const summary: ReceiptCheckSummary = {
     checked: 0,
     delivered: 0,
@@ -76,7 +81,7 @@ export async function checkPendingPushReceipts(): Promise<ReceiptCheckSummary> {
       created_at: { lte: minutesAgo(RECEIPT_DELAY_MINUTES) },
     },
     orderBy: { created_at: "asc" },
-    take: MAX_TICKETS_PER_RUN,
+    take: Math.min(options.limit ?? MAX_TICKETS_PER_RUN, MAX_TICKETS_PER_RUN),
   })
 
   if (pending.length === 0) return summary
