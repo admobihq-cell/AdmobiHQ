@@ -69,7 +69,12 @@ When someone submits a **driver application**, **fleet partnership**, or **campa
 
 Expo answers a send with a **ticket**, which only means it queued the message. Whether FCM or APNs actually accepted it is in the **delivery receipt**, available a few minutes later and kept for 24 hours.
 
-Every message is written to `push_tickets` as `pending`. A cron hits `/v1/push-receipts/check` every 15 minutes, resolves those rows to `ok` or `error`, deletes tokens that came back `DeviceNotRegistered` / `InvalidCredentials`, and recomputes `delivered_count` on `announcement_broadcasts`.
+Every message is written to `push_tickets` as `pending`. Resolving those rows to `ok` or `error` deletes tokens that came back `DeviceNotRegistered` / `InvalidCredentials` and recomputes `delivered_count` on `announcement_broadcasts`.
+
+Two things trigger it:
+
+- **Opening the announcements list** (`GET /v1/notifications`) sweeps up to 100 pending tickets first. Costs one indexed query when there is nothing to resolve.
+- **A nightly cron** at 03:00 (`apps/api/vercel.json`) as the backstop. Vercel's Hobby plan only permits **one cron run per day** — a `*/15 * * * *` schedule fails the deploy outright. On Pro you can tighten it.
 
 So the `delivered_count / target_count` shown in the ops console is **0 right after sending** and fills in once receipts arrive. A broadcast stuck at `0/N` with a `MismatchSenderId` error means the FCM V1 key and `google-services.json` belong to different Firebase senders.
 
