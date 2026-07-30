@@ -6,10 +6,8 @@ meta {
 
 post {
   url: {{API_URL}}/v1/drivers/bulk
-}
-
-auth {
-  mode: bearer
+  body: json
+  auth: bearer
 }
 
 auth:bearer {

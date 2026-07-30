@@ -6,10 +6,8 @@ meta {
 
 delete {
   url: {{API_URL}}/v1/waitlist/{{resource_id}}
-}
-
-auth {
-  mode: bearer
+  body: none
+  auth: bearer
 }
 
 auth:bearer {

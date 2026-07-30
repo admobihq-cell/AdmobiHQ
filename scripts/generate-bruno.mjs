@@ -14,6 +14,20 @@ function write(rel, content) {
 }
 
 function http({ name, seq, method, url, headers = {}, body, auth, docs }) {
+  // Bruno requires body + auth INSIDE the method block or requests are ignored.
+  const bodyMode = body === undefined ? "none" : "json"
+  let authMode = "none"
+  let tokenVar = null
+  if (auth === "bearer") {
+    authMode = "bearer"
+    tokenVar = "clerk_jwt"
+  } else if (auth === "cron") {
+    authMode = "bearer"
+    tokenVar = "cron_secret"
+  } else if (auth === "inherit") {
+    authMode = "inherit"
+  }
+
   const lines = [
     `meta {`,
     `  name: ${name}`,
@@ -23,15 +37,13 @@ function http({ name, seq, method, url, headers = {}, body, auth, docs }) {
     ``,
     `${method} {`,
     `  url: ${url}`,
+    `  body: ${bodyMode}`,
+    `  auth: ${authMode}`,
     `}`,
   ]
 
-  if (auth === "bearer") {
-    lines.push(``, `auth {`, `  mode: bearer`, `}`, ``, `auth:bearer {`, `  token: {{clerk_jwt}}`, `}`)
-  } else if (auth === "cron") {
-    lines.push(``, `auth {`, `  mode: bearer`, `}`, ``, `auth:bearer {`, `  token: {{cron_secret}}`, `}`)
-  } else if (auth === "none") {
-    lines.push(``, `auth {`, `  mode: none`, `}`)
+  if (tokenVar) {
+    lines.push(``, `auth:bearer {`, `  token: {{${tokenVar}}}`, `}`)
   }
 
   const headerEntries = Object.entries(headers)
@@ -130,11 +142,7 @@ vars:secret [
 // --- business-api ---
 write("business-api/folder.bru", folder("Business API", 1))
 
-write("business-api/public/folder.bru", folder("Public", 1, `
-auth {
-  mode: none
-}
-`))
+write("business-api/public/folder.bru", folder("Public", 1))
 
 write(
   "business-api/public/health.bru",
@@ -274,14 +282,6 @@ write(
     "Admin",
     2,
     `
-auth {
-  mode: bearer
-}
-
-auth:bearer {
-  token: {{clerk_jwt}}
-}
-
 docs {
   Requires Clerk session JWT for an @admobihq.com user.
   Set secret env var clerk_jwt in Bruno before running these requests.
@@ -530,6 +530,18 @@ write(
   }),
 )
 
+write(
+  "business-api/admin/push-receipts-check-get.bru",
+  http({
+    name: "Check Push Receipts (GET)",
+    seq: 15,
+    method: "get",
+    url: "{{API_URL}}/v1/push-receipts/check",
+    auth: "cron",
+    docs: "Same handler as POST. Vercel Cron typically uses GET.",
+  }),
+)
+
 // --- payload cms ---
 write(
   "payload-cms/folder.bru",
@@ -537,10 +549,6 @@ write(
     "Payload CMS",
     2,
     `
-auth {
-  mode: none
-}
-
 docs {
   Payload 3 REST on apps/web. Auth via Payload admin session cookie when needed.
   Base: {{WEB_URL}}/api/{collection-slug}
