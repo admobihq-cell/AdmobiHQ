@@ -6,10 +6,8 @@ meta {
 
 get {
   url: {{API_URL}}/v1/drivers?page=1&pageSize=20&city=Nairobi
-}
-
-auth {
-  mode: bearer
+  body: none
+  auth: bearer
 }
 
 auth:bearer {
