@@ -18,6 +18,10 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:watch": "turbo test -- --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "env:pull": "npm run env:pull -w web && npm run env:pull -w ops && npm run env:pull -w customer-web && npm run env:pull -w api && npm run env:pull -w ops-mobile && npm run env:pull -w customer-mobile",
     "env:pull:mobile-stack": "npm run env:pull -w api && npm run env:pull -w ops-mobile && npm run env:pull -w customer-mobile",
     "env:pull:staging": "npm run env:pull:staging -w web && npm run env:pull:staging -w ops && npm run env:pull:staging -w customer-web && npm run env:pull:staging -w api && npm run env:pull:staging -w ops-mobile && npm run env:pull:staging -w customer-mobile",
@@ -33,13 +37,15 @@
     "postinstall": "patch-package"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
     "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.9.16",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^3.2.4"
   },
   "packageManager": "npm@11.12.1",
   "overrides": {
