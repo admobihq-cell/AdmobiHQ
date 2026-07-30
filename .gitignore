@@ -57,3 +57,5 @@ apps/web/media/
 # Bruno local secrets (never commit JWTs / cron secrets)
 bruno/**/*.local.bru
 bruno/environments/*.local.bru
+bruno/.env
+
