@@ -1,0 +1,23 @@
+meta {
+  name: Update drivers
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/v1/drivers/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "status": "verified"
+  }
+}

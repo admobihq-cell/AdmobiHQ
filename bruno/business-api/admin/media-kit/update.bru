@@ -1,0 +1,23 @@
+meta {
+  name: Update media-kit
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/v1/media-kit/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "name": "Updated Press Contact"
+  }
+}

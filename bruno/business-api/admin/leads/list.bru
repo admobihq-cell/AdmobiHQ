@@ -1,0 +1,17 @@
+meta {
+  name: List leads
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/leads?page=1&pageSize=20&status=new
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

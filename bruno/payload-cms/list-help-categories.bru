@@ -1,0 +1,13 @@
+meta {
+  name: List help-categories
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{WEB_URL}}/api/help-categories?limit=10
+}
+
+auth {
+  mode: none
+}

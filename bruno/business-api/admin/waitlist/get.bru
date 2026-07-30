@@ -1,0 +1,17 @@
+meta {
+  name: Get waitlist
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/waitlist/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

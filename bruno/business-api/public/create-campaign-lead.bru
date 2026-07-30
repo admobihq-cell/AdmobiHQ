@@ -1,0 +1,33 @@
+meta {
+  name: Create Campaign Lead
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/public/leads
+}
+
+auth {
+  mode: none
+}
+
+body:json {
+  {
+    "audience": "campaign",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "company": "Acme Ads",
+    "phone": "+254700000000",
+    "cities": [
+      "Nairobi"
+    ],
+    "adFormats": [
+      "taxi_top"
+    ],
+    "duration": "1_month",
+    "budget": "50k_150k",
+    "brief": "Launch Q3 brand campaign",
+    "consent": true
+  }
+}

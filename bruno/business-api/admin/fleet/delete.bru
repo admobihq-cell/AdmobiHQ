@@ -1,0 +1,17 @@
+meta {
+  name: Delete fleet
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{API_URL}}/v1/fleet/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

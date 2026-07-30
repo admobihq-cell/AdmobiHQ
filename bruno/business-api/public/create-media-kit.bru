@@ -1,0 +1,20 @@
+meta {
+  name: Create Media Kit Request
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/public/media-kit
+}
+
+auth {
+  mode: none
+}
+
+body:json {
+  {
+    "name": "Press Contact",
+    "email": "press@example.com"
+  }
+}

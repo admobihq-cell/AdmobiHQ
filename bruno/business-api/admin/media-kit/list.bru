@@ -1,0 +1,17 @@
+meta {
+  name: List media-kit
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/media-kit?page=1&pageSize=20
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
