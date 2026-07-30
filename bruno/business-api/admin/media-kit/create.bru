@@ -1,0 +1,24 @@
+meta {
+  name: Create media-kit
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/media-kit
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "name": "Press Contact",
+    "email": "press@example.com"
+  }
+}

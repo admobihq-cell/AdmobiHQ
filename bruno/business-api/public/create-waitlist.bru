@@ -1,0 +1,19 @@
+meta {
+  name: Create Waitlist Entry
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/v1/public/waitlist
+}
+
+auth {
+  mode: none
+}
+
+body:json {
+  {
+    "email": "waitlist@example.com"
+  }
+}

@@ -1,0 +1,13 @@
+meta {
+  name: List help-articles
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{WEB_URL}}/api/help-articles?limit=10
+}
+
+auth {
+  mode: none
+}

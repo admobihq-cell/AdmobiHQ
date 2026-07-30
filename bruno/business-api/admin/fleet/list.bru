@@ -1,0 +1,17 @@
+meta {
+  name: List fleet
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/fleet?page=1&pageSize=20&city=Nairobi
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

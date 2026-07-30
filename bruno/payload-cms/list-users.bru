@@ -1,0 +1,13 @@
+meta {
+  name: List users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{WEB_URL}}/api/users?limit=10
+}
+
+auth {
+  mode: none
+}

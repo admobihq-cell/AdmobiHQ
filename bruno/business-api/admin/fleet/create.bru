@@ -1,0 +1,34 @@
+meta {
+  name: Create fleet
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/fleet
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "email": "ops@citycabs.example",
+    "company_name": "City Cabs Ltd",
+    "primary_contact_name": "John Kamau",
+    "phone": "+254711000000",
+    "city": "Nairobi",
+    "fleet_types": [
+      "taxi"
+    ],
+    "fleet_size": "25",
+    "vehicles_active": "yes",
+    "notes": "Created from Bruno",
+    "status": "pending"
+  }
+}

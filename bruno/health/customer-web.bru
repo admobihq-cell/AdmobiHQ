@@ -1,0 +1,13 @@
+meta {
+  name: Customer Web Health
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{APP_URL}}/api/health
+}
+
+auth {
+  mode: none
+}
