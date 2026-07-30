@@ -6,10 +6,8 @@ meta {
 
 get {
   url: {{API_URL}}/v1/stats?range=30d
-}
-
-auth {
-  mode: bearer
+  body: none
+  auth: bearer
 }
 
 auth:bearer {
