@@ -1,0 +1,24 @@
+meta {
+  name: Create waitlist
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/waitlist
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "email": "waitlist-admin@example.com",
+    "source": "bruno"
+  }
+}

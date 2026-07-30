@@ -1,0 +1,26 @@
+meta {
+  name: Bulk media-kit
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/media-kit/bulk
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "action": "delete",
+    "ids": [
+      1
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Register Customer Push Token
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{API_URL}}/v1/public/push-tokens
+}
+
+auth {
+  mode: none
+}
+
+body:json {
+  {
+    "expoPushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "platform": "android"
+  }
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Admobi HQ
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+docs {
+  Git-friendly API collection for the Admobi monorepo.
+
+  Primary: Business API (apps/api) under {{API_URL}}/v1
+  Optional: Payload CMS (apps/web) under {{WEB_URL}}/api
+  Health: customer-web under {{APP_URL}}/api/health
+
+  Auth:
+  - Public routes: none
+  - Admin routes: Clerk JWT in secret var clerk_jwt (must be @admobihq.com)
+  - Cron: secret var cron_secret for push-receipts check
+
+  Sources of truth: docs/API.md, packages/ops-contracts, apps/api/app/v1/
+}

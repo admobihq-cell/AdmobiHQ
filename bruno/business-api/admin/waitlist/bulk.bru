@@ -1,0 +1,26 @@
+meta {
+  name: Bulk waitlist
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/waitlist/bulk
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "action": "delete",
+    "ids": [
+      1
+    ]
+  }
+}

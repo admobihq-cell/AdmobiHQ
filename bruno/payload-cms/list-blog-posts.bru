@@ -1,0 +1,13 @@
+meta {
+  name: List blog-posts
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{WEB_URL}}/api/blog-posts?limit=10
+}
+
+auth {
+  mode: none
+}

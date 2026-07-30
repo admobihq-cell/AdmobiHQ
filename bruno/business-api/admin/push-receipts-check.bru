@@ -1,0 +1,21 @@
+meta {
+  name: Check Push Receipts
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{API_URL}}/v1/push-receipts/check
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{cron_secret}}
+}
+
+docs {
+  Accepts CRON_SECRET or Clerk ops JWT. Prefer cron_secret for scheduled runs.
+}

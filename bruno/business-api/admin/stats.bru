@@ -1,0 +1,21 @@
+meta {
+  name: Get Stats
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{API_URL}}/v1/stats?range=30d
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  range: 7d | 30d | 90d | all
+}

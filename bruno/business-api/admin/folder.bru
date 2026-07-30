@@ -1,0 +1,17 @@
+meta {
+  name: Admin
+  seq: 2
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Requires Clerk session JWT for an @admobihq.com user.
+  Set secret env var clerk_jwt in Bruno before running these requests.
+}

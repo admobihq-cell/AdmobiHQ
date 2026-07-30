@@ -1,0 +1,17 @@
+meta {
+  name: Delete drivers
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{API_URL}}/v1/drivers/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

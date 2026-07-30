@@ -1,0 +1,27 @@
+meta {
+  name: Bulk fleet
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/fleet/bulk
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "action": "updateStatus",
+    "ids": [
+      1
+    ],
+    "status": "active"
+  }
+}
