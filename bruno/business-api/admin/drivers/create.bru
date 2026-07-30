@@ -1,0 +1,31 @@
+meta {
+  name: Create drivers
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/drivers
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "name": "Mary Wanjiku",
+    "phone": "+254722000000",
+    "email": "mary@example.com",
+    "city": "Nairobi",
+    "vehicle_type": "taxi",
+    "days_per_week": "daily",
+    "heard_about": "whatsapp",
+    "status": "pending",
+    "notes": "Created from Bruno"
+  }
+}

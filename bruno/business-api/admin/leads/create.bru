@@ -1,0 +1,36 @@
+meta {
+  name: Create leads
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/leads
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "contact_name": "Jane Doe",
+    "email": "jane@example.com",
+    "company_name": "Acme Ads",
+    "phone": "+254700000000",
+    "cities": [
+      "Nairobi"
+    ],
+    "ad_formats": [
+      "taxi_top"
+    ],
+    "duration": "1_month",
+    "budget_range": "50k_150k",
+    "additional_info": "Created from Bruno",
+    "status": "new"
+  }
+}

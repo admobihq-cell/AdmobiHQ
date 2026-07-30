@@ -1,0 +1,31 @@
+meta {
+  name: Create Fleet Lead
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/public/leads
+}
+
+auth {
+  mode: none
+}
+
+body:json {
+  {
+    "audience": "fleet",
+    "fleetOrCompanyName": "City Cabs Ltd",
+    "primaryContactName": "John Kamau",
+    "email": "ops@citycabs.example",
+    "phone": "+254711000000",
+    "city": "Nairobi",
+    "fleetTypes": [
+      "taxi"
+    ],
+    "vehicleCount": 25,
+    "vehiclesActive": "yes",
+    "notes": "Interested in rooftop ads",
+    "consent": true
+  }
+}

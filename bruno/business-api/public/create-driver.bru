@@ -1,0 +1,26 @@
+meta {
+  name: Create Driver
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_URL}}/v1/public/drivers
+}
+
+auth {
+  mode: none
+}
+
+body:json {
+  {
+    "name": "Mary Wanjiku",
+    "phone": "+254722000000",
+    "email": "mary@example.com",
+    "city": "Nairobi",
+    "vehicleType": "taxi",
+    "daysPerWeek": "daily",
+    "heardAbout": "whatsapp",
+    "consent": true
+  }
+}

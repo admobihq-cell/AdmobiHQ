@@ -1,0 +1,25 @@
+meta {
+  name: Broadcast Notification
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/notifications/broadcast
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "title": "System update",
+    "body": "We shipped a small reliability fix. No action needed.",
+    "category": "announcement"
+  }
+}

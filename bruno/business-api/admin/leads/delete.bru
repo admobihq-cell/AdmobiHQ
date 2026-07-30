@@ -1,0 +1,17 @@
+meta {
+  name: Delete leads
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{API_URL}}/v1/leads/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

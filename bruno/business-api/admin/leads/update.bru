@@ -1,0 +1,23 @@
+meta {
+  name: Update leads
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/v1/leads/{{resource_id}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "status": "contacted"
+  }
+}

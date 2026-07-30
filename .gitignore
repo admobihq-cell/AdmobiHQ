@@ -53,3 +53,7 @@ apps/web/media/
 .pnp
 .pnp.js
 *.pem
+
+# Bruno local secrets (never commit JWTs / cron secrets)
+bruno/**/*.local.bru
+bruno/environments/*.local.bru
