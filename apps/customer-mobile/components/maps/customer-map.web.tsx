@@ -74,7 +74,7 @@ export function CustomerMap() {
     <View style={styles.root}>
       <View onLayout={onHeaderLayout}>
         <CustomerMapHeader
-          paddingTop={insets.top + spacing.sm}
+          paddingTop={spacing.sm}
           basemap={basemap}
           onBasemapChange={setBasemap}
         />

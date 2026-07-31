@@ -7,7 +7,6 @@ import {
   View,
   useColorScheme,
 } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { WebView } from "react-native-webview"
 
 import { DEFAULT_BASEMAP, type BasemapId } from "@workspace/geo"
@@ -16,7 +15,6 @@ import { buildOpsMapHtml } from "@/components/maps/ops-map-html"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 export function OpsMapWeb() {
-  const insets = useSafeAreaInsets()
   const scheme = useColorScheme()
   const colors = useThemeColors()
   const [basemap, setBasemap] = useState<BasemapId>(DEFAULT_BASEMAP)
@@ -63,7 +61,7 @@ export function OpsMapWeb() {
   return (
     <View style={styles.root}>
       <OpsMapHeader
-        paddingTop={insets.top + spacing.sm}
+        paddingTop={spacing.sm}
         basemap={basemap}
         onBasemapChange={setBasemap}
       />

@@ -257,7 +257,7 @@ Output: a GitHub Release named e.g. `Ops App APK - <short-sha>` with `admobihq-o
 | `npm run dev:clear -w ops-mobile` | Ops — clear Metro cache |
 | `npm run run:android -w ops-mobile` | Ops — install dev build on connected device/emulator |
 
-### APK builds
+### APK builds (Android)
 
 | Command | What it produces |
 |---------|------------------|
@@ -265,6 +265,20 @@ Output: a GitHub Release named e.g. `Ops App APK - <short-sha>` with `admobihq-o
 | `npm run mobile:apk:local:customer` | Local debug APK (needs Metro) |
 | `npm run mobile:apk:eas:ops` | EAS preview APK — **share with team** |
 | `npm run mobile:apk:eas:customer` | EAS preview APK — **share with team** |
+
+### IPA builds (iOS)
+
+There is no local option — iOS builds require macOS + Xcode, so these always run on EAS's cloud build servers regardless of your dev machine's OS.
+
+| Command | What it produces |
+|---------|------------------|
+| `npm run mobile:ipa:eas:ops` | EAS preview build for ops (`.ipa`, ad hoc/internal distribution) |
+| `npm run mobile:ipa:eas:customer` | EAS preview build for customer (`.ipa`, ad hoc/internal distribution) |
+| `npm run mobile:ipa:eas` | Both apps sequentially |
+| `npm run build:ios:production -w ops-mobile` | App Store–ready build (ops) |
+| `npm run build:ios:production -w customer-mobile` | App Store–ready build (customer) |
+
+**One-time setup before the first iOS build:** you need an Apple Developer Program account. Run `npx eas-cli build --platform ios --profile preview` interactively (not `--non-interactive`) once per app so EAS can walk you through Apple sign-in, provisioning profile, and distribution certificate generation — after that, remote credentials are stored on EAS and the `npm run mobile:ipa:eas:*` scripts work non-interactively. Internal-distribution (preview/ad hoc) builds also require registering test devices' UDIDs with `npx eas-cli device:create` before they can install.
 
 ### OTA
 

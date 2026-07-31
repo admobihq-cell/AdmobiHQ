@@ -12,13 +12,11 @@ import {
 } from "@maplibre/maplibre-react-native"
 import { useState } from "react"
 import { StyleSheet, View, useColorScheme } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { CustomerMapHeader } from "@/components/maps/customer-map-header"
 import { spacing, useThemedStyles } from "@/lib/theme"
 
 export function CustomerMapNative() {
-  const insets = useSafeAreaInsets()
   const scheme = useColorScheme()
   const dark = scheme === "dark"
   const [basemap, setBasemap] = useState<BasemapId>(DEFAULT_BASEMAP)
@@ -39,7 +37,7 @@ export function CustomerMapNative() {
   return (
     <View style={styles.root}>
       <CustomerMapHeader
-        paddingTop={insets.top + spacing.sm}
+        paddingTop={spacing.sm}
         basemap={basemap}
         onBasemapChange={setBasemap}
       />

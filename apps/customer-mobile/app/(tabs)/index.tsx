@@ -4,8 +4,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Campaigns, Eye, Map, Radio, TrendingUp } from "@/components/icons"
-import { NotificationBellButton } from "@/components/notifications/notification-bell-button"
-import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { StatCard } from "@/components/ui/stat-card"
 import { WalletPreviewCard } from "@/components/wallet/wallet-preview-card"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
@@ -49,16 +47,6 @@ export default function OverviewScreen() {
         scroll: { flex: 1 },
         content: { gap: spacing.lg, paddingHorizontal: spacing.lg },
         hero: { gap: spacing.sm },
-        heroTop: {
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: spacing.md,
-        },
-        heroActions: {
-          flexDirection: "row",
-          gap: spacing.sm,
-        },
         heroEyebrow: {
           ...typography.caption,
           color: colors.primary,
@@ -163,21 +151,13 @@ export default function OverviewScreen() {
       style={[styles.scroll, { backgroundColor: colors.bg }]}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.lg },
+        { paddingTop: spacing.lg, paddingBottom: insets.bottom + spacing.lg },
       ]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
-        <View style={styles.heroTop}>
-          <View style={{ flex: 1, gap: spacing.sm }}>
-            <Text style={styles.heroEyebrow}>{getGreeting()}</Text>
-            <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
-          </View>
-          <View style={styles.heroActions}>
-            <NotificationBellButton />
-            <ThemeToggleButton />
-          </View>
-        </View>
+        <Text style={styles.heroEyebrow}>{getGreeting()}</Text>
+        <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
         <Text style={styles.heroBody}>
           Placeholder dashboard — live metrics and reporting will connect to
           your Admobi account here.

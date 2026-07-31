@@ -12,13 +12,11 @@ import {
 } from "@maplibre/maplibre-react-native"
 import { useState } from "react"
 import { StyleSheet, View, useColorScheme } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { OpsMapHeader } from "@/components/maps/ops-map-header"
 import { spacing, useThemedStyles } from "@/lib/theme"
 
 export function OpsMapNative() {
-  const insets = useSafeAreaInsets()
   const scheme = useColorScheme()
   const dark = scheme === "dark"
   const [basemap, setBasemap] = useState<BasemapId>(DEFAULT_BASEMAP)
@@ -39,7 +37,7 @@ export function OpsMapNative() {
   return (
     <View style={styles.root}>
       <OpsMapHeader
-        paddingTop={insets.top + spacing.sm}
+        paddingTop={spacing.sm}
         basemap={basemap}
         onBasemapChange={setBasemap}
       />
