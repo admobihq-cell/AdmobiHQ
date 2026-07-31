@@ -24,7 +24,7 @@ Form a platform hypothesis: `web`, `ios`, `android`, or `adaptive` (one product 
 
 ## Step 3: Interview for product truth
 
-STOP and use Codex's structured user-input/question tool when available; if unavailable, ask directly in chat to clarify what you cannot infer. Ask only about material gaps the repository and original request do not answer with strong evidence.
+STOP and call the AskUserQuestion tool to clarify. Ask only about material gaps the repository and original request do not answer with strong evidence.
 
 Use the structured question tool when available; otherwise ask and wait. Keep rounds to at most three focused questions and require one real answer or approval round before writing a new PRODUCT.md. Confirm inferences.
 
@@ -36,7 +36,7 @@ Start with the unknowns that most change future product decisions:
 2. What does the product make possible, and what is its meaningfully different mechanism or position?
 3. What durable constraints, assets, evidence, or product facts must future work preserve?
 
-Confirm ambiguous platform separately. Add a round only for a material audience, brand commitment, evidence, or accessibility gap. Record undecided facts instead of inventing them.
+Confirm ambiguous platform separately. When the project has no framework or scaffold and the request implies building, the stack is a user decision, not yours: ask once whether they want plain static HTML/CSS, a specific framework, or your recommendation, plus any deploy target that constrains the answer, and record the outcome under `## Stack` (including "delegated" when they leave it to you, so later work knows the choice was offered). Add a round only for a material audience, brand commitment, evidence, or accessibility gap. Record undecided facts instead of inventing them.
 
 Do not ask for an aesthetic direction, emotional feel, visual references, colors, typography, or style during init. If the user volunteers a binding visual constraint, record it without expanding it.
 
@@ -65,6 +65,9 @@ Write only confirmed facts and explicitly marked open decisions. Omit irrelevant
 ## Platform
 
 web
+
+## Stack
+[Greenfield only: the user's answer to the stack question, e.g. "static HTML/CSS", "Astro", or "delegated: <what you chose and why>". Omit the section when an existing codebase already answers it.]
 
 ## Users
 [Primary users, their situation, and job. Add other audiences only when confirmed.]
@@ -114,9 +117,9 @@ Summarize captured and deliberately undecided facts. Do not offer DESIGN.md mere
 
 Recommend the next action from the actual project state:
 
-- Empty or early project: ask naturally for the surface to be built, or use `$impeccable shape <surface>` when the user wants a confirmed brief without implementation. New-work will establish a visual world only when the requested work needs one.
-- Existing coherent interface without DESIGN.md: `$impeccable document` if the user wants the incumbent system recorded independently of a new build.
+- Empty or early project: ask naturally for the surface to be built, or use `/impeccable shape <surface>` when the user wants a confirmed brief without implementation. New-work will establish a visual world only when the requested work needs one.
+- Existing coherent interface without DESIGN.md: `/impeccable document` if the user wants the incumbent system recorded independently of a new build.
 - Existing surface needing work: name the most relevant scoped command.
-- Web project ready for visual iteration: `$impeccable live` when configured.
+- Web project ready for visual iteration: `/impeccable live` when configured.
 
 If init was invoked by another request, resume without rerunning context.mjs; the native reference above is the one thing that run could not have given you, and new-work owns later visual decisions.
