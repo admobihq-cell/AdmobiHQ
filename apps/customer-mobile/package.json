@@ -19,8 +19,11 @@
     "env:check": "node ./scripts/check-env.mjs",
     "assets:sync": "node ../../scripts/sync-mobile-brand-assets.mjs",
     "prebuild:android": "expo prebuild --platform android --clean",
+    "prebuild:ios": "expo prebuild --platform ios --clean",
     "build:android:preview": "npx eas-cli build --platform android --profile preview --non-interactive",
     "build:android:production": "npx eas-cli build --platform android --profile production --non-interactive",
+    "build:ios:preview": "npx eas-cli build --platform ios --profile preview --non-interactive",
+    "build:ios:production": "npx eas-cli build --platform ios --profile production --non-interactive",
     "update:preview": "npx eas-cli update --channel preview --environment preview --non-interactive --auto",
     "update:production": "npx eas-cli update --channel production --environment production --non-interactive --auto"
   },

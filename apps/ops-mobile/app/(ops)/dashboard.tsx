@@ -2,7 +2,6 @@ import { useMemo, useState } from "react"
 import { useUser } from "@clerk/clerk-expo"
 import { useRouter } from "expo-router"
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -30,15 +29,12 @@ import { StatCard } from "@/components/ui/stat-card"
 import { DashboardBanner } from "@/components/app/dashboard-banner"
 import { BreakdownPieSwitcher } from "@/components/app/metric-bar"
 import { RangeDropdown } from "@/components/app/range-dropdown"
-import { AvatarInitials } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { ActivityChart } from "@/components/app/sparkline"
 import { FabMenu, type FabMenuItem } from "@/components/app/fab-menu"
-import { ActivityBellButton } from "@/components/activity/activity-bell-button"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
-import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { useThemeColors, spacing, typography, radius } from "@/lib/theme"
 import type { RecentSubmission } from "@/hooks/use-recent-submissions"
 
@@ -114,39 +110,11 @@ export default function DashboardScreen() {
         padded: {
           paddingHorizontal: spacing.lg,
         },
-        appHeader: {
-          paddingHorizontal: spacing.lg,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        },
-        brandLockup: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: spacing.sm,
-        },
-        brandMark: {
-          width: 28,
-          height: 28,
-          borderRadius: radius.sm,
-        },
-        brandName: {
-          fontSize: 16,
-          fontWeight: "700",
-          letterSpacing: -0.2,
-          color: colors.text,
-        },
         bannerWrap: {
           paddingHorizontal: spacing.lg,
-          marginTop: spacing.md,
         },
         recentError: {
           marginBottom: spacing.sm,
-        },
-        heroTrailing: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: spacing.sm,
         },
         sectionLabel: {
           ...typography.caption,
@@ -248,7 +216,7 @@ export default function DashboardScreen() {
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + spacing.md,
+            paddingTop: spacing.lg,
             paddingBottom: insets.bottom + spacing.lg + 72,
           },
         ]}
@@ -262,27 +230,6 @@ export default function DashboardScreen() {
           />
         }
       >
-        <View style={styles.appHeader}>
-          <View style={styles.brandLockup}>
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={styles.brandMark}
-              resizeMode="contain"
-              accessibilityLabel="Admobi"
-            />
-            <Text style={styles.brandName}>Admobi Ops</Text>
-          </View>
-          <View style={styles.heroTrailing}>
-            <ActivityBellButton />
-            <ThemeToggleButton />
-            <AvatarInitials
-              name={displayName}
-              onPress={() => router.push("/(ops)/profile")}
-              size={32}
-            />
-          </View>
-        </View>
-
         <View style={styles.bannerWrap}>
           <DashboardBanner
             eyebrow={getGreeting()}
