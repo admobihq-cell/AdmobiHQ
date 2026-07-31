@@ -70,7 +70,7 @@ export function OpsMap() {
     <View style={styles.root}>
       <View onLayout={onHeaderLayout}>
         <OpsMapHeader
-          paddingTop={insets.top + spacing.sm}
+          paddingTop={spacing.sm}
           basemap={basemap}
           onBasemapChange={setBasemap}
         />

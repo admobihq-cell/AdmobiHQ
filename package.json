@@ -28,12 +28,16 @@
     "env:pull:mobile-stack:staging": "npm run env:pull:staging -w api && npm run env:pull:staging -w ops-mobile && npm run env:pull:staging -w customer-mobile",
     "mobile:assets:sync": "node scripts/sync-mobile-brand-assets.mjs",
     "mobile:prebuild": "npm run prebuild:android -w ops-mobile && npm run prebuild:android -w customer-mobile",
+    "mobile:prebuild:ios": "npm run prebuild:ios -w ops-mobile && npm run prebuild:ios -w customer-mobile",
     "mobile:apk:local": "node scripts/build-apk-local.mjs all",
     "mobile:apk:local:ops": "node scripts/build-apk-local.mjs ops-mobile",
     "mobile:apk:local:customer": "node scripts/build-apk-local.mjs customer-mobile",
     "mobile:apk:eas:ops": "npm run build:android:preview -w ops-mobile",
     "mobile:apk:eas:customer": "npm run build:android:preview -w customer-mobile",
     "mobile:apk:eas": "npm run mobile:apk:eas:ops && npm run mobile:apk:eas:customer",
+    "mobile:ipa:eas:ops": "npm run build:ios:preview -w ops-mobile",
+    "mobile:ipa:eas:customer": "npm run build:ios:preview -w customer-mobile",
+    "mobile:ipa:eas": "npm run mobile:ipa:eas:ops && npm run mobile:ipa:eas:customer",
     "postinstall": "patch-package"
   },
   "devDependencies": {
