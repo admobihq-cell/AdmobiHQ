@@ -1,6 +1,7 @@
 import { useCallback } from "react"
 import { DRIVER_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
+import { driverStatusVariant } from "@/components/app/entity-list-rows"
 import { detailValue, EntityDetail } from "@/components/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -9,7 +10,7 @@ export default function DriverDetailScreen() {
   const load = useCallback((id: number) => client.drivers.get(id), [client])
   const remove = useCallback(
     (id: number) => client.drivers.delete(id),
-    [client],
+    [client]
   )
 
   return (
@@ -20,6 +21,7 @@ export default function DriverDetailScreen() {
       editHref={(recordId) => `/(ops)/drivers/edit/${recordId}`}
       statusOptions={DRIVER_STATUS_OPTIONS}
       getStatus={(item) => item.status}
+      getStatusVariant={driverStatusVariant}
       onStatusChange={(recordId, status) =>
         client.drivers.update(recordId, { status: status as never })
       }
@@ -29,7 +31,12 @@ export default function DriverDetailScreen() {
         {
           title: "Contact",
           fields: [
-            { label: "Phone", value: item.phone, copyable: true, callable: true },
+            {
+              label: "Phone",
+              value: item.phone,
+              copyable: true,
+              callable: true,
+            },
             { label: "Email", value: item.email, copyable: true },
           ],
         },

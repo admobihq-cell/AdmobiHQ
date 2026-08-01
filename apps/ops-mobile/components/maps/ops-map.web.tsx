@@ -39,7 +39,7 @@ export function OpsMap() {
         dark: scheme === "dark",
         basemap,
       }),
-    [scheme, basemap],
+    [scheme, basemap]
   )
 
   const iframeSrc = useMemo(() => {
@@ -56,7 +56,7 @@ export function OpsMap() {
 
   const mapHeight = Math.max(
     320,
-    windowHeight - headerHeight - insets.bottom - 8,
+    windowHeight - headerHeight - insets.bottom - 8
   )
 
   function onHeaderLayout(event: LayoutChangeEvent) {

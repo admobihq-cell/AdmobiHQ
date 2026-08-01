@@ -1,7 +1,14 @@
 import { Pressable, Text, View } from "react-native"
 
 import { ChevronRight, type AppIcon } from "@/components/icons"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { IconBox } from "@/components/ui"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type SettingsRowProps = {
   label: string
@@ -32,14 +39,6 @@ export function SettingsRow({
     rowPressed: {
       opacity: 0.7,
     },
-    iconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: c.secondary,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
     copy: {
       flex: 1,
       gap: 2,
@@ -59,9 +58,15 @@ export function SettingsRow({
 
   const content = (
     <>
-      <View style={styles.iconWrap}>
-        <Icon color={destructive ? colors.destructive : colors.primary} size={20} />
-      </View>
+      <IconBox
+        icon={Icon}
+        size={20}
+        boxSize={36}
+        cornerRadius={radius.md}
+        backgroundColor={colors.secondary}
+        bordered={false}
+        iconColor={destructive ? colors.destructive : colors.primary}
+      />
       <View style={styles.copy}>
         <Text style={[styles.label, destructive && styles.destructive]}>
           {label}

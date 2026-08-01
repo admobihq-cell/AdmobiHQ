@@ -6,6 +6,7 @@ import { Platform } from "react-native"
 import type { OpsClient } from "@workspace/ops-api-client"
 
 const ANDROID_CHANNEL_ID = "default"
+/** Android notification-channel LED/icon color — a fixed OS-level value, not the in-app theme's `primary` (which changes with light/dark mode). Must match the `expo-notifications` plugin `color` in app.json. */
 const BRAND_COLOR = "#0B6E4F"
 
 let handlerConfigured = false
@@ -99,7 +100,8 @@ export async function registerOpsPushToken(client: OpsClient): Promise<void> {
     return
   }
 
-  const platform = Platform.OS === "ios" || Platform.OS === "android" ? Platform.OS : undefined
+  const platform =
+    Platform.OS === "ios" || Platform.OS === "android" ? Platform.OS : undefined
 
   await client.pushTokens.register({ expoPushToken, platform })
 }
@@ -124,9 +126,13 @@ export type OpsPushDeepLink = {
 }
 
 export function readPushDeepLink(
-  data: Record<string, unknown> | undefined,
+  data: Record<string, unknown> | undefined
 ): OpsPushDeepLink | null {
-  if (!data || typeof data.href !== "string" || !data.href.startsWith("/(ops)/")) {
+  if (
+    !data ||
+    typeof data.href !== "string" ||
+    !data.href.startsWith("/(ops)/")
+  ) {
     return null
   }
   return { href: data.href }
@@ -138,12 +144,12 @@ export async function getColdStartPushDeepLink(): Promise<OpsPushDeepLink | null
   const response = await Notifications.getLastNotificationResponseAsync()
   if (!response) return null
   return readPushDeepLink(
-    response.notification.request.content.data as Record<string, unknown>,
+    response.notification.request.content.data as Record<string, unknown>
   )
 }
 
 export function addPushResponseListener(
-  onNavigate: (link: OpsPushDeepLink) => void,
+  onNavigate: (link: OpsPushDeepLink) => void
 ) {
   if (!isPushSupported()) {
     return () => {}
@@ -152,12 +158,12 @@ export function addPushResponseListener(
   const subscription = Notifications.addNotificationResponseReceivedListener(
     (response) => {
       const link = readPushDeepLink(
-        response.notification.request.content.data as Record<string, unknown>,
+        response.notification.request.content.data as Record<string, unknown>
       )
       if (link) {
         onNavigate(link)
       }
-    },
+    }
   )
 
   return () => subscription.remove()

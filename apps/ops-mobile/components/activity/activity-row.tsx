@@ -1,7 +1,14 @@
 import { Pressable, Text, View } from "react-native"
 
 import { ACTIVITY_CATEGORY_ICONS, type ActivityItem } from "@/lib/activity-feed"
-import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { IconBox } from "@/components/ui"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type ActivityRowProps = {
   item: ActivityItem
@@ -21,14 +28,6 @@ export function ActivityRow({ item, onPress }: ActivityRowProps) {
       alignItems: "flex-start" as const,
     },
     rowPressed: { opacity: 0.7 },
-    iconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.md,
-      backgroundColor: item.read ? c.muted : c.accentSurface,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
     copy: { flex: 1, gap: 2 },
     titleRow: {
       flexDirection: "row" as const,
@@ -66,9 +65,15 @@ export function ActivityRow({ item, onPress }: ActivityRowProps) {
       accessibilityRole="button"
       accessibilityLabel={item.title}
     >
-      <View style={styles.iconWrap}>
-        <Icon color={item.read ? colors.mutedForeground : colors.primary} size={18} />
-      </View>
+      <IconBox
+        icon={Icon}
+        size={18}
+        boxSize={36}
+        cornerRadius={radius.md}
+        backgroundColor={item.read ? colors.muted : colors.accentSurface}
+        bordered={false}
+        iconColor={item.read ? colors.mutedForeground : colors.primary}
+      />
       <View style={styles.copy}>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={2}>

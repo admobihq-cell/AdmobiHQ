@@ -1,6 +1,5 @@
 import { useCallback, useLayoutEffect, useState } from "react"
 import {
-  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -18,15 +17,24 @@ import type { FormFieldOption } from "@workspace/ops-contracts"
 
 import { SkeletonDetailRecord } from "@/components/app/skeleton"
 import { GroupedSection } from "@/components/app/grouped-list"
-import { StatusChip } from "@/components/app/status-chip"
+import {
+  StatusChip,
+  type StatusChipVariant,
+} from "@/components/app/status-chip"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pencil, Trash } from "@/components/icons"
 import { StatusPicker } from "@/components/StatusPicker"
 import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
 import { entityKeys } from "@/lib/query-keys"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type DetailField = {
   label: string
@@ -45,12 +53,16 @@ type EntityDetailProps<T> = {
   load: (id: number) => Promise<T>
   remove?: (id: number) => Promise<unknown>
   title: (item: T) => string
-  chips?: (item: T) => Array<{ label: string; variant?: "default" | "primary" | "muted" }>
+  chips?: (
+    item: T
+  ) => Array<{ label: string; variant?: "default" | "primary" | "muted" }>
   sections: (item: T) => DetailSection[]
   editHref?: (id: number) => string
   statusOptions?: FormFieldOption[]
   onStatusChange?: (id: number, status: string) => Promise<T>
   getStatus?: (item: T) => string | null | undefined
+  /** Same semantic color mapping used by the entity's list-row status chip, so status colors match between list and detail. */
+  getStatusVariant?: (status: string | null | undefined) => StatusChipVariant
 }
 
 export function EntityDetail<T>({
@@ -64,6 +76,7 @@ export function EntityDetail<T>({
   statusOptions,
   onStatusChange,
   getStatus,
+  getStatusVariant,
 }: EntityDetailProps<T>) {
   const router = useRouter()
   const navigation = useNavigation()
@@ -155,6 +168,7 @@ export function EntityDetail<T>({
   const validId = Number.isFinite(id) && id > 0
   const queryClient = useQueryClient()
   const [dismissedError, setDismissedError] = useState<string | null>(null)
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false)
 
   const itemQuery = useQuery({
     queryKey: entityKeys.detail(entity, id),
@@ -206,20 +220,8 @@ export function EntityDetail<T>({
 
   const handleDelete = useCallback(() => {
     if (!remove || !item) return
-
-    Alert.alert(
-      "Delete record",
-      "This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteMutation.mutate(),
-        },
-      ],
-    )
-  }, [remove, item, deleteMutation])
+    setConfirmDeleteVisible(true)
+  }, [remove, item])
 
   useLayoutEffect(() => {
     if (!item) return
@@ -283,93 +285,111 @@ export function EntityDetail<T>({
   const detailSections = item ? sections(item) : []
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {activeError ? (
-        <ApiErrorBanner
-          message={activeError}
-          onRetry={handleRetry}
-          onDismiss={() => setDismissedError(activeError)}
-        />
-      ) : null}
-
-      <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>Record</Text>
-        <Text style={styles.title}>{item ? title(item) : "—"}</Text>
-        {statusOptions?.length && item && onStatusChange ? (
-          <StatusPicker
-            label="Status"
-            value={getStatus?.(item) ?? null}
-            options={statusOptions}
-            onChange={(status) => statusMutation.mutate(status)}
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        {activeError ? (
+          <ApiErrorBanner
+            message={activeError}
+            onRetry={handleRetry}
+            onDismiss={() => setDismissedError(activeError)}
           />
         ) : null}
-        {chipItems.length > 0 ? (
-          <View style={styles.chips}>
-            {chipItems.map((chip) => (
-              <StatusChip
-                key={chip.label}
-                label={chip.label}
-                variant={chip.variant}
-              />
-            ))}
-          </View>
-        ) : null}
-      </View>
 
-      {item ? (
-        detailSections.map((section) => (
-          <GroupedSection key={section.title} title={section.title}>
-            <View style={styles.fieldList}>
-              {section.fields.map((field, index) => {
-                const value = field.value || "—"
-                const hasCopy = field.copyable && field.value
-                const hasCall = field.callable && field.value
+        <View style={styles.heroCard}>
+          <Text style={styles.eyebrow}>Record</Text>
+          <Text style={styles.title}>{item ? title(item) : "—"}</Text>
+          {statusOptions?.length && item && onStatusChange ? (
+            <StatusPicker
+              label="Status"
+              value={getStatus?.(item) ?? null}
+              options={statusOptions}
+              onChange={(status) => statusMutation.mutate(status)}
+              getVariant={getStatusVariant}
+            />
+          ) : null}
+          {chipItems.length > 0 ? (
+            <View style={styles.chips}>
+              {chipItems.map((chip) => (
+                <StatusChip
+                  key={chip.label}
+                  label={chip.label}
+                  variant={chip.variant}
+                />
+              ))}
+            </View>
+          ) : null}
+        </View>
 
-                return (
-                  <View key={field.label}>
-                    <View style={styles.fieldRow}>
-                      <Text style={styles.fieldLabel}>{field.label}</Text>
-                      <Text style={styles.fieldValue}>{value}</Text>
-                      {hasCopy || hasCall ? (
-                        <View style={styles.fieldActions}>
-                          {hasCopy ? (
-                            <Pressable
-                              onPress={() => void handleCopy(field.value!)}
-                              style={styles.actionButton}
-                            >
-                              <Text style={styles.actionText}>Copy</Text>
-                            </Pressable>
-                          ) : null}
-                          {hasCall ? (
-                            <Pressable
-                              onPress={() => handleCall(field.value!)}
-                              style={styles.actionButton}
-                            >
-                              <Text style={styles.actionText}>Call</Text>
-                            </Pressable>
-                          ) : null}
-                        </View>
+        {item ? (
+          detailSections.map((section) => (
+            <GroupedSection key={section.title} title={section.title}>
+              <View style={styles.fieldList}>
+                {section.fields.map((field, index) => {
+                  const value = field.value || "—"
+                  const hasCopy = field.copyable && field.value
+                  const hasCall = field.callable && field.value
+
+                  return (
+                    <View key={field.label}>
+                      <View style={styles.fieldRow}>
+                        <Text style={styles.fieldLabel}>{field.label}</Text>
+                        <Text style={styles.fieldValue}>{value}</Text>
+                        {hasCopy || hasCall ? (
+                          <View style={styles.fieldActions}>
+                            {hasCopy ? (
+                              <Pressable
+                                onPress={() => void handleCopy(field.value!)}
+                                style={styles.actionButton}
+                              >
+                                <Text style={styles.actionText}>Copy</Text>
+                              </Pressable>
+                            ) : null}
+                            {hasCall ? (
+                              <Pressable
+                                onPress={() => handleCall(field.value!)}
+                                style={styles.actionButton}
+                              >
+                                <Text style={styles.actionText}>Call</Text>
+                              </Pressable>
+                            ) : null}
+                          </View>
+                        ) : null}
+                      </View>
+                      {index < section.fields.length - 1 ? (
+                        <View style={styles.fieldSeparator} />
                       ) : null}
                     </View>
-                    {index < section.fields.length - 1 ? (
-                      <View style={styles.fieldSeparator} />
-                    ) : null}
-                  </View>
-                )
-              })}
+                  )
+                })}
+              </View>
+            </GroupedSection>
+          ))
+        ) : (
+          <GroupedSection title="Details">
+            <View style={styles.placeholder}>
+              <Text style={styles.placeholderText}>
+                Record details are unavailable right now.
+              </Text>
             </View>
           </GroupedSection>
-        ))
-      ) : (
-        <GroupedSection title="Details">
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>
-              Record details are unavailable right now.
-            </Text>
-          </View>
-        </GroupedSection>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+      <ConfirmDialog
+        visible={confirmDeleteVisible}
+        title="Delete record"
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          setConfirmDeleteVisible(false)
+          deleteMutation.mutate()
+        }}
+        onCancel={() => setConfirmDeleteVisible(false)}
+      />
+    </>
   )
 }
 

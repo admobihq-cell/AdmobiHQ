@@ -13,9 +13,7 @@ import { AppBar } from "@/components/app/app-bar"
 import { useNavigationTheme } from "@/lib/theme"
 
 function TabLabel({ label, color }: { label: string; color: string }) {
-  return (
-    <Text style={{ fontSize: 11, fontWeight: "600", color }}>{label}</Text>
-  )
+  return <Text style={{ fontSize: 11, fontWeight: "600", color }}>{label}</Text>
 }
 
 export default function OpsLayout() {
@@ -54,7 +52,11 @@ export default function OpsLayout() {
               <TabLabel label="Dashboard" color={color} />
             ),
             tabBarIcon: ({ color, size }) => (
-              <LayoutDashboard color={color} size={size - 2} strokeWidth={2.25} />
+              <LayoutDashboard
+                color={color}
+                size={size - 2}
+                strokeWidth={2.25}
+              />
             ),
           }}
         />
@@ -63,7 +65,9 @@ export default function OpsLayout() {
           options={{
             title: "Leads",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Leads" color={color} />,
+            tabBarLabel: ({ color }) => (
+              <TabLabel label="Leads" color={color} />
+            ),
             tabBarIcon: ({ color, size }) => (
               <Megaphone color={color} size={size - 2} strokeWidth={2.25} />
             ),
@@ -74,7 +78,9 @@ export default function OpsLayout() {
           options={{
             title: "Fleet",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Fleet" color={color} />,
+            tabBarLabel: ({ color }) => (
+              <TabLabel label="Fleet" color={color} />
+            ),
             tabBarIcon: ({ color, size }) => (
               <Truck color={color} size={size - 2} strokeWidth={2.25} />
             ),
@@ -98,7 +104,9 @@ export default function OpsLayout() {
           options={{
             title: "Profile",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Profile" color={color} />,
+            tabBarLabel: ({ color }) => (
+              <TabLabel label="Profile" color={color} />
+            ),
             tabBarIcon: ({ color, size }) => (
               <Person color={color} size={size - 2} strokeWidth={2.25} />
             ),
@@ -156,6 +164,14 @@ export default function OpsLayout() {
           name="finances"
           options={{
             title: "Finances",
+            headerShown: false,
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="onboarding"
+          options={{
+            title: "Welcome",
             headerShown: false,
             href: null,
           }}

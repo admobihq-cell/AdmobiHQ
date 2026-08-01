@@ -2,7 +2,16 @@ import { useEffect, useState } from "react"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { Bell, Car, Mail, Megaphone, Send, Warning, type AppIcon } from "@/components/icons"
+import {
+  Bell,
+  Car,
+  Mail,
+  Megaphone,
+  Send,
+  Warning,
+  type AppIcon,
+} from "@/components/icons"
+import { IconBox } from "@/components/ui"
 import {
   getNotificationPermissionStatus,
   NOTIFICATION_STYLES,
@@ -10,7 +19,13 @@ import {
   sendTestNotification,
   type NotificationStyle,
 } from "@/lib/test-notifications"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 const STYLE_ICONS: Record<string, AppIcon> = {
   new_lead: Megaphone,
@@ -23,13 +38,13 @@ export default function NotificationsTestScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(
-    null,
+    null
   )
   const [status, setStatus] = useState<string | null>(null)
 
   useEffect(() => {
     getNotificationPermissionStatus().then((result) =>
-      setPermissionGranted(result === "granted"),
+      setPermissionGranted(result === "granted")
     )
   }, [])
 
@@ -117,14 +132,6 @@ export default function NotificationsTestScreen() {
     rowPressed: {
       opacity: 0.7,
     },
-    iconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: c.secondary,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
     copy: {
       flex: 1,
       gap: 2,
@@ -192,16 +199,19 @@ export default function NotificationsTestScreen() {
         style={styles.root}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + spacing.xl,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
           <Text style={styles.title}>Preview notifications</Text>
           <Text style={styles.body}>
-            Send yourself a sample notification to preview how each style
-            looks, including in the system notification panel, before
-            shipping this to devices.
+            Send yourself a sample notification to preview how each style looks,
+            including in the system notification panel, before shipping this to
+            devices.
           </Text>
         </View>
 
@@ -238,9 +248,14 @@ export default function NotificationsTestScreen() {
                     ]}
                     accessibilityRole="button"
                   >
-                    <View style={styles.iconWrap}>
-                      <Icon color={colors.primary} size={20} />
-                    </View>
+                    <IconBox
+                      icon={Icon}
+                      size={20}
+                      boxSize={36}
+                      cornerRadius={radius.md}
+                      backgroundColor={colors.secondary}
+                      bordered={false}
+                    />
                     <View style={styles.copy}>
                       <Text style={styles.label}>{style.label}</Text>
                       <Text style={styles.description}>{style.title}</Text>

@@ -7,21 +7,27 @@ import { getApiBaseUrl } from "./base-url"
 export type FormatApiErrorOptions = {
   apiUrl?: string
   networkHint?: string
+  /** Include engineer-facing detail (env var names, redeploy instructions). Default false — end users get actionable, non-technical copy. */
+  verbose?: boolean
 }
 
 export function formatApiError(
   err: unknown,
-  options?: FormatApiErrorOptions,
+  options?: FormatApiErrorOptions
 ): string {
   if (err instanceof OpsApiError) {
     if (err.status === 401) {
-      return "Could not verify your session with the API. Sign out, sign in again, and confirm the app uses production Clerk keys."
+      return options?.verbose
+        ? "Could not verify your session with the API. Sign out, sign in again, and confirm the app uses production Clerk keys."
+        : "Your session couldn't be verified. Try signing out and signing back in."
     }
     if (err.status === 403) {
       return "Access denied. Use your @admobihq.com account."
     }
     if (err.status === 404) {
-      return "API route not found. Check EXPO_PUBLIC_API_URL points to https://api.admobihq.com and redeploy the API."
+      return options?.verbose
+        ? "API route not found. Check EXPO_PUBLIC_API_URL points to https://api.admobihq.com and redeploy the API."
+        : "That page or record couldn't be found. Contact IT if this keeps happening."
     }
     return err.message
   }
@@ -48,15 +54,21 @@ function formatFieldErrors(issues: unknown): string | undefined {
   if (!fieldErrors) return undefined
 
   const lines = Object.entries(fieldErrors)
-    .filter((entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].length > 0)
-    .map(([key, messages]) => `${fieldKeyToLabel(key)}: ${humanizeZodMessage(messages[0])}`)
+    .filter(
+      (entry): entry is [string, string[]] =>
+        Array.isArray(entry[1]) && entry[1].length > 0
+    )
+    .map(
+      ([key, messages]) =>
+        `${fieldKeyToLabel(key)}: ${humanizeZodMessage(messages[0])}`
+    )
 
   return lines.length > 0 ? lines.join("\n") : undefined
 }
 
 export function formatApiErrorResponse(
   body: ApiErrorResponse | undefined,
-  status: number,
+  status: number
 ): string {
   return (
     formatFieldErrors(body?.issues) ??

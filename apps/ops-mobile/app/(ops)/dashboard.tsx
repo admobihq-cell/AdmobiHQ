@@ -53,11 +53,31 @@ const RECENT_TYPE_ICON: Record<RecentSubmission["type"], AppIcon> = {
 
 const FAB_ITEMS: FabMenuItem[] = [
   { key: "lead", label: "New lead", icon: Megaphone, href: "/(ops)/leads/new" },
-  { key: "fleet", label: "New fleet partner", icon: Truck, href: "/(ops)/fleet/new" },
+  {
+    key: "fleet",
+    label: "New fleet partner",
+    icon: Truck,
+    href: "/(ops)/fleet/new",
+  },
   { key: "driver", label: "New driver", icon: Car, href: "/(ops)/drivers/new" },
-  { key: "waitlist", label: "New waitlist entry", icon: Mail, href: "/(ops)/waitlist/new" },
-  { key: "media-kit", label: "New media kit request", icon: FileText, href: "/(ops)/media-kit/new" },
-  { key: "announcement", label: "New announcement", icon: Send, href: "/(ops)/announcements/new" },
+  {
+    key: "waitlist",
+    label: "New waitlist entry",
+    icon: Mail,
+    href: "/(ops)/waitlist/new",
+  },
+  {
+    key: "media-kit",
+    label: "New media kit request",
+    icon: FileText,
+    href: "/(ops)/media-kit/new",
+  },
+  {
+    key: "announcement",
+    label: "New announcement",
+    icon: Send,
+    href: "/(ops)/announcements/new",
+  },
 ]
 
 function getGreeting(): string {
@@ -74,12 +94,10 @@ export default function DashboardScreen() {
   const { user } = useUser()
   const email = getPrimaryEmail(
     user?.emailAddresses,
-    user?.primaryEmailAddressId,
+    user?.primaryEmailAddressId
   )
-  const rawName =
-    user?.firstName?.trim() || email?.split("@")[0] || "there"
-  const displayName =
-    rawName.charAt(0).toUpperCase() + rawName.slice(1)
+  const rawName = user?.firstName?.trim() || email?.split("@")[0] || "there"
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
 
   const { stats, loading, error, range, setRange, refetch } =
     useDashboardStats("30d")
@@ -197,7 +215,7 @@ export default function DashboardScreen() {
           color: colors.mutedForeground,
         },
       }),
-    [colors],
+    [colors]
   )
 
   const onRefresh = async () => {
@@ -246,8 +264,14 @@ export default function DashboardScreen() {
 
         <View style={styles.padded}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionLabel, styles.sectionLabelInline]}>Overview</Text>
-            <RangeDropdown options={RANGES} selected={range} onSelect={setRange} />
+            <Text style={[styles.sectionLabel, styles.sectionLabelInline]}>
+              Overview
+            </Text>
+            <RangeDropdown
+              options={RANGES}
+              selected={range}
+              onSelect={setRange}
+            />
           </View>
           <View style={styles.statsGrid}>
             {loading && !totals && !error ? (
@@ -301,7 +325,7 @@ export default function DashboardScreen() {
           <ActivityChart data={stats?.timeline ?? []} loading={loading} />
         </View>
 
-        {(byType.length > 0 || driversByCity.length > 0 || loading) ? (
+        {byType.length > 0 || driversByCity.length > 0 || loading ? (
           <View style={styles.padded}>
             <Text style={styles.sectionLabel}>Breakdown</Text>
             <BreakdownPieSwitcher
@@ -356,10 +380,7 @@ export default function DashboardScreen() {
           <Text style={styles.sectionLabel}>Recent activity</Text>
           {recentError ? (
             <View style={styles.recentError}>
-              <ApiErrorBanner
-                message={recentError}
-                onRetry={refetchRecent}
-              />
+              <ApiErrorBanner message={recentError} onRetry={refetchRecent} />
             </View>
           ) : null}
           <View style={styles.group}>
@@ -387,7 +408,9 @@ export default function DashboardScreen() {
                       </View>
                       <View style={styles.activityCopy}>
                         <Text style={styles.activityTitle}>{item.title}</Text>
-                        <Text style={styles.activityDetail}>{item.subtitle}</Text>
+                        <Text style={styles.activityDetail}>
+                          {item.subtitle}
+                        </Text>
                       </View>
                       <ChevronRight color={colors.mutedForeground} size={18} />
                     </Pressable>

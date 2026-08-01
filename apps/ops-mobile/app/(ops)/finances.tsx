@@ -1,5 +1,12 @@
 import { useState } from "react"
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import {
@@ -12,10 +19,18 @@ import {
   TrendingDown,
   TrendingUp,
   Wallet,
+  Warning,
   type AppIcon,
 } from "@/components/icons"
+import { IconBox } from "@/components/ui"
 import { PageHero } from "@/components/ui/page-hero"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type Transaction = {
   id: string
@@ -26,11 +41,41 @@ type Transaction = {
 }
 
 const TRANSACTIONS: Transaction[] = [
-  { id: "1", label: "Nova Media — campaign top-up", meta: "2h ago", amount: 50000, kind: "credit" },
-  { id: "2", label: "Driver payout batch #482", meta: "Yesterday", amount: 12400, kind: "debit" },
-  { id: "3", label: "Skyline Ads — campaign top-up", meta: "Yesterday", amount: 25000, kind: "credit" },
-  { id: "4", label: "Driver payout — J. Alvarez", meta: "2 days ago", amount: 1800, kind: "debit" },
-  { id: "5", label: "Refund — cancelled campaign", meta: "3 days ago", amount: 6500, kind: "debit" },
+  {
+    id: "1",
+    label: "Nova Media — campaign top-up",
+    meta: "2h ago",
+    amount: 50000,
+    kind: "credit",
+  },
+  {
+    id: "2",
+    label: "Driver payout batch #482",
+    meta: "Yesterday",
+    amount: 12400,
+    kind: "debit",
+  },
+  {
+    id: "3",
+    label: "Skyline Ads — campaign top-up",
+    meta: "Yesterday",
+    amount: 25000,
+    kind: "credit",
+  },
+  {
+    id: "4",
+    label: "Driver payout — J. Alvarez",
+    meta: "2 days ago",
+    amount: 1800,
+    kind: "debit",
+  },
+  {
+    id: "5",
+    label: "Refund — cancelled campaign",
+    meta: "3 days ago",
+    amount: 6500,
+    kind: "debit",
+  },
 ]
 
 const ACTIONS: Array<{ key: string; label: string; icon: AppIcon }> = [
@@ -91,6 +136,21 @@ export default function FinancesScreen() {
       ...typography.caption,
       color: "rgba(250, 249, 247, 0.75)",
     },
+    previewBadge: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.xs,
+      alignSelf: "flex-start" as const,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.full,
+      backgroundColor: "rgba(250, 249, 247, 0.16)",
+    },
+    previewBadgeText: {
+      ...typography.caption,
+      color: c.primaryForeground,
+      fontWeight: "700" as const,
+    },
     actionsRow: {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
@@ -143,7 +203,11 @@ export default function FinancesScreen() {
       letterSpacing: 0.8,
       fontWeight: "700" as const,
     },
-    seeAll: { ...typography.caption, color: c.primary, fontWeight: "700" as const },
+    seeAll: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "700" as const,
+    },
     group: {
       borderRadius: 14,
       borderWidth: 1,
@@ -163,18 +227,24 @@ export default function FinancesScreen() {
       backgroundColor: c.border,
       marginLeft: 60,
     },
-    iconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
     txCopy: { flex: 1, gap: 2 },
     txLabel: { ...typography.section, color: c.text },
     txMeta: { ...typography.caption, color: c.mutedForeground },
-    txAmountCredit: { ...typography.body, fontWeight: "700" as const, color: c.success },
-    txAmountDebit: { ...typography.body, fontWeight: "700" as const, color: c.destructive },
+    txAmountCredit: {
+      ...typography.body,
+      fontWeight: "700" as const,
+      color: c.success,
+    },
+    txAmountDebit: {
+      ...typography.body,
+      fontWeight: "700" as const,
+      color: c.destructive,
+    },
+    actionSoon: {
+      ...typography.caption,
+      fontSize: 10,
+      color: "rgba(250, 249, 247, 0.7)",
+    },
     note: {
       ...typography.caption,
       color: c.mutedForeground,
@@ -216,8 +286,19 @@ export default function FinancesScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.balance}>{hidden ? "••••••••" : formatCurrency(balance)}</Text>
-        <Text style={styles.walletHint}>Held across 58 active campaign wallets</Text>
+        <View style={styles.previewBadge}>
+          <Warning color={colors.primaryForeground} size={12} />
+          <Text style={styles.previewBadgeText}>
+            Preview data — not connected to live billing
+          </Text>
+        </View>
+
+        <Text style={styles.balance}>
+          {hidden ? "••••••••" : formatCurrency(balance)}
+        </Text>
+        <Text style={styles.walletHint}>
+          Held across 58 active campaign wallets
+        </Text>
 
         <View style={styles.actionsRow}>
           {ACTIONS.map((action) => {
@@ -227,13 +308,16 @@ export default function FinancesScreen() {
                 key={action.key}
                 style={styles.actionItem}
                 onPress={() =>
-                  notify(`${action.label} will be available in a future update.`)
+                  notify(
+                    `${action.label} will be available in a future update.`
+                  )
                 }
               >
                 <View style={styles.actionCircle}>
                   <Icon color={colors.primaryForeground} size={20} />
                 </View>
                 <Text style={styles.actionLabel}>{action.label}</Text>
+                <Text style={styles.actionSoon}>Soon</Text>
               </Pressable>
             )
           })}
@@ -262,48 +346,59 @@ export default function FinancesScreen() {
           <Text style={styles.sectionLabel}>Recent transactions</Text>
           <Pressable
             onPress={() =>
-              notify("The full transaction history is coming in a future update.")
+              notify(
+                "The full transaction history is coming in a future update."
+              )
             }
           >
-            <Text style={styles.seeAll}>See all</Text>
+            <Text style={styles.seeAll}>See all · Soon</Text>
           </Pressable>
         </View>
         <View style={styles.group}>
           {TRANSACTIONS.map((tx, index) => (
             <View key={tx.id}>
               <View style={styles.row}>
-                <View
-                  style={[
-                    styles.iconWrap,
-                    {
-                      backgroundColor:
-                        tx.kind === "credit" ? colors.secondary : colors.destructiveMuted,
-                    },
-                  ]}
-                >
-                  <Receipt
-                    color={tx.kind === "credit" ? colors.primary : colors.destructive}
-                    size={18}
-                  />
-                </View>
+                <IconBox
+                  icon={Receipt}
+                  size={18}
+                  boxSize={36}
+                  cornerRadius={radius.md}
+                  backgroundColor={
+                    tx.kind === "credit"
+                      ? colors.secondary
+                      : colors.destructiveMuted
+                  }
+                  bordered={false}
+                  iconColor={
+                    tx.kind === "credit" ? colors.primary : colors.destructive
+                  }
+                />
                 <View style={styles.txCopy}>
                   <Text style={styles.txLabel}>{tx.label}</Text>
                   <Text style={styles.txMeta}>{tx.meta}</Text>
                 </View>
-                <Text style={tx.kind === "credit" ? styles.txAmountCredit : styles.txAmountDebit}>
+                <Text
+                  style={
+                    tx.kind === "credit"
+                      ? styles.txAmountCredit
+                      : styles.txAmountDebit
+                  }
+                >
                   {tx.kind === "credit" ? "+" : "-"}
                   {formatCurrency(tx.amount)}
                 </Text>
               </View>
-              {index < TRANSACTIONS.length - 1 ? <View style={styles.divider} /> : null}
+              {index < TRANSACTIONS.length - 1 ? (
+                <View style={styles.divider} />
+              ) : null}
             </View>
           ))}
         </View>
       </View>
 
       <Text style={styles.note}>
-        Placeholder data. Wallet balances, top-ups, and payouts will connect to live billing
-        once the finance API ships.
+        Placeholder data. Wallet balances, top-ups, and payouts will connect to
+        live billing once the finance API ships.
       </Text>
     </ScrollView>
   )

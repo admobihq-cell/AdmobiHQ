@@ -11,19 +11,32 @@ import {
 } from "react-native"
 
 import { Bell } from "@/components/icons"
+import { IconBox } from "@/components/ui"
 import {
   ACTIVITY_CATEGORY_ICONS,
   auditEventToActivityItem,
   type ActivityItem,
 } from "@/lib/activity-feed"
 import { useOpsClient } from "@/lib/ops-client"
-import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 const MAX_PREVIEW_ITEMS = 3
 
 type Anchor = { x: number; y: number; width: number; height: number }
 
-function PreviewRow({ item, onPress }: { item: ActivityItem; onPress: () => void }) {
+function PreviewRow({
+  item,
+  onPress,
+}: {
+  item: ActivityItem
+  onPress: () => void
+}) {
   const colors = useThemeColors()
   const Icon = ACTIVITY_CATEGORY_ICONS[item.category]
   const styles = useThemedStyles((c) => ({
@@ -36,14 +49,6 @@ function PreviewRow({ item, onPress }: { item: ActivityItem; onPress: () => void
     },
     rowPressed: {
       opacity: 0.7,
-    },
-    iconWrap: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.full,
-      backgroundColor: item.read ? c.muted : c.accent,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
     },
     title: {
       ...typography.bodySm,
@@ -70,9 +75,15 @@ function PreviewRow({ item, onPress }: { item: ActivityItem; onPress: () => void
       accessibilityRole="button"
       accessibilityLabel={item.title}
     >
-      <View style={styles.iconWrap}>
-        <Icon color={item.read ? colors.mutedForeground : colors.primary} size={14} />
-      </View>
+      <IconBox
+        icon={Icon}
+        size={14}
+        boxSize={28}
+        cornerRadius={radius.full}
+        backgroundColor={item.read ? colors.muted : colors.accent}
+        bordered={false}
+        iconColor={item.read ? colors.mutedForeground : colors.primary}
+      />
       <Text style={styles.title} numberOfLines={1}>
         {item.title}
       </Text>
@@ -95,7 +106,10 @@ export function ActivityBellButton() {
 
   const loadPreview = useCallback(async () => {
     try {
-      const result = await client.audit.list({ page: 1, pageSize: MAX_PREVIEW_ITEMS })
+      const result = await client.audit.list({
+        page: 1,
+        pageSize: MAX_PREVIEW_ITEMS,
+      })
       setPreview(result.items.map(auditEventToActivityItem))
     } catch {
       setPreview([])
@@ -201,7 +215,12 @@ export function ActivityBellButton() {
         <Bell size={18} color={colors.text} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
         {anchor ? (
           <View
@@ -209,7 +228,10 @@ export function ActivityBellButton() {
               styles.panel,
               {
                 top: anchor.y + anchor.height + 8,
-                right: Math.max(spacing.lg, screenWidth - (anchor.x + anchor.width)),
+                right: Math.max(
+                  spacing.lg,
+                  screenWidth - (anchor.x + anchor.width)
+                ),
               },
             ]}
           >
@@ -229,7 +251,10 @@ export function ActivityBellButton() {
 
             <Pressable
               onPress={goToActivity}
-              style={({ pressed }) => [styles.footer, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.footer,
+                pressed && styles.pressed,
+              ]}
             >
               <Text style={styles.footerText}>See all activity</Text>
             </Pressable>

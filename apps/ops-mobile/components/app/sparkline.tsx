@@ -4,7 +4,14 @@ import { StyleSheet, Text, View } from "react-native"
 
 import { BarChart3 } from "@/components/icons"
 import { SkeletonBlock } from "@/components/app/skeleton"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { IconBox } from "@/components/ui"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type ActivityChartProps = {
   data: Array<{ day: string; count: number }>
@@ -19,7 +26,8 @@ function formatShortDate(iso: string): string {
 }
 
 function formatAxisCount(value: number): string {
-  if (value >= 1000) return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`
+  if (value >= 1000)
+    return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`
   return String(Math.round(value))
 }
 
@@ -27,7 +35,9 @@ function formatAxisCount(value: number): string {
 function smoothPath(points: Array<{ x: number; y: number }>): string {
   if (points.length === 0) return ""
   if (points.length < 3) {
-    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x},${p.y}`).join(" ")
+    return points
+      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x},${p.y}`)
+      .join(" ")
   }
   let d = `M ${points[0]!.x},${points[0]!.y}`
   for (let i = 0; i < points.length - 1; i++) {
@@ -45,7 +55,7 @@ function smoothPath(points: Array<{ x: number; y: number }>): string {
 }
 
 function normalizeTimeline(
-  data: Array<{ day: string; count: number }>,
+  data: Array<{ day: string; count: number }>
 ): Array<{ day: string; count: number }> {
   return data
     .filter((point) => point?.day)
@@ -78,14 +88,6 @@ export function ActivityChart({
       flexDirection: "row" as const,
       alignItems: "flex-start" as const,
       gap: spacing.sm,
-    },
-    iconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: c.secondary,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
     },
     headerCopy: {
       flex: 1,
@@ -146,7 +148,10 @@ export function ActivityChart({
     },
   }))
   const { width: windowWidth } = useWindowDimensions()
-  const chartOuterWidth = Math.max(windowWidth - spacing.lg * 2 - spacing.md * 2, 280)
+  const chartOuterWidth = Math.max(
+    windowWidth - spacing.lg * 2 - spacing.md * 2,
+    280
+  )
   const points = normalizeTimeline(data)
   const areaFill = `${colors.primary}24`
 
@@ -154,9 +159,14 @@ export function ActivityChart({
     return (
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.iconWrap}>
-            <BarChart3 color={colors.primary} size={18} />
-          </View>
+          <IconBox
+            icon={BarChart3}
+            size={18}
+            boxSize={36}
+            cornerRadius={radius.md}
+            backgroundColor={colors.secondary}
+            bordered={false}
+          />
           <View style={styles.headerCopy}>
             <SkeletonBlock width={120} height={14} />
             <SkeletonBlock width={80} height={12} style={styles.skeletonGap} />
@@ -171,9 +181,14 @@ export function ActivityChart({
     return (
       <View style={[styles.card, styles.emptyCard]}>
         <View style={styles.header}>
-          <View style={styles.iconWrap}>
-            <BarChart3 color={colors.primary} size={18} />
-          </View>
+          <IconBox
+            icon={BarChart3}
+            size={18}
+            boxSize={36}
+            cornerRadius={radius.md}
+            backgroundColor={colors.secondary}
+            bordered={false}
+          />
           <View style={styles.headerCopy}>
             <Text style={styles.title}>Submissions over time</Text>
             <Text style={styles.subtitle}>No activity in this period</Text>
@@ -193,21 +208,19 @@ export function ActivityChart({
   const total = points.reduce((sum, d) => sum + d.count, 0)
   const peak = points.reduce(
     (best, point) => (point.count > best.count ? point : best),
-    points[0]!,
+    points[0]!
   )
 
   const plotPoints = points.map((point, index) => {
     const x =
-      padding.left +
-      (index / Math.max(points.length - 1, 1)) * chartWidth
-    const y =
-      padding.top +
-      plotHeight -
-      (point.count / maxCount) * plotHeight
+      padding.left + (index / Math.max(points.length - 1, 1)) * chartWidth
+    const y = padding.top + plotHeight - (point.count / maxCount) * plotHeight
     return { x, y, count: point.count, day: point.day }
   })
 
-  const peakPoint = plotPoints.find((p) => p.day === peak.day && p.count === peak.count)
+  const peakPoint = plotPoints.find(
+    (p) => p.day === peak.day && p.count === peak.count
+  )
 
   const curvePath = smoothPath(plotPoints)
   const areaPath = [
@@ -223,11 +236,11 @@ export function ActivityChart({
   }))
 
   const gridLines = [0.25, 0.5, 0.75].map(
-    (fraction) => padding.top + plotHeight * (1 - fraction),
+    (fraction) => padding.top + plotHeight * (1 - fraction)
   )
 
   const xAxisLabelIndexes = Array.from(
-    new Set([0, Math.round((points.length - 1) / 2), points.length - 1]),
+    new Set([0, Math.round((points.length - 1) / 2), points.length - 1])
   )
 
   const rangeLabel =
@@ -238,9 +251,14 @@ export function ActivityChart({
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.iconWrap}>
-          <BarChart3 color={colors.primary} size={18} />
-        </View>
+        <IconBox
+          icon={BarChart3}
+          size={18}
+          boxSize={36}
+          cornerRadius={radius.md}
+          backgroundColor={colors.secondary}
+          bordered={false}
+        />
         <View style={styles.headerCopy}>
           <Text style={styles.title}>Submissions over time</Text>
           <Text style={styles.subtitle}>{rangeLabel}</Text>

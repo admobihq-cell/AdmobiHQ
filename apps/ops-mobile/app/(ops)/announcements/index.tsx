@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react"
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native"
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native"
 import { useRouter } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
@@ -14,7 +21,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
-import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 export default function AnnouncementsScreen() {
   const client = useOpsClient()
@@ -35,8 +48,8 @@ export default function AnnouncementsScreen() {
       gap: spacing.sm,
     },
     addButton: {
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: radius.full,
       backgroundColor: c.primary,
       alignItems: "center" as const,
@@ -103,8 +116,13 @@ export default function AnnouncementsScreen() {
     async (nextPage: number, replace = false) => {
       try {
         setError(null)
-        const result = await client.notifications.list({ page: nextPage, pageSize: 20 })
-        setItems((current) => (replace ? result.items : [...current, ...result.items]))
+        const result = await client.notifications.list({
+          page: nextPage,
+          pageSize: 20,
+        })
+        setItems((current) =>
+          replace ? result.items : [...current, ...result.items]
+        )
         setPage(result.page)
         setTotalPages(result.totalPages)
       } catch (err) {
@@ -114,7 +132,7 @@ export default function AnnouncementsScreen() {
         setRefreshing(false)
       }
     },
-    [client],
+    [client]
   )
 
   useEffect(() => {
@@ -141,11 +159,7 @@ export default function AnnouncementsScreen() {
         title: resendTarget.title,
         body: resendTarget.body,
         category: (resendTarget.category ?? "announcement") as
-          | "announcement"
-          | "campaign"
-          | "billing"
-          | "promo"
-          | "system",
+          "announcement" | "campaign" | "billing" | "promo" | "system",
       })
       setResendTarget(null)
       setRefreshing(true)
@@ -170,7 +184,10 @@ export default function AnnouncementsScreen() {
           />
         </View>
         <Pressable
-          style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.85 }]}
+          style={({ pressed }) => [
+            styles.addButton,
+            pressed && { opacity: 0.85 },
+          ]}
           onPress={() => router.push("/(ops)/announcements/new")}
           accessibilityLabel="New announcement"
         >
@@ -249,7 +266,10 @@ export default function AnnouncementsScreen() {
               showChevron={false}
               rightElement={
                 <Pressable
-                  style={({ pressed }) => [styles.resendButton, pressed && { opacity: 0.7 }]}
+                  style={({ pressed }) => [
+                    styles.resendButton,
+                    pressed && { opacity: 0.7 },
+                  ]}
                   onPress={() => setResendTarget(item)}
                   disabled={resending}
                   accessibilityLabel={`Resend ${item.title}`}
@@ -260,7 +280,9 @@ export default function AnnouncementsScreen() {
                 </Pressable>
               }
             />
-            {index < items.length - 1 ? <View style={styles.separator} /> : null}
+            {index < items.length - 1 ? (
+              <View style={styles.separator} />
+            ) : null}
           </View>
         )}
       />
