@@ -59,19 +59,40 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           style={{ ["--rise-delay" as string]: `350ms` }}
           vectorEffect="non-scaling-stroke"
         />
-        {/* Broadcast pulse: echoes the innermost arc, expanding outward on loop */}
+        {/* Broadcast pulse: two staggered rings sweeping out through the static arcs */}
         <circle
           cx={400}
           cy={180}
-          r={60}
+          r={64}
           strokeWidth={1.5}
-          className="anim-pulse opacity-40"
+          className="anim-pulse opacity-35"
           vectorEffect="non-scaling-stroke"
+        />
+        <circle
+          cx={400}
+          cy={180}
+          r={64}
+          strokeWidth={1.5}
+          className="anim-pulse opacity-35"
+          vectorEffect="non-scaling-stroke"
+          style={{ animationDelay: "900ms" }}
         />
       </g>
 
-      {/* Roof hint: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
-      <ellipse cx={400} cy={302} rx={260} ry={26} className="anim-rise fill-foreground/[0.045]" style={{ ["--rise-delay" as string]: `50ms` }} />
+      {/* Contact shadow beneath the car */}
+      <ellipse cx={380} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
+
+      {/* Car: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
+      <image
+        href="/art/taxi-car-final.png"
+        x={213}
+        y={280}
+        width={334}
+        height={120}
+        preserveAspectRatio="xMidYMid meet"
+        className="anim-rise"
+        style={{ ["--rise-delay" as string]: `50ms` }}
+      />
 
       {/* Centerpiece: stylized taxi-top LED unit, lit up like an active screen at night */}
       <g
@@ -158,26 +179,21 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           preserveAspectRatio="xMidYMid meet"
         />
 
-        {/* Roof mount: two support legs along the housing */}
-        {[336, 464].map((x) => (
+        {/* Roof mount: two support legs, each sized to reach the car's actual roofline below */}
+        {[
+          { x: 300, roofY: 284 },
+          { x: 400, roofY: 291 },
+        ].map(({ x, roofY }) => (
           <rect
             key={`leg-${x}`}
             x={x - 5}
             y={260}
             width={10}
-            height={16}
+            height={roofY - 260}
             rx={2}
             className="fill-foreground/30"
           />
         ))}
-        <rect
-          x={280}
-          y={272}
-          width={240}
-          height={8}
-          rx={4}
-          className="fill-foreground/20"
-        />
       </g>
 
       {/* Top-left chip: Live · Nairobi */}
@@ -206,42 +222,34 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
         </text>
       </g>
 
-      {/* Top-right chip: Route · CBD → Westlands */}
+      {/* Top-right chip: Route · CBD → Westlands — same pill shape and baseline as the Live chip */}
       <g
         className="anim-rise"
         style={{ ["--rise-delay" as string]: `550ms` }}
       >
         <rect
-          x={580}
+          x={558}
           y={42}
-          width={188}
-          height={60}
-          rx={8}
+          width={210}
+          height={32}
+          rx={16}
           className="fill-background stroke-border"
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
         />
-        {/* Pin glyph, echoing the Live chip's marker */}
-        <g className="text-primary" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M 598 50 Q 598 44 604 44 Q 610 44 610 50 Q 610 56 604 64 Q 598 56 598 50 Z" strokeWidth={1.4} />
-          <circle cx={604} cy={50} r={1.6} fill="currentColor" stroke="none" />
+        {/* Pin glyph, echoing the Live chip's dot marker */}
+        <g className="text-primary">
+          <path
+            d="M 569 53 A 5 5 0 1 1 579 53 Q 579 59 574 67 Q 569 59 569 53 Z"
+            fill="currentColor"
+          />
+          <circle cx={574} cy={53} r={1.8} className="fill-background" />
         </g>
-        <text
-          x={620}
-          y={62}
-          fontSize={9}
-          letterSpacing={1.4}
-          className="fill-muted-foreground font-mono"
-        >
-          ROUTE
+        <text x={588} y={62} fontSize={13} fontWeight={600} className="fill-foreground">
+          Route
         </text>
-        <text
-          x={598}
-          y={87}
-          fontSize={15}
-          fontWeight={600}
-          className="fill-foreground"
-        >
+        <circle cx={622} cy={58} r={1.5} className="fill-muted-foreground" />
+        <text x={632} y={62} fontSize={13} className="fill-muted-foreground">
           CBD → Westlands
         </text>
       </g>
@@ -253,9 +261,9 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       >
         <line
           x1={240}
-          y1={340}
+          y1={418}
           x2={560}
-          y2={340}
+          y2={418}
           className="stroke-border"
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
@@ -267,15 +275,15 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
               {active ? (
                 <circle
                   cx={node.x}
-                  cy={340}
-                  r={7}
+                  cy={418}
+                  r={6}
                   className="anim-pulse fill-primary opacity-50"
                 />
               ) : null}
               <circle
                 cx={node.x}
-                cy={340}
-                r={active ? 7 : 5.5}
+                cy={418}
+                r={active ? 6 : 4.5}
                 className={
                   active
                     ? "fill-primary"
@@ -286,9 +294,9 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
               />
               <text
                 x={node.x}
-                y={364}
+                y={439}
                 textAnchor="middle"
-                fontSize={11}
+                fontSize={10}
                 fontWeight={active ? 600 : 500}
                 className={active ? "fill-foreground" : "fill-muted-foreground"}
               >
