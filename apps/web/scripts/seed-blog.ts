@@ -315,6 +315,163 @@ const SEED_POSTS: SeedPost[] = [
       ),
     ),
   },
+  {
+    slug: "cost-of-taxi-top-led-advertising-nairobi",
+    title: "How much does taxi-top LED advertising cost in Nairobi?",
+    excerpt:
+      "Indicative KES pricing for taxi-top day bursts, weekly corridor books, and delivery bike flights, plus the factors that move a quote up or down.",
+    topic: "insights",
+    featured: false,
+    publishedAt: "2026-06-19T09:00:00.000Z",
+    authorName: "Admobi editorial",
+    authorRole: "Campaign operations",
+    seoTitle: "Taxi-top LED advertising cost in Nairobi | Admobi Blog",
+    seoDescription:
+      "Indicative pricing for taxi-top and delivery bike LED advertising in Nairobi: day bursts, weekly corridor books, and sustained flights, plus what changes a quote.",
+    cover: {
+      alt: "Illustrated cover: The cost of taxi-top LED advertising in Nairobi",
+      badge: "INSIGHTS",
+      headline: ["What taxi-top LED", "ads cost in Nairobi"],
+      subtitle: "Indicative KES pricing guide",
+      filename: "taxi-top-pricing-cover.png",
+    },
+    body: richText(
+      paragraph(
+        "The first question most Nairobi advertisers ask is not “does it work” but “what does it cost.” Moving LED media is still newer than billboards and radio, so there is less shared reference for budgeting. This guide walks through indicative starting prices and the variables that move a quote, so you can size a test flight before requesting a formal brief.",
+      ),
+      heading("Indicative starting prices", "h2"),
+      paragraph(
+        "Taxi-top day burst: from KES 85,000 for a single Nairobi corridor, one day where inventory allows, includes creative QA and a GPS proof-of-play summary. Taxi-top weekly corridor book: from KES 420,000 for seven days across one or two corridors, with scheduled plays by time window and corridor-level reporting. Taxi-top sustained book: from KES 1,350,000 for 28 days across multiple corridors, with pacing across peak and off-peak windows and procurement-ready proof-of-play exports.",
+      ),
+      paragraph(
+        "Delivery bike weekly flight: from KES 180,000 for seven days across estate and last-mile clusters, same creative gates as taxi-top units. Delivery bike sustained book: from KES 620,000 for 28 days across multiple estate corridors, with lunch-hour and e-commerce peak targeting and optional combined reporting alongside a taxi-top line.",
+      ),
+      paragraph(
+        "These are starting-from figures, not a rate card. Final pricing is confirmed per brief, corridor, and inventory availability, and can move with volume or exclusivity requests.",
+      ),
+      heading("What moves a quote up or down", "h2"),
+      paragraph(
+        "Corridor count and competitiveness: high-demand arterials like Mombasa Road or Waiyaki Way during peak windows carry different inventory pressure than a single off-peak corridor. Flight length: day bursts test cheaper per unit but cost more per day than a sustained 28-day book, which amortises setup and QA. Exclusivity: locking a category or corridor to your brand only adjusts the base rate. Creative complexity: video assets that need extra QA passes or multiple swap windows during the flight add coordination time versus a single static loop.",
+      ),
+      heading("Taxi-top vs delivery bike budgets", "h2"),
+      paragraph(
+        "Taxi-top corridors suit brand fame and commute-wide reach; delivery bike flights are priced lower per week because they target tighter estate and dispatch clusters rather than an arterial. Brands chasing both commute visibility and estate-level depth often split budget across a taxi-top corridor book and a parallel bike flight rather than over-extending one format across every use case.",
+      ),
+      heading("How to size a first test", "h2"),
+      paragraph(
+        "If budget is the main unknown, start with a single-corridor taxi-top day burst or a one-week bike flight in your priority estate cluster. Both are small enough to validate creative and corridor choice before committing to a monthly book, and both come with the same GPS proof-of-play reporting as larger flights.",
+      ),
+      paragraph(
+        "Ready for a firm number? Request the media kit and a brief-based quote, indicative pricing above is a planning tool, not a booking price.",
+      ),
+    ),
+  },
+  {
+    slug: "sme-first-ooh-campaign-nairobi-guide",
+    title: "A small business guide to your first OOH campaign in Nairobi",
+    excerpt:
+      "Moving LED advertising is not just for national brands. How SMEs can test taxi-top or delivery bike OOH on a small budget before scaling.",
+    topic: "campaigns",
+    featured: false,
+    publishedAt: "2026-06-22T08:00:00.000Z",
+    authorName: "Admobi editorial",
+    authorRole: "Campaign operations",
+    seoTitle: "SME guide to taxi-top OOH advertising in Nairobi | Admobi Blog",
+    seoDescription:
+      "How small and medium businesses in Nairobi can test taxi-top or delivery bike LED advertising on a small budget, from single-corridor bursts to scaling up.",
+    cover: {
+      alt: "Illustrated cover: A small business guide to OOH advertising in Nairobi",
+      badge: "CAMPAIGNS",
+      headline: ["Your first OOH", "campaign, on a budget"],
+      subtitle: "A small business guide",
+      filename: "sme-first-campaign-cover.png",
+    },
+    body: richText(
+      paragraph(
+        "Outdoor advertising has a reputation for needing a national ad budget and a multi-week commitment. Moving LED changes that math: a single corridor, a single day, and one clear message is enough to learn whether taxi-top or delivery bike OOH belongs in your marketing mix, before you book anything bigger.",
+      ),
+      heading("Why moving LED suits smaller budgets", "h2"),
+      paragraph(
+        "Static billboards are typically sold in multi-week minimums and priced for citywide or landmark visibility. A taxi-top day burst is scoped to one corridor and one day where inventory allows, which means an SME can test a launch, a promotion, or a store opening without matching a national brand's flight length.",
+      ),
+      heading("Picking one corridor, not five", "h2"),
+      paragraph(
+        "The biggest budgeting mistake is spreading a small budget across too many corridors. If your customers are concentrated near one estate, market, or transport hub, put the full test budget on that single route and time window rather than diluting reach across the whole city. You can expand to adjacent corridors once you know the format converts.",
+      ),
+      heading("Matching format to what you sell", "h2"),
+      paragraph(
+        "A retail shop, salon, or restaurant with a local catchment often gets more from delivery bike enclosures circulating estate and lunch routes than from a CBD arterial taxi-top corridor built for commute-wide fame. A service or product with citywide appeal, or a launch that needs visible momentum, leans toward a taxi-top corridor during peak traffic. If you are unsure, describe your customer's daily route in the brief and we will recommend a format.",
+      ),
+      heading("Creative that works without a design team", "h2"),
+      paragraph(
+        "You do not need a full creative agency for a first test. One message, your logo, a phone number or short promo code, and high contrast for daylight legibility is enough. Follow the media kit for exact dimensions and safe zones so a simple design still passes QA on the first submission.",
+      ),
+      heading("What a small test actually proves", "h2"),
+      paragraph(
+        "A short flight will not tell you brand lift the way a national campaign study would, but it will show you whether foot traffic, calls, or promo code redemptions move during the flight window, and it comes with a GPS proof-of-play summary so you know the plays actually happened on your booked corridor and dates.",
+      ),
+      heading("Scaling up once it works", "h2"),
+      paragraph(
+        "If a single-corridor burst performs, the natural next step is a weekly corridor book or a recurring monthly slot around paydays and peak shopping periods, not necessarily more corridors at once. Small businesses that scale OOH successfully usually deepen frequency on a proven route before widening geography.",
+      ),
+      paragraph(
+        "Thinking about a first test flight? Start with one corridor, one message, and a modest budget, submit a brief and we will confirm what is achievable at your price point.",
+      ),
+    ),
+  },
+  {
+    slug: "how-admobi-driver-partner-network-works",
+    title: "Inside the Admobi driver and rider partner network",
+    excerpt:
+      "How taxi and delivery bike owners in Nairobi join the Admobi network, what installation involves, and how monthly M-Pesa payouts are calculated.",
+    topic: "company",
+    featured: false,
+    publishedAt: "2026-06-25T07:00:00.000Z",
+    authorName: "Admobi editorial",
+    authorRole: "Partner operations",
+    seoTitle: "How the Admobi driver partner network works | Admobi Blog",
+    seoDescription:
+      "How taxi and delivery bike owners join Admobi, what free LED screen installation involves, and how monthly M-Pesa payouts are calculated from active hours.",
+    cover: {
+      alt: "Illustrated cover: Inside the Admobi driver and rider partner network in Nairobi",
+      badge: "COMPANY",
+      headline: ["Inside the Admobi", "partner network"],
+      subtitle: "Drivers, riders & payouts",
+      filename: "driver-partner-network-cover.png",
+    },
+    body: richText(
+      paragraph(
+        "Every taxi-top and delivery bike flight advertisers book runs on hardware fitted to real vehicles owned by real drivers and riders. The advertiser side of Admobi only works because the partner side, the fleet, is onboarded, paid, and maintained properly. Here is what that process looks like end to end.",
+      ),
+      heading("Applying to the network", "h2"),
+      paragraph(
+        "Owners of taxis and delivery bikes apply with a short form covering city and vehicle type. Applications are reviewed by city, and the team confirms eligibility and schedules installation, typically responding within three business days.",
+      ),
+      heading("Free installation, Admobi-owned hardware", "h2"),
+      paragraph(
+        "A certified technician fits the LED screen or enclosure directly to the vehicle, usually in under two hours. Admobi installs and owns the screen: drivers and riders do not pay for installation, maintenance, or replacement if a unit develops a fault under normal use.",
+      ),
+      heading("Running without extra work", "h2"),
+      paragraph(
+        "Screens play automatically during normal driving hours. Partners do not manage content, scheduling, or playback, that is handled centrally so a driver's job stays driving, not operating an ad unit. Every ad is reviewed by Admobi before it goes live, and partners can flag anything they are uncomfortable displaying.",
+      ),
+      heading("How payouts are calculated", "h2"),
+      paragraph(
+        "Monthly earnings are based on active screen hours and verified GPS data, the same data that generates advertiser-facing proof-of-play. Exact rates are confirmed at onboarding based on city and vehicle type, and payouts are made to M-Pesa by the 5th of each month.",
+      ),
+      heading("Vehicle requirements and flexibility", "h2"),
+      paragraph(
+        "Vehicles must be roadworthy, insured, and actively operating in a covered city; eligibility is confirmed before installation. The arrangement is not a long-term lock-in, either side can end it with 14 days notice, and Admobi arranges hardware collection at no cost to the partner.",
+      ),
+      heading("Why this matters to advertisers", "h2"),
+      paragraph(
+        "A well-onboarded, fairly paid partner fleet is what makes corridor coverage and GPS proof-of-play reliable for advertisers. When drivers and riders are compensated for active hours rather than a flat installation fee, screens stay switched on and maintained, which is the operational backbone behind every campaign brief Admobi confirms.",
+      ),
+      paragraph(
+        "Own a taxi or delivery bike in Nairobi, Mombasa, or Kisumu? Apply to the partner network to start earning on routes you already drive.",
+      ),
+    ),
+  },
 ]
 
 async function createCoverImage(

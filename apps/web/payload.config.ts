@@ -46,6 +46,18 @@ export default buildConfig({
     // Never auto-push: Drizzle would drop Prisma tables (leads, drivers, fleet_partners).
     push: false,
   }),
+  // @payloadcms/db-postgres never listens for 'error' on the pool itself, only on the
+  // one-off startup client. When the DB provider (Neon/Vercel Postgres) kills an idle
+  // pooled connection (e.g. "terminating connection due to administrator command"),
+  // pg emits an unhandled 'error' on the pool, which Node treats as an uncaught
+  // exception and crashes the whole function. Attach a listener so pg just drops the
+  // dead client and reconnects on the next query instead of taking the process down.
+  onInit: async (payload) => {
+    const pool = (payload.db as { pool?: import("pg").Pool }).pool
+    pool?.on("error", (err) => {
+      payload.logger.error({ err }, "Postgres pool idle client error")
+    })
+  },
   plugins: [
     ...(blobToken
       ? [
