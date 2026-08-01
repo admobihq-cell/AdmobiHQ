@@ -1,26 +1,38 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
+  Text,
   TextInput,
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Inbox, Plus, Search } from "@/components/icons"
-import type { PaginatedResponse } from "@workspace/ops-contracts"
+import * as Haptics from "expo-haptics"
+import {
+  CheckboxOff,
+  CheckboxOn,
+  Inbox,
+  Plus,
+  Search,
+} from "@/components/icons"
+import type {
+  FormFieldOption,
+  PaginatedResponse,
+} from "@workspace/ops-contracts"
 import { formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
-import { FilterChips, type FilterChipOption } from "@/components/app/filter-chips"
+import {
+  FilterChips,
+  type FilterChipOption,
+} from "@/components/app/filter-chips"
 import { ListRow } from "@/components/app/list-row"
 import type { StatusChipVariant } from "@/components/app/status-chip"
-import {
-  SkeletonListRows,
-  SkeletonTriageRows,
-} from "@/components/app/skeleton"
+import { SkeletonListRows, SkeletonTriageRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
@@ -28,7 +40,13 @@ import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
 import { entityKeys } from "@/lib/query-keys"
-import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type EntityListLoadOptions = {
   status?: string | null
@@ -40,7 +58,10 @@ type EntityListProps<T extends { id: number }> = {
   title: string
   description?: string
   eyebrow?: string
-  loadPage: (page: number, options?: EntityListLoadOptions) => Promise<PaginatedResponse<T>>
+  loadPage: (
+    page: number,
+    options?: EntityListLoadOptions
+  ) => Promise<PaginatedResponse<T>>
   /** Required unless `renderRow` is provided. */
   getTitle?: (item: T) => string
   getSubtitle?: (item: T) => string
@@ -49,11 +70,14 @@ type EntityListProps<T extends { id: number }> = {
   getStatusVariant?: (item: T) => StatusChipVariant
   renderRow?: (
     item: T,
-    ctx: { onPress: () => void; index: number },
+    ctx: { onPress: () => void; index: number }
   ) => ReactNode
   filterOptions?: FilterChipOption[]
   detailHref: (id: number) => string
   addHref?: string
+  /** Enables long-list triage: a "Select" toggle, per-row checkboxes, and a bulk status bar. Requires both props together. */
+  statusOptions?: FormFieldOption[]
+  onBulkStatusChange?: (ids: number[], status: string) => Promise<unknown>
 }
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -73,6 +97,8 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   filterOptions,
   detailHref,
   addHref,
+  statusOptions,
+  onBulkStatusChange,
 }: EntityListProps<T>) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -94,14 +120,58 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       justifyContent: "space-between" as const,
       gap: spacing.sm,
     },
+    headerActions: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
     addButton: {
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: radius.full,
       backgroundColor: c.primary,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      marginTop: spacing.xs,
+    },
+    selectToggle: {
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      justifyContent: "center" as const,
+    },
+    selectToggleText: {
+      ...typography.body,
+      fontWeight: "600" as const,
+      color: c.primary,
+    },
+    bulkBar: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      gap: spacing.xs,
+      backgroundColor: c.surface,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    bulkBarLabel: {
+      ...typography.caption,
+      fontWeight: "700" as const,
+      color: c.mutedForeground,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.6,
+    },
+    rowInner: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    checkbox: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    rowContentFlex: {
+      flex: 1,
+      minWidth: 0,
     },
     searchBox: {
       flexDirection: "row" as const,
@@ -162,6 +232,39 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [filter, setFilter] = useState<string | null>(null)
   const [errorDismissed, setErrorDismissed] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkApplying, setBulkApplying] = useState(false)
+  const canBulkEdit = Boolean(statusOptions?.length && onBulkStatusChange)
+
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false)
+    setSelectedIds(new Set())
+  }
+
+  async function applyBulkStatus(status: string) {
+    if (!onBulkStatusChange || selectedIds.size === 0 || bulkApplying) return
+    setBulkApplying(true)
+    try {
+      await onBulkStatusChange(Array.from(selectedIds), status)
+      if (Platform.OS !== "web") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      }
+      exitSelectionMode()
+      void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
+    } finally {
+      setBulkApplying(false)
+    }
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -193,11 +296,12 @@ export function EntityList<T extends { id: number; created_at?: string }>({
 
   const items = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
-    [data],
+    [data]
   )
   const loading = isPending
   const refreshing = isRefetching && !isFetchingNextPage
-  const error = queryError && !errorDismissed ? formatOpsError(queryError, API_URL) : null
+  const error =
+    queryError && !errorDismissed ? formatOpsError(queryError, API_URL) : null
 
   const onRefresh = () => {
     setErrorDismissed(false)
@@ -227,18 +331,38 @@ export function EntityList<T extends { id: number; created_at?: string }>({
             }
           />
         </View>
-        {addHref ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.addButton,
-              pressed && { opacity: 0.85 },
-            ]}
-            onPress={() => router.push(addHref as never)}
-            accessibilityLabel="Add record"
-          >
-            <Plus color={colors.primaryForeground} size={22} strokeWidth={2.5} />
-          </Pressable>
-        ) : null}
+        <View style={styles.headerActions}>
+          {canBulkEdit ? (
+            <Pressable
+              style={styles.selectToggle}
+              onPress={() =>
+                selectionMode ? exitSelectionMode() : setSelectionMode(true)
+              }
+              hitSlop={8}
+              accessibilityRole="button"
+            >
+              <Text style={styles.selectToggleText}>
+                {selectionMode ? "Cancel" : "Select"}
+              </Text>
+            </Pressable>
+          ) : null}
+          {addHref && !selectionMode ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.addButton,
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={() => router.push(addHref as never)}
+              accessibilityLabel="Add record"
+            >
+              <Plus
+                color={colors.primaryForeground}
+                size={22}
+                strokeWidth={2.5}
+              />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
       <View style={styles.searchBox}>
         <Search color={colors.mutedForeground} size={18} strokeWidth={2} />
@@ -294,6 +418,27 @@ export function EntityList<T extends { id: number; created_at?: string }>({
 
   return (
     <View style={styles.container}>
+      {selectionMode && canBulkEdit ? (
+        <View style={styles.bulkBar}>
+          <Text style={styles.bulkBarLabel}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} selected — set status`
+              : "Select records, then choose a status"}
+          </Text>
+          <FilterChips
+            options={statusOptions!.map((option) => ({
+              key: option.value,
+              label: option.label,
+            }))}
+            selected={null}
+            showAll={false}
+            embedded
+            onSelect={(key) => {
+              if (key && !bulkApplying) void applyBulkStatus(key)
+            }}
+          />
+        </View>
+      ) : null}
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
@@ -332,9 +477,14 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         }
         renderItem={({ item, index }) => {
           const openDetail = () => router.push(detailHref(item.id) as never)
+          const selected = selectedIds.has(item.id)
+          const rowPress =
+            selectionMode && canBulkEdit
+              ? () => toggleSelected(item.id)
+              : openDetail
           const status = getStatus?.(item)
           const rowContent = renderRow ? (
-            renderRow(item, { onPress: openDetail, index })
+            renderRow(item, { onPress: rowPress, index })
           ) : (
             <ListRow
               title={getTitle?.(item) ?? String(item.id)}
@@ -349,7 +499,8 @@ export function EntityList<T extends { id: number; created_at?: string }>({
               }
               statusLabel={status ? formatLabel(status) : undefined}
               statusVariant={getStatusVariant?.(item) ?? "muted"}
-              onPress={openDetail}
+              onPress={rowPress}
+              showChevron={!selectionMode}
             />
           )
           return (
@@ -360,12 +511,30 @@ export function EntityList<T extends { id: number; created_at?: string }>({
                 index === items.length - 1 && styles.rowLast,
               ]}
             >
-              {rowContent}
+              <View style={styles.rowInner}>
+                {selectionMode && canBulkEdit ? (
+                  <Pressable
+                    onPress={() => toggleSelected(item.id)}
+                    hitSlop={8}
+                    style={styles.checkbox}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={
+                      selected ? "Deselect record" : "Select record"
+                    }
+                  >
+                    {selected ? (
+                      <CheckboxOn color={colors.primary} size={22} />
+                    ) : (
+                      <CheckboxOff color={colors.mutedForeground} size={22} />
+                    )}
+                  </Pressable>
+                ) : null}
+                <View style={styles.rowContentFlex}>{rowContent}</View>
+              </View>
               {index < items.length - 1 ? (
                 <View
-                  style={
-                    renderRow ? styles.separatorFlush : styles.separator
-                  }
+                  style={renderRow ? styles.separatorFlush : styles.separator}
                 />
               ) : null}
             </View>

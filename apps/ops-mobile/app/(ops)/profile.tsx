@@ -7,7 +7,18 @@ import { useMemo } from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { DateRangeKey } from "@workspace/ops-contracts"
-import { Bell, FileText, LogOut, Mail, Map, Person, Radio, RefreshCcw, Wallet } from "@/components/icons"
+import {
+  Bell,
+  FileText,
+  LogOut,
+  Mail,
+  Map,
+  Person,
+  Radio,
+  RefreshCcw,
+  Sparkles,
+  Wallet,
+} from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
@@ -27,12 +38,10 @@ export default function ProfileScreen() {
   const client = useOpsClient()
   const email = getPrimaryEmail(
     user?.emailAddresses,
-    user?.primaryEmailAddressId,
+    user?.primaryEmailAddressId
   )
-  const rawName =
-    user?.firstName?.trim() || email?.split("@")[0] || "Staff"
-  const displayName =
-    rawName.charAt(0).toUpperCase() + rawName.slice(1)
+  const rawName = user?.firstName?.trim() || email?.split("@")[0] || "Staff"
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
 
   const [counts, setCounts] = useState<{ waitlist: number; mediaKit: number }>({
     waitlist: 0,
@@ -74,13 +83,22 @@ export default function ProfileScreen() {
 
     switch (result.status) {
       case "unsupported":
-        Alert.alert("Not available", "Update checks aren't available in this build.")
+        Alert.alert(
+          "Not available",
+          "Update checks aren't available in this build."
+        )
         return
       case "up-to-date":
-        Alert.alert("You're up to date", "You're running the latest version of the app.")
+        Alert.alert(
+          "You're up to date",
+          "You're running the latest version of the app."
+        )
         return
       case "error":
-        Alert.alert("Couldn't check for updates", "Check your connection and try again.")
+        Alert.alert(
+          "Couldn't check for updates",
+          "Check your connection and try again."
+        )
         return
       case "downloaded":
         Alert.alert(
@@ -89,7 +107,7 @@ export default function ProfileScreen() {
           [
             { text: "Later", style: "cancel" },
             { text: "Restart now", onPress: () => void Updates.reloadAsync() },
-          ],
+          ]
         )
     }
   }
@@ -172,8 +190,8 @@ export default function ProfileScreen() {
           letterSpacing: 0.6,
         },
         footerValue: {
-          ...typography.body,
-          color: colors.text,
+          ...typography.caption,
+          color: colors.mutedForeground,
         },
         footerHint: {
           ...typography.caption,
@@ -181,7 +199,7 @@ export default function ProfileScreen() {
           marginTop: spacing.xs,
         },
       }),
-    [colors],
+    [colors]
   )
 
   return (
@@ -255,12 +273,12 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Preferences</Text>
+          <Text style={styles.sectionLabel}>Developer tools</Text>
           <View style={styles.group}>
             <SettingsRow
               icon={Bell}
-              label="Notifications"
-              description="Preview alert styles"
+              label="Notification style preview"
+              description="QA tool — not a notification preference"
               onPress={() => router.push("/(ops)/notifications")}
             />
           </View>
@@ -274,8 +292,17 @@ export default function ProfileScreen() {
             <SettingsRow
               icon={RefreshCcw}
               label="Check for updates"
-              description={checkingUpdate ? "Checking…" : "Get the latest version now"}
+              description={
+                checkingUpdate ? "Checking…" : "Get the latest version now"
+              }
               onPress={handleCheckForUpdates}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              icon={Sparkles}
+              label="Replay welcome tour"
+              description="See the first-run introduction again"
+              onPress={() => router.push("/(ops)/onboarding")}
             />
           </View>
         </View>
@@ -295,8 +322,8 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerLabel}>Environment</Text>
-          <Text style={styles.footerValue}>API: {API_URL}</Text>
+          <Text style={styles.footerLabel}>For support</Text>
+          <Text style={styles.footerValue}>Connected to: {API_URL}</Text>
           <Text style={styles.footerHint}>Ops mobile · v{version}</Text>
         </View>
       </ScrollView>

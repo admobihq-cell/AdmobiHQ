@@ -37,7 +37,7 @@ function parseStoredTheme(value: string | null): ThemeOption {
 
 function resolveTheme(
   theme: ThemeOption,
-  systemScheme: ResolvedTheme | null | undefined,
+  systemScheme: ResolvedTheme | null | undefined
 ): ResolvedTheme {
   if (theme === "system") {
     return systemScheme === "dark" ? "dark" : "light"
@@ -63,7 +63,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const resolvedTheme = resolveTheme(theme, systemScheme)
   const colors = useMemo(
     () => getColorsForTheme(resolvedTheme),
-    [resolvedTheme],
+    [resolvedTheme]
   )
 
   useEffect(() => {
@@ -93,11 +93,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.remove("light", "dark")
     root.classList.add(resolvedTheme)
     root.style.colorScheme = resolvedTheme
-    root.style.backgroundColor =
-      resolvedTheme === "dark" ? "#1E1D24" : "#FAF9F7"
+    const bg = getColorsForTheme(resolvedTheme).bg
+    root.style.backgroundColor = bg
     if (document.body) {
-      document.body.style.backgroundColor =
-        resolvedTheme === "dark" ? "#1E1D24" : "#FAF9F7"
+      document.body.style.backgroundColor = bg
     }
   }, [resolvedTheme])
 
@@ -124,7 +123,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setTheme,
       toggleTheme,
     }),
-    [theme, resolvedTheme, colors, setTheme, toggleTheme],
+    [theme, resolvedTheme, colors, setTheme, toggleTheme]
   )
 
   if (!ready) {
@@ -167,7 +166,8 @@ export function useNavigationTheme() {
   return {
     colors,
     resolvedTheme,
-    statusBarStyle: resolvedTheme === "dark" ? ("light" as const) : ("dark" as const),
+    statusBarStyle:
+      resolvedTheme === "dark" ? ("light" as const) : ("dark" as const),
     screenOptions: {
       headerStyle: { backgroundColor: colors.bg },
       headerTintColor: colors.primary,

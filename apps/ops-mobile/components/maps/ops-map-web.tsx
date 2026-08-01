@@ -12,7 +12,12 @@ import { WebView } from "react-native-webview"
 import { DEFAULT_BASEMAP, type BasemapId } from "@workspace/geo"
 import { OpsMapHeader } from "@/components/maps/ops-map-header"
 import { buildOpsMapHtml } from "@/components/maps/ops-map-html"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 export function OpsMapWeb() {
   const scheme = useColorScheme()
@@ -51,7 +56,7 @@ export function OpsMapWeb() {
         dark: scheme === "dark",
         basemap,
       }),
-    [scheme, basemap],
+    [scheme, basemap]
   )
 
   useEffect(() => {
@@ -86,7 +91,9 @@ export function OpsMapWeb() {
             allowFileAccess
             mixedContentMode="always"
             setSupportMultipleWindows={false}
-            androidLayerType={Platform.OS === "android" ? "hardware" : undefined}
+            androidLayerType={
+              Platform.OS === "android" ? "hardware" : undefined
+            }
             startInLoadingState
             renderLoading={() => (
               <View style={styles.overlay}>
