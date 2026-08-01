@@ -9,8 +9,11 @@ const stepperNodes = [
 ] as const
 
 export function RouteSignal(props: SVGProps<SVGSVGElement>) {
+  // A varied Nairobi-inspired skyline: stepped building heights, a pointed spire,
+  // and two landmark towers — one echoing KICC (disc + mast), one echoing Britam
+  // Tower's tiered, tapering crown — so both halves read as equally defined.
   const skylinePath =
-    "M 0 380 L 0 360 L 60 360 L 60 322 L 110 322 L 110 358 L 158 358 L 158 302 L 198 290 L 238 302 L 238 348 L 288 348 L 288 312 L 328 312 L 328 280 L 368 280 L 368 340 L 418 340 L 418 296 L 466 296 L 466 358 L 520 358 L 520 320 L 570 320 L 570 348 L 620 348 L 620 306 L 668 306 L 668 360 L 738 360 L 738 332 L 800 332 L 800 380 Z"
+    "M 0 380 L 0 320 L 50 320 L 50 285 L 95 285 L 95 325 L 135 325 L 135 260 L 190 260 L 190 310 L 225 310 L 225 330 L 273 330 L 273 290 L 315 290 L 315 315 L 353 315 L 353 275 L 378 250 L 403 275 L 403 325 L 443 325 L 443 285 L 478 285 L 478 335 L 510 335 L 510 250 L 525 250 L 525 220 L 550 220 L 550 250 L 565 250 L 565 320 L 600 320 L 600 280 L 640 280 L 640 330 L 670 330 L 670 270 L 715 270 L 715 325 L 750 325 L 750 295 L 800 295 L 800 380 Z"
 
   return (
     <svg
@@ -31,8 +34,36 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       </desc>
 
       {/* Nairobi skyline silhouette (decorative, sets place) */}
+      <defs>
+        <pattern id="skyline-windows" width={9} height={11} patternUnits="userSpaceOnUse">
+          <rect x={1.5} y={1.5} width={2.5} height={3} className="fill-foreground/20" />
+          <rect x={5} y={1.5} width={2.5} height={3} className="fill-foreground/20" />
+          <rect x={1.5} y={6.5} width={2.5} height={3} className="fill-foreground/20" />
+          <rect x={5} y={6.5} width={2.5} height={3} className="fill-foreground/20" />
+        </pattern>
+      </defs>
       <path
         d={skylinePath}
+        className="anim-rise fill-foreground/[0.05]"
+        style={{ ["--rise-delay" as string]: `0ms` }}
+      />
+      <path
+        d={skylinePath}
+        fill="url(#skyline-windows)"
+        className="anim-rise"
+        style={{ ["--rise-delay" as string]: `0ms` }}
+      />
+      {/* Landmark tower detail: helipad disc + mast, echoing KICC */}
+      <g className="anim-rise fill-foreground/[0.05]" style={{ ["--rise-delay" as string]: `0ms` }}>
+        <ellipse cx={162.5} cy={258} rx={22} ry={5} />
+        <rect x={161} y={230} width={3} height={28} />
+      </g>
+      {/* Second landmark: mast atop the tiered right-side tower, echoing Britam Tower */}
+      <rect
+        x={536}
+        y={200}
+        width={3}
+        height={20}
         className="anim-rise fill-foreground/[0.05]"
         style={{ ["--rise-delay" as string]: `0ms` }}
       />
@@ -59,19 +90,40 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           style={{ ["--rise-delay" as string]: `350ms` }}
           vectorEffect="non-scaling-stroke"
         />
-        {/* Broadcast pulse: echoes the innermost arc, expanding outward on loop */}
+        {/* Broadcast pulse: two staggered rings sweeping out through the static arcs */}
         <circle
           cx={400}
           cy={180}
-          r={60}
+          r={64}
           strokeWidth={1.5}
-          className="anim-pulse opacity-40"
+          className="anim-pulse opacity-35"
           vectorEffect="non-scaling-stroke"
+        />
+        <circle
+          cx={400}
+          cy={180}
+          r={64}
+          strokeWidth={1.5}
+          className="anim-pulse opacity-35"
+          vectorEffect="non-scaling-stroke"
+          style={{ animationDelay: "900ms" }}
         />
       </g>
 
-      {/* Roof hint: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
-      <ellipse cx={400} cy={302} rx={260} ry={26} className="anim-rise fill-foreground/[0.045]" style={{ ["--rise-delay" as string]: `50ms` }} />
+      {/* Contact shadow beneath the car */}
+      <ellipse cx={365} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
+
+      {/* Car: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
+      <image
+        href="/art/suv-hero-2.png"
+        x={210}
+        y={280}
+        width={310}
+        height={120}
+        preserveAspectRatio="xMidYMid meet"
+        className="anim-rise"
+        style={{ ["--rise-delay" as string]: `50ms` }}
+      />
 
       {/* Centerpiece: stylized taxi-top LED unit, lit up like an active screen at night */}
       <g
@@ -158,26 +210,21 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           preserveAspectRatio="xMidYMid meet"
         />
 
-        {/* Roof mount: two support legs along the housing */}
-        {[336, 464].map((x) => (
+        {/* Roof mount: two support legs, centered on the canvas (not the car) */}
+        {[
+          { x: 383, roofY: 281 },
+          { x: 417, roofY: 281 },
+        ].map(({ x, roofY }) => (
           <rect
             key={`leg-${x}`}
             x={x - 5}
             y={260}
             width={10}
-            height={16}
+            height={roofY - 260}
             rx={2}
             className="fill-foreground/30"
           />
         ))}
-        <rect
-          x={280}
-          y={272}
-          width={240}
-          height={8}
-          rx={4}
-          className="fill-foreground/20"
-        />
       </g>
 
       {/* Top-left chip: Live · Nairobi */}
@@ -206,42 +253,34 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
         </text>
       </g>
 
-      {/* Top-right chip: Route · CBD → Westlands */}
+      {/* Top-right chip: Route · CBD → Westlands — same pill shape and baseline as the Live chip */}
       <g
         className="anim-rise"
         style={{ ["--rise-delay" as string]: `550ms` }}
       >
         <rect
-          x={580}
+          x={558}
           y={42}
-          width={188}
-          height={60}
-          rx={8}
+          width={210}
+          height={32}
+          rx={16}
           className="fill-background stroke-border"
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
         />
-        {/* Pin glyph, echoing the Live chip's marker */}
-        <g className="text-primary" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M 598 50 Q 598 44 604 44 Q 610 44 610 50 Q 610 56 604 64 Q 598 56 598 50 Z" strokeWidth={1.4} />
-          <circle cx={604} cy={50} r={1.6} fill="currentColor" stroke="none" />
+        {/* Pin glyph, echoing the Live chip's dot marker */}
+        <g className="text-primary">
+          <path
+            d="M 569 53 A 5 5 0 1 1 579 53 Q 579 59 574 67 Q 569 59 569 53 Z"
+            fill="currentColor"
+          />
+          <circle cx={574} cy={53} r={1.8} className="fill-background" />
         </g>
-        <text
-          x={620}
-          y={62}
-          fontSize={9}
-          letterSpacing={1.4}
-          className="fill-muted-foreground font-mono"
-        >
-          ROUTE
+        <text x={588} y={62} fontSize={13} fontWeight={600} className="fill-foreground">
+          Route
         </text>
-        <text
-          x={598}
-          y={87}
-          fontSize={15}
-          fontWeight={600}
-          className="fill-foreground"
-        >
+        <circle cx={622} cy={58} r={1.5} className="fill-muted-foreground" />
+        <text x={632} y={62} fontSize={13} className="fill-muted-foreground">
           CBD → Westlands
         </text>
       </g>
@@ -253,9 +292,9 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       >
         <line
           x1={240}
-          y1={340}
+          y1={418}
           x2={560}
-          y2={340}
+          y2={418}
           className="stroke-border"
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
@@ -267,15 +306,15 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
               {active ? (
                 <circle
                   cx={node.x}
-                  cy={340}
-                  r={7}
+                  cy={418}
+                  r={6}
                   className="anim-pulse fill-primary opacity-50"
                 />
               ) : null}
               <circle
                 cx={node.x}
-                cy={340}
-                r={active ? 7 : 5.5}
+                cy={418}
+                r={active ? 6 : 4.5}
                 className={
                   active
                     ? "fill-primary"
@@ -286,9 +325,9 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
               />
               <text
                 x={node.x}
-                y={364}
+                y={439}
                 textAnchor="middle"
-                fontSize={11}
+                fontSize={10}
                 fontWeight={active ? 600 : 500}
                 className={active ? "fill-foreground" : "fill-muted-foreground"}
               >
