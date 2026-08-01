@@ -43,6 +43,21 @@ export async function getBlogIndexData(): Promise<{
   return { posts }
 }
 
+export async function getRecentBlogPosts(limit = 3): Promise<BlogPostListItem[]> {
+  const payload = await getPayloadClient()
+
+  const result = await payload.find({
+    collection: "blog-posts",
+    depth: 1,
+    sort: "-publishedAt",
+    limit,
+  })
+
+  return result.docs
+    .map(toListItem)
+    .filter((post): post is BlogPostListItem => post !== null)
+}
+
 export async function getBlogPostSlugs(): Promise<string[]> {
   const payload = await getPayloadClient()
 

@@ -9,6 +9,8 @@ import { SiteHeader } from "@/components/landing/site-header"
 import { WhatsappFab } from "@/components/landing/whatsapp-fab"
 import { JsonLd } from "@/components/seo/json-ld"
 import { ThemeProvider } from "@/components/theme-provider"
+import { isPayloadConfigured } from "@/lib/payload/help-queries"
+import { getRecentBlogPosts } from "@/lib/payload/blog-queries"
 import { websiteJsonLd } from "@/lib/seo/schema"
 import {
   DEFAULT_OG_IMAGE,
@@ -81,11 +83,18 @@ export const metadata: Metadata = {
 }
 
 /** Marketing site root layout (Payload admin uses its own root in app/(payload)/layout.tsx). */
-export default function MarketingLayout({
+export default async function MarketingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const recentPosts = isPayloadConfigured()
+    ? await getRecentBlogPosts(3).catch((error) => {
+        console.error("[site-header] Failed to load recent posts:", error)
+        return []
+      })
+    : []
+
   return (
     <html
       lang="en"
@@ -107,7 +116,7 @@ export default function MarketingLayout({
         <JsonLd data={websiteJsonLd} />
         <GoogleAnalytics />
         <ThemeProvider>
-          <SiteHeader />
+          <SiteHeader recentPosts={recentPosts} />
           <main>{children}</main>
           <SiteFooter />
           <WhatsappFab />
