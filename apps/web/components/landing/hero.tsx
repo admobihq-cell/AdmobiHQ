@@ -1,4 +1,3 @@
-import Image from "next/image"
 import Link from "next/link"
 
 import { Button } from "@workspace/ui/components/button"
@@ -6,17 +5,6 @@ import { Button } from "@workspace/ui/components/button"
 import { Container } from "./container"
 import { InView } from "./in-view"
 import { RouteSignal } from "./system-illustration"
-
-const LOGO_PREFIX = "/logo%20Carousel"
-
-const heroLogos = [
-  { src: `${LOGO_PREFIX}/safaricom.png`, alt: "Safaricom" },
-  { src: `${LOGO_PREFIX}/naivas.png`, alt: "Naivas" },
-  { src: `${LOGO_PREFIX}/eabl.png`, alt: "EABL" },
-  { src: `${LOGO_PREFIX}/java.png`, alt: "Java House" },
-  { src: `${LOGO_PREFIX}/sarova.png`, alt: "Sarova Hotels" },
-  { src: `${LOGO_PREFIX}/tsavo.png`, alt: "Tsavo" },
-] as const
 
 export function HeroSection() {
   return (
@@ -41,25 +29,6 @@ export function HeroSection() {
               <Link href="/partner-fleet">Join as fleet manager</Link>
             </Button>
           </div>
-        </div>
-
-        <div className="mx-auto mt-14 max-w-[52rem] text-center sm:mt-16">
-          <p className="text-muted-foreground text-[0.65rem] font-medium uppercase tracking-[0.24em] sm:text-[0.7rem]">
-            Brands we&apos;re built for
-          </p>
-          <ul className="mt-5 grid grid-cols-3 items-center justify-items-center gap-x-6 gap-y-5 sm:grid-cols-6 sm:gap-x-8">
-            {heroLogos.map((logo) => (
-              <li key={logo.src} className="flex h-7 items-center justify-center sm:h-8">
-                <Image
-                  src={logo.src}
-                  alt={logo.alt}
-                  width={120}
-                  height={32}
-                  className="max-h-7 w-auto max-w-[6rem] object-contain opacity-70 sm:max-h-8"
-                />
-              </li>
-            ))}
-          </ul>
         </div>
 
         <InView className="relative isolate mx-auto mt-14 w-full max-w-[64rem] sm:mt-20">
