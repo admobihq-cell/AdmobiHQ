@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
 import { formatRelativeTime } from "@workspace/ops-contracts"
 
@@ -21,6 +20,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
+import { usePageHeader } from "@/lib/page-header"
 import {
   radius,
   spacing,
@@ -30,9 +30,9 @@ import {
 } from "@/lib/theme"
 
 export default function AnnouncementsScreen() {
+  usePageHeader("Announcements")
   const client = useOpsClient()
   const router = useRouter()
-  const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const styles = useThemedStyles((c) => ({
     container: { flex: 1, backgroundColor: c.bg },
@@ -173,7 +173,7 @@ export default function AnnouncementsScreen() {
   }
 
   const listHeader = (
-    <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+    <View style={[styles.header, { paddingTop: spacing.md }]}>
       <View style={styles.headerTop}>
         <View style={{ flex: 1 }}>
           <PageHero

@@ -27,9 +27,11 @@ import { getPrimaryEmail } from "@/lib/auth"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { API_URL } from "@/lib/ops-client"
 import { useOpsClient } from "@/lib/ops-client"
+import { usePageHeader } from "@/lib/page-header"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
 export default function ProfileScreen() {
+  usePageHeader("Profile")
   const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()

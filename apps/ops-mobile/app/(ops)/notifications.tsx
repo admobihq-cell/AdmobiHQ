@@ -12,6 +12,7 @@ import {
   type AppIcon,
 } from "@/components/icons"
 import { IconBox } from "@/components/ui"
+import { usePageHeader } from "@/lib/page-header"
 import {
   getNotificationPermissionStatus,
   NOTIFICATION_STYLES,
@@ -35,6 +36,10 @@ const STYLE_ICONS: Record<string, AppIcon> = {
 }
 
 export default function NotificationsTestScreen() {
+  usePageHeader("Notification style preview", {
+    showBack: true,
+    backHref: "/(ops)/profile",
+  })
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(

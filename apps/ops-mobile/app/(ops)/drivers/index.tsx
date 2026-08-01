@@ -46,8 +46,12 @@ export default function DriversScreen() {
       statusOptions={DRIVER_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
       detailHref={(id) => `/(ops)/drivers/${id}`}
-      renderRow={(item, { onPress }) => (
-        <DriverListRow item={item} onPress={onPress} />
+      renderRow={(item, { onPress, onLongPress }) => (
+        <DriverListRow
+          item={item}
+          onPress={onPress}
+          onLongPress={onLongPress}
+        />
       )}
     />
   )

@@ -46,8 +46,8 @@ export default function FleetScreen() {
       statusOptions={FLEET_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
       detailHref={(id) => `/(ops)/fleet/${id}`}
-      renderRow={(item, { onPress }) => (
-        <FleetListRow item={item} onPress={onPress} />
+      renderRow={(item, { onPress, onLongPress }) => (
+        <FleetListRow item={item} onPress={onPress} onLongPress={onLongPress} />
       )}
     />
   )

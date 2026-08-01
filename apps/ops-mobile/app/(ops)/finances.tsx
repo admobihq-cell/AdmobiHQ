@@ -24,6 +24,7 @@ import {
 } from "@/components/icons"
 import { IconBox } from "@/components/ui"
 import { PageHero } from "@/components/ui/page-hero"
+import { usePageHeader } from "@/lib/page-header"
 import {
   radius,
   spacing,
@@ -91,6 +92,7 @@ function formatCurrency(value: number) {
 }
 
 export default function FinancesScreen() {
+  usePageHeader("Finances", { showBack: true, backHref: "/(ops)/profile" })
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [hidden, setHidden] = useState(false)
@@ -258,7 +260,7 @@ export default function FinancesScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: insets.top + spacing.md,
+          paddingTop: spacing.md,
           paddingBottom: insets.bottom + spacing.xl,
         },
       ]}

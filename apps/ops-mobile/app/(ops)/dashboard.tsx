@@ -34,6 +34,7 @@ import { ActivityChart } from "@/components/app/sparkline"
 import { FabMenu, type FabMenuItem } from "@/components/app/fab-menu"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
+import { usePageHeader } from "@/lib/page-header"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
 import { useThemeColors, spacing, typography, radius } from "@/lib/theme"
 import type { RecentSubmission } from "@/hooks/use-recent-submissions"
@@ -88,6 +89,7 @@ function getGreeting(): string {
 }
 
 export default function DashboardScreen() {
+  usePageHeader("Dashboard")
   const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()
