@@ -8,7 +8,6 @@ import { MissionSection } from "./mission-section"
 import { MobileStickyCta } from "./mobile-sticky-cta"
 import { ProcessSection } from "./process"
 import { ProductSection } from "./product-section"
-import { TrustedLogosSection } from "./trusted-logos"
 import { WhyTaxisSection } from "./why-taxis"
 
 export function LandingPage() {
@@ -18,7 +17,6 @@ export function LandingPage() {
       <WhyTaxisSection />
       <MissionSection />
       <ProductSection />
-      <TrustedLogosSection />
       <AudiencesSection />
       <MarketsSection />
       <ProcessSection />
