@@ -1,6 +1,7 @@
 import { useCallback } from "react"
 import { LEAD_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
+import { leadStatusVariant } from "@/components/app/entity-list-rows"
 import { detailValue, EntityDetail } from "@/components/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -17,13 +18,19 @@ export default function LeadDetailScreen() {
       editHref={(recordId) => `/(ops)/leads/edit/${recordId}`}
       statusOptions={LEAD_STATUS_OPTIONS}
       getStatus={(item) => item.status}
+      getStatusVariant={leadStatusVariant}
       onStatusChange={(recordId, status) =>
         client.leads.update(recordId, { status: status as never })
       }
       title={(item) => item.company_name}
       chips={(item) => [
         ...(item.budget_range
-          ? [{ label: detailValue(item.budget_range), variant: "muted" as const }]
+          ? [
+              {
+                label: detailValue(item.budget_range),
+                variant: "muted" as const,
+              },
+            ]
           : []),
       ]}
       sections={(item) => [
@@ -32,7 +39,12 @@ export default function LeadDetailScreen() {
           fields: [
             { label: "Contact name", value: item.contact_name },
             { label: "Email", value: item.email, copyable: true },
-            { label: "Phone", value: item.phone, copyable: true, callable: true },
+            {
+              label: "Phone",
+              value: item.phone,
+              copyable: true,
+              callable: true,
+            },
           ],
         },
         {
@@ -42,7 +54,10 @@ export default function LeadDetailScreen() {
             { label: "Cities", value: detailValue(item.cities) },
             { label: "Formats", value: detailValue(item.ad_formats) },
             { label: "Duration", value: detailValue(item.duration) },
-            { label: "Start date", value: detailValue(item.campaign_start_date) },
+            {
+              label: "Start date",
+              value: detailValue(item.campaign_start_date),
+            },
             { label: "Notes", value: item.additional_info },
           ],
         },

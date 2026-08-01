@@ -11,7 +11,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
-import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import {
+  radius,
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 const layoutStyles = StyleSheet.create({
   screen: {
@@ -168,26 +174,38 @@ export function Card({
 export function IconBox({
   icon: Icon,
   size = 18,
+  boxSize = 40,
+  cornerRadius = radius.md,
+  backgroundColor,
+  bordered = true,
+  iconColor,
 }: {
   icon: AppIcon
   size?: number
+  /** Box side length. Callers with a smaller badge (e.g. 36) should match their prior size exactly. */
+  boxSize?: number
+  cornerRadius?: number
+  /** Defaults to the neutral `c.background` box. Pass a tone (e.g. `c.accentSurface`) for filled/status badges. */
+  backgroundColor?: string
+  bordered?: boolean
+  iconColor?: string
 }) {
   const colors = useThemeColors()
   const styles = useThemedStyles((c) => ({
     iconBox: {
-      width: 40,
-      height: 40,
-      borderRadius: radius.md,
-      borderWidth: 1,
+      width: boxSize,
+      height: boxSize,
+      borderRadius: cornerRadius,
+      borderWidth: bordered ? 1 : 0,
       borderColor: c.border,
-      backgroundColor: c.background,
+      backgroundColor: backgroundColor ?? c.background,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
   }))
   return (
     <View style={styles.iconBox}>
-      <Icon color={colors.primary} size={size} strokeWidth={2} />
+      <Icon color={iconColor ?? colors.primary} size={size} strokeWidth={2} />
     </View>
   )
 }

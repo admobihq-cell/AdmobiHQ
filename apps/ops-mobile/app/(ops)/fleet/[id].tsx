@@ -1,6 +1,7 @@
 import { useCallback } from "react"
 import { FLEET_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
+import { fleetStatusVariant } from "@/components/app/entity-list-rows"
 import { detailValue, EntityDetail } from "@/components/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -17,6 +18,7 @@ export default function FleetDetailScreen() {
       editHref={(recordId) => `/(ops)/fleet/edit/${recordId}`}
       statusOptions={FLEET_STATUS_OPTIONS}
       getStatus={(item) => item.status}
+      getStatusVariant={fleetStatusVariant}
       onStatusChange={(recordId, status) =>
         client.fleet.update(recordId, { status: status as never })
       }
@@ -27,7 +29,12 @@ export default function FleetDetailScreen() {
           fields: [
             { label: "Primary contact", value: item.primary_contact_name },
             { label: "Email", value: item.email, copyable: true },
-            { label: "Phone", value: item.phone, copyable: true, callable: true },
+            {
+              label: "Phone",
+              value: item.phone,
+              copyable: true,
+              callable: true,
+            },
           ],
         },
         {
@@ -36,7 +43,10 @@ export default function FleetDetailScreen() {
             { label: "City", value: item.city },
             { label: "Fleet types", value: detailValue(item.fleet_types) },
             { label: "Fleet size", value: item.fleet_size },
-            { label: "Vehicles active", value: detailValue(item.vehicles_active) },
+            {
+              label: "Vehicles active",
+              value: detailValue(item.vehicles_active),
+            },
             { label: "Notes", value: item.notes },
           ],
         },

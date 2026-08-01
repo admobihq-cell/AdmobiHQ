@@ -1,5 +1,9 @@
 import { useCallback } from "react"
-import { LEAD_STATUSES, formatLabel } from "@workspace/ops-contracts"
+import {
+  LEAD_STATUSES,
+  LEAD_STATUS_OPTIONS,
+  formatLabel,
+} from "@workspace/ops-contracts"
 
 import { LeadListRow } from "@/components/app/entity-list-rows"
 import { EntityList } from "@/components/EntityList"
@@ -8,14 +12,24 @@ import { useOpsClient } from "@/lib/ops-client"
 export default function LeadsScreen() {
   const client = useOpsClient()
   const loadPage = useCallback(
-    (page: number, options?: { status?: string | null; search?: string | null }) =>
+    (
+      page: number,
+      options?: { status?: string | null; search?: string | null }
+    ) =>
       client.leads.list({
         page,
         pageSize: 20,
         status: options?.status ?? undefined,
         search: options?.search ?? undefined,
       }),
-    [client],
+    [client]
+  )
+  const onBulkStatusChange = useCallback(
+    (ids: number[], status: string) =>
+      Promise.all(
+        ids.map((id) => client.leads.update(id, { status: status as never }))
+      ),
+    [client]
   )
 
   return (
@@ -29,6 +43,8 @@ export default function LeadsScreen() {
         key: status,
         label: formatLabel(status),
       }))}
+      statusOptions={LEAD_STATUS_OPTIONS}
+      onBulkStatusChange={onBulkStatusChange}
       detailHref={(id) => `/(ops)/leads/${id}`}
       renderRow={(item, { onPress }) => (
         <LeadListRow item={item} onPress={onPress} />
