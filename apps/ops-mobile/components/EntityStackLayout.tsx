@@ -1,31 +1,6 @@
-import { Pressable } from "react-native"
-import { Stack, useRouter } from "expo-router"
+import { Stack } from "expo-router"
 
-import { ChevronLeft } from "@/components/icons"
 import { useThemeColors } from "@/lib/theme"
-
-function StackBackButton() {
-  const router = useRouter()
-  const colors = useThemeColors()
-
-  return (
-    <Pressable
-      onPress={() => {
-        if (router.canGoBack()) {
-          router.back()
-          return
-        }
-        router.replace("/(ops)/dashboard")
-      }}
-      hitSlop={12}
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-      style={({ pressed }) => [{ marginLeft: -4, opacity: pressed ? 0.6 : 1 }]}
-    >
-      <ChevronLeft color={colors.primary} size={28} />
-    </Pressable>
-  )
-}
 
 export function EntityStackLayout() {
   const colors = useThemeColors()
@@ -64,10 +39,7 @@ export function EntityStackLayout() {
       <Stack.Screen
         name="[id]"
         options={{
-          title: "Details",
-          headerLargeTitle: false,
-          headerBackVisible: false,
-          headerLeft: () => <StackBackButton />,
+          headerShown: false,
         }}
       />
     </Stack>

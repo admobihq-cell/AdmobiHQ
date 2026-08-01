@@ -28,7 +28,7 @@ function joinLabeled(parts: Array<string | null | undefined>): string {
 
 function joinWithOverflow(
   values: string[],
-  maxVisible = 2,
+  maxVisible = 2
 ): string | undefined {
   const labels = values.map((v) => formatLabel(v)).filter((v) => v !== "—")
   if (labels.length === 0) return undefined
@@ -37,7 +37,7 @@ function joinWithOverflow(
 }
 
 export function leadStatusVariant(
-  status: string | null | undefined,
+  status: string | null | undefined
 ): StatusChipVariant {
   switch (status) {
     case "new":
@@ -53,7 +53,7 @@ export function leadStatusVariant(
 }
 
 export function fleetStatusVariant(
-  status: string | null | undefined,
+  status: string | null | undefined
 ): StatusChipVariant {
   switch (status) {
     case "pending":
@@ -68,7 +68,7 @@ export function fleetStatusVariant(
 }
 
 export function driverStatusVariant(
-  status: string | null | undefined,
+  status: string | null | undefined
 ): StatusChipVariant {
   return fleetStatusVariant(status)
 }
@@ -81,6 +81,7 @@ type TriageRowProps = {
   statusVariant?: StatusChipVariant
   time?: string
   onPress: () => void
+  onLongPress?: () => void
 }
 
 function TriageRow({
@@ -91,6 +92,7 @@ function TriageRow({
   statusVariant = "muted",
   time,
   onPress,
+  onLongPress,
 }: TriageRowProps) {
   const colors = useThemeColors()
   const styles = useThemedStyles((c) => ({
@@ -147,6 +149,16 @@ function TriageRow({
         }
         onPress()
       }}
+      onLongPress={
+        onLongPress
+          ? () => {
+              if (Platform.OS !== "web") {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+              }
+              onLongPress()
+            }
+          : undefined
+      }
       onPressIn={() => {
         scale.value = withTiming(0.98, { duration: 100 })
       }}
@@ -179,7 +191,11 @@ function TriageRow({
         {time ? <Text style={styles.time}>{time}</Text> : null}
       </View>
       <View style={styles.chevronWrap}>
-        <ChevronRight color={colors.mutedForeground} size={18} strokeWidth={2} />
+        <ChevronRight
+          color={colors.mutedForeground}
+          size={18}
+          strokeWidth={2}
+        />
       </View>
     </AnimatedPressable>
   )
@@ -188,9 +204,14 @@ function TriageRow({
 type EntityRowProps<T> = {
   item: T
   onPress: () => void
+  onLongPress?: () => void
 }
 
-export function LeadListRow({ item, onPress }: EntityRowProps<LeadDto>) {
+export function LeadListRow({
+  item,
+  onPress,
+  onLongPress,
+}: EntityRowProps<LeadDto>) {
   const meta = joinLabeled([
     item.budget_range ? formatLabel(item.budget_range) : null,
     joinWithOverflow(item.cities),
@@ -206,6 +227,7 @@ export function LeadListRow({ item, onPress }: EntityRowProps<LeadDto>) {
       statusVariant={leadStatusVariant(item.status)}
       time={formatRelativeTime(item.created_at)}
       onPress={onPress}
+      onLongPress={onLongPress}
     />
   )
 }
@@ -213,6 +235,7 @@ export function LeadListRow({ item, onPress }: EntityRowProps<LeadDto>) {
 export function FleetListRow({
   item,
   onPress,
+  onLongPress,
 }: EntityRowProps<FleetPartnerDto>) {
   const subtitle = joinLabeled([
     item.primary_contact_name || null,
@@ -233,11 +256,16 @@ export function FleetListRow({
       statusVariant={fleetStatusVariant(item.status)}
       time={formatRelativeTime(item.created_at)}
       onPress={onPress}
+      onLongPress={onLongPress}
     />
   )
 }
 
-export function DriverListRow({ item, onPress }: EntityRowProps<DriverDto>) {
+export function DriverListRow({
+  item,
+  onPress,
+  onLongPress,
+}: EntityRowProps<DriverDto>) {
   const meta = joinLabeled([
     item.city ? formatLabel(item.city) : null,
     item.vehicle_type ? formatLabel(item.vehicle_type) : null,
@@ -253,6 +281,7 @@ export function DriverListRow({ item, onPress }: EntityRowProps<DriverDto>) {
       statusVariant={driverStatusVariant(item.status)}
       time={formatRelativeTime(item.created_at)}
       onPress={onPress}
+      onLongPress={onLongPress}
     />
   )
 }

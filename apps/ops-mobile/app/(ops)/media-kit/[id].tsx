@@ -8,7 +8,7 @@ export default function MediaKitDetailScreen() {
   const load = useCallback((id: number) => client.mediaKit.get(id), [client])
   const remove = useCallback(
     (id: number) => client.mediaKit.delete(id),
-    [client],
+    [client]
   )
 
   return (
@@ -17,13 +17,12 @@ export default function MediaKitDetailScreen() {
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/media-kit/edit/${recordId}`}
+      backHref="/(ops)/media-kit"
       title={(item) => item.name}
       sections={(item) => [
         {
           title: "Contact",
-          fields: [
-            { label: "Email", value: item.email, copyable: true },
-          ],
+          fields: [{ label: "Email", value: item.email, copyable: true }],
         },
         {
           title: "Metadata",
