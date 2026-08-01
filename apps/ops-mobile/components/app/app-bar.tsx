@@ -18,7 +18,7 @@ export function AppBar() {
 
   const email = getPrimaryEmail(
     user?.emailAddresses,
-    user?.primaryEmailAddressId,
+    user?.primaryEmailAddressId
   )
   const rawName = user?.firstName?.trim() || email?.split("@")[0] || "there"
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)

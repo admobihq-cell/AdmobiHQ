@@ -1,12 +1,20 @@
 import { useState } from "react"
-import { Pressable, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, Text, View } from "react-native"
 import * as Haptics from "expo-haptics"
 import { Platform } from "react-native"
 import type { FormFieldOption } from "@workspace/ops-contracts"
 
-import { StatusChip } from "@/components/app/status-chip"
+import {
+  StatusChip,
+  type StatusChipVariant,
+} from "@/components/app/status-chip"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
-import { spacing, typography, useThemedStyles } from "@/lib/theme"
+import {
+  spacing,
+  typography,
+  useThemeColors,
+  useThemedStyles,
+} from "@/lib/theme"
 
 type StatusPickerProps = {
   label: string
@@ -14,6 +22,8 @@ type StatusPickerProps = {
   options: FormFieldOption[]
   onChange: (value: string) => Promise<void> | void
   disabled?: boolean
+  /** Maps a status value to the same semantic chip color used in list rows, so status color-coding stays consistent between list and detail. Defaults to "primary" if not provided. */
+  getVariant?: (value: string | null | undefined) => StatusChipVariant
 }
 
 export function StatusPicker({
@@ -22,7 +32,9 @@ export function StatusPicker({
   options,
   onChange,
   disabled = false,
+  getVariant,
 }: StatusPickerProps) {
+  const colors = useThemeColors()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -54,7 +66,7 @@ export function StatusPicker({
       .then(() => {
         if (Platform.OS !== "web") {
           void Haptics.notificationAsync(
-            Haptics.NotificationFeedbackType.Success,
+            Haptics.NotificationFeedbackType.Success
           )
         }
         setOpen(false)
@@ -69,14 +81,24 @@ export function StatusPicker({
         <Pressable
           disabled={disabled || saving}
           onPress={() => setOpen(true)}
-          style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [
+            {
+              flexDirection: "row" as const,
+              alignItems: "center" as const,
+              gap: spacing.xs,
+            },
+            pressed && { opacity: 0.7 },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={label}
-          accessibilityState={{ disabled: disabled || saving }}
+          accessibilityState={{ disabled: disabled || saving, busy: saving }}
         >
+          {saving ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : null}
           <StatusChip
             label={current?.label ?? value ?? "Set status"}
-            variant="primary"
+            variant={getVariant ? getVariant(value) : "primary"}
           />
         </Pressable>
       </View>
