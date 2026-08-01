@@ -46,8 +46,8 @@ export default function LeadsScreen() {
       statusOptions={LEAD_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
       detailHref={(id) => `/(ops)/leads/${id}`}
-      renderRow={(item, { onPress }) => (
-        <LeadListRow item={item} onPress={onPress} />
+      renderRow={(item, { onPress, onLongPress }) => (
+        <LeadListRow item={item} onPress={onPress} onLongPress={onLongPress} />
       )}
     />
   )

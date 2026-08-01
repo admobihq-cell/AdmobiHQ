@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import {
   Linking,
   Pressable,
@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from "react-native"
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as Clipboard from "expo-clipboard"
 import * as Haptics from "expo-haptics"
@@ -17,6 +17,7 @@ import type { FormFieldOption } from "@workspace/ops-contracts"
 
 import { SkeletonDetailRecord } from "@/components/app/skeleton"
 import { GroupedSection } from "@/components/app/grouped-list"
+import { AvatarInitials } from "@/components/app/list-row"
 import {
   StatusChip,
   type StatusChipVariant,
@@ -28,6 +29,7 @@ import { StatusPicker } from "@/components/StatusPicker"
 import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
+import { usePageHeader } from "@/lib/page-header"
 import { entityKeys } from "@/lib/query-keys"
 import {
   spacing,
@@ -48,6 +50,9 @@ export type DetailSection = {
   fields: DetailField[]
 }
 
+/** A section titled exactly this renders as a quiet footnote instead of a boxed group — timestamps aren't worth the same visual weight as real record data. */
+const FOOTNOTE_SECTION_TITLE = "Metadata"
+
 type EntityDetailProps<T> = {
   entity: EntityKey
   load: (id: number) => Promise<T>
@@ -58,6 +63,8 @@ type EntityDetailProps<T> = {
   ) => Array<{ label: string; variant?: "default" | "primary" | "muted" }>
   sections: (item: T) => DetailSection[]
   editHref?: (id: number) => string
+  /** List screen this record belongs to, e.g. "/(ops)/fleet" — the app bar's back button lands here. */
+  backHref: string
   statusOptions?: FormFieldOption[]
   onStatusChange?: (id: number, status: string) => Promise<T>
   getStatus?: (item: T) => string | null | undefined
@@ -73,13 +80,13 @@ export function EntityDetail<T>({
   chips,
   sections,
   editHref,
+  backHref,
   statusOptions,
   onStatusChange,
   getStatus,
   getStatusVariant,
 }: EntityDetailProps<T>) {
   const router = useRouter()
-  const navigation = useNavigation()
   const colors = useThemeColors()
   const styles = useThemedStyles((c) => ({
     container: {
@@ -89,29 +96,43 @@ export function EntityDetail<T>({
     content: {
       padding: spacing.lg,
       paddingBottom: spacing.xl,
+      gap: spacing.lg,
+    },
+    identityHeader: {
+      flexDirection: "row" as const,
       gap: spacing.md,
     },
-    heroCard: {
+    identityCopy: {
+      flex: 1,
+      minWidth: 0,
       gap: spacing.sm,
-      marginBottom: spacing.md,
-      padding: spacing.lg,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
     },
-    eyebrow: {
-      ...typography.caption,
-      color: c.primary,
-      textTransform: "uppercase" as const,
-      letterSpacing: 0.8,
-      fontWeight: "700" as const,
+    identityTopRow: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+    },
+    identityActions: {
+      flexDirection: "row" as const,
+      gap: spacing.sm,
+      marginTop: -spacing.xs,
+    },
+    identityActionButton: {
+      padding: spacing.xs,
     },
     title: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: "700" as const,
       color: c.text,
       letterSpacing: -0.3,
+      flexShrink: 1,
+    },
+    statusRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      flexWrap: "wrap" as const,
+      gap: spacing.sm,
     },
     chips: {
       flexDirection: "row" as const,
@@ -153,6 +174,11 @@ export function EntityDetail<T>({
       fontWeight: "600" as const,
       color: c.primary,
     },
+    footnote: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      textAlign: "center" as const,
+    },
     placeholder: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.lg,
@@ -177,6 +203,7 @@ export function EntityDetail<T>({
   })
   const item = itemQuery.data ?? null
   const loading = validId ? itemQuery.isPending : false
+  usePageHeader(item ? title(item) : "Details", { showBack: true, backHref })
 
   const statusMutation = useMutation({
     mutationFn: (status: string) => {
@@ -223,49 +250,6 @@ export function EntityDetail<T>({
     setConfirmDeleteVisible(true)
   }, [remove, item])
 
-  useLayoutEffect(() => {
-    if (!item) return
-
-    navigation.setOptions({
-      title: title(item),
-      headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          {editHref ? (
-            <Pressable
-              onPress={() => router.push(editHref(id) as never)}
-              hitSlop={12}
-              style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-            >
-              <Pencil color={colors.primary} size={22} strokeWidth={2} />
-            </Pressable>
-          ) : null}
-          {remove ? (
-            <Pressable
-              onPress={handleDelete}
-              disabled={deleteMutation.isPending}
-              hitSlop={12}
-              style={({ pressed }) => [pressed && { opacity: 0.6 }]}
-            >
-              <Trash color={colors.destructive} size={22} strokeWidth={2} />
-            </Pressable>
-          ) : null}
-        </View>
-      ),
-    })
-  }, [
-    navigation,
-    remove,
-    editHref,
-    item,
-    deleteMutation.isPending,
-    handleDelete,
-    title,
-    colors.primary,
-    colors.destructive,
-    router,
-    id,
-  ])
-
   const handleCopy = async (value: string) => {
     await Clipboard.setStringAsync(value)
     if (Platform.OS !== "web") {
@@ -283,6 +267,16 @@ export function EntityDetail<T>({
 
   const chipItems = item ? (chips?.(item) ?? []) : []
   const detailSections = item ? sections(item) : []
+  const primarySections = detailSections.filter(
+    (section) => section.title !== FOOTNOTE_SECTION_TITLE
+  )
+  const footnoteSection = detailSections.find(
+    (section) => section.title === FOOTNOTE_SECTION_TITLE
+  )
+  const footnoteText = footnoteSection?.fields
+    .filter((field) => field.value)
+    .map((field) => `${field.label}: ${field.value}`)
+    .join("   ·   ")
 
   return (
     <>
@@ -298,20 +292,65 @@ export function EntityDetail<T>({
           />
         ) : null}
 
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>Record</Text>
-          <Text style={styles.title}>{item ? title(item) : "—"}</Text>
-          {statusOptions?.length && item && onStatusChange ? (
-            <StatusPicker
-              label="Status"
-              value={getStatus?.(item) ?? null}
-              options={statusOptions}
-              onChange={(status) => statusMutation.mutate(status)}
-              getVariant={getStatusVariant}
-            />
-          ) : null}
-          {chipItems.length > 0 ? (
-            <View style={styles.chips}>
+        <View style={styles.identityHeader}>
+          <AvatarInitials name={item ? title(item) : "—"} size={52} />
+          <View style={styles.identityCopy}>
+            <View style={styles.identityTopRow}>
+              <Text style={styles.title} numberOfLines={2}>
+                {item ? title(item) : "—"}
+              </Text>
+              {item && (editHref || remove) ? (
+                <View style={styles.identityActions}>
+                  {editHref ? (
+                    <Pressable
+                      onPress={() => router.push(editHref(id) as never)}
+                      hitSlop={12}
+                      style={({ pressed }) => [
+                        styles.identityActionButton,
+                        pressed && { opacity: 0.6 },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Edit record"
+                    >
+                      <Pencil
+                        color={colors.primary}
+                        size={20}
+                        strokeWidth={2}
+                      />
+                    </Pressable>
+                  ) : null}
+                  {remove ? (
+                    <Pressable
+                      onPress={handleDelete}
+                      disabled={deleteMutation.isPending}
+                      hitSlop={12}
+                      style={({ pressed }) => [
+                        styles.identityActionButton,
+                        pressed && { opacity: 0.6 },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete record"
+                    >
+                      <Trash
+                        color={colors.destructive}
+                        size={20}
+                        strokeWidth={2}
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+            <View style={styles.statusRow}>
+              {statusOptions?.length && item && onStatusChange ? (
+                <StatusPicker
+                  label="Status"
+                  value={getStatus?.(item) ?? null}
+                  options={statusOptions}
+                  onChange={(status) => statusMutation.mutate(status)}
+                  getVariant={getStatusVariant}
+                />
+              ) : null}
               {chipItems.map((chip) => (
                 <StatusChip
                   key={chip.label}
@@ -320,11 +359,11 @@ export function EntityDetail<T>({
                 />
               ))}
             </View>
-          ) : null}
+          </View>
         </View>
 
         {item ? (
-          detailSections.map((section) => (
+          primarySections.map((section) => (
             <GroupedSection key={section.title} title={section.title}>
               <View style={styles.fieldList}>
                 {section.fields.map((field, index) => {
@@ -376,6 +415,10 @@ export function EntityDetail<T>({
             </View>
           </GroupedSection>
         )}
+
+        {footnoteText ? (
+          <Text style={styles.footnote}>{footnoteText}</Text>
+        ) : null}
       </ScrollView>
       <ConfirmDialog
         visible={confirmDeleteVisible}

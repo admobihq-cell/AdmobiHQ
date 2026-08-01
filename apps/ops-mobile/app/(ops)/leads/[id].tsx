@@ -16,6 +16,7 @@ export default function LeadDetailScreen() {
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/leads/edit/${recordId}`}
+      backHref="/(ops)/leads"
       statusOptions={LEAD_STATUS_OPTIONS}
       getStatus={(item) => item.status}
       getStatusVariant={leadStatusVariant}

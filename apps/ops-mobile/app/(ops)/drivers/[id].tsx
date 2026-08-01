@@ -19,6 +19,7 @@ export default function DriverDetailScreen() {
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/drivers/edit/${recordId}`}
+      backHref="/(ops)/drivers"
       statusOptions={DRIVER_STATUS_OPTIONS}
       getStatus={(item) => item.status}
       getStatusVariant={driverStatusVariant}

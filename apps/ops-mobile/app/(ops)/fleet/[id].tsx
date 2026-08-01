@@ -16,6 +16,7 @@ export default function FleetDetailScreen() {
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/fleet/edit/${recordId}`}
+      backHref="/(ops)/fleet"
       statusOptions={FLEET_STATUS_OPTIONS}
       getStatus={(item) => item.status}
       getStatusVariant={fleetStatusVariant}

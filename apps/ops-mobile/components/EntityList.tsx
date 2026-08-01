@@ -11,7 +11,6 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import {
   CheckboxOff,
@@ -39,6 +38,7 @@ import { EmptyState } from "@/components/ui"
 import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"
+import { usePageHeader } from "@/lib/page-header"
 import { entityKeys } from "@/lib/query-keys"
 import {
   radius,
@@ -70,12 +70,12 @@ type EntityListProps<T extends { id: number }> = {
   getStatusVariant?: (item: T) => StatusChipVariant
   renderRow?: (
     item: T,
-    ctx: { onPress: () => void; index: number }
+    ctx: { onPress: () => void; onLongPress: () => void; index: number }
   ) => ReactNode
   filterOptions?: FilterChipOption[]
   detailHref: (id: number) => string
   addHref?: string
-  /** Enables long-list triage: a "Select" toggle, per-row checkboxes, and a bulk status bar. Requires both props together. */
+  /** Enables long-list triage: long-press a row to select it and start a bulk status change. Requires both props together. */
   statusOptions?: FormFieldOption[]
   onBulkStatusChange?: (ids: number[], status: string) => Promise<unknown>
 }
@@ -100,9 +100,9 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   statusOptions,
   onBulkStatusChange,
 }: EntityListProps<T>) {
+  usePageHeader(title)
   const router = useRouter()
   const queryClient = useQueryClient()
-  const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const styles = useThemedStyles((c) => ({
     container: {
@@ -134,16 +134,6 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    selectToggle: {
-      minHeight: 44,
-      paddingHorizontal: spacing.md,
-      justifyContent: "center" as const,
-    },
-    selectToggleText: {
-      ...typography.body,
-      fontWeight: "600" as const,
-      color: c.primary,
-    },
     bulkBar: {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
@@ -152,12 +142,21 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: c.border,
     },
-    bulkBarLabel: {
+    bulkBarLeft: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+    },
+    bulkBarCount: {
+      ...typography.caption,
+      fontWeight: "700" as const,
+      color: c.text,
+    },
+    bulkBarCancel: {
       ...typography.caption,
       fontWeight: "700" as const,
       color: c.mutedForeground,
-      textTransform: "uppercase" as const,
-      letterSpacing: 0.6,
+      paddingVertical: spacing.xs,
     },
     rowInner: {
       flexDirection: "row" as const,
@@ -232,10 +231,13 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [filter, setFilter] = useState<string | null>(null)
   const [errorDismissed, setErrorDismissed] = useState(false)
-  const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkApplying, setBulkApplying] = useState(false)
   const canBulkEdit = Boolean(statusOptions?.length && onBulkStatusChange)
+  // Selection mode is implicit: long-pressing a row selects it, which is
+  // enough to enter "bulk" state on its own — no separate mode toggle to
+  // show or hide.
+  const selectionMode = canBulkEdit && selectedIds.size > 0
 
   function toggleSelected(id: number) {
     setSelectedIds((prev) => {
@@ -246,8 +248,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
     })
   }
 
-  function exitSelectionMode() {
-    setSelectionMode(false)
+  function clearSelection() {
     setSelectedIds(new Set())
   }
 
@@ -259,7 +260,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       if (Platform.OS !== "web") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       }
-      exitSelectionMode()
+      clearSelection()
       void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
     } finally {
       setBulkApplying(false)
@@ -319,7 +320,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   }
 
   const listHeader = (
-    <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+    <View style={[styles.header, { paddingTop: spacing.md }]}>
       <View style={styles.headerTop}>
         <View style={{ flex: 1 }}>
           <PageHero
@@ -332,20 +333,6 @@ export function EntityList<T extends { id: number; created_at?: string }>({
           />
         </View>
         <View style={styles.headerActions}>
-          {canBulkEdit ? (
-            <Pressable
-              style={styles.selectToggle}
-              onPress={() =>
-                selectionMode ? exitSelectionMode() : setSelectionMode(true)
-              }
-              hitSlop={8}
-              accessibilityRole="button"
-            >
-              <Text style={styles.selectToggleText}>
-                {selectionMode ? "Cancel" : "Select"}
-              </Text>
-            </Pressable>
-          ) : null}
           {addHref && !selectionMode ? (
             <Pressable
               style={({ pressed }) => [
@@ -418,13 +405,14 @@ export function EntityList<T extends { id: number; created_at?: string }>({
 
   return (
     <View style={styles.container}>
-      {selectionMode && canBulkEdit ? (
+      {selectionMode ? (
         <View style={styles.bulkBar}>
-          <Text style={styles.bulkBarLabel}>
-            {selectedIds.size > 0
-              ? `${selectedIds.size} selected — set status`
-              : "Select records, then choose a status"}
-          </Text>
+          <View style={styles.bulkBarLeft}>
+            <Text style={styles.bulkBarCount}>{selectedIds.size} selected</Text>
+            <Pressable onPress={clearSelection} hitSlop={8}>
+              <Text style={styles.bulkBarCancel}>Cancel</Text>
+            </Pressable>
+          </View>
           <FilterChips
             options={statusOptions!.map((option) => ({
               key: option.value,
@@ -478,13 +466,19 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         renderItem={({ item, index }) => {
           const openDetail = () => router.push(detailHref(item.id) as never)
           const selected = selectedIds.has(item.id)
-          const rowPress =
-            selectionMode && canBulkEdit
-              ? () => toggleSelected(item.id)
-              : openDetail
+          const rowPress = selectionMode
+            ? () => toggleSelected(item.id)
+            : openDetail
+          const rowLongPress = canBulkEdit
+            ? () => toggleSelected(item.id)
+            : () => {}
           const status = getStatus?.(item)
           const rowContent = renderRow ? (
-            renderRow(item, { onPress: rowPress, index })
+            renderRow(item, {
+              onPress: rowPress,
+              onLongPress: rowLongPress,
+              index,
+            })
           ) : (
             <ListRow
               title={getTitle?.(item) ?? String(item.id)}
@@ -500,6 +494,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
               statusLabel={status ? formatLabel(status) : undefined}
               statusVariant={getStatusVariant?.(item) ?? "muted"}
               onPress={rowPress}
+              onLongPress={rowLongPress}
               showChevron={!selectionMode}
             />
           )
@@ -512,7 +507,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
               ]}
             >
               <View style={styles.rowInner}>
-                {selectionMode && canBulkEdit ? (
+                {selectionMode ? (
                   <Pressable
                     onPress={() => toggleSelected(item.id)}
                     hitSlop={8}

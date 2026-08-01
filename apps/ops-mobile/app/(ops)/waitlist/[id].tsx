@@ -8,7 +8,7 @@ export default function WaitlistDetailScreen() {
   const load = useCallback((id: number) => client.waitlist.get(id), [client])
   const remove = useCallback(
     (id: number) => client.waitlist.delete(id),
-    [client],
+    [client]
   )
 
   return (
@@ -17,6 +17,7 @@ export default function WaitlistDetailScreen() {
       load={load}
       remove={remove}
       editHref={(recordId) => `/(ops)/waitlist/edit/${recordId}`}
+      backHref="/(ops)/waitlist"
       title={(item) => item.email}
       chips={(item) =>
         item.source
