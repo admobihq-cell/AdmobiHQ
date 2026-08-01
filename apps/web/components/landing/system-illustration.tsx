@@ -9,8 +9,11 @@ const stepperNodes = [
 ] as const
 
 export function RouteSignal(props: SVGProps<SVGSVGElement>) {
+  // A varied Nairobi-inspired skyline: stepped building heights, a pointed spire,
+  // and two landmark towers — one echoing KICC (disc + mast), one echoing Britam
+  // Tower's tiered, tapering crown — so both halves read as equally defined.
   const skylinePath =
-    "M 0 380 L 0 360 L 60 360 L 60 322 L 110 322 L 110 358 L 158 358 L 158 302 L 198 290 L 238 302 L 238 348 L 288 348 L 288 312 L 328 312 L 328 280 L 368 280 L 368 340 L 418 340 L 418 296 L 466 296 L 466 358 L 520 358 L 520 320 L 570 320 L 570 348 L 620 348 L 620 306 L 668 306 L 668 360 L 738 360 L 738 332 L 800 332 L 800 380 Z"
+    "M 0 380 L 0 320 L 50 320 L 50 285 L 95 285 L 95 325 L 135 325 L 135 260 L 190 260 L 190 310 L 225 310 L 225 330 L 273 330 L 273 290 L 315 290 L 315 315 L 353 315 L 353 275 L 378 250 L 403 275 L 403 325 L 443 325 L 443 285 L 478 285 L 478 335 L 510 335 L 510 250 L 525 250 L 525 220 L 550 220 L 550 250 L 565 250 L 565 320 L 600 320 L 600 280 L 640 280 L 640 330 L 670 330 L 670 270 L 715 270 L 715 325 L 750 325 L 750 295 L 800 295 L 800 380 Z"
 
   return (
     <svg
@@ -31,8 +34,36 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       </desc>
 
       {/* Nairobi skyline silhouette (decorative, sets place) */}
+      <defs>
+        <pattern id="skyline-windows" width={9} height={11} patternUnits="userSpaceOnUse">
+          <rect x={1.5} y={1.5} width={2.5} height={3} className="fill-foreground/20" />
+          <rect x={5} y={1.5} width={2.5} height={3} className="fill-foreground/20" />
+          <rect x={1.5} y={6.5} width={2.5} height={3} className="fill-foreground/20" />
+          <rect x={5} y={6.5} width={2.5} height={3} className="fill-foreground/20" />
+        </pattern>
+      </defs>
       <path
         d={skylinePath}
+        className="anim-rise fill-foreground/[0.05]"
+        style={{ ["--rise-delay" as string]: `0ms` }}
+      />
+      <path
+        d={skylinePath}
+        fill="url(#skyline-windows)"
+        className="anim-rise"
+        style={{ ["--rise-delay" as string]: `0ms` }}
+      />
+      {/* Landmark tower detail: helipad disc + mast, echoing KICC */}
+      <g className="anim-rise fill-foreground/[0.05]" style={{ ["--rise-delay" as string]: `0ms` }}>
+        <ellipse cx={162.5} cy={258} rx={22} ry={5} />
+        <rect x={161} y={230} width={3} height={28} />
+      </g>
+      {/* Second landmark: mast atop the tiered right-side tower, echoing Britam Tower */}
+      <rect
+        x={536}
+        y={200}
+        width={3}
+        height={20}
         className="anim-rise fill-foreground/[0.05]"
         style={{ ["--rise-delay" as string]: `0ms` }}
       />
