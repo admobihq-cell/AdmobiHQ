@@ -80,14 +80,14 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       </g>
 
       {/* Contact shadow beneath the car */}
-      <ellipse cx={380} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
+      <ellipse cx={365} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
 
       {/* Car: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
       <image
-        href="/art/taxi-car-final.png"
-        x={213}
+        href="/art/suv-hero-2.png"
+        x={210}
         y={280}
-        width={334}
+        width={310}
         height={120}
         preserveAspectRatio="xMidYMid meet"
         className="anim-rise"
@@ -179,10 +179,10 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           preserveAspectRatio="xMidYMid meet"
         />
 
-        {/* Roof mount: two support legs, each sized to reach the car's actual roofline below */}
+        {/* Roof mount: two support legs, centered on the canvas (not the car) */}
         {[
-          { x: 300, roofY: 284 },
-          { x: 400, roofY: 291 },
+          { x: 383, roofY: 281 },
+          { x: 417, roofY: 281 },
         ].map(({ x, roofY }) => (
           <rect
             key={`leg-${x}`}
