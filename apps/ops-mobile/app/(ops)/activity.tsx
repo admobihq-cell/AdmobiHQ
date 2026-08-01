@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SectionList, StyleSheet, Text, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ActivityRow } from "@/components/activity/activity-row"
 import { FilterChips } from "@/components/app/filter-chips"
@@ -17,6 +16,7 @@ import {
 } from "@/lib/activity-feed"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
+import { usePageHeader } from "@/lib/page-header"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 const CATEGORY_OPTIONS = ACTIVITY_CATEGORY_ORDER.map((key) => ({
@@ -25,8 +25,8 @@ const CATEGORY_OPTIONS = ACTIVITY_CATEGORY_ORDER.map((key) => ({
 }))
 
 export default function ActivityScreen() {
+  usePageHeader("Activity", { showBack: true, backHref: "/(ops)/dashboard" })
   const client = useOpsClient()
-  const insets = useSafeAreaInsets()
   const [items, setItems] = useState<ActivityItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -54,7 +54,10 @@ export default function ActivityScreen() {
       ? items.filter((item) => item.category === category)
       : items
     return [
-      { title: "Today", data: filtered.filter((item) => item.group === "today") },
+      {
+        title: "Today",
+        data: filtered.filter((item) => item.group === "today"),
+      },
       {
         title: "Earlier",
         data: filtered.filter((item) => item.group === "earlier"),
@@ -96,7 +99,7 @@ export default function ActivityScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+      <View style={[styles.header, { paddingTop: spacing.md }]}>
         <PageHero
           eyebrow="Operations"
           title="Activity"
@@ -151,7 +154,9 @@ export default function ActivityScreen() {
           </View>
         )}
         ItemSeparatorComponent={() => <View style={styles.divider} />}
-        renderItem={({ item }) => <ActivityRow item={item} onPress={() => {}} />}
+        renderItem={({ item }) => (
+          <ActivityRow item={item} onPress={() => {}} />
+        )}
       />
     </View>
   )

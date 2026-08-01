@@ -23,6 +23,7 @@ type ListRowProps = {
   statusLabel?: string
   statusVariant?: StatusChipVariant
   onPress?: () => void
+  onLongPress?: () => void
   showChevron?: boolean
   rightElement?: React.ReactNode
   destructive?: boolean
@@ -93,6 +94,7 @@ export function ListRow({
   statusLabel,
   statusVariant = "muted",
   onPress,
+  onLongPress,
   showChevron = !!onPress,
   rightElement,
   destructive = false,
@@ -151,6 +153,14 @@ export function ListRow({
     onPress?.()
   }
 
+  const handleLongPress = () => {
+    if (!onLongPress) return
+    if (Platform.OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    }
+    onLongPress()
+  }
+
   const content = (
     <>
       {initials ? <AvatarInitials name={initials} /> : null}
@@ -173,7 +183,11 @@ export function ListRow({
       ) : null}
       {rightElement}
       {showChevron && !rightElement ? (
-        <ChevronRight color={colors.mutedForeground} size={18} strokeWidth={2} />
+        <ChevronRight
+          color={colors.mutedForeground}
+          size={18}
+          strokeWidth={2}
+        />
       ) : null}
     </>
   )
@@ -185,6 +199,7 @@ export function ListRow({
   return (
     <AnimatedPressable
       onPress={handlePress}
+      onLongPress={onLongPress ? handleLongPress : undefined}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[styles.row, animatedStyle]}
