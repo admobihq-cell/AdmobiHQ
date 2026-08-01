@@ -59,75 +59,124 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           style={{ ["--rise-delay" as string]: `350ms` }}
           vectorEffect="non-scaling-stroke"
         />
+        {/* Broadcast pulse: echoes the innermost arc, expanding outward on loop */}
+        <circle
+          cx={400}
+          cy={180}
+          r={60}
+          strokeWidth={1.5}
+          className="anim-pulse opacity-40"
+          vectorEffect="non-scaling-stroke"
+        />
       </g>
 
-      {/* Centerpiece: stylized taxi-top LED unit */}
+      {/* Roof hint: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
+      <ellipse cx={400} cy={302} rx={260} ry={26} className="anim-rise fill-foreground/[0.045]" style={{ ["--rise-delay" as string]: `50ms` }} />
+
+      {/* Centerpiece: stylized taxi-top LED unit, lit up like an active screen at night */}
       <g
         className="anim-rise"
         style={{ ["--rise-delay" as string]: `100ms` }}
       >
-        {/* Unit body */}
-        <rect
-          x={210}
-          y={180}
-          width={380}
-          height={80}
-          rx={6}
-          className="fill-foreground/[0.06] stroke-foreground/40"
-          strokeWidth={1.5}
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Inset LED panel */}
+        <defs>
+          <filter id="screen-glow" x="-60%" y="-120%" width="220%" height="420%">
+            <feGaussianBlur stdDeviation="14" />
+          </filter>
+        </defs>
+
+        {/* Soft light bloom behind the panel */}
         <rect
           x={224}
           y={194}
           width={352}
           height={52}
-          rx={3}
-          className="fill-foreground/[0.10]"
+          rx={8}
+          className="text-primary opacity-40"
+          fill="currentColor"
+          filter="url(#screen-glow)"
         />
-        {/* Brand-kit glyph: two terra dots + signal wave */}
-        <g className="text-primary" stroke="currentColor" fill="currentColor">
-          <path
-            d="M 246 220 Q 258 205 270 220 T 294 220"
-            fill="none"
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+
+        {/* Unit body / housing */}
+        <rect
+          x={210}
+          y={180}
+          width={380}
+          height={80}
+          rx={9}
+          className="fill-foreground/[0.06] stroke-foreground/40"
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+
+        {/* Vent grilles at each end of the housing */}
+        {[222, 232, 242].map((x) => (
+          <line
+            key={`vent-l-${x}`}
+            x1={x}
+            y1={186}
+            x2={x}
+            y2={254}
+            className="stroke-foreground/15"
+            strokeWidth={1.5}
             vectorEffect="non-scaling-stroke"
           />
-          <circle cx={246} cy={220} r={4} />
-          <circle cx={294} cy={220} r={4} />
-        </g>
-        {/* "Admobi" wordmark on the LED face */}
-        <text
-          x={310}
-          y={229}
-          className="fill-primary"
-          fontSize={26}
-          fontWeight={600}
-          letterSpacing={-0.4}
-        >
-          Admobi
-        </text>
-        {/* Mount bracket + roof stub */}
+        ))}
+        {[558, 568, 578].map((x) => (
+          <line
+            key={`vent-r-${x}`}
+            x1={x}
+            y1={186}
+            x2={x}
+            y2={254}
+            className="stroke-foreground/15"
+            strokeWidth={1.5}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+
+        {/* Inset LED panel: dark and emissive, independent of light/dark theme */}
+        <rect x={224} y={194} width={352} height={52} rx={5} fill="#171310" />
         <rect
-          x={370}
-          y={260}
-          width={60}
-          height={10}
-          rx={2}
-          className="fill-foreground/30"
+          x={224}
+          y={194}
+          width={352}
+          height={52}
+          rx={5}
+          fill="none"
+          stroke="#000000"
+          strokeOpacity={0.4}
+          strokeWidth={1}
         />
-        <line
-          x1={400}
-          y1={270}
-          x2={400}
-          y2={288}
-          className="stroke-foreground/30"
-          strokeWidth={2}
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
+
+        {/* Admobi typemark, lit on the screen face */}
+        <image
+          href="/brand/logo-typemark.png"
+          x={400 - 30.5}
+          y={220 - 17}
+          width={61}
+          height={34}
+          preserveAspectRatio="xMidYMid meet"
+        />
+
+        {/* Roof mount: two support legs along the housing */}
+        {[336, 464].map((x) => (
+          <rect
+            key={`leg-${x}`}
+            x={x - 5}
+            y={260}
+            width={10}
+            height={16}
+            rx={2}
+            className="fill-foreground/30"
+          />
+        ))}
+        <rect
+          x={280}
+          y={272}
+          width={240}
+          height={8}
+          rx={4}
+          className="fill-foreground/20"
         />
       </g>
 
@@ -172,8 +221,13 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
         />
+        {/* Pin glyph, echoing the Live chip's marker */}
+        <g className="text-primary" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M 598 50 Q 598 44 604 44 Q 610 44 610 50 Q 610 56 604 64 Q 598 56 598 50 Z" strokeWidth={1.4} />
+          <circle cx={604} cy={50} r={1.6} fill="currentColor" stroke="none" />
+        </g>
         <text
-          x={598}
+          x={620}
           y={62}
           fontSize={9}
           letterSpacing={1.4}
@@ -210,6 +264,14 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           const active = i === 0
           return (
             <g key={node.label}>
+              {active ? (
+                <circle
+                  cx={node.x}
+                  cy={340}
+                  r={7}
+                  className="anim-pulse fill-primary opacity-50"
+                />
+              ) : null}
               <circle
                 cx={node.x}
                 cy={340}

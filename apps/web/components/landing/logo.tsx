@@ -1,10 +1,11 @@
-import {
-  ROUTE_SIGNAL_NODES,
-  ROUTE_SIGNAL_PATH,
-  ROUTE_SIGNAL_STROKE_WIDTH,
-  ROUTE_SIGNAL_VIEWBOX,
-} from "@/lib/brand/geometry"
+import Image from "next/image"
+
 import { cn } from "@workspace/ui/lib/utils"
+
+/** Cropped from assets/brand/logo.png — the same mark used for the mobile apps' app bar, loader, and splash screen. */
+const LOGO_MARK_SRC = "/brand/logo-mark.png"
+const LOGO_MARK_WIDTH = 85
+const LOGO_MARK_HEIGHT = 47
 
 export function Logo({ className }: { className?: string }) {
   return (
@@ -15,31 +16,15 @@ export function Logo({ className }: { className?: string }) {
       )}
     >
       <span className="sr-only">Admobi</span>
-      <svg
-        viewBox={`0 0 ${ROUTE_SIGNAL_VIEWBOX.width} ${ROUTE_SIGNAL_VIEWBOX.height}`}
-        width="36"
-        height="25"
+      <Image
+        src={LOGO_MARK_SRC}
+        alt=""
+        width={LOGO_MARK_WIDTH}
+        height={LOGO_MARK_HEIGHT}
+        priority
         aria-hidden
-        className="shrink-0 text-primary"
-      >
-        <path
-          d={ROUTE_SIGNAL_PATH}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={ROUTE_SIGNAL_STROKE_WIDTH}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {ROUTE_SIGNAL_NODES.map((node) => (
-          <circle
-            key={`${node.cx}-${node.cy}`}
-            cx={node.cx}
-            cy={node.cy}
-            r={node.r}
-            fill="currentColor"
-          />
-        ))}
-      </svg>
+        className="h-[26px] w-auto shrink-0"
+      />
       <span className="text-lg leading-none sm:text-xl">Admobi</span>
     </span>
   )

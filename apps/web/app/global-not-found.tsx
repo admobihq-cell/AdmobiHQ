@@ -12,6 +12,8 @@ import { Container } from "@/components/landing/container"
 import { SiteFooter } from "@/components/landing/site-footer"
 import { SiteHeader } from "@/components/landing/site-header"
 import { ThemeProvider } from "@/components/theme-provider"
+import { isPayloadConfigured } from "@/lib/payload/help-queries"
+import { getRecentBlogPosts } from "@/lib/payload/blog-queries"
 
 import "@workspace/ui/globals.css"
 
@@ -44,6 +46,9 @@ export default async function GlobalNotFound() {
   const serverTheme = getServerThemeClass(
     cookieStore.get(THEME_STORAGE_KEY)?.value,
   )
+  const recentPosts = isPayloadConfigured()
+    ? await getRecentBlogPosts(3).catch(() => [])
+    : []
 
   return (
     <html
@@ -65,7 +70,7 @@ export default async function GlobalNotFound() {
       </head>
       <body className="bg-background text-foreground">
         <ThemeProvider>
-          <SiteHeader />
+          <SiteHeader recentPosts={recentPosts} />
           <main>
             <Container>
               <NotFoundPage
