@@ -14,8 +14,12 @@ type PaginatedResult<T> = {
   totalPages: number
 }
 
-type SerializedEntity<T extends { created_at: Date }> = Omit<T, "created_at"> & {
-  created_at: string
+type SerializedEntity<T extends { created_at: Date }> = {
+  [K in keyof T]: T[K] extends Date
+    ? string
+    : Date extends NonNullable<T[K]>
+      ? Exclude<T[K], Date> | string
+      : T[K]
 }
 
 type SerializedPaginatedResult<T extends { created_at: Date }> = PaginatedResult<
@@ -25,10 +29,15 @@ type SerializedPaginatedResult<T extends { created_at: Date }> = PaginatedResult
 function serializeEntityDates<T extends { created_at: Date }>(
   items: T[],
 ): SerializedEntity<T>[] {
-  return items.map((item) => ({
-    ...item,
-    created_at: item.created_at.toISOString(),
-  }))
+  return items.map((item) => {
+    const out: Record<string, unknown> = { ...item }
+    for (const [key, value] of Object.entries(item)) {
+      if (value instanceof Date) {
+        out[key] = value.toISOString()
+      }
+    }
+    return out as SerializedEntity<T>
+  })
 }
 
 function toPaginatedResult<T extends { created_at: Date }>(
