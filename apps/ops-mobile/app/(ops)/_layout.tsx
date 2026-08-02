@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Tabs } from "expo-router"
 import { Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -10,6 +11,7 @@ import {
 } from "@/components/icons"
 
 import { AppBar } from "@/components/app/app-bar"
+import { NavDrawer } from "@/components/app/nav-drawer"
 import { PageHeaderProvider } from "@/lib/page-header"
 import { useNavigationTheme } from "@/lib/theme"
 
@@ -26,11 +28,12 @@ export default function OpsLayout() {
     colors,
   } = useNavigationTheme()
   const insets = useSafeAreaInsets()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
     <PageHeaderProvider>
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <AppBar />
+        <AppBar onAvatarPress={() => setDrawerOpen(true)} />
         <Tabs
           screenOptions={{
             ...screenOptions,
@@ -171,14 +174,15 @@ export default function OpsLayout() {
             }}
           />
           <Tabs.Screen
-            name="onboarding"
+            name="support"
             options={{
-              title: "Welcome",
+              title: "Support",
               headerShown: false,
               href: null,
             }}
           />
         </Tabs>
+        <NavDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       </View>
     </PageHeaderProvider>
   )

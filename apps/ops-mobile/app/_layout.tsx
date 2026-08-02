@@ -223,6 +223,10 @@ function RootNavigator() {
           />
           <Stack.Screen name="(ops)" options={{ headerShown: false }} />
           <Stack.Screen name="(customer)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="onboarding-replay"
+            options={{ headerShown: false, presentation: "fullScreenModal" }}
+          />
         </Stack>
       </AuthGate>
     </>

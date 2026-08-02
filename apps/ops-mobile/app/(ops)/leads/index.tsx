@@ -31,6 +31,10 @@ export default function LeadsScreen() {
       ),
     [client]
   )
+  const onBulkDelete = useCallback(
+    (ids: number[]) => client.leads.bulk({ action: "delete", ids }),
+    [client]
+  )
 
   return (
     <EntityList
@@ -45,6 +49,7 @@ export default function LeadsScreen() {
       }))}
       statusOptions={LEAD_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
+      onBulkDelete={onBulkDelete}
       detailHref={(id) => `/(ops)/leads/${id}`}
       renderRow={(item, { onPress, onLongPress }) => (
         <LeadListRow item={item} onPress={onPress} onLongPress={onLongPress} />
