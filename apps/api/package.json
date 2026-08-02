@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "prisma generate --schema=../web/prisma/schema.prisma && dotenv -e .env.local -e ../web/.env.local -- next dev --port 3003 --webpack",
+    "dev": "node ../../scripts/prisma-generate-safe.mjs && dotenv -e .env.local -e ../web/.env.local -- next dev --port 3003 --webpack",
     "build": "prisma generate --schema=../web/prisma/schema.prisma && next build --webpack",
     "start": "next start --port 3003",
     "lint": "eslint",

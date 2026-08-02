@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
+import { Eye, Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { ANNOUNCEMENT_FORM_FIELDS, type AnnouncementDto } from "@workspace/ops-contracts"
@@ -20,6 +20,14 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -30,7 +38,7 @@ import {
 
 import { SimpleFormDialog } from "@/components/entity-page"
 import { PageHero } from "@/components/ui/page-hero"
-import { formatDateTime, truncate } from "@/lib/format"
+import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
 type Paginated<T> = {
@@ -58,6 +66,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [pending, setPending] = useState<PendingBroadcast | null>(null)
   const [pendingDelete, setPendingDelete] = useState<AnnouncementDto | null>(null)
+  const [viewing, setViewing] = useState<AnnouncementDto | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -122,15 +131,15 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead>Sent</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
+              <TableHead className="w-[9rem]">Sent</TableHead>
+              <TableHead className="w-[12rem]">Title</TableHead>
+              <TableHead className="w-[8rem]">Category</TableHead>
               <TableHead>Message</TableHead>
-              <TableHead>Delivered</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="w-[7rem]">Delivered</TableHead>
+              <TableHead className="w-[6rem]">Status</TableHead>
               <TableHead className="w-[1%] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -147,15 +156,26 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
             ) : (
               data.items.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{formatDateTime(row.created_at)}</TableCell>
-                  <TableCell className="font-medium">{row.title}</TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {formatDateTime(row.created_at)}
+                  </TableCell>
+                  <TableCell className="truncate font-medium" title={row.title}>
+                    {row.title}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{row.category ?? "announcement"}</Badge>
                   </TableCell>
-                  <TableCell className="max-w-sm text-muted-foreground">
-                    {truncate(row.body, 80)}
+                  <TableCell className="max-w-0">
+                    <button
+                      type="button"
+                      className="block w-full truncate text-left text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                      onClick={() => setViewing(row)}
+                      title="View full announcement"
+                    >
+                      {row.body}
+                    </button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
                     {row.delivered_count}/{row.target_count}
                     {row.invalid_count > 0 ? ` · ${row.invalid_count} invalid` : ""}
                   </TableCell>
@@ -170,6 +190,14 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewing(row)}
+                      >
+                        <Eye data-icon="inline-start" />
+                        View
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -226,6 +254,86 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           })
         }}
       />
+
+      <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          {viewing ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{viewing.title}</DialogTitle>
+                <DialogDescription>
+                  Sent {formatDateTime(viewing.created_at)}
+                  {viewing.sent_by_email ? ` · ${viewing.sent_by_email}` : ""}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{viewing.category ?? "announcement"}</Badge>
+                {viewing.deleted_at ? (
+                  <Badge variant="destructive">Deleted</Badge>
+                ) : (
+                  <Badge variant={viewing.status === "failed" ? "destructive" : "secondary"}>
+                    {viewing.status}
+                  </Badge>
+                )}
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {viewing.delivered_count}/{viewing.target_count} delivered
+                  {viewing.invalid_count > 0 ? ` · ${viewing.invalid_count} invalid` : ""}
+                </span>
+              </div>
+
+              {viewing.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL; Next Image not needed here
+                <img
+                  src={viewing.image_url}
+                  alt=""
+                  className="max-h-64 w-full rounded-lg border object-cover"
+                />
+              ) : null}
+
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                {viewing.body}
+              </p>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={() => setViewing(null)}>
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => {
+                    setPending({
+                      title: viewing.title,
+                      body: viewing.body,
+                      category: viewing.category ?? "announcement",
+                      mode: "resend",
+                    })
+                    setViewing(null)
+                  }}
+                >
+                  <RotateCcw data-icon="inline-start" />
+                  Resend
+                </Button>
+                {viewing.deleted_at ? null : (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={deleting}
+                    onClick={() => {
+                      setPendingDelete(viewing)
+                      setViewing(null)
+                    }}
+                  >
+                    <Trash2 data-icon="inline-start" />
+                    Delete
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
         <AlertDialogContent>
