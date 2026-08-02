@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { BRAND_CREAM } from "@/lib/brand/constants"
+const BRAND_CREAM = "#FAF9F7"
 
-// Native crop of assets/brand/logo.png (apps/web/public/brand/logo-mark.png) is 85×47.
+// Native crop of public/brand/logo-mark.png is 85×47.
 const MARK_ASPECT = 47 / 85
 
 let cachedMarkDataUri: string | null = null
@@ -17,14 +17,14 @@ function getMarkDataUri(): string {
   return cachedMarkDataUri
 }
 
-type BrandTileProps = {
+type LogoBrandTileProps = {
   size: number
   padding?: number
   borderRadius?: number
 }
 
-/** Cream tile + the actual terracotta logo mark — matches the mobile apps' app icon exactly. */
-export function BrandTile({ size, padding, borderRadius }: BrandTileProps) {
+/** Cream tile + the actual terracotta logo mark — matches admobihq.com's favicon exactly. */
+export function LogoBrandTile({ size, padding, borderRadius }: LogoBrandTileProps) {
   const inset = padding ?? Math.round(size * 0.24)
   const radius = borderRadius ?? Math.round(size * 0.125)
   const markWidth = size - inset * 2
