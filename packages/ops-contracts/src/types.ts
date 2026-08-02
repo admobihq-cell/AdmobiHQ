@@ -145,6 +145,8 @@ export type AnnouncementDto = {
   invalid_count: number
   status: string
   created_at: string
+  deleted_at: string | null
+  deleted_by_email: string | null
 }
 
 export type AuditEventDto = {

@@ -193,8 +193,13 @@ export default function AnnouncementsScreen() {
     setDeleting(true)
     try {
       await client.notifications.delete(deleteTarget.id)
+      const deletedAt = new Date().toISOString()
       setDeleteTarget(null)
-      setItems((current) => current.filter((item) => item.id !== deleteTarget.id))
+      setItems((current) =>
+        current.map((item) =>
+          item.id === deleteTarget.id ? { ...item, deleted_at: deletedAt } : item,
+        ),
+      )
     } catch (err) {
       setError(formatOpsError(err, API_URL))
       setDeleteTarget(null)
@@ -295,6 +300,8 @@ export default function AnnouncementsScreen() {
               meta={formatRelativeTime(item.created_at)}
               initials={item.title}
               showChevron={false}
+              statusLabel={item.deleted_at ? "Deleted" : undefined}
+              statusVariant="muted"
               rightElement={
                 <View style={styles.rowActions}>
                   <Pressable
@@ -310,18 +317,20 @@ export default function AnnouncementsScreen() {
                     <RefreshCcw color={colors.primary} size={14} />
                     <Text style={styles.resendLabel}>Resend</Text>
                   </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.deleteButton,
-                      pressed && { opacity: 0.7 },
-                    ]}
-                    onPress={() => setDeleteTarget(item)}
-                    disabled={deleting}
-                    accessibilityLabel={`Delete ${item.title}`}
-                    hitSlop={8}
-                  >
-                    <Trash color={colors.mutedForeground} size={14} />
-                  </Pressable>
+                  {item.deleted_at ? null : (
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.deleteButton,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                      onPress={() => setDeleteTarget(item)}
+                      disabled={deleting}
+                      accessibilityLabel={`Delete ${item.title}`}
+                      hitSlop={8}
+                    >
+                      <Trash color={colors.mutedForeground} size={14} />
+                    </Pressable>
+                  )}
                 </View>
               }
             />
