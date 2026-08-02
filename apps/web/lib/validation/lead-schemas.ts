@@ -71,8 +71,17 @@ export const mediaKitSchema = z.object({
   email: z.string().trim().email("Use a valid email address."),
 })
 
+export const supportContactSchema = z.object({
+  contact_name: z.string().trim().min(1, "Enter your name"),
+  contact_email: z.string().trim().email("Use a valid email address."),
+  category: z.enum(["general", "billing", "campaign", "technical", "driver"]),
+  subject: z.string().trim().min(1, "Add a subject").max(200),
+  message: z.string().trim().min(1, "Tell us what's going on").max(5000),
+})
+
 export type CampaignLeadInput = z.infer<typeof campaignLeadSchema>
 export type FleetLeadInput = z.infer<typeof fleetLeadSchema>
 export type LeadBodyInput = z.infer<typeof leadBodySchema>
 export type DriverJoinInput = z.infer<typeof driverJoinSchema>
 export type MediaKitInput = z.infer<typeof mediaKitSchema>
+export type SupportContactInput = z.infer<typeof supportContactSchema>
