@@ -49,6 +49,7 @@ import {
   radius,
   spacing,
   typography,
+  useResolvedTheme,
   useThemeColors,
   useThemedStyles,
 } from "@/lib/theme"
@@ -121,6 +122,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const router = useRouter()
   const queryClient = useQueryClient()
   const colors = useThemeColors()
+  const resolvedTheme = useResolvedTheme()
   const insets = useSafeAreaInsets()
   const styles = useThemedStyles((c) => ({
     container: {
@@ -491,6 +493,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
+        extraData={`${resolvedTheme}:${selectionMode}:${selectedIds.size}`}
         ListHeaderComponent={listHeader}
         refreshControl={
           <RefreshControl
