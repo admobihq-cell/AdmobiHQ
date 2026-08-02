@@ -274,8 +274,8 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
               Delete this announcement?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              &ldquo;{pendingDelete?.title}&rdquo; will be hidden from the customer app and this
-              list. The record is kept for audit history, not permanently erased.
+              &ldquo;{pendingDelete?.title}&rdquo; will be hidden from the customer app. It stays
+              in this list marked as Deleted for audit history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -300,8 +300,8 @@ export default function AnnouncementsScreen() {
               meta={formatRelativeTime(item.created_at)}
               initials={item.title}
               showChevron={false}
-              statusLabel={item.deleted_at ? "Deleted" : undefined}
-              statusVariant="muted"
+              statusLabel={item.deleted_at ? "Deleted" : item.status}
+              statusVariant={item.deleted_at ? "attention" : "muted"}
               rightElement={
                 <View style={styles.rowActions}>
                   <Pressable
@@ -362,7 +362,7 @@ export default function AnnouncementsScreen() {
         title="Delete this announcement?"
         message={
           deleteTarget
-            ? `"${deleteTarget.title}" will be hidden from the customer app and this list. The record is kept for audit history, not permanently erased.`
+            ? `"${deleteTarget.title}" will be hidden from the customer app. It stays in this list marked as Deleted for audit history.`
             : undefined
         }
         confirmLabel={deleting ? "Deleting…" : "Delete"}

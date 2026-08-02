@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
 
-/** Soft delete — keeps the row (and its push-ticket history) for audit, hides it from ops and the customer feed. */
+/** Soft delete — keeps the row (and its push-ticket history) for ops audit, hides it from the customer feed. */
 export async function DELETE(_req: Request, { params }: Params) {
   let access
   try {
