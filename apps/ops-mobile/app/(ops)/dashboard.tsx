@@ -16,7 +16,6 @@ import {
   Car,
   ChevronRight,
   FileText,
-  LifeBuoy,
   Mail,
   Megaphone,
   Send,
@@ -375,11 +374,6 @@ export default function DashboardScreen() {
               icon={FileText}
               label="Media kit"
               onPress={() => router.push("/(ops)/media-kit")}
-            />
-            <ActionCard
-              icon={LifeBuoy}
-              label="Support"
-              onPress={() => router.push("/(ops)/support")}
             />
           </View>
         </View>

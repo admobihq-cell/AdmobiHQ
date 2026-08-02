@@ -1,11 +1,9 @@
 import { useRouter } from "expo-router"
 
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
-import { usePageHeader } from "@/lib/page-header"
 
-/** Replay entry point for the first-run onboarding carousel, reachable from Profile. Does not touch the AsyncStorage-persisted "completed" flag used by the auth gate — this is just a manual replay. */
+/** Replay entry point for the first-run onboarding carousel, reachable from Profile. Lives at the root stack (not inside (ops)) so it renders full-screen with no app bar or tab bar, matching the real first-run experience. Does not touch the AsyncStorage-persisted "completed" flag used by the auth gate — this is just a manual replay. */
 export default function OnboardingReplayScreen() {
-  usePageHeader("Welcome", { showBack: true, backHref: "/(ops)/profile" })
   const router = useRouter()
 
   return (

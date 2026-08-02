@@ -9,10 +9,10 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
-import { formatRelativeTime } from "@workspace/ops-contracts"
+import { formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
 import { Inbox, Plus, RefreshCcw, Trash } from "@/components/icons"
-import { ListRow } from "@/components/app/list-row"
+import { StatusChip } from "@/components/app/status-chip"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
@@ -84,31 +84,46 @@ export default function AnnouncementsScreen() {
     separator: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: c.border,
-      marginLeft: 68,
+      marginLeft: 16,
     },
-    resendButton: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: radius.md,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border,
+    itemRow: {
       flexDirection: "row" as const,
-      alignItems: "center" as const,
+      alignItems: "flex-start" as const,
+      gap: spacing.sm,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      minHeight: 56,
+    },
+    itemContent: {
+      flex: 1,
+      minWidth: 0,
       gap: 4,
     },
-    resendLabel: {
+    itemTitle: {
+      ...typography.headline,
+      fontSize: 16,
+      color: c.text,
+    },
+    itemMetaRow: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      alignItems: "center" as const,
+      gap: 6,
+    },
+    itemMeta: {
       ...typography.caption,
-      fontWeight: "600" as const,
-      color: c.primary,
+      color: c.mutedForeground,
+      flexShrink: 1,
     },
     rowActions: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       gap: spacing.xs,
+      paddingTop: 2,
     },
-    deleteButton: {
-      width: 30,
-      height: 30,
+    iconButton: {
+      width: 32,
+      height: 32,
       borderRadius: radius.md,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
@@ -294,46 +309,50 @@ export default function AnnouncementsScreen() {
               index === items.length - 1 && styles.rowLast,
             ]}
           >
-            <ListRow
-              title={item.title}
-              subtitle={`${item.category ?? "announcement"} · ${item.delivered_count}/${item.target_count} delivered`}
-              meta={formatRelativeTime(item.created_at)}
-              initials={item.title}
-              showChevron={false}
-              statusLabel={item.deleted_at ? "Deleted" : item.status}
-              statusVariant={item.deleted_at ? "attention" : "muted"}
-              rightElement={
-                <View style={styles.rowActions}>
+            <View style={styles.itemRow}>
+              <View style={styles.itemContent}>
+                <Text style={styles.itemTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <View style={styles.itemMetaRow}>
+                  <StatusChip
+                    label={item.deleted_at ? "Deleted" : formatLabel(item.status)}
+                    variant={item.deleted_at ? "attention" : "muted"}
+                  />
+                  <Text style={styles.itemMeta} numberOfLines={1}>
+                    {`${item.category ?? "announcement"} · ${item.delivered_count}/${item.target_count} delivered · ${formatRelativeTime(item.created_at)}`}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.rowActions}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.iconButton,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => setResendTarget(item)}
+                  disabled={resending}
+                  accessibilityLabel={`Resend ${item.title}`}
+                  hitSlop={8}
+                >
+                  <RefreshCcw color={colors.primary} size={16} />
+                </Pressable>
+                {item.deleted_at ? null : (
                   <Pressable
                     style={({ pressed }) => [
-                      styles.resendButton,
+                      styles.iconButton,
                       pressed && { opacity: 0.7 },
                     ]}
-                    onPress={() => setResendTarget(item)}
-                    disabled={resending}
-                    accessibilityLabel={`Resend ${item.title}`}
+                    onPress={() => setDeleteTarget(item)}
+                    disabled={deleting}
+                    accessibilityLabel={`Delete ${item.title}`}
                     hitSlop={8}
                   >
-                    <RefreshCcw color={colors.primary} size={14} />
-                    <Text style={styles.resendLabel}>Resend</Text>
+                    <Trash color={colors.mutedForeground} size={16} />
                   </Pressable>
-                  {item.deleted_at ? null : (
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.deleteButton,
-                        pressed && { opacity: 0.7 },
-                      ]}
-                      onPress={() => setDeleteTarget(item)}
-                      disabled={deleting}
-                      accessibilityLabel={`Delete ${item.title}`}
-                      hitSlop={8}
-                    >
-                      <Trash color={colors.mutedForeground} size={14} />
-                    </Pressable>
-                  )}
-                </View>
-              }
-            />
+                )}
+              </View>
+            </View>
             {index < items.length - 1 ? (
               <View style={styles.separator} />
             ) : null}
