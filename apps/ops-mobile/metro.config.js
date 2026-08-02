@@ -38,10 +38,15 @@ config.resolver.nodeModulesPaths = [
 ]
 
 const appsDir = path.resolve(workspaceRoot, "apps").replace(/\\/g, "/")
+const escapedAppsDir = appsDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+// Metro's Windows FallbackWatcher calls fs.watch() on every crawled dir.
+// Ignore must match the `android` folder itself (not only children), or the
+// walker descends into ephemeral Gradle/Kotlin caches and crashes with ENOENT
+// when those paths disappear mid-watch.
 config.resolver.blockList = [
-  new RegExp(
-    `${appsDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/[^/]+/\\.next/.*`,
-  ),
+  new RegExp(`${escapedAppsDir}/[^/]+/\\.next(/|$)`),
+  /expo-modules-autolinking\/android(\/|$)/,
+  /\/android\/.*\/build(\/|$)/,
 ]
 
 function resolveFromMobile(moduleName) {
