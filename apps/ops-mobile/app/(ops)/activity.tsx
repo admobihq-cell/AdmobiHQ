@@ -5,7 +5,7 @@ import { ActivityRow } from "@/components/activity/activity-row"
 import { FilterChips } from "@/components/app/filter-chips"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
-import { Inbox } from "@/components/icons"
+import { Clock, Inbox } from "@/components/icons"
 import { PageHero } from "@/components/ui/page-hero"
 import {
   ACTIVITY_CATEGORY_LABELS,
@@ -101,7 +101,7 @@ export default function ActivityScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: spacing.md }]}>
         <PageHero
-          eyebrow="Operations"
+          icon={Clock}
           title="Activity"
           compact
           description="Who changed what — ops edits, public submissions, and broadcasts."
