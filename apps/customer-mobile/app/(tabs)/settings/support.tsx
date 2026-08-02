@@ -11,7 +11,8 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { ChevronRight } from "@/components/icons"
+import { ChevronRight, HelpCircle } from "@/components/icons"
+import { CategoryIcon, SUPPORT_CATEGORIES, SupportStatusPill } from "@/components/support/support-ui"
 import { useCustomerSession } from "@/lib/auth/use-customer-session"
 import {
   createSupportCase,
@@ -20,21 +21,6 @@ import {
   type SupportCase,
 } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-
-const CATEGORIES: { value: string; label: string }[] = [
-  { value: "general", label: "General" },
-  { value: "billing", label: "Billing" },
-  { value: "campaign", label: "Campaign" },
-  { value: "technical", label: "Technical" },
-  { value: "driver", label: "Driver" },
-]
-
-const STATUS_LABELS: Record<string, string> = {
-  open: "Open",
-  pending: "Awaiting you",
-  resolved: "Resolved",
-  closed: "Closed",
-}
 
 export default function SupportSettingsScreen() {
   const router = useRouter()
@@ -78,7 +64,10 @@ export default function SupportSettingsScreen() {
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
-    container: { padding: spacing.lg, gap: spacing.lg },
+    container: { padding: spacing.lg, gap: spacing.xl },
+    intro: { gap: spacing.xs },
+    introTitle: { ...typography.title, color: c.text },
+    introBody: { ...typography.bodySm, color: c.mutedForeground },
     sectionLabel: {
       ...typography.caption,
       color: c.mutedForeground,
@@ -94,6 +83,7 @@ export default function SupportSettingsScreen() {
       backgroundColor: c.surface,
       gap: spacing.md,
     },
+    fieldGroup: { gap: 6 },
     label: {
       ...typography.label,
       color: c.text,
@@ -112,30 +102,34 @@ export default function SupportSettingsScreen() {
       minHeight: 96,
       textAlignVertical: "top" as const,
     },
-    chipRow: {
+    chipGrid: {
       flexDirection: "row" as const,
       flexWrap: "wrap" as const,
       gap: spacing.sm,
     },
     chip: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: 8,
-      borderRadius: radius.full,
+      flexBasis: "30%" as const,
+      flexGrow: 1,
+      alignItems: "center" as const,
+      gap: 6,
+      paddingVertical: 12,
+      paddingHorizontal: spacing.xs,
+      borderRadius: radius.md,
       borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.bg,
     },
     chipActive: {
-      backgroundColor: c.primary,
+      backgroundColor: `${c.primary}0F`,
       borderColor: c.primary,
     },
     chipText: {
-      ...typography.bodySm,
-      color: c.text,
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.mutedForeground,
     },
     chipTextActive: {
-      color: c.primaryForeground,
-      fontWeight: "700" as const,
+      color: c.primary,
     },
     submit: {
       marginTop: spacing.xs,
@@ -166,9 +160,26 @@ export default function SupportSettingsScreen() {
       borderColor: c.border,
       backgroundColor: c.surface,
     },
+    caseIconTile: {
+      width: 34,
+      height: 34,
+      borderRadius: radius.sm,
+      backgroundColor: c.muted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
     caseCopy: { flex: 1, gap: 2 },
     caseSubject: { ...typography.section, color: c.text },
     caseMeta: { ...typography.caption, color: c.mutedForeground },
+    emptyCard: {
+      alignItems: "flex-start" as const,
+      gap: spacing.xs,
+      padding: spacing.lg,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderStyle: "dashed" as const,
+      borderColor: c.border,
+    },
     emptyText: { ...typography.bodySm, color: c.mutedForeground },
   }))
 
@@ -210,43 +221,56 @@ export default function SupportSettingsScreen() {
         contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.intro}>
+          <Text style={styles.introTitle}>Help &amp; contact</Text>
+          <Text style={styles.introBody}>
+            Billing, campaigns, or anything else — send a request and we&apos;ll
+            reply here, usually within one business day.
+          </Text>
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>New request</Text>
 
-          <View>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Your name</Text>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
               placeholder="Jane Doe"
+              placeholderTextColor={colors.mutedForeground}
               autoCapitalize="words"
             />
           </View>
 
-          <View>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Email</Text>
             <TextInput
               style={styles.input}
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
+              placeholderTextColor={colors.mutedForeground}
               autoCapitalize="none"
               keyboardType="email-address"
             />
           </View>
 
-          <View>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Category</Text>
-            <View style={styles.chipRow}>
-              {CATEGORIES.map((option) => {
+            <View style={styles.chipGrid}>
+              {SUPPORT_CATEGORIES.map((option) => {
                 const active = option.value === category
                 return (
                   <Pressable
                     key={option.value}
                     style={[styles.chip, active && styles.chipActive]}
                     onPress={() => setCategory(option.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
                   >
+                    <option.icon size={18} color={active ? colors.primary : colors.mutedForeground} />
                     <Text style={[styles.chipText, active && styles.chipTextActive]}>
                       {option.label}
                     </Text>
@@ -256,23 +280,25 @@ export default function SupportSettingsScreen() {
             </View>
           </View>
 
-          <View>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Subject</Text>
             <TextInput
               style={styles.input}
               value={subject}
               onChangeText={setSubject}
               placeholder="What's this about?"
+              placeholderTextColor={colors.mutedForeground}
             />
           </View>
 
-          <View>
+          <View style={styles.fieldGroup}>
             <Text style={styles.label}>Message</Text>
             <TextInput
               style={[styles.input, styles.messageInput]}
               value={message}
               onChangeText={setMessage}
               placeholder="Tell us what's going on"
+              placeholderTextColor={colors.mutedForeground}
               multiline
             />
           </View>
@@ -283,9 +309,10 @@ export default function SupportSettingsScreen() {
             style={[styles.submit, submitting && styles.submitDisabled]}
             onPress={handleSubmit}
             disabled={submitting}
+            accessibilityRole="button"
           >
             {submitting ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.primaryForeground} />
             ) : (
               <Text style={styles.submitText}>Send request</Text>
             )}
@@ -297,22 +324,30 @@ export default function SupportSettingsScreen() {
           {loadingCases ? (
             <ActivityIndicator />
           ) : cases.length === 0 ? (
-            <Text style={styles.emptyText}>
-              Requests you send will show up here on this device.
-            </Text>
+            <View style={styles.emptyCard}>
+              <HelpCircle size={18} color={colors.mutedForeground} />
+              <Text style={styles.emptyText}>
+                Requests you send will show up here on this device.
+              </Text>
+            </View>
           ) : (
             cases.map((item) => (
               <Pressable
                 key={item.id}
                 style={styles.caseRow}
                 onPress={() => router.push(`/settings/support/${item.id}`)}
+                accessibilityRole="button"
               >
-                <View style={styles.caseCopy}>
-                  <Text style={styles.caseSubject}>{item.subject}</Text>
-                  <Text style={styles.caseMeta}>
-                    #{item.id} · {STATUS_LABELS[item.status] ?? item.status}
-                  </Text>
+                <View style={styles.caseIconTile}>
+                  <CategoryIcon category={item.category} size={16} color={colors.mutedForeground} />
                 </View>
+                <View style={styles.caseCopy}>
+                  <Text style={styles.caseSubject} numberOfLines={1}>
+                    {item.subject}
+                  </Text>
+                  <Text style={styles.caseMeta}>#{item.id}</Text>
+                </View>
+                <SupportStatusPill status={item.status} />
                 <ChevronRight size={18} color={colors.mutedForeground} />
               </Pressable>
             ))

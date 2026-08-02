@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useUser } from "@clerk/nextjs"
-import { ArrowLeft, Loader2, Send } from "lucide-react"
+import { ArrowLeft, Lock, Phone, Send, UserCircle, X } from "lucide-react"
 import { toast } from "sonner"
 
 import {
@@ -18,6 +18,7 @@ import { formatApiError } from "@workspace/ops-api-client"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Select,
   SelectContent,
@@ -29,8 +30,18 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { StatusBadge } from "@/components/status-badge"
+import { SupportCategoryIcon } from "@/components/support-category-icon"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("")
+}
 
 export function CaseDetailView({ caseId }: { caseId: number }) {
   const client = useOpsClient()
@@ -55,6 +66,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
   }, [client, caseId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [load])
 
@@ -120,8 +132,11 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center py-24">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div className="flex flex-1 flex-col gap-6">
+        <Skeleton className="h-4 w-32 rounded" />
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
       </div>
     )
   }
@@ -141,7 +156,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
     <div className="flex flex-1 flex-col gap-6">
       <Link
         href="/support"
-        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
         Back to support
@@ -149,22 +164,38 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
 
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">{data.subject}</h1>
-            <p className="text-sm text-muted-foreground">
-              #{data.id} · {data.contact_name} ({data.contact_email})
-              {data.contact_phone ? ` · ${data.contact_phone}` : ""}
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+              {initials(data.contact_name)}
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-lg font-semibold tracking-tight">{data.subject}</h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <span>#{data.id}</span>
+                <span>
+                  {data.contact_name} · {data.contact_email}
+                </span>
+                {data.contact_phone ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="size-3.5" />
+                    {data.contact_phone}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{formatLabel(data.channel)}</Badge>
-            <Badge variant="outline">{formatLabel(data.category)}</Badge>
+            <Badge variant="outline" className="gap-1">
+              <SupportCategoryIcon category={data.category} className="size-3" />
+              {formatLabel(data.category)}
+            </Badge>
             <StatusBadge status={data.status} />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t pt-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-3 border-t pt-4">
+          <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">Status</span>
             <Select
               value={data.status}
@@ -186,7 +217,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
             </Select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">Priority</span>
             <Select
               value={data.priority}
@@ -208,18 +239,25 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
             </Select>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Assignee</span>
             {data.assigned_to_email ? (
-              <>
-                <span className="text-xs text-muted-foreground">
-                  Assigned to {data.assigned_to_email}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => void unassign()} disabled={updating}>
-                  Unassign
-                </Button>
-              </>
+              <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 py-1 pr-1 pl-2.5 text-sm">
+                <UserCircle className="size-3.5 text-muted-foreground" />
+                {data.assigned_to_email}
+                <button
+                  type="button"
+                  onClick={() => void unassign()}
+                  disabled={updating}
+                  aria-label="Unassign"
+                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
             ) : (
               <Button variant="outline" size="sm" onClick={() => void assignToMe()} disabled={updating}>
+                <UserCircle className="size-3.5" />
                 Assign to me
               </Button>
             )}
@@ -227,34 +265,61 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-6">
-        {data.messages.map((message) => {
+      <div className="flex flex-col rounded-xl border bg-card p-6">
+        {data.messages.map((message, index) => {
           const isCustomer = message.author_type === "customer"
+          const prev = data.messages[index - 1]
+          const grouped =
+            prev !== undefined &&
+            prev.author_type === message.author_type &&
+            prev.internal_note === message.internal_note
+
           return (
             <div
               key={message.id}
-              className={cn("flex flex-col gap-1", isCustomer ? "items-start" : "items-end")}
+              className={cn(
+                "flex items-end gap-2.5",
+                isCustomer ? "flex-row" : "flex-row-reverse",
+                index === 0 ? "mt-0" : grouped ? "mt-1.5" : "mt-4",
+              )}
             >
               <div
                 className={cn(
-                  "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-                  message.internal_note
-                    ? "border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
-                    : isCustomer
-                      ? "border bg-muted text-foreground"
-                      : "bg-primary text-primary-foreground",
+                  "flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                  grouped && "opacity-0",
+                  isCustomer ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground",
                 )}
+                aria-hidden={grouped}
               >
-                {message.body}
+                {isCustomer ? initials(data.contact_name) : "AH"}
               </div>
-              <span className="text-xs text-muted-foreground">
-                {message.internal_note
-                  ? "Internal note"
-                  : isCustomer
-                    ? data.contact_name
-                    : (message.author_email ?? "Admobi team")}{" "}
-                · {formatDateTime(message.created_at)}
-              </span>
+              <div className={cn("flex max-w-[75%] flex-col gap-1", isCustomer ? "items-start" : "items-end")}>
+                <div
+                  className={cn(
+                    "rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
+                    message.internal_note
+                      ? "rounded-br-sm flex items-start gap-1.5 border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                      : isCustomer
+                        ? "rounded-bl-sm border bg-muted text-foreground"
+                        : "rounded-br-sm bg-primary text-primary-foreground",
+                  )}
+                >
+                  {message.internal_note ? (
+                    <Lock className="mt-0.5 size-3 shrink-0" aria-hidden />
+                  ) : null}
+                  {message.body}
+                </div>
+                {!grouped ? (
+                  <span className="px-1 text-[11px] text-muted-foreground">
+                    {message.internal_note
+                      ? "Internal note"
+                      : isCustomer
+                        ? data.contact_name
+                        : (message.author_email ?? "Admobi team")}{" "}
+                    · {formatDateTime(message.created_at)}
+                  </span>
+                ) : null}
+              </div>
             </div>
           )
         })}
@@ -266,6 +331,9 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
           onChange={(e) => setReply(e.target.value)}
           placeholder="Write a reply…"
           rows={4}
+          className={cn(
+            internalNote && "border-amber-300 focus-visible:ring-amber-300/50 dark:border-amber-900",
+          )}
         />
         <div className="flex items-center justify-between gap-3">
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -275,9 +343,17 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
             />
             Internal note (not visible to customer)
           </label>
-          <Button onClick={() => void handleSend()} disabled={sending || !reply.trim()}>
-            {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            {internalNote ? "Add note" : "Send reply"}
+          <Button
+            onClick={() => void handleSend()}
+            disabled={sending || !reply.trim()}
+            variant={internalNote ? "outline" : "default"}
+            className={cn(
+              internalNote &&
+                "border-amber-300 text-amber-900 hover:bg-amber-50 dark:border-amber-900 dark:text-amber-200 dark:hover:bg-amber-950",
+            )}
+          >
+            {internalNote ? <Lock className="size-4" /> : <Send className="size-4" />}
+            {sending ? "Sending…" : internalNote ? "Add note" : "Send reply"}
           </Button>
         </div>
       </div>
