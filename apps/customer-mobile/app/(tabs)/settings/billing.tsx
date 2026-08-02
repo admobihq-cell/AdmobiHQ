@@ -17,7 +17,7 @@ import {
   type AppIcon,
 } from "@/components/icons"
 import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import { formatCurrency, WALLET_CARD_BG, WALLET_CARD_FG } from "@/lib/wallet"
 
 type Transaction = {
@@ -77,19 +77,24 @@ export default function BillingSettingsScreen() {
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
     content: { padding: spacing.lg, gap: spacing.lg },
-    hero: { gap: spacing.xs },
-    eyebrow: {
-      ...typography.caption,
-      color: c.primary,
-      textTransform: "uppercase" as const,
-      letterSpacing: 0.8,
-      fontWeight: "700" as const,
+    hero: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
     },
-    title: { ...typography.title, color: c.text, fontSize: 26 },
+    heroIconTile: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.lg,
+      backgroundColor: `${c.primary}14`,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    heroCopy: { flex: 1, minWidth: 0, gap: 2 },
+    title: { ...typography.title, color: c.text, fontSize: 21 },
     subtitle: {
-      ...typography.body,
+      ...typography.bodySm,
       color: c.mutedForeground,
-      marginTop: spacing.xs,
     },
     walletCard: {
       borderRadius: 20,
@@ -221,12 +226,16 @@ export default function BillingSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <Text style={styles.eyebrow}>Workspace</Text>
-          <Text style={styles.title}>Wallet</Text>
-          <Text style={styles.subtitle}>
-            Fund your campaigns and track spend. Placeholder data for layout
-            preview.
-          </Text>
+          <View style={styles.heroIconTile}>
+            <Wallet color={colors.primary} size={20} />
+          </View>
+          <View style={styles.heroCopy}>
+            <Text style={styles.title}>Wallet</Text>
+            <Text style={styles.subtitle}>
+              Fund your campaigns and track spend. Placeholder data for layout
+              preview.
+            </Text>
+          </View>
         </View>
 
         <View style={styles.walletCard}>

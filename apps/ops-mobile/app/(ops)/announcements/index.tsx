@@ -11,7 +11,7 @@ import { useRouter } from "expo-router"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
 import { formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
-import { Inbox, Plus, RefreshCcw, Trash } from "@/components/icons"
+import { Inbox, Plus, Radio, RefreshCcw, Trash } from "@/components/icons"
 import { StatusChip } from "@/components/app/status-chip"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
@@ -228,7 +228,7 @@ export default function AnnouncementsScreen() {
       <View style={styles.headerTop}>
         <View style={{ flex: 1 }}>
           <PageHero
-            eyebrow="Operations"
+            icon={Radio}
             title="Announcements"
             compact
             description="Broadcast a message to every installed customer app."
