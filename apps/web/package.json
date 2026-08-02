@@ -20,6 +20,7 @@
     "db:ops-schema": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/ops-schema-additive.sql",
     "db:support-schema": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/support-schema-additive.sql",
     "db:announcements-soft-delete": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/announcements-soft-delete-additive.sql",
+    "db:announcements-image": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/announcements-image-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "payload": "dotenv -e .env.local -- cross-env NODE_OPTIONS=--no-deprecation payload",

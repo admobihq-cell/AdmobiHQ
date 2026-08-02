@@ -10,6 +10,8 @@ const optional = [
   "resend_api_key",
   "SENDER_EMAIL",
   "ADMIN_EMAIL",
+  "BLOB_READ_WRITE_TOKEN",
+  "CLOUDINARY_URL",
 ] as const
 
 function clerkKeyMode(value: string): "test" | "live" | null {

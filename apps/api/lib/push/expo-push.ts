@@ -18,6 +18,13 @@ export type ExpoPushPayload = {
   priority?: "default" | "normal" | "high"
   ttl?: number
   data?: Record<string, string>
+  /**
+   * Image shown in the notification itself. Android renders it with no extra
+   * app config. iOS requires a Notification Service Extension the app does
+   * not have yet, so iOS silently falls back to a text-only notification —
+   * see the announcement image feature notes before assuming this reaches iOS.
+   */
+  richContent?: { image: string }
 }
 
 type ExpoTicket =
