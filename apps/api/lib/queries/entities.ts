@@ -263,14 +263,16 @@ export async function listAnnouncementBroadcasts(
   SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.announcementBroadcast.findMany>>[number]>
 > {
   const parsed = parsePagination(params)
+  const where: Prisma.AnnouncementBroadcastWhereInput = { deleted_at: null }
 
   const [items, total] = await Promise.all([
     prisma.announcementBroadcast.findMany({
+      where,
       orderBy: { created_at: parsed.sortDir },
       skip: (parsed.page - 1) * parsed.pageSize,
       take: parsed.pageSize,
     }),
-    prisma.announcementBroadcast.count(),
+    prisma.announcementBroadcast.count({ where }),
   ])
 
   return toPaginatedResult(items, total, parsed.page, parsed.pageSize)

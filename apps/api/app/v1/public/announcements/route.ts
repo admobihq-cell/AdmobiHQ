@@ -8,6 +8,7 @@ const MAX_ITEMS = 30
 export async function GET() {
   try {
     const items = await prisma.announcementBroadcast.findMany({
+      where: { deleted_at: null },
       orderBy: { created_at: "desc" },
       take: MAX_ITEMS,
       select: { id: true, title: true, body: true, category: true, created_at: true },

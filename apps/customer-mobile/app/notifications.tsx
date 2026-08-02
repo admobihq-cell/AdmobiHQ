@@ -8,8 +8,12 @@ import {
   NOTIFICATION_CATEGORY_LABELS,
   NOTIFICATION_CATEGORY_ORDER,
   type NotificationCategory,
-  type NotificationItem,
 } from "@/lib/notifications-data"
+import {
+  getReadNotificationIds,
+  markNotificationRead,
+  markNotificationsRead,
+} from "@/lib/notification-read-state"
 import { useLiveAnnouncements } from "@/lib/use-live-announcements"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
@@ -19,39 +23,30 @@ const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
 }))
 
 export default function NotificationsScreen() {
-  const [items, setItems] = useState<NotificationItem[]>([])
   const [category, setCategory] = useState<NotificationCategory | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [readIds, setReadIds] = useState<Set<string>>(new Set())
   // Tick so relative timestamps (5m ago → 6m ago) refresh while the screen is open.
   const [, setClock] = useState(0)
-  const unreadCount = items.filter((item) => !item.read).length
 
   const { items: liveItems, loading, refetch: refetchLive } = useLiveAnnouncements()
+
+  // Read state is per-device (AsyncStorage) — there's no account to store it
+  // against — so it's loaded once here rather than carried on each item.
+  useEffect(() => {
+    void getReadNotificationIds().then(setReadIds)
+  }, [])
+
+  const items = useMemo(
+    () => liveItems.map((item) => ({ ...item, read: readIds.has(item.id) })),
+    [liveItems, readIds],
+  )
+  const unreadCount = items.filter((item) => !item.read).length
 
   useEffect(() => {
     const id = setInterval(() => setClock((n) => n + 1), 60_000)
     return () => clearInterval(id)
   }, [])
-
-  // Merge live broadcasts in at the front. New ids are prepended; known ids keep
-  // read state but pick up category/title/body/time updates from the API.
-  useEffect(() => {
-    if (liveItems.length === 0) return
-    setItems((current) => {
-      const byId = new Map(current.map((item) => [item.id, item]))
-      const mergedLive = liveItems.map((live) => {
-        const existing = byId.get(live.id)
-        if (!existing) return live
-        return {
-          ...live,
-          read: existing.read,
-        }
-      })
-      const liveIds = new Set(liveItems.map((item) => item.id))
-      const rest = current.filter((item) => !liveIds.has(item.id))
-      return [...mergedLive, ...rest]
-    })
-  }, [liveItems])
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -60,14 +55,15 @@ export default function NotificationsScreen() {
   }, [refetchLive])
 
   const markRead = useCallback((id: string) => {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, read: true } : item)),
-    )
+    setReadIds((current) => (current.has(id) ? current : new Set(current).add(id)))
+    void markNotificationRead(id)
   }, [])
 
   const markAllRead = useCallback(() => {
-    setItems((current) => current.map((item) => ({ ...item, read: true })))
-  }, [])
+    const ids = items.map((item) => item.id)
+    setReadIds((current) => new Set([...current, ...ids]))
+    void markNotificationsRead(ids)
+  }, [items])
 
   const sections = useMemo(() => {
     const filtered = category ? items.filter((item) => item.category === category) : items

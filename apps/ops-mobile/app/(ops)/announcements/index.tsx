@@ -11,7 +11,7 @@ import { useRouter } from "expo-router"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
 import { formatRelativeTime } from "@workspace/ops-contracts"
 
-import { Inbox, Plus, RefreshCcw } from "@/components/icons"
+import { Inbox, Plus, RefreshCcw, Trash } from "@/components/icons"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
@@ -101,6 +101,20 @@ export default function AnnouncementsScreen() {
       fontWeight: "600" as const,
       color: c.primary,
     },
+    rowActions: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.xs,
+    },
+    deleteButton: {
+      width: 30,
+      height: 30,
+      borderRadius: radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
   }))
 
   const [items, setItems] = useState<AnnouncementDto[]>([])
@@ -111,6 +125,8 @@ export default function AnnouncementsScreen() {
   const [error, setError] = useState<string | null>(null)
   const [resendTarget, setResendTarget] = useState<AnnouncementDto | null>(null)
   const [resending, setResending] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<AnnouncementDto | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchPage = useCallback(
     async (nextPage: number, replace = false) => {
@@ -169,6 +185,21 @@ export default function AnnouncementsScreen() {
       setResendTarget(null)
     } finally {
       setResending(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget || deleting) return
+    setDeleting(true)
+    try {
+      await client.notifications.delete(deleteTarget.id)
+      setDeleteTarget(null)
+      setItems((current) => current.filter((item) => item.id !== deleteTarget.id))
+    } catch (err) {
+      setError(formatOpsError(err, API_URL))
+      setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -265,19 +296,33 @@ export default function AnnouncementsScreen() {
               initials={item.title}
               showChevron={false}
               rightElement={
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.resendButton,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                  onPress={() => setResendTarget(item)}
-                  disabled={resending}
-                  accessibilityLabel={`Resend ${item.title}`}
-                  hitSlop={8}
-                >
-                  <RefreshCcw color={colors.primary} size={14} />
-                  <Text style={styles.resendLabel}>Resend</Text>
-                </Pressable>
+                <View style={styles.rowActions}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.resendButton,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                    onPress={() => setResendTarget(item)}
+                    disabled={resending}
+                    accessibilityLabel={`Resend ${item.title}`}
+                    hitSlop={8}
+                  >
+                    <RefreshCcw color={colors.primary} size={14} />
+                    <Text style={styles.resendLabel}>Resend</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.deleteButton,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                    onPress={() => setDeleteTarget(item)}
+                    disabled={deleting}
+                    accessibilityLabel={`Delete ${item.title}`}
+                    hitSlop={8}
+                  >
+                    <Trash color={colors.mutedForeground} size={14} />
+                  </Pressable>
+                </View>
               }
             />
             {index < items.length - 1 ? (
@@ -300,6 +345,22 @@ export default function AnnouncementsScreen() {
         onConfirm={() => void handleResend()}
         onCancel={() => {
           if (!resending) setResendTarget(null)
+        }}
+      />
+
+      <ConfirmDialog
+        visible={deleteTarget !== null}
+        title="Delete this announcement?"
+        message={
+          deleteTarget
+            ? `"${deleteTarget.title}" will be hidden from the customer app and this list. The record is kept for audit history, not permanently erased.`
+            : undefined
+        }
+        confirmLabel={deleting ? "Deleting…" : "Delete"}
+        destructive
+        onConfirm={() => void handleDelete()}
+        onCancel={() => {
+          if (!deleting) setDeleteTarget(null)
         }}
       />
     </View>
