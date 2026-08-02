@@ -27,6 +27,12 @@ import {
   type PaginatedResponse,
   type StatsResponseDto,
   type SuccessResponse,
+  type SupportCaseDetailDto,
+  type SupportCaseDto,
+  type SupportCaseUpdateInput,
+  type SupportListQueryParams,
+  type SupportMessageCreateInput,
+  type SupportMessageDto,
   type WaitlistBulkInput,
   type WaitlistCreateInput,
   type WaitlistEntryDto,
@@ -122,6 +128,12 @@ export type OpsClient = {
   }
   audit: {
     list: (params?: AuditListQueryParams) => Promise<PaginatedResponse<AuditEventDto>>
+  }
+  support: {
+    list: (params?: SupportListQueryParams) => Promise<PaginatedResponse<SupportCaseDto>>
+    get: (id: number) => Promise<SupportCaseDetailDto>
+    update: (id: number, body: SupportCaseUpdateInput) => Promise<SupportCaseDto>
+    reply: (id: number, body: SupportMessageCreateInput) => Promise<SupportMessageDto>
   }
 }
 
@@ -308,6 +320,35 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           `${apiPrefix}/audit${qs ? `?${qs}` : ""}`,
         )
       },
+    },
+    support: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+          sortBy: params.sortBy,
+          sortDir: params.sortDir,
+          status: params.status,
+          category: params.category,
+          assignedToClerkId: params.assignedToClerkId,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<SupportCaseDto>>(
+          `${apiPrefix}/support${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<SupportCaseDetailDto>(`${apiPrefix}/support/${id}`),
+      update: (id, body) =>
+        request<SupportCaseDto>(`${apiPrefix}/support/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      reply: (id, body) =>
+        request<SupportMessageDto>(`${apiPrefix}/support/${id}/messages`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
     },
   }
 }

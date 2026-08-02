@@ -161,6 +161,41 @@ export type AuditEventDto = {
   created_at: string
 }
 
+export type SupportCaseDto = {
+  id: number
+  customer_id: number | null
+  subject: string
+  category: string
+  status: string
+  priority: string
+  channel: string
+  contact_name: string
+  contact_email: string
+  contact_phone: string | null
+  assigned_to_clerk_id: string | null
+  assigned_to_email: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SupportMessageDto = {
+  id: number
+  author_type: string
+  author_email: string | null
+  author_clerk_id: string | null
+  body: string
+  internal_note: boolean
+  created_at: string
+}
+
+export type SupportCaseDetailDto = SupportCaseDto & { messages: SupportMessageDto[] }
+
+export type SupportListQueryParams = Partial<PaginationParams> & {
+  status?: string
+  category?: string
+  assignedToClerkId?: string
+}
+
 export type AuditListQueryParams = Partial<PaginationParams> & {
   entity_type?: string
   actor_email?: string

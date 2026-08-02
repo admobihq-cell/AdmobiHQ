@@ -8,6 +8,7 @@ import {
   FileText,
   Home,
   History,
+  LifeBuoy,
   Mail,
   Map,
   Megaphone,
@@ -55,6 +56,7 @@ const navItems = [
   { href: "/waitlist", label: "Waitlist", icon: Mail },
   { href: "/media-kit", label: "Media Kit", icon: FileText },
   { href: "/announcements", label: "Announcements", icon: Radio },
+  { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/activity", label: "Activity", icon: History },
 ]
 
