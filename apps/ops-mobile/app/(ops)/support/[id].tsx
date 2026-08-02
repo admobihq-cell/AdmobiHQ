@@ -20,7 +20,8 @@ import {
   type SupportCaseDetailDto,
 } from "@workspace/ops-contracts"
 
-import { CheckboxOff, CheckboxOn, Send } from "@/components/icons"
+import { Call, CheckboxOff, CheckboxOn, Lock, Send, UserCircle, X } from "@/components/icons"
+import { CategoryIcon } from "@/components/support/category-icon"
 import { StatusChip } from "@/components/app/status-chip"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
@@ -28,11 +29,20 @@ import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { formatOpsError } from "@/lib/format-error"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-const STATUS_VARIANT: Record<string, "muted" | "attention" | "success" | "default"> = {
+const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "success"> = {
   open: "attention",
-  pending: "attention",
+  pending: "progress",
   resolved: "success",
   closed: "muted",
+}
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("")
 }
 
 export default function SupportCaseDetailScreen() {
@@ -49,6 +59,7 @@ export default function SupportCaseDetailScreen() {
   const [reply, setReply] = useState("")
   const [internalNote, setInternalNote] = useState(false)
   const [sending, setSending] = useState(false)
+  const [updating, setUpdating] = useState(false)
   const [statusPickerOpen, setStatusPickerOpen] = useState(false)
   const [priorityPickerOpen, setPriorityPickerOpen] = useState(false)
 
@@ -68,16 +79,20 @@ export default function SupportCaseDetailScreen() {
   }, [load])
 
   async function updateCase(patch: { status?: string; priority?: string }) {
+    setUpdating(true)
     try {
       await client.support.update(caseId, patch as never)
       await load()
     } catch (e) {
       setError(formatOpsError(e, API_URL))
+    } finally {
+      setUpdating(false)
     }
   }
 
   async function assignToMe() {
     if (!user) return
+    setUpdating(true)
     try {
       await client.support.update(caseId, {
         assigned_to_clerk_id: user.id,
@@ -86,6 +101,23 @@ export default function SupportCaseDetailScreen() {
       await load()
     } catch (e) {
       setError(formatOpsError(e, API_URL))
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  async function unassign() {
+    setUpdating(true)
+    try {
+      await client.support.update(caseId, {
+        assigned_to_clerk_id: null,
+        assigned_to_email: null,
+      } as never)
+      await load()
+    } catch (e) {
+      setError(formatOpsError(e, API_URL))
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -107,7 +139,25 @@ export default function SupportCaseDetailScreen() {
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
     container: { padding: spacing.lg, gap: spacing.md },
+    header: { flexDirection: "row" as const, gap: spacing.sm, alignItems: "flex-start" as const },
+    avatar: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: c.muted,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    avatarText: { ...typography.caption, fontWeight: "700" as const, color: c.mutedForeground },
+    headerCopy: { flex: 1, gap: 2 },
+    contactLine: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      alignItems: "center" as const,
+      gap: 6,
+    },
     metaText: { ...typography.caption, color: c.mutedForeground },
+    phoneRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 3 },
     controlsRow: {
       flexDirection: "row" as const,
       flexWrap: "wrap" as const,
@@ -115,6 +165,9 @@ export default function SupportCaseDetailScreen() {
       alignItems: "center" as const,
     },
     pill: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
       paddingHorizontal: spacing.md,
       paddingVertical: 8,
       borderRadius: radius.full,
@@ -123,32 +176,67 @@ export default function SupportCaseDetailScreen() {
       backgroundColor: c.surface,
     },
     pillText: { ...typography.bodySm, color: c.text, fontWeight: "600" as const },
+    assigneePill: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      paddingLeft: spacing.md,
+      paddingRight: spacing.xs,
+      paddingVertical: 6,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: `${c.primary}0F`,
+    },
+    unassignButton: { padding: 6 },
+    bubbleRow: { flexDirection: "row" as const, alignItems: "flex-end" as const, gap: spacing.xs },
+    avatarSm: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    avatarSmText: { fontSize: 10, fontWeight: "700" as const },
     bubble: {
-      maxWidth: "82%" as const,
-      padding: spacing.md,
+      maxWidth: "76%" as const,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 10,
       borderRadius: radius.lg,
       gap: 4,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 1,
     },
     bubbleCustomer: {
       alignSelf: "flex-start" as const,
       backgroundColor: c.surface,
       borderWidth: 1,
       borderColor: c.border,
+      shadowOpacity: 0,
+      elevation: 0,
     },
     bubbleOps: {
       alignSelf: "flex-end" as const,
       backgroundColor: c.primary,
     },
     bubbleInternal: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      gap: 6,
       alignSelf: "flex-end" as const,
-      backgroundColor: "#FEF3C7",
+      backgroundColor: c.accent,
       borderWidth: 1,
-      borderColor: "#FCD34D",
+      borderColor: c.border,
+      shadowOpacity: 0,
+      elevation: 0,
     },
     bubbleTextCustomer: { ...typography.body, color: c.text },
     bubbleTextOps: { ...typography.body, color: c.primaryForeground },
-    bubbleTextInternal: { ...typography.body, color: "#92400E" },
-    bubbleMeta: { ...typography.caption, color: c.mutedForeground },
+    bubbleTextInternal: { ...typography.body, color: c.text, flexShrink: 1 },
+    bubbleMeta: { ...typography.caption, color: c.mutedForeground, paddingHorizontal: 4 },
     composer: {
       flexDirection: "row" as const,
       alignItems: "flex-end" as const,
@@ -170,6 +258,7 @@ export default function SupportCaseDetailScreen() {
       maxHeight: 120,
       backgroundColor: c.surface,
     },
+    inputInternal: { borderColor: c.primary, backgroundColor: c.accent },
     sendButton: {
       width: 44,
       height: 44,
@@ -214,32 +303,77 @@ export default function SupportCaseDetailScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-          <Text style={styles.metaText}>
-            #{data.id} · {data.contact_name} ({data.contact_email})
-            {data.contact_phone ? ` · ${data.contact_phone}` : ""}
-          </Text>
+          <View style={styles.header}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials(data.contact_name)}</Text>
+            </View>
+            <View style={styles.headerCopy}>
+              <View style={styles.contactLine}>
+                <Text style={styles.metaText}>#{data.id}</Text>
+                <Text style={styles.metaText}>·</Text>
+                <Text style={styles.metaText}>{data.contact_name}</Text>
+                <Text style={styles.metaText}>·</Text>
+                <Text style={styles.metaText}>{data.contact_email}</Text>
+              </View>
+              {data.contact_phone ? (
+                <View style={styles.phoneRow}>
+                  <Call size={12} color={colors.mutedForeground} />
+                  <Text style={styles.metaText}>{data.contact_phone}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
 
           {error ? <ApiErrorBanner message={error} onDismiss={() => setError(null)} /> : null}
 
           <View style={styles.controlsRow}>
-            <Pressable style={styles.pill} onPress={() => setStatusPickerOpen(true)}>
+            <Pressable style={styles.pill} onPress={() => setStatusPickerOpen(true)} disabled={updating}>
               <StatusChip
                 label={formatLabel(data.status)}
                 variant={STATUS_VARIANT[data.status] ?? "muted"}
               />
             </Pressable>
-            <Pressable style={styles.pill} onPress={() => setPriorityPickerOpen(true)}>
+            <Pressable style={styles.pill} onPress={() => setPriorityPickerOpen(true)} disabled={updating}>
               <Text style={styles.pillText}>{formatLabel(data.priority)}</Text>
             </Pressable>
-            <Pressable style={styles.pill} onPress={() => void assignToMe()}>
-              <Text style={styles.pillText}>
-                {data.assigned_to_email ? data.assigned_to_email : "Assign to me"}
-              </Text>
-            </Pressable>
+            <View style={styles.pill}>
+              <CategoryIcon category={data.category} size={13} color={colors.mutedForeground} />
+              <Text style={styles.pillText}>{formatLabel(data.category)}</Text>
+            </View>
+            {data.assigned_to_email ? (
+              <View style={styles.assigneePill}>
+                <UserCircle size={13} color={colors.mutedForeground} />
+                <Text style={styles.pillText}>{data.assigned_to_email}</Text>
+                <Pressable
+                  style={styles.unassignButton}
+                  onPress={() => void unassign()}
+                  disabled={updating}
+                  accessibilityLabel="Unassign"
+                >
+                  <X size={13} color={colors.mutedForeground} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable style={styles.pill} onPress={() => void assignToMe()} disabled={updating}>
+                <UserCircle size={13} color={colors.mutedForeground} />
+                <Text style={styles.pillText}>Assign to me</Text>
+              </Pressable>
+            )}
           </View>
 
-          {data.messages.map((message) => {
+          {data.messages.map((message, index) => {
             const isCustomer = message.author_type === "customer"
+            const prev = data.messages[index - 1]
+            const grouped =
+              prev !== undefined &&
+              prev.author_type === message.author_type &&
+              prev.internal_note === message.internal_note
+            const next = data.messages[index + 1]
+            const endsGroup =
+              next === undefined ||
+              next.author_type !== message.author_type ||
+              next.internal_note !== message.internal_note
+
             const bubbleStyle = message.internal_note
               ? styles.bubbleInternal
               : isCustomer
@@ -250,17 +384,60 @@ export default function SupportCaseDetailScreen() {
               : isCustomer
                 ? styles.bubbleTextCustomer
                 : styles.bubbleTextOps
+            const onLeft = isCustomer && !message.internal_note
+
             return (
-              <View key={message.id} style={[styles.bubble, bubbleStyle]}>
-                <Text style={textStyle}>{message.body}</Text>
-                <Text style={styles.bubbleMeta}>
-                  {message.internal_note
-                    ? "Internal note"
-                    : isCustomer
-                      ? data.contact_name
-                      : (message.author_email ?? "Admobi team")}{" "}
-                  · {new Date(message.created_at).toLocaleString()}
-                </Text>
+              <View
+                key={message.id}
+                style={{ marginTop: index === 0 ? 0 : grouped ? spacing.xs : spacing.md }}
+              >
+                <View
+                  style={[
+                    styles.bubbleRow,
+                    { justifyContent: onLeft ? "flex-start" : "flex-end" },
+                  ]}
+                >
+                  {onLeft ? (
+                    <View
+                      style={[
+                        styles.avatarSm,
+                        { backgroundColor: colors.muted, opacity: grouped ? 0 : 1 },
+                      ]}
+                    >
+                      <Text style={[styles.avatarSmText, { color: colors.mutedForeground }]}>
+                        {initials(data.contact_name)}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <View style={[styles.bubble, bubbleStyle]}>
+                    {message.internal_note ? (
+                      <View style={{ marginTop: 3 }}>
+                        <Lock size={12} color={colors.mutedForeground} />
+                      </View>
+                    ) : null}
+                    <Text style={textStyle}>{message.body}</Text>
+                  </View>
+                </View>
+                {endsGroup ? (
+                  <Text
+                    style={[
+                      styles.bubbleMeta,
+                      { alignSelf: onLeft ? "flex-start" : "flex-end", marginTop: 4 },
+                    ]}
+                  >
+                    {message.internal_note
+                      ? "Internal note · "
+                      : isCustomer
+                        ? ""
+                        : `${message.author_email ?? "Admobi team"} · `}
+                    {new Date(message.created_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                ) : null}
               </View>
             )
           })}
@@ -281,19 +458,23 @@ export default function SupportCaseDetailScreen() {
         </Pressable>
         <View style={[styles.composer, { paddingBottom: insets.bottom + spacing.sm }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, internalNote && styles.inputInternal]}
             value={reply}
             onChangeText={setReply}
             placeholder="Write a reply…"
+            placeholderTextColor={colors.mutedForeground}
             multiline
           />
           <Pressable
             style={[styles.sendButton, (sending || !reply.trim()) && styles.sendButtonDisabled]}
             onPress={handleSend}
             disabled={sending || !reply.trim()}
+            accessibilityLabel={internalNote ? "Add internal note" : "Send reply"}
           >
             {sending ? (
               <ActivityIndicator color={colors.primaryForeground} size="small" />
+            ) : internalNote ? (
+              <Lock size={18} color={colors.primaryForeground} />
             ) : (
               <Send size={18} color={colors.primaryForeground} />
             )}
