@@ -1,6 +1,7 @@
 import { useCallback } from "react"
 
 import { EntityList } from "@/components/EntityList"
+import { FileText } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function MediaKitScreen() {
@@ -20,6 +21,7 @@ export default function MediaKitScreen() {
       entity="mediaKit"
       title="Media kit"
       description="Marketers and agencies who requested the Admobi media kit."
+      icon={FileText}
       loadPage={loadPage}
       addHref="/(ops)/media-kit/new"
       getTitle={(item) => item.name}

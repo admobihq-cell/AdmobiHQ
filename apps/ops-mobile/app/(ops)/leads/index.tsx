@@ -7,6 +7,7 @@ import {
 
 import { LeadListRow } from "@/components/app/entity-list-rows"
 import { EntityList } from "@/components/EntityList"
+import { Megaphone } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function LeadsScreen() {
@@ -41,6 +42,7 @@ export default function LeadsScreen() {
       entity="leads"
       title="Campaign leads"
       description="Review and manage inbound campaign interest from advertisers."
+      icon={Megaphone}
       loadPage={loadPage}
       addHref="/(ops)/leads/new"
       filterOptions={LEAD_STATUSES.map((status) => ({
