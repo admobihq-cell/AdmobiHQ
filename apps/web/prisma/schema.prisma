@@ -160,6 +160,65 @@ model PushTicket {
   @@map("push_tickets")
 }
 
+/// Dormant scaffold for real customer auth. Nullable everywhere it's
+/// referenced today; wiring up real auth later means populating clerk_user_id
+/// and backfilling SupportCase.customer_id by matching email — no schema change.
+model Customer {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  name          String?
+  phone         String?
+  clerk_user_id String?  @unique
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  cases SupportCase[]
+
+  @@map("customers")
+}
+
+model SupportCase {
+  id                    Int       @id @default(autoincrement())
+  customer_id           Int?
+  customer              Customer? @relation(fields: [customer_id], references: [id])
+  contact_name          String
+  contact_email         String
+  contact_phone         String?
+  anonymous_device_id   String?
+  access_token_hash     String    @unique
+  channel               String // "web" | "customer-web" | "customer-mobile"
+  category              String    @default("general") // billing, campaign, technical, driver, general
+  subject               String
+  status                String    @default("open") // open, pending, resolved, closed
+  priority              String    @default("normal") // low, normal, high, urgent
+  assigned_to_clerk_id  String?
+  assigned_to_email     String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  messages SupportMessage[]
+
+  @@index([status, created_at])
+  @@index([contact_email])
+  @@index([assigned_to_clerk_id])
+  @@map("support_cases")
+}
+
+model SupportMessage {
+  id               Int         @id @default(autoincrement())
+  case_id          Int
+  case             SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  author_type      String // "customer" | "ops"
+  author_email     String?
+  author_clerk_id  String?
+  body             String
+  internal_note    Boolean     @default(false)
+  created_at       DateTime    @default(now())
+
+  @@index([case_id, created_at])
+  @@map("support_messages")
+}
+
 /// Cross-app activity trail: who did what, when (ops, public forms, future customer apps).
 model AuditEvent {
   id            Int      @id @default(autoincrement())

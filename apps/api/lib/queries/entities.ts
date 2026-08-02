@@ -212,6 +212,51 @@ export async function listMediaKitRequests(
   return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
 }
 
+export async function listSupportCases(
+  params: Partial<PaginationParams> & {
+    status?: string
+    category?: string
+    assignedToClerkId?: string
+  } = {},
+): Promise<
+  SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.supportCase.findMany>>[number]>
+> {
+  const parsed = parsePagination({
+    ...params,
+    sortBy: params.sortBy ?? "created_at",
+  })
+  const where: Prisma.SupportCaseWhereInput = {}
+
+  if (parsed.search) {
+    where.OR = [
+      { subject: { contains: parsed.search, mode: "insensitive" } },
+      { contact_name: { contains: parsed.search, mode: "insensitive" } },
+      { contact_email: { contains: parsed.search, mode: "insensitive" } },
+    ]
+  }
+  if (params.status) where.status = params.status
+  if (params.category) where.category = params.category
+  if (params.assignedToClerkId) where.assigned_to_clerk_id = params.assignedToClerkId
+
+  const sortField = ["created_at", "updated_at", "status", "priority"].includes(
+    parsed.sortBy ?? "",
+  )
+    ? parsed.sortBy!
+    : "created_at"
+
+  const [items, total] = await Promise.all([
+    prisma.supportCase.findMany({
+      where,
+      orderBy: { [sortField]: parsed.sortDir },
+      skip: (parsed.page - 1) * parsed.pageSize,
+      take: parsed.pageSize,
+    }),
+    prisma.supportCase.count({ where }),
+  ])
+
+  return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
+}
+
 export async function listAnnouncementBroadcasts(
   params: Partial<PaginationParams> = {},
 ): Promise<

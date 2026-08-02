@@ -2,7 +2,13 @@ import { prisma } from "@/lib/prisma"
 import { sendExpoPushMessages } from "@/lib/push/expo-push"
 import { recordPushTickets } from "@/lib/push/receipts"
 
-export type OpsAlertType = "campaign" | "fleet" | "driver" | "waitlist" | "media-kit"
+export type OpsAlertType =
+  | "campaign"
+  | "fleet"
+  | "driver"
+  | "waitlist"
+  | "media-kit"
+  | "support"
 
 const TYPE_LABELS: Record<OpsAlertType, string> = {
   campaign: "Campaign brief",
@@ -10,6 +16,7 @@ const TYPE_LABELS: Record<OpsAlertType, string> = {
   driver: "Driver application",
   waitlist: "Waitlist signup",
   "media-kit": "Media kit request",
+  support: "Support case",
 }
 
 const ROUTE_SEGMENT: Record<OpsAlertType, string> = {
@@ -18,6 +25,7 @@ const ROUTE_SEGMENT: Record<OpsAlertType, string> = {
   driver: "drivers",
   waitlist: "waitlist",
   "media-kit": "media-kit",
+  support: "support",
 }
 
 export type OpsStaffAlertInput = {

@@ -100,5 +100,24 @@ export const AUDIT_ENTITY_TYPES = [
   "waitlist",
   "media_kit",
   "announcement",
+  "support_case",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
+
+export const SUPPORT_CHANNELS = ["web", "customer-web", "customer-mobile"] as const
+export type SupportChannel = (typeof SUPPORT_CHANNELS)[number]
+
+export const SUPPORT_CATEGORIES = [
+  "general",
+  "billing",
+  "campaign",
+  "technical",
+  "driver",
+] as const
+export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number]
+
+export const SUPPORT_STATUSES = ["open", "pending", "resolved", "closed"] as const
+export type SupportStatus = (typeof SUPPORT_STATUSES)[number]
+
+export const SUPPORT_PRIORITIES = ["low", "normal", "high", "urgent"] as const
+export type SupportPriority = (typeof SUPPORT_PRIORITIES)[number]

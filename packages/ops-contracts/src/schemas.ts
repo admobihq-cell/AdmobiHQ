@@ -13,6 +13,10 @@ import {
   HEARD_ABOUT,
   LEAD_CITIES,
   LEAD_STATUSES,
+  SUPPORT_CATEGORIES,
+  SUPPORT_CHANNELS,
+  SUPPORT_PRIORITIES,
+  SUPPORT_STATUSES,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
 } from "./enums"
@@ -123,6 +127,30 @@ export const statsRangeSchema = z.object({
   range: z.enum(DATE_RANGE_KEYS).default("30d"),
 })
 
+export const supportCaseCreateSchema = z.object({
+  contact_name: z.string().trim().min(1),
+  contact_email: z.string().trim().email(),
+  contact_phone: z.string().trim().optional(),
+  anonymous_device_id: z.string().trim().optional(),
+  channel: z.enum(SUPPORT_CHANNELS),
+  category: z.enum(SUPPORT_CATEGORIES).default("general"),
+  subject: z.string().trim().min(1).max(200),
+  message: z.string().trim().min(1).max(5000),
+})
+
+export const supportMessageCreateSchema = z.object({
+  body: z.string().trim().min(1).max(5000),
+  internal_note: z.boolean().optional(),
+})
+
+export const supportCaseUpdateSchema = z.object({
+  status: z.enum(SUPPORT_STATUSES).optional(),
+  priority: z.enum(SUPPORT_PRIORITIES).optional(),
+  category: z.enum(SUPPORT_CATEGORIES).optional(),
+  assigned_to_clerk_id: z.string().nullable().optional(),
+  assigned_to_email: z.string().nullable().optional(),
+})
+
 export const broadcastCreateSchema = z.object({
   title: z.string().trim().min(1).max(65),
   body: z.string().trim().min(1).max(178),
@@ -146,3 +174,6 @@ export type FleetBulkInput = z.infer<typeof fleetBulkSchema>
 export type WaitlistBulkInput = z.infer<typeof waitlistBulkSchema>
 export type MediaKitBulkInput = z.infer<typeof mediaKitBulkSchema>
 export type BroadcastCreateInput = z.infer<typeof broadcastCreateSchema>
+export type SupportCaseCreateInput = z.infer<typeof supportCaseCreateSchema>
+export type SupportMessageCreateInput = z.infer<typeof supportMessageCreateSchema>
+export type SupportCaseUpdateInput = z.infer<typeof supportCaseUpdateSchema>
