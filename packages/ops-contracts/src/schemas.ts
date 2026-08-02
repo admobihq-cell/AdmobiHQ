@@ -155,6 +155,7 @@ export const broadcastCreateSchema = z.object({
   title: z.string().trim().min(1).max(65),
   body: z.string().trim().min(1).max(178),
   category: z.enum(ANNOUNCEMENT_CATEGORIES),
+  image_url: z.string().url().nullable().optional(),
 })
 
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>
