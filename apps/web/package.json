@@ -18,6 +18,7 @@
     "prisma": "prisma",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "db:ops-schema": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/ops-schema-additive.sql",
+    "db:support-schema": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/support-schema-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "payload": "dotenv -e .env.local -- cross-env NODE_OPTIONS=--no-deprecation payload",
