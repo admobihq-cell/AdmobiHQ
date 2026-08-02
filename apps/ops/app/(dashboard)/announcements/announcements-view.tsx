@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, Plus, Radio, RotateCcw } from "lucide-react"
+import { Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { ANNOUNCEMENT_FORM_FIELDS, type AnnouncementDto } from "@workspace/ops-contracts"
@@ -57,11 +57,28 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [data, setData] = useState(initialData)
   const [formOpen, setFormOpen] = useState(false)
   const [pending, setPending] = useState<PendingBroadcast | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<AnnouncementDto | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const refresh = async () => {
     const result = await client.notifications.list({ page: 1, pageSize: 20 })
     setData(result)
+  }
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      await client.notifications.delete(pendingDelete.id)
+      toast.success("Announcement deleted")
+      setPendingDelete(null)
+      await refresh()
+    } catch (e) {
+      toast.error(formatApiError(e))
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleSend = async () => {
@@ -148,22 +165,33 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={saving}
-                      onClick={() =>
-                        setPending({
-                          title: row.title,
-                          body: row.body,
-                          category: row.category ?? "announcement",
-                          mode: "resend",
-                        })
-                      }
-                    >
-                      <RotateCcw data-icon="inline-start" />
-                      Resend
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={saving}
+                        onClick={() =>
+                          setPending({
+                            title: row.title,
+                            body: row.body,
+                            category: row.category ?? "announcement",
+                            mode: "resend",
+                          })
+                        }
+                      >
+                        <RotateCcw data-icon="inline-start" />
+                        Resend
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={deleting}
+                        onClick={() => setPendingDelete(row)}
+                      >
+                        <Trash2 data-icon="inline-start" />
+                        Delete
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -224,6 +252,36 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
               ) : (
                 "Send"
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-4" />
+              Delete this announcement?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{pendingDelete?.title}&rdquo; will be hidden from the customer app and this
+              list. The record is kept for audit history, not permanently erased.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                void handleDelete()
+              }}
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="size-4 animate-spin" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

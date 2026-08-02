@@ -125,6 +125,7 @@ export type OpsClient = {
       page?: number
       pageSize?: number
     }) => Promise<PaginatedResponse<AnnouncementDto>>
+    delete: (id: number) => Promise<SuccessResponse>
   }
   audit: {
     list: (params?: AuditListQueryParams) => Promise<PaginatedResponse<AuditEventDto>>
@@ -301,6 +302,8 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           `${apiPrefix}/notifications${qs ? `?${qs}` : ""}`,
         )
       },
+      delete: (id) =>
+        request<SuccessResponse>(`${apiPrefix}/notifications/${id}`, { method: "DELETE" }),
     },
     audit: {
       list: (params = {}) => {
