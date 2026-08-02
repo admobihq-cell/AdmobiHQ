@@ -16,8 +16,8 @@ export default function SupportLayout() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Support" }} />
-      <Stack.Screen name="[id]" options={{ headerShown: true }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="[id]" options={{ headerShown: false }} />
     </Stack>
   )
 }

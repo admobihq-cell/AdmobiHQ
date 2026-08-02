@@ -19,6 +19,7 @@ import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { formatOpsError } from "@/lib/format-error"
+import { usePageHeader } from "@/lib/page-header"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "success"> = {
@@ -29,6 +30,7 @@ const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "succe
 }
 
 export default function SupportListScreen() {
+  usePageHeader("Support")
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()

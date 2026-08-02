@@ -2,22 +2,15 @@ import { useAuth, useUser } from "@clerk/clerk-expo"
 import Constants from "expo-constants"
 import { useRouter } from "expo-router"
 import * as Updates from "expo-updates"
-import { useEffect, useState } from "react"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import type { DateRangeKey } from "@workspace/ops-contracts"
 import {
   Bell,
-  FileText,
   LogOut,
-  Mail,
-  Map,
   Person,
-  Radio,
   RefreshCcw,
   Sparkles,
-  Wallet,
 } from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
@@ -26,7 +19,6 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { getPrimaryEmail } from "@/lib/auth"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { API_URL } from "@/lib/ops-client"
-import { useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
@@ -37,41 +29,12 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets()
   const { signOut } = useAuth()
   const { user } = useUser()
-  const client = useOpsClient()
   const email = getPrimaryEmail(
     user?.emailAddresses,
     user?.primaryEmailAddressId
   )
   const rawName = user?.firstName?.trim() || email?.split("@")[0] || "Staff"
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
-
-  const [counts, setCounts] = useState<{ waitlist: number; mediaKit: number }>({
-    waitlist: 0,
-    mediaKit: 0,
-  })
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function fetchCounts() {
-      try {
-        const stats = await client.stats.get({ range: "all" as DateRangeKey })
-        if (!cancelled) {
-          setCounts({
-            waitlist: stats.overview.totals.waitlist,
-            mediaKit: stats.overview.totals.mediaKit,
-          })
-        }
-      } catch {
-        // Counts are optional on this screen
-      }
-    }
-
-    void fetchCounts()
-    return () => {
-      cancelled = true
-    }
-  }, [client])
 
   const version = Constants.expoConfig?.version ?? "0.0.1"
 
@@ -230,51 +193,6 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Modules</Text>
-          <View style={styles.group}>
-            <SettingsRow
-              icon={Map}
-              label="Network map"
-              description="Corridors and city view"
-              onPress={() => router.push("/(ops)/map")}
-            />
-            <View style={styles.divider} />
-            <SettingsRow
-              icon={Mail}
-              label="Waitlist"
-              description={`${counts.waitlist} entries`}
-              onPress={() => router.push("/(ops)/waitlist")}
-            />
-            <View style={styles.divider} />
-            <SettingsRow
-              icon={FileText}
-              label="Media kit"
-              description={`${counts.mediaKit} requests`}
-              onPress={() => router.push("/(ops)/media-kit")}
-            />
-            <View style={styles.divider} />
-            <SettingsRow
-              icon={Radio}
-              label="Announcements"
-              description="Broadcast to customer apps"
-              onPress={() => router.push("/(ops)/announcements")}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Finance</Text>
-          <View style={styles.group}>
-            <SettingsRow
-              icon={Wallet}
-              label="Finances"
-              description="Wallet, top-ups & payouts"
-              onPress={() => router.push("/(ops)/finances")}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionLabel}>Developer tools</Text>
           <View style={styles.group}>
             <SettingsRow
@@ -304,7 +222,7 @@ export default function ProfileScreen() {
               icon={Sparkles}
               label="Replay welcome tour"
               description="See the first-run introduction again"
-              onPress={() => router.push("/(ops)/onboarding")}
+              onPress={() => router.push("/onboarding-replay")}
             />
           </View>
         </View>

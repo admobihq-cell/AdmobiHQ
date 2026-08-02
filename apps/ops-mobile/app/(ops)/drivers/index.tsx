@@ -31,6 +31,10 @@ export default function DriversScreen() {
       ),
     [client]
   )
+  const onBulkDelete = useCallback(
+    (ids: number[]) => client.drivers.bulk({ action: "delete", ids }),
+    [client]
+  )
 
   return (
     <EntityList
@@ -45,6 +49,7 @@ export default function DriversScreen() {
       }))}
       statusOptions={DRIVER_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
+      onBulkDelete={onBulkDelete}
       detailHref={(id) => `/(ops)/drivers/${id}`}
       renderRow={(item, { onPress, onLongPress }) => (
         <DriverListRow
