@@ -15,13 +15,13 @@ export const SupportCaseConfirmation = ({
   subject,
 }: SupportCaseConfirmationProps) => (
   <EmailLayout preview={`We received your support request — case #${caseId}`}>
-    <Text style={emailStyles.heading}>We've got your request</Text>
+    <Text style={emailStyles.heading}>We&apos;ve got your request</Text>
 
     <Text style={emailStyles.paragraph}>Hi {name},</Text>
 
     <Text style={emailStyles.paragraph}>
-      Thanks for reaching out. Your case is open and the Admobi team will reply
-      here as soon as they have an update.
+      Thanks for reaching out. Your case is open and the Admobi team will
+      reply here as soon as they have an update.
     </Text>
 
     <Text style={emailStyles.label}>Case</Text>
