@@ -9,6 +9,8 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated"
 import { useRouter } from "expo-router"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import * as Haptics from "expo-haptics"
@@ -18,6 +20,7 @@ import {
   Inbox,
   Plus,
   Search,
+  Trash,
 } from "@/components/icons"
 import type {
   FormFieldOption,
@@ -34,6 +37,7 @@ import type { StatusChipVariant } from "@/components/app/status-chip"
 import { SkeletonListRows, SkeletonTriageRows } from "@/components/app/skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui"
 import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
@@ -47,6 +51,14 @@ import {
   useThemeColors,
   useThemedStyles,
 } from "@/lib/theme"
+
+// Hoisted so they're stable references across renders — a fresh FadeOutDown
+// instance on every render can make Reanimated restart the exit animation
+// mid-flight if the parent re-renders (e.g. a bulk apply) while it's closing.
+const BULK_BAR_ENTERING = FadeInDown.duration(200)
+const BULK_BAR_EXITING = FadeOutDown.duration(150)
+// Matches the bottom tab bar's own height calc in (ops)/_layout.tsx.
+const TAB_BAR_HEIGHT = 60
 
 type EntityListLoadOptions = {
   status?: string | null
@@ -78,6 +90,8 @@ type EntityListProps<T extends { id: number }> = {
   /** Enables long-list triage: long-press a row to select it and start a bulk status change. Requires both props together. */
   statusOptions?: FormFieldOption[]
   onBulkStatusChange?: (ids: number[], status: string) => Promise<unknown>
+  /** Enables bulk delete from the same long-press selection UI. Independent of statusOptions/onBulkStatusChange — either or both may be provided. */
+  onBulkDelete?: (ids: number[]) => Promise<unknown>
 }
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -99,11 +113,13 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   addHref,
   statusOptions,
   onBulkStatusChange,
+  onBulkDelete,
 }: EntityListProps<T>) {
   usePageHeader(title)
   const router = useRouter()
   const queryClient = useQueryClient()
   const colors = useThemeColors()
+  const insets = useSafeAreaInsets()
   const styles = useThemedStyles((c) => ({
     container: {
       flex: 1,
@@ -135,28 +151,75 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       justifyContent: "center" as const,
     },
     bulkBar: {
+      position: "absolute" as const,
+      left: spacing.lg,
+      right: spacing.lg,
       paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-      gap: spacing.xs,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+      borderRadius: radius.lg,
       backgroundColor: c.surface,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: c.border,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      // Reanimated-driven opacity (FadeInDown/FadeOutDown below) doesn't fade
+      // Android's elevation shadow with it, leaving a ghost trail — same fix
+      // as the FAB menu's item rows use.
+      elevation: Platform.OS === "android" ? 0 : 8,
     },
-    bulkBarLeft: {
+    bulkBarTop: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "space-between" as const,
+      gap: spacing.sm,
     },
     bulkBarCount: {
-      ...typography.caption,
-      fontWeight: "700" as const,
+      ...typography.section,
       color: c.text,
+    },
+    bulkBarActions: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
     },
     bulkBarCancel: {
       ...typography.caption,
       fontWeight: "700" as const,
       color: c.mutedForeground,
       paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.xs,
+    },
+    bulkDeleteButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      borderRadius: radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.destructive,
+      backgroundColor: `${c.destructive}12`,
+    },
+    bulkDeleteButtonDisabled: {
+      opacity: 0.5,
+    },
+    bulkDeleteLabel: {
+      ...typography.caption,
+      fontWeight: "700" as const,
+      color: c.destructive,
+    },
+    bulkStatusSection: {
+      gap: spacing.xs,
+    },
+    bulkStatusLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      fontWeight: "700" as const,
+      textTransform: "uppercase" as const,
+      letterSpacing: 0.5,
     },
     rowInner: {
       flexDirection: "row" as const,
@@ -233,11 +296,13 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const [errorDismissed, setErrorDismissed] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkApplying, setBulkApplying] = useState(false)
-  const canBulkEdit = Boolean(statusOptions?.length && onBulkStatusChange)
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false)
+  const canBulkEditStatus = Boolean(statusOptions?.length && onBulkStatusChange)
+  const canBulkAct = canBulkEditStatus || Boolean(onBulkDelete)
   // Selection mode is implicit: long-pressing a row selects it, which is
   // enough to enter "bulk" state on its own — no separate mode toggle to
   // show or hide.
-  const selectionMode = canBulkEdit && selectedIds.size > 0
+  const selectionMode = canBulkAct && selectedIds.size > 0
 
   function toggleSelected(id: number) {
     setSelectedIds((prev) => {
@@ -260,6 +325,22 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       if (Platform.OS !== "web") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       }
+      clearSelection()
+      void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
+    } finally {
+      setBulkApplying(false)
+    }
+  }
+
+  async function applyBulkDelete() {
+    if (!onBulkDelete || selectedIds.size === 0 || bulkApplying) return
+    setBulkApplying(true)
+    try {
+      await onBulkDelete(Array.from(selectedIds))
+      if (Platform.OS !== "web") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      }
+      setConfirmDeleteVisible(false)
       clearSelection()
       void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
     } finally {
@@ -405,28 +486,6 @@ export function EntityList<T extends { id: number; created_at?: string }>({
 
   return (
     <View style={styles.container}>
-      {selectionMode ? (
-        <View style={styles.bulkBar}>
-          <View style={styles.bulkBarLeft}>
-            <Text style={styles.bulkBarCount}>{selectedIds.size} selected</Text>
-            <Pressable onPress={clearSelection} hitSlop={8}>
-              <Text style={styles.bulkBarCancel}>Cancel</Text>
-            </Pressable>
-          </View>
-          <FilterChips
-            options={statusOptions!.map((option) => ({
-              key: option.value,
-              label: option.label,
-            }))}
-            selected={null}
-            showAll={false}
-            embedded
-            onSelect={(key) => {
-              if (key && !bulkApplying) void applyBulkStatus(key)
-            }}
-          />
-        </View>
-      ) : null}
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
@@ -441,7 +500,10 @@ export function EntityList<T extends { id: number; created_at?: string }>({
         }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          selectionMode && { paddingBottom: TAB_BAR_HEIGHT + insets.bottom + 140 },
+        ]}
         ListEmptyComponent={
           error ? (
             <EmptyState
@@ -469,7 +531,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
           const rowPress = selectionMode
             ? () => toggleSelected(item.id)
             : openDetail
-          const rowLongPress = canBulkEdit
+          const rowLongPress = canBulkAct
             ? () => toggleSelected(item.id)
             : () => {}
           const status = getStatus?.(item)
@@ -534,6 +596,68 @@ export function EntityList<T extends { id: number; created_at?: string }>({
               ) : null}
             </View>
           )
+        }}
+      />
+      {selectionMode ? (
+        <Animated.View
+          entering={BULK_BAR_ENTERING}
+          exiting={BULK_BAR_EXITING}
+          style={[
+            styles.bulkBar,
+            { bottom: TAB_BAR_HEIGHT + insets.bottom + spacing.sm },
+          ]}
+        >
+          <View style={styles.bulkBarTop}>
+            <Text style={styles.bulkBarCount}>{selectedIds.size} selected</Text>
+            <View style={styles.bulkBarActions}>
+              {onBulkDelete ? (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.bulkDeleteButton,
+                    (pressed || bulkApplying) && styles.bulkDeleteButtonDisabled,
+                  ]}
+                  onPress={() => setConfirmDeleteVisible(true)}
+                  disabled={bulkApplying}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete selected"
+                >
+                  <Trash size={14} color={colors.destructive} />
+                  <Text style={styles.bulkDeleteLabel}>Delete</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={clearSelection} hitSlop={8}>
+                <Text style={styles.bulkBarCancel}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+          {canBulkEditStatus ? (
+            <View style={styles.bulkStatusSection}>
+              <Text style={styles.bulkStatusLabel}>Set status</Text>
+              <FilterChips
+                options={statusOptions!.map((option) => ({
+                  key: option.value,
+                  label: option.label,
+                }))}
+                selected={null}
+                showAll={false}
+                embedded
+                onSelect={(key) => {
+                  if (key && !bulkApplying) void applyBulkStatus(key)
+                }}
+              />
+            </View>
+          ) : null}
+        </Animated.View>
+      ) : null}
+      <ConfirmDialog
+        visible={confirmDeleteVisible}
+        title={`Delete ${selectedIds.size} record${selectedIds.size === 1 ? "" : "s"}?`}
+        message="This can't be undone."
+        confirmLabel={bulkApplying ? "Deleting…" : "Delete"}
+        destructive
+        onConfirm={() => void applyBulkDelete()}
+        onCancel={() => {
+          if (!bulkApplying) setConfirmDeleteVisible(false)
         }}
       />
     </View>

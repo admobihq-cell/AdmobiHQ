@@ -12,7 +12,7 @@ import { usePageHeaderState } from "@/lib/page-header"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
 /** Persistent top bar shown above every ops screen — brand/back plus the current section or record name, and activity/theme/account access that used to live only on the dashboard and scroll out of view. */
-export function AppBar() {
+export function AppBar({ onAvatarPress }: { onAvatarPress: () => void }) {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const router = useRouter()
@@ -85,7 +85,7 @@ export function AppBar() {
         <ThemeToggleButton />
         <AvatarInitials
           name={displayName}
-          onPress={() => router.push("/(ops)/profile")}
+          onPress={onAvatarPress}
           size={32}
         />
       </View>

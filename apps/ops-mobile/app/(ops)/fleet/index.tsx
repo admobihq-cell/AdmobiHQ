@@ -31,6 +31,10 @@ export default function FleetScreen() {
       ),
     [client]
   )
+  const onBulkDelete = useCallback(
+    (ids: number[]) => client.fleet.bulk({ action: "delete", ids }),
+    [client]
+  )
 
   return (
     <EntityList
@@ -45,6 +49,7 @@ export default function FleetScreen() {
       }))}
       statusOptions={FLEET_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
+      onBulkDelete={onBulkDelete}
       detailHref={(id) => `/(ops)/fleet/${id}`}
       renderRow={(item, { onPress, onLongPress }) => (
         <FleetListRow item={item} onPress={onPress} onLongPress={onLongPress} />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Stack, useLocalSearchParams } from "expo-router"
+import { useLocalSearchParams } from "expo-router"
 import { useUser } from "@clerk/clerk-expo"
 import {
   ActivityIndicator,
@@ -27,6 +27,7 @@ import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { formatOpsError } from "@/lib/format-error"
+import { usePageHeader } from "@/lib/page-header"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "success"> = {
@@ -62,6 +63,11 @@ export default function SupportCaseDetailScreen() {
   const [updating, setUpdating] = useState(false)
   const [statusPickerOpen, setStatusPickerOpen] = useState(false)
   const [priorityPickerOpen, setPriorityPickerOpen] = useState(false)
+
+  usePageHeader(data ? data.subject : "Support case", {
+    showBack: true,
+    backHref: "/(ops)/support",
+  })
 
   const load = useCallback(async () => {
     try {
@@ -296,7 +302,6 @@ export default function SupportCaseDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: data.subject, headerShown: true }} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
