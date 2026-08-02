@@ -4,7 +4,7 @@ import { Hr, Link, Text } from "react-email"
 import { EmailLayout, emailStyles } from "@/lib/email/templates/shared/EmailLayout"
 
 interface AdminAlertProps {
-  type: "campaign" | "fleet" | "driver"
+  type: "campaign" | "fleet" | "driver" | "support"
   submitterName: string
   submitterEmail: string
   submitterPhone?: string
@@ -17,6 +17,7 @@ const typeLabels = {
   campaign: "Campaign brief",
   fleet: "Fleet partnership",
   driver: "Driver application",
+  support: "Support case",
 } as const
 
 export const AdminAlert = ({
