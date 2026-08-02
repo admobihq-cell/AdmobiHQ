@@ -12,17 +12,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { formatLabel, formatRelativeTime, SUPPORT_STATUSES, type SupportCaseDto } from "@workspace/ops-contracts"
 
+import { Inbox, Search } from "@/components/icons"
 import { FilterChips } from "@/components/app/filter-chips"
 import { ListRow } from "@/components/app/list-row"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { formatOpsError } from "@/lib/format-error"
-import { spacing, typography, useThemedStyles } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-const STATUS_VARIANT: Record<string, "muted" | "attention" | "success" | "default"> = {
+const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "success"> = {
   open: "attention",
-  pending: "attention",
+  pending: "progress",
   resolved: "success",
   closed: "muted",
 }
@@ -30,6 +31,7 @@ const STATUS_VARIANT: Record<string, "muted" | "attention" | "success" | "defaul
 export default function SupportListScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const colors = useThemeColors()
   const client = useOpsClient()
 
   const [items, setItems] = useState<SupportCaseDto[]>([])
@@ -65,26 +67,27 @@ export default function SupportListScreen() {
   useEffect(() => {
     const timeout = setTimeout(() => void load("initial"), search ? 300 : 0)
     return () => clearTimeout(timeout)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, status])
 
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
     header: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+    searchWrap: { position: "relative" as const, marginBottom: spacing.sm },
+    searchIcon: { position: "absolute" as const, left: spacing.md, top: 12, zIndex: 1 },
     searchInput: {
       ...typography.body,
       color: c.text,
       borderWidth: 1,
       borderColor: c.border,
       borderRadius: 10,
-      paddingHorizontal: spacing.md,
+      paddingLeft: 40,
+      paddingRight: spacing.md,
       paddingVertical: 10,
       backgroundColor: c.surface,
-      marginBottom: spacing.sm,
     },
     listContent: { paddingBottom: insets.bottom + spacing.xl },
     separator: { height: 1, backgroundColor: c.border, marginLeft: spacing.lg },
-    emptyWrap: { padding: spacing.xl, alignItems: "center" as const },
+    emptyWrap: { padding: spacing.xl, alignItems: "center" as const, gap: spacing.xs },
     emptyText: { ...typography.body, color: c.mutedForeground, textAlign: "center" as const },
     errorWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
   }))
@@ -97,12 +100,18 @@ export default function SupportListScreen() {
           title="Support"
           description="Cases from the landing page, customer web, and customer mobile."
         />
-        <TextInput
-          style={styles.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search subject, name, email…"
-        />
+        <View style={styles.searchWrap}>
+          <View style={styles.searchIcon} pointerEvents="none">
+            <Search size={16} color={colors.mutedForeground} />
+          </View>
+          <TextInput
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search subject, name, email…"
+            placeholderTextColor={colors.mutedForeground}
+          />
+        </View>
       </View>
 
       <FilterChips
@@ -132,6 +141,7 @@ export default function SupportListScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
+              <Inbox size={20} color={colors.mutedForeground} />
               <Text style={styles.emptyText}>No support cases yet.</Text>
             </View>
           }
@@ -139,7 +149,8 @@ export default function SupportListScreen() {
             <ListRow
               title={item.subject}
               subtitle={`${item.contact_name} · ${item.contact_email}`}
-              meta={`#${item.id} · ${formatLabel(item.channel)} · ${formatRelativeTime(item.created_at)}`}
+              meta={`#${item.id} · ${formatLabel(item.category)} · ${formatRelativeTime(item.created_at)}`}
+              initials={item.contact_name}
               statusLabel={formatLabel(item.status)}
               statusVariant={STATUS_VARIANT[item.status] ?? "muted"}
               onPress={() => router.push(`/(ops)/support/${item.id}`)}
