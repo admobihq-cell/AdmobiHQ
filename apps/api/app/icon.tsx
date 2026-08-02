@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og"
 
-import { LogoBrandTile } from "@workspace/ui/brand/favicon-mark"
+import { LogoBrandTile } from "@/lib/brand/favicon-mark"
 
 export const runtime = "nodejs"
 export const size = { width: 32, height: 32 }
