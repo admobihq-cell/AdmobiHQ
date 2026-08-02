@@ -35,6 +35,11 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 
 import { SimpleFormDialog } from "@/components/entity-page"
 import { PageHero } from "@/components/ui/page-hero"
@@ -130,17 +135,19 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-        <Table className="table-fixed">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-none [&_[data-slot=table-container]]:overflow-hidden">
+        <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[9rem]">Sent</TableHead>
-              <TableHead className="w-[12rem]">Title</TableHead>
-              <TableHead className="w-[8rem]">Category</TableHead>
-              <TableHead>Message</TableHead>
-              <TableHead className="w-[7rem]">Delivered</TableHead>
-              <TableHead className="w-[6rem]">Status</TableHead>
-              <TableHead className="w-[1%] text-right">Actions</TableHead>
+              <TableHead className="w-[10%]">Sent</TableHead>
+              <TableHead className="w-[16%]">Title</TableHead>
+              <TableHead className="w-[12%]">Category</TableHead>
+              <TableHead className="w-[34%]">Message</TableHead>
+              <TableHead className="w-[10%]">Delivered</TableHead>
+              <TableHead className="w-[10%]">Status</TableHead>
+              <TableHead className="w-[8%] text-right">
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -156,13 +163,13 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
             ) : (
               data.items.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                  <TableCell className="max-w-0 truncate text-muted-foreground" title={formatDateTime(row.created_at)}>
                     {formatDateTime(row.created_at)}
                   </TableCell>
-                  <TableCell className="truncate font-medium" title={row.title}>
+                  <TableCell className="max-w-0 truncate font-medium" title={row.title}>
                     {row.title}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="max-w-0 overflow-hidden">
                     <Badge variant="outline">{row.category ?? "announcement"}</Badge>
                   </TableCell>
                   <TableCell className="max-w-0">
@@ -175,11 +182,17 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                       {row.body}
                     </button>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap tabular-nums">
+                  <TableCell
+                    className="max-w-0 truncate tabular-nums"
+                    title={
+                      row.invalid_count > 0
+                        ? `${row.delivered_count}/${row.target_count} delivered · ${row.invalid_count} invalid`
+                        : `${row.delivered_count}/${row.target_count} delivered`
+                    }
+                  >
                     {row.delivered_count}/{row.target_count}
-                    {row.invalid_count > 0 ? ` · ${row.invalid_count} invalid` : ""}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="max-w-0">
                     {row.deleted_at ? (
                       <Badge variant="destructive">Deleted</Badge>
                     ) : (
@@ -189,41 +202,57 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setViewing(row)}
-                      >
-                        <Eye data-icon="inline-start" />
-                        View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={saving}
-                        onClick={() =>
-                          setPending({
-                            title: row.title,
-                            body: row.body,
-                            category: row.category ?? "announcement",
-                            mode: "resend",
-                          })
-                        }
-                      >
-                        <RotateCcw data-icon="inline-start" />
-                        Resend
-                      </Button>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="View announcement"
+                            onClick={() => setViewing(row)}
+                          >
+                            <Eye />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Resend announcement"
+                            disabled={saving}
+                            onClick={() =>
+                              setPending({
+                                title: row.title,
+                                body: row.body,
+                                category: row.category ?? "announcement",
+                                mode: "resend",
+                              })
+                            }
+                          >
+                            <RotateCcw />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Resend</TooltipContent>
+                      </Tooltip>
                       {row.deleted_at ? null : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={deleting}
-                          onClick={() => setPendingDelete(row)}
-                        >
-                          <Trash2 data-icon="inline-start" />
-                          Delete
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Delete announcement"
+                              className="text-destructive hover:text-destructive"
+                              disabled={deleting}
+                              onClick={() => setPendingDelete(row)}
+                            >
+                              <Trash2 />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Delete</TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </TableCell>
