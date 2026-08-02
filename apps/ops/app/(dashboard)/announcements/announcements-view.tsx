@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Eye, Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-import { ANNOUNCEMENT_FORM_FIELDS, type AnnouncementDto } from "@workspace/ops-contracts"
+import { type AnnouncementDto } from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
 
 import {
@@ -41,10 +41,14 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
-import { SimpleFormDialog } from "@/components/entity-page"
 import { PageHero } from "@/components/ui/page-hero"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+
+import {
+  AnnouncementFormDialog,
+  type AnnouncementFormValues,
+} from "./announcement-form-dialog"
 
 type Paginated<T> = {
   items: T[]
@@ -59,6 +63,10 @@ type PendingBroadcast = {
   body: string
   category: string
   mode: "new" | "resend"
+  /** New upload (cropped JPEG). Prefer this over image_url when present. */
+  imageBlob?: Blob | null
+  /** Existing public image URL, e.g. when resending. */
+  image_url?: string | null
 }
 
 type AnnouncementsViewProps = {
@@ -99,6 +107,13 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     if (!pending) return
     setSaving(true)
     try {
+      let imageUrl = pending.image_url ?? undefined
+      if (pending.imageBlob) {
+        const uploaded = await client.notifications.uploadImage(
+          new File([pending.imageBlob], "announcement.jpg", { type: "image/jpeg" }),
+        )
+        imageUrl = uploaded.url
+      }
       await client.notifications.broadcast({
         title: pending.title,
         body: pending.body,
@@ -108,6 +123,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           | "billing"
           | "promo"
           | "system",
+        image_url: imageUrl ?? null,
       })
       toast.success(pending.mode === "resend" ? "Announcement resent" : "Announcement sent")
       setPending(null)
@@ -118,6 +134,17 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     } finally {
       setSaving(false)
     }
+  }
+
+  const queueNewAnnouncement = (values: AnnouncementFormValues) => {
+    setFormOpen(false)
+    setPending({
+      title: values.title,
+      body: values.body,
+      category: values.category,
+      mode: "new",
+      imageBlob: values.imageBlob,
+    })
   }
 
   return (
@@ -229,6 +256,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                                 body: row.body,
                                 category: row.category ?? "announcement",
                                 mode: "resend",
+                                image_url: row.image_url,
                               })
                             }
                           >
@@ -263,25 +291,14 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         </Table>
       </div>
 
-      <SimpleFormDialog
+      <AnnouncementFormDialog
         open={formOpen}
         onOpenChange={(open) => {
           setFormOpen(open)
           if (!open) setPending(null)
         }}
-        title="New announcement"
-        fields={ANNOUNCEMENT_FORM_FIELDS}
         saving={saving}
-        initial={{ category: "announcement" }}
-        onSubmit={async (values) => {
-          setFormOpen(false)
-          setPending({
-            title: String(values.title ?? ""),
-            body: String(values.body ?? ""),
-            category: String(values.category ?? "announcement"),
-            mode: "new",
-          })
-        }}
+        onSubmit={queueNewAnnouncement}
       />
 
       <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
@@ -337,6 +354,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                       body: viewing.body,
                       category: viewing.category ?? "announcement",
                       mode: "resend",
+                      image_url: viewing.image_url,
                     })
                     setViewing(null)
                   }}
@@ -375,12 +393,15 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
               {pending?.mode === "resend" ? (
                 <>
                   This sends &ldquo;{pending.title}&rdquo; again as a new push to every installed
-                  customer app. This can&apos;t be undone.
+                  customer app
+                  {pending.image_url || pending.imageBlob ? ", including its image" : ""}. This
+                  can&apos;t be undone.
                 </>
               ) : (
                 <>
-                  This sends a real push notification to every installed customer app. This
-                  can&apos;t be undone.
+                  This sends a real push notification to every installed customer app
+                  {pending?.imageBlob ? ", with your attached image" : ""}. This can&apos;t be
+                  undone.
                 </>
               )}
             </AlertDialogDescription>
