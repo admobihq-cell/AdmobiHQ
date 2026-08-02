@@ -13,15 +13,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Send } from "@/components/icons"
+import { CategoryIcon, SupportStatusPill } from "@/components/support/support-ui"
 import { getSupportCase, replyToSupportCase, type SupportMessage } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-
-const STATUS_LABELS: Record<string, string> = {
-  open: "Open",
-  pending: "Awaiting you",
-  resolved: "Resolved",
-  closed: "Closed",
-}
 
 const POLL_INTERVAL_MS = 15_000
 
@@ -33,6 +27,7 @@ export default function SupportCaseScreen() {
 
   const [subject, setSubject] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [category, setCategory] = useState<string | null>(null)
   const [messages, setMessages] = useState<SupportMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState("")
@@ -46,6 +41,7 @@ export default function SupportCaseScreen() {
       if (data) {
         setSubject(data.subject)
         setStatus(data.status)
+        setCategory(data.category)
         setMessages(data.messages)
       } else {
         setError("This request isn't available on this device.")
@@ -67,13 +63,36 @@ export default function SupportCaseScreen() {
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
-    container: { padding: spacing.lg, gap: spacing.md },
+    container: { padding: spacing.lg, paddingBottom: spacing.md },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    headerMeta: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      flex: 1,
+    },
     metaText: { ...typography.caption, color: c.mutedForeground },
+    bubbleRow: {
+      flexDirection: "row" as const,
+      alignItems: "flex-end" as const,
+      gap: spacing.xs,
+    },
     bubble: {
-      maxWidth: "82%" as const,
-      padding: spacing.md,
+      maxWidth: "78%" as const,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 10,
       borderRadius: radius.lg,
       gap: 4,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 1,
     },
     bubbleCustomer: {
       alignSelf: "flex-end" as const,
@@ -86,11 +105,12 @@ export default function SupportCaseScreen() {
       borderWidth: 1,
       borderColor: c.border,
       borderBottomLeftRadius: radius.sm,
+      shadowOpacity: 0,
+      elevation: 0,
     },
     bubbleTextCustomer: { ...typography.body, color: c.primaryForeground },
     bubbleTextOps: { ...typography.body, color: c.text },
-    bubbleMetaCustomer: { ...typography.caption, color: "rgba(255,255,255,0.75)" },
-    bubbleMetaOps: { ...typography.caption, color: c.mutedForeground },
+    bubbleMeta: { ...typography.caption, color: c.mutedForeground, paddingHorizontal: 4 },
     composer: {
       flexDirection: "row" as const,
       alignItems: "flex-end" as const,
@@ -161,25 +181,57 @@ export default function SupportCaseScreen() {
               contentContainerStyle={styles.container}
               onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
             >
-              {status ? (
-                <Text style={styles.metaText}>
-                  Status: {STATUS_LABELS[status] ?? status}
-                </Text>
-              ) : null}
-              {messages.map((message) => {
+              <View style={styles.header}>
+                <View style={styles.headerMeta}>
+                  {category ? (
+                    <CategoryIcon category={category} size={14} color={colors.mutedForeground} />
+                  ) : null}
+                  <Text style={styles.metaText}>#{caseId}</Text>
+                </View>
+                {status ? <SupportStatusPill status={status} /> : null}
+              </View>
+
+              {messages.map((message, index) => {
                 const isCustomer = message.author_type === "customer"
+                const next = messages[index + 1]
+                const endsGroup = next?.author_type !== message.author_type
+                const prev = messages[index - 1]
+                const grouped = prev?.author_type === message.author_type
                 return (
-                  <View
-                    key={message.id}
-                    style={[styles.bubble, isCustomer ? styles.bubbleCustomer : styles.bubbleOps]}
-                  >
-                    <Text style={isCustomer ? styles.bubbleTextCustomer : styles.bubbleTextOps}>
-                      {message.body}
-                    </Text>
-                    <Text style={isCustomer ? styles.bubbleMetaCustomer : styles.bubbleMetaOps}>
-                      {isCustomer ? "You" : "Admobi team"} ·{" "}
-                      {new Date(message.created_at).toLocaleString()}
-                    </Text>
+                  <View key={message.id}>
+                    <View
+                      style={[
+                        styles.bubbleRow,
+                        { justifyContent: isCustomer ? "flex-end" : "flex-start" },
+                        { marginTop: index === 0 ? 0 : grouped ? spacing.xs : spacing.md },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.bubble,
+                          isCustomer ? styles.bubbleCustomer : styles.bubbleOps,
+                        ]}
+                      >
+                        <Text style={isCustomer ? styles.bubbleTextCustomer : styles.bubbleTextOps}>
+                          {message.body}
+                        </Text>
+                      </View>
+                    </View>
+                    {endsGroup ? (
+                      <Text
+                        style={[
+                          styles.bubbleMeta,
+                          { alignSelf: isCustomer ? "flex-end" : "flex-start", marginTop: 4 },
+                        ]}
+                      >
+                        {new Date(message.created_at).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+                    ) : null}
                   </View>
                 )
               })}
@@ -191,12 +243,15 @@ export default function SupportCaseScreen() {
                 value={reply}
                 onChangeText={setReply}
                 placeholder="Write a reply…"
+                placeholderTextColor={colors.mutedForeground}
                 multiline
               />
               <Pressable
                 style={[styles.sendButton, (sending || !reply.trim()) && styles.sendButtonDisabled]}
                 onPress={handleSend}
                 disabled={sending || !reply.trim()}
+                accessibilityRole="button"
+                accessibilityLabel="Send reply"
               >
                 {sending ? (
                   <ActivityIndicator color={colors.primaryForeground} size="small" />
