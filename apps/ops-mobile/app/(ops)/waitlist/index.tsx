@@ -1,6 +1,7 @@
 import { useCallback } from "react"
 
 import { EntityList } from "@/components/EntityList"
+import { Mail } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function WaitlistScreen() {
@@ -20,6 +21,7 @@ export default function WaitlistScreen() {
       entity="waitlist"
       title="Waitlist"
       description="Early-interest emails from homepage and other launch CTAs."
+      icon={Mail}
       loadPage={loadPage}
       addHref="/(ops)/waitlist/new"
       getTitle={(item) => item.email}

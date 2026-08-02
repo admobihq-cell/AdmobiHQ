@@ -7,6 +7,7 @@ import {
 
 import { FleetListRow } from "@/components/app/entity-list-rows"
 import { EntityList } from "@/components/EntityList"
+import { Truck } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function FleetScreen() {
@@ -41,6 +42,7 @@ export default function FleetScreen() {
       entity="fleet"
       title="Fleet partners"
       description="Onboard and track fleet partner applications across cities."
+      icon={Truck}
       loadPage={loadPage}
       addHref="/(ops)/fleet/new"
       filterOptions={FLEET_STATUSES.map((status) => ({

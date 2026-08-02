@@ -7,6 +7,7 @@ import {
 
 import { DriverListRow } from "@/components/app/entity-list-rows"
 import { EntityList } from "@/components/EntityList"
+import { Car } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function DriversScreen() {
@@ -41,6 +42,7 @@ export default function DriversScreen() {
       entity="drivers"
       title="Drivers"
       description="Monitor driver signups, city distribution, and onboarding status."
+      icon={Car}
       loadPage={loadPage}
       addHref="/(ops)/drivers/new"
       filterOptions={DRIVER_STATUSES.map((status) => ({

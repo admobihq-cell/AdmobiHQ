@@ -21,6 +21,7 @@ import {
   Plus,
   Search,
   Trash,
+  type AppIcon,
 } from "@/components/icons"
 import type {
   FormFieldOption,
@@ -69,7 +70,8 @@ type EntityListProps<T extends { id: number }> = {
   entity: EntityKey
   title: string
   description?: string
-  eyebrow?: string
+  /** Tinted icon tile shown beside the title, replacing the old repeated "Operations" eyebrow as the section's visual identity. */
+  icon?: AppIcon
   loadPage: (
     page: number,
     options?: EntityListLoadOptions
@@ -100,7 +102,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   entity,
   title,
   description,
-  eyebrow = "Operations",
+  icon,
   loadPage,
   getTitle,
   getSubtitle,
@@ -405,7 +407,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       <View style={styles.headerTop}>
         <View style={{ flex: 1 }}>
           <PageHero
-            eyebrow={eyebrow}
+            icon={icon}
             title={title}
             compact
             description={

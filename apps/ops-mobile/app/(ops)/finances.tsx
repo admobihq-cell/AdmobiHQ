@@ -267,7 +267,7 @@ export default function FinancesScreen() {
       showsVerticalScrollIndicator={false}
     >
       <PageHero
-        eyebrow="Operations"
+        icon={Wallet}
         title="Finances"
         description="Platform wallet, campaign top-ups, and driver payouts in one place."
         compact

@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useUser } from "@clerk/clerk-expo"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -50,7 +50,6 @@ export function AppBar({ onAvatarPress }: { onAvatarPress: () => void }) {
         {
           paddingTop: insets.top + spacing.sm,
           backgroundColor: colors.bg,
-          borderBottomColor: colors.border,
         },
       ]}
     >
@@ -100,8 +99,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: spacing.md,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: Platform.OS === "android" ? 3 : 0,
   },
   brand: {
     flexDirection: "row",

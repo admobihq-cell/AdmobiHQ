@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { formatLabel, formatRelativeTime, SUPPORT_STATUSES, type SupportCaseDto } from "@workspace/ops-contracts"
 
-import { Inbox, Search } from "@/components/icons"
+import { Inbox, LifeBuoy, Search } from "@/components/icons"
 import { FilterChips } from "@/components/app/filter-chips"
 import { ListRow } from "@/components/app/list-row"
 import { PageHero } from "@/components/ui/page-hero"
@@ -98,7 +98,7 @@ export default function SupportListScreen() {
     <View style={styles.root}>
       <View style={styles.header}>
         <PageHero
-          eyebrow="Operations"
+          icon={LifeBuoy}
           title="Support"
           description="Cases from the landing page, customer web, and customer mobile."
         />
