@@ -39,6 +39,8 @@
   },
   "exports": {
     "./brand/admobi-mark": "./src/brand/admobi-mark.tsx",
+    "./brand/favicon-mark": "./src/brand/favicon-mark.tsx",
+    "./brand/logo": "./src/brand/logo.tsx",
     "./brand/constants": "./src/brand/constants.ts",
     "./brand/geometry": "./src/brand/geometry.ts",
     "./globals.css": "./src/styles/globals.css",

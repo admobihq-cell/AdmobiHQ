@@ -121,21 +121,24 @@ model CustomerPushToken {
 }
 
 model AnnouncementBroadcast {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   title            String
   body             String
-  category         String   @default("announcement")
+  category         String    @default("announcement")
   sent_by_clerk_id String
   sent_by_email    String
-  target_count     Int      @default(0)
-  delivered_count  Int      @default(0)
-  invalid_count    Int      @default(0)
-  status           String   @default("sent")
-  created_at       DateTime @default(now())
+  target_count     Int       @default(0)
+  delivered_count  Int       @default(0)
+  invalid_count    Int       @default(0)
+  status           String    @default("sent")
+  created_at       DateTime  @default(now())
+  deleted_at       DateTime?
+  deleted_by_email String?
 
   tickets PushTicket[]
 
   @@index([created_at])
+  @@index([deleted_at])
   @@map("announcement_broadcasts")
 }
 

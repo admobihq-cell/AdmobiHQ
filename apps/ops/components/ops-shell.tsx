@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 
+import { Logo } from "@workspace/ui/brand/logo"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -97,11 +98,9 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar variant="inset">
         <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Admobi
-            </span>
-            <span className="text-sm font-semibold">Ops Console</span>
+          <div className="flex flex-col gap-1">
+            <Logo markHeight={18} wordmarkClassName="text-sm leading-none" />
+            <span className="text-xs font-medium text-muted-foreground">Ops Console</span>
           </div>
         </SidebarHeader>
         <SidebarContent>

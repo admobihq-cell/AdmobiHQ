@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
 
 import { Bell } from "@/components/icons"
 import { NotificationRow } from "@/components/notifications/notification-row"
 import { FilterChips } from "@/components/ui/filter-chips"
 import {
-  INITIAL_NOTIFICATIONS,
   NOTIFICATION_CATEGORY_LABELS,
   NOTIFICATION_CATEGORY_ORDER,
   type NotificationCategory,
@@ -20,14 +19,14 @@ const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
 }))
 
 export default function NotificationsScreen() {
-  const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
+  const [items, setItems] = useState<NotificationItem[]>([])
   const [category, setCategory] = useState<NotificationCategory | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   // Tick so relative timestamps (5m ago → 6m ago) refresh while the screen is open.
   const [, setClock] = useState(0)
   const unreadCount = items.filter((item) => !item.read).length
 
-  const { items: liveItems, refetch: refetchLive } = useLiveAnnouncements()
+  const { items: liveItems, loading, refetch: refetchLive } = useLiveAnnouncements()
 
   useEffect(() => {
     const id = setInterval(() => setClock((n) => n + 1), 60_000)
@@ -178,15 +177,23 @@ export default function NotificationsScreen() {
           <NotificationRow item={item} onPress={() => markRead(item.id)} />
         )}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <View style={styles.emptyIconWrap}>
-              <Bell size={26} />
+          loading ? (
+            <View style={styles.empty}>
+              <ActivityIndicator />
             </View>
-            <Text style={styles.emptyTitle}>Nothing here</Text>
-            <Text style={styles.emptyBody}>
-              No notifications in this category yet.
-            </Text>
-          </View>
+          ) : (
+            <View style={styles.empty}>
+              <View style={styles.emptyIconWrap}>
+                <Bell size={26} />
+              </View>
+              <Text style={styles.emptyTitle}>Nothing here</Text>
+              <Text style={styles.emptyBody}>
+                {category
+                  ? "No notifications in this category yet."
+                  : "You're all caught up — announcements will show up here."}
+              </Text>
+            </View>
+          )
         }
       />
     </View>
