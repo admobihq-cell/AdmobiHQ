@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native"
+import { Image, Pressable, Text, View } from "react-native"
 
 import {
   formatRelativeTime,
@@ -21,11 +21,21 @@ export function NotificationRow({ item, onPress }: NotificationRowProps) {
     row: {
       flexDirection: "row" as const,
       gap: spacing.md,
-      paddingVertical: spacing.md,
+      paddingTop: spacing.md,
+      paddingBottom: item.imageUrl ? spacing.sm : spacing.md,
       paddingHorizontal: spacing.lg,
       alignItems: "flex-start" as const,
     },
     rowPressed: { opacity: 0.7 },
+    imageWrap: {
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      aspectRatio: 2,
+      borderRadius: radius.md,
+      overflow: "hidden" as const,
+      backgroundColor: c.muted,
+    },
+    image: { width: "100%" as const, height: "100%" as const },
     iconWrap: {
       width: 36,
       height: 36,
@@ -77,28 +87,35 @@ export function NotificationRow({ item, onPress }: NotificationRowProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      style={({ pressed }) => pressed && styles.rowPressed}
       accessibilityRole="button"
       accessibilityLabel={item.title}
     >
-      <View style={styles.iconWrap}>
-        <Icon color={item.read ? colors.mutedForeground : colors.primary} size={18} />
-      </View>
-      <View style={styles.copy}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={2}>
-            {item.title}
+      <View style={styles.row}>
+        <View style={styles.iconWrap}>
+          <Icon color={item.read ? colors.mutedForeground : colors.primary} size={18} />
+        </View>
+        <View style={styles.copy}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {item.title}
+            </Text>
+            {item.read ? null : <View style={styles.unreadDot} />}
+          </View>
+          <Text style={styles.body} numberOfLines={2}>
+            {item.body}
           </Text>
-          {item.read ? null : <View style={styles.unreadDot} />}
-        </View>
-        <Text style={styles.body} numberOfLines={2}>
-          {item.body}
-        </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.category}>{NOTIFICATION_CATEGORY_LABELS[item.category]}</Text>
-          <Text style={styles.time}>· {formatRelativeTime(item.createdAt)}</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.category}>{NOTIFICATION_CATEGORY_LABELS[item.category]}</Text>
+            <Text style={styles.time}>· {formatRelativeTime(item.createdAt)}</Text>
+          </View>
         </View>
       </View>
+      {item.imageUrl ? (
+        <View style={styles.imageWrap}>
+          <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" />
+        </View>
+      ) : null}
     </Pressable>
   )
 }

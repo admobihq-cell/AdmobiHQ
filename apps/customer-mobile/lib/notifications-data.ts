@@ -8,6 +8,7 @@ export type NotificationItem = {
   category: NotificationCategory
   title: string
   body: string
+  imageUrl: string | null
   /** ISO timestamp — formatted at render so relative labels stay current. */
   createdAt: string
   read: boolean
@@ -45,6 +46,7 @@ export type AnnouncementBroadcastDto = {
   title: string
   body: string
   category?: string | null
+  image_url?: string | null
   created_at: string
 }
 
@@ -93,6 +95,7 @@ export function announcementToNotificationItem(dto: AnnouncementBroadcastDto): N
     category: parseCategory(dto.category),
     title: dto.title,
     body: dto.body,
+    imageUrl: dto.image_url ?? null,
     createdAt: dto.created_at,
     read: false,
     group: dayDiff(dto.created_at) <= 0 ? "today" : "earlier",

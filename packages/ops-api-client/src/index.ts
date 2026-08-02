@@ -126,6 +126,15 @@ export type OpsClient = {
       pageSize?: number
     }) => Promise<PaginatedResponse<AnnouncementDto>>
     delete: (id: number) => Promise<SuccessResponse>
+    /**
+     * Uploads an image (already cropped/resized client-side) and returns its
+     * public URL, for use as `image_url` on `broadcast`. Accepts either a Web
+     * `Blob`/`File` or React Native's `{ uri, name, type }` file descriptor —
+     * RN's `FormData.append` takes the latter shape, not a real `Blob`.
+     */
+    uploadImage: (
+      file: Blob | { uri: string; name: string; type: string },
+    ) => Promise<{ url: string }>
   }
   audit: {
     list: (params?: AuditListQueryParams) => Promise<PaginatedResponse<AuditEventDto>>
@@ -168,7 +177,8 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   ): Promise<T> {
     const token = await options.getToken()
     const headers = new Headers(init.headers)
-    if (!headers.has("Content-Type") && init.body) {
+    // FormData needs the runtime-generated multipart boundary header, not JSON.
+    if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json")
     }
     if (token) {
@@ -304,6 +314,17 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       },
       delete: (id) =>
         request<SuccessResponse>(`${apiPrefix}/notifications/${id}`, { method: "DELETE" }),
+      uploadImage: (file) => {
+        const form = new FormData()
+        // React Native's FormData accepts { uri, name, type } directly, which
+        // isn't assignable to the DOM lib's Blob type this package is compiled
+        // against — the cast bridges that real cross-platform API difference.
+        form.append("file", file as Blob)
+        return request<{ url: string }>(`${apiPrefix}/notifications/broadcast-image`, {
+          method: "POST",
+          body: form,
+        })
+      },
     },
     audit: {
       list: (params = {}) => {

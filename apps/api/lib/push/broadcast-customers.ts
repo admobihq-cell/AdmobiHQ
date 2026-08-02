@@ -22,6 +22,7 @@ export async function broadcastToCustomers(
       title: input.title,
       body: input.body,
       category: input.category,
+      image_url: input.image_url ?? null,
       sent_by_clerk_id: sender.clerkUserId,
       sent_by_email: sender.email,
       target_count: tokens.length,
@@ -43,6 +44,10 @@ export async function broadcastToCustomers(
     // High priority wakes doze-mode Android devices so the tray banner shows promptly.
     priority: "high" as const,
     data: { type: "announcement", category: input.category },
+    // Android renders this in the push banner automatically. iOS needs a
+    // Notification Service Extension the app doesn't have yet, so it's
+    // harmless to include — iOS just ignores it and shows text-only.
+    ...(input.image_url ? { richContent: { image: input.image_url } } : {}),
   }))
 
   let queued = 0
