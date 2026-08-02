@@ -160,9 +160,13 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                     {row.invalid_count > 0 ? ` · ${row.invalid_count} invalid` : ""}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={row.status === "failed" ? "destructive" : "secondary"}>
-                      {row.status}
-                    </Badge>
+                    {row.deleted_at ? (
+                      <Badge variant="destructive">Deleted</Badge>
+                    ) : (
+                      <Badge variant={row.status === "failed" ? "destructive" : "secondary"}>
+                        {row.status}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -182,15 +186,17 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                         <RotateCcw data-icon="inline-start" />
                         Resend
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={deleting}
-                        onClick={() => setPendingDelete(row)}
-                      >
-                        <Trash2 data-icon="inline-start" />
-                        Delete
-                      </Button>
+                      {row.deleted_at ? null : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={deleting}
+                          onClick={() => setPendingDelete(row)}
+                        >
+                          <Trash2 data-icon="inline-start" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
