@@ -20,7 +20,7 @@ import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { formatOpsError } from "@/lib/format-error"
 import { usePageHeader } from "@/lib/page-header"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { spacing, typography, useResolvedTheme, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "success"> = {
   open: "attention",
@@ -34,6 +34,7 @@ export default function SupportListScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
+  const resolvedTheme = useResolvedTheme()
   const client = useOpsClient()
 
   const [items, setItems] = useState<SupportCaseDto[]>([])
@@ -136,6 +137,7 @@ export default function SupportListScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => String(item.id)}
+          extraData={resolvedTheme}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => void load("refresh")} />

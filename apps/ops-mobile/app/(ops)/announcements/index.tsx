@@ -25,6 +25,7 @@ import {
   radius,
   spacing,
   typography,
+  useResolvedTheme,
   useThemeColors,
   useThemedStyles,
 } from "@/lib/theme"
@@ -34,6 +35,7 @@ export default function AnnouncementsScreen() {
   const client = useOpsClient()
   const router = useRouter()
   const colors = useThemeColors()
+  const resolvedTheme = useResolvedTheme()
   const styles = useThemedStyles((c) => ({
     container: { flex: 1, backgroundColor: c.bg },
     header: {
@@ -274,6 +276,7 @@ export default function AnnouncementsScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
+        extraData={resolvedTheme}
         ListHeaderComponent={listHeader}
         refreshControl={
           <RefreshControl
