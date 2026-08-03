@@ -61,7 +61,7 @@ function RootLayout() {
   const ready = appReady && onboardingChecked
 
   useSplashBootstrap(ready)
-  useOtaUpdates()
+  useOtaUpdates(ready)
   usePushRegistration()
 
   useEffect(() => {
