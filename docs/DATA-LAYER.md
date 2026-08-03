@@ -25,8 +25,9 @@ Tables (see Prisma schema):
 | `leads` | `Lead` | Campaign briefs (`POST /v1/public/leads`, audience `campaign`) |
 | `fleet_partners` | `FleetPartner` | Fleet inquiries (`POST /v1/public/leads`, audience `fleet`) |
 | `drivers` | `Driver` | Driver onboarding (`POST /v1/public/drivers`) |
-| `waitlist`, `media_kit_requests`, etc. | — | Public + ops admin routes under `/v1/*` |
+| `waitlist_entries`, `media_kit_requests`, etc. | — | Public + ops admin routes under `/v1/*` |
 | `audit_events` | `AuditEvent` | Cross-app activity trail (who did what, when, email) |
+| `support_identities` | `SupportIdentity` | Email-level identity token gating `GET /v1/public/support` — see [API.md](./API.md#support-case-identity-token) |
 
 Implementation pattern (in `apps/api`):
 
