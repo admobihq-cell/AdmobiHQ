@@ -9,11 +9,15 @@ import { CampaignConfirmation } from "@/lib/email/templates/CampaignConfirmation
 import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 // Database: Neon PostgreSQL with Prisma ORM
 // Email: Resend with Bull queue for reliability
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, "leads", { limit: 5, windowSeconds: 60 })
+  if (limited) return limited
+
   let body: unknown
   try {
     body = await req.json()
@@ -46,7 +50,7 @@ export async function POST(req: Request) {
           additional_info: parsed.data.brief || '',
         },
       })
-      console.log("[Admobi API leads] Saved campaign lead:", parsed.data)
+      console.log("[Admobi API leads] Saved campaign lead:", { id: data.id })
 
       // Push notifies ops staff independently of email — must not be
       // skipped just because Resend fails (e.g. invalid API key).
@@ -115,7 +119,7 @@ export async function POST(req: Request) {
           notes: parsed.data.notes || '',
         },
       })
-      console.log("[Admobi API leads] Saved fleet partner:", parsed.data)
+      console.log("[Admobi API leads] Saved fleet partner:", { id: data.id })
 
       // Push notifies ops staff independently of email — must not be
       // skipped just because Resend fails (e.g. invalid API key).
