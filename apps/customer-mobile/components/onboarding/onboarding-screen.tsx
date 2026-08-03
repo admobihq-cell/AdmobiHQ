@@ -248,7 +248,12 @@ function SlideItem({ item, itemIndex, width, height, scrollX, bottomReserve }: S
       </Svg>
 
       <View style={[styles.slide, { paddingBottom: bottomReserve }]}>
-        <Animated.View style={textStyle}>
+        <Animated.View
+          style={textStyle}
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={`Slide ${itemIndex + 1} of ${SLIDES.length}. ${item.eyebrow}. ${item.title}. ${item.body}`}
+        >
           <Text style={styles.eyebrow}>{item.eyebrow}</Text>
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.body}>{item.body}</Text>
