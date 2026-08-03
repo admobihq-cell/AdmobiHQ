@@ -106,9 +106,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const inAuthGroup = segments[0] === "sign-in" || segments[0] === "sign-up"
   const inCustomerGroup = segments[0] === "(customer)"
   const inOpsGroup = segments[0] === "(ops)"
+  const inOnboardingReplay = segments[0] === "onboarding-replay"
 
-  const needsOpsRedirect =
-    Boolean(isSignedIn && isStaff && (inAuthGroup || inCustomerGroup || !inOpsGroup))
+  const needsOpsRedirect = Boolean(
+    isSignedIn &&
+      isStaff &&
+      (inAuthGroup || inCustomerGroup || (!inOpsGroup && !inOnboardingReplay)),
+  )
   const needsCustomerRedirect =
     Boolean(isSignedIn && !isStaff && (inAuthGroup || inOpsGroup || !inCustomerGroup))
   const isRedirecting = needsOpsRedirect || needsCustomerRedirect
@@ -130,7 +134,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       // the dashboard redirect until it's been checked and cleared.
       if (!onboardingChecked || !onboardingCompleted) return
 
-      if (inAuthGroup || inCustomerGroup || !inOpsGroup) {
+      if (inAuthGroup || inCustomerGroup || (!inOpsGroup && !inOnboardingReplay)) {
         if (!handoffStarted.current) {
           handoffStarted.current = true
           setHandoffVisible(true)
@@ -150,6 +154,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     inAuthGroup,
     inCustomerGroup,
     inOpsGroup,
+    inOnboardingReplay,
     onboardingChecked,
     onboardingCompleted,
     router,
