@@ -30,7 +30,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
-import { appNavItems, navItemForPath } from "@/lib/navigation"
+import { appNavItems, isNavItemActive, navItemForPath } from "@/lib/navigation"
 import { appHostLabel } from "@/lib/site-urls"
 
 const activeSidebarLinkClassName =
@@ -61,11 +61,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar variant="inset">
-        <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-          <div className="flex flex-col gap-1">
-            <Logo markHeight={18} wordmarkClassName="text-sm leading-none" />
-            <span className="text-xs font-medium text-muted-foreground">Customer App</span>
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+            <Logo
+              markHeight={16}
+              wordmarkClassName="text-sm leading-none group-data-[collapsible=icon]:hidden"
+            />
+            <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+              · Customer App
+            </span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -77,8 +82,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === item.href}
+                      isActive={isNavItemActive(pathname, item.href)}
                       className={activeSidebarLinkClassName}
+                      tooltip={item.label}
                     >
                       <Link href={item.href}>
                         <item.icon />
@@ -92,7 +98,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border p-3">
-          <p className="text-xs text-muted-foreground">{appHostLabel()}</p>
+          <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+            {appHostLabel()}
+          </p>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
