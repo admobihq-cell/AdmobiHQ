@@ -25,7 +25,7 @@ export type SupportMessage = {
   created_at: string
 }
 
-export type SupportIdentity = { name: string; email: string }
+export type SupportIdentity = { name: string; email: string; token?: string }
 
 async function getCaseTokens(): Promise<Record<number, string>> {
   const raw = await AsyncStorage.getItem(CASE_TOKENS_KEY)
@@ -48,8 +48,13 @@ export async function getStoredIdentity(): Promise<SupportIdentity | null> {
   return raw ? (JSON.parse(raw) as SupportIdentity) : null
 }
 
+// Merges rather than overwrites: a case created from a device that already
+// has a stored identity token won't get a fresh one from the API (see
+// mintIdentityTokenIfAbsent), so a naive overwrite here would wipe it out.
 async function saveIdentity(identity: SupportIdentity) {
-  await AsyncStorage.setItem(IDENTITY_KEY, JSON.stringify(identity))
+  const existing = await getStoredIdentity()
+  const merged: SupportIdentity = { ...identity, token: identity.token ?? existing?.token }
+  await AsyncStorage.setItem(IDENTITY_KEY, JSON.stringify(merged))
 }
 
 export async function createSupportCase(input: {
@@ -63,11 +68,15 @@ export async function createSupportCase(input: {
 }): Promise<SupportCase & { accessToken: string }> {
   const res = await postJson<{
     success: true
-    data: SupportCase & { accessToken: string }
+    data: SupportCase & { accessToken: string; identityToken?: string }
   }>("/v1/public/support", { ...input, channel: "customer-mobile" })
 
   await saveCaseToken(res.data.id, res.data.accessToken)
-  await saveIdentity({ name: input.contact_name, email: input.contact_email })
+  await saveIdentity({
+    name: input.contact_name,
+    email: input.contact_email,
+    token: res.data.identityToken,
+  })
 
   return res.data
 }
@@ -92,9 +101,13 @@ export async function replyToSupportCase(caseId: number, body: string): Promise<
   return res.data
 }
 
-export async function listMySupportCases(email: string, deviceId: string): Promise<SupportCase[]> {
+export async function listMySupportCases(): Promise<SupportCase[]> {
+  const identity = await getStoredIdentity()
+  if (!identity?.token) return []
+
   const res = await getJson<{ items: SupportCase[] }>(
-    `/v1/public/support?email=${encodeURIComponent(email)}&deviceId=${encodeURIComponent(deviceId)}`,
+    `/v1/public/support?email=${encodeURIComponent(identity.email)}`,
+    { Authorization: `Bearer ${identity.token}` },
   )
   return res.items
 }
