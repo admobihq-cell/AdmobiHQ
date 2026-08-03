@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { broadcastCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser, recordAuditEvent } from "@/lib/audit"
-import { jsonError, parseJsonBody } from "@/lib/api-utils"
+import { jsonError, parseJsonBody, timingSafeEqual } from "@/lib/api-utils"
 import { requireOpsUser } from "@/lib/auth"
 import { broadcastToCustomers } from "@/lib/push/broadcast-customers"
 
@@ -14,7 +14,7 @@ export const maxDuration = 60
 function hasCronSecret(req: Request): boolean {
   const secret = process.env.CRON_SECRET?.trim()
   if (!secret) return false
-  return req.headers.get("authorization") === `Bearer ${secret}`
+  return timingSafeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`)
 }
 
 const SYSTEM_SENDER = { clerkUserId: "system", email: "release-bot@admobihq.com" }

@@ -3,20 +3,15 @@ import { NextResponse } from "next/server"
 import { supportCaseUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError, parseId, parseJsonBody } from "@/lib/api-utils"
+import { jsonError, parseId, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { toOpsCase, toOpsMessage } from "@/lib/support"
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Params) {
-  try {
-    await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
 
   const { id: rawId } = await params
   const id = parseId(rawId)
@@ -37,13 +32,9 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const { id: rawId } = await params
   const id = parseId(rawId)

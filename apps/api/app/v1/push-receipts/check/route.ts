@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { jsonError } from "@/lib/api-utils"
+import { jsonError, timingSafeEqual } from "@/lib/api-utils"
 import { getOpsUser } from "@/lib/auth"
 import { checkPendingPushReceipts } from "@/lib/push/receipts"
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 function hasCronSecret(req: Request): boolean {
   const secret = process.env.CRON_SECRET?.trim()
   if (!secret) return false
-  return req.headers.get("authorization") === `Bearer ${secret}`
+  return timingSafeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`)
 }
 
 async function handle(req: Request) {

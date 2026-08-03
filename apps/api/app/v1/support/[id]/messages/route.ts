@@ -3,8 +3,7 @@ import { NextResponse } from "next/server"
 import { supportMessageCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError, parseId, parseJsonBody } from "@/lib/api-utils"
+import { jsonError, parseId, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
 import { renderTemplate } from "@/lib/email/render-template"
 import { SupportCaseReply } from "@/lib/email/templates/SupportCaseReply"
 import { sendEmail } from "@/lib/email/send-email"
@@ -14,13 +13,9 @@ import { toOpsMessage } from "@/lib/support"
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: Request, { params }: Params) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const { id: rawId } = await params
   const id = parseId(rawId)
@@ -34,20 +29,24 @@ export async function POST(req: Request, { params }: Params) {
 
   const internalNote = parsed.data.internal_note === true
 
-  const message = await prisma.supportMessage.create({
-    data: {
-      case_id: id,
-      author_type: "ops",
-      author_email: access.email,
-      author_clerk_id: access.userId,
-      body: parsed.data.body,
-      internal_note: internalNote,
-    },
-  })
+  const message = await prisma.$transaction(async (tx) => {
+    const created = await tx.supportMessage.create({
+      data: {
+        case_id: id,
+        author_type: "ops",
+        author_email: access.email,
+        author_clerk_id: access.userId,
+        body: parsed.data.body,
+        internal_note: internalNote,
+      },
+    })
 
-  if (!internalNote && supportCase.status === "open") {
-    await prisma.supportCase.update({ where: { id }, data: { status: "pending" } })
-  }
+    if (!internalNote && supportCase.status === "open") {
+      await tx.supportCase.update({ where: { id }, data: { status: "pending" } })
+    }
+
+    return created
+  })
 
   await auditFromOpsUser(access, {
     action: "update",
