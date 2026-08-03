@@ -111,6 +111,11 @@ export function WalletView() {
           </p>
           <Card className="shadow-none">
             <CardContent className="p-0">
+              {SPEND_BY_CAMPAIGN.length === 0 ? (
+                <p className="p-6 text-center text-sm text-muted-foreground">
+                  No spend recorded in the last 30 days.
+                </p>
+              ) : null}
               {SPEND_BY_CAMPAIGN.map((campaign, index) => (
                 <div key={campaign.id}>
                   {index > 0 ? <Separator /> : null}
@@ -137,6 +142,11 @@ export function WalletView() {
           </div>
           <Card className="shadow-none">
             <CardContent className="p-0">
+              {WALLET_TRANSACTIONS.length === 0 ? (
+                <p className="p-6 text-center text-sm text-muted-foreground">
+                  No transactions yet.
+                </p>
+              ) : null}
               {WALLET_TRANSACTIONS.map((tx, index) => (
                 <div key={tx.id}>
                   {index > 0 ? <Separator /> : null}
