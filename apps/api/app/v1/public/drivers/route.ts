@@ -8,8 +8,12 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, "drivers", { limit: 5, windowSeconds: 60 })
+  if (limited) return limited
+
   let body: unknown
   try {
     body = await req.json()
@@ -38,7 +42,7 @@ export async function POST(req: Request) {
       },
     })
 
-    console.log("[Admobi API drivers] Saved:", parsed.data)
+    console.log("[Admobi API drivers] Saved:", { id: data.id })
 
     // Push notifies ops staff independently of email — must not be
     // skipped just because Resend fails (e.g. invalid API key).

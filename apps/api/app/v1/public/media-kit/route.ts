@@ -4,8 +4,12 @@ import { auditPublic } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, "media-kit", { limit: 5, windowSeconds: 60 })
+  if (limited) return limited
+
   let body: unknown
   try {
     body = await req.json()
