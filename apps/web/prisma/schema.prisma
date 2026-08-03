@@ -25,10 +25,13 @@ model Lead {
   status              String?   @default("new") // new, contacted, qualified, closed
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
+  deleted_at          DateTime?
+  deleted_by_email    String?
 
   @@index([created_at])
   @@index([status])
   @@index([budget_range])
+  @@index([deleted_at])
   @@map("leads")
 }
 
@@ -46,11 +49,14 @@ model FleetPartner {
   status               String?  @default("pending") // "pending", "verified", "active"
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
+  deleted_at           DateTime?
+  deleted_by_email     String?
 
   @@index([created_at])
   @@index([city])
   @@index([status])
   @@index([city, status])
+  @@index([deleted_at])
   @@map("fleet_partners")
 }
 
@@ -67,34 +73,43 @@ model Driver {
   notes         String?
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+  deleted_by_email String?
 
   @@index([created_at])
   @@index([city])
   @@index([status])
   @@index([vehicle_type])
   @@index([city, status])
+  @@index([deleted_at])
   @@map("drivers")
 }
 
 model WaitlistEntry {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  source     String?  @default("homepage")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  email            String   @unique
+  source           String?  @default("homepage")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  deleted_at       DateTime?
+  deleted_by_email String?
 
   @@index([created_at])
+  @@index([deleted_at])
   @@map("waitlist_entries")
 }
 
 model MediaKitRequest {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String
+  email            String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  deleted_at       DateTime?
+  deleted_by_email String?
 
   @@index([created_at])
+  @@index([deleted_at])
   @@map("media_kit_requests")
 }
 
@@ -111,12 +126,14 @@ model OpsPushToken {
 }
 
 model CustomerPushToken {
-  id              Int      @id @default(autoincrement())
-  expo_push_token String   @unique
-  platform        String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id                  Int      @id @default(autoincrement())
+  expo_push_token     String   @unique
+  platform            String?
+  anonymous_device_id String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
+  @@index([anonymous_device_id])
   @@map("customer_push_tokens")
 }
 
@@ -206,6 +223,20 @@ model SupportCase {
   @@index([contact_email])
   @@index([assigned_to_clerk_id])
   @@map("support_cases")
+}
+
+/// Email-level identity token, minted once the first time an email opens a
+/// support case. Lets a device list all cases for that email without trusting
+/// a bare email query param — see SupportCase.access_token_hash for the
+/// equivalent per-case model this mirrors.
+model SupportIdentity {
+  id                  Int      @id @default(autoincrement())
+  contact_email       String   @unique
+  anonymous_device_id String?
+  access_token_hash   String   @unique
+  created_at          DateTime @default(now())
+
+  @@map("support_identities")
 }
 
 model SupportMessage {
