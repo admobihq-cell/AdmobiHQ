@@ -1,3 +1,4 @@
+import { timingSafeEqual as nodeTimingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -8,11 +9,37 @@ import {
   type PaginationParams,
 } from "@workspace/ops-contracts"
 
+import { requireOpsUser } from "@/lib/auth"
+
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }
 
 export function jsonError(message: string, status: number, issues?: unknown) {
   return NextResponse.json({ error: message, issues }, { status })
+}
+
+/** Every ops route repeated this same try/catch around requireOpsUser() —
+ * centralized here so each route is just the two lines below instead. */
+export async function requireOpsAccess(): Promise<
+  | { access: Awaited<ReturnType<typeof requireOpsUser>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireOpsUser()
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Constant-time string comparison — safe for secrets and hashes of any
+ * length. A length mismatch is always a real non-match, so it's safe to
+ * short-circuit on before the constant-time comparison of the equal-length
+ * remainder. */
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  return nodeTimingSafeEqual(Buffer.from(a), Buffer.from(b))
 }
 
 export async function parseJsonBody<T>(

@@ -1,7 +1,8 @@
 import type { SupportCase, SupportMessage } from "@prisma/client"
 
+import { timingSafeEqual } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { hashAccessToken } from "@/lib/support-token"
+import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
 
 export function getBearerToken(req: Request): string | null {
   const header = req.headers.get("authorization")
@@ -17,8 +18,42 @@ export async function loadCaseByToken(
 ): Promise<SupportCase | null> {
   const supportCase = await prisma.supportCase.findUnique({ where: { id } })
   if (!supportCase) return null
-  if (supportCase.access_token_hash !== hashAccessToken(token)) return null
+  if (!timingSafeEqual(supportCase.access_token_hash, hashAccessToken(token))) return null
   return supportCase
+}
+
+/**
+ * Mints an email-level identity token the first time this email opens a case.
+ * Returns the raw token only when newly minted — an email that already has an
+ * identity keeps its existing token, since minting a new one on every case
+ * would silently invalidate any device that already stored the original.
+ */
+export async function mintIdentityTokenIfAbsent(
+  email: string,
+  deviceId: string | null,
+): Promise<string | null> {
+  const existing = await prisma.supportIdentity.findUnique({
+    where: { contact_email: email },
+  })
+  if (existing) return null
+
+  const token = generateAccessToken()
+  await prisma.supportIdentity.create({
+    data: {
+      contact_email: email,
+      anonymous_device_id: deviceId,
+      access_token_hash: hashAccessToken(token),
+    },
+  })
+  return token
+}
+
+export async function verifyIdentityToken(email: string, token: string): Promise<boolean> {
+  const identity = await prisma.supportIdentity.findUnique({
+    where: { contact_email: email },
+  })
+  if (!identity) return false
+  return timingSafeEqual(identity.access_token_hash, hashAccessToken(token))
 }
 
 export function toPublicCase(c: SupportCase) {

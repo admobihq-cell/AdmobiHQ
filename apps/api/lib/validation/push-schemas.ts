@@ -18,4 +18,6 @@ export const pushTokenUnregisterSchema = z.object({
   expoPushToken: z.string().trim().min(1),
 })
 
-export const customerPushTokenRegisterSchema = pushTokenRegisterSchema
+export const customerPushTokenRegisterSchema = pushTokenRegisterSchema.extend({
+  anonymousDeviceId: z.string().trim().min(1).optional(),
+})
