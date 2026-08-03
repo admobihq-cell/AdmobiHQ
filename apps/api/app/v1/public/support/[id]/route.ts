@@ -2,11 +2,15 @@ import { NextResponse } from "next/server"
 
 import { jsonError, parseId } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { getBearerToken, loadCaseByToken, toPublicCase, toPublicMessage } from "@/lib/support"
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(req: Request, { params }: Params) {
+  const limited = await checkRateLimit(req, "support-case", { limit: 30, windowSeconds: 60 })
+  if (limited) return limited
+
   const { id: rawId } = await params
   const id = parseId(rawId)
   if (!id) return jsonError("Invalid id", 400)

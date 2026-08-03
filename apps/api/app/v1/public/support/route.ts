@@ -10,10 +10,14 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { prisma } from "@/lib/prisma"
-import { toPublicCase } from "@/lib/support"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { getBearerToken, mintIdentityTokenIfAbsent, toPublicCase, verifyIdentityToken } from "@/lib/support"
 import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
 
 export async function POST(req: Request) {
+  const limited = await checkRateLimit(req, "support-create", { limit: 5, windowSeconds: 60 })
+  if (limited) return limited
+
   const parsed = await parseJsonBody(req, supportCaseCreateSchema)
   if ("error" in parsed) return parsed.error
 
@@ -40,6 +44,11 @@ export async function POST(req: Request) {
         },
       },
     })
+
+    const identityToken = await mintIdentityTokenIfAbsent(
+      data.contact_email,
+      data.anonymous_device_id ?? null,
+    )
 
     void notifyOpsStaffAlert({
       type: "support",
@@ -81,7 +90,14 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { success: true, data: { ...toPublicCase(supportCase), accessToken } },
+      {
+        success: true,
+        data: {
+          ...toPublicCase(supportCase),
+          accessToken,
+          ...(identityToken ? { identityToken } : {}),
+        },
+      },
       { status: 201 },
     )
   } catch (error) {
@@ -91,21 +107,26 @@ export async function POST(req: Request) {
 }
 
 /**
- * Best-effort "my cases" lookup for the pre-auth era: email alone is
- * guessable, so this only returns case metadata (no message bodies), and a
- * matching anonymous_device_id narrows results when the client has one.
+ * "My cases" lookup, gated by the email-level identity token minted on first
+ * case creation (see mintIdentityTokenIfAbsent) — email alone is guessable
+ * and is no longer trusted on its own.
  */
 export async function GET(req: Request) {
+  const limited = await checkRateLimit(req, "support-list", { limit: 20, windowSeconds: 60 })
+  if (limited) return limited
+
   const { searchParams } = new URL(req.url)
   const email = searchParams.get("email")?.trim()
-  const deviceId = searchParams.get("deviceId")?.trim() || undefined
   if (!email) return jsonError("email is required", 400)
 
+  const token = getBearerToken(req)
+  if (!token) return jsonError("Unauthorized", 401)
+
+  const verified = await verifyIdentityToken(email, token)
+  if (!verified) return jsonError("Unauthorized", 401)
+
   const cases = await prisma.supportCase.findMany({
-    where: {
-      contact_email: email,
-      ...(deviceId ? { anonymous_device_id: deviceId } : {}),
-    },
+    where: { contact_email: email },
     orderBy: { created_at: "desc" },
     take: 50,
   })
