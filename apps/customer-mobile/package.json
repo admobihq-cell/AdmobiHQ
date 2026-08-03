@@ -24,8 +24,8 @@
     "build:android:production": "npx eas-cli build --platform android --profile production --non-interactive",
     "build:ios:preview": "npx eas-cli build --platform ios --profile preview --non-interactive",
     "build:ios:production": "npx eas-cli build --platform ios --profile production --non-interactive",
-    "update:preview": "npx eas-cli update --channel preview --environment preview --non-interactive --auto",
-    "update:production": "npx eas-cli update --channel production --environment production --non-interactive --auto"
+    "update:preview": "npx eas-cli update --channel preview --environment preview --non-interactive --auto && node ../../scripts/notify-app-update.mjs",
+    "update:production": "npx eas-cli update --channel production --environment production --non-interactive --auto && node ../../scripts/notify-app-update.mjs"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.42",
