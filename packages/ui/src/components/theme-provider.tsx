@@ -41,13 +41,35 @@ function resolveTheme(theme: ThemeOption): "light" | "dark" {
   return theme === "dark" ? "dark" : "light"
 }
 
+// Every themed element that transitions color/border on hover or focus
+// (table rows, buttons, inputs, badges, ...) also picks up that transition
+// when the CSS variables it reads flip via the root class swap below, so
+// without this guard the page repaints as an uneven, staggered fade instead
+// of a single instant switch. Suspending transitions for one frame makes
+// the swap atomic across every component at once.
+function suspendTransitions() {
+  const style = document.createElement("style")
+  style.textContent = "*, *::before, *::after { transition: none !important; }"
+  document.head.appendChild(style)
+  // Force a layout flush so the override is active before the class swap.
+  window.getComputedStyle(style).opacity
+  return () => {
+    // Wait a frame so the new colors paint before transitions resume.
+    requestAnimationFrame(() => {
+      style.remove()
+    })
+  }
+}
+
 function applyThemeToDocument(resolved: "light" | "dark") {
+  const resumeTransitions = suspendTransitions()
   const root = document.documentElement
   root.classList.remove("light", "dark")
   root.classList.add(resolved)
   if (themeConfig.enableColorScheme) {
     root.style.colorScheme = resolved
   }
+  resumeTransitions()
 }
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
