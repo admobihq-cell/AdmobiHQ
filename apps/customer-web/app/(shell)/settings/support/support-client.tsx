@@ -54,18 +54,17 @@ export function SupportClient() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(identity.name)
       setEmail(identity.email)
-      void refreshCases(identity.email)
+      void refreshCases()
     } else {
       setLoadingCases(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.status])
 
-  async function refreshCases(forEmail: string) {
-    if (session.status !== "anonymous") return
+  async function refreshCases() {
     setLoadingCases(true)
     try {
-      const items = await listMySupportCases(forEmail, session.deviceId)
+      const items = await listMySupportCases()
       setCases(items)
     } finally {
       setLoadingCases(false)
@@ -93,7 +92,7 @@ export function SupportClient() {
       setSubject("")
       setMessage("")
       toast.success(`Request sent — case #${created.id}`)
-      await refreshCases(email.trim())
+      await refreshCases()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't send your request.")
     } finally {

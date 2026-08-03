@@ -48,6 +48,14 @@ export const appNavItems: AppNavItem[] = [
   },
 ]
 
+/** Matches nested routes too (e.g. /settings/billing under /settings), not just an exact pathname. */
+export function isNavItemActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/"
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
 export function navItemForPath(pathname: string): AppNavItem {
-  return appNavItems.find((item) => item.href === pathname) ?? appNavItems[0]!
+  return (
+    appNavItems.find((item) => isNavItemActive(pathname, item.href)) ?? appNavItems[0]!
+  )
 }
