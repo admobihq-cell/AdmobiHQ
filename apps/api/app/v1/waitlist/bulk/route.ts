@@ -8,7 +8,10 @@ export async function POST(req: Request) {
     waitlistBulkSchema,
     {
       delete: async (ids) => {
-        const result = await prisma.waitlistEntry.deleteMany({ where: { id: { in: ids } } })
+        const result = await prisma.waitlistEntry.updateMany({
+          where: { id: { in: ids }, deleted_at: null },
+          data: { deleted_at: new Date() },
+        })
         return result.count
       },
     },

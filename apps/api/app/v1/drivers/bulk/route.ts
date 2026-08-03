@@ -8,7 +8,10 @@ export async function POST(req: Request) {
     driverBulkSchema,
     {
       delete: async (ids) => {
-        const result = await prisma.driver.deleteMany({ where: { id: { in: ids } } })
+        const result = await prisma.driver.updateMany({
+          where: { id: { in: ids }, deleted_at: null },
+          data: { deleted_at: new Date() },
+        })
         return result.count
       },
       updateStatus: async (ids, status) => {

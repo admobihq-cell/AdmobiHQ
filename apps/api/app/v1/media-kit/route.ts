@@ -3,19 +3,14 @@ import { NextResponse } from "next/server"
 import { paginationSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError, parseJsonBody } from "@/lib/api-utils"
+import { jsonError, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { listMediaKitRequests } from "@/lib/queries/entities"
 import { mediaKitCreateSchema } from "@/lib/validation/schemas"
 
 export async function GET(req: Request) {
-  try {
-    await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)
   const params = paginationSchema.parse({
@@ -38,13 +33,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const parsed = await parseJsonBody(req, mediaKitCreateSchema)
   if ("error" in parsed) return parsed.error
