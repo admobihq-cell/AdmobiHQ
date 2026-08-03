@@ -51,6 +51,8 @@ No `CLERK_*` keys.
 | Scheme | `admobihq-app` |
 | EAS slug | `admobihq-app` |
 
+No login means no stable user ID from auth — instead, `lib/auth/use-customer-session.ts` generates and persists a random `anonymousDeviceId` (via `getOrCreateDeviceId()`) on first launch. This same ID backs both the support-case identity-token flow (see [API.md](./API.md#support-case-identity-token)) and push-token registration (`lib/push-registration.ts` sends it alongside the Expo push token), so a support case opened from a device can eventually be tied back to that device's push notifications.
+
 ---
 
 ## Building an APK for the team
