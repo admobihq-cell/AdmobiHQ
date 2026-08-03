@@ -2,17 +2,12 @@ import { NextResponse } from "next/server"
 
 import { paginationSchema } from "@workspace/ops-contracts"
 
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError } from "@/lib/api-utils"
+import { jsonError, requireOpsAccess } from "@/lib/api-utils"
 import { listSupportCases } from "@/lib/queries/entities"
 
 export async function GET(req: Request) {
-  try {
-    await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)
   const params = paginationSchema.parse({

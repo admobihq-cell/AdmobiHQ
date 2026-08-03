@@ -1,19 +1,14 @@
 import { put } from "@vercel/blob"
 import { NextResponse } from "next/server"
 
-import { jsonError } from "@/lib/api-utils"
-import { requireOpsUser } from "@/lib/auth"
+import { jsonError, requireOpsAccess } from "@/lib/api-utils"
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 const MAX_BYTES = 5 * 1024 * 1024
 
 export async function POST(req: Request) {
-  try {
-    await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
 
   const form = await req.formData()
   const file = form.get("file")

@@ -2,18 +2,13 @@ import { NextResponse } from "next/server"
 
 import { statsRangeSchema } from "@workspace/ops-contracts"
 
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError } from "@/lib/api-utils"
+import { jsonError, requireOpsAccess } from "@/lib/api-utils"
 import { getContentStats } from "@/lib/queries/content"
 import { getOverviewStats, getSubmissionsOverTime } from "@/lib/queries/stats"
 
 export async function GET(req: Request) {
-  try {
-    await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)
   const { range } = statsRangeSchema.parse({
