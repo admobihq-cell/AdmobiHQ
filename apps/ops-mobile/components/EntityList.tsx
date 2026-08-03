@@ -298,6 +298,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [filter, setFilter] = useState<string | null>(null)
   const [errorDismissed, setErrorDismissed] = useState(false)
+  const [bulkError, setBulkError] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkApplying, setBulkApplying] = useState(false)
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false)
@@ -324,6 +325,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   async function applyBulkStatus(status: string) {
     if (!onBulkStatusChange || selectedIds.size === 0 || bulkApplying) return
     setBulkApplying(true)
+    setBulkError(null)
     try {
       await onBulkStatusChange(Array.from(selectedIds), status)
       if (Platform.OS !== "web") {
@@ -331,6 +333,8 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       }
       clearSelection()
       void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
+    } catch (err) {
+      setBulkError(formatOpsError(err, API_URL))
     } finally {
       setBulkApplying(false)
     }
@@ -339,6 +343,7 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   async function applyBulkDelete() {
     if (!onBulkDelete || selectedIds.size === 0 || bulkApplying) return
     setBulkApplying(true)
+    setBulkError(null)
     try {
       await onBulkDelete(Array.from(selectedIds))
       if (Platform.OS !== "web") {
@@ -347,6 +352,8 @@ export function EntityList<T extends { id: number; created_at?: string }>({
       setConfirmDeleteVisible(false)
       clearSelection()
       void queryClient.invalidateQueries({ queryKey: entityKeys.all(entity) })
+    } catch (err) {
+      setBulkError(formatOpsError(err, API_URL))
     } finally {
       setBulkApplying(false)
     }
@@ -413,7 +420,10 @@ export function EntityList<T extends { id: number; created_at?: string }>({
             title={title}
             compact
             description={
-              description ?? "Search, filter, and tap a row to view details."
+              description ??
+              (canBulkAct
+                ? "Search, filter, and tap a row to view details. Long-press to select multiple."
+                : "Search, filter, and tap a row to view details.")
             }
           />
         </View>
@@ -460,7 +470,9 @@ export function EntityList<T extends { id: number; created_at?: string }>({
           embedded
         />
       ) : null}
-      {error ? (
+      {bulkError ? (
+        <ApiErrorBanner message={bulkError} onDismiss={() => setBulkError(null)} />
+      ) : error ? (
         <ApiErrorBanner
           message={error}
           onRetry={() => {
