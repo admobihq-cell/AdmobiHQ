@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError, parseId } from "@/lib/api-utils"
+import { jsonError, parseId, requireOpsAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
 
 /** Soft delete — keeps the row (and its push-ticket history) for ops audit, hides it from the customer feed. */
 export async function DELETE(_req: Request, { params }: Params) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const { id: rawId } = await params
   const id = parseId(rawId)

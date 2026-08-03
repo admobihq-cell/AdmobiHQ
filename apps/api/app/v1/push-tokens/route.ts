@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { jsonError, parseJsonBody } from "@/lib/api-utils"
-import { requireOpsUser } from "@/lib/auth"
+import { jsonError, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import {
   pushTokenRegisterSchema,
@@ -9,13 +8,9 @@ import {
 } from "@/lib/validation/push-schemas"
 
 export async function POST(req: Request) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const parsed = await parseJsonBody(req, pushTokenRegisterSchema)
   if ("error" in parsed) return parsed.error
@@ -44,13 +39,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const parsed = await parseJsonBody(req, pushTokenUnregisterSchema)
   if ("error" in parsed) return parsed.error
