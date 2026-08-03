@@ -19,12 +19,18 @@ export function useCustomerSession(): CustomerSession {
   const [deviceId, setDeviceId] = useState<string | null>(null)
 
   useEffect(() => {
-    let id = window.localStorage.getItem(DEVICE_ID_KEY)
-    if (!id) {
-      id = crypto.randomUUID()
-      window.localStorage.setItem(DEVICE_ID_KEY, id)
+    try {
+      let id = window.localStorage.getItem(DEVICE_ID_KEY)
+      if (!id) {
+        id = crypto.randomUUID()
+        window.localStorage.setItem(DEVICE_ID_KEY, id)
+      }
+      setDeviceId(id)
+    } catch {
+      // Storage blocked (e.g. Safari private mode) — fall back to a
+      // session-only id instead of throwing and crashing the app.
+      setDeviceId(crypto.randomUUID())
     }
-    setDeviceId(id)
   }, [])
 
   if (!deviceId) return { status: "loading" }
