@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import {
   ActivityIndicator,
@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useInfiniteQuery } from "@tanstack/react-query"
 
 import { formatLabel, formatRelativeTime, SUPPORT_STATUSES, type SupportCaseDto } from "@workspace/ops-contracts"
 
@@ -29,6 +30,8 @@ const STATUS_VARIANT: Record<string, "muted" | "attention" | "progress" | "succe
   closed: "muted",
 }
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export default function SupportListScreen() {
   usePageHeader("Support")
   const router = useRouter()
@@ -37,40 +40,54 @@ export default function SupportListScreen() {
   const resolvedTheme = useResolvedTheme()
   const client = useOpsClient()
 
-  const [items, setItems] = useState<SupportCaseDto[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [status, setStatus] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(
-    async (mode: "initial" | "refresh" = "initial") => {
-      if (mode === "initial") setLoading(true)
-      else setRefreshing(true)
-      setError(null)
-      try {
-        const result = await client.support.list({
-          page: 1,
-          pageSize: 50,
-          search: search || undefined,
-          status: status ?? undefined,
-        })
-        setItems(result.items)
-      } catch (e) {
-        setError(formatOpsError(e, API_URL))
-      } finally {
-        setLoading(false)
-        setRefreshing(false)
-      }
-    },
-    [client, search, status],
-  )
+  const [errorDismissed, setErrorDismissed] = useState(false)
 
   useEffect(() => {
-    const timeout = setTimeout(() => void load("initial"), search ? 300 : 0)
-    return () => clearTimeout(timeout)
-  }, [search, status])
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const {
+    data,
+    error: queryError,
+    isPending,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteQuery({
+    queryKey: ["support", "list", status, debouncedSearch],
+    queryFn: ({ pageParam }) =>
+      client.support.list({
+        page: pageParam,
+        pageSize: 50,
+        search: debouncedSearch || undefined,
+        status: status ?? undefined,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+  })
+
+  const items = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
+  const loading = isPending
+  const refreshing = isRefetching && !isFetchingNextPage
+  const error =
+    queryError && !errorDismissed ? formatOpsError(queryError, API_URL) : null
+
+  const onRefresh = () => {
+    setErrorDismissed(false)
+    void refetch()
+  }
+
+  const onEndReached = () => {
+    if (isFetchingNextPage || isRefetching || !hasNextPage) return
+    void fetchNextPage()
+  }
 
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
@@ -93,6 +110,7 @@ export default function SupportListScreen() {
     emptyWrap: { padding: spacing.xl, alignItems: "center" as const, gap: spacing.xs },
     emptyText: { ...typography.body, color: c.mutedForeground, textAlign: "center" as const },
     errorWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+    footerWrap: { paddingVertical: spacing.md },
   }))
 
   return (
@@ -125,7 +143,11 @@ export default function SupportListScreen() {
 
       {error ? (
         <View style={styles.errorWrap}>
-          <ApiErrorBanner message={error} onRetry={() => void load("initial")} />
+          <ApiErrorBanner
+            message={error}
+            onRetry={onRefresh}
+            onDismiss={() => setErrorDismissed(true)}
+          />
         </View>
       ) : null}
 
@@ -139,17 +161,24 @@ export default function SupportListScreen() {
           keyExtractor={(item) => String(item.id)}
           extraData={resolvedTheme}
           contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => void load("refresh")} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.footerWrap}>
+                <ActivityIndicator />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Inbox size={20} color={colors.mutedForeground} />
               <Text style={styles.emptyText}>No support cases yet.</Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: SupportCaseDto }) => (
             <ListRow
               title={item.subject}
               subtitle={`${item.contact_name} · ${item.contact_email}`}

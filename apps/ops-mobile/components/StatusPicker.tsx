@@ -20,7 +20,7 @@ type StatusPickerProps = {
   label: string
   value: string | null | undefined
   options: FormFieldOption[]
-  onChange: (value: string) => Promise<void> | void
+  onChange: (value: string) => Promise<unknown> | void
   disabled?: boolean
   /** Maps a status value to the same semantic chip color used in list rows, so status color-coding stays consistent between list and detail. Defaults to "primary" if not provided. */
   getVariant?: (value: string | null | undefined) => StatusChipVariant
@@ -70,6 +70,12 @@ export function StatusPicker({
           )
         }
         setOpen(false)
+      })
+      .catch(() => {
+        // Failure surfaces via the caller's own error state (e.g. an
+        // ApiErrorBanner reading the mutation's error) — keep the sheet open
+        // here so the user can see that and retry, rather than silently
+        // closing as if it had succeeded.
       })
       .finally(() => setSaving(false))
   }

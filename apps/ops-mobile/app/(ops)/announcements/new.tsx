@@ -36,6 +36,12 @@ import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/
 const CATEGORY_FIELD = ANNOUNCEMENT_FORM_FIELDS.find((field) => field.name === "category")!
 const CAN_AUTO_CROP = isAnnouncementImageCropAvailable()
 
+// Deliberately not a theme token: this sits on top of an arbitrary photo, not
+// an app surface, so it needs a fixed dark scrim for legible contrast against
+// any image regardless of light/dark theme — the same reasoning as the
+// onboarding carousel's scrim.
+const IMAGE_REMOVE_BUTTON_SCRIM = "rgba(0,0,0,0.55)"
+
 export default function NewAnnouncementScreen() {
   const router = useRouter()
   const client = useOpsClient()
@@ -111,7 +117,7 @@ export default function NewAnnouncementScreen() {
       width: 28,
       height: 28,
       borderRadius: radius.full,
-      backgroundColor: "rgba(0,0,0,0.55)",
+      backgroundColor: IMAGE_REMOVE_BUTTON_SCRIM,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
