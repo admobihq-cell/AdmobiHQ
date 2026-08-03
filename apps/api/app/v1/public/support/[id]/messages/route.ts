@@ -4,6 +4,7 @@ import { z } from "zod"
 import { auditPublic } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { getBearerToken, loadCaseByToken, toPublicMessage } from "@/lib/support"
 
 type Params = { params: Promise<{ id: string }> }
@@ -13,6 +14,9 @@ const customerMessageSchema = z.object({
 })
 
 export async function POST(req: Request, { params }: Params) {
+  const limited = await checkRateLimit(req, "support-reply", { limit: 10, windowSeconds: 60 })
+  if (limited) return limited
+
   const { id: rawId } = await params
   const id = parseId(rawId)
   if (!id) return jsonError("Invalid id", 400)
@@ -26,19 +30,23 @@ export async function POST(req: Request, { params }: Params) {
   const parsed = await parseJsonBody(req, customerMessageSchema)
   if ("error" in parsed) return parsed.error
 
-  const message = await prisma.supportMessage.create({
-    data: {
-      case_id: id,
-      author_type: "customer",
-      author_email: supportCase.contact_email,
-      body: parsed.data.body,
-    },
-  })
-
   const reopens = supportCase.status === "resolved" || supportCase.status === "closed"
-  await prisma.supportCase.update({
-    where: { id },
-    data: { status: reopens ? "open" : supportCase.status },
+
+  const message = await prisma.$transaction(async (tx) => {
+    const created = await tx.supportMessage.create({
+      data: {
+        case_id: id,
+        author_type: "customer",
+        author_email: supportCase.contact_email,
+        body: parsed.data.body,
+      },
+    })
+
+    if (reopens) {
+      await tx.supportCase.update({ where: { id }, data: { status: "open" } })
+    }
+
+    return created
   })
 
   await auditPublic({
