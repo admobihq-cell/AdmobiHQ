@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useUser } from "@clerk/clerk-expo"
 import { useRouter } from "expo-router"
 import {
@@ -36,7 +36,7 @@ import { getPrimaryEmail } from "@/lib/auth"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { usePageHeader } from "@/lib/page-header"
 import { useRecentSubmissions } from "@/hooks/use-recent-submissions"
-import { useThemeColors, spacing, typography, radius } from "@/lib/theme"
+import { useThemeColors, useThemedStyles, spacing, typography, radius } from "@/lib/theme"
 import type { RecentSubmission } from "@/hooks/use-recent-submissions"
 
 const RANGES: Array<{ key: DateRangeKey; label: string }> = [
@@ -115,110 +115,106 @@ export default function DashboardScreen() {
   const driversByCity = stats?.overview?.driversByCity ?? []
   const [refreshing, setRefreshing] = useState(false)
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        screen: {
-          flex: 1,
-        },
-        scroll: {
-          flex: 1,
-        },
-        content: {
-          gap: spacing.lg,
-        },
-        padded: {
-          paddingHorizontal: spacing.lg,
-        },
-        bannerWrap: {
-          paddingHorizontal: spacing.lg,
-        },
-        recentError: {
-          marginBottom: spacing.sm,
-        },
-        sectionLabel: {
-          ...typography.caption,
-          color: colors.mutedForeground,
-          textTransform: "uppercase",
-          letterSpacing: 0.8,
-          fontWeight: "700",
-          marginBottom: spacing.sm,
-          marginLeft: spacing.xs,
-        },
-        sectionLabelInline: {
-          marginBottom: 0,
-        },
-        sectionHeaderRow: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: spacing.sm,
-        },
-        statsGrid: {
-          gap: spacing.sm,
-        },
-        statsRow: {
-          flexDirection: "row",
-          gap: spacing.sm,
-        },
-        group: {
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.surface,
-          overflow: "hidden",
-        },
-        actions: {
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: spacing.sm,
-        },
-        activityRow: {
-          flexDirection: "row",
-          alignItems: "flex-start",
-          gap: spacing.md,
-          padding: spacing.md,
-        },
-        activityPressed: {
-          opacity: 0.75,
-        },
-        activityIconWrap: {
-          width: 36,
-          height: 36,
-          borderRadius: radius.md,
-          backgroundColor: colors.accentSurface,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        activityCopy: {
-          flex: 1,
-          gap: 2,
-        },
-        activityTitle: {
-          ...typography.section,
-          color: colors.text,
-        },
-        activityDetail: {
-          ...typography.caption,
-          color: colors.mutedForeground,
-          lineHeight: 18,
-        },
-        divider: {
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: colors.border,
-          marginLeft: spacing.md + 36 + spacing.md,
-        },
-        emptyRecent: {
-          padding: spacing.lg,
-          alignItems: "center",
-        },
-        emptyText: {
-          ...typography.bodySm,
-          color: colors.mutedForeground,
-        },
-      }),
-    [colors]
-  )
+  const styles = useThemedStyles((c) => ({
+    screen: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      gap: spacing.lg,
+    },
+    padded: {
+      paddingHorizontal: spacing.lg,
+    },
+    bannerWrap: {
+      paddingHorizontal: spacing.lg,
+    },
+    recentError: {
+      marginBottom: spacing.sm,
+    },
+    sectionLabel: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      fontWeight: "700",
+      marginBottom: spacing.sm,
+      marginLeft: spacing.xs,
+    },
+    sectionLabelInline: {
+      marginBottom: 0,
+    },
+    sectionHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.sm,
+    },
+    statsGrid: {
+      gap: spacing.sm,
+    },
+    statsRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    group: {
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      overflow: "hidden",
+    },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    activityRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.md,
+      padding: spacing.md,
+    },
+    activityPressed: {
+      opacity: 0.75,
+    },
+    activityIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.md,
+      backgroundColor: c.accentSurface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    activityCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    activityTitle: {
+      ...typography.section,
+      color: c.text,
+    },
+    activityDetail: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      lineHeight: 18,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginLeft: spacing.md + 36 + spacing.md,
+    },
+    emptyRecent: {
+      padding: spacing.lg,
+      alignItems: "center",
+    },
+    emptyText: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+    },
+  }))
 
   const onRefresh = async () => {
     setRefreshing(true)

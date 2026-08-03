@@ -236,7 +236,9 @@ export function EntityDetail<T>({
       ? formatOpsError(itemQuery.error, API_URL)
       : deleteMutation.error
         ? formatOpsError(deleteMutation.error, API_URL)
-        : null
+        : statusMutation.error
+          ? formatOpsError(statusMutation.error, API_URL)
+          : null
     : "Invalid record id"
   const activeError = error && error !== dismissedError ? error : null
 
@@ -347,7 +349,7 @@ export function EntityDetail<T>({
                   label="Status"
                   value={getStatus?.(item) ?? null}
                   options={statusOptions}
-                  onChange={(status) => statusMutation.mutate(status)}
+                  onChange={(status) => statusMutation.mutateAsync(status)}
                   getVariant={getStatusVariant}
                 />
               ) : null}
