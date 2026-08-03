@@ -46,9 +46,6 @@ export function FinanceView() {
   return (
     <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-          Operations
-        </p>
         <h1 className="text-3xl font-semibold tracking-tight">Finances</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Platform wallet, campaign top-ups, and driver payouts across all

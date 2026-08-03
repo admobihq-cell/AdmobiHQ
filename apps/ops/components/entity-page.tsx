@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronDown, Download, Loader2, Plus, Search, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
@@ -35,6 +35,13 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import {
   Table,
@@ -49,6 +56,11 @@ import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
 import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 import { PageHero } from "@/components/ui/page-hero"
+
+// Radix's Select forbids an item value of "" (reserved to mean "no
+// selection"), so "all statuses" needs a sentinel — statusFilter itself
+// stays "" internally, translated only at this component's boundary.
+const ALL_STATUSES = "__all__"
 
 export type ColumnDef<T> = {
   key: string
@@ -139,7 +151,7 @@ export function EntityPage<T extends { id: number }>({
   const [editing, setEditing] = useState<T | null>(null)
   const [viewing, setViewing] = useState<T | null>(null)
   const [saving, setSaving] = useState(false)
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<T | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkPending, setBulkPending] = useState(false)
@@ -171,7 +183,10 @@ export function EntityPage<T extends { id: number }>({
       render: column.render,
     }))
 
+  const fetchSeq = useRef(0)
+
   const fetchData = useCallback(async () => {
+    const seq = ++fetchSeq.current
     setLoading(true)
     setFetchError(null)
     try {
@@ -181,24 +196,27 @@ export function EntityPage<T extends { id: number }>({
         ...(search ? { search } : {}),
         ...(statusFilter ? { status: statusFilter } : {}),
       })
+      // A slower, now-stale request can resolve after a newer one — ignore it.
+      if (seq !== fetchSeq.current) return
       setData(result as unknown as Paginated<T>)
     } catch (err) {
+      if (seq !== fetchSeq.current) return
       const message = formatApiError(err, {
         apiUrl: getApiBaseUrl(),
         networkHint: `Cannot reach the ops API. Run \`npm run env:pull -w ops\` and confirm the API is running.`,
       })
       setFetchError(message)
     } finally {
-      setLoading(false)
+      if (seq === fetchSeq.current) setLoading(false)
     }
   }, [resource, page, search, statusFilter])
 
   useEffect(() => {
-    if (initialData && page === 1 && !search) {
+    if (initialData && page === 1 && !search && !statusFilter) {
       return
     }
     void fetchData()
-  }, [fetchData, initialData, page, search])
+  }, [fetchData, initialData, page, search, statusFilter])
 
   useEffect(() => {
     setSelectedIds(new Set())
@@ -306,12 +324,12 @@ export function EntityPage<T extends { id: number }>({
   }
 
   const handleDelete = async () => {
-    if (!deleteId) return
+    if (!deleteTarget) return
     setDeleting(true)
     try {
-      await resource.delete(deleteId)
+      await resource.delete(deleteTarget.id)
       toast.success("Deleted")
-      setDeleteId(null)
+      setDeleteTarget(null)
       setViewing(null)
       void fetchData()
     } catch (e) {
@@ -351,8 +369,8 @@ export function EntityPage<T extends { id: number }>({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-8">
-      <PageHero eyebrow="Operations" title={title} description={description} />
+    <div className="flex flex-1 flex-col gap-6">
+      <PageHero title={title} description={description} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
@@ -372,21 +390,25 @@ export function EntityPage<T extends { id: number }>({
           Export CSV
         </Button>
         {statusFilterOptions?.length ? (
-          <select
-            className="border-input bg-background h-8 rounded-md border px-2 text-sm"
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value)
+          <Select
+            value={statusFilter || ALL_STATUSES}
+            onValueChange={(value) => {
+              setStatusFilter(value === ALL_STATUSES ? "" : value)
               setPage(1)
             }}
           >
-            <option value="">All statuses</option>
-            {statusFilterOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_STATUSES}>All statuses</SelectItem>
+              {statusFilterOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : null}
         <Button
           size="sm"
@@ -518,7 +540,7 @@ export function EntityPage<T extends { id: number }>({
                     Couldn&apos;t load records
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Your previous data may still be visible after a successful load.
+                    Check your connection and try again.
                   </p>
                 </TableCell>
               </TableRow>
@@ -565,7 +587,7 @@ export function EntityPage<T extends { id: number }>({
                         variant="ghost"
                         size="sm"
                         className="text-destructive"
-                        onClick={() => setDeleteId(row.id)}
+                        onClick={() => setDeleteTarget(row)}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -677,7 +699,7 @@ export function EntityPage<T extends { id: number }>({
                   type="button"
                   variant="destructive"
                   onClick={() => {
-                    setDeleteId(viewing.id)
+                    setDeleteTarget(viewing)
                     setViewing(null)
                   }}
                 >
@@ -700,12 +722,15 @@ export function EntityPage<T extends { id: number }>({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete record?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. Record #{deleteId} will be permanently removed.
+              This action cannot be undone.{" "}
+              {deleteTarget
+                ? `${getRecordTitle?.(deleteTarget) ?? `Record #${deleteTarget.id}`} will be permanently removed.`
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -806,22 +831,25 @@ export function SimpleFormDialog({
             <div key={field.name} className="flex flex-col gap-1.5">
               <Label htmlFor={field.name}>{field.label}</Label>
               {field.options ? (
-                <select
-                  id={field.name}
-                  className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
-                  value={values[field.name] ?? ""}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, [field.name]: e.target.value }))
-                  }
+                <Select
+                  name={field.name}
                   required={field.required}
+                  value={values[field.name] ?? ""}
+                  onValueChange={(value) =>
+                    setValues((v) => ({ ...v, [field.name]: value }))
+                  }
                 >
-                  <option value="">Select…</option>
-                  {field.options.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id={field.name} className="w-full">
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : field.type === "multiline" ? (
                 <Textarea
                   id={field.name}

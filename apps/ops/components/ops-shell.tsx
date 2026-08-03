@@ -70,9 +70,14 @@ const allNavItems = [...navItems, ...secondaryItems]
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
 
+/** Matches nested routes too (e.g. /support/42 under /support), not just an exact pathname. */
+function isNavItemActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
 function OpsBreadcrumbs({ pathname }: { pathname: string }) {
   const current =
-    allNavItems.find((item) => item.href === pathname)?.label ?? "Home"
+    allNavItems.find((item) => isNavItemActive(pathname, item.href))?.label ?? "Home"
 
   return (
     <Breadcrumb>
@@ -96,11 +101,16 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar variant="inset">
-        <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-          <div className="flex flex-col gap-1">
-            <Logo markHeight={18} wordmarkClassName="text-sm leading-none" />
-            <span className="text-xs font-medium text-muted-foreground">Ops Console</span>
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+            <Logo
+              markHeight={16}
+              wordmarkClassName="text-sm leading-none group-data-[collapsible=icon]:hidden"
+            />
+            <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+              · Ops Console
+            </span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -112,8 +122,9 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === item.href}
+                      isActive={isNavItemActive(pathname, item.href)}
                       className={activeSidebarLinkClassName}
+                      tooltip={item.label}
                     >
                       <Link href={item.href}>
                         <item.icon />
@@ -133,8 +144,9 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === item.href}
+                      isActive={isNavItemActive(pathname, item.href)}
                       className={activeSidebarLinkClassName}
+                      tooltip={item.label}
                     >
                       <Link href={item.href}>
                         <item.icon />
@@ -147,10 +159,12 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border p-3">
-          <div className="flex items-center gap-2">
+        <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
             <UserButton />
-            <span className="text-xs text-muted-foreground">@admobihq.com</span>
+            <span className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+              @admobihq.com
+            </span>
           </div>
         </SidebarFooter>
       </Sidebar>

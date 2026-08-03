@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { History, Loader2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -50,32 +50,41 @@ export function ActivityView() {
   const [loading, setLoading] = useState(true)
   const [entityType, setEntityType] = useState<string>(ALL)
   const [action, setAction] = useState<string>(ALL)
+  const [page, setPage] = useState(1)
+
+  const fetchSeq = useRef(0)
 
   const refresh = useCallback(async () => {
+    const seq = ++fetchSeq.current
     setLoading(true)
     try {
       const result = await client.audit.list({
-        page: 1,
+        page,
         pageSize: 50,
         entity_type: entityType === ALL ? undefined : entityType,
         action: action === ALL ? undefined : action,
       })
+      if (seq !== fetchSeq.current) return
       setData(result)
     } catch (e) {
+      if (seq !== fetchSeq.current) return
       toast.error(formatApiError(e))
     } finally {
-      setLoading(false)
+      if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, entityType, action])
+  }, [client, entityType, action, page])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
+  useEffect(() => {
+    setPage(1)
+  }, [entityType, action])
+
   return (
-    <div className="flex flex-1 flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-6">
       <PageHero
-        eyebrow="Operations"
         title="Activity"
         description="Who did what across ops, public forms, and future customer apps."
       />
@@ -194,7 +203,31 @@ export function ActivityView() {
         </Table>
       </div>
 
-      {data && data.total > 0 ? (
+      {data && data.totalPages > 1 ? (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {data.total} total · page {data.page} of {data.totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= data.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : data && data.total > 0 ? (
         <p className="text-xs text-muted-foreground">
           Showing {data.items.length} of {data.total} events
         </p>

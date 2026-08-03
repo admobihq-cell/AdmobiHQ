@@ -148,19 +148,17 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-6">
       <PageHero
-        eyebrow="Operations"
         title="Announcements"
         description="Broadcast a message to every installed customer app."
+        actions={
+          <Button size="sm" onClick={() => setFormOpen(true)}>
+            <Plus data-icon="inline-start" />
+            New announcement
+          </Button>
+        }
       />
-
-      <div className="flex items-center justify-end">
-        <Button size="sm" onClick={() => setFormOpen(true)}>
-          <Plus data-icon="inline-start" />
-          New announcement
-        </Button>
-      </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none [&_[data-slot=table-container]]:overflow-hidden">
         <Table className="table-fixed w-full">

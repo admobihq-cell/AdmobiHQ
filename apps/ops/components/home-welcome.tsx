@@ -16,7 +16,6 @@ export async function HomeWelcome() {
   return (
     <PageHero
       variant="card"
-      eyebrow="Operations"
       title={`Welcome back, ${displayName}`}
       description={
         <>
