@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Check, ClipboardList, Cpu, Handshake, Smartphone, Wallet } from "lucide-react"
@@ -13,10 +12,10 @@ import { Label } from "@workspace/ui/components/label"
 import type { FleetLeadInput } from "@/lib/validation/lead-schemas"
 import { fleetLeadSchema } from "@/lib/validation/lead-schemas"
 
-import { publicApiFetch } from "@workspace/ops-api-client"
-
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
+import { useLeadForm } from "@/components/forms/use-lead-form"
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { fleetFaqItems } from "@/lib/seo/faq-data"
@@ -91,8 +90,8 @@ const eligibility = [
 ]
 
 export default function PartnerFleetClient() {
-  const [submitted, setSubmitted] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const { submitted, submitError, dismissError, honeypot, setHoneypot, submit, reset: resetLeadForm } =
+    useLeadForm({ endpoint: "/leads" })
 
   const form = useForm<FleetLeadInput>({
     resolver: zodResolver(fleetLeadSchema),
@@ -135,22 +134,12 @@ export default function PartnerFleetClient() {
   }
 
   async function onSubmit(data: FleetLeadInput) {
-    setSubmitError(null)
-    const result = await publicApiFetch<{ success?: boolean }>("/leads", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-    if (!result.ok) {
-      setSubmitError(result.message)
-      return
-    }
-    if (result.data.success) setSubmitted(true)
+    await submit(data)
   }
 
   function handleReset() {
     form.reset()
-    setSubmitError(null)
-    setSubmitted(false)
+    resetLeadForm()
   }
 
   return (
@@ -425,11 +414,10 @@ export default function PartnerFleetClient() {
             ) : null}
 
             {submitError ? (
-              <ApiErrorBanner
-                message={submitError}
-                onDismiss={() => setSubmitError(null)}
-              />
+              <ApiErrorBanner message={submitError} onDismiss={dismissError} />
             ) : null}
+
+            <HoneypotField value={honeypot} onChange={setHoneypot} />
 
             <Button type="submit" className="w-full" disabled={formState.isSubmitting} size="lg">
               {formState.isSubmitting ? "Sending…" : "Request partnership deck"}

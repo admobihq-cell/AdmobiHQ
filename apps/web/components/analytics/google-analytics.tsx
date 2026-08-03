@@ -1,8 +1,18 @@
 import Script from "next/script"
 
-const GA_MEASUREMENT_ID = "G-01QR9P6WJB"
+// No NEXT_PUBLIC_GA_ID override needed for the real production deploy — it
+// falls back to the existing production ID there. VERCEL_ENV (not NODE_ENV,
+// which Vercel sets to "production" for preview/staging builds too) is what
+// actually distinguishes the real production domain, so local dev and
+// staging/preview deploys stay silent by default instead of reporting into
+// the production GA property.
+const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_ID ??
+  (process.env.VERCEL_ENV === "production" ? "G-01QR9P6WJB" : undefined)
 
 export function GoogleAnalytics() {
+  if (!GA_MEASUREMENT_ID) return null
+
   return (
     <>
       <Script

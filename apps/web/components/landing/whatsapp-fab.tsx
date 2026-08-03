@@ -1,3 +1,7 @@
+"use client"
+
+import { trackEvent } from "@/lib/analytics"
+
 const WHATSAPP_NUMBER = "254703643560"
 const WHATSAPP_MESSAGE = "Hi Admobi, I'd like to learn more about taxi-top campaigns."
 
@@ -9,6 +13,7 @@ export function WhatsappFab() {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackEvent("contact_whatsapp")}
       aria-label="Chat with Admobi on WhatsApp"
       className="fixed bottom-[5.25rem] right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_10px_24px_-6px_oklch(0.55_0.18_152/0.45)] outline-none transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-[#25D366]/40 lg:bottom-6 lg:right-6"
     >
