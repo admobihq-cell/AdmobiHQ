@@ -3,8 +3,7 @@ import type { z } from "zod"
 import type { AuditEntityType } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { requireOpsUser } from "@/lib/auth"
-import { jsonError, parseJsonBody } from "@/lib/api-utils"
+import { jsonError, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
 
 type BulkDeleteBody = { action: "delete"; ids: number[] }
 type BulkStatusBody = { action: "updateStatus"; ids: number[]; status: string }
@@ -18,13 +17,9 @@ export async function handleBulkRequest(
   },
   entityType: AuditEntityType,
 ) {
-  let access
-  try {
-    access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response) return e
-    return jsonError("Unauthorized", 401)
-  }
+  const auth = await requireOpsAccess()
+  if (auth.error) return auth.error
+  const { access } = auth
 
   const parsed = await parseJsonBody(req, schema)
   if ("error" in parsed) return parsed.error

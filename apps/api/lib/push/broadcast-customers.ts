@@ -50,31 +50,43 @@ export async function broadcastToCustomers(
     ...(input.image_url ? { richContent: { image: input.image_url } } : {}),
   }))
 
+  let outcomes: Awaited<ReturnType<typeof sendExpoPushMessages>>["outcomes"] = []
+  let invalidTokens: string[] = []
   let queued = 0
   let status = "sending"
 
   try {
-    const { outcomes, invalidTokens } = await sendExpoPushMessages(messages)
+    ;({ outcomes, invalidTokens } = await sendExpoPushMessages(messages))
     queued = outcomes.filter((outcome) => outcome.status === "queued").length
+    if (queued === 0) status = "failed"
+  } catch (error) {
+    console.error("[push] Failed to send customer broadcast:", error)
+    status = "failed"
+  }
 
-    await recordPushTickets({
-      audience: "customer",
-      broadcastId: broadcast.id,
-      outcomes,
-    })
+  // Record whatever tickets we do have even if something below throws —
+  // otherwise a real send that fails only during bookkeeping leaves nothing
+  // for checkPendingPushReceipts() to reconcile against later.
+  if (outcomes.length > 0) {
+    try {
+      await recordPushTickets({
+        audience: "customer",
+        broadcastId: broadcast.id,
+        outcomes,
+      })
+    } catch (error) {
+      console.error("[push] Failed to record push tickets:", error)
+    }
+  }
 
-    if (invalidTokens.length > 0) {
+  if (invalidTokens.length > 0) {
+    try {
       await prisma.customerPushToken.deleteMany({
         where: { expo_push_token: { in: invalidTokens } },
       })
+    } catch (error) {
+      console.error("[push] Failed to clean up invalid tokens:", error)
     }
-
-    if (queued === 0) {
-      status = "failed"
-    }
-  } catch (error) {
-    console.error("[push] Failed to broadcast to customers:", error)
-    status = "failed"
   }
 
   // delivered_count stays 0 until receipts land — a queued message is not a
