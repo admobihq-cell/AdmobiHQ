@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Car, Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
@@ -13,10 +12,10 @@ import { Label } from "@workspace/ui/components/label"
 import type { DriverJoinInput } from "@/lib/validation/lead-schemas"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 
-import { publicApiFetch } from "@workspace/ops-api-client"
-
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
+import { useLeadForm } from "@/components/forms/use-lead-form"
 import { Container } from "@/components/landing/container"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { driverFaqItems } from "@/lib/seo/faq-data"
@@ -91,8 +90,8 @@ const eligibility = [
 ]
 
 export default function DriversClient() {
-  const [submitted, setSubmitted] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const { submitted, submitError, dismissError, honeypot, setHoneypot, submit, reset: resetLeadForm } =
+    useLeadForm({ endpoint: "/drivers" })
 
   const form = useForm<DriverJoinInput>({
     resolver: zodResolver(driverJoinSchema),
@@ -112,22 +111,12 @@ export default function DriversClient() {
   const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
 
   async function onSubmit(data: DriverJoinInput) {
-    setSubmitError(null)
-    const result = await publicApiFetch<{ success?: boolean }>("/drivers", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-    if (!result.ok) {
-      setSubmitError(result.message)
-      return
-    }
-    if (result.data.success) setSubmitted(true)
+    await submit(data)
   }
 
   function handleReset() {
     reset()
-    setSubmitError(null)
-    setSubmitted(false)
+    resetLeadForm()
   }
 
   return (
@@ -350,11 +339,10 @@ export default function DriversClient() {
               ) : null}
 
               {submitError ? (
-                <ApiErrorBanner
-                  message={submitError}
-                  onDismiss={() => setSubmitError(null)}
-                />
+                <ApiErrorBanner message={submitError} onDismiss={dismissError} />
               ) : null}
+
+              <HoneypotField value={honeypot} onChange={setHoneypot} />
 
               <Button type="submit" className="w-full" disabled={formState.isSubmitting} size="lg">
                 {formState.isSubmitting ? "Sending…" : "Raise my hand"}

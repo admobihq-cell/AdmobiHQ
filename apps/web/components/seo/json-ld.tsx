@@ -1,5 +1,3 @@
-import Script from "next/script"
-
 function jsonLdScriptId(data: Record<string, unknown>): string {
   const type = String(data["@type"] ?? "schema").toLowerCase()
   const page = String(data.mainEntityOfPage ?? data.url ?? "site")
@@ -7,12 +5,14 @@ function jsonLdScriptId(data: Record<string, unknown>): string {
   return `jsonld-${type}-${slug}`
 }
 
+// A plain server-rendered <script>, not next/script — crawlers that don't
+// execute JS (or execute it late) need this present in the initial HTML,
+// which next/script's afterInteractive strategy doesn't guarantee.
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
-    <Script
+    <script
       id={jsonLdScriptId(data)}
       type="application/ld+json"
-      strategy="afterInteractive"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
     />
   )

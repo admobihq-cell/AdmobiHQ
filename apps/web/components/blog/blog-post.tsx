@@ -24,6 +24,15 @@ function formatDate(value: string) {
   })
 }
 
+// Google recommends BlogPosting.headline stay under ~110 characters —
+// nothing else in the CMS enforces that on the title field.
+const HEADLINE_MAX_LENGTH = 110
+
+function truncateHeadline(title: string): string {
+  if (title.length <= HEADLINE_MAX_LENGTH) return title
+  return `${title.slice(0, HEADLINE_MAX_LENGTH - 1).trimEnd()}…`
+}
+
 export function BlogPostView({ post, related }: BlogPostViewProps) {
   const headings = extractHeadingIds(post.body)
   const canonical = blogAbsoluteUrl(`/${post.slug}`)
@@ -37,7 +46,7 @@ export function BlogPostView({ post, related }: BlogPostViewProps) {
   const blogPostingJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title,
+    headline: truncateHeadline(post.title),
     description: post.excerpt,
     datePublished: publishedAt,
     dateModified: updatedAt,

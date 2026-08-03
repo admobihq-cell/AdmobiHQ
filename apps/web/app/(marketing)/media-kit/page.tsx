@@ -1,7 +1,5 @@
 "use client"
 
-import { useState } from "react"
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { FileDown } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -12,15 +10,15 @@ import { Label } from "@workspace/ui/components/label"
 import type { MediaKitInput } from "@/lib/validation/lead-schemas"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 
-import { publicApiFetch } from "@workspace/ops-api-client"
-
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
+import { useLeadForm } from "@/components/forms/use-lead-form"
 import { Container } from "@/components/landing/container"
 
 export default function MediaKitPage() {
-  const [submitted, setSubmitted] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const { submitted, submitError, dismissError, honeypot, setHoneypot, submit, reset: resetLeadForm } =
+    useLeadForm({ endpoint: "/media-kit" })
 
   const {
     register,
@@ -33,22 +31,12 @@ export default function MediaKitPage() {
   })
 
   async function onSubmit(data: MediaKitInput) {
-    setSubmitError(null)
-    const result = await publicApiFetch<{ success?: boolean }>("/media-kit", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-    if (!result.ok) {
-      setSubmitError(result.message)
-      return
-    }
-    if (result.data.success) setSubmitted(true)
+    await submit(data)
   }
 
   function handleReset() {
     reset()
-    setSubmitError(null)
-    setSubmitted(false)
+    resetLeadForm()
   }
 
   return (
@@ -97,11 +85,9 @@ export default function MediaKitPage() {
               ) : null}
             </div>
             {submitError ? (
-              <ApiErrorBanner
-                message={submitError}
-                onDismiss={() => setSubmitError(null)}
-              />
+              <ApiErrorBanner message={submitError} onDismiss={dismissError} />
             ) : null}
+            <HoneypotField value={honeypot} onChange={setHoneypot} />
             <Button type="submit" size="lg" disabled={isSubmitting}>
               {isSubmitting ? "Sending…" : "Send me the kit"}
             </Button>

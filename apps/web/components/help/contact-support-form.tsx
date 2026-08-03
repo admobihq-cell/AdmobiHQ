@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -19,7 +18,6 @@ import {
 } from "lucide-react"
 import { useForm } from "react-hook-form"
 
-import { publicApiFetch } from "@workspace/ops-api-client"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -27,7 +25,9 @@ import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Container } from "@/components/landing/container"
+import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
+import { useLeadForm } from "@/components/forms/use-lead-form"
 import {
   supportContactSchema,
   type SupportContactInput,
@@ -46,8 +46,8 @@ const CATEGORIES: {
 ]
 
 export function ContactSupportForm() {
-  const [submitted, setSubmitted] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const { submitted, submitError, dismissError, honeypot, setHoneypot, submit, reset: resetLeadForm } =
+    useLeadForm({ endpoint: "/support", extra: { channel: "web" } })
 
   const {
     register,
@@ -70,22 +70,12 @@ export function ContactSupportForm() {
   const category = watch("category")
 
   async function onSubmit(data: SupportContactInput) {
-    setSubmitError(null)
-    const result = await publicApiFetch<{ success?: boolean }>("/support", {
-      method: "POST",
-      body: JSON.stringify({ ...data, channel: "web" }),
-    })
-    if (!result.ok) {
-      setSubmitError(result.message)
-      return
-    }
-    if (result.data.success) setSubmitted(true)
+    await submit(data)
   }
 
   function handleReset() {
     reset()
-    setSubmitError(null)
-    setSubmitted(false)
+    resetLeadForm()
   }
 
   return (
@@ -199,8 +189,10 @@ export function ContactSupportForm() {
               </div>
 
               {submitError ? (
-                <ApiErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
+                <ApiErrorBanner message={submitError} onDismiss={dismissError} />
               ) : null}
+
+              <HoneypotField value={honeypot} onChange={setHoneypot} />
 
               <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting} size="lg">
                 {isSubmitting ? "Sending…" : "Send request"}
