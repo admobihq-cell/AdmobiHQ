@@ -28,7 +28,7 @@ function dateFilter(range: DateRangeKey) {
 
 export async function getOverviewStats(range: DateRangeKey = "30d") {
   const createdAt = dateFilter(range)
-  const where = createdAt ? { created_at: createdAt } : {}
+  const where = { deleted_at: null, ...(createdAt ? { created_at: createdAt } : {}) }
 
   const [
     leads,
@@ -115,15 +115,15 @@ export async function getSubmissionsOverTime(days = 30) {
     `
     SELECT day::date::text AS day, COUNT(*)::text AS count
     FROM (
-      SELECT date_trunc('day', created_at) AS day FROM leads WHERE created_at >= $1
+      SELECT date_trunc('day', created_at) AS day FROM leads WHERE created_at >= $1 AND deleted_at IS NULL
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM fleet_partners WHERE created_at >= $1
+      SELECT date_trunc('day', created_at) FROM fleet_partners WHERE created_at >= $1 AND deleted_at IS NULL
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM drivers WHERE created_at >= $1
+      SELECT date_trunc('day', created_at) FROM drivers WHERE created_at >= $1 AND deleted_at IS NULL
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM waitlist_entries WHERE created_at >= $1
+      SELECT date_trunc('day', created_at) FROM waitlist_entries WHERE created_at >= $1 AND deleted_at IS NULL
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM media_kit_requests WHERE created_at >= $1
+      SELECT date_trunc('day', created_at) FROM media_kit_requests WHERE created_at >= $1 AND deleted_at IS NULL
     ) combined
     GROUP BY day
     ORDER BY day ASC
