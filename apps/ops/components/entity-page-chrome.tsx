@@ -27,8 +27,8 @@ export function EntityPageChrome({
   loading = false,
 }: EntityPageChromeProps) {
   return (
-    <div className="flex flex-1 flex-col gap-8">
-      <PageHero eyebrow="Operations" title={title} description={description} />
+    <div className="flex flex-1 flex-col gap-6">
+      <PageHero title={title} description={description} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">

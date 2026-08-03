@@ -1,9 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Inbox, Loader2, RefreshCw, Search } from "lucide-react"
-import { toast } from "sonner"
 
 import {
   SUPPORT_CATEGORIES,
@@ -13,6 +12,7 @@ import {
 } from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
 
+import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -62,37 +62,48 @@ export function SupportView() {
   const client = useOpsClient()
   const [data, setData] = useState<Paginated<SupportCaseDto> | null>(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<string>(ALL)
   const [category, setCategory] = useState<string>(ALL)
+  const [page, setPage] = useState(1)
+
+  const fetchSeq = useRef(0)
 
   const refresh = useCallback(async () => {
+    const seq = ++fetchSeq.current
     setLoading(true)
+    setFetchError(null)
     try {
       const result = await client.support.list({
-        page: 1,
+        page,
         pageSize: 50,
         search: search || undefined,
         status: status === ALL ? undefined : status,
         category: category === ALL ? undefined : category,
       })
+      if (seq !== fetchSeq.current) return
       setData(result)
     } catch (e) {
-      toast.error(formatApiError(e))
+      if (seq !== fetchSeq.current) return
+      setFetchError(formatApiError(e))
     } finally {
-      setLoading(false)
+      if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, search, status, category])
+  }, [client, search, status, category, page])
 
   useEffect(() => {
     const timeout = setTimeout(() => void refresh(), search ? 300 : 0)
     return () => clearTimeout(timeout)
   }, [refresh, search])
 
+  useEffect(() => {
+    setPage(1)
+  }, [search, status, category])
+
   return (
-    <div className="flex flex-1 flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-6">
       <PageHero
-        eyebrow="Operations"
         title="Support"
         description="Cases opened from the landing page, customer web, and customer mobile."
       />
@@ -151,6 +162,14 @@ export function SupportView() {
           Refresh
         </Button>
       </div>
+
+      {fetchError ? (
+        <ApiErrorBanner
+          message={fetchError}
+          onRetry={() => void refresh()}
+          onDismiss={() => setFetchError(null)}
+        />
+      ) : null}
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
         <Table>
@@ -247,7 +266,31 @@ export function SupportView() {
         </Table>
       </div>
 
-      {data && data.total > 0 ? (
+      {data && data.totalPages > 1 ? (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {data.total} total · page {data.page} of {data.totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= data.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : data && data.total > 0 ? (
         <p className="text-xs text-muted-foreground">
           Showing {data.items.length} of {data.total} cases
         </p>
