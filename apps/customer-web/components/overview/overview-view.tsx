@@ -7,6 +7,7 @@ import {
   TrendingUp,
 } from "lucide-react"
 
+import { Greeting } from "@/components/overview/greeting"
 import { StatCard } from "@/components/stat-card"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -23,7 +24,7 @@ export function OverviewView() {
     <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-          Good afternoon
+          <Greeting />
         </p>
         <h1 className="text-3xl font-semibold tracking-tight">
           Your campaigns at a glance

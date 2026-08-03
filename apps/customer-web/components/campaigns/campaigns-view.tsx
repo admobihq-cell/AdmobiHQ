@@ -11,6 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@workspace/ui/components/dialog"
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
 import { PLACEHOLDER_CAMPAIGNS } from "@/lib/placeholder-data"
@@ -104,10 +112,23 @@ export function CampaignsView() {
         ))}
       </div>
 
-      <Button className="fixed bottom-6 right-6 z-10 gap-2 rounded-full px-5 shadow-lg md:bottom-8 md:right-8">
-        <Plus className="size-4" />
-        New campaign
-      </Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="fixed bottom-6 right-6 z-10 gap-2 rounded-full px-5 shadow-lg md:bottom-8 md:right-8">
+            <Plus className="size-4" />
+            New campaign
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New campaign</DialogTitle>
+            <DialogDescription>
+              Creating campaigns from the app is coming soon. Reach out to your Admobi contact to
+              get a campaign started today.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
