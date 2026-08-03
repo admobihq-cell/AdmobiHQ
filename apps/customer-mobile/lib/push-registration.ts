@@ -4,6 +4,7 @@ import * as Device from "expo-device"
 import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 
+import { getOrCreateDeviceId } from "@/lib/auth/use-customer-session"
 import { postJson } from "@/lib/api-client"
 import {
   configureNotificationHandler,
@@ -73,9 +74,10 @@ export async function registerCustomerPushToken(): Promise<void> {
   }
 
   const platform = Platform.OS === "ios" || Platform.OS === "android" ? Platform.OS : undefined
+  const anonymousDeviceId = await getOrCreateDeviceId()
 
   try {
-    await postJson("/v1/public/push-tokens", { expoPushToken, platform })
+    await postJson("/v1/public/push-tokens", { expoPushToken, platform, anonymousDeviceId })
   } catch (error) {
     Sentry.captureException(error, { tags: { flow: "push-token-post" } })
     throw error

@@ -15,6 +15,17 @@ export type CustomerSession =
   | { status: "loading" }
   | { status: "anonymous"; deviceId: string }
 
+/** Shared with lib/push-registration.ts so push tokens can be tied to the
+ * same per-device identity used for support cases, without needing a hook. */
+export async function getOrCreateDeviceId(): Promise<string> {
+  let id = await AsyncStorage.getItem(DEVICE_ID_KEY)
+  if (!id) {
+    id = Crypto.randomUUID()
+    await AsyncStorage.setItem(DEVICE_ID_KEY, id)
+  }
+  return id
+}
+
 export function useCustomerSession(): CustomerSession {
   const [deviceId, setDeviceId] = useState<string | null>(null)
 
@@ -22,11 +33,7 @@ export function useCustomerSession(): CustomerSession {
     let cancelled = false
 
     async function load() {
-      let id = await AsyncStorage.getItem(DEVICE_ID_KEY)
-      if (!id) {
-        id = Crypto.randomUUID()
-        await AsyncStorage.setItem(DEVICE_ID_KEY, id)
-      }
+      const id = await getOrCreateDeviceId()
       if (!cancelled) setDeviceId(id)
     }
 

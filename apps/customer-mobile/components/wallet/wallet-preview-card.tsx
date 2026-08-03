@@ -3,9 +3,13 @@ import { Pressable, Text, View } from "react-native"
 
 import { ChevronRight, Wallet } from "@/components/icons"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
-import { formatCurrency, WALLET_CARD_BG, WALLET_CARD_FG } from "@/lib/wallet"
-
-const PREVIEW_BALANCE = 18400
+import {
+  formatCurrency,
+  PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT,
+  PLACEHOLDER_WALLET_BALANCE,
+  WALLET_CARD_BG,
+  WALLET_CARD_FG,
+} from "@/lib/wallet"
 
 export function WalletPreviewCard() {
   const router = useRouter()
@@ -62,8 +66,10 @@ export function WalletPreviewCard() {
         </View>
         <ChevronRight color={WALLET_CARD_FG} size={18} />
       </View>
-      <Text style={styles.balance}>{formatCurrency(PREVIEW_BALANCE)}</Text>
-      <Text style={styles.hint}>3 active campaigns · auto-reload off</Text>
+      <Text style={styles.balance}>{formatCurrency(PLACEHOLDER_WALLET_BALANCE)}</Text>
+      <Text style={styles.hint}>
+        {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT} active campaigns · auto-reload off
+      </Text>
     </Pressable>
   )
 }

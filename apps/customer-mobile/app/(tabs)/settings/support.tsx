@@ -46,7 +46,7 @@ export default function SupportSettingsScreen() {
       if (identity && session.status === "anonymous") {
         setEmail((current) => current || identity.email)
         setName((current) => current || identity.name)
-        const items = await listMySupportCases(identity.email, session.deviceId)
+        const items = await listMySupportCases()
         setCases(items)
       }
     } catch {

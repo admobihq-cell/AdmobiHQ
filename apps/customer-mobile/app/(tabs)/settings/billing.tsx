@@ -18,7 +18,13 @@ import {
 } from "@/components/icons"
 import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-import { formatCurrency, WALLET_CARD_BG, WALLET_CARD_FG } from "@/lib/wallet"
+import {
+  formatCurrency,
+  PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT,
+  PLACEHOLDER_WALLET_BALANCE,
+  WALLET_CARD_BG,
+  WALLET_CARD_FG,
+} from "@/lib/wallet"
 
 type Transaction = {
   id: string
@@ -71,7 +77,7 @@ export default function BillingSettingsScreen() {
   const [hidden, setHidden] = useState(false)
   const [comingSoon, setComingSoon] = useState<{ title: string; body: string } | null>(null)
 
-  const balance = 18400
+  const balance = PLACEHOLDER_WALLET_BALANCE
   const isLow = balance < LOW_BALANCE_THRESHOLD
 
   const styles = useThemedStyles((c) => ({
@@ -254,7 +260,9 @@ export default function BillingSettingsScreen() {
           </View>
 
           <Text style={styles.balance}>{hidden ? "••••••••" : formatCurrency(balance)}</Text>
-          <Text style={styles.walletHint}>Auto-reload is off · 3 active campaigns</Text>
+          <Text style={styles.walletHint}>
+            Auto-reload is off · {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT} active campaigns
+          </Text>
 
           <View style={styles.actionsRow}>
             {ACTIONS.map((action) => {

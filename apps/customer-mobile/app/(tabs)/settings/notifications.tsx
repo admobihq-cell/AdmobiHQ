@@ -1,5 +1,5 @@
 import { Stack } from "expo-router"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -27,11 +27,18 @@ export default function NotificationsSettingsScreen() {
     null,
   )
   const [status, setStatus] = useState<string | null>(null)
+  const pendingTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
     getNotificationPermissionStatus().then((result) =>
       setPermissionGranted(result === "granted"),
     )
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      for (const timer of pendingTimers.current) clearTimeout(timer)
+    }
   }, [])
 
   const styles = useThemedStyles((c) => ({
@@ -174,9 +181,10 @@ export default function NotificationsSettingsScreen() {
 
   const handleSendAll = async () => {
     for (const [index, style] of NOTIFICATION_STYLES.entries()) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         void sendTestNotification(style)
       }, index * 1200)
+      pendingTimers.current.push(timer)
     }
     setPermissionGranted(true)
     setStatus("Sending all styles — check your notification shade.")
