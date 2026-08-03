@@ -1,23 +1,33 @@
+import { useCallback, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
-import { useRouter } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 
 import { Bell } from "@/components/icons"
+import { getReadNotificationIds } from "@/lib/notification-read-state"
 import { useLiveAnnouncements } from "@/lib/use-live-announcements"
 import { radius, useThemeColors } from "@/lib/theme"
 
 export function NotificationBellButton() {
   const router = useRouter()
   const colors = useThemeColors()
-  // Read state isn't persisted anywhere yet, so this is a "there's something
-  // to see" indicator rather than a true unread count.
   const { items } = useLiveAnnouncements()
-  const hasItems = items.length > 0
+  const [readIds, setReadIds] = useState<Set<string>>(new Set())
+
+  // Re-check on focus so returning from the notifications screen (where
+  // items just got marked read) updates the badge immediately.
+  useFocusEffect(
+    useCallback(() => {
+      void getReadNotificationIds().then(setReadIds)
+    }, []),
+  )
+
+  const hasUnread = items.some((item) => !readIds.has(item.id))
 
   return (
     <Pressable
       onPress={() => router.push("/notifications")}
       accessibilityRole="button"
-      accessibilityLabel={hasItems ? "Notifications, new announcements" : "Notifications"}
+      accessibilityLabel={hasUnread ? "Notifications, new announcements" : "Notifications"}
       hitSlop={10}
       style={({ pressed }) => [
         styles.button,
@@ -26,7 +36,7 @@ export function NotificationBellButton() {
       ]}
     >
       <Bell size={20} color={colors.text} />
-      {hasItems ? (
+      {hasUnread ? (
         <View
           style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.bg }]}
         />

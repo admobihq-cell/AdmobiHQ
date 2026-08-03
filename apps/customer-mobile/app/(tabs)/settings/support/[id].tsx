@@ -33,11 +33,13 @@ export default function SupportCaseScreen() {
   const [reply, setReply] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
 
   const load = useCallback(async () => {
     if (!Number.isFinite(caseId)) return
     try {
       const data = await getSupportCase(caseId)
+      if (!mountedRef.current) return
       if (data) {
         setSubject(data.subject)
         setStatus(data.status)
@@ -47,16 +49,21 @@ export default function SupportCaseScreen() {
         setError("This request isn't available on this device.")
       }
     } catch {
+      if (!mountedRef.current) return
       setError("Couldn't load this request. Check your connection.")
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }, [caseId])
 
   useEffect(() => {
+    mountedRef.current = true
     void load()
     const interval = setInterval(() => void load(), POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
+    return () => {
+      mountedRef.current = false
+      clearInterval(interval)
+    }
   }, [load])
 
   const scrollRef = useRef<ScrollView>(null)
