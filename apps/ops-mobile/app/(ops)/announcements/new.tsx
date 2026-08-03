@@ -15,55 +15,26 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import * as ImagePicker from "expo-image-picker"
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
 import { ANNOUNCEMENT_FORM_FIELDS, broadcastCreateSchema } from "@workspace/ops-contracts"
 
 import { AppLoader } from "@/components/app/app-loader"
 import { ImageIcon, X } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
+import {
+  ANNOUNCEMENT_IMAGE_ASPECT,
+  ANNOUNCEMENT_IMAGE_HEIGHT,
+  ANNOUNCEMENT_IMAGE_WIDTH,
+  isAnnouncementImageCropAvailable,
+  prepareAnnouncementImage,
+  type AnnouncementImage,
+} from "@/lib/announcement-image"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-// Push-friendly banner shape — matches the 2:1 frame most rich-notification
-// and in-app card layouts expect. Every picked image is auto-cropped/resized
-// to exactly this, so nothing ever ships off-spec.
-const TARGET_WIDTH = 1200
-const TARGET_HEIGHT = 600
-const TARGET_ASPECT = TARGET_WIDTH / TARGET_HEIGHT
-
 const CATEGORY_FIELD = ANNOUNCEMENT_FORM_FIELDS.find((field) => field.name === "category")!
-
-type PickedImage = { uri: string; width: number; height: number }
-
-async function autoCropToTarget(uri: string, width: number, height: number): Promise<PickedImage> {
-  const sourceAspect = width / height
-  const cropRect =
-    sourceAspect > TARGET_ASPECT
-      ? {
-          originX: (width - height * TARGET_ASPECT) / 2,
-          originY: 0,
-          width: height * TARGET_ASPECT,
-          height,
-        }
-      : {
-          originX: 0,
-          originY: (height - width / TARGET_ASPECT) / 2,
-          width,
-          height: width / TARGET_ASPECT,
-        }
-
-  const rendered = await ImageManipulator.manipulate(uri)
-    .crop(cropRect)
-    .resize({ width: TARGET_WIDTH, height: TARGET_HEIGHT })
-    .renderAsync()
-  const saved = await rendered.saveAsync({
-    format: SaveFormat.JPEG,
-    compress: 0.85,
-  })
-  return { uri: saved.uri, width: saved.width, height: saved.height }
-}
+const CAN_AUTO_CROP = isAnnouncementImageCropAvailable()
 
 export default function NewAnnouncementScreen() {
   const router = useRouter()
@@ -74,7 +45,7 @@ export default function NewAnnouncementScreen() {
   const [category, setCategory] = useState("announcement")
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
-  const [image, setImage] = useState<PickedImage | null>(null)
+  const [image, setImage] = useState<AnnouncementImage | null>(null)
   const [processingImage, setProcessingImage] = useState(false)
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -115,7 +86,7 @@ export default function NewAnnouncementScreen() {
     selectValue: { ...typography.body, color: c.text, flex: 1 },
     imageTile: {
       width: "100%" as const,
-      aspectRatio: TARGET_ASPECT,
+      aspectRatio: ANNOUNCEMENT_IMAGE_ASPECT,
       borderRadius: radius.md,
       borderWidth: 1,
       borderStyle: "dashed" as const,
@@ -127,7 +98,7 @@ export default function NewAnnouncementScreen() {
     },
     imageTileLabel: { ...typography.body, color: c.text, fontWeight: "600" as const },
     imageTileHint: { ...typography.caption, color: c.mutedForeground },
-    imagePreviewWrap: { width: "100%" as const, aspectRatio: TARGET_ASPECT },
+    imagePreviewWrap: { width: "100%" as const, aspectRatio: ANNOUNCEMENT_IMAGE_ASPECT },
     imagePreview: {
       width: "100%" as const,
       height: "100%" as const,
@@ -179,9 +150,13 @@ export default function NewAnnouncementScreen() {
       return
     }
 
+    // When the native cropper isn't in this binary yet, fall back to the system
+    // editor so OTA updates don't crash waiting for a rebuild.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      quality: 1,
+      quality: CAN_AUTO_CROP ? 1 : 0.85,
+      allowsEditing: !CAN_AUTO_CROP,
+      aspect: CAN_AUTO_CROP ? undefined : [2, 1],
     })
     if (result.canceled || !result.assets?.[0]) return
 
@@ -189,7 +164,7 @@ export default function NewAnnouncementScreen() {
     setProcessingImage(true)
     setError(null)
     try {
-      const final = await autoCropToTarget(asset.uri, asset.width, asset.height)
+      const final = await prepareAnnouncementImage(asset)
       setImage(final)
     } catch {
       setError("Couldn't process that image. Try a different one.")
@@ -351,7 +326,9 @@ export default function NewAnnouncementScreen() {
                   <ImageIcon color={colors.mutedForeground} size={24} />
                   <Text style={styles.imageTileLabel}>Add image</Text>
                   <Text style={styles.imageTileHint}>
-                    {TARGET_WIDTH}×{TARGET_HEIGHT} · auto-cropped &amp; resized
+                    {CAN_AUTO_CROP
+                      ? `${ANNOUNCEMENT_IMAGE_WIDTH}×${ANNOUNCEMENT_IMAGE_HEIGHT} · auto-cropped & resized`
+                      : "Optional · crop in the system editor"}
                   </Text>
                 </>
               )}
