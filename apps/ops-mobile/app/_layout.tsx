@@ -93,7 +93,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   } = useOnboarding()
 
   useSplashBootstrap(authReady)
-  useOtaUpdates()
+  useOtaUpdates(authReady)
 
   const email = getPrimaryEmail(
     user?.emailAddresses,

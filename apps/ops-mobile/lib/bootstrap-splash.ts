@@ -1,7 +1,8 @@
 import Constants from "expo-constants"
 import * as SplashScreen from "expo-splash-screen"
 import * as Updates from "expo-updates"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Alert } from "react-native"
 
 const isExpoGo = Constants.executionEnvironment === "storeClient"
 
@@ -28,7 +29,15 @@ export function useSplashBootstrap(isReady: boolean) {
   }, [isReady, minTimeElapsed])
 }
 
-export function useOtaUpdates() {
+/**
+ * `readyToPrompt` gates the restart Alert (not the download) behind the caller's
+ * own "app is interactive" signal, so it can't pop up over the splash screen or
+ * mid-onboarding.
+ */
+export function useOtaUpdates(readyToPrompt: boolean) {
+  const [updateDownloaded, setUpdateDownloaded] = useState(false)
+  const prompted = useRef(false)
+
   useEffect(() => {
     if (__DEV__) return
 
@@ -38,13 +47,30 @@ export function useOtaUpdates() {
         if (!update.isAvailable) return
 
         await Updates.fetchUpdateAsync()
-        // Fetch only on launch — apply on next cold start. Immediate reloadAsync()
-        // after splash often looks like a crash when the OTA bundle is bad.
+        // Downloaded now, applied on next cold start by default — but also
+        // surfaced below so the user can opt into restarting sooner. Immediate,
+        // unprompted reloadAsync() after splash often looks like a crash when
+        // the OTA bundle is bad, so this always waits for explicit consent.
+        setUpdateDownloaded(true)
       } catch {
         // OTA is best-effort; offline or misconfigured EAS Update should not block launch.
       }
     })()
   }, [])
+
+  useEffect(() => {
+    if (!updateDownloaded || !readyToPrompt || prompted.current) return
+    prompted.current = true
+
+    Alert.alert(
+      "Update ready",
+      "A new version has been downloaded. Restart now to apply it?",
+      [
+        { text: "Later", style: "cancel" },
+        { text: "Restart now", onPress: () => void Updates.reloadAsync() },
+      ],
+    )
+  }, [updateDownloaded, readyToPrompt])
 }
 
 export type ManualUpdateCheckResult =
