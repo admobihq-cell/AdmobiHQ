@@ -169,7 +169,15 @@ npm run update:preview -w customer-mobile
 npm run update:preview -w ops-mobile
 ```
 
-On launch, production/preview builds check for updates (see `lib/bootstrap-splash.ts` → `useOtaUpdates`). Users get the new JS on next open — **same APK, no reinstall**.
+On launch, production/preview builds check for updates in the background (`lib/bootstrap-splash.ts` → `useOtaUpdates`). Once downloaded, the app shows a native "Update ready — Restart now?" prompt (same one the manual Settings/Profile "Check for updates" button already used) rather than silently waiting for the next cold start — **same APK, no reinstall** either way.
+
+### OTA auto-notify (customer-mobile only) {#ota-auto-notify}
+
+`npm run update:preview` / `update:production -w customer-mobile` do one more thing after the JS publish succeeds: they run `scripts/notify-app-update.mjs`, which sends a **real push notification** ("Admobi has a new update…") to every customer device with a registered token — via the same `POST /v1/notifications/broadcast` pipeline ops staff use to send announcements, authenticated with `CRON_SECRET` instead of a Clerk session (see [API.md](./API.md#service-to-service-auth)).
+
+This fires on **every publish, on every channel** — there is no separate staging backend for this app, so a `preview` push and a `production` push both notify the exact same real customer audience. There is currently no way to publish JS-only without also notifying; if you need a silent OTA push (e.g. a same-day follow-up fix), that's a gap, not a flag you're missing.
+
+Requires `CRON_SECRET` in the environment the script runs in — it fails soft (warns, exits 0) if unset, so a missing secret never blocks the OTA publish itself, it just means no notification goes out. **ops-mobile's** `update:*` scripts are not wired to this — pushing an ops-mobile update never notifies anyone.
 
 ### `runtimeVersion`
 
