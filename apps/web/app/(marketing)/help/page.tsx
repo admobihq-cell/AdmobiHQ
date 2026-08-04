@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Container } from "@/components/landing/container"
-import { HelpIndexWithSearch } from "@/components/help/help-index-with-search"
+import { HelpArticleSearch } from "@/components/help/help-article-search"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { getHelpIndexData, isPayloadConfigured } from "@/lib/payload/help-queries"
 import { pageMetadata } from "@/lib/seo/site"
@@ -35,7 +35,27 @@ export default async function HelpPage() {
           { name: "Help", path: "/help" },
         ]}
       />
-      <HelpIndexWithSearch categories={data.categories} articles={data.articles} />
+      <div className="border-b border-border pb-14 sm:pb-20">
+        <section className="border-border border-b bg-foreground py-14 text-background sm:py-20">
+          <Container>
+            <div className="max-w-2xl space-y-4">
+              <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
+                Help center
+              </p>
+              <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
+                Guides and answers for Admobi in Kenya
+              </h1>
+              <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed">
+                Campaign setup, driver onboarding, fleet partnerships, and Nairobi rollout, all in
+                one place.
+              </p>
+            </div>
+          </Container>
+        </section>
+
+        <HelpArticleSearch categories={data.categories} articles={data.articles} />
+      </div>
+
       <div className="border-t border-border py-10 sm:py-12">
         <Container>
           <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:p-8">
