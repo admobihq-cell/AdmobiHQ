@@ -119,6 +119,30 @@ export const WALLET_TRANSACTIONS: WalletTransaction[] = [
   },
 ]
 
+export const OLDER_WALLET_TRANSACTIONS: WalletTransaction[] = [
+  {
+    id: "6",
+    label: "Mombasa Rd Commute — daily spend",
+    meta: "6 days ago",
+    amount: 2100,
+    kind: "debit",
+  },
+  {
+    id: "7",
+    label: "Wallet top-up · M-Pesa",
+    meta: "9 days ago",
+    amount: 25000,
+    kind: "credit",
+  },
+  {
+    id: "8",
+    label: "Nairobi CBD Summer — daily spend",
+    meta: "10 days ago",
+    amount: 5900,
+    kind: "debit",
+  },
+]
+
 export const SPEND_BY_CAMPAIGN = [
   { id: "1", name: "Nairobi CBD Summer", spend: 62400 },
   { id: "2", name: "Westlands Retail Push", spend: 41200 },

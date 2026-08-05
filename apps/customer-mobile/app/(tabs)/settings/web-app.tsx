@@ -12,7 +12,7 @@ export default function WebAppSettingsScreen() {
       <Stack.Screen options={{ title: "Web app" }} />
       <PlaceholderScreen
         title="Open web app"
-        body={`Campaign creation, billing, and reporting are available now at ${WEB_APP_URL}.`}
+        body={`Prefer a bigger screen? Browse your Admobi account from a browser at ${WEB_APP_URL}.`}
         actionLabel="Open in browser"
         onAction={() => void WebBrowser.openBrowserAsync(WEB_APP_URL)}
       />

@@ -2,7 +2,6 @@ import { useCallback, useState } from "react"
 import { Stack, useFocusEffect } from "expo-router"
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -25,7 +24,6 @@ import {
   Wallet,
   Warning,
 } from "@/components/icons"
-import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import {
   formatCurrency,
@@ -39,11 +37,6 @@ import {
   WALLET_CARD_FG,
   type AutoReloadSettings,
 } from "@/lib/wallet"
-
-// Top up, auto-reload, and the full statement only work in the web export
-// (the embedded marketing-site demo). The real app still shows "coming
-// soon" here until real billing ships; flip this once it does.
-const CAN_MANAGE_WALLET = Platform.OS === "web"
 
 type Transaction = {
   id: string
@@ -83,11 +76,10 @@ export default function BillingSettingsScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [hidden, setHidden] = useState(false)
-  const [comingSoon, setComingSoon] = useState<{ title: string; body: string } | null>(null)
 
   const [balance, setBalance] = useState(PLACEHOLDER_WALLET_BALANCE)
   const [autoReload, setAutoReload] = useState<AutoReloadSettings | null>(null)
-  const [loading, setLoading] = useState(CAN_MANAGE_WALLET)
+  const [loading, setLoading] = useState(true)
   const [panel, setPanel] = useState<Panel>(null)
   const [topUpAmount, setTopUpAmount] = useState("")
   const [thresholdInput, setThresholdInput] = useState("")
@@ -95,7 +87,6 @@ export default function BillingSettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!CAN_MANAGE_WALLET) return
       let mounted = true
       setLoading(true)
       void Promise.all([getWalletBalance(), getAutoReloadSettings()]).then(([bal, reload]) => {
@@ -316,15 +307,6 @@ export default function BillingSettingsScreen() {
   }))
 
   function openAction(key: "topup" | "auto" | "statement") {
-    if (!CAN_MANAGE_WALLET) {
-      const copy = {
-        topup: { title: "Top up", body: "Add funds via M-Pesa or card. Wallet top-ups are coming in a future update." },
-        auto: { title: "Auto reload", body: "Automatically top up your wallet when the balance runs low. Coming soon." },
-        statement: { title: "Statement", body: "Download a PDF statement of your wallet activity. Coming soon." },
-      }[key]
-      setComingSoon(copy)
-      return
-    }
     if (key === "topup") setPanel(panel === "topup" ? null : "topup")
     else if (key === "auto") setPanel(panel === "autoreload" ? null : "autoreload")
     else setShowOlderTransactions(true)
@@ -367,9 +349,7 @@ export default function BillingSettingsScreen() {
           <View style={styles.heroCopy}>
             <Text style={styles.title}>Wallet</Text>
             <Text style={styles.subtitle}>
-              {CAN_MANAGE_WALLET
-                ? "Fund your campaigns and track spend. Top-ups here are saved on this device."
-                : "Fund your campaigns and track spend. Placeholder data for layout preview."}
+              Fund your campaigns and track spend. Top-ups here are saved on this device.
             </Text>
           </View>
         </View>
@@ -554,18 +534,10 @@ export default function BillingSettingsScreen() {
         </View>
 
         <Text style={styles.note}>
-          {CAN_MANAGE_WALLET
-            ? "Placeholder data. Top-ups and auto-reload are saved on this device only — nothing here moves real money."
-            : "Placeholder data. Top-ups, auto-reload, and statements will connect to live billing once payments ship."}
+          Placeholder data. Top-ups and auto-reload are saved on this device only — nothing here
+          moves real money.
         </Text>
       </ScrollView>
-
-      <ComingSoonModal
-        visible={comingSoon !== null}
-        title={comingSoon?.title ?? ""}
-        body={comingSoon?.body ?? ""}
-        onClose={() => setComingSoon(null)}
-      />
     </>
   )
 }
