@@ -29,7 +29,7 @@ export function AppDemoPhone({ className, src = "/app-demo" }: AppDemoPhoneProps
   const [activated, setActivated] = useState(false)
 
   return (
-    <div className={cn("relative mx-auto w-full max-w-[27rem]", className)}>
+    <div className={cn("relative mx-auto w-full max-w-[20rem] xl:max-w-[22rem]", className)}>
       <div
         aria-hidden
         className="absolute inset-x-10 bottom-[-1.75rem] h-14 rounded-full bg-black/30 blur-2xl dark:bg-black/55"
