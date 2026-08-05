@@ -1,11 +1,5 @@
 import type { ReactNode } from "react"
-import {
-  Bell,
-  HelpCircle,
-  Shield,
-  UserCircle,
-  Wallet,
-} from "lucide-react"
+import { Bell, Shield, UserCircle } from "lucide-react"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
@@ -51,22 +45,6 @@ export function SettingsView() {
           icon={Bell}
           label="Notifications"
           description="Campaign alerts and digests"
-        />
-        <Separator />
-        <SettingsRow
-          href="/settings/billing"
-          icon={Wallet}
-          label="Wallet & billing"
-          description="Balance, top-ups, and invoices"
-        />
-      </SettingsSection>
-
-      <SettingsSection label="Support">
-        <SettingsRow
-          href="/settings/support"
-          icon={HelpCircle}
-          label="Help & contact"
-          description="FAQs and support requests"
         />
       </SettingsSection>
 
