@@ -1,16 +1,58 @@
 "use client"
 
-import { useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import Image from "next/image"
 
 import { cn } from "@workspace/ui/lib/utils"
 
 import "./devices-iphone-14-pro.css"
 
+/** iPhone 14 Pro logical screen — matches .device-screen in devices-iphone-14-pro.css */
+const DEMO_SCREEN_WIDTH = 390
+const DEMO_SCREEN_HEIGHT = 830
+
 type AppDemoPhoneProps = {
   className?: string
   /** Path to the exported customer-mobile web build, served from apps/web/public. */
   src?: string
+}
+
+function ScaledAppDemoIframe({ src }: { src: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const updateScale = () => {
+      const width = el.clientWidth
+      const height = el.clientHeight
+      if (width <= 0 || height <= 0) return
+      setScale(Math.min(width / DEMO_SCREEN_WIDTH, height / DEMO_SCREEN_HEIGHT))
+    }
+
+    updateScale()
+    const observer = new ResizeObserver(updateScale)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={containerRef} className="device-screen overflow-hidden">
+      <iframe
+        title="Admobi app demo"
+        src={src}
+        allow="clipboard-write"
+        className="origin-top-left border-0"
+        style={{
+          width: DEMO_SCREEN_WIDTH,
+          height: DEMO_SCREEN_HEIGHT,
+          transform: `scale(${scale})`,
+        }}
+      />
+    </div>
+  )
 }
 
 /**
@@ -20,6 +62,10 @@ type AppDemoPhoneProps = {
  * vendored in ./devices-iphone-14-pro.css). The frame scales fluidly via
  * container-query transform (see .phone-demo-shell in that file) instead of
  * the library's fixed 428x868 px sizing.
+ *
+ * The iframe always lays out at the native 390×830 logical resolution and is
+ * visually scaled to the current bezel size, so the app isn't squished when
+ * the mockup is smaller than a real phone.
  *
  * The ~4MB app bundle only loads once the visitor presses "Try live demo" —
  * until then this renders the app's own splash screen as a static cover, so
@@ -45,12 +91,7 @@ export function AppDemoPhone({ className, src = "/app-demo" }: AppDemoPhoneProps
         <div className="device device-iphone-14-pro">
           <div className="device-frame">
             {activated ? (
-              <iframe
-                title="Admobi app demo"
-                src={src}
-                className="device-screen"
-                allow="clipboard-write"
-              />
+              <ScaledAppDemoIframe src={src} />
             ) : (
               <button
                 type="button"

@@ -11,6 +11,10 @@ const appRoot = path.resolve(__dirname, "..")
 const outputDir = path.join(appRoot, "dist-web-demo")
 const publicDir = path.resolve(appRoot, "../web/public/app-demo")
 
+/** iPhone 14 Pro logical screen width — matches .device-screen in the phone frame. */
+const DEMO_LAYOUT_WIDTH = 390
+const DEMO_VIEWPORT = `width=${DEMO_LAYOUT_WIDTH}, initial-scale=1, shrink-to-fit=no`
+
 const result = spawnSync("npx", ["expo", "export", "--platform", "web", "--output-dir", "dist-web-demo"], {
   cwd: appRoot,
   stdio: "inherit",
@@ -22,8 +26,6 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1)
 }
 
-// Preload Ionicons so tab-bar and stat-card icons render on first paint in the
-// static iframe export (expo-font otherwise injects @font-face lazily).
 function findIoniconsFont(relativeDir) {
   const absoluteDir = path.join(outputDir, relativeDir)
   for (const entry of readdirSync(absoluteDir, { withFileTypes: true })) {
@@ -40,15 +42,38 @@ function findIoniconsFont(relativeDir) {
   return null
 }
 
+function patchIndexHtml(html, ioniconsFont) {
+  let patched = html.replace(
+    /content="width=device-width[^"]*"/,
+    `content="${DEMO_VIEWPORT}"`,
+  )
+
+  const headInjections = []
+
+  if (ioniconsFont) {
+    headInjections.push(
+      `  <link rel="preload" href="/app-demo/${ioniconsFont}" as="font" type="font/ttf" crossorigin />`,
+      `  <style id="demo-ionicons">
+    @font-face {
+      font-family: ionicons;
+      src: url("/app-demo/${ioniconsFont}") format("truetype");
+      font-display: block;
+    }
+  </style>`,
+    )
+  }
+
+  if (headInjections.length > 0 && !patched.includes('id="demo-ionicons"')) {
+    patched = patched.replace("</head>", `${headInjections.join("\n")}\n</head>`)
+  }
+
+  return patched
+}
+
 const ioniconsFont = findIoniconsFont("assets")
 const indexPath = path.join(outputDir, "index.html")
-let indexHtml = readFileSync(indexPath, "utf8")
-
-if (ioniconsFont && !indexHtml.includes("rel=\"preload\"")) {
-  const preload = `  <link rel="preload" href="/app-demo/${ioniconsFont}" as="font" type="font/ttf" crossorigin />\n`
-  indexHtml = indexHtml.replace("</head>", `${preload}</head>`)
-  writeFileSync(indexPath, indexHtml)
-}
+const indexHtml = patchIndexHtml(readFileSync(indexPath, "utf8"), ioniconsFont)
+writeFileSync(indexPath, indexHtml)
 
 rmSync(publicDir, { recursive: true, force: true })
 cpSync(outputDir, publicDir, { recursive: true })
