@@ -1,19 +1,12 @@
 import { useCallback, useState } from "react"
 import { useFocusEffect, useRouter } from "expo-router"
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Add, Calendar, Location } from "@/components/icons"
-import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getCampaigns, type Campaign } from "@/lib/campaigns"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-
-// Creating a campaign and viewing its details only work in the web export
-// (the embedded marketing-site demo — see apps/customer-mobile's
-// export:web-demo script). The real app still shows "coming soon" here
-// until that flow ships for real; flip this once it does.
-const CAN_MANAGE_CAMPAIGNS = Platform.OS === "web"
 
 const FILTERS = ["All", "Active", "Scheduled", "Draft", "Completed"] as const
 type Filter = (typeof FILTERS)[number]
@@ -25,7 +18,6 @@ export default function CampaignsScreen() {
   const [filter, setFilter] = useState<Filter>("All")
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
-  const [comingSoon, setComingSoon] = useState<{ title: string; body: string } | null>(null)
 
   useFocusEffect(
     useCallback(() => {
@@ -217,9 +209,8 @@ export default function CampaignsScreen() {
           <Text style={styles.eyebrow}>Workspace</Text>
           <Text style={styles.title}>Campaigns</Text>
           <Text style={styles.subtitle}>
-            {CAN_MANAGE_CAMPAIGNS
-              ? "Create, schedule, and monitor out-of-home flights. Campaigns you create here are saved on this device."
-              : "Create, schedule, and monitor out-of-home flights."}
+            Create, schedule, and monitor out-of-home flights. Campaigns you create here are
+            saved on this device.
           </Text>
         </View>
 
@@ -256,14 +247,7 @@ export default function CampaignsScreen() {
               <Pressable
                 key={campaign.id}
                 style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-                onPress={() =>
-                  CAN_MANAGE_CAMPAIGNS
-                    ? router.push(`/campaigns/${campaign.id}`)
-                    : setComingSoon({
-                        title: campaign.name,
-                        body: "Campaign details are coming soon in a future update.",
-                      })
-                }
+                onPress={() => router.push(`/campaigns/${campaign.id}`)}
                 accessibilityRole="button"
                 accessibilityLabel={`${campaign.name}, ${campaign.status}`}
               >
@@ -304,27 +288,13 @@ export default function CampaignsScreen() {
           { bottom: insets.bottom + spacing.lg },
           pressed && styles.fabPressed,
         ]}
-        onPress={() =>
-          CAN_MANAGE_CAMPAIGNS
-            ? router.push("/campaigns/new")
-            : setComingSoon({
-                title: "New campaign",
-                body: "Creating campaigns from the app is coming soon.",
-              })
-        }
+        onPress={() => router.push("/campaigns/new")}
         accessibilityRole="button"
         accessibilityLabel="New campaign"
       >
         <Add color={colors.primaryForeground} size={24} />
         <Text style={styles.fabLabel}>New campaign</Text>
       </Pressable>
-
-      <ComingSoonModal
-        visible={comingSoon !== null}
-        title={comingSoon?.title ?? ""}
-        body={comingSoon?.body ?? ""}
-        onClose={() => setComingSoon(null)}
-      />
     </View>
   )
 }
