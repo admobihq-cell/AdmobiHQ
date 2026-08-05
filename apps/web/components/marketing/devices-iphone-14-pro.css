@@ -1,0 +1,232 @@
+/*!
+ * Trimmed from Devices.css v0.2.0 (MIT License)
+ * https://github.com/picturepan2/devices.css
+ * Copyright (c) Peng Jiaxin — full library covers many devices; only the
+ * base rules and .device-iphone-14-pro block are vendored here.
+ *
+ * All pixel values below are converted to `em`, driven by the `font-size`
+ * set on .phone-demo-shell (see bottom of file). This is genuine fluid
+ * CSS sizing, not a compositor scale/zoom trick — the interactive iframe's
+ * own box is a real, normally-laid-out size at every breakpoint, so click
+ * hit-testing works exactly like an unscaled iframe. Both `transform:
+ * scale()` and CSS `zoom` were tried first and both broke real click
+ * delivery into the iframe (transform doesn't update hit-test coordinates
+ * for compositor-scaled iframes reliably in Chromium; zoom changes the
+ * iframe's actual internal viewport in ways that desynced from Playwright's
+ * — and likely some real browsers' — viewport/actionability checks).
+ */
+.device,
+.device::before,
+.device::after,
+.device *,
+.device *::before,
+.device *::after {
+  box-sizing: border-box;
+  display: block;
+}
+
+.device {
+  position: relative;
+  z-index: 1;
+}
+
+.device .device-frame {
+  z-index: 1;
+}
+
+.device .device-screen {
+  background-color: #000;
+  position: relative;
+}
+
+.device-iphone-14-pro {
+  height: 868em;
+  width: 428em;
+}
+
+.device-iphone-14-pro .device-frame {
+  background: #010101;
+  border: 1em solid #1b1721;
+  border-radius: 68em;
+  box-shadow: inset 0 0 4em 2em #c0b7cd, inset 0 0 0 6em #342c3f;
+  height: 868em;
+  padding: 19em;
+  width: 428em;
+}
+
+.device-iphone-14-pro .device-screen {
+  border: 0;
+  border-radius: 49em;
+  height: 830em;
+  width: 390em;
+  /*
+   * The blanket `.device *` reset above forces display:block on every
+   * descendant, including this project's added cover button/logo/pill
+   * (not part of upstream Devices.css). Tailwind's flex utilities live in
+   * `@layer utilities`, and unlayered CSS always beats layered CSS in the
+   * Cascade Layers spec regardless of specificity or source order — so
+   * without this, `flex items-center justify-center` on .device-screen
+   * silently do nothing. Restore it here with matching specificity.
+   */
+  display: flex;
+}
+
+.device-iphone-14-pro .device-screen span {
+  display: inline-flex;
+}
+
+.device-iphone-14-pro .device-stripe::after,
+.device-iphone-14-pro .device-stripe::before {
+  border: solid rgba(1, 1, 1, .25);
+  border-width: 0 7em;
+  content: "";
+  height: 7em;
+  left: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 9;
+}
+
+.device-iphone-14-pro .device-stripe::after {
+  top: 85em;
+}
+
+.device-iphone-14-pro .device-stripe::before {
+  bottom: 85em;
+}
+
+.device-iphone-14-pro .device-header {
+  background: #010101;
+  border-radius: 20em;
+  height: 35em;
+  left: 50%;
+  margin-left: -60em;
+  position: absolute;
+  top: 29em;
+  width: 120em;
+}
+
+.device-iphone-14-pro .device-sensors::after,
+.device-iphone-14-pro .device-sensors::before {
+  content: "";
+  position: absolute;
+}
+
+.device-iphone-14-pro .device-sensors::after {
+  background: #010101;
+  border-radius: 17em;
+  height: 33em;
+  left: 50%;
+  margin-left: -60em;
+  top: 30em;
+  width: 74em;
+}
+
+.device-iphone-14-pro .device-sensors::before {
+  background: radial-gradient(farthest-corner at 20% 20%, #6074bf 0, transparent 40%), radial-gradient(farthest-corner at 80% 80%, #513785 0, #24555e 20%, transparent 50%);
+  border-radius: 50%;
+  box-shadow: 0 0 1em 1em rgba(255, 255, 255, .05);
+  height: 9em;
+  left: 50%;
+  margin-left: 36em;
+  top: 42em;
+  width: 9em;
+}
+
+.device-iphone-14-pro .device-btns {
+  background: #1b1721;
+  border-radius: 2em;
+  height: 32em;
+  left: -2em;
+  position: absolute;
+  top: 115em;
+  width: 3em;
+}
+
+.device-iphone-14-pro .device-btns::after,
+.device-iphone-14-pro .device-btns::before {
+  background: #1b1721;
+  border-radius: 2em;
+  content: "";
+  height: 62em;
+  left: 0;
+  position: absolute;
+  width: 3em;
+}
+
+.device-iphone-14-pro .device-btns::after {
+  top: 60em;
+}
+
+.device-iphone-14-pro .device-btns::before {
+  top: 140em;
+}
+
+.device-iphone-14-pro .device-power {
+  background: #1b1721;
+  border-radius: 2em;
+  height: 100em;
+  position: absolute;
+  right: -2em;
+  top: 200em;
+  width: 3em;
+}
+
+.device-iphone-14-pro.device-silver .device-frame {
+  border-color: #c8cacb;
+  box-shadow: inset 0 0 4em 2em white, inset 0 0 0 6em #e2e3e4;
+}
+
+.device-iphone-14-pro.device-silver .device-btns {
+  background: #c8cacb;
+}
+
+.device-iphone-14-pro.device-silver .device-btns::after,
+.device-iphone-14-pro.device-silver .device-btns::before {
+  background: #c8cacb;
+}
+
+.device-iphone-14-pro.device-silver .device-power {
+  background: #c8cacb;
+}
+
+.device-iphone-14-pro.device-gold .device-frame {
+  border-color: #e7d19e;
+  box-shadow: inset 0 0 4em 2em white, inset 0 0 0 6em #d2ab4c;
+}
+
+.device-iphone-14-pro.device-gold .device-btns {
+  background: #e7d19e;
+}
+
+.device-iphone-14-pro.device-gold .device-btns::after,
+.device-iphone-14-pro.device-gold .device-btns::before {
+  background: #e7d19e;
+}
+
+.device-iphone-14-pro.device-gold .device-power {
+  background: #e7d19e;
+}
+
+/*
+ * Fluid scaling wrapper (project addition, not part of upstream
+ * Devices.css, which ships fixed pixel sizes). font-size here is "1 design
+ * unit" of the 428x868 layout above — every `em` in this file resolves off
+ * it, so the whole frame (bezel and the interactive iframe alike) is a
+ * genuinely, normally laid-out size at the container's current width.
+ *
+ * font-size is set on .device-iphone-14-pro (a child of the container), not
+ * on .phone-demo-shell itself — a container can't read its own cqw in its
+ * own declarations (self-referencing), and silently falls back to the
+ * viewport width instead, which rendered the whole phone at ~4x size.
+ */
+.phone-demo-shell {
+  container-type: inline-size;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.phone-demo-shell .device-iphone-14-pro {
+  font-size: calc(100cqw / 428);
+}
