@@ -1,75 +1,48 @@
-import { useState } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { useCallback, useState } from "react"
+import { useFocusEffect, useRouter } from "expo-router"
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Add, Calendar, Location } from "@/components/icons"
 import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
-import {
-  StatusBadge,
-  type CampaignStatus,
-} from "@/components/ui/status-badge"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { getCampaigns, type Campaign } from "@/lib/campaigns"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-type Campaign = {
-  id: string
-  name: string
-  status: CampaignStatus
-  market: string
-  dates: string
-  impressions: string
-  budget: string
-}
-
-const CAMPAIGNS: Campaign[] = [
-  {
-    id: "1",
-    name: "Nairobi CBD Summer",
-    status: "active",
-    market: "CBD · 4 corridors",
-    dates: "Jun 1 – Aug 31",
-    impressions: "482k",
-    budget: "KES 180k",
-  },
-  {
-    id: "2",
-    name: "Westlands Retail Push",
-    status: "active",
-    market: "Westlands · 3 corridors",
-    dates: "Jul 1 – Sep 15",
-    impressions: "318k",
-    budget: "KES 145k",
-  },
-  {
-    id: "3",
-    name: "Karen Estate Awareness",
-    status: "scheduled",
-    market: "Karen · 6 corridors",
-    dates: "Starts Aug 4",
-    impressions: "—",
-    budget: "KES 95k",
-  },
-  {
-    id: "4",
-    name: "Mombasa Rd Commute",
-    status: "draft",
-    market: "Mombasa Rd · 2 corridors",
-    dates: "Not scheduled",
-    impressions: "—",
-    budget: "KES 60k",
-  },
-]
+// Creating a campaign and viewing its details only work in the web export
+// (the embedded marketing-site demo — see apps/customer-mobile's
+// export:web-demo script). The real app still shows "coming soon" here
+// until that flow ships for real; flip this once it does.
+const CAN_MANAGE_CAMPAIGNS = Platform.OS === "web"
 
 const FILTERS = ["All", "Active", "Scheduled", "Draft", "Completed"] as const
 type Filter = (typeof FILTERS)[number]
 
 export default function CampaignsScreen() {
+  const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [filter, setFilter] = useState<Filter>("All")
-  const [comingSoon, setComingSoon] = useState<{
-    title: string
-    body: string
-  } | null>(null)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
+  const [comingSoon, setComingSoon] = useState<{ title: string; body: string } | null>(null)
+
+  useFocusEffect(
+    useCallback(() => {
+      let mounted = true
+      setLoading(true)
+      void getCampaigns().then((items) => {
+        if (mounted) {
+          setCampaigns(items)
+          setLoading(false)
+        }
+      })
+      return () => {
+        mounted = false
+      }
+    }, []),
+  )
+
   const styles = useThemedStyles((c) => ({
     root: {
       flex: 1,
@@ -187,6 +160,19 @@ export default function CampaignsScreen() {
       backgroundColor: c.border,
       marginHorizontal: spacing.md,
     },
+    emptyState: {
+      alignItems: "flex-start" as const,
+      gap: spacing.xs,
+      padding: spacing.lg,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderStyle: "dashed" as const,
+      borderColor: c.border,
+    },
+    emptyText: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+    },
     fab: {
       position: "absolute" as const,
       right: spacing.lg,
@@ -212,7 +198,7 @@ export default function CampaignsScreen() {
     },
   }))
 
-  const visible = CAMPAIGNS.filter((campaign) => {
+  const visible = campaigns.filter((campaign) => {
     if (filter === "All") return true
     return campaign.status === filter.toLowerCase()
   })
@@ -231,8 +217,9 @@ export default function CampaignsScreen() {
           <Text style={styles.eyebrow}>Workspace</Text>
           <Text style={styles.title}>Campaigns</Text>
           <Text style={styles.subtitle}>
-            Create, schedule, and monitor out-of-home flights. Placeholder data
-            for layout preview.
+            {CAN_MANAGE_CAMPAIGNS
+              ? "Create, schedule, and monitor out-of-home flights. Campaigns you create here are saved on this device."
+              : "Create, schedule, and monitor out-of-home flights."}
           </Text>
         </View>
 
@@ -249,9 +236,7 @@ export default function CampaignsScreen() {
                 onPress={() => setFilter(item)}
                 style={[styles.filterChip, active && styles.filterChipActive]}
               >
-                <Text
-                  style={[styles.filterText, active && styles.filterTextActive]}
-                >
+                <Text style={[styles.filterText, active && styles.filterTextActive]}>
                   {item}
                 </Text>
               </Pressable>
@@ -259,51 +244,58 @@ export default function CampaignsScreen() {
           })}
         </ScrollView>
 
-        <View style={styles.list}>
-          {visible.map((campaign) => (
-            <Pressable
-              key={campaign.id}
-              style={({ pressed }) => [
-                styles.card,
-                pressed && styles.cardPressed,
-              ]}
-              onPress={() =>
-                setComingSoon({
-                  title: campaign.name,
-                  body: "Campaign details are coming soon in a future update.",
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={`${campaign.name}, ${campaign.status}`}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{campaign.name}</Text>
-                <StatusBadge status={campaign.status} />
-              </View>
-
-              <View style={styles.metaRow}>
-                <Location color={colors.mutedForeground} size={14} />
-                <Text style={styles.metaText}>{campaign.market}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Calendar color={colors.mutedForeground} size={14} />
-                <Text style={styles.metaText}>{campaign.dates}</Text>
-              </View>
-
-              <View style={styles.metrics}>
-                <View style={styles.metric}>
-                  <Text style={styles.metricLabel}>Impressions</Text>
-                  <Text style={styles.metricValue}>{campaign.impressions}</Text>
+        {loading ? (
+          <ActivityIndicator />
+        ) : visible.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No campaigns match this filter yet.</Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {visible.map((campaign) => (
+              <Pressable
+                key={campaign.id}
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                onPress={() =>
+                  CAN_MANAGE_CAMPAIGNS
+                    ? router.push(`/campaigns/${campaign.id}`)
+                    : setComingSoon({
+                        title: campaign.name,
+                        body: "Campaign details are coming soon in a future update.",
+                      })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`${campaign.name}, ${campaign.status}`}
+              >
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{campaign.name}</Text>
+                  <StatusBadge status={campaign.status} />
                 </View>
-                <View style={styles.metricDivider} />
-                <View style={styles.metric}>
-                  <Text style={styles.metricLabel}>Budget</Text>
-                  <Text style={styles.metricValue}>{campaign.budget}</Text>
+
+                <View style={styles.metaRow}>
+                  <Location color={colors.mutedForeground} size={14} />
+                  <Text style={styles.metaText}>{campaign.market}</Text>
                 </View>
-              </View>
-            </Pressable>
-          ))}
-        </View>
+                <View style={styles.metaRow}>
+                  <Calendar color={colors.mutedForeground} size={14} />
+                  <Text style={styles.metaText}>{campaign.dates}</Text>
+                </View>
+
+                <View style={styles.metrics}>
+                  <View style={styles.metric}>
+                    <Text style={styles.metricLabel}>Impressions</Text>
+                    <Text style={styles.metricValue}>{campaign.impressions}</Text>
+                  </View>
+                  <View style={styles.metricDivider} />
+                  <View style={styles.metric}>
+                    <Text style={styles.metricLabel}>Budget</Text>
+                    <Text style={styles.metricValue}>{campaign.budget}</Text>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       <Pressable
@@ -313,10 +305,12 @@ export default function CampaignsScreen() {
           pressed && styles.fabPressed,
         ]}
         onPress={() =>
-          setComingSoon({
-            title: "New campaign",
-            body: "Creating campaigns from the app is coming soon.",
-          })
+          CAN_MANAGE_CAMPAIGNS
+            ? router.push("/campaigns/new")
+            : setComingSoon({
+                title: "New campaign",
+                body: "Creating campaigns from the app is coming soon.",
+              })
         }
         accessibilityRole="button"
         accessibilityLabel="New campaign"

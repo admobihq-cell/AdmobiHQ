@@ -105,6 +105,18 @@ const nextConfig = {
         cloudStorageClientUtilities,
     },
   },
+  async rewrites() {
+    return [
+      // apps/customer-mobile's web export (public/app-demo, see its
+      // export:web-demo script) is served under its exact index.html file —
+      // Next's static handling doesn't do directory-index resolution — but
+      // expo-router's client-side routing expects the clean /app-demo path
+      // it was built with (experiments.baseUrl in customer-mobile's
+      // app.config.js), so this rewrites the clean URL to the real file
+      // without changing what the browser shows.
+      { source: "/app-demo", destination: "/app-demo/index.html" },
+    ]
+  },
   async headers() {
     const stagingNoIndex = allowSiteIndexing
       ? []

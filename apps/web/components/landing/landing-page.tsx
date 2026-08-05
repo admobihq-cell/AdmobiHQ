@@ -1,4 +1,5 @@
 import { Container } from "./container"
+import { AppDemoSection } from "./app-demo-section"
 import { AudiencesSection } from "./audiences"
 import { FaqSection } from "./faq"
 import { GetStartedSection } from "./get-started-section"
@@ -17,6 +18,7 @@ export function LandingPage() {
       <WhyTaxisSection />
       <MissionSection />
       <ProductSection />
+      <AppDemoSection />
       <AudiencesSection />
       <MarketsSection />
       <ProcessSection />
