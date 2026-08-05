@@ -1,9 +1,11 @@
 import {
   BarChart3,
+  HelpCircle,
   LayoutDashboard,
   Map,
   Megaphone,
   Settings,
+  Wallet,
   type LucideIcon,
 } from "lucide-react"
 
@@ -28,6 +30,12 @@ export const appNavItems: AppNavItem[] = [
     description: "Create and manage out-of-home campaigns from this workspace.",
   },
   {
+    href: "/settings/billing",
+    label: "Wallet",
+    icon: Wallet,
+    description: "Fund your campaigns and track spend.",
+  },
+  {
     href: "/map",
     label: "Map",
     icon: Map,
@@ -41,6 +49,12 @@ export const appNavItems: AppNavItem[] = [
     description: "Performance metrics and delivery reports will live here.",
   },
   {
+    href: "/settings/support",
+    label: "Support",
+    icon: HelpCircle,
+    description: "Get help and reach the Admobi team.",
+  },
+  {
     href: "/settings",
     label: "Settings",
     icon: Settings,
@@ -49,7 +63,7 @@ export const appNavItems: AppNavItem[] = [
 ]
 
 /** Matches nested routes too (e.g. /settings/billing under /settings), not just an exact pathname. */
-export function isNavItemActive(pathname: string, href: string): boolean {
+function isNavItemActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/"
   return pathname === href || pathname.startsWith(`${href}/`)
 }
