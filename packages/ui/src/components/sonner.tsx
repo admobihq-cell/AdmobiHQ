@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -13,7 +14,14 @@ import { useTheme } from "@workspace/ui/components/theme-provider"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { resolvedTheme } = useTheme()
-  const theme = resolvedTheme ?? "light"
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+  }, [])
+
+  const theme = mounted ? (resolvedTheme ?? "light") : "light"
 
   return (
     <Sonner
