@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   Menu,
+  MonitorSmartphone,
   Rocket,
   Route,
   Tag,
@@ -50,6 +51,12 @@ const navItems: NavItem[] = [
         label: "All products & solutions",
         description: "Everything Admobi offers, in one place",
         icon: LayoutGrid,
+      },
+      {
+        href: "/product-demo",
+        label: "Try the live app demo",
+        description: "Explore the real advertiser app in your browser",
+        icon: MonitorSmartphone,
       },
       {
         href: "/media-kit",
