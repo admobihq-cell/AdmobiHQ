@@ -228,5 +228,9 @@
 }
 
 .phone-demo-shell .device-iphone-14-pro {
-  font-size: calc(100cqw / 428);
+  /*
+   * Scale from container width, but cap height at ~72vh so the mockup fits
+   * laptop viewports without dominating the page.
+   */
+  font-size: min(calc(100cqw / 428), calc(72vh / 868));
 }
