@@ -53,17 +53,10 @@ function patchIndexHtml(html, ioniconsFont) {
   if (ioniconsFont) {
     headInjections.push(
       `  <link rel="preload" href="/app-demo/${ioniconsFont}" as="font" type="font/ttf" crossorigin />`,
-      `  <style id="demo-ionicons">
-    @font-face {
-      font-family: ionicons;
-      src: url("/app-demo/${ioniconsFont}") format("truetype");
-      font-display: block;
-    }
-  </style>`,
     )
   }
 
-  if (headInjections.length > 0 && !patched.includes('id="demo-ionicons"')) {
+  if (headInjections.length > 0 && !patched.includes(`href="/app-demo/${ioniconsFont}"`)) {
     patched = patched.replace("</head>", `${headInjections.join("\n")}\n</head>`)
   }
 
