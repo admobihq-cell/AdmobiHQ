@@ -6,14 +6,10 @@
  *
  * All pixel values below are converted to `em`, driven by the `font-size`
  * set on .phone-demo-shell (see bottom of file). This is genuine fluid
- * CSS sizing, not a compositor scale/zoom trick — the interactive iframe's
- * own box is a real, normally-laid-out size at every breakpoint, so click
- * hit-testing works exactly like an unscaled iframe. Both `transform:
- * scale()` and CSS `zoom` were tried first and both broke real click
- * delivery into the iframe (transform doesn't update hit-test coordinates
- * for compositor-scaled iframes reliably in Chromium; zoom changes the
- * iframe's actual internal viewport in ways that desynced from Playwright's
- * — and likely some real browsers' — viewport/actionability checks).
+ * CSS sizing for the bezel. The interactive iframe is rendered at the
+ * native 390×830 logical resolution and visually scaled to fit .device-screen
+ * (see ScaledAppDemoIframe in app-demo-phone.tsx) so the app layout matches
+ * a real phone even when the mockup is smaller on laptop screens.
  */
 .device,
 .device::before,
