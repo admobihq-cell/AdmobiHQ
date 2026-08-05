@@ -38,6 +38,9 @@ function ScaledAppDemoIframe({ src }: { src: string }) {
     return () => observer.disconnect()
   }, [])
 
+  const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1
+  const inverseScalePercent = 100 / safeScale
+
   return (
     <div ref={containerRef} className="device-screen overflow-hidden">
       <iframe
@@ -46,9 +49,10 @@ function ScaledAppDemoIframe({ src }: { src: string }) {
         allow="clipboard-write"
         className="origin-top-left border-0"
         style={{
-          width: DEMO_SCREEN_WIDTH,
-          height: DEMO_SCREEN_HEIGHT,
-          transform: `scale(${scale})`,
+          width: `${inverseScalePercent}%`,
+          height: `${inverseScalePercent}%`,
+          transform: `scale(${safeScale})`,
+          transformOrigin: "top left",
         }}
       />
     </div>
