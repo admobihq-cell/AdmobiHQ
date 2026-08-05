@@ -51,6 +51,7 @@ function ScaledAppDemoIframe({ src }: { src: string }) {
         style={{
           width: `${inverseScalePercent}%`,
           height: `${inverseScalePercent}%`,
+          flexShrink: 0,
           transform: `scale(${safeScale})`,
           transformOrigin: "top left",
         }}
