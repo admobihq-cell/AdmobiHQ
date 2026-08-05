@@ -48,18 +48,14 @@ export default function ProductDemoPage() {
       <div className="border-b border-border pb-14 sm:pb-20">
         <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
           <Container>
-            <div className="max-w-2xl space-y-6">
-              <div className="space-y-3">
-                <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
-                  Live product demo
-                </p>
+            <div className="mx-auto max-w-2xl space-y-8 text-center">
+              <div className="space-y-4">
                 <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
-                  This is the real Admobi app, running in your browser
+                  The real Admobi app, running in your browser
                 </h1>
-                <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
-                  Not a video, not a clickable prototype: the same app code advertisers use, compiled
-                  straight from our codebase and dropped into this page. Tap around below, no download
-                  and no account needed.
+                <p className="text-background/82 mx-auto max-w-[48ch] text-lg leading-relaxed sm:text-xl">
+                  Same code our advertisers use, compiled straight from our codebase. Tap around, no
+                  download and no account needed.
                 </p>
               </div>
               <Button
