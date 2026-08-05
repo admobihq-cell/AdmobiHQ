@@ -1,6 +1,4 @@
-import Ionicons from "@expo/vector-icons/Ionicons"
 import * as Sentry from "@sentry/react-native"
-import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -55,13 +53,12 @@ function RootNavigator({
 
 function RootLayout() {
   const [appReady, setAppReady] = useState(false)
-  const [fontsLoaded] = useFonts(Ionicons.font)
   const {
     checked: onboardingChecked,
     completed: onboardingCompleted,
     complete: completeOnboarding,
   } = useOnboarding()
-  const ready = appReady && onboardingChecked && fontsLoaded
+  const ready = appReady && onboardingChecked
 
   useSplashBootstrap(ready)
   useOtaUpdates(ready)
