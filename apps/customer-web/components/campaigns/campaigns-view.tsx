@@ -1,9 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { Calendar, MapPin, Plus } from "lucide-react"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
+import { NewCampaignForm } from "@/components/campaigns/new-campaign-form"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -11,31 +13,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@workspace/ui/components/dialog"
 import { Separator } from "@workspace/ui/components/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@workspace/ui/components/sheet"
 import { cn } from "@workspace/ui/lib/utils"
-import { PLACEHOLDER_CAMPAIGNS } from "@/lib/placeholder-data"
+import { getCampaigns, type Campaign } from "@/lib/campaigns"
 
 const FILTERS = ["All", "Active", "Scheduled", "Draft"] as const
 type Filter = (typeof FILTERS)[number]
 
 export function CampaignsView() {
   const [filter, setFilter] = useState<Filter>("All")
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [newCampaignOpen, setNewCampaignOpen] = useState(false)
+
+  useEffect(() => {
+    setCampaigns(getCampaigns())
+  }, [])
 
   const visible = useMemo(
     () =>
-      PLACEHOLDER_CAMPAIGNS.filter((campaign) => {
+      campaigns.filter((campaign) => {
         if (filter === "All") return true
         return campaign.status === filter.toLowerCase()
       }),
-    [filter],
+    [campaigns, filter],
   )
 
   return (
@@ -46,8 +54,8 @@ export function CampaignsView() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight">Campaigns</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Create, schedule, and monitor out-of-home flights. Placeholder data
-          for layout preview.
+          Create, schedule, and monitor out-of-home flights. Campaigns you create here are saved
+          on this device.
         </p>
       </div>
 
@@ -71,64 +79,64 @@ export function CampaignsView() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {visible.map((campaign) => (
-          <Card
-            key={campaign.id}
-            className="shadow-none transition-colors hover:bg-muted/20"
-          >
-            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-              <CardTitle className="text-base leading-snug">
-                {campaign.name}
-              </CardTitle>
-              <CampaignStatusBadge status={campaign.status} />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p className="flex items-center gap-2">
-                  <MapPin className="size-3.5 shrink-0" />
-                  {campaign.market}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Calendar className="size-3.5 shrink-0" />
-                  {campaign.dates}
-                </p>
-              </div>
-              <Separator />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Impressions
+          <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="block">
+            <Card className="shadow-none transition-colors hover:bg-muted/20">
+              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+                <CardTitle className="text-base leading-snug">
+                  {campaign.name}
+                </CardTitle>
+                <CampaignStatusBadge status={campaign.status} />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2">
+                    <MapPin className="size-3.5 shrink-0" />
+                    {campaign.market}
                   </p>
-                  <p className="text-sm font-semibold">{campaign.impressions}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Budget
+                  <p className="flex items-center gap-2">
+                    <Calendar className="size-3.5 shrink-0" />
+                    {campaign.dates}
                   </p>
-                  <p className="text-sm font-semibold">{campaign.budget}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Impressions
+                    </p>
+                    <p className="text-sm font-semibold">{campaign.impressions}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Budget
+                    </p>
+                    <p className="text-sm font-semibold">{campaign.budget}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
-      <Dialog>
-        <DialogTrigger asChild>
+      <Sheet open={newCampaignOpen} onOpenChange={setNewCampaignOpen}>
+        <SheetTrigger asChild>
           <Button className="fixed bottom-6 right-6 z-10 gap-2 rounded-full px-5 shadow-lg md:bottom-8 md:right-8">
             <Plus className="size-4" />
             New campaign
           </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New campaign</DialogTitle>
-            <DialogDescription>
-              Creating campaigns from the app is coming soon. Reach out to your Admobi contact to
-              get a campaign started today.
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+        </SheetTrigger>
+        <SheetContent className="sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>New campaign</SheetTitle>
+            <SheetDescription>
+              Set the basics now — corridors, creative, and exact scheduling are confirmed with
+              your account manager before a flight goes live.
+            </SheetDescription>
+          </SheetHeader>
+          <NewCampaignForm onCreated={() => setNewCampaignOpen(false)} />
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
