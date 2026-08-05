@@ -2,11 +2,55 @@
 // the compiled bundle's asset URLs resolve correctly once copied into
 // apps/web/public/app-demo for the embedded marketing-site iframe demo.
 import { spawnSync } from "node:child_process"
+import { cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const appRoot = path.resolve(__dirname, "..")
+const outputDir = path.join(appRoot, "dist-web-demo")
+const publicDir = path.resolve(appRoot, "../web/public/app-demo")
 
 const result = spawnSync("npx", ["expo", "export", "--platform", "web", "--output-dir", "dist-web-demo"], {
+  cwd: appRoot,
   stdio: "inherit",
   shell: true,
   env: { ...process.env, EXPO_WEB_DEMO_BASE_URL: "/app-demo" },
 })
 
-process.exit(result.status ?? 1)
+if (result.status !== 0) {
+  process.exit(result.status ?? 1)
+}
+
+// Preload Ionicons so tab-bar and stat-card icons render on first paint in the
+// static iframe export (expo-font otherwise injects @font-face lazily).
+function findIoniconsFont(relativeDir) {
+  const absoluteDir = path.join(outputDir, relativeDir)
+  for (const entry of readdirSync(absoluteDir, { withFileTypes: true })) {
+    const nextRelative = path.join(relativeDir, entry.name)
+    if (entry.isDirectory()) {
+      const found = findIoniconsFont(nextRelative)
+      if (found) return found
+      continue
+    }
+    if (entry.isFile() && entry.name.startsWith("Ionicons.") && entry.name.endsWith(".ttf")) {
+      return nextRelative.replaceAll("\\", "/")
+    }
+  }
+  return null
+}
+
+const ioniconsFont = findIoniconsFont("assets")
+const indexPath = path.join(outputDir, "index.html")
+let indexHtml = readFileSync(indexPath, "utf8")
+
+if (ioniconsFont && !indexHtml.includes("rel=\"preload\"")) {
+  const preload = `  <link rel="preload" href="/app-demo/${ioniconsFont}" as="font" type="font/ttf" crossorigin />\n`
+  indexHtml = indexHtml.replace("</head>", `${preload}</head>`)
+  writeFileSync(indexPath, indexHtml)
+}
+
+rmSync(publicDir, { recursive: true, force: true })
+cpSync(outputDir, publicDir, { recursive: true })
+
+console.log(`Copied web demo export to ${publicDir}`)
