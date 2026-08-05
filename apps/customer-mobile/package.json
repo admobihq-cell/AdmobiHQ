@@ -34,7 +34,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@sentry/react-native": "~7.2.0",
     "@workspace/geo": "*",
-    "expo": "~54.0.36",
+    "expo": "~57.0.10",
     "expo-auth-session": "~7.0.11",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
