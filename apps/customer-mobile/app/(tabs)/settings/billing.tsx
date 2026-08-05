@@ -1,6 +1,16 @@
-import { useState } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
-import { Stack } from "expo-router"
+import { useCallback, useState } from "react"
+import { Stack, useFocusEffect } from "expo-router"
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import {
@@ -14,17 +24,26 @@ import {
   TrendingUp,
   Wallet,
   Warning,
-  type AppIcon,
 } from "@/components/icons"
 import { ComingSoonModal } from "@/components/ui/coming-soon-modal"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import {
   formatCurrency,
+  getAutoReloadSettings,
+  getWalletBalance,
   PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT,
   PLACEHOLDER_WALLET_BALANCE,
+  setAutoReloadSettings,
+  topUpWallet,
   WALLET_CARD_BG,
   WALLET_CARD_FG,
+  type AutoReloadSettings,
 } from "@/lib/wallet"
+
+// Top up, auto-reload, and the full statement only work in the web export
+// (the embedded marketing-site demo). The real app still shows "coming
+// soon" here until real billing ships; flip this once it does.
+const CAN_MANAGE_WALLET = Platform.OS === "web"
 
 type Transaction = {
   id: string
@@ -42,34 +61,23 @@ const TRANSACTIONS: Transaction[] = [
   { id: "5", label: "Karen Estate Awareness — daily spend", meta: "4 days ago", amount: 3100, kind: "debit" },
 ]
 
+const OLDER_TRANSACTIONS: Transaction[] = [
+  { id: "6", label: "Mombasa Rd Commute — daily spend", meta: "6 days ago", amount: 2100, kind: "debit" },
+  { id: "7", label: "Wallet top-up · M-Pesa", meta: "9 days ago", amount: 25000, kind: "credit" },
+  { id: "8", label: "Nairobi CBD Summer — daily spend", meta: "10 days ago", amount: 5900, kind: "debit" },
+]
+
 const SPEND_BY_CAMPAIGN = [
   { id: "1", name: "Nairobi CBD Summer", spend: 62400 },
   { id: "2", name: "Westlands Retail Push", spend: 41200 },
   { id: "3", name: "Karen Estate Awareness", spend: 12300 },
 ]
 
-const ACTIONS: Array<{ key: string; label: string; icon: AppIcon; body: string }> = [
-  {
-    key: "topup",
-    label: "Top up",
-    icon: Add,
-    body: "Add funds via M-Pesa or card. Wallet top-ups are coming in a future update.",
-  },
-  {
-    key: "auto",
-    label: "Auto reload",
-    icon: RefreshCcw,
-    body: "Automatically top up your wallet when the balance runs low. Coming soon.",
-  },
-  {
-    key: "statement",
-    label: "Statement",
-    icon: Download,
-    body: "Download a PDF statement of your wallet activity. Coming soon.",
-  },
-]
+const TOPUP_PRESETS = [5000, 10000, 20000, 50000]
 
 const LOW_BALANCE_THRESHOLD = 20000
+
+type Panel = "topup" | "autoreload" | null
 
 export default function BillingSettingsScreen() {
   const colors = useThemeColors()
@@ -77,7 +85,32 @@ export default function BillingSettingsScreen() {
   const [hidden, setHidden] = useState(false)
   const [comingSoon, setComingSoon] = useState<{ title: string; body: string } | null>(null)
 
-  const balance = PLACEHOLDER_WALLET_BALANCE
+  const [balance, setBalance] = useState(PLACEHOLDER_WALLET_BALANCE)
+  const [autoReload, setAutoReload] = useState<AutoReloadSettings | null>(null)
+  const [loading, setLoading] = useState(CAN_MANAGE_WALLET)
+  const [panel, setPanel] = useState<Panel>(null)
+  const [topUpAmount, setTopUpAmount] = useState("")
+  const [thresholdInput, setThresholdInput] = useState("")
+  const [showOlderTransactions, setShowOlderTransactions] = useState(false)
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!CAN_MANAGE_WALLET) return
+      let mounted = true
+      setLoading(true)
+      void Promise.all([getWalletBalance(), getAutoReloadSettings()]).then(([bal, reload]) => {
+        if (!mounted) return
+        setBalance(bal)
+        setAutoReload(reload)
+        setThresholdInput(String(reload.threshold))
+        setLoading(false)
+      })
+      return () => {
+        mounted = false
+      }
+    }, []),
+  )
+
   const isLow = balance < LOW_BALANCE_THRESHOLD
 
   const styles = useThemedStyles((c) => ({
@@ -167,6 +200,68 @@ export default function BillingSettingsScreen() {
       flex: 1,
       lineHeight: 18,
     },
+    panel: {
+      padding: spacing.lg,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      gap: spacing.md,
+    },
+    panelTitle: { ...typography.section, color: c.text },
+    chipGrid: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      gap: spacing.sm,
+    },
+    chip: {
+      paddingVertical: 10,
+      paddingHorizontal: spacing.md,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.bg,
+    },
+    chipActive: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    chipText: {
+      ...typography.label,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+    },
+    chipTextActive: {
+      color: c.primaryForeground,
+    },
+    input: {
+      ...typography.body,
+      color: c.text,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 10,
+      backgroundColor: c.bg,
+    },
+    toggleRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+    },
+    toggleLabel: { ...typography.body, color: c.text, fontWeight: "600" as const },
+    submit: {
+      alignItems: "center" as const,
+      backgroundColor: c.primary,
+      borderRadius: radius.md,
+      paddingVertical: 12,
+    },
+    submitDisabled: { opacity: 0.6 },
+    submitText: {
+      ...typography.body,
+      fontWeight: "700" as const,
+      color: c.primaryForeground,
+    },
     sectionHeader: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -220,6 +315,40 @@ export default function BillingSettingsScreen() {
     },
   }))
 
+  function openAction(key: "topup" | "auto" | "statement") {
+    if (!CAN_MANAGE_WALLET) {
+      const copy = {
+        topup: { title: "Top up", body: "Add funds via M-Pesa or card. Wallet top-ups are coming in a future update." },
+        auto: { title: "Auto reload", body: "Automatically top up your wallet when the balance runs low. Coming soon." },
+        statement: { title: "Statement", body: "Download a PDF statement of your wallet activity. Coming soon." },
+      }[key]
+      setComingSoon(copy)
+      return
+    }
+    if (key === "topup") setPanel(panel === "topup" ? null : "topup")
+    else if (key === "auto") setPanel(panel === "autoreload" ? null : "autoreload")
+    else setShowOlderTransactions(true)
+  }
+
+  async function handleTopUp(amount: number) {
+    if (!amount || amount <= 0) return
+    const next = await topUpWallet(amount)
+    setBalance(next)
+    setPanel(null)
+    setTopUpAmount("")
+  }
+
+  async function handleSaveAutoReload(enabled: boolean) {
+    const threshold = Number(thresholdInput.replace(/[^0-9]/g, "")) || 20000
+    const next: AutoReloadSettings = { enabled, threshold, topUpAmount: 30000 }
+    await setAutoReloadSettings(next)
+    setAutoReload(next)
+  }
+
+  const visibleTransactions = showOlderTransactions
+    ? [...TRANSACTIONS, ...OLDER_TRANSACTIONS]
+    : TRANSACTIONS
+
   return (
     <>
       <Stack.Screen options={{ title: "Wallet" }} />
@@ -238,8 +367,9 @@ export default function BillingSettingsScreen() {
           <View style={styles.heroCopy}>
             <Text style={styles.title}>Wallet</Text>
             <Text style={styles.subtitle}>
-              Fund your campaigns and track spend. Placeholder data for layout
-              preview.
+              {CAN_MANAGE_WALLET
+                ? "Fund your campaigns and track spend. Top-ups here are saved on this device."
+                : "Fund your campaigns and track spend. Placeholder data for layout preview."}
             </Text>
           </View>
         </View>
@@ -259,29 +389,98 @@ export default function BillingSettingsScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.balance}>{hidden ? "••••••••" : formatCurrency(balance)}</Text>
+          {loading ? (
+            <ActivityIndicator color={WALLET_CARD_FG} />
+          ) : (
+            <Text style={styles.balance}>{hidden ? "••••••••" : formatCurrency(balance)}</Text>
+          )}
           <Text style={styles.walletHint}>
-            Auto-reload is off · {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT} active campaigns
+            Auto-reload is {autoReload?.enabled ? "on" : "off"} · {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT}{" "}
+            active campaigns
           </Text>
 
           <View style={styles.actionsRow}>
-            {ACTIONS.map((action) => {
-              const Icon = action.icon
-              return (
-                <Pressable
-                  key={action.key}
-                  style={styles.actionItem}
-                  onPress={() => setComingSoon({ title: action.label, body: action.body })}
-                >
-                  <View style={styles.actionCircle}>
-                    <Icon color={WALLET_CARD_FG} size={20} />
-                  </View>
-                  <Text style={styles.actionLabel}>{action.label}</Text>
-                </Pressable>
-              )
-            })}
+            <Pressable style={styles.actionItem} onPress={() => openAction("topup")}>
+              <View style={styles.actionCircle}>
+                <Add color={WALLET_CARD_FG} size={20} />
+              </View>
+              <Text style={styles.actionLabel}>Top up</Text>
+            </Pressable>
+            <Pressable style={styles.actionItem} onPress={() => openAction("auto")}>
+              <View style={styles.actionCircle}>
+                <RefreshCcw color={WALLET_CARD_FG} size={20} />
+              </View>
+              <Text style={styles.actionLabel}>Auto reload</Text>
+            </Pressable>
+            <Pressable style={styles.actionItem} onPress={() => openAction("statement")}>
+              <View style={styles.actionCircle}>
+                <Download color={WALLET_CARD_FG} size={20} />
+              </View>
+              <Text style={styles.actionLabel}>Statement</Text>
+            </Pressable>
           </View>
         </View>
+
+        {panel === "topup" ? (
+          <View style={styles.panel}>
+            <Text style={styles.panelTitle}>Top up wallet</Text>
+            <View style={styles.chipGrid}>
+              {TOPUP_PRESETS.map((amount) => (
+                <Pressable
+                  key={amount}
+                  style={[styles.chip, topUpAmount === String(amount) && styles.chipActive]}
+                  onPress={() => setTopUpAmount(String(amount))}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      topUpAmount === String(amount) && styles.chipTextActive,
+                    ]}
+                  >
+                    {formatCurrency(amount)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={styles.input}
+              value={topUpAmount}
+              onChangeText={setTopUpAmount}
+              placeholder="Custom amount (KES)"
+              placeholderTextColor={colors.mutedForeground}
+              keyboardType="number-pad"
+            />
+            <Pressable
+              style={styles.submit}
+              onPress={() => void handleTopUp(Number(topUpAmount.replace(/[^0-9]/g, "")))}
+            >
+              <Text style={styles.submitText}>Add funds</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {panel === "autoreload" && autoReload ? (
+          <View style={styles.panel}>
+            <Text style={styles.panelTitle}>Auto reload</Text>
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Reload automatically</Text>
+              <Switch
+                value={autoReload.enabled}
+                onValueChange={(value) => void handleSaveAutoReload(value)}
+                trackColor={{ true: colors.primary }}
+              />
+            </View>
+            <TextInput
+              style={styles.input}
+              value={thresholdInput}
+              onChangeText={setThresholdInput}
+              placeholder="Reload when balance drops below (KES)"
+              placeholderTextColor={colors.mutedForeground}
+              keyboardType="number-pad"
+              onBlur={() => void handleSaveAutoReload(autoReload.enabled)}
+            />
+          </View>
+        ) : null}
 
         {isLow ? (
           <View style={styles.lowBalanceBanner}>
@@ -314,19 +513,14 @@ export default function BillingSettingsScreen() {
         <View style={{ gap: spacing.sm }}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>Recent transactions</Text>
-            <Pressable
-              onPress={() =>
-                setComingSoon({
-                  title: "Transaction history",
-                  body: "The full transaction history is coming in a future update.",
-                })
-              }
-            >
-              <Text style={styles.seeAll}>See all</Text>
-            </Pressable>
+            {!showOlderTransactions ? (
+              <Pressable onPress={() => openAction("statement")}>
+                <Text style={styles.seeAll}>See all</Text>
+              </Pressable>
+            ) : null}
           </View>
           <View style={styles.group}>
-            {TRANSACTIONS.map((tx, index) => (
+            {visibleTransactions.map((tx, index) => (
               <View key={tx.id}>
                 <View style={styles.row}>
                   <View
@@ -353,15 +547,16 @@ export default function BillingSettingsScreen() {
                     {formatCurrency(tx.amount)}
                   </Text>
                 </View>
-                {index < TRANSACTIONS.length - 1 ? <View style={styles.divider} /> : null}
+                {index < visibleTransactions.length - 1 ? <View style={styles.divider} /> : null}
               </View>
             ))}
           </View>
         </View>
 
         <Text style={styles.note}>
-          Placeholder data. Top-ups, auto-reload, and statements will connect to
-          live billing once payments ship.
+          {CAN_MANAGE_WALLET
+            ? "Placeholder data. Top-ups and auto-reload are saved on this device only — nothing here moves real money."
+            : "Placeholder data. Top-ups, auto-reload, and statements will connect to live billing once payments ship."}
         </Text>
       </ScrollView>
 

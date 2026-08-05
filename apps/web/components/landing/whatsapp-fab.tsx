@@ -1,12 +1,24 @@
 "use client"
 
+import { usePathname } from "next/navigation"
+
 import { trackEvent } from "@/lib/analytics"
 
 const WHATSAPP_NUMBER = "254703643560"
 const WHATSAPP_MESSAGE = "Hi Admobi, I'd like to learn more about taxi-top campaigns."
 
+// The interactive app demo is a live iframe the visitor taps around in — a
+// fixed, page-level overlay here would sit on top of it and steal clicks
+// meant for whatever demo content happens to render underneath it.
+const SUPPRESSED_ON = ["/product-demo"]
+
 export function WhatsappFab() {
+  const pathname = usePathname()
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`
+
+  if (SUPPRESSED_ON.includes(pathname)) {
+    return null
+  }
 
   return (
     <a
