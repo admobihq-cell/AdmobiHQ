@@ -1,0 +1,103 @@
+name: Build Android Release APK (Driver)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - driver-v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build via EAS (remote Android credentials)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.DRIVER_EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Verify required secrets
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Missing required secret: DRIVER_EXPO_TOKEN"
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build on EAS and wait for completion
+        working-directory: apps/driver-mobile
+        run: |
+          npx eas-cli build --platform android --profile production --non-interactive --wait --json > /tmp/eas-build.json
+          cat /tmp/eas-build.json
+
+      - name: Download build artifact
+        working-directory: apps/driver-mobile
+        run: |
+          node -e "
+            const fs = require('fs');
+            const builds = JSON.parse(fs.readFileSync('/tmp/eas-build.json', 'utf8'));
+            const build = Array.isArray(builds) ? builds[0] : builds;
+            if (build.status !== 'FINISHED' || !build.artifacts?.buildUrl) {
+              console.error('EAS build did not finish successfully:', build.status);
+              process.exit(1);
+            }
+            fs.writeFileSync('/tmp/artifact-url.txt', build.artifacts.buildUrl);
+          "
+          curl -fL -o app-release.apk "$(cat /tmp/artifact-url.txt)"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: driver-mobile-release-apk
+          path: apps/driver-mobile/app-release.apk
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub Release
+    needs: build-android
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: driver-mobile-release-apk
+          path: dist/
+
+      - name: Get short commit SHA
+        id: short-sha
+        run: echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK with short commit SHA
+        run: mv dist/app-release.apk dist/admobihq-driver-${{ steps.short-sha.outputs.value }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: driver-apk-${{ steps.short-sha.outputs.value }}
+          name: "Driver App APK - ${{ steps.short-sha.outputs.value }}"
+          body: |
+            Automated release from commit [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}).
+
+            Built via EAS (`production` profile) from `master` on ${{ github.event.head_commit.timestamp }}.
+          files: dist/admobihq-driver-${{ steps.short-sha.outputs.value }}.apk
+          make_latest: false

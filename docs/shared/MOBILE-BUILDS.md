@@ -229,9 +229,9 @@ For internal team distribution, use **`preview`**.
 
 ## GitHub Actions release APKs (tag-triggered)
 
-A separate path from EAS: [`.github/workflows/android-release-ops-mobile.yml`](../../.github/workflows/android-release-ops-mobile.yml) and [`android-release-customer-mobile.yml`](../../.github/workflows/android-release-customer-mobile.yml) build a **signed release APK with Gradle on GitHub's runners** and attach it to a **GitHub Release** — useful for stakeholders who want a direct-download APK without an Expo account.
+A separate path from running `eas build` by hand: [`android-release-ops-mobile.yml`](../../.github/workflows/android-release-ops-mobile.yml), [`android-release-customer-mobile.yml`](../../.github/workflows/android-release-customer-mobile.yml), and [`android-release-driver-mobile.yml`](../../.github/workflows/android-release-driver-mobile.yml) build a release APK on a tag push and attach it to a **GitHub Release** — useful for stakeholders who want a direct-download APK without an Expo account. The three workflows do **not** all build the same way — see the two patterns below.
 
-**Trigger:** a version tag push or a manual run only. These do **not** run on every push to `master` or on pull requests — that was removed because both workflows previously watched the shared root `package.json`/`package-lock.json`, so any dependency change anywhere in the monorepo fired a full native Android build for both apps.
+**Trigger (all three):** a version tag push or a manual run only. These do **not** run on every push to `master` or on pull requests — that was removed because the workflows previously watched the shared root `package.json`/`package-lock.json`, so any dependency change anywhere in the monorepo fired a full native Android build for every app.
 
 ```bash
 # Cut an ops release
@@ -239,13 +239,28 @@ git tag ops-v0.0.5 && git push origin ops-v0.0.5
 
 # Cut a customer release
 git tag customer-v0.0.5 && git push origin customer-v0.0.5
+
+# Cut a driver release
+git tag driver-v0.0.1 && git push origin driver-v0.0.1
 ```
 
 Or run manually from the GitHub Actions tab → select the workflow → **Run workflow**.
 
-Output: a GitHub Release named e.g. `Ops App APK - <short-sha>` with `admobihq-ops-<short-sha>.apk` attached (`admobihq-customer-<short-sha>.apk` for the customer app).
+Output: a GitHub Release named e.g. `Ops App APK - <short-sha>` with `admobihq-ops-<short-sha>.apk` attached (`admobihq-customer-<short-sha>.apk` / `admobihq-driver-<short-sha>.apk` for the other two apps).
 
-**Required repo secrets** (`OPS_*` / `CUSTOMER_*` prefixed per app): `EXPO_PUBLIC_API_URL`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (ops also needs `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, customer also needs `EXPO_PUBLIC_APP_URL`). The workflow fails fast with a clear message if any are missing.
+### Pattern 1 — ops-mobile / customer-mobile: local Gradle build, keystore from a GH secret
+
+**Required repo secrets** (`OPS_*` / `CUSTOMER_*` prefixed per app): `EXPO_PUBLIC_API_URL`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (ops also needs `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`; customer also needs `EXPO_PUBLIC_APP_URL`). The workflow decodes the keystore, runs `./gradlew assembleRelease` directly on the GitHub runner, and fails fast with a clear message if any secret is missing.
+
+**Known gap:** neither app's checked-in `android/app/build.gradle` actually reads the `keystore.properties` file the workflow writes — the `release` build type is hardcoded to `signingConfigs.debug`. So today, both workflows decode a real keystore from secrets but then **sign the "release" APK with the plain committed debug keystore** regardless. Worth fixing to match driver's setup below — but changing the actual signing key on an app with previously-installed release APKs breaks in-place updates for existing installs (Android refuses to install an update signed with a different key), so treat it as a deliberate rollout, not a drive-by fix.
+
+### Pattern 2 — driver-mobile: EAS cloud build, remote-managed credentials
+
+driver-mobile's workflow does not build locally or handle a keystore file at all. It calls `eas build --platform android --profile production --non-interactive --wait`, which builds on Expo's infrastructure using the **remote Android credentials already stored on EAS** for `@admobimedia/admobihq-driver` (generated once via `eas build`'s automatic non-interactive keystore creation — nobody downloaded or handled the private key directly), then downloads the resulting `buildUrl` artifact and attaches it to the release exactly like the other two.
+
+**Required repo secret:** `DRIVER_EXPO_TOKEN` — an Expo access token (expo.dev → account settings → **Access Tokens** → Create) with permission to build `@admobimedia/admobihq-driver`. No `ANDROID_KEYSTORE_*` secrets exist or are needed for driver — the signing key never leaves Expo's servers. `EXPO_PUBLIC_API_URL` / `EXPO_PUBLIC_DRIVER_URL` are configured as EAS project environment variables (`eas env:set production --name ... --value ...`) rather than GitHub secrets, since `eas build` reads them from there, not from a `.env.local` written by the workflow.
+
+Access tokens are revocable (expo.dev → Access Tokens → Revoke) and safe to rotate anytime, unlike a keystore — if `DRIVER_EXPO_TOKEN` ever leaks, revoke and reissue it with no impact on already-published builds.
 
 **Caveat:** this signs with the keystore stored in those `ANDROID_KEYSTORE_BASE64` secrets, built locally via Gradle — separate from the EAS-managed remote keystore described above. Confirm whether it's the *same* key before assuming a GitHub-Release APK can install as an update over an EAS-built APK (or vice versa); Android refuses to install an update signed with a different key than what's already on the device.
 
