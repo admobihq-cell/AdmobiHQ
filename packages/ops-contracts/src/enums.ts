@@ -72,6 +72,8 @@ export const AUDIT_APPS = [
   "web",
   "customer-web",
   "customer-mobile",
+  "driver-web",
+  "driver-mobile",
 ] as const
 export type AuditApp = (typeof AUDIT_APPS)[number]
 
@@ -101,8 +103,13 @@ export const AUDIT_ENTITY_TYPES = [
   "media_kit",
   "announcement",
   "support_case",
+  "platform_flag",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
+
+/** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema. */
+export const PLATFORM_FLAG_KEYS = ["deliveries"] as const
+export type PlatformFlagKey = (typeof PLATFORM_FLAG_KEYS)[number]
 
 export const SUPPORT_CHANNELS = ["web", "customer-web", "customer-mobile"] as const
 export type SupportChannel = (typeof SUPPORT_CHANNELS)[number]
