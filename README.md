@@ -42,7 +42,7 @@ npm ci
 infisical login && cd apps/web && infisical init   # one-time
 npm run dev                                        # pull secrets + start web, api, ops, customer-web, driver-web
 ```
-
+ 
 | URL | What |
 |-----|------|
 | http://localhost:3000 | Marketing site |
