@@ -1,31 +1,28 @@
-import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
-import { ChevronRight } from "lucide-react"
 
-import { cn } from "@workspace/ui/lib/utils"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 
-type SettingsRowProps = {
-  href: string
+type SettingsToggleRowProps = {
+  id: string
   label: string
   description?: string
   icon: LucideIcon
-  className?: string
+  checked: boolean
+  disabled?: boolean
 }
 
-export function SettingsRow({
-  href,
+export function SettingsToggleRow({
+  id,
   label,
   description,
   icon: Icon,
-  className,
-}: SettingsRowProps) {
+  checked,
+  disabled,
+}: SettingsToggleRowProps) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50",
-        className,
-      )}
+    <label
+      htmlFor={id}
+      className="flex items-center gap-4 px-4 py-3 has-[:disabled]:cursor-not-allowed"
     >
       <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
         <Icon className="size-4 text-primary" aria-hidden />
@@ -36,7 +33,7 @@ export function SettingsRow({
           <p className="truncate text-xs text-muted-foreground">{description}</p>
         ) : null}
       </div>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-    </Link>
+      <Checkbox id={id} checked={checked} disabled={disabled} />
+    </label>
   )
 }
