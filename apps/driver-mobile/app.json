@@ -79,7 +79,10 @@
       "typedRoutes": false
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "95dc4e3d-d29f-4513-917f-391207264047"
+      }
     },
     "owner": "admobimedia"
   }
