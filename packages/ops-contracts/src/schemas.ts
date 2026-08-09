@@ -13,6 +13,7 @@ import {
   HEARD_ABOUT,
   LEAD_CITIES,
   LEAD_STATUSES,
+  PLATFORM_FLAG_KEYS,
   SUPPORT_CATEGORIES,
   SUPPORT_CHANNELS,
   SUPPORT_PRIORITIES,
@@ -78,6 +79,11 @@ export const mediaKitCreateSchema = z.object({
 })
 
 export const mediaKitUpdateSchema = mediaKitCreateSchema.partial()
+
+export const platformFlagUpdateSchema = z.object({
+  key: z.enum(PLATFORM_FLAG_KEYS),
+  enabled: z.boolean(),
+})
 
 const bulkIdsSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1),
@@ -168,6 +174,7 @@ export type WaitlistCreateInput = z.infer<typeof waitlistCreateSchema>
 export type WaitlistUpdateInput = z.infer<typeof waitlistUpdateSchema>
 export type MediaKitCreateInput = z.infer<typeof mediaKitCreateSchema>
 export type MediaKitUpdateInput = z.infer<typeof mediaKitUpdateSchema>
+export type PlatformFlagUpdateInput = z.infer<typeof platformFlagUpdateSchema>
 export type PaginationParams = z.infer<typeof paginationSchema>
 export type LeadBulkInput = z.infer<typeof leadBulkSchema>
 export type DriverBulkInput = z.infer<typeof driverBulkSchema>

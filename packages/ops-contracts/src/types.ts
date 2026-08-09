@@ -90,6 +90,19 @@ export type MediaKitRequestDto = {
   updated_at: string
 }
 
+export type PlatformFlagDto = {
+  key: string
+  enabled: boolean
+  updated_by_email: string | null
+  updated_at: string
+}
+
+/** Shape of GET /v1/public/config — every app polls this, so it stays a flat
+ * key/boolean map rather than the full PlatformFlagDto list ops edits. */
+export type PublicConfigDto = {
+  flags: Record<string, boolean>
+}
+
 export type NamedCount = {
   name: string
   value: number
