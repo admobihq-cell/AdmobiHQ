@@ -8,7 +8,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
+import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
+import { useOnboarding } from "@/lib/onboarding"
 import { initSentry } from "@/lib/sentry"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 
@@ -18,11 +20,23 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
 })
 
-function RootNavigator({ ready }: { ready: boolean }) {
+function RootNavigator({
+  ready,
+  onboardingCompleted,
+  onCompleteOnboarding,
+}: {
+  ready: boolean
+  onboardingCompleted: boolean
+  onCompleteOnboarding: () => void
+}) {
   const { screenOptions, statusBarStyle } = useNavigationTheme()
 
   if (!ready) {
     return <BrandedSplashScreen />
+  }
+
+  if (!onboardingCompleted) {
+    return <OnboardingScreen onDone={onCompleteOnboarding} />
   }
 
   return (
@@ -37,9 +51,15 @@ function RootNavigator({ ready }: { ready: boolean }) {
 
 function RootLayout() {
   const [appReady, setAppReady] = useState(false)
+  const {
+    checked: onboardingChecked,
+    completed: onboardingCompleted,
+    complete: completeOnboarding,
+  } = useOnboarding()
+  const ready = appReady && onboardingChecked
 
-  useSplashBootstrap(appReady)
-  useOtaUpdates(appReady)
+  useSplashBootstrap(ready)
+  useOtaUpdates(ready)
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
@@ -55,7 +75,11 @@ function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AppErrorBoundary>
-          <RootNavigator ready={appReady} />
+          <RootNavigator
+            ready={ready}
+            onboardingCompleted={onboardingCompleted}
+            onCompleteOnboarding={completeOnboarding}
+          />
         </AppErrorBoundary>
       </ThemeProvider>
     </SafeAreaProvider>
