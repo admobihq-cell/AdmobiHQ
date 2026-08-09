@@ -1,0 +1,149 @@
+name: Build Android Release APK (Driver)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - driver-v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build signed release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      EXPO_PUBLIC_API_URL: ${{ secrets.DRIVER_EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_DRIVER_URL: ${{ secrets.DRIVER_EXPO_PUBLIC_DRIVER_URL }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.DRIVER_ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.DRIVER_ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.DRIVER_ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.DRIVER_ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Verify required secrets
+        run: |
+          missing=0
+          for key in EXPO_PUBLIC_API_URL EXPO_PUBLIC_DRIVER_URL ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required secret: $key"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-driver-${{ runner.os }}-${{ hashFiles('apps/driver-mobile/android/**/*.gradle*', 'apps/driver-mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-driver-${{ runner.os }}-
+
+      - name: Tune Gradle for the runner
+        working-directory: apps/driver-mobile
+        run: |
+          sed -i '/org.gradle.jvmargs/d;/org.gradle.parallel/d;/org.gradle.workers.max/d;/org.gradle.caching/d' android/gradle.properties
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.parallel=true
+          org.gradle.workers.max=4
+          org.gradle.caching=true
+          EOF
+
+      - name: Write runtime env
+        working-directory: apps/driver-mobile
+        run: |
+          cat > .env.local <<EOF
+          EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
+          EXPO_PUBLIC_DRIVER_URL=$EXPO_PUBLIC_DRIVER_URL
+          EOF
+
+      - name: Decode release keystore
+        working-directory: apps/driver-mobile
+        run: printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
+      - name: Write keystore.properties
+        working-directory: apps/driver-mobile
+        run: |
+          cat > android/keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build release APK
+        working-directory: apps/driver-mobile/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: driver-mobile-release-apk
+          path: apps/driver-mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub Release
+    needs: build-android
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: driver-mobile-release-apk
+          path: dist/
+
+      - name: Get short commit SHA
+        id: short-sha
+        run: echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK with short commit SHA
+        run: mv dist/app-release.apk dist/admobihq-driver-${{ steps.short-sha.outputs.value }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: driver-apk-${{ steps.short-sha.outputs.value }}
+          name: "Driver App APK - ${{ steps.short-sha.outputs.value }}"
+          body: |
+            Automated release from commit [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}).
+
+            Built from `master` on ${{ github.event.head_commit.timestamp }}.
+          files: dist/admobihq-driver-${{ steps.short-sha.outputs.value }}.apk
+          make_latest: false

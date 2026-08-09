@@ -1,10 +1,10 @@
 # Admobi
 
-Monorepo for **Admobi**: the public marketing site, business API, internal ops console, and related apps for digital taxi-top OOH in Kenya.
+Monorepo for **Admobi**: the public marketing site, business API, internal ops console, driver app, and related apps for GPS-verified taxi-top OOH advertising in Kenya.
 
 ## Requirements
 
-- **Node.js** 20 or newer (`engines` in root `package.json`)
+- **Node.js** 22 or newer (`engines` in root `package.json`)
 - **npm** 11.x (the repo declares `"packageManager": "npm@11.12.1"`)
 - **Infisical CLI** (optional) — for `npm run dev` auto-pull; see [docs/shared/DEV-SETUP.md](docs/shared/DEV-SETUP.md)
 
@@ -16,8 +16,10 @@ Monorepo for **Admobi**: the public marketing site, business API, internal ops c
 | `apps/api` | Business REST API (`/v1`, `/v1/public`) | `:3003` |
 | `apps/ops` | Internal ops console (Clerk, UI only) | `:3001` |
 | `apps/customer-web` | Customer product scaffold | `:3002` |
-| `apps/ops-mobile` | Expo ops mobile app | Expo |
-| `apps/customer-mobile` | Expo customer app (no Clerk) | Expo |
+| `apps/driver-web` | Driver app scaffold (earnings, routes, payouts) | `:3004` |
+| `apps/ops-mobile` | Expo ops mobile app (Clerk) | Expo `:8081` |
+| `apps/customer-mobile` | Expo customer app (no Clerk) | Expo `:8082` |
+| `apps/driver-mobile` | Expo driver app (no Clerk yet) | Expo `:8083` |
 | `packages/ui` | Shared design system (Tailwind v4, shadcn/Radix, mapcn) |
 | `packages/geo` | Nairobi corridor / coverage map fixtures |
 | `packages/ops-api-client` | Typed HTTP client for admin + public API URLs |
@@ -38,7 +40,7 @@ From the repository root:
 ```bash
 npm ci
 infisical login && cd apps/web && infisical init   # one-time
-npm run dev                                        # pull secrets + start web, api, ops, customer-web
+npm run dev                                        # pull secrets + start web, api, ops, customer-web, driver-web
 ```
 
 | URL | What |
@@ -48,6 +50,7 @@ npm run dev                                        # pull secrets + start web, a
 | http://localhost:3003 | Business API |
 | http://localhost:3001 | Ops console |
 | http://localhost:3002 | Customer app scaffold |
+| http://localhost:3004 | Driver app scaffold |
 
 Skip Infisical pull if `.env.local` files already exist: `npm run dev:skip-pull`.
 
@@ -55,18 +58,22 @@ Skip Infisical pull if `.env.local` files already exist: `npm run dev:skip-pull`
 
 | Command | Purpose |
 |---------|---------|
-| `npm run dev` | Pull Infisical dev secrets + start web, api, ops, app |
-| `npm run dev:all` | Same + ops mobile + customer mobile (Expo) |
-| `npm run dev:stack:mobile` | API + both Expo apps only (pulls api/mobile secrets) |
+| `npm run dev` | Pull Infisical dev secrets + start web, api, ops, customer-web, driver-web |
+| `npm run dev:all` | Same + ops-mobile, customer-mobile, driver-mobile (Expo) |
+| `npm run dev:web` / `dev:ops` / `dev:customer-web` / `dev:driver-web` | Single app — `api` is co-started automatically via Turborepo's `with` graph, since it's shared by every frontend |
+| `npm run dev:stack:mobile` | API + all three Expo apps only (pulls api/mobile secrets) |
 | `npm run dev:stack:mobile:ops` | API + ops Expo only |
 | `npm run dev:stack:mobile:customer` | API + customer Expo only |
+| `npm run dev:stack:mobile:driver` | API + driver Expo only |
 | `npm run dev:mobile` | Ops Expo with cleared Metro cache (:8081) |
 | `npm run dev:mobile:customer` | Customer Expo with cleared Metro cache (:8082) |
-| `npm run mobile:apk:eas` | Build both preview APKs on EAS (shareable, no Metro) |
+| `npm run dev:mobile:driver` | Driver Expo with cleared Metro cache (:8083) |
+| `npm run mobile:apk:eas` | Build all three preview APKs on EAS (shareable, no Metro) |
 | `npm run dev:skip-pull` | Start apps without re-pulling secrets |
-| `npm run dev -w web` | Single app (replace `web` with `api`, `ops`, `app`) |
 | `npm run build` | Production build (Turbo, all workspaces) |
 | `npm run env:pull` | Pull secrets to all apps' `.env.local` |
+
+Only run one `npm run dev*` stack at a time — a second instance collides with the first on the same ports (`web` :3000, `ops` :3001, `customer-web` :3002, `api` :3003, `driver-web` :3004) and can take down both.
 
 ## Quality scripts
 
@@ -82,7 +89,8 @@ Secrets live in **Infisical** and are exported to each app's `.env.local`. Templ
 
 Key vars:
 
-- **`NEXT_PUBLIC_API_URL`** — business API origin (web, ops, app, mobile)
+- **`NEXT_PUBLIC_API_URL`** / **`EXPO_PUBLIC_API_URL`** — business API origin (every web + mobile app)
+- **`NEXT_PUBLIC_DRIVER_URL`** / **`EXPO_PUBLIC_DRIVER_URL`** — driver-web origin (driver-mobile, ops apps that link out to it)
 - **`DATABASE_URL`** — shared Neon Postgres (web + api; ops for server-rendered stats)
 - **`PAYLOAD_SECRET`** — Payload CMS (web only)
 
