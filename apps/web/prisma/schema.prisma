@@ -255,6 +255,19 @@ model SupportMessage {
 }
 
 /// Cross-app activity trail: who did what, when (ops, public forms, future customer apps).
+/// Ops-controlled visibility switches, e.g. showing the Deliveries placeholder
+/// screens across customer-web, driver-web, and driver-mobile before the real
+/// feature ships. Public and unauthenticated to read (flags are visibility
+/// toggles, never secrets); Clerk ops JWT required to write.
+model PlatformFlag {
+  key              String   @id
+  enabled          Boolean  @default(false)
+  updated_by_email String?
+  updated_at       DateTime @updatedAt
+
+  @@map("platform_flags")
+}
+
 model AuditEvent {
   id            Int      @id @default(autoincrement())
   app           String
