@@ -30,7 +30,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
-import { appNavItems, navItemForPath } from "@/lib/navigation"
+import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { appHostLabel } from "@/lib/site-urls"
 
 const activeSidebarLinkClassName =
@@ -56,9 +56,16 @@ function AppBreadcrumbs({ pathname }: { pathname: string }) {
   )
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  enabledFlags,
+}: {
+  children: React.ReactNode
+  enabledFlags: string[]
+}) {
   const pathname = usePathname()
   const currentNavHref = navItemForPath(pathname).href
+  const navItems = visibleNavItems(new Set(enabledFlags))
 
   return (
     <SidebarProvider>
@@ -79,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupLabel>Product</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {appNavItems.map((item) => (
+                {navItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild

@@ -45,13 +45,13 @@ function FlagSwitch({
       aria-label={label}
       disabled={disabled}
       onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         checked ? "bg-primary" : "bg-muted"
       }`}
     >
       <span
-        className={`absolute top-0.5 size-5 rounded-full bg-background shadow-sm transition-transform ${
-          checked ? "translate-x-[22px]" : "translate-x-0.5"
+        className={`block size-5 rounded-full bg-background shadow-sm transition-transform ${
+          checked ? "translate-x-5" : "translate-x-0"
         }`}
       />
     </button>
