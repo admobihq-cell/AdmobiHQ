@@ -6,7 +6,7 @@ Monorepo for **Admobi**: the public marketing site, business API, internal ops c
 
 - **Node.js** 20 or newer (`engines` in root `package.json`)
 - **npm** 11.x (the repo declares `"packageManager": "npm@11.12.1"`)
-- **Infisical CLI** (optional) — for `npm run dev` auto-pull; see [docs/DEV-SETUP.md](docs/DEV-SETUP.md)
+- **Infisical CLI** (optional) — for `npm run dev` auto-pull; see [docs/shared/DEV-SETUP.md](docs/shared/DEV-SETUP.md)
 
 ## Repository layout
 
@@ -31,7 +31,7 @@ Product and design intent: **`PRODUCT.md`** and **`DESIGN.md`** at the repo root
 
 ## Setup
 
-**Full guide:** [`docs/DEV-SETUP.md`](docs/DEV-SETUP.md) (Infisical, Postgres, Prisma, Payload, API, seeds).
+**Full guide:** [`docs/shared/DEV-SETUP.md`](docs/shared/DEV-SETUP.md) (Infisical, Postgres, Prisma, Payload, API, seeds).
 
 From the repository root:
 
@@ -86,7 +86,7 @@ Key vars:
 - **`DATABASE_URL`** — shared Neon Postgres (web + api; ops for server-rendered stats)
 - **`PAYLOAD_SECRET`** — Payload CMS (web only)
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full per-Vercel-project matrix.
+See [docs/shared/DEPLOYMENT.md](docs/shared/DEPLOYMENT.md) for the full per-Vercel-project matrix.
 
 ## CI
 
@@ -94,17 +94,21 @@ Pull requests to **`master`** run install, typecheck, lint, and build (`.github/
 
 ## Further reading
 
+Docs are organized under `docs/` by app — `docs/shared/` (repo-wide), `docs/web/`, `docs/api/`, `docs/ops/`, `docs/customer/`, `docs/driver/`.
+
 | Doc | Contents |
 |-----|----------|
-| [docs/DEV-SETUP.md](docs/DEV-SETUP.md) | Local dev, Infisical, database, seeds |
-| [docs/API.md](docs/API.md) | Business API routes and deployment |
-| [docs/OPS-ADMIN.md](docs/OPS-ADMIN.md) | Ops console |
-| [docs/APP.md](docs/APP.md) | Customer web app |
-| [docs/APP-MOBILE.md](docs/APP-MOBILE.md) | Customer Expo app (no Clerk) |
-| [docs/MOBILE-OPS.md](docs/MOBILE-OPS.md) | Ops Expo app (Clerk) |
-| [docs/MOBILE-BUILDS.md](docs/MOBILE-BUILDS.md) | APK builds, EAS, OTA updates |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel, Infisical, domains, EAS mobile |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Repo layout and conventions |
-| [docs/DATA-LAYER.md](docs/DATA-LAYER.md) | Prisma vs Payload |
+| [docs/shared/DEV-SETUP.md](docs/shared/DEV-SETUP.md) | Local dev, Infisical, database, seeds |
+| [docs/api/API.md](docs/api/API.md) | Business API routes and deployment |
+| [docs/ops/OPS-ADMIN.md](docs/ops/OPS-ADMIN.md) | Ops console |
+| [docs/customer/APP.md](docs/customer/APP.md) | Customer web app |
+| [docs/customer/APP-MOBILE.md](docs/customer/APP-MOBILE.md) | Customer Expo app (no Clerk) |
+| [docs/ops/MOBILE-OPS.md](docs/ops/MOBILE-OPS.md) | Ops Expo app (Clerk) |
+| [docs/driver/DRIVER-APP.md](docs/driver/DRIVER-APP.md) | Driver web + Expo app scaffold, platform flags |
+| [docs/shared/MOBILE-BUILDS.md](docs/shared/MOBILE-BUILDS.md) | APK builds, EAS, OTA updates |
+| [docs/shared/DEPLOYMENT.md](docs/shared/DEPLOYMENT.md) | Vercel, Infisical, domains, EAS mobile |
+| [docs/shared/ARCHITECTURE.md](docs/shared/ARCHITECTURE.md) | Repo layout and conventions |
+| [docs/shared/DATA-LAYER.md](docs/shared/DATA-LAYER.md) | Prisma vs Payload |
+| [docs/shared/ROADMAP.md](docs/shared/ROADMAP.md) | Actor-by-actor product roadmap |
 | [PRODUCT.md](PRODUCT.md) | Audience, positioning, tone |
 | [DESIGN.md](DESIGN.md) | Visual system for marketing |

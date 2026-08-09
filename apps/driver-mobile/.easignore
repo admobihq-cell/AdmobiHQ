@@ -1,0 +1,61 @@
+# Note: creating this file makes EAS CLI use it INSTEAD of .gitignore
+# when deciding what to upload, so keep it in sync with .gitignore.
+# Unlike .gitignore, this must NOT exclude /android or /ios since EAS
+# needs the native project files to build.
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# machine-specific Android SDK path, must be generated on the build server
+android/local.properties
+
+# Local Android/Gradle build artifacts. EAS archives the whole monorepo for
+# either app's build, so these must be excluded here even though they belong
+# to android/.gitignore, since .easignore replaces .gitignore entirely and
+# an uncommitted, actively-locked local Gradle cache breaks the upload.
+**/android/build/
+**/android/app/build/
+**/android/.gradle/
+**/android/.idea/
+**/android/.cxx/
+**/android/*.iml
+**/android/*.hprof
+**/android/keystore.properties
+**/android/app/release.keystore
+**/ios/build/
+**/ios/Pods/
+**/ios/DerivedData/
