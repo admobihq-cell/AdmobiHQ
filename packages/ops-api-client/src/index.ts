@@ -25,6 +25,8 @@ import {
   type MediaKitRequestDto,
   type MediaKitUpdateInput,
   type PaginatedResponse,
+  type PlatformFlagDto,
+  type PlatformFlagUpdateInput,
   type StatsResponseDto,
   type SuccessResponse,
   type SupportCaseDetailDto,
@@ -138,6 +140,10 @@ export type OpsClient = {
   }
   audit: {
     list: (params?: AuditListQueryParams) => Promise<PaginatedResponse<AuditEventDto>>
+  }
+  flags: {
+    list: () => Promise<{ items: PlatformFlagDto[] }>
+    update: (body: PlatformFlagUpdateInput) => Promise<PlatformFlagDto>
   }
   support: {
     list: (params?: SupportListQueryParams) => Promise<PaginatedResponse<SupportCaseDto>>
@@ -344,6 +350,14 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           `${apiPrefix}/audit${qs ? `?${qs}` : ""}`,
         )
       },
+    },
+    flags: {
+      list: () => request<{ items: PlatformFlagDto[] }>(`${apiPrefix}/flags`),
+      update: (body) =>
+        request<PlatformFlagDto>(`${apiPrefix}/flags`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
     },
     support: {
       list: (params = {}) => {

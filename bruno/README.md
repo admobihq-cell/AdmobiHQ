@@ -62,4 +62,4 @@ Then try **Admin → leads → List leads** after `clerk_jwt` is set.
 - `payload-cms` — Payload on `WEB_URL`
 - `health` — customer-web smoke check
 
-Canonical route map: `docs/API.md`.
+Canonical route map: `docs/api/API.md`.

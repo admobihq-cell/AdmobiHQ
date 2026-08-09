@@ -13,6 +13,7 @@ import {
   Map,
   Megaphone,
   Radio,
+  Settings,
   Truck,
   Users,
   Wallet,
@@ -63,6 +64,7 @@ const navItems = [
 
 const secondaryItems = [
   { href: "/content", label: "Content (CMS)", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings },
 ]
 
 const allNavItems = [...navItems, ...secondaryItems]

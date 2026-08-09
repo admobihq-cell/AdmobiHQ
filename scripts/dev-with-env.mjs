@@ -2,11 +2,12 @@
  * Pull Infisical secrets, then start local dev servers via Turbo.
  *
  * Usage (from repo root):
- *   npm run dev                      # pull all secrets + web, api, ops, customer-web
- *   npm run dev:all                  # same + both Expo apps
- *   npm run dev:stack:mobile         # pull api + mobile secrets; api + both Expo apps
+ *   npm run dev                      # pull all secrets + web, api, ops, customer-web, driver-web
+ *   npm run dev:all                  # same + all three Expo apps
+ *   npm run dev:stack:mobile         # pull api + mobile secrets; api + all three Expo apps
  *   npm run dev:stack:mobile:ops     # pull api + ops-mobile secrets; api + ops Expo only
  *   npm run dev:stack:mobile:customer  # pull api + customer-mobile secrets; api + customer Expo only
+ *   npm run dev:stack:mobile:driver  # pull api + driver-mobile secrets; api + driver Expo only
  *   npm run dev:skip-pull            # skip Infisical, use existing .env.local
  *   npm run dev:staging              # pull staging secrets + start web stack
  */
@@ -24,16 +25,18 @@ const includeMobile = args.has("--mobile")
 const mobileStack = args.has("--mobile-stack")
 const opsOnly = args.has("--ops-only")
 const customerOnly = args.has("--customer-only")
+const driverOnly = args.has("--driver-only")
 const envName = staging ? "staging" : "dev"
 const pullScript = staging ? "env:pull:staging" : "env:pull"
 
-const coreApps = ["web", "api", "ops", "customer-web"]
+const coreApps = ["web", "api", "ops", "customer-web", "driver-web"]
 
 function pullTargets() {
   if (mobileStack) {
     if (opsOnly) return ["api", "ops-mobile"]
     if (customerOnly) return ["api", "customer-mobile"]
-    return ["api", "ops-mobile", "customer-mobile"]
+    if (driverOnly) return ["api", "driver-mobile"]
+    return ["api", "ops-mobile", "customer-mobile", "driver-mobile"]
   }
   return null
 }
@@ -42,12 +45,13 @@ function devFilters() {
   if (mobileStack) {
     if (opsOnly) return ["api", "ops-mobile"]
     if (customerOnly) return ["api", "customer-mobile"]
-    return ["api", "ops-mobile", "customer-mobile"]
+    if (driverOnly) return ["api", "driver-mobile"]
+    return ["api", "ops-mobile", "customer-mobile", "driver-mobile"]
   }
 
   const filters = [...coreApps]
   if (includeMobile) {
-    filters.push("ops-mobile", "customer-mobile")
+    filters.push("ops-mobile", "customer-mobile", "driver-mobile")
   }
   return filters
 }
@@ -129,12 +133,14 @@ console.log(`[dev] Starting ${filters.join(", ")}…`)
 
 if (mobileStack) {
   console.log(
-    "      api :3003 | ops-mobile :8081 | customer-mobile :8082 (Expo — press i on a task in Turbo to interact)",
+    "      api :3003 | ops-mobile :8081 | customer-mobile :8082 | driver-mobile :8083 (Expo — press i on a task in Turbo to interact)",
   )
 } else {
   console.log(
-    "      web :3000 | api :3003 | ops :3001 | customer-web :3002" +
-      (includeMobile ? " | ops-mobile :8081 | customer-mobile :8082 (Expo)" : ""),
+    "      web :3000 | api :3003 | ops :3001 | customer-web :3002 | driver-web :3004" +
+      (includeMobile
+        ? " | ops-mobile :8081 | customer-mobile :8082 | driver-mobile :8083 (Expo)"
+        : ""),
   )
 }
 

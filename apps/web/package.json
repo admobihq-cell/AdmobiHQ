@@ -22,6 +22,7 @@
     "db:announcements-soft-delete": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/announcements-soft-delete-additive.sql",
     "db:announcements-image": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/announcements-image-additive.sql",
     "db:audit-fixes": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/audit-fixes-additive.sql",
+    "db:platform-flags": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/platform-flags-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "payload": "dotenv -e .env.local -- cross-env NODE_OPTIONS=--no-deprecation payload",

@@ -110,7 +110,7 @@ docs {
   - Admin routes: Clerk JWT in secret var clerk_jwt (must be @admobihq.com)
   - Cron: secret var cron_secret for push-receipts check
 
-  Sources of truth: docs/API.md, packages/ops-contracts, apps/api/app/v1/
+  Sources of truth: docs/api/API.md, packages/ops-contracts, apps/api/app/v1/
 }
 `,
 )
@@ -629,7 +629,7 @@ Optional: copy values into a gitignored \`*.local.bru\` if your Bruno version su
 - \`payload-cms\` — Payload collections on \`apps/web\`
 - \`health\` — deploy smoke checks
 
-Canonical route map: \`docs/API.md\`.
+Canonical route map: \`docs/api/API.md\`.
 `,
 )
 

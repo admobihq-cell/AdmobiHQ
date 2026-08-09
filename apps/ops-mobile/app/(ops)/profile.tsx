@@ -2,14 +2,16 @@ import { useAuth, useUser } from "@clerk/clerk-expo"
 import Constants from "expo-constants"
 import { useRouter } from "expo-router"
 import * as Updates from "expo-updates"
-import { useMemo, useState } from "react"
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type { PlatformFlagDto, PlatformFlagKey } from "@workspace/ops-contracts"
 import {
   Bell,
   LogOut,
   Person,
   RefreshCcw,
+  Rocket,
   Sparkles,
 } from "@/components/icons"
 
@@ -18,9 +20,16 @@ import { ThemeSettingsSection } from "@/components/theme-settings-section"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { getPrimaryEmail } from "@/lib/auth"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
-import { API_URL } from "@/lib/ops-client"
+import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
+
+const FLAG_COPY: Record<string, { label: string; description: string }> = {
+  deliveries: {
+    label: "Deliveries",
+    description: "Show the Deliveries placeholder in customer + driver apps",
+  },
+}
 
 export default function ProfileScreen() {
   usePageHeader("Profile")
@@ -37,6 +46,40 @@ export default function ProfileScreen() {
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
 
   const version = Constants.expoConfig?.version ?? "0.0.1"
+
+  const opsClient = useOpsClient()
+  const [flags, setFlags] = useState<PlatformFlagDto[] | null>(null)
+  const [pendingFlagKey, setPendingFlagKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    opsClient.flags
+      .list()
+      .then((res) => {
+        if (!cancelled) setFlags(res.items)
+      })
+      .catch(() => {
+        // Best-effort — profile still works if flags fail to load.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [opsClient])
+
+  async function toggleFlag(flag: PlatformFlagDto) {
+    setPendingFlagKey(flag.key)
+    try {
+      const updated = await opsClient.flags.update({
+        key: flag.key as PlatformFlagKey,
+        enabled: !flag.enabled,
+      })
+      setFlags((prev) => prev?.map((f) => (f.key === updated.key ? updated : f)) ?? prev)
+    } catch {
+      Alert.alert("Couldn't update flag", "Check your connection and try again.")
+    } finally {
+      setPendingFlagKey(null)
+    }
+  }
 
   const [checkingUpdate, setCheckingUpdate] = useState(false)
 
@@ -139,6 +182,24 @@ export default function ProfileScreen() {
           backgroundColor: colors.border,
           marginLeft: 60,
         },
+        flagRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.md,
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.md,
+        },
+        flagIconWrap: {
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          backgroundColor: colors.secondary,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        flagCopy: { flex: 1, gap: 2 },
+        flagLabel: { ...typography.section, color: colors.text },
+        flagDescription: { ...typography.caption, color: colors.mutedForeground },
         footer: {
           padding: spacing.md,
           borderRadius: 12,
@@ -203,6 +264,42 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
+
+        {flags && flags.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Platform flags</Text>
+            <View style={styles.group}>
+              {flags.map((flag, index) => {
+                const copy = FLAG_COPY[flag.key] ?? {
+                  label: flag.key,
+                  description: "",
+                }
+                return (
+                  <View key={flag.key}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <View style={styles.flagRow}>
+                      <View style={styles.flagIconWrap}>
+                        <Rocket color={colors.primary} size={20} />
+                      </View>
+                      <View style={styles.flagCopy}>
+                        <Text style={styles.flagLabel}>{copy.label}</Text>
+                        <Text style={styles.flagDescription}>
+                          {copy.description}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={flag.enabled}
+                        onValueChange={() => toggleFlag(flag)}
+                        disabled={pendingFlagKey === flag.key}
+                        trackColor={{ true: colors.primary, false: colors.border }}
+                      />
+                    </View>
+                  </View>
+                )
+              })}
+            </View>
+          </View>
+        ) : null}
 
         <ThemeSettingsSection />
 

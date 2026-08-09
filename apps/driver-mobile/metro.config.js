@@ -1,0 +1,83 @@
+const { getSentryExpoConfig } = require("@sentry/react-native/metro")
+const { FileStore } = require("metro-cache")
+const os = require("node:os")
+const path = require("node:path")
+
+const projectRoot = __dirname
+const workspaceRoot = path.resolve(projectRoot, "../..")
+const mobileModules = path.resolve(projectRoot, "node_modules")
+const geoPackage = path.resolve(workspaceRoot, "packages/geo")
+
+/** @type {import('expo/metro-config').MetroConfig} */
+const config = getSentryExpoConfig(projectRoot)
+
+// Metro's default cache dir (os.tmpdir()/metro-cache) is shared across every
+// project on the machine. Give this app its own so concurrent builds of the
+// other Expo apps don't race each other's cache-clear (EPERM).
+config.cacheStores = [
+  new FileStore({
+    root: path.join(os.tmpdir(), "metro-cache-driver-mobile"),
+  }),
+]
+
+// Only watch packages this app imports — not the whole monorepo (avoids
+// ENOENT spam from sibling Next.js apps writing under apps/*/.next).
+config.watchFolders = [geoPackage]
+config.resolver.nodeModulesPaths = [
+  mobileModules,
+  path.resolve(workspaceRoot, "node_modules"),
+]
+
+const appsDir = path.resolve(workspaceRoot, "apps").replace(/\\/g, "/")
+// Metro's Windows FallbackWatcher calls fs.watch() on every crawled dir.
+// Ignore must match the `android` folder itself (not only children), or the
+// walker descends into ephemeral Gradle/Kotlin caches and crashes with ENOENT
+// when those paths disappear mid-watch.
+const escapedAppsDir = appsDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+config.resolver.blockList = [
+  new RegExp(`${escapedAppsDir}/[^/]+/\\.next(/|$)`),
+  /expo-modules-autolinking\/android(\/|$)/,
+  /\/android\/.*\/build(\/|$)/,
+]
+
+function resolveFromMobile(moduleName) {
+  return require.resolve(moduleName, { paths: [mobileModules] })
+}
+
+config.resolver.extraNodeModules = {
+  react: path.dirname(resolveFromMobile("react/package.json")),
+  "react-dom": path.dirname(resolveFromMobile("react-dom/package.json")),
+  "@workspace/geo": geoPackage,
+}
+
+const reactAliases = new Set([
+  "react",
+  "react-dom",
+  "react/jsx-runtime",
+  "react/jsx-dev-runtime",
+])
+
+const originalResolveRequest = config.resolver.resolveRequest
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (reactAliases.has(moduleName) || moduleName.startsWith("react-dom/")) {
+    return {
+      filePath: resolveFromMobile(moduleName),
+      type: "sourceFile",
+    }
+  }
+
+  if (moduleName === "@workspace/geo") {
+    return {
+      filePath: path.join(geoPackage, "src/index.ts"),
+      type: "sourceFile",
+    }
+  }
+
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform)
+  }
+
+  return context.resolveRequest(context, moduleName, platform)
+}
+
+module.exports = config
