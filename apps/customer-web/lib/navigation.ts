@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Map,
   Megaphone,
+  Package,
   Settings,
   Wallet,
   type LucideIcon,
@@ -14,6 +15,8 @@ export type AppNavItem = {
   label: string
   icon: LucideIcon
   description: string
+  /** Only shown when the matching platform flag is enabled — see lib/flags.ts. */
+  flag?: string
 }
 
 export const appNavItems: AppNavItem[] = [
@@ -49,6 +52,13 @@ export const appNavItems: AppNavItem[] = [
     description: "Performance metrics and delivery reports will live here.",
   },
   {
+    href: "/deliveries",
+    label: "Deliveries",
+    icon: Package,
+    description: "Book a pickup and dropoff for one of our screen-carrying drivers.",
+    flag: "deliveries",
+  },
+  {
     href: "/settings/support",
     label: "Support",
     icon: HelpCircle,
@@ -72,4 +82,8 @@ export function navItemForPath(pathname: string): AppNavItem {
   return (
     appNavItems.find((item) => isNavItemActive(pathname, item.href)) ?? appNavItems[0]!
   )
+}
+
+export function visibleNavItems(enabledFlags: Set<string>): AppNavItem[] {
+  return appNavItems.filter((item) => !item.flag || enabledFlags.has(item.flag))
 }
