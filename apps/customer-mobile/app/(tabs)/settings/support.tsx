@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react"
 import { Stack, useFocusEffect, useRouter } from "expo-router"
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native"
+import { Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { Add, ChevronRight, HelpCircle } from "@/components/icons"
 import { CategoryIcon, SupportStatusPill } from "@/components/support/support-ui"
 import { listMySupportCases, type SupportCase } from "@/lib/support"
@@ -137,7 +138,7 @@ export default function SupportSettingsScreen() {
           </View>
 
           {loading ? (
-            <ActivityIndicator />
+            <SkeletonCaseRows count={5} />
           ) : cases.length === 0 ? (
             <View style={styles.emptyState}>
               <HelpCircle size={20} color={colors.mutedForeground} />

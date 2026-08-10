@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { FormFieldDef } from "@workspace/ops-contracts"
 import { formatLabel, groupFormFieldsBySection, splitCsv } from "@workspace/ops-contracts"
 
-import { AppLoader } from "@/components/app/app-loader"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
@@ -288,7 +288,7 @@ export function EntityFormScreen({
           onPress={handleSubmit}
         >
           {saving ? (
-            <AppLoader compact message="" />
+            <ActivityIndicator color={colors.primaryForeground} />
           ) : (
             <Text style={styles.submitText}>{submitLabel}</Text>
           )}
