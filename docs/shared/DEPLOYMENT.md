@@ -428,7 +428,14 @@ Use this when going live:
 - [ ] **Vercel:** Five projects configured (`apps/web`, `apps/api`, `apps/ops`, `apps/customer-web`, `apps/driver-web`) with domains above
 - [ ] **Infisical:** `staging` + `prod` envs synced to all five Vercel projects
 - [ ] **Clerk:** Ops + API URLs in allowed origins; live keys in prod
-- [ ] **Neon:** `ops-schema-additive.sql` applied on prod (and staging); `platform_flags` table created on **every** environment's database via `npm run db:platform-flags -w web` (**not** `db:push` — see the warning above; each environment needs this run separately, nothing propagates automatically)
+- [ ] **Neon:** all additive SQL scripts applied on **every** environment's database (**not** `db:push` — see the warning above; nothing propagates automatically between environments), in order:
+  - `npm run db:ops-schema -w web`
+  - `npm run db:support-schema -w web`
+  - `npm run db:announcements-soft-delete -w web`
+  - `npm run db:announcements-image -w web`
+  - `npm run db:audit-fixes -w web`
+  - `npm run db:platform-flags -w web`
+  - `npm run db:driver-push-and-targeting -w web`
 - [ ] **GitHub:** Clerk + URL secrets added for CI
 - [ ] **Expo / EAS:** Logged in; all three mobile projects linked (`admobihq-ops`, `admobihq-app`, `admobihq-driver` — driver needs `eas init` first, see [DRIVER-APP.md](../driver/DRIVER-APP.md)); preview APKs built for team testing
 
