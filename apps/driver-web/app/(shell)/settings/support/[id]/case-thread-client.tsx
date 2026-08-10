@@ -77,35 +77,35 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
       <Link
         href="/settings/support"
-        className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" aria-hidden />
         Back to requests
       </Link>
 
       {loading ? (
-        <div className="flex w-full max-w-2xl flex-col gap-4">
-          <Skeleton className="h-9 w-2/3 rounded-md" />
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-7 w-2/3 rounded-md" />
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
             <Skeleton className="ml-auto h-10 w-2/3 rounded-lg" />
             <Skeleton className="h-10 w-3/4 rounded-lg" />
           </div>
         </div>
       ) : notFound ? (
-        <div className="flex w-full max-w-2xl flex-col items-center gap-2 rounded-xl border border-dashed bg-muted/20 p-10 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-10 text-center">
           <SearchX className="size-5 text-muted-foreground" aria-hidden />
           <p className="text-sm text-muted-foreground">
             This request isn&apos;t available on this device.
           </p>
         </div>
       ) : (
-        <div className="flex w-full max-w-2xl flex-col gap-5">
+        <>
           <div className="flex flex-col gap-2 border-b border-border pb-4">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">{subject}</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-foreground">{subject}</h1>
               {status ? <SupportStatusBadge status={status} /> : null}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -124,7 +124,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
 
           <div className="flex flex-col rounded-xl border bg-card p-4">
             {messages.map((message, index) => {
-              const isCustomer = message.author_type === "customer"
+              const isDriver = message.author_type === "customer"
               const prev = messages[index - 1]
               const grouped = prev?.author_type === message.author_type
               return (
@@ -132,7 +132,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
                   key={message.id}
                   className={cn(
                     "flex items-end gap-2",
-                    isCustomer ? "flex-row-reverse" : "flex-row",
+                    isDriver ? "flex-row-reverse" : "flex-row",
                     index === 0 ? "mt-0" : grouped ? "mt-1.5" : "mt-4",
                   )}
                 >
@@ -140,24 +140,24 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
                     className={cn(
                       "flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
                       grouped && "opacity-0",
-                      isCustomer
+                      isDriver
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground",
                     )}
                     aria-hidden={grouped}
                   >
-                    {isCustomer ? initials(contactName) : "AH"}
+                    {isDriver ? initials(contactName) : "AH"}
                   </div>
                   <div
                     className={cn(
                       "flex max-w-[78%] flex-col gap-1",
-                      isCustomer ? "items-end" : "items-start",
+                      isDriver ? "items-end" : "items-start",
                     )}
                   >
                     <div
                       className={cn(
                         "rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
-                        isCustomer
+                        isDriver
                           ? "rounded-br-sm bg-primary text-primary-foreground"
                           : "rounded-bl-sm border bg-muted text-foreground",
                       )}
@@ -199,7 +199,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
               {sending ? "Sending…" : "Send reply"}
             </Button>
           </div>
-        </div>
+        </>
       )}
     </div>
   )
