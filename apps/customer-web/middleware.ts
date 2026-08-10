@@ -13,16 +13,29 @@ async function getAuthMiddleware(): Promise<NextMiddleware> {
   // here IS the protected dashboard, so it must NOT be in this list.
   const isPublicRoute = createRouteMatcher(["/auth/(.*)", "/api/health(.*)"])
 
-  cachedMiddleware = clerkMiddleware(async (auth, request) => {
-    if (isPublicRoute(request)) {
-      return
-    }
+  cachedMiddleware = clerkMiddleware(
+    async (auth, request) => {
+      if (isPublicRoute(request)) {
+        return
+      }
 
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.redirect(new URL("/auth/login", request.url))
-    }
-  })
+      const { userId } = await auth()
+      if (!userId) {
+        return NextResponse.redirect(new URL("/auth/login", request.url))
+      }
+    },
+    {
+      // Without these, clerkMiddleware() falls back to the unprefixed
+      // CLERK_SECRET_KEY / NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY env vars —
+      // which belong to the ops Clerk instance in this repo's shared
+      // Infisical pool, not the customer instance ClerkProvider actually
+      // signs sessions with (see app/layout.tsx). That mismatch is what
+      // produces "jwk-kid-mismatch": the client mints a customer-instance
+      // session cookie, but the server tried to verify it against ops's JWKS.
+      publishableKey: process.env.NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY,
+      secretKey: process.env.CUSTOMER_CLERK_SECRET_KEY,
+    },
+  )
 
   return cachedMiddleware
 }

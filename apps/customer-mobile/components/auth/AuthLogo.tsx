@@ -1,37 +1,37 @@
-import { Image, StyleSheet, View } from "react-native"
+import { Image, StyleSheet, Text, View } from "react-native"
 
 import { spacing } from "@/lib/theme/tokens"
-import { useThemeColors } from "@/lib/theme/provider"
+import { useThemedStyles } from "@/lib/theme"
 
-/**
- * Same transparent wordmark as BrandedSplashScreen, but tinted with the
- * theme's foreground color instead of the splash's cream-on-black — the
- * source PNG is cream/terracotta built for a black canvas, which disappears
- * on this screen's light background.
- */
+// Same mark + wordmark pairing as @workspace/ui's <Logo> (used on the
+// customer-web / driver-web auth pages) — logo-mark.png is 85x47 native.
+const MARK_HEIGHT = 32
+const MARK_WIDTH = Math.round((85 / 47) * MARK_HEIGHT)
+
 export function AuthLogo() {
-  const colors = useThemeColors()
+  const styles = useThemedStyles((c) => ({
+    text: { fontSize: 20, fontWeight: "600" as const, letterSpacing: -0.2, color: c.text },
+  }))
 
   return (
-    <View style={styles.row}>
+    <View style={rootStyles.row}>
       <Image
-        source={require("@/assets/images/splash-icon.png")}
-        style={[styles.mark, { tintColor: colors.text }]}
+        source={require("@/assets/images/logo-mark.png")}
+        style={{ width: MARK_WIDTH, height: MARK_HEIGHT }}
         resizeMode="contain"
         accessibilityLabel="Admobi"
       />
+      <Text style={styles.text}>Admobi</Text>
     </View>
   )
 }
 
-const styles = StyleSheet.create({
+const rootStyles = StyleSheet.create({
   row: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.sm,
     marginBottom: spacing.lg,
-  },
-  mark: {
-    width: 220,
-    height: 110,
   },
 })
