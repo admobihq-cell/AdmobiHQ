@@ -2,15 +2,14 @@ import { useSignIn, useSSO } from "@clerk/clerk-expo"
 import { Link } from "expo-router"
 import { useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
-import { AuthHeroBand } from "@/components/auth/AuthHeroBand"
 import { AuthLegalLine } from "@/components/auth/AuthLegalLine"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import { radius, spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
 
 const CODE_LENGTH = 6
-const HERO_IMAGE = require("@/assets/images/driver-aerial-routes.jpg")
 
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
@@ -32,8 +31,8 @@ export function SignInForm() {
 
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { flexGrow: 1 },
-    formArea: { flex: 1, gap: spacing.md, padding: spacing.xl },
+    scrollContent: { flexGrow: 1, justifyContent: "center" },
+    formArea: { gap: spacing.md, padding: spacing.xl },
     title: { ...typography.title, color: c.text },
     subtitle: { ...typography.body, color: c.mutedForeground },
     input: {
@@ -48,7 +47,7 @@ export function SignInForm() {
     error: { ...typography.bodySm, color: c.danger },
     primaryButton: {
       backgroundColor: c.primary,
-      borderRadius: radius.full,
+      borderRadius: radius.lg,
       paddingVertical: 14,
       alignItems: "center",
     },
@@ -128,11 +127,9 @@ export function SignInForm() {
   }
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          <AuthHeroBand image={HERO_IMAGE} eyebrow="Admobi Driver" title="Welcome back" />
-
           <View style={styles.formArea}>
             {step === "code" ? (
               <>
@@ -222,6 +219,6 @@ export function SignInForm() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   )
 }
