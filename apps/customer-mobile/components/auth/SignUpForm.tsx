@@ -1,11 +1,16 @@
 import { useSignUp, useSSO } from "@clerk/clerk-expo"
+import { Link } from "expo-router"
 import { useState } from "react"
-import { Pressable, Text, TextInput, View } from "react-native"
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native"
 
+import { AuthHeroBand } from "@/components/auth/AuthHeroBand"
+import { AuthLegalLine } from "@/components/auth/AuthLegalLine"
+import { GoogleButton } from "@/components/auth/GoogleButton"
 import { radius, spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
 
 const CODE_LENGTH = 6
+const HERO_IMAGE = require("@/assets/images/aerial-city-routes.jpg")
 
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
@@ -26,7 +31,9 @@ export function SignUpForm() {
   const [error, setError] = useState<string | null>(null)
 
   const styles = useThemedStyles((c) => ({
-    container: { flex: 1, justifyContent: "center", gap: spacing.md, padding: spacing.lg, backgroundColor: c.bg },
+    root: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { flexGrow: 1 },
+    formArea: { flex: 1, gap: spacing.md, padding: spacing.xl },
     title: { ...typography.title, color: c.text },
     subtitle: { ...typography.body, color: c.mutedForeground },
     input: {
@@ -48,6 +55,12 @@ export function SignUpForm() {
     primaryButtonLabel: { ...typography.headline, color: c.primaryForeground },
     secondaryButton: { paddingVertical: 10, alignItems: "center" },
     secondaryButtonLabel: { ...typography.bodySm, color: c.mutedForeground },
+    dividerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    dividerLine: { flex: 1, height: 1, backgroundColor: c.border },
+    dividerLabel: { ...typography.caption, color: c.mutedForeground },
+    footerRow: { flexDirection: "row", justifyContent: "center", gap: spacing.xs },
+    footerText: { ...typography.bodySm, color: c.mutedForeground },
+    footerLink: { ...typography.bodySm, color: c.text, fontWeight: "600" },
   }))
 
   async function handleSendCode() {
@@ -99,70 +112,101 @@ export function SignUpForm() {
     }
   }
 
-  if (step === "code") {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Check your email</Text>
-        <Text style={styles.subtitle}>Enter the {CODE_LENGTH}-digit code sent to {email.trim()}</Text>
-        <TextInput
-          style={styles.input}
-          value={code}
-          onChangeText={setCode}
-          placeholder="123456"
-          keyboardType="number-pad"
-          maxLength={CODE_LENGTH}
-          editable={!submitting}
-        />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Pressable
-          style={styles.primaryButton}
-          disabled={submitting || code.trim().length < CODE_LENGTH}
-          onPress={() => void handleVerifyCode()}
-        >
-          <Text style={styles.primaryButtonLabel}>
-            {submitting ? "Verifying…" : "Verify and create account"}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={styles.secondaryButton}
-          disabled={submitting}
-          onPress={() => {
-            setStep("email")
-            setCode("")
-            setError(null)
-          }}
-        >
-          <Text style={styles.secondaryButtonLabel}>Use a different email</Text>
-        </Pressable>
-      </View>
-    )
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create your Admobi account</Text>
-      <Text style={styles.subtitle}>We&apos;ll email you a one-time code.</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="you@example.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        editable={!submitting}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Pressable
-        style={styles.primaryButton}
-        disabled={submitting || !isLoaded || !email.trim()}
-        onPress={() => void handleSendCode()}
-      >
-        <Text style={styles.primaryButtonLabel}>{submitting ? "Sending…" : "Send code"}</Text>
-      </Pressable>
-      <Pressable style={styles.secondaryButton} onPress={() => void handleGoogleSignUp()}>
-        <Text style={styles.secondaryButtonLabel}>Continue with Google</Text>
-      </Pressable>
+    <View style={styles.root}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <AuthHeroBand image={HERO_IMAGE} eyebrow="Admobi" title="Get started" />
+
+          <View style={styles.formArea}>
+            {step === "code" ? (
+              <>
+                <View style={{ gap: spacing.xs }}>
+                  <Text style={styles.title}>Check your email</Text>
+                  <Text style={styles.subtitle}>
+                    Enter the {CODE_LENGTH}-digit code sent to {email.trim()}
+                  </Text>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  value={code}
+                  onChangeText={setCode}
+                  placeholder="123456"
+                  keyboardType="number-pad"
+                  maxLength={CODE_LENGTH}
+                  editable={!submitting}
+                  autoFocus
+                />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
+                <Pressable
+                  style={styles.primaryButton}
+                  disabled={submitting || code.trim().length < CODE_LENGTH}
+                  onPress={() => void handleVerifyCode()}
+                >
+                  <Text style={styles.primaryButtonLabel}>
+                    {submitting ? "Verifying…" : "Verify and create account"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.secondaryButton}
+                  disabled={submitting}
+                  onPress={() => {
+                    setStep("email")
+                    setCode("")
+                    setError(null)
+                  }}
+                >
+                  <Text style={styles.secondaryButtonLabel}>Use a different email</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <View style={{ gap: spacing.xs }}>
+                  <Text style={styles.title}>Create your Admobi account</Text>
+                  <Text style={styles.subtitle}>We&apos;ll email you a one-time code.</Text>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  editable={!submitting}
+                  autoFocus
+                />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
+                <Pressable
+                  style={styles.primaryButton}
+                  disabled={submitting || !isLoaded || !email.trim()}
+                  onPress={() => void handleSendCode()}
+                >
+                  <Text style={styles.primaryButtonLabel}>{submitting ? "Sending…" : "Send code"}</Text>
+                </Pressable>
+
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerLabel}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <GoogleButton label="Continue with Google" onPress={() => void handleGoogleSignUp()} />
+
+                <View style={{ marginTop: spacing.sm, gap: spacing.md }}>
+                  <AuthLegalLine />
+                  <View style={styles.footerRow}>
+                    <Text style={styles.footerText}>Already have an account?</Text>
+                    <Link href="/sign-in">
+                      <Text style={styles.footerLink}>Sign in</Text>
+                    </Link>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   )
 }

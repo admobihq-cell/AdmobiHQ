@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { useSignUp } from "@clerk/nextjs"
+import { useSignIn } from "@clerk/nextjs"
 
 import { AuthLegalLine } from "@workspace/ui/components/auth-legal-line"
 import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
@@ -12,12 +12,12 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { webPublicUrl } from "@/lib/site-urls"
+import { appPublicUrl, webPublicUrl } from "@/lib/site-urls"
 
 import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 
 const CODE_LENGTH = 6
-const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
+const HERO_PHOTO_SRC = "/auth/hero-driver.jpg"
 
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
@@ -26,8 +26,8 @@ function clerkErrorMessage(err: unknown, fallback: string) {
   return fallback
 }
 
-export function AdvertiserSignUp() {
-  const { isLoaded, signUp, setActive } = useSignUp()
+export function DriverSignIn() {
+  const { isLoaded, signIn, setActive } = useSignIn()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
@@ -39,12 +39,24 @@ export function AdvertiserSignUp() {
   }
 
   async function handleSendCode() {
-    if (!isLoaded || !signUp || !email.trim()) return
+    if (!isLoaded || !signIn || !email.trim()) return
     setSubmitting(true)
     setError(null)
     try {
-      await signUp.create({ emailAddress: email.trim() })
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+      const attempt = await signIn.create({ identifier: email.trim() })
+      const emailCodeFactor = attempt.supportedFirstFactors?.find(
+        (factor) => factor.strategy === "email_code",
+      ) as { strategy: "email_code"; emailAddressId: string } | undefined
+
+      if (!emailCodeFactor) {
+        setError("Email verification is not available for this account.")
+        return
+      }
+
+      await signIn.prepareFirstFactor({
+        strategy: "email_code",
+        emailAddressId: emailCodeFactor.emailAddressId,
+      })
       setCode("")
       setStep("code")
     } catch (err) {
@@ -55,16 +67,19 @@ export function AdvertiserSignUp() {
   }
 
   async function handleVerifyCode() {
-    if (!isLoaded || !signUp || code.trim().length < CODE_LENGTH) return
+    if (!isLoaded || !signIn || code.trim().length < CODE_LENGTH) return
     setSubmitting(true)
     setError(null)
     try {
-      const attempt = await signUp.attemptEmailAddressVerification({ code: code.trim() })
+      const attempt = await signIn.attemptFirstFactor({
+        strategy: "email_code",
+        code: code.trim(),
+      })
       if (attempt.status === "complete" && attempt.createdSessionId) {
         await setActive({ session: attempt.createdSessionId })
         return
       }
-      setError("Sign-up could not be completed. Try again.")
+      setError("Sign-in could not be completed. Try again.")
     } catch (err) {
       setError(clerkErrorMessage(err, "Invalid verification code."))
       setCode("")
@@ -73,26 +88,26 @@ export function AdvertiserSignUp() {
     }
   }
 
-  async function handleGoogleSignUp() {
-    if (!isLoaded || !signUp) return
+  async function handleGoogleSignIn() {
+    if (!isLoaded || !signIn) return
     setError(null)
     try {
-      await signUp.authenticateWithRedirect({
+      await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "/auth/sso-callback/advertiser",
+        redirectUrl: "/auth/sso-callback",
         redirectUrlComplete: "/",
       })
     } catch (err) {
-      setError(clerkErrorMessage(err, "Google sign-up failed."))
+      setError(clerkErrorMessage(err, "Google sign-in failed."))
     }
   }
 
   return (
     <AuthSplitShell
       photoSrc={HERO_PHOTO_SRC}
-      photoAlt="A Nairobi street at golden hour"
-      statement="Book screens that move with the city."
-      statementDetail="Zones, schedule, and spend for taxi-top campaigns across Nairobi — one place to run it all."
+      photoAlt="A driver on a Nairobi road at dusk"
+      statement="Get paid for the miles you already drive."
+      statementDetail="See screen-on hours and payouts land — one place to track what your route earns."
     >
       {step === "code" ? (
         <div className="flex flex-col gap-5">
@@ -124,7 +139,7 @@ export function AdvertiserSignUp() {
             loadingText="Verifying…"
             onClick={() => void handleVerifyCode()}
           >
-            Verify and create account
+            Verify and sign in
           </Button>
           <Button
             variant="ghost"
@@ -142,7 +157,7 @@ export function AdvertiserSignUp() {
       ) : (
         <div className="flex flex-col gap-5">
           <div>
-            <h1 className="font-heading text-xl font-medium">Create your Admobi account</h1>
+            <h1 className="font-heading text-xl font-medium">Sign in to Admobi Driver</h1>
             <p className="text-sm text-muted-foreground">We&apos;ll email you a one-time code.</p>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -178,7 +193,7 @@ export function AdvertiserSignUp() {
             variant="outline"
             size="lg"
             className="w-full gap-2"
-            onClick={() => void handleGoogleSignUp()}
+            onClick={() => void handleGoogleSignIn()}
           >
             <GoogleIcon className="size-4" />
             Continue with Google
@@ -188,13 +203,22 @@ export function AdvertiserSignUp() {
             privacyHref={`${webPublicUrl()}/privacy`}
           />
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
-              href="/auth/login/advertiser"
+              href="/auth/signup"
               className="font-medium text-foreground underline underline-offset-4"
             >
-              Sign in
+              Sign up
             </Link>
+          </p>
+          <p className="text-center text-sm text-muted-foreground">
+            Not a driver?{" "}
+            <a
+              href={`${appPublicUrl()}/auth/login`}
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Sign in as an advertiser
+            </a>
           </p>
         </div>
       )}

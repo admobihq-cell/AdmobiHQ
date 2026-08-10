@@ -12,12 +12,12 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { webPublicUrl } from "@/lib/site-urls"
+import { appPublicUrl, webPublicUrl } from "@/lib/site-urls"
 
 import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 
 const CODE_LENGTH = 6
-const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
+const HERO_PHOTO_SRC = "/auth/hero-driver.jpg"
 
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
@@ -26,7 +26,7 @@ function clerkErrorMessage(err: unknown, fallback: string) {
   return fallback
 }
 
-export function AdvertiserSignUp() {
+export function DriverSignUp() {
   const { isLoaded, signUp, setActive } = useSignUp()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -79,7 +79,7 @@ export function AdvertiserSignUp() {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "/auth/sso-callback/advertiser",
+        redirectUrl: "/auth/sso-callback",
         redirectUrlComplete: "/",
       })
     } catch (err) {
@@ -90,9 +90,9 @@ export function AdvertiserSignUp() {
   return (
     <AuthSplitShell
       photoSrc={HERO_PHOTO_SRC}
-      photoAlt="A Nairobi street at golden hour"
-      statement="Book screens that move with the city."
-      statementDetail="Zones, schedule, and spend for taxi-top campaigns across Nairobi — one place to run it all."
+      photoAlt="A driver on a Nairobi road at dusk"
+      statement="Get paid for the miles you already drive."
+      statementDetail="See screen-on hours and payouts land — one place to track what your route earns."
     >
       {step === "code" ? (
         <div className="flex flex-col gap-5">
@@ -142,7 +142,7 @@ export function AdvertiserSignUp() {
       ) : (
         <div className="flex flex-col gap-5">
           <div>
-            <h1 className="font-heading text-xl font-medium">Create your Admobi account</h1>
+            <h1 className="font-heading text-xl font-medium">Create your driver account</h1>
             <p className="text-sm text-muted-foreground">We&apos;ll email you a one-time code.</p>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -190,11 +190,20 @@ export function AdvertiserSignUp() {
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              href="/auth/login/advertiser"
+              href="/auth/login"
               className="font-medium text-foreground underline underline-offset-4"
             >
               Sign in
             </Link>
+          </p>
+          <p className="text-center text-sm text-muted-foreground">
+            Not a driver?{" "}
+            <a
+              href={`${appPublicUrl()}/auth/signup`}
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Sign up as an advertiser
+            </a>
           </p>
         </div>
       )}

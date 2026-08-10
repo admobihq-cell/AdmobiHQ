@@ -1,4 +1,4 @@
-import { AuthRoleEntry } from "@/components/auth/auth-role-entry"
+import { DriverSignUp } from "@/components/auth/driver-sign-up"
 import { redirectIfAuthenticated } from "@/lib/auth/redirect-if-authenticated"
 
 export const metadata = { title: "Sign up" }
@@ -6,5 +6,5 @@ export const metadata = { title: "Sign up" }
 export default async function SignupPage() {
   await redirectIfAuthenticated()
 
-  return <AuthRoleEntry mode="signup" />
+  return <DriverSignUp />
 }
