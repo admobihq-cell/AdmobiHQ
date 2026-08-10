@@ -20,6 +20,16 @@ import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-driver.jpg"
 
+function useDisabledSignIn() {
+  return { isLoaded: false, signIn: undefined, setActive: undefined }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern as driver-session.ts —
+ * useSignIn() must never run unless ClerkProvider is mounted.
+ */
+const useSignInIfEnabled = isAuthEnabled() ? useSignIn : useDisabledSignIn
+
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
     return (err as { errors: Array<{ message?: string }> }).errors[0]?.message ?? fallback
@@ -28,7 +38,7 @@ function clerkErrorMessage(err: unknown, fallback: string) {
 }
 
 export function DriverSignIn() {
-  const { isLoaded, signIn, setActive } = useSignIn()
+  const { isLoaded, signIn, setActive } = useSignInIfEnabled()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
