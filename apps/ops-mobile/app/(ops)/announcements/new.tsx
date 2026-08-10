@@ -15,9 +15,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import * as ImagePicker from "expo-image-picker"
-import { ANNOUNCEMENT_FORM_FIELDS, broadcastCreateSchema } from "@workspace/ops-contracts"
+import {
+  ANNOUNCEMENT_FORM_FIELDS,
+  ANNOUNCEMENT_TARGET_APP_OPTIONS,
+  broadcastCreateSchema,
+  describeAnnouncementTargets,
+} from "@workspace/ops-contracts"
 
-import { ImageIcon, X } from "@/components/icons"
+import { CheckboxOff, CheckboxOn, ImageIcon, X } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
 import {
@@ -50,6 +55,7 @@ export default function NewAnnouncementScreen() {
   const [category, setCategory] = useState("announcement")
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
+  const [targetApps, setTargetApps] = useState<string[]>(["customer-mobile"])
   const [image, setImage] = useState<AnnouncementImage | null>(null)
   const [processingImage, setProcessingImage] = useState(false)
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
@@ -83,6 +89,13 @@ export default function NewAnnouncementScreen() {
     inputError: { borderColor: c.danger },
     multiline: { minHeight: 120, textAlignVertical: "top" as const, paddingTop: 12 },
     fieldError: { ...typography.caption, color: c.danger },
+    targetRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    targetLabel: { ...typography.body, color: c.text },
     select: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -187,6 +200,7 @@ export default function NewAnnouncementScreen() {
       title,
       body,
       category,
+      target_apps: targetApps,
     })
     if (!parsed.success) {
       setSubmitAttempted(true)
@@ -194,9 +208,10 @@ export default function NewAnnouncementScreen() {
       return
     }
 
+    const targets = describeAnnouncementTargets(targetApps)
     Alert.alert(
-      "Send to all customers?",
-      "This sends a real push notification to every installed customer app. This can't be undone.",
+      `Send to ${targets}?`,
+      `This sends a real push notification to every installed ${targets} app. This can't be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -212,6 +227,7 @@ export default function NewAnnouncementScreen() {
     title: string
     body: string
     category: "announcement" | "campaign" | "billing" | "promo" | "system"
+    target_apps: ("customer-mobile" | "driver-mobile")[]
   }) {
     setSaving(true)
     setError(null)
@@ -248,6 +264,35 @@ export default function NewAnnouncementScreen() {
         <Text style={styles.title}>New announcement</Text>
 
         {error ? <ApiErrorBanner message={error} onDismiss={() => setError(null)} /> : null}
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Send to</Text>
+          {ANNOUNCEMENT_TARGET_APP_OPTIONS.map((option) => {
+            const checked = targetApps.includes(option.value)
+            return (
+              <Pressable
+                key={option.value}
+                style={styles.targetRow}
+                onPress={() =>
+                  setTargetApps((current) =>
+                    checked
+                      ? current.filter((value) => value !== option.value)
+                      : [...current, option.value],
+                  )
+                }
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked }}
+              >
+                {checked ? (
+                  <CheckboxOn size={18} color={colors.primary} />
+                ) : (
+                  <CheckboxOff size={18} color={colors.mutedForeground} />
+                )}
+                <Text style={styles.targetLabel}>{option.label}</Text>
+              </Pressable>
+            )
+          })}
+        </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>{CATEGORY_FIELD.label}</Text>
@@ -349,13 +394,15 @@ export default function NewAnnouncementScreen() {
             (pressed || saving) && styles.submitPressed,
             saving && styles.submitDisabled,
           ]}
-          disabled={saving}
+          disabled={saving || targetApps.length === 0}
           onPress={handleSubmit}
         >
           {saving ? (
             <ActivityIndicator color={colors.primaryForeground} />
           ) : (
-            <Text style={styles.submitText}>Send to all customers</Text>
+            <Text style={styles.submitText}>
+              Send to {describeAnnouncementTargets(targetApps)}
+            </Text>
           )}
         </Pressable>
       </View>

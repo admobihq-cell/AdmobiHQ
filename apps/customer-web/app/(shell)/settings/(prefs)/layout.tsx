@@ -8,7 +8,7 @@ export default function SettingsPrefsLayout({ children }: { children: ReactNode 
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Manage your workspace profile, security, and notification preferences.
+          Manage your profile, sign-in, and notification preferences.
         </p>
       </div>
 

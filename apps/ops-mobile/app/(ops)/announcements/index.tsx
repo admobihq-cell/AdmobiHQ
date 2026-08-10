@@ -9,7 +9,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
-import { formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
+import { describeAnnouncementTargets, formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
 import { Inbox, Plus, Radio, RefreshCcw, Trash } from "@/components/icons"
 import { StatusChip } from "@/components/app/status-chip"
@@ -193,6 +193,7 @@ export default function AnnouncementsScreen() {
         body: resendTarget.body,
         category: (resendTarget.category ?? "announcement") as
           "announcement" | "campaign" | "billing" | "promo" | "system",
+        target_apps: resendTarget.target_apps as ("customer-mobile" | "driver-mobile")[],
       })
       setResendTarget(null)
       setRefreshing(true)
@@ -233,7 +234,7 @@ export default function AnnouncementsScreen() {
             icon={Radio}
             title="Announcements"
             compact
-            description="Broadcast a message to every installed customer app."
+            description="Broadcast a message to the customer and/or driver app."
           />
         </View>
         <Pressable
@@ -323,7 +324,7 @@ export default function AnnouncementsScreen() {
                     variant={item.deleted_at ? "attention" : "muted"}
                   />
                   <Text style={styles.itemMeta} numberOfLines={1}>
-                    {`${item.category ?? "announcement"} · ${item.delivered_count}/${item.target_count} delivered · ${formatRelativeTime(item.created_at)}`}
+                    {`${item.category ?? "announcement"} · ${describeAnnouncementTargets(item.target_apps)} · ${item.delivered_count}/${item.target_count} delivered · ${formatRelativeTime(item.created_at)}`}
                   </Text>
                 </View>
               </View>
@@ -365,10 +366,14 @@ export default function AnnouncementsScreen() {
 
       <ConfirmDialog
         visible={resendTarget !== null}
-        title="Resend to all customers?"
+        title={
+          resendTarget
+            ? `Resend to ${describeAnnouncementTargets(resendTarget.target_apps)}?`
+            : "Resend?"
+        }
         message={
           resendTarget
-            ? `This sends "${resendTarget.title}" again as a new push to every installed customer app. This can't be undone.`
+            ? `This sends "${resendTarget.title}" again as a new push to every installed ${describeAnnouncementTargets(resendTarget.target_apps)} app. This can't be undone.`
             : undefined
         }
         confirmLabel={resending ? "Sending…" : "Resend"}
