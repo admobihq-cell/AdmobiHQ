@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput,
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import { AuthLegalLine } from "@/components/auth/AuthLegalLine"
+import { AuthLogo } from "@/components/auth/AuthLogo"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import { radius, spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
@@ -131,6 +132,7 @@ export function SignInForm() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.formArea}>
+            <AuthLogo />
             {step === "code" ? (
               <>
                 <View style={{ gap: spacing.xs }}>

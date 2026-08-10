@@ -56,7 +56,9 @@ export function AuthSplitShell({
 
       <div className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16">
         <div className="mx-auto w-full max-w-sm">
-          <Logo className="mb-10 lg:hidden" />
+          <div className="mb-10 flex justify-center lg:hidden">
+            <Logo />
+          </div>
           {children}
         </div>
       </div>

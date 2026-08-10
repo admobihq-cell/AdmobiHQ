@@ -96,13 +96,16 @@ export function NavUser() {
                     {initials || <UserCircle className="size-4" aria-hidden />}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium">{displayName}</span>
                   <span className="truncate text-xs text-muted-foreground">
                     {displaySubtitle}
                   </span>
                 </div>
-                <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" aria-hidden />
+                <ChevronsUpDown
+                  className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                  aria-hidden
+                />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent

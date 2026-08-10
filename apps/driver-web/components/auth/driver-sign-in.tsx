@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useSignIn } from "@clerk/nextjs"
 
@@ -28,6 +29,7 @@ function clerkErrorMessage(err: unknown, fallback: string) {
 
 export function DriverSignIn() {
   const { isLoaded, signIn, setActive } = useSignIn()
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
@@ -77,6 +79,7 @@ export function DriverSignIn() {
       })
       if (attempt.status === "complete" && attempt.createdSessionId) {
         await setActive({ session: attempt.createdSessionId })
+        router.push("/")
         return
       }
       setError("Sign-in could not be completed. Try again.")
