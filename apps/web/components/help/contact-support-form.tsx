@@ -194,8 +194,15 @@ export function ContactSupportForm() {
 
               <HoneypotField value={honeypot} onChange={setHoneypot} />
 
-              <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting} size="lg">
-                {isSubmitting ? "Sending…" : "Send request"}
+              <Button
+                type="submit"
+                className="w-full sm:w-auto"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+                loadingText="Sending…"
+                size="lg"
+              >
+                Send request
               </Button>
             </form>
 

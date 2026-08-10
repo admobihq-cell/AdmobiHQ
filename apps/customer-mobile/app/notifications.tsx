@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
 
+import { SkeletonListRows } from "@/components/app/skeleton"
 import { Bell } from "@/components/icons"
 import { NotificationRow } from "@/components/notifications/notification-row"
 import { FilterChips } from "@/components/ui/filter-chips"
@@ -15,7 +16,7 @@ import {
   markNotificationsRead,
 } from "@/lib/notification-read-state"
 import { useLiveAnnouncements } from "@/lib/use-live-announcements"
-import { spacing, typography, useThemedStyles } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
   key,
@@ -23,6 +24,7 @@ const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
 }))
 
 export default function NotificationsScreen() {
+  const colors = useThemeColors()
   const [category, setCategory] = useState<NotificationCategory | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
@@ -161,7 +163,12 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
         }
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
@@ -174,9 +181,7 @@ export default function NotificationsScreen() {
         )}
         ListEmptyComponent={
           loading ? (
-            <View style={styles.empty}>
-              <ActivityIndicator />
-            </View>
+            <SkeletonListRows count={6} />
           ) : (
             <View style={styles.empty}>
               <View style={styles.emptyIconWrap}>

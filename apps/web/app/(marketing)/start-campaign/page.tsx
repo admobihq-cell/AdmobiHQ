@@ -279,8 +279,15 @@ export default function StartCampaignPage() {
 
             <HoneypotField value={honeypot} onChange={setHoneypot} />
 
-            <Button type="submit" className="w-full" disabled={isSubmitting} size="lg">
-              {isSubmitting ? "Sending…" : "Send brief"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting}
+              loading={isSubmitting}
+              loadingText="Sending…"
+              size="lg"
+            >
+              Send brief
             </Button>
           </form>
         )}
