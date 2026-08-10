@@ -86,6 +86,8 @@ function writeMappedEnv(sourceVars, header) {
   const mappings = [
     ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
     ["EXPO_PUBLIC_APP_URL", "NEXT_PUBLIC_APP_URL"],
+    ["EXPO_PUBLIC_WEB_URL", "NEXT_PUBLIC_WEB_URL"],
+    ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY"],
   ]
 
   const lines = [header]
@@ -117,7 +119,7 @@ try {
     sourceVars = parseEnv(readFileSync(fallbackPath, "utf8"))
     writeMappedEnv(
       sourceVars,
-      `# Generated from ${fallbackPath} — no Clerk; customer app only`,
+      `# Generated from ${fallbackPath} — no customer Clerk key in that file; run npm run env:pull -w customer-web first`,
     )
     console.log(
       `[customer-mobile env:pull] Infisical unavailable — mapped from ${fallbackPath}`,
@@ -132,14 +134,16 @@ try {
       },
       "# Local defaults — run npm run env:pull -w customer-web first when Infisical is available",
     )
-    console.log("[customer-mobile env:pull] Wrote local defaults (no Clerk)")
+    console.log("[customer-mobile env:pull] Wrote local defaults (no Clerk key)")
   }
 }
 
 const mappings = [
   ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
   ["EXPO_PUBLIC_APP_URL", "NEXT_PUBLIC_APP_URL"],
+  ["EXPO_PUBLIC_WEB_URL", "NEXT_PUBLIC_WEB_URL"],
   ["EXPO_PUBLIC_SENTRY_DSN", "NEXT_PUBLIC_SENTRY_DSN"],
+  ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY"],
 ]
 
 let additions = ""

@@ -6,10 +6,10 @@ import { ArrowLeft, Send, SearchX } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { ChatThreadSkeleton } from "@/components/skeletons/chat-thread-skeleton"
 import { SupportStatusBadge } from "@/components/support-status-badge"
 import { getSupportCase, replyToSupportCase, type SupportMessage } from "@/lib/support-client"
 import { CategoryIcon, getCategoryLabel } from "@/lib/support-categories"
@@ -87,13 +87,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
       </Link>
 
       {loading ? (
-        <div className="flex w-full max-w-2xl flex-col gap-4">
-          <Skeleton className="h-9 w-2/3 rounded-md" />
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-            <Skeleton className="ml-auto h-10 w-2/3 rounded-lg" />
-            <Skeleton className="h-10 w-3/4 rounded-lg" />
-          </div>
-        </div>
+        <ChatThreadSkeleton />
       ) : notFound ? (
         <div className="flex w-full max-w-2xl flex-col items-center gap-2 rounded-xl border border-dashed bg-muted/20 p-10 text-center">
           <SearchX className="size-5 text-muted-foreground" aria-hidden />
