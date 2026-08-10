@@ -88,8 +88,14 @@ export default function MediaKitPage() {
               <ApiErrorBanner message={submitError} onDismiss={dismissError} />
             ) : null}
             <HoneypotField value={honeypot} onChange={setHoneypot} />
-            <Button type="submit" size="lg" disabled={isSubmitting}>
-              {isSubmitting ? "Sending…" : "Send me the kit"}
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSubmitting}
+              loading={isSubmitting}
+              loadingText="Sending…"
+            >
+              Send me the kit
             </Button>
           </form>
         )}

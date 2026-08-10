@@ -344,8 +344,15 @@ export default function DriversClient() {
 
               <HoneypotField value={honeypot} onChange={setHoneypot} />
 
-              <Button type="submit" className="w-full" disabled={formState.isSubmitting} size="lg">
-                {formState.isSubmitting ? "Sending…" : "Raise my hand"}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={formState.isSubmitting}
+                loading={formState.isSubmitting}
+                loadingText="Sending…"
+                size="lg"
+              >
+                Raise my hand
               </Button>
             </form>
           )}

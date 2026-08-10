@@ -152,13 +152,11 @@ export function SupportView() {
           size="sm"
           onClick={() => void refresh()}
           disabled={loading}
+          loading={loading}
+          loadingText="Refresh"
           className="ml-auto"
         >
-          {loading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <RefreshCw className="size-4" />
-          )}
+          <RefreshCw className="size-4" />
           Refresh
         </Button>
       </div>

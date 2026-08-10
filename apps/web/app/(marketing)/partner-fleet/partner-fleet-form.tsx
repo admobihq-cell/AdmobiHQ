@@ -256,8 +256,15 @@ export default function PartnerFleetForm() {
 
       <HoneypotField value={honeypot} onChange={setHoneypot} />
 
-      <Button type="submit" className="w-full" disabled={formState.isSubmitting} size="lg">
-        {formState.isSubmitting ? "Sending…" : "Request partnership deck"}
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={formState.isSubmitting}
+        loading={formState.isSubmitting}
+        loadingText="Sending…"
+        size="lg"
+      >
+        Request partnership deck
       </Button>
     </form>
   )

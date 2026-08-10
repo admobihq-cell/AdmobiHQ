@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from "expo-router"
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -10,6 +11,7 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { ChevronRight, HelpCircle } from "@/components/icons"
 import { CategoryIcon, SUPPORT_CATEGORIES, SupportStatusPill } from "@/components/support/support-ui"
 import { useDriverSession } from "@/lib/auth/use-driver-session"
@@ -29,6 +31,7 @@ export default function SupportScreen() {
 
   const [cases, setCases] = useState<SupportCase[]>([])
   const [loadingCases, setLoadingCases] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -60,6 +63,21 @@ export default function SupportScreen() {
       void refreshCases()
     }, [refreshCases]),
   )
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      const identity = await getStoredIdentity()
+      if (identity && session.status === "anonymous") {
+        const items = await listMySupportCases()
+        setCases(items)
+      }
+    } catch {
+      // best-effort — keep whatever cases are already shown
+    } finally {
+      setRefreshing(false)
+    }
+  }, [session])
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -217,6 +235,14 @@ export default function SupportScreen() {
       style={styles.scroll}
       contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => void onRefresh()}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+        />
+      }
     >
       <View style={styles.intro}>
         <Text style={styles.introTitle}>Help &amp; contact</Text>
@@ -319,7 +345,7 @@ export default function SupportScreen() {
       <View style={{ gap: spacing.sm }}>
         <Text style={styles.sectionLabel}>My requests</Text>
         {loadingCases ? (
-          <ActivityIndicator />
+          <SkeletonCaseRows count={5} />
         ) : cases.length === 0 ? (
           <View style={styles.emptyCard}>
             <HelpCircle size={18} color={colors.mutedForeground} />

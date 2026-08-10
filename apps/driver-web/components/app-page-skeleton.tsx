@@ -1,18 +1,25 @@
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-type AppPageSkeletonProps = {
-  title?: string
-}
-
-/** Inline content-area skeleton — app shell (sidebar) stays visible. */
-export function AppPageSkeleton({ title = "Loading…" }: AppPageSkeletonProps) {
+/** Inline content-area skeleton shown during route transitions — app shell (sidebar) stays visible. */
+export function AppPageSkeleton() {
   return (
-    <div className="flex flex-1 flex-col gap-3 rounded-xl border border-dashed bg-muted/20 p-12 text-center">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        Coming soon
-      </p>
-      <h1 className="text-xl font-semibold">{title}</h1>
-      <Skeleton className="mx-auto h-4 w-full max-w-md" />
+    <div className="flex flex-1 flex-col gap-6" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading…</span>
+      <div className="flex items-center justify-between gap-4">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-8 w-24 rounded-lg" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="h-24 rounded-xl" />
+      </div>
+      <div className="flex flex-1 flex-col gap-3 rounded-xl border p-4">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-4/6" />
+        <Skeleton className="h-4 w-3/6" />
+      </div>
     </div>
   )
 }

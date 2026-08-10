@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react"
 import { useFocusEffect, useRouter } from "expo-router"
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { SkeletonCampaignCards } from "@/components/app/skeleton"
 import { Add, Calendar, Location } from "@/components/icons"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getCampaigns, type Campaign } from "@/lib/campaigns"
@@ -18,6 +19,7 @@ export default function CampaignsScreen() {
   const [filter, setFilter] = useState<Filter>("All")
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   useFocusEffect(
     useCallback(() => {
@@ -34,6 +36,16 @@ export default function CampaignsScreen() {
       }
     }, []),
   )
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      const items = await getCampaigns()
+      setCampaigns(items)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [])
 
   const styles = useThemedStyles((c) => ({
     root: {
@@ -204,6 +216,14 @@ export default function CampaignsScreen() {
           { paddingTop: insets.top + spacing.md, paddingBottom: spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <View style={styles.hero}>
           <Text style={styles.eyebrow}>Workspace</Text>
@@ -236,7 +256,7 @@ export default function CampaignsScreen() {
         </ScrollView>
 
         {loading ? (
-          <ActivityIndicator />
+          <SkeletonCampaignCards count={4} />
         ) : visible.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No campaigns match this filter yet.</Text>

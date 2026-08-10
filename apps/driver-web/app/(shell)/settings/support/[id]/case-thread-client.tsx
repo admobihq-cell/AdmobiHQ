@@ -190,13 +190,15 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
             <Button
               onClick={handleSend}
               disabled={sending || !reply.trim()}
+              loading={sending}
+              loadingText="Sending…"
               className="group self-end"
             >
               <Send
                 className="size-4 transition-transform group-hover:translate-x-0.5"
                 aria-hidden
               />
-              {sending ? "Sending…" : "Send reply"}
+              Send reply
             </Button>
           </div>
         </>

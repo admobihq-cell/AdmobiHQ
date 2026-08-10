@@ -13,21 +13,14 @@ import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type AppLoaderProps = {
   message?: string
-  compact?: boolean
 }
 
-export function AppLoader({
-  message = "Starting up",
-  compact = false,
-}: AppLoaderProps) {
+export function AppLoader({ message = "Starting up" }: AppLoaderProps) {
   const styles = useThemedStyles((c) => ({
     container: {
       alignItems: "center" as const,
       justifyContent: "center" as const,
       paddingHorizontal: spacing.xl,
-    },
-    compact: {
-      paddingVertical: spacing.xl,
     },
     logoWrap: {
       width: 220,
@@ -94,7 +87,7 @@ export function AppLoader({
   }))
 
   return (
-    <View style={[styles.container, compact && styles.compact]}>
+    <View style={styles.container}>
       <Animated.View style={[styles.logoWrap, logoStyle]}>
         <Image
           source={require("@/assets/images/splash-icon.png")}
