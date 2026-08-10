@@ -5,7 +5,7 @@ import {
   type ExpoSendOutcome,
 } from "@/lib/push/expo-push"
 
-export type PushAudience = "customer" | "ops"
+export type PushAudience = "customer" | "ops" | "driver"
 
 /** Expo advises waiting ~15 min before asking for receipts. */
 const RECEIPT_DELAY_MINUTES = 15
@@ -173,10 +173,11 @@ async function pruneDeadTokens(deadTokens: Map<PushAudience, Set<string>>): Prom
 
   for (const [audience, tokens] of deadTokens) {
     const expo_push_token = { in: [...tokens] }
-    const result =
-      audience === "ops"
-        ? await prisma.opsPushToken.deleteMany({ where: { expo_push_token } })
-        : await prisma.customerPushToken.deleteMany({ where: { expo_push_token } })
+    const result = await (audience === "ops"
+      ? prisma.opsPushToken.deleteMany({ where: { expo_push_token } })
+      : audience === "driver"
+        ? prisma.driverPushToken.deleteMany({ where: { expo_push_token } })
+        : prisma.customerPushToken.deleteMany({ where: { expo_push_token } }))
     pruned += result.count
   }
 

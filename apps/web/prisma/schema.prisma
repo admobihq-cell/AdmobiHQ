@@ -137,6 +137,18 @@ model CustomerPushToken {
   @@map("customer_push_tokens")
 }
 
+model DriverPushToken {
+  id                  Int      @id @default(autoincrement())
+  expo_push_token     String   @unique
+  platform            String?
+  anonymous_device_id String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  @@index([anonymous_device_id])
+  @@map("driver_push_tokens")
+}
+
 model AnnouncementBroadcast {
   id               Int       @id @default(autoincrement())
   title            String
@@ -145,6 +157,7 @@ model AnnouncementBroadcast {
   image_url        String?
   sent_by_clerk_id String
   sent_by_email    String
+  target_apps      String[]  @default(["customer-mobile"])
   target_count     Int       @default(0)
   delivered_count  Int       @default(0)
   invalid_count    Int       @default(0)
@@ -166,7 +179,7 @@ model PushTicket {
   id              Int      @id @default(autoincrement())
   ticket_id       String?  @unique
   expo_push_token String
-  audience        String // "customer" | "ops"
+  audience        String // "customer" | "ops" | "driver"
   broadcast_id    Int?
   status          String   @default("pending") // pending | ok | error | expired
   error_code      String?

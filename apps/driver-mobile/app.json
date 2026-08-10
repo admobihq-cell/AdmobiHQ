@@ -10,7 +10,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.admobihq.driver"
+      "bundleIdentifier": "com.admobihq.driver",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,9 +24,11 @@
       },
       "package": "com.admobihq.driver",
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -58,6 +63,13 @@
       ],
       "expo-updates",
       [
+        "expo-notifications",
+        {
+          "color": "#0B6E4F",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow Admobi to use your location to track your routes and screen-on time.",
@@ -84,6 +96,9 @@
         "projectId": "95dc4e3d-d29f-4513-917f-391207264047"
       }
     },
-    "owner": "admobimedia"
+    "owner": "admobimedia",
+    "updates": {
+      "url": "https://u.expo.dev/95dc4e3d-d29f-4513-917f-391207264047"
+    }
   }
 }

@@ -16,8 +16,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@workspace/ui/components/sheet"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 
+import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
 import { NewSupportRequestForm } from "@/components/support/new-support-request-form"
 import { SupportStatusBadge } from "@/components/support-status-badge"
 import { useCustomerSession } from "@/lib/auth/customer-session"
@@ -71,11 +71,7 @@ export function SupportClient() {
       </div>
 
       {loadingCases ? (
-        <div className="flex flex-col gap-2">
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-16 rounded-lg" />
-          ))}
-        </div>
+        <CaseListSkeleton rows={3} />
       ) : cases.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/20 p-10 text-center">
           <Inbox className="size-5 text-muted-foreground" aria-hidden />

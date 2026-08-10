@@ -1,0 +1,121 @@
+import { Image, Pressable, Text, View } from "react-native"
+
+import {
+  formatRelativeTime,
+  NOTIFICATION_CATEGORY_ICONS,
+  NOTIFICATION_CATEGORY_LABELS,
+  type NotificationItem,
+} from "@/lib/notifications-data"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+
+type NotificationRowProps = {
+  item: NotificationItem
+  onPress: () => void
+}
+
+export function NotificationRow({ item, onPress }: NotificationRowProps) {
+  const colors = useThemeColors()
+  const Icon = NOTIFICATION_CATEGORY_ICONS[item.category]
+
+  const styles = useThemedStyles((c) => ({
+    row: {
+      flexDirection: "row" as const,
+      gap: spacing.md,
+      paddingTop: spacing.md,
+      paddingBottom: item.imageUrl ? spacing.sm : spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: "flex-start" as const,
+    },
+    rowPressed: { opacity: 0.7 },
+    imageWrap: {
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      aspectRatio: 2,
+      borderRadius: radius.md,
+      overflow: "hidden" as const,
+      backgroundColor: c.muted,
+    },
+    image: { width: "100%" as const, height: "100%" as const },
+    iconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.md,
+      backgroundColor: item.read ? c.muted : c.accentSurface,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    copy: { flex: 1, gap: 2 },
+    titleRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.xs,
+    },
+    title: {
+      ...typography.section,
+      color: c.text,
+      flex: 1,
+      fontWeight: item.read ? ("500" as const) : ("700" as const),
+    },
+    unreadDot: {
+      width: 7,
+      height: 7,
+      borderRadius: radius.full,
+      backgroundColor: c.primary,
+    },
+    body: {
+      ...typography.caption,
+      color: c.mutedForeground,
+      lineHeight: 18,
+    },
+    metaRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+      marginTop: 2,
+    },
+    category: {
+      ...typography.caption,
+      color: c.primary,
+      fontWeight: "600" as const,
+    },
+    time: {
+      ...typography.caption,
+      color: c.mutedForeground,
+    },
+  }))
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.rowPressed}
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+    >
+      <View style={styles.row}>
+        <View style={styles.iconWrap}>
+          <Icon color={item.read ? colors.mutedForeground : colors.primary} size={18} />
+        </View>
+        <View style={styles.copy}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {item.title}
+            </Text>
+            {item.read ? null : <View style={styles.unreadDot} />}
+          </View>
+          <Text style={styles.body} numberOfLines={2}>
+            {item.body}
+          </Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.category}>{NOTIFICATION_CATEGORY_LABELS[item.category]}</Text>
+            <Text style={styles.time}>· {formatRelativeTime(item.createdAt)}</Text>
+          </View>
+        </View>
+      </View>
+      {item.imageUrl ? (
+        <View style={styles.imageWrap}>
+          <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" />
+        </View>
+      ) : null}
+    </Pressable>
+  )
+}

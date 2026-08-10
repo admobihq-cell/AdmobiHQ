@@ -17,7 +17,7 @@ Five **separate Vercel projects** from one GitHub repo. Each project has its own
 | **Production** | [admobihq.com](https://admobihq.com) | [api.admobihq.com](https://api.admobihq.com) | [ops.admobihq.com](https://ops.admobihq.com) | [app.admobihq.com](https://app.admobihq.com) | [driver.admobihq.com](https://driver.admobihq.com) |
 | **Staging** (`staging` branch) | staging.admobihq.com | api.staging.admobihq.com | ops.staging.admobihq.com | app.staging.admobihq.com | driver.staging.admobihq.com |
 | **Local port** | `:3000` | `:3003` | `:3001` | `:3002` | `:3004` |
-| **Auth** | Payload at `/admin` | Clerk on `/v1/*` (admin); public on `/v1/public/*` | Clerk (staff UI only) | None yet | None yet |
+| **Auth** | Payload at `/admin` | Clerk on `/v1/*` (admin); public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, `/auth/login`) | Clerk (own instance, `/auth/login`) |
 | **Database** | Prisma + Payload (owner) | Prisma (shared) | — (UI calls API) | None yet | None yet |
 | **Build** | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` |
 
@@ -239,6 +239,10 @@ Use the exact records shown in Vercel → Domains for your project.
 
 ## Clerk
 
+**Three independent Clerk applications** — no shared session, no satellite domains between them. This is a deliberate departure from the "two Clerk instances" plan in [ROADMAP.md](./ROADMAP.md) (customer + driver were originally meant to share one instance; splitting them removed a domain-primary/satellite conflict and all role-mismatch handling). Phone/SMS is also dropped — customer and driver both use email + optional Google.
+
+### Ops (staff)
+
 App: **`app_3GALZRS50nwbrWeiFLZXxsgDIid`**
 
 **Allowed origins / redirect URLs**
@@ -246,15 +250,31 @@ App: **`app_3GALZRS50nwbrWeiFLZXxsgDIid`**
 - Ops UI: `https://ops.admobihq.com`, `https://ops.staging.admobihq.com`, `http://localhost:3001`
 - API: `https://api.admobihq.com`, `https://api.staging.admobihq.com`, `http://localhost:3003`
 
-Cross-origin Bearer JWT from ops and mobile validates against the API subdomain.
+Cross-origin Bearer JWT from ops and `ops-mobile` validates against the API subdomain.
 
-The customer app (`apps/customer-web`) and driver app (`apps/driver-web`) have **no auth yet** — both are planned to use a separate, non-`@admobihq.com`-locked Clerk instance (customer/advertiser login + driver SMS OTP) rather than this ops instance. Add URLs here when that instance exists.
+**Restrictions:** `@admobihq.com` email domain only.
 
-**Restrictions:** `@admobihq.com` email domain only (ops).
+**Keys:** test (`pk_test_` / `sk_test_`) for dev/staging; live keys for production ops. Env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` (also mapped to `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for `ops-mobile`).
 
-**Keys:** test (`pk_test_` / `sk_test_`) for dev/staging; live keys for production ops.
+### Customer (advertisers)
 
-Ensure `CLERK_SECRET_KEY` is the **full** key (truncated keys cause `secret-key-invalid`).
+Separate Clerk application, used by both `apps/customer-web` and `apps/customer-mobile`. Email + Google, no domain restriction. Entry point: `app.admobihq.com/auth/login` and `/auth/signup` (also link out to the driver app's own login for anyone who picks "I'm a driver").
+
+Env vars: `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` / `CUSTOMER_CLERK_SECRET_KEY` (web), mapped to `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for `customer-mobile` via its `pull-env.mjs`.
+
+### Driver
+
+Separate Clerk application, used by both `apps/driver-web` and `apps/driver-mobile`. Email + Google (no SMS OTP — dropped, see above). Entry point: `driver.admobihq.com/auth/login` and `/auth/signup`.
+
+Env vars: `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` / `DRIVER_CLERK_SECRET_KEY` (web), mapped to `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for `driver-mobile` via its `pull-env.mjs`.
+
+### Shared Infisical pool — name collisions matter
+
+All three apps' secrets live in the **same flat Infisical project/environment** (one root `.infisical.json`, no per-app path scoping) — there is no folder isolation between apps. The customer/driver key names above are deliberately prefixed to avoid colliding with ops's plain `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`. **Never reuse the unprefixed names for a non-ops Clerk app** — doing so overwrites ops's working keys for every project pulling `dev`/`staging`/`prod` afterward.
+
+**Feature flag:** `NEXT_PUBLIC_AUTH_ENABLED` (web) / `EXPO_PUBLIC_AUTH_ENABLED` (mobile) gates whether each app mounts its `ClerkProvider` at all — defaults to `false`/unset, kept local-only (not in Infisical), so a missing key never crashes the app.
+
+Ensure `CLERK_SECRET_KEY` (and the customer/driver equivalents) are the **full** key (truncated keys cause `secret-key-invalid`).
 
 ---
 

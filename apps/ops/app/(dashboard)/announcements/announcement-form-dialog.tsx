@@ -3,9 +3,10 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { ImagePlus, Loader2, X } from "lucide-react"
 
-import { ANNOUNCEMENT_FORM_FIELDS } from "@workspace/ops-contracts"
+import { ANNOUNCEMENT_FORM_FIELDS, ANNOUNCEMENT_TARGET_APP_OPTIONS } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export type AnnouncementFormValues = {
   title: string
   body: string
   category: string
+  targetApps: string[]
   /** Cropped JPEG ready to upload, if the user attached an image. */
   imageBlob: Blob | null
 }
@@ -90,6 +92,7 @@ export function AnnouncementFormDialog({
   const [category, setCategory] = useState("announcement")
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
+  const [targetApps, setTargetApps] = useState<string[]>(["customer-mobile"])
   const [imageBlob, setImageBlob] = useState<Blob | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [processingImage, setProcessingImage] = useState(false)
@@ -100,6 +103,7 @@ export function AnnouncementFormDialog({
     setCategory("announcement")
     setTitle("")
     setBody("")
+    setTargetApps(["customer-mobile"])
     setImageBlob(null)
     setPreviewUrl(null)
     setProcessingImage(false)
@@ -157,10 +161,32 @@ export function AnnouncementFormDialog({
               title: title.trim(),
               body: body.trim(),
               category,
+              targetApps,
               imageBlob,
             })
           }}
         >
+          <div className="flex flex-col gap-1.5">
+            <Label>Send to</Label>
+            <div className="flex flex-col gap-2">
+              {ANNOUNCEMENT_TARGET_APP_OPTIONS.map((option) => (
+                <label key={option.value} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={targetApps.includes(option.value)}
+                    onCheckedChange={(checked) =>
+                      setTargetApps((current) =>
+                        checked === true
+                          ? [...current, option.value]
+                          : current.filter((value) => value !== option.value),
+                      )
+                    }
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="announcement-category">{CATEGORY_FIELD.label}</Label>
             <select
@@ -266,7 +292,12 @@ export function AnnouncementFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || processingImage || !title.trim() || !body.trim()}>
+            <Button
+              type="submit"
+              disabled={
+                saving || processingImage || !title.trim() || !body.trim() || targetApps.length === 0
+              }
+            >
               Continue
             </Button>
           </DialogFooter>
