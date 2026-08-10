@@ -17,7 +17,6 @@ import { useRouter } from "expo-router"
 import * as ImagePicker from "expo-image-picker"
 import { ANNOUNCEMENT_FORM_FIELDS, broadcastCreateSchema } from "@workspace/ops-contracts"
 
-import { AppLoader } from "@/components/app/app-loader"
 import { ImageIcon, X } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
@@ -354,7 +353,7 @@ export default function NewAnnouncementScreen() {
           onPress={handleSubmit}
         >
           {saving ? (
-            <AppLoader compact message="" />
+            <ActivityIndicator color={colors.primaryForeground} />
           ) : (
             <Text style={styles.submitText}>Send to all customers</Text>
           )}

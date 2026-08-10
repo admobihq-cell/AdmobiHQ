@@ -877,8 +877,8 @@ export function SimpleFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? <Loader2 className="size-4 animate-spin" /> : "Save"}
+            <Button type="submit" disabled={saving} loading={saving}>
+              Save
             </Button>
           </DialogFooter>
         </form>
