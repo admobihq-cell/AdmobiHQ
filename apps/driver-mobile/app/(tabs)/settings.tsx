@@ -2,7 +2,7 @@ import { useAuth, useUser } from "@clerk/clerk-expo"
 import Constants from "expo-constants"
 import { useRouter } from "expo-router"
 import * as Updates from "expo-updates"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -10,11 +10,15 @@ import {
   Call,
   CheckmarkCircle,
   HelpCircle,
+  Laptop,
   LogOut,
+  LogoGoogle,
   Mail,
   Pencil,
   Person,
+  Phone,
   RefreshCcw,
+  Shield,
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
@@ -39,16 +43,57 @@ function useNoUser() {
  */
 const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
-function useSignOut() {
-  const { signOut } = useAuth()
-  return signOut
+function useSignedInAuth() {
+  return useAuth()
 }
 
-function useNoSignOut() {
-  return async () => {}
+function useNoAuth() {
+  return { sessionId: null as string | null, signOut: async () => {} }
 }
 
-const useSignOutIfEnabled = isAuthEnabled() ? useSignOut : useNoSignOut
+const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
+
+function formatRelativeTime(date: Date): string {
+  const diffMin = Math.round((Date.now() - date.getTime()) / 60000)
+  if (diffMin < 1) return "Active now"
+  if (diffMin < 60) return `Active ${diffMin}m ago`
+  const diffHr = Math.round(diffMin / 60)
+  if (diffHr < 24) return `Active ${diffHr}h ago`
+  const diffDay = Math.round(diffHr / 24)
+  return `Active ${diffDay}d ago`
+}
+
+type SessionActivity = {
+  browserName?: string
+  deviceType?: string
+  isMobile?: boolean
+  city?: string
+  country?: string
+}
+
+function sessionDeviceLabel(activity: SessionActivity | undefined): string {
+  if (!activity) return "Unknown device"
+  if (activity.browserName) {
+    return `${activity.browserName} · ${activity.isMobile ? "Mobile" : "Desktop"}`
+  }
+  if (activity.isMobile) return "Mobile app"
+  return activity.deviceType || "Unknown device"
+}
+
+function sessionLocation(activity: SessionActivity | undefined): string | null {
+  if (!activity) return null
+  return [activity.city, activity.country].filter(Boolean).join(", ") || null
+}
+
+type SessionRow = {
+  id: string
+  isCurrent: boolean
+  label: string
+  location: string | null
+  lastActiveAt: Date
+  isMobile: boolean
+  revoke: () => Promise<unknown>
+}
 
 export default function SettingsScreen() {
   const colors = useThemeColors()
@@ -57,18 +102,48 @@ export default function SettingsScreen() {
   const version = Constants.expoConfig?.version ?? "0.0.1"
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const { user } = useUserIfEnabled()
-  const signOut = useSignOutIfEnabled()
+  const { sessionId, signOut } = useAuthIfEnabled()
 
   const [editing, setEditing] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName ?? "")
   const [lastName, setLastName] = useState(user?.lastName ?? "")
   const [saving, setSaving] = useState(false)
   const [signOutVisible, setSignOutVisible] = useState(false)
+  const [sessions, setSessions] = useState<SessionRow[] | null>(null)
+  const [revokingId, setRevokingId] = useState<string | null>(null)
 
   const email = user?.primaryEmailAddress?.emailAddress
   const emailVerified = user?.primaryEmailAddress?.verification?.status === "verified"
   const phone = user?.primaryPhoneNumber?.phoneNumber
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+  const googleAccount = user?.externalAccounts?.find((a) => a.provider === "google")
+
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    user
+      .getSessions()
+      .then((list) => {
+        if (cancelled) return
+        setSessions(
+          list.map((session) => ({
+            id: session.id,
+            isCurrent: session.id === sessionId,
+            label: sessionDeviceLabel(session.latestActivity),
+            location: sessionLocation(session.latestActivity),
+            lastActiveAt: session.lastActiveAt,
+            isMobile: Boolean(session.latestActivity?.isMobile),
+            revoke: () => session.revoke(),
+          })),
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setSessions([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user, sessionId])
 
   async function handleCheckForUpdates() {
     if (checkingUpdate) return
@@ -115,6 +190,18 @@ export default function SettingsScreen() {
     setFirstName(user?.firstName ?? "")
     setLastName(user?.lastName ?? "")
     setEditing(true)
+  }
+
+  async function handleRevoke(row: SessionRow) {
+    setRevokingId(row.id)
+    try {
+      await row.revoke()
+      setSessions((prev) => prev?.filter((s) => s.id !== row.id) ?? prev)
+    } catch {
+      Alert.alert("Couldn't sign out that device", "Check your connection and try again.")
+    } finally {
+      setRevokingId(null)
+    }
   }
 
   const styles = useMemo(
@@ -206,6 +293,21 @@ export default function SettingsScreen() {
         value: { ...typography.body, color: colors.mutedForeground },
         valueRow: { flexDirection: "row", alignItems: "center", gap: 6 },
         verified: { color: colors.success },
+        currentTag: {
+          ...typography.caption,
+          color: colors.primary,
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: 0.4,
+        },
+        signOutSmall: { ...typography.label, color: colors.destructive, fontWeight: "700" },
+        skeleton: {
+          height: 52,
+          borderRadius: 10,
+          backgroundColor: colors.muted,
+          marginHorizontal: spacing.md,
+          marginVertical: spacing.xs,
+        },
         input: {
           ...typography.body,
           color: colors.text,
@@ -365,6 +467,107 @@ export default function SettingsScreen() {
                     </>
                   ) : null}
                 </>
+              )}
+            </View>
+          </View>
+        ) : null}
+
+        {user ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Sign-in methods</Text>
+            <View style={styles.group}>
+              <View style={styles.row}>
+                <View style={styles.iconWrap}>
+                  <Mail color={styles.label.color} size={20} />
+                </View>
+                <View style={styles.copy}>
+                  <Text style={styles.label}>Email code</Text>
+                  <Text style={styles.value} numberOfLines={1}>
+                    {email}
+                    {emailVerified ? " · Verified" : ""}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.row}>
+                <View style={styles.iconWrap}>
+                  <LogoGoogle color={styles.label.color} size={18} />
+                </View>
+                <View style={styles.copy}>
+                  <Text style={styles.label}>Google</Text>
+                  <Text style={styles.value} numberOfLines={1}>
+                    {googleAccount
+                      ? `Connected · ${googleAccount.emailAddress ?? email ?? ""}`
+                      : "Not connected"}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.row}>
+                <View style={styles.iconWrap}>
+                  <Shield color={styles.label.color} size={18} />
+                </View>
+                <View style={styles.copy}>
+                  <Text style={styles.label}>Two-factor authentication</Text>
+                  <Text style={styles.value}>
+                    {user.twoFactorEnabled ? "On" : "Off"} — passwordless sign-in has no password
+                    to pair it with yet.
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        {user ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Active sessions</Text>
+            <View style={styles.group}>
+              {sessions === null ? (
+                <>
+                  <View style={styles.skeleton} />
+                  <View style={styles.skeleton} />
+                </>
+              ) : (
+                sessions.map((session, index) => {
+                  const Icon = session.isMobile ? Phone : Laptop
+                  return (
+                    <View key={session.id}>
+                      {index > 0 ? <View style={styles.divider} /> : null}
+                      <View style={styles.row}>
+                        <View style={styles.iconWrap}>
+                          <Icon color={styles.label.color} size={18} />
+                        </View>
+                        <View style={styles.copy}>
+                          <View style={styles.valueRow}>
+                            <Text style={styles.label} numberOfLines={1}>
+                              {session.label}
+                            </Text>
+                            {session.isCurrent ? (
+                              <Text style={styles.currentTag}>This device</Text>
+                            ) : null}
+                          </View>
+                          <Text style={styles.value} numberOfLines={1}>
+                            {[session.location, formatRelativeTime(session.lastActiveAt)]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </Text>
+                        </View>
+                        {!session.isCurrent ? (
+                          <Pressable
+                            onPress={() => void handleRevoke(session)}
+                            disabled={revokingId === session.id}
+                            hitSlop={8}
+                          >
+                            <Text style={styles.signOutSmall}>
+                              {revokingId === session.id ? "…" : "Sign out"}
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    </View>
+                  )
+                })
               )}
             </View>
           </View>
