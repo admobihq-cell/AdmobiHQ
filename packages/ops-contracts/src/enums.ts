@@ -111,7 +111,13 @@ export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 export const PLATFORM_FLAG_KEYS = ["deliveries"] as const
 export type PlatformFlagKey = (typeof PLATFORM_FLAG_KEYS)[number]
 
-export const SUPPORT_CHANNELS = ["web", "customer-web", "customer-mobile"] as const
+export const SUPPORT_CHANNELS = [
+  "web",
+  "customer-web",
+  "customer-mobile",
+  "driver-web",
+  "driver-mobile",
+] as const
 export type SupportChannel = (typeof SUPPORT_CHANNELS)[number]
 
 export const SUPPORT_CATEGORIES = [

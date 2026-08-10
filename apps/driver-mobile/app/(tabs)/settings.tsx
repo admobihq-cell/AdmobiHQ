@@ -1,10 +1,11 @@
 import Constants from "expo-constants"
+import { useRouter } from "expo-router"
 import * as Updates from "expo-updates"
 import { useMemo, useState } from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { RefreshCcw } from "@/components/icons"
+import { HelpCircle, RefreshCcw } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
@@ -14,6 +15,7 @@ import { spacing, typography, useThemeColors } from "@/lib/theme"
 export default function SettingsScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const version = Constants.expoConfig?.version ?? "0.0.1"
   const [checkingUpdate, setCheckingUpdate] = useState(false)
 
@@ -96,6 +98,18 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <ThemeSettingsSection />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Support</Text>
+        <View style={styles.group}>
+          <SettingsRow
+            icon={HelpCircle}
+            label="Help & contact"
+            description="Send a request to the Admobi team"
+            onPress={() => router.push("/support")}
+          />
+        </View>
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>App</Text>

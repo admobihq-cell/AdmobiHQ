@@ -3,7 +3,7 @@ import { Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AppBar } from "@/components/app/app-bar"
-import { Deliveries, Payouts, Routes, Settings, Wallet } from "@/components/icons"
+import { Dashboard, Deliveries, Payouts, Routes, Settings, Wallet } from "@/components/icons"
 import { usePlatformFlags } from "@/lib/flags"
 import { useNavigationTheme } from "@/lib/theme"
 
@@ -43,6 +43,17 @@ export default function TabsLayout() {
       >
         <Tabs.Screen
           name="index"
+          options={{
+            title: "Dashboard",
+            headerShown: false,
+            tabBarLabel: ({ color }) => <TabLabel label="Dashboard" color={color} />,
+            tabBarIcon: ({ color, size }) => (
+              <Dashboard color={color} size={size - 2} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="earnings"
           options={{
             title: "Earnings",
             headerShown: false,
@@ -98,6 +109,16 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, size }) => (
               <Settings color={color} size={size - 2} />
             ),
+          }}
+        />
+        <Tabs.Screen
+          name="support"
+          options={{
+            title: "Support",
+            headerShown: false,
+            // Kept off the tab bar to avoid crowding it — reached from the
+            // Settings screen and the dashboard's quick actions instead.
+            href: null,
           }}
         />
       </Tabs>

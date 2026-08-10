@@ -1,7 +1,10 @@
-import { EarningsView } from "@/components/overview/earnings-view"
+import { DashboardView } from "@/components/overview/dashboard-view"
+import { getPlatformFlags } from "@/lib/flags"
 
-export const metadata = { title: "Earnings" }
+export const metadata = { title: "Dashboard" }
 
-export default function EarningsPage() {
-  return <EarningsView />
+export default async function DashboardPage() {
+  const flags = await getPlatformFlags()
+
+  return <DashboardView deliveriesEnabled={flags.has("deliveries")} />
 }
