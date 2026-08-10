@@ -3,6 +3,7 @@ import { z } from "zod"
 import {
   AD_FORMATS,
   ANNOUNCEMENT_CATEGORIES,
+  ANNOUNCEMENT_TARGET_APPS,
   BUDGET_RANGES,
   CITIES,
   DATE_RANGE_KEYS,
@@ -162,6 +163,10 @@ export const broadcastCreateSchema = z.object({
   body: z.string().trim().min(1).max(178),
   category: z.enum(ANNOUNCEMENT_CATEGORIES),
   image_url: z.string().url().nullable().optional(),
+  target_apps: z
+    .array(z.enum(ANNOUNCEMENT_TARGET_APPS))
+    .min(1, "Select at least one app.")
+    .default(["customer-mobile"]),
 })
 
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>

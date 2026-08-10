@@ -1,6 +1,7 @@
 import { Image, Platform, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { NotificationBellButton } from "@/components/notifications/notification-bell-button"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
@@ -29,6 +30,7 @@ export function AppBar() {
         <Text style={[styles.brandName, { color: colors.text }]}>Admobi Driver</Text>
       </View>
       <View style={styles.actions}>
+        <NotificationBellButton />
         <ThemeToggleButton />
       </View>
     </View>

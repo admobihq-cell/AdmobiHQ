@@ -19,6 +19,7 @@ import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 import { useOnboarding } from "@/lib/onboarding"
 import { initSentry } from "@/lib/sentry"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
+import { usePushRegistration } from "@/lib/use-push-registration"
 
 initSentry()
 // Required once at app root so the browser tab opened for Google OAuth
@@ -65,6 +66,7 @@ function RootNavigator({
       <StatusBar style={statusBarStyle} />
       <Stack screenOptions={screenOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false }} />
       </Stack>
@@ -83,6 +85,7 @@ function RootLayout() {
 
   useSplashBootstrap(ready)
   useOtaUpdates(ready)
+  usePushRegistration()
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {

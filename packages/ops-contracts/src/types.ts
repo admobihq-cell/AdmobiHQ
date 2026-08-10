@@ -154,6 +154,7 @@ export type AnnouncementDto = {
   category: string
   image_url: string | null
   sent_by_email: string
+  target_apps: string[]
   target_count: number
   delivered_count: number
   invalid_count: number
