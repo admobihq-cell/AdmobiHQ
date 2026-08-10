@@ -1,21 +1,42 @@
+import { ClerkProvider } from "@clerk/clerk-expo"
+import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import * as Sentry from "@sentry/react-native"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
+import * as WebBrowser from "expo-web-browser"
 import { useEffect, useState } from "react"
 import { InteractionManager } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { AppErrorBoundary } from "@/components/AppErrorBoundary"
+import { AuthGate } from "@/components/AuthGate"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
+import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 import { useOnboarding } from "@/lib/onboarding"
 import { initSentry } from "@/lib/sentry"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 import { usePushRegistration } from "@/lib/use-push-registration"
 
 initSentry()
+// Required once at app root so the browser tab opened for Google OAuth
+// (via useSSO) closes and hands control back to the app after redirect.
+WebBrowser.maybeCompleteAuthSession()
+
+function AuthenticatedApp({ children }: { children: React.ReactNode }) {
+  if (!isAuthEnabled()) {
+    return <>{children}</>
+  }
+
+  return (
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+      <AuthGate>{children}</AuthGate>
+    </ClerkProvider>
+  )
+}
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
@@ -41,13 +62,15 @@ function RootNavigator({
   }
 
   return (
-    <>
+    <AuthenticatedApp>
       <StatusBar style={statusBarStyle} />
       <Stack screenOptions={screenOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
       </Stack>
-    </>
+    </AuthenticatedApp>
   )
 }
 

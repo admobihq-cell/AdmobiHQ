@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Eye, Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-import { type AnnouncementDto } from "@workspace/ops-contracts"
+import { describeAnnouncementTargets, type AnnouncementDto } from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
 
 import {
@@ -62,6 +62,7 @@ type PendingBroadcast = {
   title: string
   body: string
   category: string
+  targetApps: string[]
   mode: "new" | "resend"
   /** New upload (cropped JPEG). Prefer this over image_url when present. */
   imageBlob?: Blob | null
@@ -123,6 +124,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           | "billing"
           | "promo"
           | "system",
+        target_apps: pending.targetApps as ("customer-mobile" | "driver-mobile")[],
         image_url: imageUrl ?? null,
       })
       toast.success(pending.mode === "resend" ? "Announcement resent" : "Announcement sent")
@@ -142,6 +144,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
       title: values.title,
       body: values.body,
       category: values.category,
+      targetApps: values.targetApps,
       mode: "new",
       imageBlob: values.imageBlob,
     })
@@ -151,7 +154,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     <div className="flex flex-1 flex-col gap-6">
       <PageHero
         title="Announcements"
-        description="Broadcast a message to every installed customer app."
+        description="Broadcast a message to the customer and/or driver app."
         actions={
           <Button size="sm" onClick={() => setFormOpen(true)}>
             <Plus data-icon="inline-start" />
@@ -164,10 +167,11 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         <Table className="table-fixed w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[10%]">Sent</TableHead>
-              <TableHead className="w-[16%]">Title</TableHead>
-              <TableHead className="w-[12%]">Category</TableHead>
-              <TableHead className="w-[34%]">Message</TableHead>
+              <TableHead className="w-[9%]">Sent</TableHead>
+              <TableHead className="w-[14%]">Title</TableHead>
+              <TableHead className="w-[10%]">Category</TableHead>
+              <TableHead className="w-[13%]">Target</TableHead>
+              <TableHead className="w-[26%]">Message</TableHead>
               <TableHead className="w-[10%]">Delivered</TableHead>
               <TableHead className="w-[10%]">Status</TableHead>
               <TableHead className="w-[8%] text-right">
@@ -178,7 +182,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           <TableBody>
             {!data.items.length ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={8} className="h-32 text-center">
                   <p className="text-sm font-medium text-foreground">No announcements yet.</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Sent broadcasts will appear here.
@@ -196,6 +200,9 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                   </TableCell>
                   <TableCell className="max-w-0 overflow-hidden">
                     <Badge variant="outline">{row.category ?? "announcement"}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-0 truncate" title={describeAnnouncementTargets(row.target_apps)}>
+                    {describeAnnouncementTargets(row.target_apps)}
                   </TableCell>
                   <TableCell className="max-w-0">
                     <button
@@ -253,6 +260,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                                 title: row.title,
                                 body: row.body,
                                 category: row.category ?? "announcement",
+                                targetApps: row.target_apps,
                                 mode: "resend",
                                 image_url: row.image_url,
                               })
@@ -313,6 +321,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{viewing.category ?? "announcement"}</Badge>
+                <Badge variant="outline">{describeAnnouncementTargets(viewing.target_apps)}</Badge>
                 {viewing.deleted_at ? (
                   <Badge variant="destructive">Deleted</Badge>
                 ) : (
@@ -351,6 +360,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                       title: viewing.title,
                       body: viewing.body,
                       category: viewing.category ?? "announcement",
+                      targetApps: viewing.target_apps,
                       mode: "resend",
                       image_url: viewing.image_url,
                     })
@@ -385,19 +395,22 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Radio className="size-4" />
-              {pending?.mode === "resend" ? "Resend to all customers?" : "Send to all customers?"}
+              {pending
+                ? `${pending.mode === "resend" ? "Resend" : "Send"} to ${describeAnnouncementTargets(pending.targetApps)}?`
+                : "Send announcement?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {pending?.mode === "resend" ? (
                 <>
-                  This sends &ldquo;{pending.title}&rdquo; again as a new push to every installed
-                  customer app
+                  This sends &ldquo;{pending.title}&rdquo; again as a new push to every installed{" "}
+                  {describeAnnouncementTargets(pending.targetApps)} app
                   {pending.image_url || pending.imageBlob ? ", including its image" : ""}. This
                   can&apos;t be undone.
                 </>
               ) : (
                 <>
-                  This sends a real push notification to every installed customer app
+                  This sends a real push notification to every installed{" "}
+                  {pending ? describeAnnouncementTargets(pending.targetApps) : ""} app
                   {pending?.imageBlob ? ", with your attached image" : ""}. This can&apos;t be
                   undone.
                 </>

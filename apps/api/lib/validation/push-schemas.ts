@@ -21,3 +21,7 @@ export const pushTokenUnregisterSchema = z.object({
 export const customerPushTokenRegisterSchema = pushTokenRegisterSchema.extend({
   anonymousDeviceId: z.string().trim().min(1).optional(),
 })
+
+export const driverPushTokenRegisterSchema = pushTokenRegisterSchema.extend({
+  anonymousDeviceId: z.string().trim().min(1).optional(),
+})

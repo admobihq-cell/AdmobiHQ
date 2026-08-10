@@ -5,7 +5,7 @@ import { broadcastCreateSchema } from "@workspace/ops-contracts"
 import { auditFromOpsUser, recordAuditEvent } from "@/lib/audit"
 import { jsonError, parseJsonBody, timingSafeEqual } from "@/lib/api-utils"
 import { requireOpsUser } from "@/lib/auth"
-import { broadcastToCustomers } from "@/lib/push/broadcast-customers"
+import { broadcastAnnouncement } from "@/lib/push/broadcast-announcement"
 
 export const maxDuration = 60
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if ("error" in parsed) return parsed.error
 
   try {
-    const broadcast = await broadcastToCustomers(
+    const broadcast = await broadcastAnnouncement(
       parsed.data,
       access ? { clerkUserId: access.userId, email: access.email } : SYSTEM_SENDER,
     )

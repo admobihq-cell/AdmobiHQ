@@ -8,6 +8,11 @@ type SettingsRowProps = {
   description?: string
   icon: AppIcon
   onPress: () => void
+  /** Tints icon, label, and chevron with the destructive color — for sign-out and other irreversible actions. */
+  destructive?: boolean
+  /** Hide the trailing chevron for rows that act immediately rather than navigate. */
+  showChevron?: boolean
+  disabled?: boolean
 }
 
 export function SettingsRow({
@@ -15,8 +20,12 @@ export function SettingsRow({
   description,
   icon: Icon,
   onPress,
+  destructive = false,
+  showChevron = true,
+  disabled = false,
 }: SettingsRowProps) {
   const colors = useThemeColors()
+  const tint = destructive ? colors.destructive : colors.primary
   const styles = useThemedStyles((c) => ({
     row: {
       flexDirection: "row" as const,
@@ -28,11 +37,14 @@ export function SettingsRow({
     rowPressed: {
       opacity: 0.7,
     },
+    rowDisabled: {
+      opacity: 0.5,
+    },
     iconWrap: {
       width: 36,
       height: 36,
       borderRadius: 10,
-      backgroundColor: c.secondary,
+      backgroundColor: destructive ? c.destructiveMuted : c.secondary,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
@@ -42,7 +54,7 @@ export function SettingsRow({
     },
     label: {
       ...typography.section,
-      color: c.text,
+      color: destructive ? c.destructive : c.text,
     },
     description: {
       ...typography.caption,
@@ -53,10 +65,16 @@ export function SettingsRow({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && styles.rowPressed,
+        disabled && styles.rowDisabled,
+      ]}
+      accessibilityRole="button"
     >
       <View style={styles.iconWrap}>
-        <Icon color={colors.primary} size={20} />
+        <Icon color={tint} size={20} />
       </View>
       <View style={styles.copy}>
         <Text style={styles.label}>{label}</Text>
@@ -64,7 +82,7 @@ export function SettingsRow({
           <Text style={styles.description}>{description}</Text>
         ) : null}
       </View>
-      <ChevronRight color={colors.mutedForeground} size={18} />
+      {showChevron ? <ChevronRight color={colors.mutedForeground} size={18} /> : null}
     </Pressable>
   )
 }

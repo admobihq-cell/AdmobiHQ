@@ -1,0 +1,89 @@
+import * as Haptics from "expo-haptics"
+import { Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native"
+
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
+
+export type FilterChipOption = {
+  key: string
+  label: string
+}
+
+type FilterChipsProps = {
+  options: FilterChipOption[]
+  selected: string | null
+  onSelect: (key: string | null) => void
+  showAll?: boolean
+}
+
+export function FilterChips({ options, selected, onSelect, showAll = true }: FilterChipsProps) {
+  const styles = useThemedStyles((c) => ({
+    root: {
+      flexGrow: 0,
+      flexShrink: 0,
+    },
+    scroll: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: radius.full,
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    chipActive: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    chipText: {
+      ...typography.caption,
+      fontWeight: "600" as const,
+      color: c.mutedForeground,
+    },
+    chipTextActive: {
+      color: c.primaryForeground,
+    },
+  }))
+
+  const handleSelect = (key: string | null) => {
+    if (Platform.OS !== "web") {
+      void Haptics.selectionAsync()
+    }
+    onSelect(key)
+  }
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.root}
+      contentContainerStyle={styles.scroll}
+    >
+      {showAll ? (
+        <Pressable
+          onPress={() => handleSelect(null)}
+          style={[styles.chip, !selected && styles.chipActive]}
+        >
+          <Text style={[styles.chipText, !selected && styles.chipTextActive]}>All</Text>
+        </Pressable>
+      ) : null}
+      {options.map((option) => {
+        const active = selected === option.key
+        return (
+          <Pressable
+            key={option.key}
+            onPress={() => handleSelect(active ? null : option.key)}
+            style={[styles.chip, active && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        )
+      })}
+    </ScrollView>
+  )
+}

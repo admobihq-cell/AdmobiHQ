@@ -20,7 +20,7 @@ import {
 export function ContentOverviewSkeleton() {
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard icon={BookOpen} label="Blog posts" value="—" />
         <StatCard icon={HelpCircle} label="Help articles" value="—" />
         <StatCard icon={FileImage} label="Media library" value="—" />

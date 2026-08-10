@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ClerkProvider } from "@clerk/nextjs"
 import { Geist, Geist_Mono } from "next/font/google"
 import { cookies } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
@@ -10,6 +11,7 @@ import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
 import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
 import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
 import { cn } from "@workspace/ui/lib/utils"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 
 import "@workspace/ui/globals.css"
 
@@ -29,6 +31,25 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+function Providers({ children }: { children: React.ReactNode }) {
+  if (!isAuthEnabled()) {
+    return <>{children}</>
+  }
+
+  return (
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY}
+      signInUrl="/auth/login"
+      signUpUrl="/auth/signup"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
+      afterSignOutUrl="/auth/login"
+    >
+      {children}
+    </ClerkProvider>
+  )
+}
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
   const serverTheme = getServerThemeClass(cookieStore.get(THEME_STORAGE_KEY)?.value)
@@ -46,12 +67,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </TooltipProvider>
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </ThemeProvider>
+        </Providers>
         <Analytics />
       </body>
     </html>

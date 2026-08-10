@@ -15,10 +15,10 @@ import {
 } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
 import { SupportStatusBadge } from "@/components/support-status-badge"
 import { useDriverSession } from "@/lib/auth/driver-session"
 import {
@@ -201,11 +201,7 @@ export function SupportClient() {
           </h2>
 
           {loadingCases ? (
-            <div className="flex flex-col gap-2">
-              {[0, 1, 2].map((i) => (
-                <Skeleton key={i} className="h-16 rounded-lg" />
-              ))}
-            </div>
+            <CaseListSkeleton rows={3} />
           ) : cases.length === 0 ? (
             <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-border p-5">
               <Inbox className="size-4.5 text-muted-foreground" aria-hidden />

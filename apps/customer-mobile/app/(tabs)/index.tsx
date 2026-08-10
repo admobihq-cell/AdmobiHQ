@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/clerk-expo"
 import { useMemo } from "react"
 import { useRouter } from "expo-router"
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
@@ -6,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Campaigns, Eye, Map, Radio, TrendingUp } from "@/components/icons"
 import { StatCard } from "@/components/ui/stat-card"
 import { WalletPreviewCard } from "@/components/wallet/wallet-preview-card"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
 function getGreeting(): string {
@@ -14,6 +16,20 @@ function getGreeting(): string {
   if (hour < 18) return "Good afternoon"
   return "Good evening"
 }
+
+function useSignedInUser() {
+  return useUser()
+}
+
+function useNoUser() {
+  return { user: null }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern used elsewhere — useUser()
+ * must never run unless ClerkProvider is mounted.
+ */
+const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 const RECENT_ACTIVITY = [
   {
@@ -40,6 +56,7 @@ export default function OverviewScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { user } = useUserIfEnabled()
 
   const styles = useMemo(
     () =>
@@ -156,7 +173,9 @@ export default function OverviewScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
-        <Text style={styles.heroEyebrow}>{getGreeting()}</Text>
+        <Text style={styles.heroEyebrow}>
+          {user?.firstName ? `${getGreeting()}, ${user.firstName}` : getGreeting()}
+        </Text>
         <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
         <Text style={styles.heroBody}>
           Placeholder dashboard — live metrics and reporting will connect to

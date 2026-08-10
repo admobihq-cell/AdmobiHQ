@@ -31,7 +31,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
-import { driverHostLabel } from "@/lib/site-urls"
+import { NavUser } from "@/components/shell/nav-user"
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -105,10 +105,8 @@ export function AppShell({
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border p-3">
-          <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-            {driverHostLabel()}
-          </p>
+        <SidebarFooter className="border-t border-sidebar-border p-2">
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
