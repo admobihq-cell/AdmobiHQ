@@ -1,9 +1,11 @@
+import { useUser } from "@clerk/clerk-expo"
 import { Link } from "expo-router"
 import { Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Clock, Deliveries, HelpCircle, Routes, TrendingUp, Wallet } from "@/components/icons"
 import { StatCard } from "@/components/ui/stat-card"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { usePlatformFlags } from "@/lib/flags"
 import { EARNINGS_STATS, RECENT_ACTIVITY } from "@/lib/placeholder-data"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
@@ -16,10 +18,25 @@ function getGreeting(hour: number): string {
   return "Good evening"
 }
 
+function useSignedInUser() {
+  return useUser()
+}
+
+function useNoUser() {
+  return { user: null }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern used elsewhere — useUser()
+ * must never run unless ClerkProvider is mounted.
+ */
+const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
+
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const flags = usePlatformFlags()
+  const { user } = useUserIfEnabled()
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -105,7 +122,11 @@ export default function DashboardScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={{ gap: 4 }}>
-        <Text style={styles.eyebrow}>{getGreeting(new Date().getHours())}</Text>
+        <Text style={styles.eyebrow}>
+          {user?.firstName
+            ? `${getGreeting(new Date().getHours())}, ${user.firstName}`
+            : getGreeting(new Date().getHours())}
+        </Text>
         <Text style={styles.title}>Your day at a glance</Text>
         <Text style={styles.subtitle}>
           Placeholder dashboard — earnings, routes, and payouts will connect to

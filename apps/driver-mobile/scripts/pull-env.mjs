@@ -86,6 +86,7 @@ function writeMappedEnv(sourceVars, header) {
   const mappings = [
     ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
     ["EXPO_PUBLIC_DRIVER_URL", "NEXT_PUBLIC_DRIVER_URL"],
+    ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY"],
   ]
 
   const lines = [header]
@@ -117,7 +118,7 @@ try {
     sourceVars = parseEnv(readFileSync(fallbackPath, "utf8"))
     writeMappedEnv(
       sourceVars,
-      `# Generated from ${fallbackPath} — no Clerk; driver app only`,
+      `# Generated from ${fallbackPath} — no driver Clerk key in that file; run npm run env:pull -w driver-web first`,
     )
     console.log(
       `[driver-mobile env:pull] Infisical unavailable — mapped from ${fallbackPath}`,
@@ -132,7 +133,7 @@ try {
       },
       "# Local defaults — run npm run env:pull -w driver-web first when Infisical is available",
     )
-    console.log("[driver-mobile env:pull] Wrote local defaults (no Clerk)")
+    console.log("[driver-mobile env:pull] Wrote local defaults (no Clerk key)")
   }
 }
 
@@ -140,6 +141,7 @@ const mappings = [
   ["EXPO_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL"],
   ["EXPO_PUBLIC_DRIVER_URL", "NEXT_PUBLIC_DRIVER_URL"],
   ["EXPO_PUBLIC_SENTRY_DSN", "NEXT_PUBLIC_SENTRY_DSN"],
+  ["EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY"],
 ]
 
 let additions = ""

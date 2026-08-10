@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/clerk-expo"
 import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
@@ -10,20 +11,42 @@ import {
   HelpCircle,
   Person,
   RefreshCcw,
-  Shield,
   Wallet,
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
+import { UserAvatar } from "@/components/settings/user-avatar"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_APP_URL } from "@/lib/env"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
+
+function useSignedInUser() {
+  return useUser()
+}
+
+function useNoUser() {
+  return { user: null }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern used elsewhere — useUser()
+ * must never run unless ClerkProvider is mounted.
+ */
+const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 export default function SettingsScreen() {
   const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { user } = useUserIfEnabled()
   const [checkingUpdate, setCheckingUpdate] = useState(false)
+
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+  const heroTitle = fullName || (user ? "Add your name" : "Admobi Customer")
+  const heroSubtitle = user?.primaryEmailAddress?.emailAddress
+    ? user.primaryEmailAddress.emailAddress
+    : "Tap Profile & sign-in to manage your account"
 
   async function handleCheckForUpdates() {
     if (checkingUpdate) return
@@ -145,13 +168,13 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
-        <View style={styles.avatar}>
-          <Person color={colors.primary} size={36} />
-        </View>
+        <UserAvatar imageUrl={user?.imageUrl} name={fullName || undefined} size={56} onPrimary />
         <View style={styles.heroCopy}>
-          <Text style={styles.heroTitle}>Admobi Customer</Text>
-          <Text style={styles.heroSubtitle}>
-            Settings refreshed via OTA — tap any row to explore.
+          <Text style={styles.heroTitle} numberOfLines={1}>
+            {heroTitle}
+          </Text>
+          <Text style={styles.heroSubtitle} numberOfLines={1}>
+            {heroSubtitle}
           </Text>
         </View>
       </View>
@@ -162,15 +185,8 @@ export default function SettingsScreen() {
           <SettingsRow
             icon={Person}
             label="Profile & sign-in"
-            description="Name, email, and access"
+            description="Identity, sign-in methods, and sessions"
             onPress={() => router.push("/settings/account")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon={Shield}
-            label="Security"
-            description="Password and device sessions"
-            onPress={() => router.push("/settings/security")}
           />
         </View>
       </View>
