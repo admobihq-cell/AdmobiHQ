@@ -1,4 +1,6 @@
 import {
+  HelpCircle,
+  LayoutDashboard,
   Package,
   Route,
   Settings,
@@ -18,6 +20,12 @@ export type DriverNavItem = {
 export const driverNavItems: DriverNavItem[] = [
   {
     href: "/",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    description: "Your day at a glance — earnings, routes, and payouts in one place.",
+  },
+  {
+    href: "/earnings",
     label: "Earnings",
     icon: Wallet,
     description: "Pay from active screen hours and route bonuses will appear here.",
@@ -40,6 +48,12 @@ export const driverNavItems: DriverNavItem[] = [
     icon: Package,
     description: "Available and assigned delivery jobs will appear here.",
     flag: "deliveries",
+  },
+  {
+    href: "/settings/support",
+    label: "Support",
+    icon: HelpCircle,
+    description: "Get help and reach the Admobi team.",
   },
   {
     href: "/settings",
