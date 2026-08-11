@@ -1,18 +1,18 @@
 # Admobi — Product Roadmap: Actors, Implementation, Technology
 
-The actor-by-actor build plan for turning the current scaffolds into the working product. Product story and brand: [PRODUCT.md](../../PRODUCT.md) · How the repo is laid out: [ARCHITECTURE.md](./ARCHITECTURE.md) · API reference: [API.md](../api/API.md).
+The actor-by-actor build plan for turning the current scaffolds into the working product. Product story and brand: [PRODUCT.md](../../PRODUCT.md) · How the repo is laid out: [ARCHITECTURE.md](./ARCHITECTURE.md) · API reference: [API.md](../api/API.md) · Full auth reference (Clerk instances, secrets, orgs, roles): [AUTH.md](./AUTH.md).
 
 This document answers three questions per actor: **what they need**, **how it's implemented in this codebase**, and **which technologies are required** — split into what the stack already has and what must be added.
 
----
+**Update (2026-08-11):** sign-in/sign-up is now live at the app layer for every actor — advertiser, driver, and ops each have working Clerk email-code + Google sign-in (see [AUTH.md](./AUTH.md)). What's still missing is the *backend* half: no `/v1/customer/*` or `/v1/driver/*` API routes exist yet, and `apps/api` still verifies only the ops Clerk instance. The auth rows below and milestone 2 in §7 reflect this — treat "auth" in this doc as "protected API + role model," not "can a user log in."
 
 ## 1. The actors
 
 | Actor | Surface | Auth | Status today |
 |-------|---------|------|--------------|
-| **Advertiser** | `apps/customer-web` + `apps/customer-mobile` | Customer Clerk instance (new) | Shell exists; Map tab live on demo data; no login |
-| **Driver** | `apps/driver-mobile` (new Expo app) | Customer Clerk instance, SMS OTP | CRM record only (`Driver` model), no app |
-| **Ops staff** | `apps/ops` + `apps/ops-mobile` | Ops Clerk instance (`@admobihq.com`) | Fully working; extended, not rebuilt |
+| **Advertiser** | `apps/customer-web` + `apps/customer-mobile` | Customer Clerk instance — sign-in/session live, flag-gated ([AUTH.md](./AUTH.md)) | Shell exists; Map tab live on demo data; login works, but no protected API behind it yet |
+| **Driver** | `apps/driver-web` + `apps/driver-mobile` | Driver Clerk instance (own app, not shared with customer) — sign-in/session live, flag-gated | CRM record only (`Driver` model, no `clerk_user_id`); login works in the new driver apps, not yet linked to the CRM record |
+| **Ops staff** | `apps/ops` + `apps/ops-mobile` | Ops Clerk instance (`@admobihq.com`), organizations + role-based permissions | Fully working; extended, not rebuilt |
 | **Fleet partner** | None (deliberate) | — | CRM record only (`FleetPartner`); dashboard deferred |
 
 Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` with an opt-in capability flag. Delivery customers are **not a fifth actor** either — delivery booking lives inside the advertiser app as a tab, keeping one login and one billing entity per business.
@@ -56,7 +56,7 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 | Need | Already in stack | To add |
 |------|------------------|--------|
 | App shell, map, forms | Next.js 16, mapcn/MapLibre, react-hook-form + zod, `@workspace/ui` | — |
-| Auth | — | **Second Clerk instance** for customers (ops instance is domain-locked) |
+| Auth | Customer Clerk instance, sign-in/session live on web + mobile ([AUTH.md](./AUTH.md)) | `CustomerUser` role model + `/v1/customer/*` routes with customer-JWT verification in `apps/api` |
 | Creative upload | Cloudinary | Direct signed-upload flow from browser |
 | Payments/invoicing | Resend (email) | **Pesapal** (API 3.0) for self-serve top-ups — M-Pesa, Airtel Money, and cards through one hosted checkout; manual invoice + bank transfer for corporates first |
 | Live map data | `@workspace/geo` fixtures | Telemetry pipeline (§5) — until then, poll the same endpoints backed by fixtures |
@@ -83,7 +83,7 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 - `Payout` — `driver_id`, amount, status, M-Pesa transaction ref.
 - `Driver.delivers` boolean — the delivery opt-in flag (ops-editable now, driver-editable later).
 
-**App:** new `apps/driver-mobile` Expo app, cloned from the `apps/ops-mobile` / `apps/customer-mobile` patterns (Expo, EAS builds, OTA updates, push tokens — all documented in [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)). Drivers are phone-first users: Clerk SMS OTP on the customer instance, with the Clerk user linked to the existing `Driver` record by verified phone number.
+**App:** `apps/driver-web` and `apps/driver-mobile` (Expo, EAS builds, OTA updates, push tokens — all documented in [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)) now exist with working sign-in against their own driver Clerk instance (email + Google — the original SMS-OTP-on-the-customer-instance plan was dropped; see [AUTH.md](./AUTH.md) §2). Still open: linking a signed-in driver-app Clerk user to the existing CRM `Driver` record — the model has no `clerk_user_id` today, so this needs either a new column matched by verified phone/email or a link table.
 
 **API:** `GET /v1/driver/earnings`, `GET /v1/driver/routes`, `GET /v1/driver/payouts`, `PATCH /v1/driver/profile` — driver-scoped JWT auth.
 
@@ -91,8 +91,8 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 
 | Need | Already in stack | To add |
 |------|------------------|--------|
-| Mobile app | Expo + EAS + OTA pipeline, `@workspace/mobile-ui`, Sentry | New app folder only |
-| Auth | — | Clerk SMS OTP (same customer instance, driver role) |
+| Mobile app | Expo + EAS + OTA pipeline, `@workspace/mobile-ui`, Sentry, `apps/driver-mobile` scaffold | — |
+| Auth | Driver Clerk instance, sign-in/session live on web + mobile ([AUTH.md](./AUTH.md)) | `clerk_user_id` link from `Driver` CRM record; `/v1/driver/*` routes with driver-JWT verification in `apps/api` |
 | Earnings data | — | Telemetry pipeline (§5) + aggregation cron |
 | Payouts | — | Disbursements: manual M-Pesa first; automate via Pesapal's payout product if it fits, else **Daraja B2C** |
 
@@ -134,7 +134,7 @@ The single biggest unbuilt system, and the honest source behind **two** screens 
 
 ## 6. Cross-cutting technology decisions
 
-**Auth — three Clerk instances, one verifier per protected route.** *(Revised from the original two-instance plan — see [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk) for why.)* The ops instance stays locked to `@admobihq.com`. Customer and driver each get their **own** Clerk application (not shared) — both email/Google, no SMS OTP. [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) still grows multi-issuer JWT verification once there are protected routes to guard: ops tokens gate `/v1/*` admin routes as today; customer tokens gate `/v1/customer/*`; driver tokens gate `/v1/driver/*`; device keys gate `/v1/telemetry/*`.
+**Auth — three Clerk instances, one verifier per protected route.** *(Revised from the original two-instance plan — see [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk) for why.)* The ops instance stays locked to `@admobihq.com`. Customer and driver each get their **own** Clerk application (not shared) — both email/Google, no SMS OTP. **The sign-in/session half of this is now built and live** on all six apps (ops, ops-mobile, customer-web, customer-mobile, driver-web, driver-mobile) — see [AUTH.md](./AUTH.md) for the full reference: instance-per-actor, secrets layout, the `AUTH_ENABLED` feature flag gating customer/driver, and how ops's Clerk-Organizations + database-backed `OpsRole` permission model works today. What's still open: [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) still only verifies the **ops** instance — it needs to grow multi-issuer JWT verification once there are protected routes to guard: customer tokens gate `/v1/customer/*`; driver tokens gate `/v1/driver/*`; device keys gate `/v1/telemetry/*`. Ops tokens already gate `/v1/*` admin routes today, with Clerk-org role (`admin`/`member`) plus a Prisma-backed `OpsRole` table for per-section permissions.
 
 **Payments — Pesapal for collections.** One aggregator covers advertiser payments end to end: Pesapal API 3.0's hosted checkout (redirect or iframe) takes M-Pesa, Airtel Money, and Visa/Mastercard in a single integration, with IPN callbacks confirming payment server-side — so no separate card-processor decision is needed. Implementation shape: `POST /v1/customer/payments` submits a Pesapal order and returns the redirect URL; an IPN handler route verifies the transaction status and credits the customer's wallet/invoice, writing an audit event like every other mutation. Corporate advertisers still get manual invoices (Resend email + bank transfer + ops marks paid) before any of that is automated. **Driver payouts are the one gap Pesapal may not cover** — it is collections-focused, so payouts start manual (ops sends M-Pesa, records the ref on the `Payout` row) and automate later via Pesapal's disbursement product if it fits, otherwise Safaricom Daraja B2C.
 
@@ -149,7 +149,7 @@ The single biggest unbuilt system, and the honest source behind **two** screens 
 | # | Milestone | Blocks | New tech |
 |---|-----------|--------|----------|
 | 1 | **Campaign model + Lead → Customer conversion** — schema + ops CRUD | Everything below | None |
-| 2 | **Customer auth** — second Clerk instance, multi-issuer verify in API, login on customer-web | Any self-serve behaviour | Clerk instance |
+| 2 | **Customer + driver auth backend** — login itself now works ([AUTH.md](./AUTH.md)); remaining: multi-issuer verify in `apps/api`, `CustomerUser`/driver role model, `/v1/customer/*` + `/v1/driver/*` routes | Any self-serve behaviour | None (Clerk instances already provisioned) |
 | 3 | **Zone inventory + pricing** — `Zone` table from geo fixtures, flat-rate pricing, ops management UI | Booking | None |
 | 4 | **Booking flow** — request-and-approve (not instant checkout — matches how OOH is bought), creative upload, approval queue | Revenue | Cloudinary signed upload |
 | 5 | **Telemetry ingestion** — device pings, aggregation cron, live map + real spend numbers | Honest advertiser map, driver app | Device keys; possibly Android fallback app |

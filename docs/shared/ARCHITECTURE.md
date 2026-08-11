@@ -4,7 +4,7 @@ How the codebase is laid out, what each part does, and how to extend it without 
 
 ## 1. What this is
 
-Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../../PRODUCT.md). The visual system lives in [DESIGN.md](../../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer web app**, **driver web app**, **ops mobile**, **customer mobile**, and **driver mobile**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md). Actor-by-actor product roadmap (what each app becomes, and why): [ROADMAP.md](./ROADMAP.md), [DRIVER-APP.md](../driver/DRIVER-APP.md).
+Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../../PRODUCT.md). The visual system lives in [DESIGN.md](../../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer web app**, **driver web app**, **ops mobile**, **customer mobile**, and **driver mobile**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md). Auth, Clerk instances, organizations and roles: [AUTH.md](./AUTH.md). Actor-by-actor product roadmap (what each app becomes, and why): [ROADMAP.md](./ROADMAP.md), [DRIVER-APP.md](../driver/DRIVER-APP.md).
 
 ## 2. Stack at a glance
 
@@ -31,8 +31,8 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 │   ├── customer-web/                Customer app scaffold (:3002)
 │   ├── driver-web/                  Driver app scaffold (:3004)
 │   ├── ops-mobile/                  Expo ops mobile app
-│   ├── customer-mobile/             Expo customer app (no Clerk)
-│   └── driver-mobile/               Expo driver app (no Clerk yet — dormant auth seam)
+│   ├── customer-mobile/             Expo customer app (Clerk, customer instance)
+│   └── driver-mobile/               Expo driver app (Clerk, driver instance)
 ├── packages/
 │   ├── ui/                          Shared UI primitives + design tokens + mapcn
 │   ├── geo/                         Nairobi map fixtures (corridors, coverage, plays)
@@ -65,8 +65,8 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 | **App** | `apps/customer-web` | Customer product at `app.admobihq.com` — scaffold + Map |
 | **Driver web** | `apps/driver-web` | Driver product at `driver.admobihq.com` — scaffold: Earnings, Routes, Payouts, flag-gated Deliveries |
 | **Ops mobile** | `apps/ops-mobile` | Expo app for ops staff — calls API with Clerk JWT. See [MOBILE-OPS.md](../ops/MOBILE-OPS.md) |
-| **Customer mobile** | `apps/customer-mobile` | Expo customer app — no Clerk; Map tab with MapLibre. See [APP-MOBILE.md](../customer/APP-MOBILE.md) |
-| **Driver mobile** | `apps/driver-mobile` | Expo driver app — no Clerk yet; same tab set as driver-web. See [DRIVER-APP.md](../driver/DRIVER-APP.md) |
+| **Customer mobile** | `apps/customer-mobile` | Expo customer app — Clerk sign-in live (flag-gated); Map tab with MapLibre. See [APP-MOBILE.md](../customer/APP-MOBILE.md) |
+| **Driver mobile** | `apps/driver-mobile` | Expo driver app — Clerk sign-in live (flag-gated); same tab set as driver-web. See [DRIVER-APP.md](../driver/DRIVER-APP.md) |
 
 See [API.md](../api/API.md), [OPS-ADMIN.md](../ops/OPS-ADMIN.md), [APP.md](../customer/APP.md), [APP-MOBILE.md](../customer/APP-MOBILE.md), [DRIVER-APP.md](../driver/DRIVER-APP.md), [MOBILE-OPS.md](../ops/MOBILE-OPS.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
@@ -306,7 +306,7 @@ Key cross-app variables:
 | `NEXT_PUBLIC_API_URL` | web, api, ops, customer-web (build-time) — business API origin |
 | `EXPO_PUBLIC_API_URL` | ops-mobile (mapped from `NEXT_PUBLIC_API_URL` on env pull) |
 | `DATABASE_URL` | web, api, ops (ops uses direct Prisma for server-rendered stats) |
-| `CLERK_*` | api, ops, ops-mobile |
+| `CLERK_*` | api, ops, ops-mobile, customer-web, customer-mobile, driver-web, driver-mobile (three separate instances — see [AUTH.md](./AUTH.md)) |
 | `PAYLOAD_SECRET` | web only |
 | `RESEND_*`, `REDIS_URL` | api only (form emails) |
 

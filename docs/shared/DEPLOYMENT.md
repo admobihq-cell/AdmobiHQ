@@ -239,6 +239,8 @@ Use the exact records shown in Vercel → Domains for your project.
 
 ## Clerk
 
+Deploy-time config only (allowed origins, key types per environment). For sign-in flows, the `AUTH_ENABLED` feature flag, organizations, and roles/permissions, see [AUTH.md](./AUTH.md).
+
 **Three independent Clerk applications** — no shared session, no satellite domains between them. This is a deliberate departure from the "two Clerk instances" plan in [ROADMAP.md](./ROADMAP.md) (customer + driver were originally meant to share one instance; splitting them removed a domain-primary/satellite conflict and all role-mismatch handling). Phone/SMS is also dropped — customer and driver both use email + optional Google.
 
 ### Ops (staff)

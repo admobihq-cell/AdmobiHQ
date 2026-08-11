@@ -2,7 +2,7 @@
 
 Expo customer product twin of the web app at **`app.admobihq.com`**.
 
-**No Clerk** — this scaffold has no authentication. Ops staff mobile is at [`apps/ops-mobile`](../../apps/ops-mobile) (Clerk).
+**Clerk sign-in is live** (email code + Google, same customer instance as `apps/customer-web`), gated by `EXPO_PUBLIC_AUTH_ENABLED`. Full reference: [AUTH.md](../shared/AUTH.md). Ops staff mobile is at [`apps/ops-mobile`](../../apps/ops-mobile) (separate, ops Clerk instance, always on).
 
 **Builds, APKs, OTA:** [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
@@ -51,7 +51,7 @@ No `CLERK_*` keys.
 | Scheme | `admobihq-app` |
 | EAS slug | `admobihq-app` |
 
-No login means no stable user ID from auth — instead, `lib/auth/use-customer-session.ts` generates and persists a random `anonymousDeviceId` (via `getOrCreateDeviceId()`) on first launch. This same ID backs both the support-case identity-token flow (see [API.md](../api/API.md#support-case-identity-token)) and push-token registration (`lib/push-registration.ts` sends it alongside the Expo push token), so a support case opened from a device can eventually be tied back to that device's push notifications.
+`lib/auth/use-customer-session.ts` is a separate, anonymous-only session hook — not yet wired to the real Clerk sign-in state above, even though `ClerkProvider` is mounted. It generates and persists a random `anonymousDeviceId` (via `getOrCreateDeviceId()`) on first launch. This same ID backs both the support-case identity-token flow (see [API.md](../api/API.md#support-case-identity-token)) and push-token registration (`lib/push-registration.ts` sends it alongside the Expo push token), so a support case opened from a device can eventually be tied back to that device's push notifications.
 
 ---
 

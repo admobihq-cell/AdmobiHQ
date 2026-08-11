@@ -18,9 +18,9 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 - Sidebar app shell (Overview, Campaigns, **Map**, Reports, Settings)
 - Overview / Campaigns / Reports / Settings show a **Coming soon** empty state
 - **Map** (`/map`) — mapcn (MapLibre) with booked corridors, coverage zones, and proof-of-play clusters (demo Nairobi data via `@workspace/geo`)
-- **No authentication** — login ships in a later phase
+- **Authentication** — Clerk sign-in/sign-up now live (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED`; the rest of the app (Campaigns, Reports, Settings) is still not wired to a protected backend API. Full reference: [AUTH.md](../shared/AUTH.md)
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
-- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/customer-mobile`, no Clerk). Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
+- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/customer-mobile`, same Clerk instance). Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
 ## Secrets (Infisical)
 
@@ -30,8 +30,10 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 | `NEXT_PUBLIC_WEB_URL` | Optional | Link back to marketing site |
 | `NEXT_PUBLIC_OPS_URL` | Optional | Cross-link to ops console |
 | `NEXT_PUBLIC_API_URL` | Optional | For future product features calling the business API |
+| `NEXT_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts at all — see [AUTH.md](../shared/AUTH.md) §4 |
+| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` | Required when auth is enabled | Customer Clerk instance — see [AUTH.md](../shared/AUTH.md) §4 |
 
-No Clerk or database vars until the product phase.
+No database vars until the product phase — auth is the one exception, see [AUTH.md](../shared/AUTH.md).
 
 ### Pull locally
 

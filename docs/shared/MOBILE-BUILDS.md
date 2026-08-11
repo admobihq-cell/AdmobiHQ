@@ -316,7 +316,7 @@ There is no local option — iOS builds require macOS + Xcode, so these always r
 | Command | Notes |
 |---------|--------|
 | `npm run env:pull -w ops-mobile` | Maps `EXPO_PUBLIC_*` + Clerk for ops |
-| `npm run env:pull -w customer-mobile` | Maps `EXPO_PUBLIC_*` (no Clerk) |
+| `npm run env:pull -w customer-mobile` | Maps `EXPO_PUBLIC_*`, incl. Clerk keys (see [AUTH.md](./AUTH.md)) |
 
 ---
 

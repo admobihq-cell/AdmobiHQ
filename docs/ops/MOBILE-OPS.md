@@ -2,7 +2,7 @@
 
 Expo app for **Admobi ops staff** — Clerk auth, calls the business API with session JWT.
 
-**Customer mobile** (no Clerk): [APP-MOBILE.md](../customer/APP-MOBILE.md)
+**Customer mobile** (own Clerk instance, see [AUTH.md](../shared/AUTH.md)): [APP-MOBILE.md](../customer/APP-MOBILE.md)
 
 **Builds, APKs, OTA:** [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
