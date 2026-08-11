@@ -124,8 +124,8 @@ npm run env:pull -w ops          # apps/ops/.env.local
 npm run env:pull -w customer-web          # apps/customer-web/.env.local
 npm run env:pull -w driver-web            # apps/driver-web/.env.local
 npm run env:pull -w ops-mobile       # apps/ops-mobile/.env.local (maps EXPO_PUBLIC_*)
-npm run env:pull -w customer-mobile   # apps/customer-mobile/.env.local (no Clerk)
-npm run env:pull -w driver-mobile     # apps/driver-mobile/.env.local (no Clerk yet)
+npm run env:pull -w customer-mobile   # apps/customer-mobile/.env.local (customer Clerk instance)
+npm run env:pull -w driver-mobile     # apps/driver-mobile/.env.local (driver Clerk instance)
 npm run env:pull:staging -w api  # staging env
 # or all workspaces:
 npm run env:pull
@@ -292,12 +292,12 @@ All `npm run … -w web` commands execute in `apps/web` and load `.env.local` wh
 |---------|-------------|
 | `npm run env:pull -w web` | First setup, after Infisical secret changes, new machine |
 | `npm run env:pull -w ops` | Same, for ops console secrets |
-| `npm run env:pull -w customer-web` | Same, for customer app URL vars |
-| `npm run env:pull -w driver-web` | Same, for driver app URL vars |
+| `npm run env:pull -w customer-web` | Same, for customer app URL + Clerk vars (see [AUTH.md](./AUTH.md)) |
+| `npm run env:pull -w driver-web` | Same, for driver app URL + Clerk vars (see [AUTH.md](./AUTH.md)) |
 | `npm run env:pull -w api` | Same, for business API secrets |
 | `npm run env:pull -w ops-mobile` | Maps `EXPO_PUBLIC_*` for Expo ops |
-| `npm run env:pull -w customer-mobile` | Maps `EXPO_PUBLIC_*` for customer Expo (no Clerk) |
-| `npm run env:pull -w driver-mobile` | Maps `EXPO_PUBLIC_*` for driver Expo (no Clerk yet) |
+| `npm run env:pull -w customer-mobile` | Maps `EXPO_PUBLIC_*` for customer Expo, incl. Clerk keys |
+| `npm run env:pull -w driver-mobile` | Maps `EXPO_PUBLIC_*` for driver Expo, incl. Clerk keys |
 | `npm run env:pull` | Pull all workspaces in one command |
 | `npm run env:check -w api` | Verify Clerk + DATABASE_URL + API vars |
 | `npm run env:check -w web` | Debug “DATABASE_URL not set”, before migrate/seed |
@@ -344,8 +344,8 @@ Full guide: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md) — local dev, debug APKs, EA
 | `npm run dev -w driver-mobile` | Daily driver mobile dev (Metro :8083) |
 | `npm run dev:all` | Web stack + all three Expo apps (Turbo TUI) |
 | `npm run env:pull -w ops-mobile` | Clerk + API vars for ops Expo |
-| `npm run env:pull -w customer-mobile` | API vars for customer Expo |
-| `npm run env:pull -w driver-mobile` | API vars for driver Expo (no Clerk yet) |
+| `npm run env:pull -w customer-mobile` | Clerk + API vars for customer Expo |
+| `npm run env:pull -w driver-mobile` | Clerk + API vars for driver Expo |
 | `npm run mobile:assets:sync` | Regenerate icons/splash from `assets/brand/` (all three Expo apps) |
 | `npm run mobile:apk:local:ops` | Local debug APK for ops (needs Metro — dev only) |
 | `npm run mobile:apk:local:customer` | Local debug APK for customer (needs Metro — dev only) |
