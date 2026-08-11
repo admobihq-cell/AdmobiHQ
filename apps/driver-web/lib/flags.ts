@@ -11,6 +11,9 @@ export async function getPlatformFlags(): Promise<Set<string>> {
   try {
     const res = await fetch(`${apiPublicUrl()}/v1/public/config`, {
       next: { revalidate: 60 },
+      // This await blocks the (shell) layout's first paint for every route —
+      // bound it so a slow/cold API can't stall the whole app shell.
+      signal: AbortSignal.timeout(3000),
     })
     if (!res.ok) return new Set()
 
