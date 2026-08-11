@@ -56,6 +56,7 @@ import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
 import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 import { PageHero } from "@/components/ui/page-hero"
+import { TablePagination } from "@/components/ui/table-pagination"
 
 // Radix's Select forbids an item value of "" (reserved to mean "no
 // selection"), so "all statuses" needs a sentinel — statusFilter itself
@@ -600,30 +601,13 @@ export function EntityPage<T extends { id: number }>({
         </Table>
       </div>
 
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {data.total} total · page {data.page} of {data.totalPages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+      {data && (
+        <TablePagination
+          page={data.page}
+          totalPages={data.totalPages}
+          total={data.total}
+          onPageChange={setPage}
+        />
       )}
 
       {renderForm({

@@ -42,6 +42,7 @@ import {
 } from "@workspace/ui/components/tooltip"
 
 import { PageHero } from "@/components/ui/page-hero"
+import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -84,8 +85,8 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const refresh = async () => {
-    const result = await client.notifications.list({ page: 1, pageSize: 20 })
+  const refresh = async (targetPage = 1) => {
+    const result = await client.notifications.list({ page: targetPage, pageSize: 20 })
     setData(result)
   }
 
@@ -296,6 +297,13 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={data.page}
+        totalPages={data.totalPages}
+        total={data.total}
+        onPageChange={(nextPage) => void refresh(nextPage)}
+      />
 
       <AnnouncementFormDialog
         open={formOpen}
