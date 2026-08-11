@@ -20,3 +20,7 @@ export const entityKeys = {
 export const statsKeys = {
   stats: (range: DateRangeKey) => ["stats", range] as const,
 }
+
+export const meKeys = {
+  me: () => ["me"] as const,
+}

@@ -8,6 +8,7 @@ import { ActivityBellButton } from "@/components/activity/activity-bell-button"
 import { ChevronLeft } from "@/components/icons"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { getPrimaryEmail } from "@/lib/auth"
+import { useOpsAccess } from "@/lib/ops-client"
 import { usePageHeaderState } from "@/lib/page-header"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
@@ -17,6 +18,8 @@ export function AppBar({ onAvatarPress }: { onAvatarPress: () => void }) {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { user } = useUser()
+  const { role, permissions } = useOpsAccess()
+  const canSeeActivity = role === "admin" || permissions.includes("activity")
   const { title, showBack, backHref } = usePageHeaderState()
 
   const email = getPrimaryEmail(
@@ -80,7 +83,7 @@ export function AppBar({ onAvatarPress }: { onAvatarPress: () => void }) {
         </Text>
       </View>
       <View style={styles.actions}>
-        <ActivityBellButton />
+        {canSeeActivity ? <ActivityBellButton /> : null}
         <ThemeToggleButton />
         <AvatarInitials
           name={displayName}

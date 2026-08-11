@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useSignUp } from "@clerk/nextjs/legacy"
-import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
+import { useSignUp } from "@clerk/nextjs"
 
 import { AdmobiEmailField } from "@/components/admobi-email-field"
 import { isAdmobiEmail } from "@/lib/allowed-email"
@@ -11,7 +10,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 export function AdmobiOtpSignUpForm() {
-  const { isLoaded, signUp, setActive } = useSignUp()
+  const { signUp } = useSignUp()
 
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -24,75 +23,63 @@ export function AdmobiOtpSignUpForm() {
 
   async function handleSendCode(event: React.FormEvent) {
     event.preventDefault()
-    if (!isLoaded || !signUp || !emailAllowed) {
+    if (!signUp || !emailAllowed) {
       return
     }
 
     setSubmitting(true)
     setError(null)
 
-    try {
-      await signUp.create({
-        emailAddress: email.trim(),
-      })
-      await signUp.prepareEmailAddressVerification({
-        strategy: "email_code",
-      })
-      setVerifying(true)
-    } catch (err) {
-      if (isClerkAPIResponseError(err)) {
-        const clerkError = err.errors[0]
-        setError(
-          clerkError?.longMessage ??
-            clerkError?.message ??
-            "Could not send verification code.",
-        )
-      } else {
-        setError("Could not send verification code.")
-      }
-    } finally {
+    const { error: createError } = await signUp.create({
+      emailAddress: email.trim(),
+    })
+    if (createError) {
+      setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
       setSubmitting(false)
+      return
     }
+
+    const { error: sendError } = await signUp.verifications.sendEmailCode()
+    if (sendError) {
+      setError(sendError.longMessage ?? sendError.message ?? "Could not send verification code.")
+      setSubmitting(false)
+      return
+    }
+
+    setVerifying(true)
+    setSubmitting(false)
   }
 
   async function handleVerifyCode(event: React.FormEvent) {
     event.preventDefault()
-    if (!isLoaded || !signUp || !code.trim()) {
+    if (!signUp || !code.trim()) {
       return
     }
 
     setSubmitting(true)
     setError(null)
 
-    try {
-      const attempt = await signUp.attemptEmailAddressVerification({
-        code: code.trim(),
-      })
+    const { error: verifyError } = await signUp.verifications.verifyEmailCode({ code: code.trim() })
+    if (verifyError) {
+      setError(verifyError.longMessage ?? verifyError.message ?? "Invalid verification code.")
+      setSubmitting(false)
+      return
+    }
 
-      if (attempt.status === "complete") {
-        await setActive({ session: attempt.createdSessionId })
+    if (signUp.status === "complete") {
+      await signUp.finalize({
         // Hard navigation, not router.push — the App Router's client cache can
         // otherwise serve a stale pre-auth response for "/" or "/home" after
         // repeated sign-in attempts in the same tab.
-        window.location.href = "/home"
-        return
-      }
-
-      setError("Sign-up could not be completed. Try again.")
-    } catch (err) {
-      if (isClerkAPIResponseError(err)) {
-        const clerkError = err.errors[0]
-        setError(
-          clerkError?.longMessage ??
-            clerkError?.message ??
-            "Invalid verification code.",
-        )
-      } else {
-        setError("Invalid verification code.")
-      }
-    } finally {
-      setSubmitting(false)
+        navigate: () => {
+          window.location.href = "/home"
+        },
+      })
+      return
     }
+
+    setError("Sign-up could not be completed. Try again.")
+    setSubmitting(false)
   }
 
   if (verifying) {

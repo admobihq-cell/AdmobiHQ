@@ -1,8 +1,11 @@
 import { useMemo, useRef } from "react"
 import { useAuth } from "@clerk/clerk-expo"
+import { useQuery } from "@tanstack/react-query"
 import { createOpsClient, OpsApiError, type OpsClient } from "@workspace/ops-api-client"
+import type { OpsPermission, OpsRole } from "@workspace/ops-contracts"
 
 import { API_URL } from "@/lib/env"
+import { meKeys } from "@/lib/query-keys"
 
 const TOKEN_RETRY_MS = [0, 150, 300, 600, 1000]
 
@@ -77,6 +80,30 @@ export function useOpsClient(): OpsClient {
       }),
     [],
   )
+}
+
+/**
+ * The signed-in member's role + section permissions, for filtering nav to
+ * what apps/ops (web) already gates via ops-shell.tsx's canSee(). Defaults
+ * to "member" / no permissions while loading, so gated destinations stay
+ * hidden until we actually know rather than flashing then disappearing.
+ */
+export function useOpsAccess(): { role: OpsRole; permissions: OpsPermission[]; loading: boolean } {
+  const authReady = useOpsAuthReady()
+  const client = useOpsClient()
+
+  const query = useQuery({
+    queryKey: meKeys.me(),
+    queryFn: () => client.me.get(),
+    enabled: authReady,
+    staleTime: 60_000,
+  })
+
+  return {
+    role: query.data?.role ?? "member",
+    permissions: query.data?.permissions ?? [],
+    loading: authReady && query.isPending,
+  }
 }
 
 export { API_URL }
