@@ -113,18 +113,6 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       {/* Contact shadow beneath the car */}
       <ellipse cx={365} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
 
-      {/* Car: grounds the unit as mounted on a vehicle, layered in front of the skyline */}
-      <image
-        href="/art/suv-hero-2.png"
-        x={210}
-        y={280}
-        width={310}
-        height={120}
-        preserveAspectRatio="xMidYMid meet"
-        className="anim-rise"
-        style={{ ["--rise-delay" as string]: `50ms` }}
-      />
-
       {/* Centerpiece: stylized taxi-top LED unit, lit up like an active screen at night */}
       <g
         className="anim-rise"
