@@ -1,16 +1,24 @@
 import Link from "next/link"
 import { Suspense } from "react"
+import { redirect } from "next/navigation"
 import { ExternalLink } from "lucide-react"
 
 import { ContentOverview } from "@/components/content-overview"
 import { ContentOverviewSkeleton } from "@/components/content-overview-skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import { cmsAdminLabel, cmsAdminUrl } from "@/lib/site-urls"
+import { requireOpsPermission } from "@/lib/auth"
 import { Button } from "@workspace/ui/components/button"
 
 export const metadata = { title: "Content" }
 
-export default function ContentPage() {
+export default async function ContentPage() {
+  try {
+    await requireOpsPermission("content")
+  } catch {
+    redirect("/home")
+  }
+
   const adminUrl = cmsAdminUrl()
   const adminLabel = cmsAdminLabel()
 

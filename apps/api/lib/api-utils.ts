@@ -6,10 +6,11 @@ import {
   paginatedResponse,
   paginationSchema,
   parseId,
+  type OpsPermission,
   type PaginationParams,
 } from "@workspace/ops-contracts"
 
-import { requireOpsUser } from "@/lib/auth"
+import { requireOpsAdmin, requireOpsPermission, requireOpsUser } from "@/lib/auth"
 
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }
@@ -26,6 +27,36 @@ export async function requireOpsAccess(): Promise<
 > {
   try {
     const access = await requireOpsUser()
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Same as requireOpsAccess, but the caller must also hold the "admin" ops role. */
+export async function requireOpsAdminAccess(): Promise<
+  | { access: Awaited<ReturnType<typeof requireOpsAdmin>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireOpsAdmin()
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Same as requireOpsAccess, but the caller must also hold the given section permission. */
+export async function requireOpsPermissionAccess(
+  permission: OpsPermission,
+): Promise<
+  | { access: Awaited<ReturnType<typeof requireOpsPermission>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireOpsPermission(permission)
     return { access }
   } catch (e) {
     if (e instanceof Response) return { error: e as NextResponse }

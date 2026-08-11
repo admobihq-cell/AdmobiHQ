@@ -100,7 +100,7 @@ export function AdmobiOtpSignUpForm() {
     return (
       <form
         onSubmit={handleVerifyCode}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-xl border bg-card p-6"
+        className="flex w-full flex-col gap-4"
       >
         <div className="space-y-1 text-center">
           <h2 className="text-base font-semibold">Verify your email</h2>
@@ -147,7 +147,7 @@ export function AdmobiOtpSignUpForm() {
   return (
     <form
       onSubmit={handleSendCode}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-xl border bg-card p-6"
+      className="flex w-full flex-col gap-4"
     >
       <AdmobiEmailField
         id="sign-up-email"
@@ -155,6 +155,11 @@ export function AdmobiOtpSignUpForm() {
         onChange={setEmail}
         disabled={submitting}
       />
+
+      <p className="text-xs text-muted-foreground">
+        Creating an account doesn&apos;t grant Ops Console access — an admin adds you to the
+        team from Team → Invite.
+      </p>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

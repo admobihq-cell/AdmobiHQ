@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { SignOutButton } from "@clerk/nextjs"
 import { ShieldAlert } from "lucide-react"
 
@@ -45,9 +44,6 @@ export function OpsAccessDenied({ email }: OpsAccessDeniedProps) {
             <SignOutButton redirectUrl="/sign-in">
               <Button className="sm:min-w-52">Sign out and try again</Button>
             </SignOutButton>
-            <Button variant="outline" asChild className="sm:min-w-44">
-              <Link href="/">Back to entrance</Link>
-            </Button>
           </div>
         </div>
       </div>

@@ -16,5 +16,6 @@ export async function POST(req: Request) {
       },
     },
     "media_kit",
+    "media_kit",
   )
 }

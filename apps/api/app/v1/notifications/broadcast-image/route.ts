@@ -1,13 +1,13 @@
 import { put } from "@vercel/blob"
 import { NextResponse } from "next/server"
 
-import { jsonError, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, requireOpsPermissionAccess } from "@/lib/api-utils"
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 const MAX_BYTES = 5 * 1024 * 1024
 
 export async function POST(req: Request) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("announcements")
   if (auth.error) return auth.error
 
   const form = await req.formData()
