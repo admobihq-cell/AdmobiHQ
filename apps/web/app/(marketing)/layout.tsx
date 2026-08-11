@@ -35,6 +35,11 @@ const fontMono = Geist_Mono({
   fallback: ["courier new", "monospace"],
 })
 
+// Without this, the layout's uncached getRecentBlogPosts() call below forces
+// every page under (marketing) — home, pricing, drivers, etc. — to render
+// dynamically on every request instead of being served from the ISR cache.
+export const revalidate = 3600
+
 const HOME_TITLE = "Taxi-top LED advertising in Nairobi | Admobi"
 const HOME_DESCRIPTION =
   "Geotargeted LED taxi-top advertising in Kenyan cities. Launch campaigns with geo and schedule control, from one-day bursts to sustained books."
