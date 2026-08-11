@@ -31,6 +31,7 @@ import {
 } from "@workspace/ui/components/table"
 
 import { PageHero } from "@/components/ui/page-hero"
+import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime, truncate } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -202,29 +203,12 @@ export function ActivityView() {
       </div>
 
       {data && data.totalPages > 1 ? (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {data.total} total · page {data.page} of {data.totalPages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <TablePagination
+          page={data.page}
+          totalPages={data.totalPages}
+          total={data.total}
+          onPageChange={setPage}
+        />
       ) : data && data.total > 0 ? (
         <p className="text-xs text-muted-foreground">
           Showing {data.items.length} of {data.total} events
