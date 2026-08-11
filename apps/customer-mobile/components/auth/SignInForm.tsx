@@ -7,10 +7,26 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { AuthLegalLine } from "@/components/auth/AuthLegalLine"
 import { AuthLogo } from "@/components/auth/AuthLogo"
 import { GoogleButton } from "@/components/auth/GoogleButton"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { radius, spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
 
 const CODE_LENGTH = 6
+
+function useDisabledSignIn() {
+  return { isLoaded: false, signIn: undefined, setActive: undefined }
+}
+
+function useDisabledSSO() {
+  return { startSSOFlow: async () => ({ createdSessionId: undefined, setActive: undefined }) }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern used elsewhere in this
+ * app — useSignIn()/useSSO() must never run unless ClerkProvider is mounted.
+ */
+const useSignInIfEnabled = isAuthEnabled() ? useSignIn : useDisabledSignIn
+const useSSOIfEnabled = isAuthEnabled() ? useSSO : useDisabledSSO
 
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
@@ -22,8 +38,8 @@ function clerkErrorMessage(err: unknown, fallback: string) {
 }
 
 export function SignInForm() {
-  const { isLoaded, signIn, setActive } = useSignIn()
-  const { startSSOFlow } = useSSO()
+  const { isLoaded, signIn, setActive } = useSignInIfEnabled()
+  const { startSSOFlow } = useSSOIfEnabled()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
