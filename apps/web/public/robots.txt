@@ -30,6 +30,7 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /admin/
 
 # AI Search & Answer Engines
 User-agent: GPTBot
@@ -71,6 +72,7 @@ Allow: /
 # Block all bots from API routes
 User-agent: *
 Disallow: /api/
+Disallow: /admin/
 
 
 
