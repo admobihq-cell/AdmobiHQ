@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { useSignIn } from "@clerk/nextjs/legacy"
+import { useSignIn } from "@clerk/nextjs"
 
 import { AuthLegalLine } from "@workspace/ui/components/auth-legal-line"
 import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
@@ -20,8 +20,8 @@ import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-driver.jpg"
 
-function useDisabledSignIn() {
-  return { isLoaded: false, signIn: undefined, setActive: undefined }
+function useDisabledSignIn(): { signIn: null } {
+  return { signIn: null }
 }
 
 /**
@@ -30,15 +30,8 @@ function useDisabledSignIn() {
  */
 const useSignInIfEnabled = isAuthEnabled() ? useSignIn : useDisabledSignIn
 
-function clerkErrorMessage(err: unknown, fallback: string) {
-  if (err && typeof err === "object" && "errors" in err) {
-    return (err as { errors: Array<{ message?: string }> }).errors[0]?.message ?? fallback
-  }
-  return fallback
-}
-
 export function DriverSignIn() {
-  const { isLoaded, signIn, setActive } = useSignInIfEnabled()
+  const { signIn } = useSignInIfEnabled()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -51,67 +44,75 @@ export function DriverSignIn() {
   }
 
   async function handleSendCode() {
-    if (!isLoaded || !signIn || !email.trim()) return
+    if (!signIn || !email.trim()) return
     setSubmitting(true)
     setError(null)
-    try {
-      const attempt = await signIn.create({ identifier: email.trim() })
-      const emailCodeFactor = attempt.supportedFirstFactors?.find(
-        (factor) => factor.strategy === "email_code",
-      ) as { strategy: "email_code"; emailAddressId: string } | undefined
 
-      if (!emailCodeFactor) {
-        setError("Email verification is not available for this account.")
-        return
-      }
-
-      await signIn.prepareFirstFactor({
-        strategy: "email_code",
-        emailAddressId: emailCodeFactor.emailAddressId,
-      })
-      setCode("")
-      setStep("code")
-    } catch (err) {
-      setError(clerkErrorMessage(err, "Could not send verification code."))
-    } finally {
+    const { error: createError } = await signIn.create({ identifier: email.trim() })
+    if (createError) {
+      setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
       setSubmitting(false)
+      return
     }
+
+    const emailCodeSupported = signIn.supportedFirstFactors.some(
+      (factor) => factor.strategy === "email_code",
+    )
+    if (!emailCodeSupported) {
+      setError("Email verification is not available for this account.")
+      setSubmitting(false)
+      return
+    }
+
+    const { error: sendError } = await signIn.emailCode.sendCode({})
+    if (sendError) {
+      setError(sendError.longMessage ?? sendError.message ?? "Could not send verification code.")
+      setSubmitting(false)
+      return
+    }
+
+    setCode("")
+    setStep("code")
+    setSubmitting(false)
   }
 
   async function handleVerifyCode() {
-    if (!isLoaded || !signIn || code.trim().length < CODE_LENGTH) return
+    if (!signIn || code.trim().length < CODE_LENGTH) return
     setSubmitting(true)
     setError(null)
-    try {
-      const attempt = await signIn.attemptFirstFactor({
-        strategy: "email_code",
-        code: code.trim(),
-      })
-      if (attempt.status === "complete" && attempt.createdSessionId) {
-        await setActive({ session: attempt.createdSessionId })
-        router.push("/")
-        return
-      }
-      setError("Sign-in could not be completed. Try again.")
-    } catch (err) {
-      setError(clerkErrorMessage(err, "Invalid verification code."))
+
+    const { error: verifyError } = await signIn.emailCode.verifyCode({ code: code.trim() })
+    if (verifyError) {
+      setError(verifyError.longMessage ?? verifyError.message ?? "Invalid verification code.")
       setCode("")
-    } finally {
       setSubmitting(false)
+      return
     }
+
+    if (signIn.status === "complete") {
+      await signIn.finalize({
+        navigate: () => {
+          router.push("/")
+        },
+      })
+      return
+    }
+
+    setError("Sign-in could not be completed. Try again.")
+    setSubmitting(false)
   }
 
   async function handleGoogleSignIn() {
-    if (!isLoaded || !signIn) return
+    if (!signIn) return
     setError(null)
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/auth/sso-callback",
-        redirectUrlComplete: "/",
-      })
-    } catch (err) {
-      setError(clerkErrorMessage(err, "Google sign-in failed."))
+
+    const { error: ssoError } = await signIn.sso({
+      strategy: "oauth_google",
+      redirectCallbackUrl: "/auth/sso-callback",
+      redirectUrl: "/",
+    })
+    if (ssoError) {
+      setError(ssoError.longMessage ?? ssoError.message ?? "Google sign-in failed.")
     }
   }
 
@@ -190,7 +191,7 @@ export function DriverSignIn() {
           <Button
             className="w-full"
             size="lg"
-            disabled={submitting || !isLoaded || !email.trim()}
+            disabled={submitting || !signIn || !email.trim()}
             loading={submitting}
             loadingText="Sending…"
             onClick={() => void handleSendCode()}
