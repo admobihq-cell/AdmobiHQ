@@ -8,8 +8,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  let access: Awaited<ReturnType<typeof requireOpsUser>>
   try {
-    await requireOpsUser()
+    access = await requireOpsUser()
   } catch (e) {
     if (e instanceof Response && e.status === 403) {
       redirect("/")
@@ -17,5 +18,9 @@ export default async function DashboardLayout({
     redirect("/")
   }
 
-  return <OpsShell>{children}</OpsShell>
+  return (
+    <OpsShell role={access.role} permissions={access.permissions}>
+      {children}
+    </OpsShell>
+  )
 }

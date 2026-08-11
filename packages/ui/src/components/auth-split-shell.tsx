@@ -14,6 +14,8 @@ type AuthSplitShellProps = {
   /** The form pane content (heading, fields, actions, legal line). */
   children: ReactNode
   className?: string
+  /** Width cap on the form column. Defaults to `max-w-sm`. */
+  formClassName?: string
 }
 
 /**
@@ -28,6 +30,7 @@ export function AuthSplitShell({
   statementDetail,
   children,
   className,
+  formClassName = "max-w-sm",
 }: AuthSplitShellProps) {
   return (
     <div className={cn("grid min-h-screen lg:grid-cols-2", className)}>
@@ -55,7 +58,7 @@ export function AuthSplitShell({
       </div>
 
       <div className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16">
-        <div className="mx-auto w-full max-w-sm">
+        <div className={cn("mx-auto w-full", formClassName)}>
           <div className="mb-10 flex justify-center lg:hidden">
             <Logo />
           </div>

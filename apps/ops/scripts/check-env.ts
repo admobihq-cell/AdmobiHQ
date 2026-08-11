@@ -2,6 +2,7 @@ const required = [
   "DATABASE_URL",
   "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
   "CLERK_SECRET_KEY",
+  "CLERK_ORG_ID",
 ] as const
 
 const optional = [
@@ -52,6 +53,12 @@ if (publishable && !publishable.startsWith("pk_")) {
 
 if (secret && !secret.startsWith("sk_")) {
   console.error("[ops env:check] CLERK_SECRET_KEY must start with sk_test_ or sk_live_")
+  invalid = true
+}
+
+const orgId = trimQuotes(process.env.CLERK_ORG_ID ?? "")
+if (orgId && !orgId.startsWith("org_")) {
+  console.error("[ops env:check] CLERK_ORG_ID must start with org_")
   invalid = true
 }
 

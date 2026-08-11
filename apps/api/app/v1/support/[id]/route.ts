@@ -3,14 +3,14 @@ import { NextResponse } from "next/server"
 import { supportCaseUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { jsonError, parseId, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { toOpsCase, toOpsMessage } from "@/lib/support"
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Params) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("support")
   if (auth.error) return auth.error
 
   const { id: rawId } = await params
@@ -32,7 +32,7 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("support")
   if (auth.error) return auth.error
   const { access } = auth
 

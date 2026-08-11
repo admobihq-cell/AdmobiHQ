@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import type { z } from "zod"
-import type { AuditEntityType } from "@workspace/ops-contracts"
+import type { AuditEntityType, OpsPermission } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { jsonError, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 
 type BulkDeleteBody = { action: "delete"; ids: number[] }
 type BulkStatusBody = { action: "updateStatus"; ids: number[]; status: string }
@@ -16,8 +16,9 @@ export async function handleBulkRequest(
     updateStatus?: (ids: number[], status: string) => Promise<number>
   },
   entityType: AuditEntityType,
+  permission: OpsPermission,
 ) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess(permission)
   if (auth.error) return auth.error
   const { access } = auth
 

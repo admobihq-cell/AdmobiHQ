@@ -4,7 +4,7 @@ import { broadcastCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser, recordAuditEvent } from "@/lib/audit"
 import { jsonError, parseJsonBody, timingSafeEqual } from "@/lib/api-utils"
-import { requireOpsUser } from "@/lib/auth"
+import { requireOpsPermission } from "@/lib/auth"
 import { broadcastAnnouncement } from "@/lib/push/broadcast-announcement"
 
 export const maxDuration = 60
@@ -22,10 +22,10 @@ const SYSTEM_SENDER = { clerkUserId: "system", email: "release-bot@admobihq.com"
 export async function POST(req: Request) {
   const isSystemCaller = hasCronSecret(req)
 
-  let access: Awaited<ReturnType<typeof requireOpsUser>> | null = null
+  let access: Awaited<ReturnType<typeof requireOpsPermission>> | null = null
   if (!isSystemCaller) {
     try {
-      access = await requireOpsUser()
+      access = await requireOpsPermission("announcements")
     } catch (e) {
       if (e instanceof Response) return e
       return jsonError("Unauthorized", 401)

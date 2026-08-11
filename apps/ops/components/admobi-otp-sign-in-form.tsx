@@ -118,7 +118,7 @@ export function AdmobiOtpSignInForm() {
     return (
       <form
         onSubmit={handleVerifyCode}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-xl border bg-card p-6"
+        className="flex w-full flex-col gap-4"
       >
         <div className="space-y-1 text-center">
           <h2 className="text-base font-semibold">Check your email</h2>
@@ -165,7 +165,7 @@ export function AdmobiOtpSignInForm() {
   return (
     <form
       onSubmit={handleSendCode}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-xl border bg-card p-6"
+      className="flex w-full flex-col gap-4"
     >
       <AdmobiEmailField
         id="sign-in-email"

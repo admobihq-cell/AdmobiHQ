@@ -3,11 +3,11 @@ import type { Prisma } from "@prisma/client"
 import { paginationSchema } from "@workspace/ops-contracts"
 
 import { toAuditEventDto } from "@/lib/audit"
-import { jsonError, paginatedResponse, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, paginatedResponse, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 
 export async function GET(req: Request) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("activity")
   if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)

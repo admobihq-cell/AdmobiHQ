@@ -3,11 +3,11 @@ import { NextResponse } from "next/server"
 import { PLATFORM_FLAG_KEYS, platformFlagUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { jsonError, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("flags")
   if (auth.error) return auth.error
 
   const rows = await prisma.platformFlag.findMany({ orderBy: { key: "asc" } })
@@ -27,7 +27,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("flags")
   if (auth.error) return auth.error
   const { access } = auth
 

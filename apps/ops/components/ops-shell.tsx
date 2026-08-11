@@ -15,10 +15,12 @@ import {
   Radio,
   Settings,
   Truck,
+  UserCog,
   Users,
   Wallet,
 } from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
+import type { OpsPermission, OpsRole } from "@workspace/ops-contracts"
 
 import { Logo } from "@workspace/ui/brand/logo"
 import {
@@ -47,24 +49,36 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
-const navItems = [
+const navItems: Array<{
+  href: string
+  label: string
+  icon: typeof Home
+  permission?: OpsPermission
+}> = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/overview", label: "Overview", icon: BarChart3 },
   { href: "/map", label: "Map", icon: Map },
-  { href: "/leads", label: "Campaign Leads", icon: Megaphone },
-  { href: "/fleet", label: "Fleet Partners", icon: Truck },
-  { href: "/drivers", label: "Drivers", icon: Car },
-  { href: "/finances", label: "Finances", icon: Wallet },
-  { href: "/waitlist", label: "Waitlist", icon: Mail },
-  { href: "/media-kit", label: "Media Kit", icon: FileText },
-  { href: "/announcements", label: "Announcements", icon: Radio },
-  { href: "/support", label: "Support", icon: LifeBuoy },
-  { href: "/activity", label: "Activity", icon: History },
+  { href: "/leads", label: "Campaign Leads", icon: Megaphone, permission: "leads" },
+  { href: "/fleet", label: "Fleet Partners", icon: Truck, permission: "fleet" },
+  { href: "/drivers", label: "Drivers", icon: Car, permission: "drivers" },
+  { href: "/finances", label: "Finances", icon: Wallet, permission: "finances" },
+  { href: "/waitlist", label: "Waitlist", icon: Mail, permission: "waitlist" },
+  { href: "/media-kit", label: "Media Kit", icon: FileText, permission: "media_kit" },
+  { href: "/announcements", label: "Announcements", icon: Radio, permission: "announcements" },
+  { href: "/support", label: "Support", icon: LifeBuoy, permission: "support" },
+  { href: "/activity", label: "Activity", icon: History, permission: "activity" },
 ]
 
-const secondaryItems = [
-  { href: "/content", label: "Content (CMS)", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
+const secondaryItems: Array<{
+  href: string
+  label: string
+  icon: typeof Users
+  permission?: OpsPermission
+  adminOnly?: boolean
+}> = [
+  { href: "/content", label: "Content (CMS)", icon: Users, permission: "content" },
+  { href: "/team", label: "Team", icon: UserCog, adminOnly: true },
+  { href: "/settings", label: "Settings", icon: Settings, permission: "flags" },
 ]
 
 const allNavItems = [...navItems, ...secondaryItems]
@@ -98,8 +112,23 @@ function OpsBreadcrumbs({ pathname }: { pathname: string }) {
   )
 }
 
-export function OpsShell({ children }: { children: React.ReactNode }) {
+export function OpsShell({
+  children,
+  role,
+  permissions,
+}: {
+  children: React.ReactNode
+  role: OpsRole
+  permissions: OpsPermission[]
+}) {
   const pathname = usePathname()
+  const canSee = (item: { permission?: OpsPermission; adminOnly?: boolean }) => {
+    if (item.adminOnly) return role === "admin"
+    if (item.permission) return role === "admin" || permissions.includes(item.permission)
+    return true
+  }
+  const visibleNavItems = navItems.filter(canSee)
+  const visibleSecondaryItems = secondaryItems.filter(canSee)
 
   return (
     <SidebarProvider>
@@ -120,7 +149,7 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupLabel>Operations</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
@@ -142,7 +171,7 @@ export function OpsShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupLabel>Content</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {secondaryItems.map((item) => (
+                {visibleSecondaryItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild

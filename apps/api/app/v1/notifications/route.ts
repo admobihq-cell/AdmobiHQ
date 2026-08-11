@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { paginationSchema } from "@workspace/ops-contracts"
 
-import { jsonError, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { listAnnouncementBroadcasts } from "@/lib/queries/entities"
 import { checkPendingPushReceipts } from "@/lib/push/receipts"
 
@@ -10,7 +10,7 @@ import { checkPendingPushReceipts } from "@/lib/push/receipts"
 const INLINE_RECEIPT_LIMIT = 100
 
 export async function GET(req: Request) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("announcements")
   if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)
