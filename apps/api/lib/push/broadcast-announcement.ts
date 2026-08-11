@@ -61,7 +61,7 @@ export async function broadcastAnnouncement(
     return broadcast
   }
 
-  const messages = tokens.map((row) => ({
+  const buildMessage = (row: TargetToken) => ({
     to: row.expo_push_token,
     title: input.title,
     body: input.body,
@@ -75,21 +75,34 @@ export async function broadcastAnnouncement(
     // Notification Service Extension the app doesn't have yet, so it's
     // harmless to include — iOS just ignores it and shows text-only.
     ...(input.image_url ? { richContent: { image: input.image_url } } : {}),
-  }))
+  })
 
-  let outcomes: Awaited<ReturnType<typeof sendExpoPushMessages>>["outcomes"] = []
-  let invalidTokens: string[] = []
-  let queued = 0
+  // Expo rejects a request whose tokens span more than one Expo project
+  // ("PUSH_TOO_MANY_EXPERIENCE_IDS") — customer-mobile and driver-mobile are
+  // separate projects, so each audience's tokens must go in their own request.
+  const tokensByAudience = new Map<PushAudience, TargetToken[]>()
+  for (const row of tokens) {
+    const group = tokensByAudience.get(row.audience) ?? []
+    group.push(row)
+    tokensByAudience.set(row.audience, group)
+  }
+
+  const outcomes: Awaited<ReturnType<typeof sendExpoPushMessages>>["outcomes"] = []
+  const invalidTokens: string[] = []
   let status = "sending"
 
-  try {
-    ;({ outcomes, invalidTokens } = await sendExpoPushMessages(messages))
-    queued = outcomes.filter((outcome) => outcome.status === "queued").length
-    if (queued === 0) status = "failed"
-  } catch (error) {
-    console.error("[push] Failed to send announcement broadcast:", error)
-    status = "failed"
+  for (const group of tokensByAudience.values()) {
+    try {
+      const result = await sendExpoPushMessages(group.map(buildMessage))
+      outcomes.push(...result.outcomes)
+      invalidTokens.push(...result.invalidTokens)
+    } catch (error) {
+      console.error("[push] Failed to send announcement broadcast:", error)
+    }
   }
+
+  const queued = outcomes.filter((outcome) => outcome.status === "queued").length
+  if (queued === 0) status = "failed"
 
   // Record whatever tickets we do have even if something below throws —
   // otherwise a real send that fails only during bookkeeping leaves nothing
