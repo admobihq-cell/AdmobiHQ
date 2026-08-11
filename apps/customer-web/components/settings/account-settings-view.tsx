@@ -22,13 +22,14 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { AccountSettingsSkeleton } from "@/components/skeletons/account-settings-skeleton"
 
 function useSignedInUser() {
   return useUser()
 }
 
 function useNoUser() {
-  return { user: null }
+  return { user: null, isLoaded: true }
 }
 
 /**
@@ -103,7 +104,7 @@ type SessionRow = {
 }
 
 export function AccountSettingsView() {
-  const { user } = useUserIfEnabled()
+  const { user, isLoaded } = useUserIfEnabled()
   const { sessionId, signOut } = useAuthIfEnabled()
 
   const [editing, setEditing] = useState(false)
@@ -146,6 +147,8 @@ export function AccountSettingsView() {
       cancelled = true
     }
   }, [user, sessionId])
+
+  if (!isLoaded) return <AccountSettingsSkeleton />
 
   function startEditing() {
     setFirstName(user?.firstName ?? "")
