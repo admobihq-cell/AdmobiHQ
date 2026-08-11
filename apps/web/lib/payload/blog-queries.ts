@@ -26,36 +26,46 @@ function toListItem(post: BlogPost): BlogPostListItem | null {
 export async function getBlogIndexData(): Promise<{
   posts: BlogPostListItem[]
 }> {
-  const payload = await getPayloadClient()
+  try {
+    const payload = await getPayloadClient()
 
-  const result = await payload.find({
-    collection: "blog-posts",
-    depth: 1,
-    sort: "-publishedAt",
-    limit: 100,
-    pagination: false,
-  })
+    const result = await payload.find({
+      collection: "blog-posts",
+      depth: 1,
+      sort: "-publishedAt",
+      limit: 100,
+      pagination: false,
+    })
 
-  const posts = result.docs
-    .map(toListItem)
-    .filter((post): post is BlogPostListItem => post !== null)
+    const posts = result.docs
+      .map(toListItem)
+      .filter((post): post is BlogPostListItem => post !== null)
 
-  return { posts }
+    return { posts }
+  } catch (error) {
+    console.warn("[blog-queries] Failed to fetch blog index, returning empty:", error)
+    return { posts: [] }
+  }
 }
 
 export async function getRecentBlogPosts(limit = 3): Promise<BlogPostListItem[]> {
-  const payload = await getPayloadClient()
+  try {
+    const payload = await getPayloadClient()
 
-  const result = await payload.find({
-    collection: "blog-posts",
-    depth: 1,
-    sort: "-publishedAt",
-    limit,
-  })
+    const result = await payload.find({
+      collection: "blog-posts",
+      depth: 1,
+      sort: "-publishedAt",
+      limit,
+    })
 
-  return result.docs
-    .map(toListItem)
-    .filter((post): post is BlogPostListItem => post !== null)
+    return result.docs
+      .map(toListItem)
+      .filter((post): post is BlogPostListItem => post !== null)
+  } catch (error) {
+    console.warn("[blog-queries] Failed to fetch recent posts, returning empty:", error)
+    return []
+  }
 }
 
 export async function getBlogPostSlugs(): Promise<string[]> {
