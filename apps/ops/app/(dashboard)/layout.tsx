@@ -11,15 +11,19 @@ export default async function DashboardLayout({
   let access: Awaited<ReturnType<typeof requireOpsUser>>
   try {
     access = await requireOpsUser()
-  } catch (e) {
-    if (e instanceof Response && e.status === 403) {
-      redirect("/")
-    }
+  } catch {
     redirect("/")
   }
 
+  const userName = access.user.fullName ?? access.email
+
   return (
-    <OpsShell role={access.role} permissions={access.permissions}>
+    <OpsShell
+      role={access.role}
+      permissions={access.permissions}
+      userName={userName}
+      orgName={access.orgName}
+    >
       {children}
     </OpsShell>
   )

@@ -13,7 +13,7 @@
     "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.36.5",
+    "@clerk/nextjs": "^7.7.3",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@sentry/nextjs": "^10.64.0",

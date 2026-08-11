@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useSignIn } from "@clerk/nextjs"
+import { useSignIn } from "@clerk/nextjs/legacy"
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
 import type { EmailCodeFactor, SignInFirstFactor } from "@clerk/types"
 
@@ -18,7 +17,6 @@ function isEmailCodeFactor(factor: SignInFirstFactor): factor is EmailCodeFactor
 
 export function AdmobiOtpSignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn()
-  const router = useRouter()
 
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -90,10 +88,11 @@ export function AdmobiOtpSignInForm() {
       })
 
       if (attempt.status === "complete") {
-        await setActive({
-          session: attempt.createdSessionId,
-          navigate: () => router.push("/home"),
-        })
+        await setActive({ session: attempt.createdSessionId })
+        // Hard navigation, not router.push — the App Router's client cache can
+        // otherwise serve a stale pre-auth response for "/" or "/home" after
+        // repeated sign-in attempts in the same tab.
+        window.location.href = "/home"
         return
       }
 
