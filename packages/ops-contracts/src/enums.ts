@@ -108,8 +108,32 @@ export const AUDIT_ENTITY_TYPES = [
   "announcement",
   "support_case",
   "platform_flag",
+  "team_member",
+  "team_invitation",
+  "ops_role",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
+
+/** Ops console access tiers, backed by Clerk Organizations roles (org:admin / org:member). */
+export const OPS_ROLES = ["admin", "member"] as const
+export type OpsRole = (typeof OPS_ROLES)[number]
+
+/** Per-section console access — org:admin always has all of these; org:member
+ * users have whatever their assigned OpsRole (see packages/ops-contracts/src/team.ts) grants. */
+export const OPS_PERMISSIONS = [
+  "leads",
+  "fleet",
+  "drivers",
+  "waitlist",
+  "media_kit",
+  "announcements",
+  "support",
+  "finances",
+  "content",
+  "flags",
+  "activity",
+] as const
+export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 
 /** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema. */
 export const PLATFORM_FLAG_KEYS = ["deliveries"] as const

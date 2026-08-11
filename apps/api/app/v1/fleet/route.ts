@@ -3,13 +3,13 @@ import { NextResponse } from "next/server"
 import { paginationSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { jsonError, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { listFleetPartners } from "@/lib/queries/entities"
 import { fleetCreateSchema } from "@/lib/validation/schemas"
 
 export async function GET(req: Request) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("fleet")
   if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("fleet")
   if (auth.error) return auth.error
   const { access } = auth
 
