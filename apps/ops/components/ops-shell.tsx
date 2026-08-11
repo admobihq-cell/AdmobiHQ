@@ -116,10 +116,14 @@ export function OpsShell({
   children,
   role,
   permissions,
+  userName,
+  orgName,
 }: {
   children: React.ReactNode
   role: OpsRole
   permissions: OpsPermission[]
+  userName: string
+  orgName: string | null
 }) {
   const pathname = usePathname()
   const canSee = (item: { permission?: OpsPermission; adminOnly?: boolean }) => {
@@ -193,9 +197,12 @@ export function OpsShell({
         <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:px-0">
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
             <UserButton />
-            <span className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-              @admobihq.com
-            </span>
+            <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+              <span className="truncate text-xs font-medium">{userName}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {orgName ?? "Admobi Ops"}
+              </span>
+            </div>
           </div>
         </SidebarFooter>
       </Sidebar>
