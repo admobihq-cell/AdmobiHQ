@@ -1,8 +1,11 @@
+"use client"
+
 import Link from "next/link"
 
 import { Button } from "@workspace/ui/components/button"
 
 import { Container } from "./container"
+import { GreenScreenCarVideo } from "./green-screen-car"
 import { InView } from "./in-view"
 import { RouteSignal } from "./system-illustration"
 
@@ -32,7 +35,13 @@ export function HeroSection() {
         </div>
 
         <InView className="relative isolate mx-auto mt-14 w-full max-w-[64rem] sm:mt-20">
-          <RouteSignal className="aspect-[4/3] w-full sm:aspect-[16/9]" />
+          {/* Exact 16:9 aspect ratio container matching the RouteSignal SVG viewBox (800x450) */}
+          <div className="relative w-full aspect-[16/9]">
+            <RouteSignal className="absolute inset-0 w-full h-full" />
+
+            {/* Client-side green screen removal component using HTML5 Canvas */}
+            <GreenScreenCarVideo />
+          </div>
         </InView>
       </Container>
     </section>
