@@ -10,6 +10,7 @@ import Animated, {
   Extrapolation,
   interpolate,
 } from "react-native-reanimated"
+import type { OpsPermission } from "@workspace/ops-contracts"
 
 import {
   FileText,
@@ -23,6 +24,7 @@ import {
   type AppIcon,
 } from "@/components/icons"
 import { getPrimaryEmail } from "@/lib/auth"
+import { useOpsAccess } from "@/lib/ops-client"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.82, 340)
@@ -33,6 +35,8 @@ type DrawerLink = {
   description: string
   icon: AppIcon
   href: Parameters<ReturnType<typeof useRouter>["push"]>[0]
+  /** Omitted for links every signed-in member can see regardless of role. */
+  permission?: OpsPermission
 }
 
 const LINKS: DrawerLink[] = [
@@ -42,6 +46,7 @@ const LINKS: DrawerLink[] = [
     description: "Cases from customers and drivers",
     icon: LifeBuoy,
     href: "/(ops)/support",
+    permission: "support",
   },
   {
     key: "announcements",
@@ -49,6 +54,7 @@ const LINKS: DrawerLink[] = [
     description: "Broadcast to customer apps",
     icon: Radio,
     href: "/(ops)/announcements",
+    permission: "announcements",
   },
   {
     key: "map",
@@ -63,6 +69,7 @@ const LINKS: DrawerLink[] = [
     description: "Pending signups",
     icon: Mail,
     href: "/(ops)/waitlist",
+    permission: "waitlist",
   },
   {
     key: "media-kit",
@@ -70,6 +77,7 @@ const LINKS: DrawerLink[] = [
     description: "Advertiser requests",
     icon: FileText,
     href: "/(ops)/media-kit",
+    permission: "media_kit",
   },
   {
     key: "finances",
@@ -77,6 +85,7 @@ const LINKS: DrawerLink[] = [
     description: "Wallet, top-ups & payouts",
     icon: Wallet,
     href: "/(ops)/finances",
+    permission: "finances",
   },
 ]
 
@@ -99,7 +108,12 @@ export function NavDrawer({
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const { user } = useUser()
+  const { role, permissions } = useOpsAccess()
   const progress = useSharedValue(0)
+
+  const visibleLinks = LINKS.filter(
+    (link) => !link.permission || role === "admin" || permissions.includes(link.permission),
+  )
 
   useEffect(() => {
     progress.value = withTiming(visible ? 1 : 0, { duration: 220 })
@@ -268,7 +282,7 @@ export function NavDrawer({
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionLabel}>Modules</Text>
             <View style={styles.group}>
-              {LINKS.map((link, index) => (
+              {visibleLinks.map((link, index) => (
                 <View key={link.key}>
                   <Pressable
                     style={({ pressed }) => [
@@ -287,7 +301,7 @@ export function NavDrawer({
                       </Text>
                     </View>
                   </Pressable>
-                  {index < LINKS.length - 1 ? (
+                  {index < visibleLinks.length - 1 ? (
                     <View style={styles.divider} />
                   ) : null}
                 </View>

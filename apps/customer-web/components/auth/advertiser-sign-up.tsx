@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { useSignUp } from "@clerk/nextjs/legacy"
+import { useSignUp } from "@clerk/nextjs"
 
 import { AuthLegalLine } from "@workspace/ui/components/auth-legal-line"
 import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
@@ -20,8 +20,8 @@ import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
 
-function useDisabledSignUp() {
-  return { isLoaded: false, signUp: undefined, setActive: undefined }
+function useDisabledSignUp(): { signUp: null } {
+  return { signUp: null }
 }
 
 /**
@@ -30,15 +30,8 @@ function useDisabledSignUp() {
  */
 const useSignUpIfEnabled = isAuthEnabled() ? useSignUp : useDisabledSignUp
 
-function clerkErrorMessage(err: unknown, fallback: string) {
-  if (err && typeof err === "object" && "errors" in err) {
-    return (err as { errors: Array<{ message?: string }> }).errors[0]?.message ?? fallback
-  }
-  return fallback
-}
-
 export function AdvertiserSignUp() {
-  const { isLoaded, signUp, setActive } = useSignUpIfEnabled()
+  const { signUp } = useSignUpIfEnabled()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -51,52 +44,66 @@ export function AdvertiserSignUp() {
   }
 
   async function handleSendCode() {
-    if (!isLoaded || !signUp || !email.trim()) return
+    if (!signUp || !email.trim()) return
     setSubmitting(true)
     setError(null)
-    try {
-      await signUp.create({ emailAddress: email.trim() })
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
-      setCode("")
-      setStep("code")
-    } catch (err) {
-      setError(clerkErrorMessage(err, "Could not send verification code."))
-    } finally {
+
+    const { error: createError } = await signUp.create({ emailAddress: email.trim() })
+    if (createError) {
+      setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
       setSubmitting(false)
+      return
     }
+
+    const { error: sendError } = await signUp.verifications.sendEmailCode()
+    if (sendError) {
+      setError(sendError.longMessage ?? sendError.message ?? "Could not send verification code.")
+      setSubmitting(false)
+      return
+    }
+
+    setCode("")
+    setStep("code")
+    setSubmitting(false)
   }
 
   async function handleVerifyCode() {
-    if (!isLoaded || !signUp || code.trim().length < CODE_LENGTH) return
+    if (!signUp || code.trim().length < CODE_LENGTH) return
     setSubmitting(true)
     setError(null)
-    try {
-      const attempt = await signUp.attemptEmailAddressVerification({ code: code.trim() })
-      if (attempt.status === "complete" && attempt.createdSessionId) {
-        await setActive({ session: attempt.createdSessionId })
-        router.push("/")
-        return
-      }
-      setError("Sign-up could not be completed. Try again.")
-    } catch (err) {
-      setError(clerkErrorMessage(err, "Invalid verification code."))
+
+    const { error: verifyError } = await signUp.verifications.verifyEmailCode({ code: code.trim() })
+    if (verifyError) {
+      setError(verifyError.longMessage ?? verifyError.message ?? "Invalid verification code.")
       setCode("")
-    } finally {
       setSubmitting(false)
+      return
     }
+
+    if (signUp.status === "complete") {
+      await signUp.finalize({
+        navigate: () => {
+          router.push("/")
+        },
+      })
+      return
+    }
+
+    setError("Sign-up could not be completed. Try again.")
+    setSubmitting(false)
   }
 
   async function handleGoogleSignUp() {
-    if (!isLoaded || !signUp) return
+    if (!signUp) return
     setError(null)
-    try {
-      await signUp.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/auth/sso-callback/advertiser",
-        redirectUrlComplete: "/",
-      })
-    } catch (err) {
-      setError(clerkErrorMessage(err, "Google sign-up failed."))
+
+    const { error: ssoError } = await signUp.sso({
+      strategy: "oauth_google",
+      redirectCallbackUrl: "/auth/sso-callback/advertiser",
+      redirectUrl: "/",
+    })
+    if (ssoError) {
+      setError(ssoError.longMessage ?? ssoError.message ?? "Google sign-up failed.")
     }
   }
 
@@ -175,7 +182,7 @@ export function AdvertiserSignUp() {
           <Button
             className="w-full"
             size="lg"
-            disabled={submitting || !isLoaded || !email.trim()}
+            disabled={submitting || !signUp || !email.trim()}
             loading={submitting}
             loadingText="Sending…"
             onClick={() => void handleSendCode()}

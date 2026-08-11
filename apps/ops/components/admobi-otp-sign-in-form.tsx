@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useSignIn } from "@clerk/nextjs/legacy"
-import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
-import type { EmailCodeFactor, SignInFirstFactor } from "@clerk/types"
+import { useSignIn } from "@clerk/nextjs"
 
 import { AdmobiEmailField } from "@/components/admobi-email-field"
 import { isAdmobiEmail } from "@/lib/allowed-email"
@@ -11,12 +9,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-function isEmailCodeFactor(factor: SignInFirstFactor): factor is EmailCodeFactor {
-  return factor.strategy === "email_code"
-}
-
 export function AdmobiOtpSignInForm() {
-  const { isLoaded, signIn, setActive } = useSignIn()
+  const { signIn } = useSignIn()
 
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -29,88 +23,77 @@ export function AdmobiOtpSignInForm() {
 
   async function handleSendCode(event: React.FormEvent) {
     event.preventDefault()
-    if (!isLoaded || !signIn || !emailAllowed) {
+    if (!signIn || !emailAllowed) {
       return
     }
 
     setSubmitting(true)
     setError(null)
 
-    try {
-      const attempt = await signIn.create({
-        identifier: email.trim(),
-      })
+    const { error: createError } = await signIn.create({
+      identifier: email.trim(),
+    })
 
-      const emailCodeFactor = attempt.supportedFirstFactors?.find(isEmailCodeFactor)
-      if (!emailCodeFactor) {
-        setError("Email verification is not available for this account.")
-        return
-      }
-
-      await signIn.prepareFirstFactor({
-        strategy: "email_code",
-        emailAddressId: emailCodeFactor.emailAddressId,
-      })
-      setVerifying(true)
-    } catch (err) {
-      if (isClerkAPIResponseError(err)) {
-        const clerkError = err.errors[0]
-        if (clerkError?.code === "form_identifier_not_found") {
-          setError("No account found for this email. Create an account first.")
-        } else {
-          setError(
-            clerkError?.longMessage ??
-              clerkError?.message ??
-              "Could not send verification code.",
-          )
-        }
+    if (createError) {
+      if (createError.code === "form_identifier_not_found") {
+        setError("No account found for this email. Create an account first.")
       } else {
-        setError("Could not send verification code.")
+        setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
       }
-    } finally {
       setSubmitting(false)
+      return
     }
+
+    const emailCodeSupported = signIn.supportedFirstFactors.some(
+      (factor) => factor.strategy === "email_code",
+    )
+    if (!emailCodeSupported) {
+      setError("Email verification is not available for this account.")
+      setSubmitting(false)
+      return
+    }
+
+    const { error: sendError } = await signIn.emailCode.sendCode({})
+    if (sendError) {
+      setError(sendError.longMessage ?? sendError.message ?? "Could not send verification code.")
+      setSubmitting(false)
+      return
+    }
+
+    setVerifying(true)
+    setSubmitting(false)
   }
 
   async function handleVerifyCode(event: React.FormEvent) {
     event.preventDefault()
-    if (!isLoaded || !signIn || !code.trim()) {
+    if (!signIn || !code.trim()) {
       return
     }
 
     setSubmitting(true)
     setError(null)
 
-    try {
-      const attempt = await signIn.attemptFirstFactor({
-        strategy: "email_code",
-        code: code.trim(),
-      })
+    const { error: verifyError } = await signIn.emailCode.verifyCode({ code: code.trim() })
+    if (verifyError) {
+      setError(verifyError.longMessage ?? verifyError.message ?? "Invalid verification code.")
+      setSubmitting(false)
+      return
+    }
 
-      if (attempt.status === "complete") {
-        await setActive({ session: attempt.createdSessionId })
+    if (signIn.status === "complete") {
+      await signIn.finalize({
         // Hard navigation, not router.push — the App Router's client cache can
         // otherwise serve a stale pre-auth response for "/" or "/home" after
         // repeated sign-in attempts in the same tab.
-        window.location.href = "/home"
-        return
-      }
-
-      setError("Sign-in could not be completed. Try again.")
-    } catch (err) {
-      if (isClerkAPIResponseError(err)) {
-        const clerkError = err.errors[0]
-        setError(
-          clerkError?.longMessage ??
-            clerkError?.message ??
-            "Invalid verification code.",
-        )
-      } else {
-        setError("Invalid verification code.")
-      }
-    } finally {
-      setSubmitting(false)
+        navigate: () => {
+          window.location.href = "/home"
+        },
+      })
+      return
     }
+
+    setError("Sign-in could not be completed. Try again.")
+    setSubmitting(false)
   }
 
   if (verifying) {

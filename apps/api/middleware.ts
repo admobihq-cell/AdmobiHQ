@@ -1,10 +1,22 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+import { clerkMiddleware } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 import { corsHeaders, isAllowedCorsOrigin } from "@/lib/cors"
 
-const isPublicApi = createRouteMatcher(["/v1/public(.*)", "/v1/health(.*)"])
-const isAdminApi = createRouteMatcher(["/v1/(.*)"])
+function isPublicApi(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  return (
+    pathname === "/v1/public" ||
+    pathname.startsWith("/v1/public/") ||
+    pathname === "/v1/health" ||
+    pathname.startsWith("/v1/health/")
+  )
+}
+
+function isAdminApi(request: NextRequest) {
+  return request.nextUrl.pathname.startsWith("/v1/")
+}
 
 function withCors(response: NextResponse, origin: string | null) {
   if (!origin || !isAllowedCorsOrigin(origin)) {

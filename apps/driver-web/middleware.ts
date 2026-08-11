@@ -5,17 +5,20 @@ import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 
 let cachedMiddleware: NextMiddleware | null = null
 
+function isPublicRoute(pathname: string): boolean {
+  return pathname.startsWith("/auth/") || pathname === "/api/health" || pathname.startsWith("/api/health/")
+}
+
 async function getAuthMiddleware(): Promise<NextMiddleware> {
   if (cachedMiddleware) return cachedMiddleware
 
-  const { clerkMiddleware, createRouteMatcher } = await import("@clerk/nextjs/server")
-  // Unlike ops (whose "/" is a stub — the real dashboard is at /home), "/"
-  // here IS the protected dashboard, so it must NOT be in this list.
-  const isPublicRoute = createRouteMatcher(["/auth/(.*)", "/api/health(.*)"])
+  const { clerkMiddleware } = await import("@clerk/nextjs/server")
 
   cachedMiddleware = clerkMiddleware(
     async (auth, request) => {
-      if (isPublicRoute(request)) {
+      // Unlike ops (whose "/" is a stub — the real dashboard is at /home), "/"
+      // here IS the protected dashboard, so it must NOT be treated as public.
+      if (isPublicRoute(request.nextUrl.pathname)) {
         return
       }
 

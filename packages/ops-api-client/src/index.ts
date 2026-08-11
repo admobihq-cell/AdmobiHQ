@@ -20,6 +20,7 @@ import {
   type LeadDto,
   type LeadUpdateInput,
   type ListQueryParams,
+  type MeDto,
   type MediaKitBulkInput,
   type MediaKitCreateInput,
   type MediaKitRequestDto,
@@ -86,6 +87,9 @@ type EntityResource<
 }
 
 export type OpsClient = {
+  me: {
+    get: () => Promise<MeDto>
+  }
   leads: EntityResource<
     LeadDto,
     LeadCreateInput,
@@ -299,6 +303,9 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   }
 
   return {
+    me: {
+      get: () => request<MeDto>(`${apiPrefix}/me`),
+    },
     leads: createEntityResource(`${apiPrefix}/leads`),
     fleet: createEntityResource(`${apiPrefix}/fleet`),
     drivers: createEntityResource(`${apiPrefix}/drivers`),

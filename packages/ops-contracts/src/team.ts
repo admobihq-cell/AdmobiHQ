@@ -1,6 +1,11 @@
 import { z } from "zod"
 
-import { OPS_PERMISSIONS } from "./enums"
+import { OPS_PERMISSIONS, type OpsPermission, type OpsRole } from "./enums"
+
+export type MeDto = {
+  role: OpsRole
+  permissions: OpsPermission[]
+}
 
 const tierSchema = z.discriminatedUnion("tier", [
   z.object({ tier: z.literal("admin") }),

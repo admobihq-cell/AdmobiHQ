@@ -12,6 +12,7 @@ import {
 
 import { AppBar } from "@/components/app/app-bar"
 import { NavDrawer } from "@/components/app/nav-drawer"
+import { useOpsAccess } from "@/lib/ops-client"
 import { PageHeaderProvider } from "@/lib/page-header"
 import { useNavigationTheme } from "@/lib/theme"
 
@@ -29,6 +30,9 @@ export default function OpsLayout() {
   } = useNavigationTheme()
   const insets = useSafeAreaInsets()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { role, permissions } = useOpsAccess()
+  const canSee = (permission: "leads" | "fleet" | "drivers") =>
+    role === "admin" || permissions.includes(permission)
 
   return (
     <PageHeaderProvider>
@@ -70,6 +74,7 @@ export default function OpsLayout() {
             options={{
               title: "Leads",
               headerShown: false,
+              href: canSee("leads") ? undefined : null,
               tabBarLabel: ({ color }) => (
                 <TabLabel label="Leads" color={color} />
               ),
@@ -83,6 +88,7 @@ export default function OpsLayout() {
             options={{
               title: "Fleet",
               headerShown: false,
+              href: canSee("fleet") ? undefined : null,
               tabBarLabel: ({ color }) => (
                 <TabLabel label="Fleet" color={color} />
               ),
@@ -96,6 +102,7 @@ export default function OpsLayout() {
             options={{
               title: "Drivers",
               headerShown: false,
+              href: canSee("drivers") ? undefined : null,
               tabBarLabel: ({ color }) => (
                 <TabLabel label="Drivers" color={color} />
               ),
