@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useSignUp } from "@clerk/nextjs"
+import { useSignUp } from "@clerk/nextjs/legacy"
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
 
 import { AdmobiEmailField } from "@/components/admobi-email-field"
@@ -13,7 +12,6 @@ import { Label } from "@workspace/ui/components/label"
 
 export function AdmobiOtpSignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp()
-  const router = useRouter()
 
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
@@ -72,10 +70,11 @@ export function AdmobiOtpSignUpForm() {
       })
 
       if (attempt.status === "complete") {
-        await setActive({
-          session: attempt.createdSessionId,
-          navigate: () => router.push("/home"),
-        })
+        await setActive({ session: attempt.createdSessionId })
+        // Hard navigation, not router.push — the App Router's client cache can
+        // otherwise serve a stale pre-auth response for "/" or "/home" after
+        // repeated sign-in attempts in the same tab.
+        window.location.href = "/home"
         return
       }
 

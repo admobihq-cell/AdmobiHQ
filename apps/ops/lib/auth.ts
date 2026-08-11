@@ -15,6 +15,7 @@ export type OpsAccess =
       email: string
       role: OpsRole
       permissions: OpsPermission[]
+      orgName: string | null
       user: NonNullable<Awaited<ReturnType<typeof currentUser>>>
     }
 
@@ -59,6 +60,34 @@ async function resolveOpsRole(userId: string): Promise<OpsRole | null> {
 
   opsRoleCache.set(userId, { role, expiresAt: Date.now() + OPS_ROLE_CACHE_TTL_MS })
   return role
+}
+
+const OPS_ORG_NAME_CACHE_TTL_MS = 5 * 60_000
+let opsOrgNameCache: { name: string | null; expiresAt: number } | null = null
+
+/** Display name of the fixed CLERK_ORG_ID org, for showing "who am I signed
+ * into" in the shell footer. Rarely changes, so cached longer than the
+ * per-user role/permissions caches above. */
+async function resolveOpsOrgName(): Promise<string | null> {
+  if (opsOrgNameCache && opsOrgNameCache.expiresAt > Date.now()) {
+    return opsOrgNameCache.name
+  }
+
+  const orgId = process.env.CLERK_ORG_ID
+  let name: string | null = null
+
+  if (orgId) {
+    try {
+      const client = await clerkClient()
+      const org = await client.organizations.getOrganization({ organizationId: orgId })
+      name = org.name
+    } catch {
+      name = null
+    }
+  }
+
+  opsOrgNameCache = { name, expiresAt: Date.now() + OPS_ORG_NAME_CACHE_TTL_MS }
+  return name
 }
 
 const opsPermissionsCache = new Map<string, { permissions: OpsPermission[]; expiresAt: number }>()
@@ -111,8 +140,9 @@ export async function getOpsAccess(): Promise<OpsAccess> {
   }
 
   const permissions = await resolveOpsPermissions(userId, role)
+  const orgName = await resolveOpsOrgName()
 
-  return { status: "authorized", userId, email: email!, role, permissions, user }
+  return { status: "authorized", userId, email: email!, role, permissions, orgName, user }
 }
 
 export async function requireOpsUser() {
