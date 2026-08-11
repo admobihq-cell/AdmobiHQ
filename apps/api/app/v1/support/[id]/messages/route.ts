@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { supportMessageCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
-import { jsonError, parseId, parseJsonBody, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { renderTemplate } from "@/lib/email/render-template"
 import { SupportCaseReply } from "@/lib/email/templates/SupportCaseReply"
 import { sendEmail } from "@/lib/email/send-email"
@@ -13,7 +13,7 @@ import { toOpsMessage } from "@/lib/support"
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: Request, { params }: Params) {
-  const auth = await requireOpsAccess()
+  const auth = await requireOpsPermissionAccess("support")
   if (auth.error) return auth.error
   const { access } = auth
 

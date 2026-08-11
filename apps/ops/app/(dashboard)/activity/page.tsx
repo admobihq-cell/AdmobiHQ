@@ -1,5 +1,14 @@
-import { ActivityView } from "./activity-view"
+import { redirect } from "next/navigation"
 
-export default function ActivityPage() {
+import { ActivityView } from "./activity-view"
+import { requireOpsPermission } from "@/lib/auth"
+
+export default async function ActivityPage() {
+  try {
+    await requireOpsPermission("activity")
+  } catch {
+    redirect("/home")
+  }
+
   return <ActivityView />
 }

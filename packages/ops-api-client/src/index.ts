@@ -35,6 +35,14 @@ import {
   type SupportListQueryParams,
   type SupportMessageCreateInput,
   type SupportMessageDto,
+  type OpsRoleCreateInput,
+  type OpsRoleDto,
+  type OpsRoleUpdateInput,
+  type TeamDto,
+  type TeamInvitationDto,
+  type TeamInviteInput,
+  type TeamMemberDto,
+  type TeamRoleUpdateInput,
   type WaitlistBulkInput,
   type WaitlistCreateInput,
   type WaitlistEntryDto,
@@ -144,6 +152,19 @@ export type OpsClient = {
   flags: {
     list: () => Promise<{ items: PlatformFlagDto[] }>
     update: (body: PlatformFlagUpdateInput) => Promise<PlatformFlagDto>
+  }
+  team: {
+    list: () => Promise<TeamDto>
+    invite: (body: TeamInviteInput) => Promise<TeamInvitationDto>
+    updateRole: (userId: string, body: TeamRoleUpdateInput) => Promise<TeamMemberDto>
+    removeMember: (userId: string) => Promise<SuccessResponse>
+    revokeInvitation: (invitationId: string) => Promise<SuccessResponse>
+  }
+  roles: {
+    list: () => Promise<{ items: OpsRoleDto[] }>
+    create: (body: OpsRoleCreateInput) => Promise<OpsRoleDto>
+    update: (roleId: number, body: OpsRoleUpdateInput) => Promise<OpsRoleDto>
+    delete: (roleId: number) => Promise<SuccessResponse>
   }
   support: {
     list: (params?: SupportListQueryParams) => Promise<PaginatedResponse<SupportCaseDto>>
@@ -358,6 +379,40 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           method: "PATCH",
           body: JSON.stringify(body),
         }),
+    },
+    team: {
+      list: () => request<TeamDto>(`${apiPrefix}/team`),
+      invite: (body) =>
+        request<TeamInvitationDto>(`${apiPrefix}/team`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      updateRole: (userId, body) =>
+        request<TeamMemberDto>(`${apiPrefix}/team/${userId}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      removeMember: (userId) =>
+        request<SuccessResponse>(`${apiPrefix}/team/${userId}`, { method: "DELETE" }),
+      revokeInvitation: (invitationId) =>
+        request<SuccessResponse>(`${apiPrefix}/team/invitations/${invitationId}`, {
+          method: "DELETE",
+        }),
+    },
+    roles: {
+      list: () => request<{ items: OpsRoleDto[] }>(`${apiPrefix}/roles`),
+      create: (body) =>
+        request<OpsRoleDto>(`${apiPrefix}/roles`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      update: (roleId, body) =>
+        request<OpsRoleDto>(`${apiPrefix}/roles/${roleId}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      delete: (roleId) =>
+        request<SuccessResponse>(`${apiPrefix}/roles/${roleId}`, { method: "DELETE" }),
     },
     support: {
       list: (params = {}) => {

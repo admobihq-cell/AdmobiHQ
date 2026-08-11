@@ -281,6 +281,30 @@ model PlatformFlag {
   @@map("platform_flags")
 }
 
+model OpsRole {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  permissions String[] @default([])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  assignments OpsRoleAssignment[]
+
+  @@map("ops_roles")
+}
+
+/// One custom OpsRole per Clerk org:member (org:admin bypasses this entirely).
+model OpsRoleAssignment {
+  clerk_user_id String   @id
+  role_id       Int
+  role          OpsRole  @relation(fields: [role_id], references: [id])
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([role_id])
+  @@map("ops_role_assignments")
+}
+
 model AuditEvent {
   id            Int      @id @default(autoincrement())
   app           String
