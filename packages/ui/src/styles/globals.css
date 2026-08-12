@@ -199,4 +199,98 @@
     transform-box: fill-box;
     animation: signal-pulse 1800ms var(--ease-out-strong) infinite;
   }
+
+  @keyframes city-scroll {
+    from {
+      transform: translate3d(-800px, 0, 0);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes drive-bob {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -2px, 0);
+    }
+  }
+
+  [data-visible="true"] .anim-city-far {
+    animation: city-scroll 14s linear infinite;
+    will-change: transform;
+  }
+
+  [data-visible="true"] .anim-city-near {
+    animation: city-scroll 7s linear infinite;
+    will-change: transform;
+  }
+
+  [data-visible="true"] .anim-drive-bob {
+    animation: drive-bob 480ms ease-in-out infinite;
+  }
+}
+
+/* Smooth light↔dark illustration colors via --hero-palette-mix (0 = light, 1 = dark). */
+.hero-scene-mix {
+  --_hero-mix: var(--hero-palette-mix, 0);
+  color-scheme: light dark;
+  --background: color-mix(
+    in oklch,
+    oklch(0.985 0.008 82) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.195 0.022 268)
+  );
+  --foreground: color-mix(
+    in oklch,
+    oklch(0.26 0.024 262) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.97 0.012 82)
+  );
+  --card: color-mix(
+    in oklch,
+    oklch(0.993 0.006 82) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.225 0.024 268)
+  );
+  --card-foreground: color-mix(
+    in oklch,
+    oklch(0.26 0.024 262) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.97 0.012 82)
+  );
+  --primary: color-mix(
+    in oklch,
+    oklch(0.48 0.14 43) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.7 0.12 52)
+  );
+  --primary-foreground: color-mix(
+    in oklch,
+    oklch(0.985 0.01 82) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.195 0.022 268)
+  );
+  --muted: color-mix(
+    in oklch,
+    oklch(0.945 0.014 82) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.28 0.026 268)
+  );
+  --muted-foreground: color-mix(
+    in oklch,
+    oklch(0.46 0.032 262) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.72 0.028 268)
+  );
+  --border: color-mix(
+    in oklch,
+    oklch(0.88 0.018 82) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.97 0.012 82 / 12%)
+  );
+  --input: color-mix(
+    in oklch,
+    oklch(0.88 0.018 82) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.97 0.012 82 / 14%)
+  );
+  --ring: color-mix(
+    in oklch,
+    oklch(0.48 0.14 43) calc((1 - var(--_hero-mix)) * 100%),
+    oklch(0.7 0.12 52)
+  );
 }

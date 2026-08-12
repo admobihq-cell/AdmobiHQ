@@ -7,6 +7,62 @@ const H = 720
 const KEY_W = 640
 const KEY_H = 360
 
+/**
+ * Chroma key tuning — adjust if green fringe remains on tires/windows.
+ * softMin/hardMax: green-excess range (g − max(r,b)) for alpha matte.
+ * despillStrength: how aggressively to pull green toward neutral (0–1).
+ */
+const KEY = {
+  softMin: 10,
+  hardMax: 40,
+  /** Allow a little green above max(r,b) on bright white body paint */
+  maxGreenOverRb: 6,
+  despillStrength: 0.85,
+  /** Extra despill on partial-alpha edge pixels (tire/window halos) */
+  edgeDespillBoost: 1.35,
+  /** Dark interior/glass: clamp green when it dominates other channels */
+  darkSpillThreshold: 72,
+  darkSpillStrength: 0.88,
+} as const
+
+function keyPixel(r: number, g: number, b: number): [number, number, number, number] {
+  const maxRb = Math.max(r, b)
+  const greenExcess = g - maxRb
+
+  let alpha = 255
+  if (greenExcess > KEY.softMin) {
+    if (greenExcess >= KEY.hardMax) {
+      return [r, g, b, 0]
+    }
+    const edge = (greenExcess - KEY.softMin) / (KEY.hardMax - KEY.softMin)
+    alpha = Math.round(255 * (1 - edge))
+  }
+
+  let outG = g
+
+  const capG = maxRb + KEY.maxGreenOverRb
+  if (outG > capG) {
+    outG = capG
+  }
+
+  const avgRb = (r + b) * 0.5
+  const spill = outG - avgRb
+  if (spill > 0) {
+    let strength: number = KEY.despillStrength
+    if (alpha < 255) {
+      strength = Math.min(1, strength * KEY.edgeDespillBoost)
+    }
+    outG = Math.round(outG - spill * strength)
+  }
+
+  const luma = r + outG + b
+  if (luma < KEY.darkSpillThreshold && outG > r && outG > b) {
+    outG = Math.round(outG - (outG - maxRb) * KEY.darkSpillStrength)
+  }
+
+  return [r, outG, b, alpha]
+}
+
 export function GreenScreenCarVideo() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -19,7 +75,6 @@ export function GreenScreenCarVideo() {
     const ctx = canvas.getContext("2d", { willReadFrequently: true })
     if (!ctx) return
 
-    // Half-resolution offscreen canvas: 4x fewer pixels to key per frame
     const keyCanvas = document.createElement("canvas")
     keyCanvas.width = KEY_W
     keyCanvas.height = KEY_H
@@ -36,7 +91,6 @@ export function GreenScreenCarVideo() {
         return
       }
 
-      // Crop the bottom 8% of the video frame to drop any bottom border artifacts
       const cropHeight = video.videoHeight * 0.92
 
       if (canvas.width !== W || canvas.height !== H) {
@@ -45,36 +99,17 @@ export function GreenScreenCarVideo() {
       }
 
       try {
-        // Downscale into the key canvas, chroma key it, then upscale to the visible canvas
         keyCtx.drawImage(video, 0, 0, video.videoWidth, cropHeight, 0, 0, KEY_W, KEY_H)
         const frame = keyCtx.getImageData(0, 0, KEY_W, KEY_H)
         const data = frame.data
         const len = data.length
 
         for (let i = 0; i < len; i += 4) {
-          const r = data[i]!
-          const g = data[i + 1]!
-          const b = data[i + 2]!
-
-          // Green screen chroma keying with feathering and despill
-          const maxRB = Math.max(r, b)
-          const greenDiff = g - maxRB
-
-          if (greenDiff > 15) {
-            if (greenDiff > 40) {
-              data[i + 3] = 0 // Transparent background
-            } else {
-              // Smooth feathering transition zone
-              const alphaFactor = (greenDiff - 15) / 25
-              data[i + 3] = Math.round(255 * (1 - alphaFactor))
-            }
-          } else {
-            data[i + 3] = 255
-            // Despill: suppress green tint on edges
-            if (g > maxRB && g - maxRB < 30) {
-              data[i + 1] = Math.round((r + b) / 2)
-            }
-          }
+          const [r, g, b, a] = keyPixel(data[i]!, data[i + 1]!, data[i + 2]!)
+          data[i] = r
+          data[i + 1] = g
+          data[i + 2] = b
+          data[i + 3] = a
         }
 
         keyCtx.putImageData(frame, 0, 0)
@@ -96,12 +131,7 @@ export function GreenScreenCarVideo() {
     video.addEventListener("loadedmetadata", start)
     video.addEventListener("play", start)
     video.load()
-    const playPromise = video.play()
-    if (playPromise) {
-      playPromise.catch(() => {
-        // Autoplay blocked; retry on next interaction
-      })
-    }
+    video.play()?.catch(() => {})
 
     return () => {
       running = false
@@ -112,7 +142,7 @@ export function GreenScreenCarVideo() {
   }, [])
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10">
+    <div className="anim-drive-bob pointer-events-none absolute inset-0 z-10">
       <video
         ref={videoRef}
         src="/videos/car-hero-admobi-greenscreen.mp4"
@@ -127,11 +157,11 @@ export function GreenScreenCarVideo() {
         ref={canvasRef}
         className="absolute"
         style={{
-          left: '14.3%',
-          top: '54.7%',
-          width: '62%',
-          height: '41%',
-          objectFit: 'contain',
+          left: "14.3%",
+          top: "54.7%",
+          width: "62%",
+          height: "41%",
+          objectFit: "contain",
         }}
       />
     </div>
