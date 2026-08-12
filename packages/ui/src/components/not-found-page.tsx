@@ -1,3 +1,5 @@
+"use client"
+
 import { ArrowLeft } from "lucide-react"
 
 import { RouteSignalMark } from "@workspace/ui/brand/admobi-mark"
