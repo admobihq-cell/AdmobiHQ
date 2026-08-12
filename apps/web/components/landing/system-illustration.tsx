@@ -1,5 +1,7 @@
 import type { ReactNode, SVGProps } from "react"
 
+import { HeroDuskLayers, HeroForegroundFade } from "./hero-scene-transition"
+
 const stepperNodes = [
   { label: "Plan", x: 240 },
   { label: "Target", x: 320 },
@@ -35,38 +37,89 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
 
       {/* Nairobi skyline silhouette (decorative, sets place) */}
       <defs>
+        {/* Dusk gradient: deep navy dusk sky with a warm horizon, fixed regardless of theme */}
+        <linearGradient id="dusk-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0a0c1c" />
+          <stop offset="0.55" stopColor="#151130" />
+          <stop offset="0.82" stopColor="#2b1d3c" />
+          <stop offset="1" stopColor="#462b3b" />
+        </linearGradient>
+        {/* Elliptical vignette: soft fade on all four edges of the dusk box */}
+        <radialGradient
+          id="dusk-edge-fade"
+          gradientUnits="userSpaceOnUse"
+          cx={0}
+          cy={0}
+          r={1}
+          gradientTransform="translate(400 225) scale(380 210)"
+        >
+          <stop offset="0%" stopColor="white" stopOpacity={1} />
+          <stop offset="62%" stopColor="white" stopOpacity={1} />
+          <stop offset="100%" stopColor="white" stopOpacity={0} />
+        </radialGradient>
+        <mask id="dusk-edge-mask" maskUnits="userSpaceOnUse" x={0} y={0} width={800} height={450}>
+          <rect x={0} y={0} width={800} height={450} fill="url(#dusk-edge-fade)" />
+        </mask>
+        {/* Horizontal fade for parallax city at viewport edges */}
+        <linearGradient id="city-edge-fade-h" gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={800} y2={0}>
+          <stop offset="0%" stopColor="white" stopOpacity={0} />
+          <stop offset="20%" stopColor="white" stopOpacity={1} />
+          <stop offset="80%" stopColor="white" stopOpacity={1} />
+          <stop offset="100%" stopColor="white" stopOpacity={0} />
+        </linearGradient>
+        <mask id="city-edge-mask" maskUnits="userSpaceOnUse" x={0} y={0} width={800} height={450}>
+          <rect x={0} y={0} width={800} height={450} fill="url(#city-edge-fade-h)" />
+        </mask>
+        <filter id="dusk-glow" x="-50%" y="-200%" width="200%" height="400%">
+          <feGaussianBlur stdDeviation="28" />
+        </filter>
         <pattern id="skyline-windows" width={9} height={11} patternUnits="userSpaceOnUse">
           <rect x={1.5} y={1.5} width={2.5} height={3} className="fill-foreground/20" />
           <rect x={5} y={1.5} width={2.5} height={3} className="fill-foreground/20" />
           <rect x={1.5} y={6.5} width={2.5} height={3} className="fill-foreground/20" />
           <rect x={5} y={6.5} width={2.5} height={3} className="fill-foreground/20" />
         </pattern>
+        <path id="skyline-silhouette" d={skylinePath} />
+        {/* Landmark tower detail: helipad disc + mast (KICC), mast with tiered Britam crown */}
+        <g id="skyline-landmarks">
+          <g className="fill-foreground/[0.05]">
+            <ellipse cx={162.5} cy={258} rx={22} ry={5} />
+            <rect x={161} y={230} width={3} height={28} />
+          </g>
+          <rect x={536} y={200} width={3} height={20} className="fill-foreground/[0.05]" />
+        </g>
       </defs>
-      <path
-        d={skylinePath}
-        className="anim-rise fill-foreground/[0.05]"
-        style={{ ["--rise-delay" as string]: `0ms` }}
-      />
-      <path
-        d={skylinePath}
-        fill="url(#skyline-windows)"
-        className="anim-rise"
-        style={{ ["--rise-delay" as string]: `0ms` }}
-      />
-      {/* Landmark tower detail: helipad disc + mast, echoing KICC */}
-      <g className="anim-rise fill-foreground/[0.05]" style={{ ["--rise-delay" as string]: `0ms` }}>
-        <ellipse cx={162.5} cy={258} rx={22} ry={5} />
-        <rect x={161} y={230} width={3} height={28} />
+
+      <HeroDuskLayers />
+
+      <HeroForegroundFade>
+      {/* Parallax city layers — masked at viewport edges so buildings fade in/out smoothly */}
+      <g mask="url(#city-edge-mask)" aria-hidden="true">
+        {/* Far skyline layer: slow parallax, scaled down, faint — distant horizon */}
+        <g className="anim-city-far" transform="translate(0 50) scale(0.85)">
+          {[0, 800, 1600].map((offset) => (
+            <use
+              key={`far-${offset}`}
+              href="#skyline-silhouette"
+              x={offset}
+              className="fill-foreground/[0.03]"
+            />
+          ))}
+        </g>
+
+        {/* Near skyline layer: faster parallax, full-size */}
+        <g className="anim-city-near">
+          {[0, 800, 1600].map((offset) => (
+            <g key={`near-${offset}`} transform={`translate(${offset} 0)`}>
+              <use href="#skyline-silhouette" className="fill-foreground/[0.05]" />
+              <use href="#skyline-silhouette" fill="url(#skyline-windows)" />
+            </g>
+          ))}
+          {[0, 800, 1600].map((offset) => (
+            <use key={`landmark-${offset}`} href="#skyline-landmarks" x={offset} />
+          ))}
+        </g>
       </g>
-      {/* Second landmark: mast atop the tiered right-side tower, echoing Britam Tower */}
-      <rect
-        x={536}
-        y={200}
-        width={3}
-        height={20}
-        className="anim-rise fill-foreground/[0.05]"
-        style={{ ["--rise-delay" as string]: `0ms` }}
-      />
 
       {/* Signal arcs above the LED unit (broadcast metaphor) */}
       <g className="text-primary" stroke="currentColor" fill="none" strokeLinecap="round">
@@ -325,6 +378,7 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
           )
         })}
       </g>
+      </HeroForegroundFade>
     </svg>
   )
 }
