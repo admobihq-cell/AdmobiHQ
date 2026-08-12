@@ -48,7 +48,7 @@ function keyPixel(r: number, g: number, b: number): [number, number, number, num
   const avgRb = (r + b) * 0.5
   const spill = outG - avgRb
   if (spill > 0) {
-    let strength = KEY.despillStrength
+    let strength: number = KEY.despillStrength
     if (alpha < 255) {
       strength = Math.min(1, strength * KEY.edgeDespillBoost)
     }
