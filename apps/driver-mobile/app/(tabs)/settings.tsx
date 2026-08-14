@@ -20,6 +20,7 @@ import {
   RefreshCcw,
   Shield,
 } from "@/components/icons"
+import { DriverVerificationSection } from "@/components/settings/DriverVerificationSection"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
@@ -363,6 +364,8 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+
+        {isAuthEnabled() ? <DriverVerificationSection /> : null}
 
         {user ? (
           <View style={styles.section}>

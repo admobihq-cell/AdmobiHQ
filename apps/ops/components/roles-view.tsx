@@ -35,6 +35,7 @@ const PERMISSION_LABELS: Record<OpsPermission, string> = {
   content: "Content (CMS)",
   flags: "Settings",
   activity: "Activity",
+  driver_applications: "Driver Applications",
 }
 
 function RoleCard({

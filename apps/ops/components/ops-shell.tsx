@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   BarChart3,
   Car,
+  FileCheck2,
   FileText,
   Home,
   History,
@@ -22,6 +23,7 @@ import {
 import { UserButton } from "@clerk/nextjs"
 import type { OpsPermission, OpsRole } from "@workspace/ops-contracts"
 
+import { Badge } from "@workspace/ui/components/badge"
 import { Logo } from "@workspace/ui/brand/logo"
 import {
   Breadcrumb,
@@ -49,6 +51,8 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
+import { NotificationBell } from "@/components/notification-bell"
+
 const navItems: Array<{
   href: string
   label: string
@@ -61,6 +65,12 @@ const navItems: Array<{
   { href: "/leads", label: "Campaign Leads", icon: Megaphone, permission: "leads" },
   { href: "/fleet", label: "Fleet Partners", icon: Truck, permission: "fleet" },
   { href: "/drivers", label: "Drivers", icon: Car, permission: "drivers" },
+  {
+    href: "/driver-applications",
+    label: "Driver Applications",
+    icon: FileCheck2,
+    permission: "driver_applications",
+  },
   { href: "/finances", label: "Finances", icon: Wallet, permission: "finances" },
   { href: "/waitlist", label: "Waitlist", icon: Mail, permission: "waitlist" },
   { href: "/media-kit", label: "Media Kit", icon: FileText, permission: "media_kit" },
@@ -118,12 +128,14 @@ export function OpsShell({
   permissions,
   userName,
   orgName,
+  pendingDriverApplicationsCount = 0,
 }: {
   children: React.ReactNode
   role: OpsRole
   permissions: OpsPermission[]
   userName: string
   orgName: string | null
+  pendingDriverApplicationsCount?: number
 }) {
   const pathname = usePathname()
   const canSee = (item: { permission?: OpsPermission; adminOnly?: boolean }) => {
@@ -133,6 +145,7 @@ export function OpsShell({
   }
   const visibleNavItems = navItems.filter(canSee)
   const visibleSecondaryItems = secondaryItems.filter(canSee)
+  const canSeeDriverApplications = canSee({ permission: "driver_applications" })
 
   return (
     <SidebarProvider>
@@ -164,6 +177,15 @@ export function OpsShell({
                       <Link href={item.href}>
                         <item.icon />
                         <span>{item.label}</span>
+                        {item.href === "/driver-applications" &&
+                        pendingDriverApplicationsCount > 0 ? (
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
+                          >
+                            {pendingDriverApplicationsCount}
+                          </Badge>
+                        ) : null}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -211,7 +233,8 @@ export function OpsShell({
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <OpsBreadcrumbs pathname={pathname} />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            {canSeeDriverApplications ? <NotificationBell /> : null}
             <ThemeToggle />
           </div>
         </header>
