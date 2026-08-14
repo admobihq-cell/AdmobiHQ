@@ -33,8 +33,15 @@ export async function uploadDriverDocument(
   const buffer = Buffer.from(arrayBuffer)
   const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`
 
+  // Accounts on Cloudinary's newer "Dynamic Folder Mode" only nest an asset
+  // under the Media Library folder tree if asset_folder is set explicitly —
+  // slashes in public_id alone (the legacy "Fixed Folder Mode" behavior) are
+  // NOT enough and everything lands in the account's default folder instead.
+  const assetFolder = publicId.split("/").slice(0, -1).join("/")
+
   await cloudinary.uploader.upload(dataUri, {
     public_id: publicId,
+    asset_folder: assetFolder,
     type: "authenticated",
     resource_type: "image",
     overwrite: true,
