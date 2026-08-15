@@ -40,6 +40,11 @@ export default buildConfig({
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
   db: postgresAdapter({
+    // Isolates every Payload table/enum in its own Postgres schema so Prisma's
+    // migration engine (scoped to `public`) never sees them and can't propose
+    // dropping them. Existing rows were moved here via the one-time
+    // prisma/scripts/isolate-payload-schema.sql cutover — see that file.
+    schemaName: "cms",
     pool: {
       connectionString: payloadDatabaseUrl,
     },
