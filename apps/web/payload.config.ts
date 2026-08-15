@@ -40,6 +40,11 @@ export default buildConfig({
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
   db: postgresAdapter({
+    // Isolates every Payload table/enum in its own Postgres schema so Prisma's
+    // migration engine (scoped to `public`) never sees them and can't propose
+    // dropping them. Existing rows were moved here via the one-time
+    // prisma/scripts/isolate-payload-schema.sql cutover — see that file.
+    schemaName: "cms",
     pool: {
       connectionString: payloadDatabaseUrl,
     },
@@ -67,6 +72,11 @@ export default buildConfig({
             },
             // Server-side uploads only, avoids browser → Blob direct upload path.
             clientUploads: false,
+            // Vercel Blob rejects re-uploading an existing path outright (no
+            // overwrite support in this adapter version). Without this, any
+            // upload that reuses a filename already in the bucket — a retried
+            // seed run, two people uploading the same asset — fails hard.
+            addRandomSuffix: true,
             token: blobToken,
           }),
         ]

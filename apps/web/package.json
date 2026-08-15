@@ -27,6 +27,10 @@
     "db:ops-roles": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/ops-roles-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
+    "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",
+    "db:migrate:status": "dotenv -e .env.local -- prisma migrate status",
+    "db:migrate:resolve-baseline": "dotenv -e .env.local -- prisma migrate resolve --applied 20260815000000_baseline",
+    "db:isolate-payload-schema": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/isolate-payload-schema.sql",
     "payload": "dotenv -e .env.local -- cross-env NODE_OPTIONS=--no-deprecation payload",
     "generate:types": "npm run payload generate:types",
     "generate:importmap": "npm run payload generate:importmap && tsx scripts/fix-importmap.ts",
@@ -40,7 +44,13 @@
     "seed:help": "dotenv -e .env.local -- tsx scripts/seed-help.ts",
     "seed:blog": "dotenv -e .env.local -- tsx scripts/seed-blog.ts",
     "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
-    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
+    "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local",
+    "env:pull:prod": "infisical export --env=prod --format=dotenv --output-file=.env.production.local",
+    "db:migrate:status:prod": "dotenv -e .env.production.local -- prisma migrate status",
+    "db:migrate:resolve-baseline:prod": "dotenv -e .env.production.local -- prisma migrate resolve --applied 20260815000000_baseline",
+    "db:migrate:deploy:prod": "dotenv -e .env.production.local -- prisma migrate deploy",
+    "db:isolate-payload-schema:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/isolate-payload-schema.sql",
+    "payload:migrate:prod": "dotenv -e .env.production.local -- cross-env NODE_OPTIONS=--no-deprecation payload migrate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
