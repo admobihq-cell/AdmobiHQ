@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import {
   AUDIT_ACTIONS,
+  AUDIT_APPS,
   AUDIT_ENTITY_TYPES,
   formatLabel,
   type AuditEventDto,
@@ -51,6 +52,7 @@ export function ActivityView() {
   const [loading, setLoading] = useState(true)
   const [entityType, setEntityType] = useState<string>(ALL)
   const [action, setAction] = useState<string>(ALL)
+  const [app, setApp] = useState<string>(ALL)
   const [page, setPage] = useState(1)
 
   const fetchSeq = useRef(0)
@@ -64,6 +66,7 @@ export function ActivityView() {
         pageSize: 50,
         entity_type: entityType === ALL ? undefined : entityType,
         action: action === ALL ? undefined : action,
+        app: app === ALL ? undefined : app,
       })
       if (seq !== fetchSeq.current) return
       setData(result)
@@ -73,7 +76,7 @@ export function ActivityView() {
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, entityType, action, page])
+  }, [client, entityType, action, app, page])
 
   useEffect(() => {
     void refresh()
@@ -81,7 +84,7 @@ export function ActivityView() {
 
   useEffect(() => {
     setPage(1)
-  }, [entityType, action])
+  }, [entityType, action, app])
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -112,6 +115,20 @@ export function ActivityView() {
           <SelectContent>
             <SelectItem value={ALL}>All actions</SelectItem>
             {AUDIT_ACTIONS.map((key) => (
+              <SelectItem key={key} value={key}>
+                {formatLabel(key)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={app} onValueChange={setApp}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="App" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All apps</SelectItem>
+            {AUDIT_APPS.map((key) => (
               <SelectItem key={key} value={key}>
                 {formatLabel(key)}
               </SelectItem>
