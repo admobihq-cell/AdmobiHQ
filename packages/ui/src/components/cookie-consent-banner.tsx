@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { CookieIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { readCookieConsent, writeCookieConsent } from "@workspace/ui/lib/cookie-consent"
@@ -28,17 +29,29 @@ export function CookieConsentBanner({ privacyHref = "/privacy#cookies" }: { priv
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card p-4 shadow-lg sm:p-5">
-      <div className="mx-auto flex max-w-4xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          We use cookies for error tracking and to understand site traffic. Choose what you're
-          comfortable with —{" "}
-          <a href={privacyHref} className="underline underline-offset-2 hover:text-foreground">
-            read more
-          </a>
-          .
-        </p>
-        <div className="flex shrink-0 gap-2">
+    <div
+      role="region"
+      aria-label="Cookie consent"
+      className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 ease-out animate-in fade-in-0 slide-in-from-bottom-4 duration-300 motion-reduce:animate-none sm:inset-x-auto sm:right-6 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:w-full sm:max-w-sm"
+    >
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-xl shadow-foreground/5">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <CookieIcon className="size-4" aria-hidden="true" />
+          </span>
+          <div className="space-y-1 pt-0.5">
+            <p className="text-sm font-semibold text-foreground">We use cookies</p>
+            <p className="text-sm text-muted-foreground">
+              For error tracking and understanding site traffic. Choose what you&apos;re
+              comfortable with, or{" "}
+              <a href={privacyHref} className="underline underline-offset-2 hover:text-foreground">
+                read our policy
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" size="sm" onClick={essentialOnly}>
             Essential only
           </Button>
