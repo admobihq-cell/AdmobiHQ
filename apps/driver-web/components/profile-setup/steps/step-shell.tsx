@@ -22,13 +22,13 @@ export function StepShell({
   error?: string | null
 }) {
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+    <div className="space-y-8">
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
 
-      <div className="space-y-5">{children}</div>
+      <div className="space-y-6">{children}</div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
