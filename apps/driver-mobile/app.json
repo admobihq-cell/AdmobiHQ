@@ -80,6 +80,13 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Admobi to use your camera to photograph your ID and profile documents.",
+          "photosPermission": "Allow Admobi to access your photos to upload your ID and profile documents."
+        }
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "organization": "admobi-media",

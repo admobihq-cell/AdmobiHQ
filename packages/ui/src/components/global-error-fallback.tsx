@@ -2,8 +2,7 @@
 
 import { RefreshCw } from "lucide-react"
 
-import { RouteSignalMark } from "@workspace/ui/brand/admobi-mark"
-import { BRAND_TERRA } from "@workspace/ui/brand/constants"
+import { Logo } from "@workspace/ui/brand/logo"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -26,12 +25,7 @@ export function GlobalErrorFallback({
       )}
     >
       <div className="flex max-w-md flex-col items-center gap-6 text-center">
-        <div
-          className="flex size-16 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: `${BRAND_TERRA}18` }}
-        >
-          <RouteSignalMark color={BRAND_TERRA} width={36} height={26} />
-        </div>
+        <Logo markHeight={32} wordmarkClassName="text-xl leading-none sm:text-2xl" />
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
             Error
