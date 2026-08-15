@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 
 import { OpsShell } from "@/components/ops-shell"
 import { requireOpsUser } from "@/lib/auth"
+import { getPendingDriverApplicationsCount } from "@/lib/queries/entities"
 
 export default async function DashboardLayout({
   children,
@@ -16,6 +17,11 @@ export default async function DashboardLayout({
   }
 
   const userName = access.user.fullName ?? access.email
+  const canSeeDriverApplications =
+    access.role === "admin" || access.permissions.includes("driver_applications")
+  const pendingDriverApplicationsCount = canSeeDriverApplications
+    ? await getPendingDriverApplicationsCount()
+    : 0
 
   return (
     <OpsShell
@@ -23,6 +29,7 @@ export default async function DashboardLayout({
       permissions={access.permissions}
       userName={userName}
       orgName={access.orgName}
+      pendingDriverApplicationsCount={pendingDriverApplicationsCount}
     >
       {children}
     </OpsShell>

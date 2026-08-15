@@ -10,6 +10,13 @@ export const DRIVERS_PAGE: EntityPageMeta = {
   columns: ["Date", "Name", "Phone", "City", "Vehicle", "Source", "Status"],
 }
 
+export const DRIVER_APPLICATIONS_PAGE: EntityPageMeta = {
+  title: "Driver Applications",
+  description:
+    "Profile-completion submissions from signed-in drivers — personal info, National ID, KRA PIN, and payout details — awaiting review.",
+  columns: ["Submitted", "Name", "Phone", "City", "Status"],
+}
+
 export const FLEET_PAGE: EntityPageMeta = {
   title: "Fleet Partners",
   description: "Fleet operators applying to join the Admobi network.",

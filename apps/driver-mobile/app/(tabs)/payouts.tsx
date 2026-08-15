@@ -1,6 +1,7 @@
+import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { PlaceholderScreen } from "@/components/settings/placeholder-screen"
 
-export default function PayoutsScreen() {
+function PayoutsScreen() {
   return (
     <PlaceholderScreen
       title="Payouts"
@@ -8,3 +9,5 @@ export default function PayoutsScreen() {
     />
   )
 }
+
+export default withProfileGate(PayoutsScreen)
