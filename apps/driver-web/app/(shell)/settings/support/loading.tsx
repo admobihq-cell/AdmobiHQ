@@ -5,7 +5,7 @@ import { NewRequestFormSkeleton } from "@/components/skeletons/new-request-form-
 
 export default function SupportListLoading() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-1">
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-4 w-full max-w-2xl" />
