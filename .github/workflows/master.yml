@@ -13,6 +13,12 @@ jobs:
   ci:
     name: Lint, Typecheck & Build
     runs-on: ubuntu-latest
+    # ci and e2e both bootstrap the same shared CI database (migrate + seed);
+    # running them in parallel races real DDL/inserts against each other.
+    # Queue them instead of canceling either one.
+    concurrency:
+      group: cms-bootstrap-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
@@ -112,6 +118,11 @@ jobs:
   e2e:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
+    # See the matching comment on the ci job: same shared database, so same
+    # concurrency group to keep the two CMS bootstraps from racing.
+    concurrency:
+      group: cms-bootstrap-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
