@@ -7,6 +7,11 @@ on:
       - master
     types: [opened, synchronize, reopened]
 
+# Nothing in this workflow pushes commits, comments on PRs (Vercel's own
+# GitHub App does that), or touches releases — checkout is all it needs.
+permissions:
+  contents: read
+
 env:
   TURBO_UI: false
   NEXT_TELEMETRY_DISABLED: 1
@@ -15,12 +20,6 @@ jobs:
   ci:
     name: Lint, Typecheck & Build
     runs-on: ubuntu-latest
-    # ci and e2e both bootstrap the same shared CI database (migrate + seed);
-    # running them in parallel races real DDL/inserts against each other.
-    # Queue them instead of canceling either one.
-    concurrency:
-      group: cms-bootstrap-${{ github.workflow }}-${{ github.run_id }}
-      cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
@@ -120,11 +119,10 @@ jobs:
   e2e:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    # See the matching comment on the ci job: same shared database, so same
-    # concurrency group to keep the two CMS bootstraps from racing.
-    concurrency:
-      group: cms-bootstrap-${{ github.workflow }}-${{ github.run_id }}
-      cancel-in-progress: false
+    # Runs after ci, which already bootstraps the same shared CI database
+    # (migrate + seed) — no need to repeat that here, and this avoids the
+    # two jobs racing real DDL/inserts against each other.
+    needs: ci
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
@@ -154,26 +152,19 @@ jobs:
           node-version: 22
           cache: "npm"
 
-      - name: Check database secrets
-        id: db_secrets
-        run: |
-          if [ -n "${DATABASE_URL}" ] && [ -n "${PAYLOAD_SECRET}" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-            echo "Database secrets present — CMS bootstrap enabled."
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::DATABASE_URL or PAYLOAD_SECRET is not set. Skipping CMS bootstrap; e2e public smokes will still run."
-          fi
-
       - name: Install dependencies
         run: npm ci
 
       - name: Generate Prisma Client (safe mode)
         run: cd apps/web && npx prisma generate
 
-      - name: Bootstrap CMS (migrate + seed)
-        if: ${{ steps.db_secrets.outputs.available == 'true' && vars.SKIP_CMS_BOOTSTRAP != 'true' }}
-        run: npm run cms:bootstrap:ci -w web
+      - name: Cache Turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
       - name: Build web
         run: npm run build -w web
