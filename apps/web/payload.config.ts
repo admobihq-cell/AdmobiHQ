@@ -72,6 +72,11 @@ export default buildConfig({
             },
             // Server-side uploads only, avoids browser → Blob direct upload path.
             clientUploads: false,
+            // Vercel Blob rejects re-uploading an existing path outright (no
+            // overwrite support in this adapter version). Without this, any
+            // upload that reuses a filename already in the bucket — a retried
+            // seed run, two people uploading the same asset — fails hard.
+            addRandomSuffix: true,
             token: blobToken,
           }),
         ]
