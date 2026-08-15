@@ -6,7 +6,7 @@ import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
-import { AdminAlert } from "@/lib/email/templates/AdminAlert"
+import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { checkRateLimit } from "@/lib/rate-limit"
 
@@ -75,6 +75,9 @@ export async function POST(req: Request) {
         submitterPhone: parsed.data.phone,
         submitterCity: parsed.data.city,
         additionalInfo: `Vehicle: ${parsed.data.vehicleType}, Days/week: ${parsed.data.daysPerWeek}`,
+        // No per-record route for leads (list + edit-sheet only) — link to
+        // the Drivers list itself rather than a non-existent detail page.
+        reviewUrl: reviewUrl('/drivers'),
       })
 
       if (parsed.data.email) {
@@ -86,7 +89,7 @@ export async function POST(req: Request) {
       }
 
       await sendAdminEmail(
-        `New Driver Application: ${parsed.data.name}`,
+        `New driver lead: ${parsed.data.name}`,
         adminDriverHtml
       )
 

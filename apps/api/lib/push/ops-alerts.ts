@@ -13,7 +13,7 @@ export type OpsAlertType =
 const TYPE_LABELS: Record<OpsAlertType, string> = {
   campaign: "Campaign brief",
   fleet: "Fleet partnership",
-  driver: "Driver application",
+  driver: "Driver lead",
   waitlist: "Waitlist signup",
   "media-kit": "Media kit request",
   support: "Support case",

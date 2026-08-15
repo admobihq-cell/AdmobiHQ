@@ -11,7 +11,7 @@ import {
 import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver-profile-store"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
-import { AdminAlert } from "@/lib/email/templates/AdminAlert"
+import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { DriverApplicationSubmitted } from "@/lib/email/templates/DriverApplicationSubmitted"
 import { prisma } from "@/lib/prisma"
 
@@ -67,14 +67,15 @@ export async function POST() {
     }
 
     const adminHtml = await renderTemplate(AdminAlert, {
-      type: "driver",
+      type: "driver-application",
       submitterName: name,
       submitterEmail: driverEmail || "No email on file",
       submitterPhone: updated.phone || undefined,
       submitterCity: updated.city || undefined,
-      additionalInfo: `Driver profile #${updated.id} — review at /driver-applications/${updated.id}`,
+      additionalInfo: `Driver profile #${updated.id}`,
+      reviewUrl: reviewUrl(`/driver-applications/${updated.id}`),
     })
-    await sendAdminEmail(`New driver application: ${name}`, adminHtml)
+    await sendAdminEmail(`Driver application ready for review: ${name}`, adminHtml)
   } catch (error) {
     console.error("[driver/profile/submit] Failed to send notifications:", error)
   }
