@@ -2,17 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
-import { AlertCircle, CheckCircle2, ChevronDown, Clock, ShieldQuestion } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronDown, Clock, ShieldQuestion, X } from "lucide-react"
 import type { DriverProfileDto } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet"
+import { Logo } from "@workspace/ui/brand/logo"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ProfileSetupStepper } from "@/components/profile-setup/stepper"
@@ -146,11 +148,24 @@ export function DriverVerificationSection() {
       </Card>
 
       <Sheet open={stepperOpen} onOpenChange={setStepperOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Complete your profile</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-8">
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          className="w-full gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none"
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-popover px-4 py-3 sm:px-8">
+            <Logo markHeight={18} wordmarkClassName="text-sm font-semibold leading-none" />
+            <SheetClose asChild>
+              <Button type="button" variant="ghost" size="icon-sm" aria-label="Close">
+                <X aria-hidden />
+              </Button>
+            </SheetClose>
+          </div>
+
+          <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Complete your profile</SheetTitle>
+            </SheetHeader>
             <ProfileSetupStepper
               initialProfile={profile}
               onSubmitted={(updated) => {
