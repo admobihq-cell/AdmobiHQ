@@ -11,6 +11,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { requireOpsAdmin, requireOpsPermission, requireOpsUser } from "@/lib/auth"
+import { requireDriverUser } from "@/lib/driver-auth"
 
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }
@@ -57,6 +58,21 @@ export async function requireOpsPermissionAccess(
 > {
   try {
     const access = await requireOpsPermission(permission)
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Same shape as requireOpsAccess, but for the driver-facing routes under
+ * /v1/driver/* — any authenticated driver-Clerk user, no org/role concept. */
+export async function requireDriverAccess(): Promise<
+  | { access: Awaited<ReturnType<typeof requireDriverUser>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireDriverUser()
     return { access }
   } catch (e) {
     if (e instanceof Response) return { error: e as NextResponse }

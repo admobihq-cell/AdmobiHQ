@@ -72,6 +72,23 @@ export function auditFromOpsUser(
   })
 }
 
+export function auditFromDriverUser(
+  userId: string,
+  input: Omit<RecordAuditEventInput, "app" | "actor_type" | "actor_user_id" | "actor_email">,
+): Promise<void> {
+  return recordAuditEvent({
+    app: "api",
+    actor_type: "driver_user",
+    actor_user_id: userId,
+    actor_email: null,
+    action: input.action,
+    entity_type: input.entity_type,
+    entity_id: input.entity_id,
+    summary: input.summary,
+    metadata: input.metadata,
+  })
+}
+
 export function auditPublic(
   input: Omit<
     RecordAuditEventInput,

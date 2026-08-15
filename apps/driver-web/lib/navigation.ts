@@ -56,16 +56,23 @@ export const driverNavItems: DriverNavItem[] = [
     description: "Get help and reach the Admobi team.",
   },
   {
-    href: "/settings",
+    href: "/settings/profile",
     label: "Settings",
     icon: Settings,
     description: "Profile and delivery preferences will be configured here.",
   },
 ]
 
-/** Matches nested routes too, not just an exact pathname. */
+/** Matches nested routes too, not just an exact pathname. The Settings item
+ * links straight to /settings/profile (skipping the bare /settings redirect
+ * for in-app nav clicks), but it still needs to read as "active" for every
+ * settings sub-page — /settings/account, /settings/preferences, etc. —
+ * except /settings/support, which is its own separate nav item above. */
 function isNavItemActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/"
+  if (href === "/settings/profile") {
+    return pathname.startsWith("/settings") && !pathname.startsWith("/settings/support")
+  }
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 

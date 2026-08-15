@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { Container } from "@/components/landing/container"
+import { GridBackground } from "@/components/landing/grid-background"
 import { pageMetadata } from "@/lib/seo/site"
 
 import { CoverSheet } from "./cover-sheet"
@@ -34,16 +35,7 @@ export default function DesignSystemPage() {
         FORM: Spec-sheet / drawing-set structure — candidate 6 of a 7-item ordered list — seed key 7467ea05.
         FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
       */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.35] dark:opacity-[0.2]"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          maskImage: "linear-gradient(to bottom, black, transparent 85%)",
-        }}
-      />
+      <GridBackground />
 
       <Container>
         <CoverSheet />

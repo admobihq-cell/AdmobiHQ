@@ -74,6 +74,56 @@ export type DriverDto = {
   updated_at: string
 }
 
+export type DriverDocumentDto = {
+  id: number
+  type: string
+  content_type: string
+  size_bytes: number
+  original_filename: string | null
+  created_at: string
+}
+
+export type DriverProfileDto = {
+  id: number
+  full_name: string | null
+  phone: string | null
+  city: string | null
+  national_id_number: string | null
+  kra_pin: string | null
+  payout_method: string | null
+  payout_mpesa_msisdn: string | null
+  payout_bank_name: string | null
+  payout_bank_account: string | null
+  status: string
+  submitted_at: string | null
+  reviewed_at: string | null
+  rejection_reason: string | null
+  created_at: string
+  updated_at: string
+  documents: DriverDocumentDto[]
+}
+
+export type DriverNotificationDto = {
+  id: number
+  type: string
+  title: string
+  body: string
+  read_at: string | null
+  created_at: string
+}
+
+/** Flattened row shape for the ops driver-applications list table — the
+ * detail view fetches the full DriverProfileDto separately. */
+export type DriverApplicationListItemDto = {
+  id: number
+  full_name: string | null
+  phone: string | null
+  city: string | null
+  status: string
+  submitted_at: string | null
+  created_at: string
+}
+
 export type WaitlistEntryDto = {
   id: number
   email: string

@@ -134,7 +134,7 @@ export function NavUser() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/settings/account">
+                <Link href="/settings/profile">
                   <UserCircle aria-hidden />
                   Profile & sign-in
                 </Link>

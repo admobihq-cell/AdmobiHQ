@@ -3,6 +3,7 @@ const required = [
   "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
   "CLERK_SECRET_KEY",
   "CLERK_ORG_ID",
+  "DRIVER_CLERK_SECRET_KEY",
 ] as const
 
 const optional = [
@@ -57,6 +58,20 @@ if (publishable && !publishable.startsWith("pk_")) {
 
 if (secret && !secret.startsWith("sk_")) {
   console.error("[api env:check] CLERK_SECRET_KEY must start with sk_test_ or sk_live_")
+  invalid = true
+}
+
+const driverSecret = trimQuotes(process.env.DRIVER_CLERK_SECRET_KEY ?? "")
+if (driverSecret && !driverSecret.startsWith("sk_")) {
+  console.error(
+    "[api env:check] DRIVER_CLERK_SECRET_KEY must start with sk_test_ or sk_live_",
+  )
+  invalid = true
+}
+if (driverSecret && driverSecret === secret) {
+  console.error(
+    "[api env:check] DRIVER_CLERK_SECRET_KEY must not equal CLERK_SECRET_KEY — they are different Clerk instances (ops vs driver).",
+  )
   invalid = true
 }
 
