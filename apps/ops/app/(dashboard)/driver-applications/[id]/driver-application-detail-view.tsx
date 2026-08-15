@@ -163,7 +163,7 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
   const canUnapprove = data.status === "approved"
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6">
+    <div className="flex w-full flex-1 flex-col gap-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon-sm" asChild>
           <Link href="/driver-applications">
@@ -178,13 +178,13 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
       </div>
 
       {data.rejection_reason ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="max-w-2xl rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           <p className="font-medium">Last review note</p>
           <p className="mt-1">{data.rejection_reason}</p>
         </div>
       ) : null}
 
-      <div className="rounded-xl border bg-card p-4 shadow-none">
+      <div className="max-w-2xl rounded-xl border bg-card p-4 shadow-none">
         <DetailRow label="Full name" value={data.full_name ?? "—"} />
         <DetailRow label="Phone" value={data.phone ?? "—"} />
         <DetailRow label="City" value={data.city ?? "—"} />
@@ -207,7 +207,7 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
         {data.documents.length === 0 ? (
           <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {data.documents.map((doc) => (
               <DocumentPreview
                 key={doc.id}
@@ -221,7 +221,7 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
       </div>
 
       {canReview || canUnapprove ? (
-        <div className="space-y-3 rounded-xl border bg-card p-4 shadow-none">
+        <div className="max-w-2xl space-y-3 rounded-xl border bg-card p-4 shadow-none">
           {deciding ? (
             <div className="space-y-3">
               <Textarea

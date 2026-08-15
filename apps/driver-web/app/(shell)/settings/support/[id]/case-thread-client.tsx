@@ -77,7 +77,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
+    <div className="flex flex-1 flex-col gap-5">
       <Link
         href="/settings/support"
         className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"

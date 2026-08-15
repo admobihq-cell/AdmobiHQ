@@ -11,6 +11,32 @@ import { TaxPayoutStep } from "@/components/profile-setup/steps/tax-payout-step"
 
 const STEP_LABELS = ["Profile", "Tax & payout", "Review"]
 
+/** Whether each required step's fields are already on file — a driver who
+ * created their account earlier, or is resuming after "changes requested",
+ * can walk in with step 0 (or both) already complete. */
+function stepCompletion(profile: DriverProfileDto): [boolean, boolean] {
+  return [
+    Boolean(
+      profile.full_name &&
+        profile.phone &&
+        profile.city &&
+        profile.national_id_number &&
+        profile.documents.some((d) => d.type === "national_id") &&
+        profile.documents.some((d) => d.type === "profile_photo"),
+    ),
+    Boolean(profile.kra_pin && profile.payout_method),
+  ]
+}
+
+/** Index of the first incomplete step, so a driver who already has data on
+ * file resumes where they left off instead of restarting at 0%. */
+function firstIncompleteStepIndex(profile: DriverProfileDto): number {
+  const [step0Done, step1Done] = stepCompletion(profile)
+  if (!step0Done) return 0
+  if (!step1Done) return 1
+  return 2
+}
+
 /** Embedded wherever a driver completes their profile — currently a Sheet
  * triggered from Settings, not a standalone route, so it never feels like a
  * separate part of the app. Owns its own step index; the caller only needs
@@ -24,11 +50,19 @@ export function ProfileSetupStepper({
 }) {
   const { getToken } = useAuth()
   const [profile, setProfile] = useState(initialProfile)
-  const [stepIndex, setStepIndex] = useState(0)
+  const [stepIndex, setStepIndex] = useState(() => firstIncompleteStepIndex(initialProfile))
+
+  const [step0Done, step1Done] = stepCompletion(profile)
+  const stepDone = [step0Done, step1Done]
 
   const steps: StepperStep[] = STEP_LABELS.map((label, index) => ({
     label,
-    status: index < stepIndex ? "complete" : index === stepIndex ? "current" : "upcoming",
+    status:
+      index === stepIndex
+        ? "current"
+        : (index < 2 && stepDone[index]) || index < stepIndex
+          ? "complete"
+          : "upcoming",
   }))
 
   function goBack() {
@@ -40,17 +74,7 @@ export function ProfileSetupStepper({
     setStepIndex((i) => Math.min(STEP_LABELS.length - 1, i + 1))
   }
 
-  const completedRequiredSteps = [
-    Boolean(
-      profile.full_name &&
-        profile.phone &&
-        profile.city &&
-        profile.national_id_number &&
-        profile.documents.some((d) => d.type === "national_id") &&
-        profile.documents.some((d) => d.type === "profile_photo"),
-    ),
-    Boolean(profile.kra_pin && profile.payout_method),
-  ].filter(Boolean).length
+  const completedRequiredSteps = stepDone.filter(Boolean).length
   const progressPercent = Math.round((completedRequiredSteps / 2) * 100)
 
   return (

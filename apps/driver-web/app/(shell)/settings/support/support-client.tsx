@@ -100,10 +100,10 @@ export function SupportClient() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Help &amp; contact</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Reach the Admobi team about earnings, routes, deliveries, or anything else — we
           usually reply within one business day.
         </p>
