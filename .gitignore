@@ -65,3 +65,5 @@ bruno/**/*.local.bru
 bruno/environments/*.local.bru
 bruno/.env
 
+.vercel
+.env*
