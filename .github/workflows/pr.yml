@@ -19,7 +19,7 @@ jobs:
     # running them in parallel races real DDL/inserts against each other.
     # Queue them instead of canceling either one.
     concurrency:
-      group: cms-bootstrap-${{ github.workflow }}-${{ github.ref }}
+      group: cms-bootstrap-${{ github.workflow }}-${{ github.run_id }}
       cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -123,7 +123,7 @@ jobs:
     # See the matching comment on the ci job: same shared database, so same
     # concurrency group to keep the two CMS bootstraps from racing.
     concurrency:
-      group: cms-bootstrap-${{ github.workflow }}-${{ github.ref }}
+      group: cms-bootstrap-${{ github.workflow }}-${{ github.run_id }}
       cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
