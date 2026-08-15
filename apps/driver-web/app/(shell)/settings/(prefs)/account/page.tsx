@@ -1,7 +1,7 @@
-import { AccountSettingsView } from "@/components/settings/account-settings-view"
+import { AccountStatusView } from "@/components/settings/account-status-view"
 
-export const metadata = { title: "Profile & sign-in" }
+export const metadata = { title: "Account status" }
 
-export default function AccountSettingsPage() {
-  return <AccountSettingsView />
+export default function AccountStatusPage() {
+  return <AccountStatusView />
 }

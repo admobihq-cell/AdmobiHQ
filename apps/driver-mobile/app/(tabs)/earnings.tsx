@@ -2,13 +2,14 @@ import { ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Clock, PackageCheck, TrendingUp, Wallet } from "@/components/icons"
+import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { StatCard } from "@/components/ui/stat-card"
 import { EARNINGS_STATS } from "@/lib/placeholder-data"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 const STAT_ICONS = [Wallet, Clock, TrendingUp, PackageCheck] as const
 
-export default function EarningsScreen() {
+function EarningsScreen() {
   const insets = useSafeAreaInsets()
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -91,3 +92,5 @@ export default function EarningsScreen() {
     </ScrollView>
   )
 }
+
+export default withProfileGate(EarningsScreen)

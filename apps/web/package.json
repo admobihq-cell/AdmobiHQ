@@ -25,6 +25,8 @@
     "db:platform-flags": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/platform-flags-additive.sql",
     "db:driver-push-and-targeting": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/driver-push-and-targeting-additive.sql",
     "db:ops-roles": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/ops-roles-additive.sql",
+    "db:driver-profiles": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/driver-profiles-additive.sql",
+    "db:driver-notifications": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/driver-notifications-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Clock, Deliveries, HelpCircle, Routes, TrendingUp, Wallet } from "@/components/icons"
+import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { StatCard } from "@/components/ui/stat-card"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { usePlatformFlags } from "@/lib/flags"
@@ -32,7 +33,7 @@ function useNoUser() {
  */
 const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
-export default function DashboardScreen() {
+function DashboardScreen() {
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const flags = usePlatformFlags()
@@ -199,3 +200,5 @@ export default function DashboardScreen() {
     </ScrollView>
   )
 }
+
+export default withProfileGate(DashboardScreen)

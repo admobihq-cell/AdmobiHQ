@@ -99,6 +99,48 @@ export async function listDrivers(
   return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
 }
 
+/** Drafts aren't ops's concern yet — a driver still filling out the stepper
+ * shouldn't show up in the review queue. Mirrors apps/api's default filter
+ * in app/v1/driver-applications/route.ts. */
+const DEFAULT_APPLICATION_STATUSES = ["submitted", "approved", "rejected", "changes_requested"]
+
+export async function listDriverApplications(
+  params: Partial<PaginationParams> & { status?: string } = {},
+): Promise<
+  SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.driverProfile.findMany>>[number]>
+> {
+  const parsed = parsePagination(params)
+  const where: Prisma.DriverProfileWhereInput = params.status
+    ? { status: params.status }
+    : { status: { in: DEFAULT_APPLICATION_STATUSES } }
+
+  if (parsed.search) {
+    where.OR = [
+      { full_name: { contains: parsed.search, mode: "insensitive" } },
+      { phone: { contains: parsed.search, mode: "insensitive" } },
+    ]
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.driverProfile.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (parsed.page - 1) * parsed.pageSize,
+      take: parsed.pageSize,
+    }),
+    prisma.driverProfile.count({ where }),
+  ])
+
+  return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
+}
+
+/** Powers the pending-review badge on the "Driver Applications" nav item —
+ * ops's review queue doubles as its notification inbox, so this is the only
+ * "unread count" that app needs. */
+export async function getPendingDriverApplicationsCount(): Promise<number> {
+  return prisma.driverProfile.count({ where: { status: "submitted" } })
+}
+
 export async function listFleetPartners(
   params: Partial<PaginationParams> & { city?: string; status?: string } = {},
 ): Promise<

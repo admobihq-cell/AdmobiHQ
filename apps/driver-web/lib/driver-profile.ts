@@ -1,0 +1,45 @@
+import { auth } from "@clerk/nextjs/server"
+import type { DriverProfileDto } from "@workspace/ops-contracts"
+
+import { apiPublicUrl } from "@/lib/site-urls"
+
+export type DriverProfileFetchResult =
+  | { status: "ok"; profile: DriverProfileDto }
+  | { status: "error" }
+
+/** Server-side authenticated fetch of the signed-in driver's profile, used
+ * to gate (shell) routes and to hydrate the profile-setup stepper. Unlike
+ * getPlatformFlags() (additive, fails-open to an empty set), a failed fetch
+ * here must NOT silently let an unapproved driver through — callers should
+ * show a retry state on { status: "error" }, never treat it as approved. */
+export async function fetchDriverProfile(): Promise<DriverProfileFetchResult> {
+  try {
+    const { getToken } = await auth()
+    const token = await getToken()
+    if (!token) {
+      console.error("[fetchDriverProfile] auth().getToken() returned no token")
+      return { status: "error" }
+    }
+
+    const res = await fetch(`${apiPublicUrl()}/v1/driver/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      // Generous even for prod: apps/api's first hit after a cold start
+      // (dev-mode route compilation, or a cold Lambda) can take several
+      // seconds on its own — a tight timeout here turns that into a false
+      // "can't verify your profile" for the driver instead of just being slow.
+      signal: AbortSignal.timeout(10000),
+    })
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      console.error(`[fetchDriverProfile] ${res.status} from /v1/driver/profile: ${body}`)
+      return { status: "error" }
+    }
+
+    const profile = (await res.json()) as DriverProfileDto
+    return { status: "ok", profile }
+  } catch (error) {
+    console.error("[fetchDriverProfile] threw:", error)
+    return { status: "error" }
+  }
+}

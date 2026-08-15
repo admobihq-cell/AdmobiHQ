@@ -22,6 +22,10 @@ const sections = [
     body: "Specifications, reach figures, and city rollout details may change. Final terms appear in signed agreements and the media kit issued to approved partners.",
   },
   {
+    heading: "Driver profile and document submission",
+    body: "Drivers completing the profile-setup process submit personal information and documents (including a National ID, a photo, and tax and payout details) for identity verification and compliance review. Submitting these documents does not guarantee approval — our team reviews every submission for accuracy and legitimacy before granting dashboard access. Submitting false, altered, or fraudulent documents may result in rejection of your application or suspension of your account. If your application is rejected or sent back for changes, you may correct and resubmit it.",
+  },
+  {
     heading: "Governing law",
     body: "These terms are governed by the laws of Kenya. For questions, contact admobihq@gmail.com.",
   },

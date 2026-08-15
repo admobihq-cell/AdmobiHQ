@@ -32,6 +32,8 @@ import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { NavUser } from "@/components/shell/nav-user"
+import { NotificationBell } from "@/components/shell/notification-bell"
+import { VerificationBadge } from "@/components/shell/verification-badge"
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -59,9 +61,11 @@ function DriverBreadcrumbs({ pathname }: { pathname: string }) {
 export function AppShell({
   children,
   enabledFlags,
+  profileStatus,
 }: {
   children: React.ReactNode
   enabledFlags: string[]
+  profileStatus: string | null
 }) {
   const pathname = usePathname()
   const currentNavHref = navItemForPath(pathname).href
@@ -105,7 +109,8 @@ export function AppShell({
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border p-2">
+        <SidebarFooter className="gap-2 border-t border-sidebar-border p-2">
+          <VerificationBadge status={profileStatus} />
           <NavUser />
         </SidebarFooter>
       </Sidebar>
@@ -114,7 +119,8 @@ export function AppShell({
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <DriverBreadcrumbs pathname={pathname} />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

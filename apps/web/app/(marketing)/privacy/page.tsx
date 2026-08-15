@@ -22,6 +22,14 @@ const sections = [
     body: "We keep submissions for as long as needed to manage programmes and comply with law. You may request deletion by contacting us at the email address on our website.",
   },
   {
+    heading: "Documents you submit as a driver",
+    body: "As part of the driver profile-setup process, we collect a National ID, a profile photo, your KRA PIN, and payout details (M-Pesa number or bank account) so we can verify your identity, meet tax compliance requirements, and pay you correctly. These documents are stored in private object storage and are never given a public URL — they can only be viewed by you and by authorized Admobi ops staff reviewing your application, through an access-controlled connection. We keep driver documents for as long as your driver account is active, plus a period afterward as required for compliance and dispute resolution.",
+  },
+  {
+    heading: "Cookies",
+    body: "Our website uses error-tracking (Sentry) to help us find and fix bugs; on admobihq.com we also use Google Analytics to understand site traffic. Both are optional and only run if you accept them in the cookie banner — if you choose \"Essential only,\" neither loads. We also use Vercel Web Analytics, which does not use cookies or store any identifier about you, so it isn't affected by your choice. You can change your choice at any time by clearing your browser's site data and reloading the page.",
+  },
+  {
     heading: "Contact",
     body: "For privacy questions, email admobihq@gmail.com. This policy may be updated as programmes expand.",
   },

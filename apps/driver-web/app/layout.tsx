@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { cookies } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
 
+import { CookieConsentBanner } from "@workspace/ui/components/cookie-consent-banner"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
@@ -12,6 +13,7 @@ import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
 import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
 import { cn } from "@workspace/ui/lib/utils"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { webPublicUrl } from "@/lib/site-urls"
 
 import "@workspace/ui/globals.css"
 
@@ -76,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </ThemeProvider>
         </Providers>
         <Analytics />
+        <CookieConsentBanner privacyHref={`${webPublicUrl()}/privacy#cookies`} />
       </body>
     </html>
   )

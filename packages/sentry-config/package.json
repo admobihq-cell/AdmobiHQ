@@ -12,7 +12,8 @@
     "./edge": "./src/edge.ts"
   },
   "peerDependencies": {
-    "@sentry/nextjs": "^10.64.0"
+    "@sentry/nextjs": "^10.64.0",
+    "@workspace/ui": "*"
   },
   "devDependencies": {
     "@sentry/nextjs": "^10.64.0",

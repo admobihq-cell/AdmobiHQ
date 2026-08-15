@@ -1,4 +1,4 @@
-import { Package, UserCircle, type LucideIcon } from "lucide-react"
+import { Package, ShieldCheck, UserCircle, type LucideIcon } from "lucide-react"
 
 export type SettingsNavItem = {
   href: string
@@ -9,10 +9,16 @@ export type SettingsNavItem = {
 
 export const settingsNavItems: SettingsNavItem[] = [
   {
-    href: "/settings/account",
+    href: "/settings/profile",
     label: "Profile & sign-in",
     icon: UserCircle,
     description: "Name, phone, and vehicle",
+  },
+  {
+    href: "/settings/account",
+    label: "Account status",
+    icon: ShieldCheck,
+    description: "Verification status and submitted documents",
   },
   {
     href: "/settings/preferences",

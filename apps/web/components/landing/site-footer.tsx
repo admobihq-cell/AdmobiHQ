@@ -73,8 +73,8 @@ export function SiteFooter() {
 
   return (
     <footer className="border-border border-t bg-muted/25">
-      <Container className="py-14 sm:py-16 lg:py-20">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,3fr)] lg:gap-16 xl:gap-20">
+      <Container className="py-12 sm:py-16 lg:py-20">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,3fr)] lg:gap-16 xl:gap-20">
           <div className="space-y-5">
             <Link
               href="/"
@@ -91,7 +91,7 @@ export function SiteFooter() {
             <SocialLinks />
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:gap-8">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 md:grid-cols-3 md:gap-8 xl:grid-cols-5">
             {columns.map(({ id, heading, links }) => (
               <nav key={id} aria-label={heading} className="min-w-0 space-y-4">
                 <FooterHeading>{heading}</FooterHeading>
@@ -109,7 +109,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-border text-muted-foreground mt-14 flex flex-col gap-4 border-t pt-10 text-xs sm:mt-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="border-border text-muted-foreground mt-12 flex flex-col gap-4 border-t pt-8 text-xs sm:mt-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pt-10">
           <div className="space-y-1">
             <p className="text-foreground text-sm tabular-nums">
               © {year} Admobi
@@ -121,7 +121,7 @@ export function SiteFooter() {
             </p>
             <LastUpdated className="mt-2" />
           </div>
-          <p className="font-mono text-[0.65rem] leading-relaxed uppercase tracking-[0.12em] sm:shrink-0 sm:text-end">
+          <p className="hidden font-mono text-[0.65rem] leading-relaxed uppercase tracking-[0.12em] sm:block sm:shrink-0 sm:text-end">
             Press D for theme
           </p>
         </div>

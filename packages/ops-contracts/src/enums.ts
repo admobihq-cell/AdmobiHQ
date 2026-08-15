@@ -26,6 +26,29 @@ export type FleetStatus = (typeof FLEET_STATUSES)[number]
 export const DRIVER_STATUSES = ["pending", "verified", "active"] as const
 export type DriverStatus = (typeof DRIVER_STATUSES)[number]
 
+/** Progression of a driver's profile-completion application — see
+ * DriverProfile in the Prisma schema. Distinct from DRIVER_STATUSES above,
+ * which belongs to the unrelated marketing lead-capture "drivers" table. */
+export const DRIVER_PROFILE_STATUSES = [
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "changes_requested",
+] as const
+export type DriverProfileStatus = (typeof DRIVER_PROFILE_STATUSES)[number]
+
+export const DRIVER_DOCUMENT_TYPES = [
+  "national_id",
+  "profile_photo",
+  "kra_pin_certificate",
+  "payout_proof",
+] as const
+export type DriverDocumentType = (typeof DRIVER_DOCUMENT_TYPES)[number]
+
+export const DRIVER_PAYOUT_METHODS = ["mpesa", "bank"] as const
+export type DriverPayoutMethod = (typeof DRIVER_PAYOUT_METHODS)[number]
+
 export const FLEET_TYPES = ["taxi", "delivery_bike"] as const
 export type FleetType = (typeof FLEET_TYPES)[number]
 
@@ -86,6 +109,7 @@ export const AUDIT_ACTOR_TYPES = [
   "public",
   "system",
   "customer",
+  "driver_user",
 ] as const
 export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number]
 
@@ -111,6 +135,8 @@ export const AUDIT_ENTITY_TYPES = [
   "team_member",
   "team_invitation",
   "ops_role",
+  "driver_profile",
+  "driver_document",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 
@@ -132,6 +158,7 @@ export const OPS_PERMISSIONS = [
   "content",
   "flags",
   "activity",
+  "driver_applications",
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 

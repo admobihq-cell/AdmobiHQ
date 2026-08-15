@@ -20,6 +20,7 @@ import {
   SITE_URL,
 } from "@/lib/seo/site"
 import "@workspace/ui/globals.css"
+import { CookieConsentBanner } from "@workspace/ui/components/cookie-consent-banner"
 import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -128,6 +129,7 @@ export default async function MarketingLayout({
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
+        <CookieConsentBanner />
       </body>
     </html>
   )

@@ -7,9 +7,12 @@ import {
   type BroadcastCreateInput,
   type BulkResponse,
   type DateRangeKey,
+  type DriverApplicationListItemDto,
   type DriverBulkInput,
   type DriverCreateInput,
   type DriverDto,
+  type DriverProfileDto,
+  type DriverProfileReviewInput,
   type DriverUpdateInput,
   type FleetBulkInput,
   type FleetCreateInput,
@@ -39,6 +42,7 @@ import {
   type OpsRoleCreateInput,
   type OpsRoleDto,
   type OpsRoleUpdateInput,
+  type PaginationParams,
   type TeamDto,
   type TeamInvitationDto,
   type TeamInviteInput,
@@ -175,6 +179,17 @@ export type OpsClient = {
     get: (id: number) => Promise<SupportCaseDetailDto>
     update: (id: number, body: SupportCaseUpdateInput) => Promise<SupportCaseDto>
     reply: (id: number, body: SupportMessageCreateInput) => Promise<SupportMessageDto>
+  }
+  driverApplications: {
+    list: (
+      params?: Partial<PaginationParams> & { status?: string },
+    ) => Promise<PaginatedResponse<DriverApplicationListItemDto>>
+    get: (id: number) => Promise<DriverProfileDto>
+    review: (id: number, body: DriverProfileReviewInput) => Promise<DriverProfileDto>
+    /** No JSON endpoint for this — the file route streams raw bytes, so the
+     * caller fetches it directly (with the same bearer token) rather than
+     * going through request<T>()'s JSON parsing. */
+    documentFileUrl: (applicationId: number, documentId: number) => string
   }
 }
 
@@ -449,6 +464,27 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           method: "POST",
           body: JSON.stringify(body),
         }),
+    },
+    driverApplications: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          status: "status" in params ? params.status : undefined,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<DriverApplicationListItemDto>>(
+          `${apiPrefix}/driver-applications${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<DriverProfileDto>(`${apiPrefix}/driver-applications/${id}`),
+      review: (id, body) =>
+        request<DriverProfileDto>(`${apiPrefix}/driver-applications/${id}/review`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      documentFileUrl: (applicationId, documentId) =>
+        `${baseUrl}${apiPrefix}/driver-applications/${applicationId}/documents/${documentId}/file`,
     },
   }
 }

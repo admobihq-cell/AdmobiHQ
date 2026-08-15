@@ -13,6 +13,7 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { AuthGate } from "@/components/AuthGate"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
+import { ProfileSetupGate } from "@/components/ProfileSetupGate"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
@@ -33,7 +34,9 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <AuthGate>{children}</AuthGate>
+      <AuthGate>
+        <ProfileSetupGate>{children}</ProfileSetupGate>
+      </AuthGate>
     </ClerkProvider>
   )
 }
@@ -66,6 +69,7 @@ function RootNavigator({
       <StatusBar style={statusBarStyle} />
       <Stack screenOptions={screenOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="profile-setup" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false }} />

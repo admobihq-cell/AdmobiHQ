@@ -96,7 +96,12 @@ export const homepageGraphJsonLd = {
         contactType: "sales",
         url: `${SITE_URL}/start-campaign`,
       },
-      sameAs: ["https://wa.me/254703643560"],
+      sameAs: [
+        "https://wa.me/254703643560",
+        "https://www.instagram.com/admobihq/",
+        "https://www.tiktok.com/@admobi.media",
+        "https://www.linkedin.com/company/admobi-hq/",
+      ],
     },
     {
       "@type": "LocalBusiness",

@@ -3,11 +3,12 @@ import { ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { MapPin, PackageCheck } from "@/components/icons"
+import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { usePlatformFlags } from "@/lib/flags"
 import { SAMPLE_DELIVERY_JOBS } from "@/lib/placeholder-data"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-export default function DeliveriesScreen() {
+function DeliveriesScreen() {
   const flags = usePlatformFlags()
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
@@ -105,3 +106,5 @@ export default function DeliveriesScreen() {
     </ScrollView>
   )
 }
+
+export default withProfileGate(DeliveriesScreen)

@@ -2,10 +2,11 @@ import { ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { RoutesMap } from "@/components/maps/routes-map"
+import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { ROUTE_HISTORY } from "@/lib/placeholder-data"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
-export default function RoutesScreen() {
+function RoutesScreen() {
   const insets = useSafeAreaInsets()
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
@@ -70,3 +71,5 @@ export default function RoutesScreen() {
     </View>
   )
 }
+
+export default withProfileGate(RoutesScreen)

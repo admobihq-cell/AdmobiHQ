@@ -8,6 +8,8 @@ import {
   CITIES,
   DATE_RANGE_KEYS,
   DAYS_PER_WEEK,
+  DRIVER_DOCUMENT_TYPES,
+  DRIVER_PAYOUT_METHODS,
   DRIVER_STATUSES,
   FLEET_STATUSES,
   FLEET_TYPES,
@@ -122,6 +124,27 @@ export const waitlistBulkSchema = bulkDeleteSchema
 
 export const mediaKitBulkSchema = bulkDeleteSchema
 
+/** Partial by design — the profile-setup stepper autosaves one step's fields
+ * at a time via PATCH, not one final submit. See driverProfileSubmitSchema. */
+export const driverProfileUpdateSchema = z.object({
+  full_name: z.string().trim().min(1).optional(),
+  phone: z.string().trim().min(1).optional(),
+  city: z.string().trim().min(1).optional(),
+  national_id_number: z.string().trim().min(1).optional(),
+  kra_pin: z.string().trim().min(1).optional(),
+  payout_method: z.enum(DRIVER_PAYOUT_METHODS).optional(),
+  payout_mpesa_msisdn: z.string().trim().min(1).optional(),
+  payout_bank_name: z.string().trim().min(1).optional(),
+  payout_bank_account: z.string().trim().min(1).optional(),
+})
+
+export const driverDocumentTypeSchema = z.enum(DRIVER_DOCUMENT_TYPES)
+
+export const driverProfileReviewSchema = z.object({
+  decision: z.enum(["approved", "rejected", "changes_requested"]),
+  reason: z.string().trim().min(1).max(2000).optional(),
+})
+
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
@@ -180,6 +203,8 @@ export type WaitlistUpdateInput = z.infer<typeof waitlistUpdateSchema>
 export type MediaKitCreateInput = z.infer<typeof mediaKitCreateSchema>
 export type MediaKitUpdateInput = z.infer<typeof mediaKitUpdateSchema>
 export type PlatformFlagUpdateInput = z.infer<typeof platformFlagUpdateSchema>
+export type DriverProfileUpdateInput = z.infer<typeof driverProfileUpdateSchema>
+export type DriverProfileReviewInput = z.infer<typeof driverProfileReviewSchema>
 export type PaginationParams = z.infer<typeof paginationSchema>
 export type LeadBulkInput = z.infer<typeof leadBulkSchema>
 export type DriverBulkInput = z.infer<typeof driverBulkSchema>

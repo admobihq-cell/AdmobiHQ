@@ -305,6 +305,79 @@ model OpsRoleAssignment {
   @@map("ops_role_assignments")
 }
 
+/// One row per driver's profile-completion application, linked to the
+/// DRIVER Clerk instance's user id — NOT the Driver model above, which is an
+/// unrelated marketing lead-capture table with no clerk_user_id. Created by
+/// the driver-web/driver-mobile profile-setup stepper, reviewed by ops.
+model DriverProfile {
+  id            Int    @id @default(autoincrement())
+  clerk_user_id String @unique
+
+  full_name          String?
+  phone              String?
+  city               String?
+  national_id_number String?
+
+  kra_pin String?
+
+  payout_method        String? // "mpesa" | "bank"
+  payout_mpesa_msisdn  String?
+  payout_bank_name     String?
+  payout_bank_account  String?
+
+  status            String    @default("draft") // draft, submitted, approved, rejected, changes_requested
+  submitted_at      DateTime?
+  reviewed_at       DateTime?
+  reviewed_by_email String?
+  rejection_reason  String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  documents DriverDocument[]
+
+  @@index([status, created_at])
+  @@map("driver_profiles")
+}
+
+/// A single uploaded file for a driver profile step (National ID, profile
+/// photo, KRA PIN certificate, payout proof). cloudinary_public_id is
+/// private (Cloudinary "authenticated" delivery type) and never exposed to
+/// the client directly — always served via an authenticated proxy route.
+model DriverDocument {
+  id                  Int           @id @default(autoincrement())
+  profile_id          Int
+  profile             DriverProfile @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  type                String // national_id, profile_photo, kra_pin_certificate, payout_proof
+  cloudinary_public_id String        @unique
+  content_type        String
+  size_bytes           Int
+  original_filename    String?
+  created_at           DateTime      @default(now())
+
+  @@index([profile_id, type])
+  @@map("driver_documents")
+}
+
+/// A per-driver in-app notification (application submitted / reviewed).
+/// Written by the same routes that trigger the matching email — see
+/// apps/api/app/v1/driver/profile/submit and
+/// apps/api/app/v1/driver-applications/[id]/review.
+model DriverNotification {
+  id            Int    @id @default(autoincrement())
+  clerk_user_id String
+
+  type  String // application_submitted, application_approved, application_rejected, application_changes_requested
+  title String
+  body  String
+
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+
+  @@index([clerk_user_id, created_at])
+  @@map("driver_notifications")
+}
+
 model AuditEvent {
   id            Int      @id @default(autoincrement())
   app           String
