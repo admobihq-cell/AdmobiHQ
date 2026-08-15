@@ -209,7 +209,7 @@ export function ActivityView() {
                       </span>
                     ) : null}
                   </TableCell>
-                  <TableCell className="max-w-md text-muted-foreground">
+                  <TableCell className="max-w-md whitespace-normal break-words text-muted-foreground">
                     {truncate(row.summary, 100)}
                   </TableCell>
                 </TableRow>
