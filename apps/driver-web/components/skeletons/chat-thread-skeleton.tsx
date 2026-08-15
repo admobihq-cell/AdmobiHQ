@@ -3,7 +3,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 /** Matches a support case thread — header, alternating message bubbles, reply box. */
 export function ChatThreadSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
+    <div className="flex flex-1 flex-col gap-5">
       <div className="flex flex-col gap-2 border-b border-border pb-4">
         <div className="flex items-start justify-between gap-3">
           <Skeleton className="h-6 w-2/3" />
