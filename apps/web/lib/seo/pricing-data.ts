@@ -165,42 +165,58 @@ export const planTiers: readonly PlanTier[] = [
   },
 ] as const
 
-export type LegacyPricingTier = {
-  id: string
-  name: string
-  startingFromKes: number
-  duration: string
-  geography: string
-  includes: readonly string[]
-  notes?: string
+/**
+ * Bike enclosures are static (non-digital), so there's no "play" to rotate — a booked side is
+ * exclusively the advertiser's for the whole flight. Priced per side, per bike, per day instead
+ * of per play. Illustrative, back-calculated to roughly match the legacy flat "weekly flight"
+ * package (KES 180,000 / 7 days) at a 20-bike, 1-side, Community-zone default — pending real
+ * reverse-engineering from dispatch route counts, same caveat as BASE_PRICE_PER_PLAY_KES.
+ */
+export const BASE_BIKE_SIDE_DAY_KES = 1_400
+
+export type BikeSidesOption = {
+  sides: 1 | 2 | 3
+  label: string
+  multiplier: number
 }
 
-/** Delivery bike enclosures are static (non-digital) inventory, so the spot/play formula does not apply — kept as starting-from flight pricing. */
-export const deliveryBikeTiers: readonly LegacyPricingTier[] = [
-  {
-    id: "bike-week-estate",
-    name: "Delivery bike weekly flight",
-    startingFromKes: 180_000,
-    duration: "7 days",
-    geography: "Estate and last-mile clusters in Nairobi",
-    includes: [
-      "Bike enclosure inventory on dispatch routes",
-      "Same creative gates as taxi-top units",
-      "GPS-verified play reporting",
-    ],
-  },
-  {
-    id: "bike-month-sustained",
-    name: "Delivery bike sustained book",
-    startingFromKes: 620_000,
-    duration: "28 days",
-    geography: "Multiple Nairobi estate corridors",
-    includes: [
-      "Lunch-hour and e-commerce peak targeting",
-      "Combined reporting with taxi-top optional",
-    ],
-  },
+/** Sub-linear like slot length: a full 3-side wrap reads far more than 3x a single side, but doesn't cost 3x — bundling more of one bike is priced at a discount. */
+export const bikeSidesOptions: readonly BikeSidesOption[] = [
+  { sides: 1, label: "1 side", multiplier: 1.0 },
+  { sides: 2, label: "2 sides", multiplier: 1.85 },
+  { sides: 3, label: "3 sides (full wrap)", multiplier: 2.5 },
 ] as const
+
+export function getSidesMultiplier(sides: number): number {
+  return bikeSidesOptions.find((option) => option.sides === sides)?.multiplier ?? 1.0
+}
+
+export type BikeSimulatorInput = {
+  bikes: number
+  sides: number
+  zoneMultiplier: number
+  days: number
+}
+
+export type BikeSimulatorResult = {
+  pricePerSidePerDay: number
+  pricePerBikePerDay: number
+  totalPerDay: number
+  total: number
+  sidesMultiplier: number
+  volumeTier: VolumeTier
+}
+
+export function calculateBikeSimulatorPrice(input: BikeSimulatorInput): BikeSimulatorResult {
+  const sidesMultiplier = getSidesMultiplier(input.sides)
+  const volumeTier = getVolumeTier(input.bikes)
+  const pricePerSidePerDay = BASE_BIKE_SIDE_DAY_KES * input.zoneMultiplier * volumeTier.multiplier
+  const pricePerBikePerDay = pricePerSidePerDay * sidesMultiplier
+  const totalPerDay = pricePerBikePerDay * input.bikes
+  const total = totalPerDay * input.days
+
+  return { pricePerSidePerDay, pricePerBikePerDay, totalPerDay, total, sidesMultiplier, volumeTier }
+}
 
 export function formatKes(amount: number): string {
   const rounded = Math.round(amount)

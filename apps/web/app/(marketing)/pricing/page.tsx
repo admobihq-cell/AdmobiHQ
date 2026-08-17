@@ -8,7 +8,7 @@ import { LastUpdated } from "@/components/seo/last-updated"
 import { PricingSimulator } from "@/components/pricing/pricing-simulator"
 import { PlanCards } from "@/components/pricing/plan-cards"
 import { ZoneReferenceTable } from "@/components/pricing/zone-reference"
-import { BikeTiersTable } from "@/components/pricing/bike-tiers-table"
+import { BikeSimulator } from "@/components/pricing/bike-simulator"
 import { PRICING_DISCLAIMER } from "@/lib/seo/pricing-data"
 import { pageMetadata } from "@/lib/seo/site"
 
@@ -121,21 +121,30 @@ export default function PricingPage() {
           </Container>
         </section>
 
-        <section className="py-14 sm:py-20">
+        <section className="border-b border-border py-14 sm:py-20">
           <Container>
             <div className="max-w-2xl">
-              <h2 className="text-balance text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl">
+              <p className="text-primary font-mono text-xs uppercase tracking-[0.14em]">
+                Base × zone × volume = price per side, per day
+              </p>
+              <h2 className="text-balance mt-3 text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[2.25rem]">
                 Delivery bike enclosures
               </h2>
-              <p className="text-muted-foreground mt-3 text-base leading-relaxed">
-                Bike enclosures are static inventory, not digital screens, so they don&apos;t sell
-                by the play. They keep the flat starting-from pricing below.
+              <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
+                Bike enclosures are static inventory, not digital screens, so a booked side is
+                exclusively yours for the whole flight — no per-play rotation. Each bike sells up
+                to three sides, and estate corridors double as Admobi&apos;s last-mile dispatch
+                routes.
               </p>
             </div>
-            <div className="mt-8">
-              <BikeTiersTable />
+            <div className="mt-10">
+              <BikeSimulator />
             </div>
+          </Container>
+        </section>
 
+        <section className="py-14 sm:py-20">
+          <Container>
             <p className="text-muted-foreground mt-14 max-w-[65ch] text-sm leading-relaxed">
               {PRICING_DISCLAIMER}
             </p>
