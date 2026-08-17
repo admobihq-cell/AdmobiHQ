@@ -1,9 +1,10 @@
 import {
+  BASE_BIKE_SIDE_DAY_KES,
   BASE_PRICE_PER_PLAY_KES,
   PRICING_DISCLAIMER,
   REFERENCE_SLOT_SECONDS,
   allScreensFlatMultiplier,
-  deliveryBikeTiers,
+  bikeSidesOptions,
   formatKes,
   planTiers,
   slotLengthOptions,
@@ -32,17 +33,9 @@ export function buildPricingMarkdown(): string {
 ${plan.bullets.map((b) => `- ${b}`).join("\n")}`,
     )
     .join("\n\n")
-  const bikeBlocks = deliveryBikeTiers
-    .map(
-      (tier) => `### ${tier.name}
-
-- **Starting from:** ${formatKes(tier.startingFromKes)}
-- **Duration:** ${tier.duration}
-- **Geography:** ${tier.geography}
-- **Includes:**
-${tier.includes.map((item) => `  - ${item}`).join("\n")}`,
-    )
-    .join("\n\n")
+  const bikeSidesRows = bikeSidesOptions
+    .map((s) => `| ${s.label} | ${s.multiplier.toFixed(2)}x |`)
+    .join("\n")
 
   return `# Pricing: Admobi (Kenya digital OOH)
 
@@ -50,7 +43,7 @@ ${tier.includes.map((item) => `  - ${item}`).join("\n")}`,
 >
 > Last updated: ${SEO_LAST_UPDATED}
 
-Admobi sells geo-targeted **taxi-top LED** advertising in Nairobi, Kenya, priced per play (spot/loop rotation) rather than per second, plus **delivery bike enclosure** advertising sold as flat flights.
+Admobi sells geo-targeted **taxi-top LED** advertising in Nairobi, Kenya, priced per play (spot/loop rotation) rather than per second, plus **delivery bike enclosure** advertising priced per side, per day (static inventory, no play rotation).
 
 **Confirm a quote:** ${SITE_URL}/start-campaign
 **Human-readable pricing page:** ${SITE_URL}/pricing
@@ -93,9 +86,29 @@ ${BASE_PRICE_PER_PLAY_KES} × 1.3 × 1.5 × 1.0 × 20 plays × 1 screen × 14 da
 
 ${planBlocks}
 
-## Delivery bike enclosures (flat flights, static inventory)
+## Delivery bike enclosures: per-side/day formula
 
-${bikeBlocks}
+Bike enclosures are static (non-digital), so a booked side is exclusively the advertiser's for the
+whole flight — there's no play rotation to share, unlike taxi-top LED.
+
+\`\`\`
+total = base_price_per_side_per_day × zone_multiplier × volume_multiplier × sides_multiplier × bikes × days
+\`\`\`
+
+- **Base price per side, per day:** ${formatKes(BASE_BIKE_SIDE_DAY_KES)}, at Community zone, per bike
+- Zone and volume multipliers reuse the taxi-top tables above. Community zones double as Admobi's
+  last-mile dispatch corridors, where bike enclosures see the most estate and gate traffic.
+
+### Sides multiplier (sub-linear)
+
+| Sides booked | Multiplier |
+| --- | --- |
+${bikeSidesRows}
+
+### Worked example
+
+20 bikes, Community zone, 1 side, 7 days:
+${BASE_BIKE_SIDE_DAY_KES} × 1.0 × 0.9 × 1.0 × 20 bikes × 7 days = **KES 176,400 total**
 
 ## Add-ons (quote on brief)
 

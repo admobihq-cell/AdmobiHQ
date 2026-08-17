@@ -4,7 +4,7 @@
 >
 > Last updated: 2026-06-01
 
-Admobi sells geo-targeted **taxi-top LED** advertising in Nairobi, Kenya, priced per play (spot/loop rotation) rather than per second, plus **delivery bike enclosure** advertising sold as flat flights.
+Admobi sells geo-targeted **taxi-top LED** advertising in Nairobi, Kenya, priced per play (spot/loop rotation) rather than per second, plus **delivery bike enclosure** advertising priced per side, per day (static inventory, no play rotation).
 
 **Confirm a quote:** https://admobihq.com/start-campaign
 **Human-readable pricing page:** https://admobihq.com/pricing
@@ -76,26 +76,31 @@ total = base_price_per_play × slot_multiplier × zone_multiplier × volume_mult
 - 50+ screen fleet commitments with dedicated pacing
 - Multi-city rollout and creative production support
 
-## Delivery bike enclosures (flat flights, static inventory)
+## Delivery bike enclosures: per-side/day formula
 
-### Delivery bike weekly flight
+Bike enclosures are static (non-digital), so a booked side is exclusively the advertiser's for the
+whole flight — there's no play rotation to share, unlike taxi-top LED.
 
-- **Starting from:** KES 180,000
-- **Duration:** 7 days
-- **Geography:** Estate and last-mile clusters in Nairobi
-- **Includes:**
-  - Bike enclosure inventory on dispatch routes
-  - Same creative gates as taxi-top units
-  - GPS-verified play reporting
+```
+total = base_price_per_side_per_day × zone_multiplier × volume_multiplier × sides_multiplier × bikes × days
+```
 
-### Delivery bike sustained book
+- **Base price per side, per day:** KES 1,400, at Community zone, per bike
+- Zone and volume multipliers reuse the taxi-top tables above. Community zones double as Admobi's
+  last-mile dispatch corridors, where bike enclosures see the most estate and gate traffic.
 
-- **Starting from:** KES 620,000
-- **Duration:** 28 days
-- **Geography:** Multiple Nairobi estate corridors
-- **Includes:**
-  - Lunch-hour and e-commerce peak targeting
-  - Combined reporting with taxi-top optional
+### Sides multiplier (sub-linear)
+
+| Sides booked | Multiplier |
+| --- | --- |
+| 1 side | 1.00x |
+| 2 sides | 1.85x |
+| 3 sides (full wrap) | 2.50x |
+
+### Worked example
+
+20 bikes, Community zone, 1 side, 7 days:
+1400 × 1.0 × 0.9 × 1.0 × 20 bikes × 7 days = **KES 176,400 total**
 
 ## Add-ons (quote on brief)
 
