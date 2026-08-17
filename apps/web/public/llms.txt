@@ -12,7 +12,7 @@
 
 - [Home](https://admobihq.com/): Taxi-top LED advertising in Nairobi
 - [Products & solutions](https://admobihq.com/products-solutions): Taxi tops, delivery bikes, geo-targeting
-- [Indicative pricing](https://admobihq.com/pricing): Starting-from KES tiers (confirmed per brief)
+- [Indicative pricing](https://admobihq.com/pricing): Spot/play pricing formula, campaign simulator, and zone rate card (confirmed per brief)
 - [Machine-readable pricing](https://admobihq.com/pricing.md): Structured pricing for AI agents
 - [Start a campaign](https://admobihq.com/start-campaign): Advertiser brief and sales contact
 - [Partner your fleet](https://admobihq.com/partner-fleet): Fleet partnership applications
