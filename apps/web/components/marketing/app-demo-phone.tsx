@@ -19,6 +19,7 @@ type AppDemoPhoneProps = {
 
 function ScaledAppDemoIframe({ src }: { src: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const [scale, setScale] = useState(1)
 
   useLayoutEffect(() => {
@@ -38,12 +39,40 @@ function ScaledAppDemoIframe({ src }: { src: string }) {
     return () => observer.disconnect()
   }, [])
 
+  useLayoutEffect(() => {
+    const iframeEl = iframeRef.current
+    if (!iframeEl) return
+
+    // Mobile Safari doesn't repaint a CSS-`transform`-scaled iframe when a
+    // web font (here, the Ionicons glyph font) finishes loading after first
+    // paint — the icons stay frozen as tofu boxes until something else
+    // forces a recomposite. Nudge opacity once the icon font is ready to
+    // force that recomposite without touching layout/size.
+    const forceRepaint = () => {
+      iframeEl.style.opacity = "0.999"
+      requestAnimationFrame(() => {
+        iframeEl.style.opacity = "1"
+      })
+    }
+
+    const handleLoad = () => {
+      const fonts = iframeEl.contentDocument?.fonts
+      if (!fonts) return
+      fonts.ready.then(forceRepaint).catch(() => {})
+      fonts.addEventListener("loadingdone", forceRepaint)
+    }
+
+    iframeEl.addEventListener("load", handleLoad)
+    return () => iframeEl.removeEventListener("load", handleLoad)
+  }, [])
+
   const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1
   const inverseScalePercent = 100 / safeScale
 
   return (
     <div ref={containerRef} className="device-screen overflow-hidden">
       <iframe
+        ref={iframeRef}
         title="Admobi app demo"
         src={src}
         allow="clipboard-write"
