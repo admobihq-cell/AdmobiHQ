@@ -101,6 +101,46 @@ function RoleBadge({ role }: { role: "admin" | "member" }) {
   )
 }
 
+function MembersTableSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-20" />
+      <Card className="overflow-hidden p-0 shadow-none">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead className="w-24" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-8 w-16" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export function TeamView() {
   const client = useOpsClient()
   const { userId: currentUserId } = useAuth()
@@ -241,7 +281,7 @@ export function TeamView() {
       </Card>
 
       {team === null ? (
-        <Skeleton className="h-40 w-full" />
+        <MembersTableSkeleton />
       ) : (
         <>
           <div className="space-y-3">
