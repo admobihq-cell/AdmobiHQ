@@ -138,8 +138,6 @@ export function TeamView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client])
 
-  const adminCount = team?.members.filter((m) => m.role === "admin").length ?? 0
-
   async function handleInvite() {
     if (!inviteEmail.trim()) return
     if (inviteTier.tier === "member" && !inviteTier.roleId) {
@@ -264,8 +262,7 @@ export function TeamView() {
                   <TableBody>
                     {team.members.map((member) => {
                       const isSelf = member.userId === currentUserId
-                      const isLastAdmin = member.role === "admin" && adminCount <= 1
-                      const locked = isLastAdmin
+                      const locked = member.role === "admin"
                       const value =
                         member.role === "admin"
                           ? ADMIN_VALUE
@@ -286,12 +283,22 @@ export function TeamView() {
                             ) : null}
                           </TableCell>
                           <TableCell>
-                            <TierSelect
-                              value={value}
-                              roles={roles}
-                              disabled={pendingUserId === member.userId || locked}
-                              onChange={(input) => void handleRoleChange(member, input)}
-                            />
+                            <div className="flex items-center gap-2">
+                              <TierSelect
+                                value={value}
+                                roles={roles}
+                                disabled={pendingUserId === member.userId || locked}
+                                onChange={(input) => void handleRoleChange(member, input)}
+                              />
+                              {locked ? (
+                                <span
+                                  className="text-xs text-muted-foreground"
+                                  title="Admins are protected — change their role in Clerk instead"
+                                >
+                                  Protected
+                                </span>
+                              ) : null}
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {formatDateTime(member.joinedAt)}
@@ -302,6 +309,7 @@ export function TeamView() {
                               variant="ghost"
                               size="sm"
                               disabled={pendingUserId === member.userId || locked}
+                              title={locked ? "Admins are protected and can't be removed here" : undefined}
                               onClick={() => setRemoveTarget(member)}
                             >
                               Remove

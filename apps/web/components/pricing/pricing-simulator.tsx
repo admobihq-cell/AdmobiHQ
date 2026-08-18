@@ -6,7 +6,6 @@ import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -20,6 +19,7 @@ import {
   zoneTiers,
 } from "@/lib/seo/pricing-data"
 import { useAnimatedNumber } from "@/components/pricing/use-animated-number"
+import { NumberStepper, clampInt } from "@/components/pricing/number-stepper"
 
 type ZoneChoiceId = (typeof zoneTiers)[number]["id"] | "all-screens"
 
@@ -45,11 +45,6 @@ const PLAYS_MAX = 120
 const DAYS_MIN = 1
 const DAYS_MAX = 90
 
-function clamp(value: number, min: number, max: number): number {
-  if (Number.isNaN(value)) return min
-  return Math.min(max, Math.max(min, value))
-}
-
 function ReceiptRow({
   label,
   value,
@@ -74,9 +69,9 @@ export function PricingSimulator() {
   const [playsPerDay, setPlaysPerDay] = useState(20)
   const [days, setDays] = useState(14)
 
+  const daysId = useId()
   const screensId = useId()
   const playsId = useId()
-  const daysId = useId()
 
   const zone = zoneChoices.find((z) => z.id === zoneId) ?? zoneChoices[0]!
 
@@ -98,21 +93,25 @@ export function PricingSimulator() {
     <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:items-start">
       <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="space-y-8">
-          <div className="grid gap-2">
-            <Label htmlFor={screensId}>Number of screens</Label>
-            <Input
+          <div className="grid gap-6 sm:grid-cols-2">
+            <NumberStepper
+              id={daysId}
+              label="Campaign length (days)"
+              value={days}
+              min={DAYS_MIN}
+              max={DAYS_MAX}
+              onChange={setDays}
+            />
+
+            <NumberStepper
               id={screensId}
-              type="number"
-              inputMode="numeric"
+              label="Number of screens"
+              value={screens}
               min={SCREENS_MIN}
               max={SCREENS_MAX}
-              value={screens}
-              onChange={(e) => setScreens(clamp(Number(e.target.value), SCREENS_MIN, SCREENS_MAX))}
-              className="h-10 max-w-[10rem] tabular-nums"
+              onChange={setScreens}
+              hint="10+ unlocks the 0.9x volume rate, 50+ unlocks 0.8x."
             />
-            <p className="text-muted-foreground text-xs">
-              10+ unlocks the 0.9x volume rate, 50+ unlocks 0.8x.
-            </p>
           </div>
 
           <fieldset className="space-y-3">
@@ -184,39 +183,23 @@ export function PricingSimulator() {
             </div>
           </fieldset>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor={playsId}>Plays per day, per screen</Label>
-              <div className="flex items-center gap-3">
-                <input
-                  id={playsId}
-                  type="range"
-                  min={PLAYS_MIN}
-                  max={PLAYS_MAX}
-                  value={playsPerDay}
-                  onChange={(e) => setPlaysPerDay(clamp(Number(e.target.value), PLAYS_MIN, PLAYS_MAX))}
-                  className="accent-primary h-1.5 w-full"
-                />
-                <span className="text-foreground w-10 shrink-0 text-right text-sm font-medium tabular-nums">
-                  {playsPerDay}
-                </span>
-              </div>
-              <p className="text-muted-foreground text-xs">Capped by loop capacity, confirmed at booking.</p>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor={daysId}>Campaign length (days)</Label>
-              <Input
-                id={daysId}
-                type="number"
-                inputMode="numeric"
-                min={DAYS_MIN}
-                max={DAYS_MAX}
-                value={days}
-                onChange={(e) => setDays(clamp(Number(e.target.value), DAYS_MIN, DAYS_MAX))}
-                className="h-10 max-w-[8rem] tabular-nums"
+          <div className="grid gap-2">
+            <Label htmlFor={playsId}>Plays per day, per screen</Label>
+            <div className="flex items-center gap-3">
+              <input
+                id={playsId}
+                type="range"
+                min={PLAYS_MIN}
+                max={PLAYS_MAX}
+                value={playsPerDay}
+                onChange={(e) => setPlaysPerDay(clampInt(Number(e.target.value), PLAYS_MIN, PLAYS_MAX))}
+                className="accent-primary h-1.5 w-full"
               />
+              <span className="text-foreground w-10 shrink-0 text-right text-sm font-medium tabular-nums">
+                {playsPerDay}
+              </span>
             </div>
+            <p className="text-muted-foreground text-xs">Capped by loop capacity, confirmed at booking.</p>
           </div>
         </div>
       </div>

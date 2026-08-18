@@ -13,16 +13,14 @@ function requireOrgId(): string | null {
   return process.env.CLERK_ORG_ID ?? null
 }
 
-/** True if `userId` is currently the org's only admin — blocking demotion/removal avoids locking the team out. */
-async function isLastRemainingAdmin(
+/** Admins are protected: their role/membership can't be changed from the Team page, by anyone (including themselves or another admin). */
+async function isProtectedAdmin(
   client: Awaited<ReturnType<typeof clerkClient>>,
   organizationId: string,
   userId: string,
 ): Promise<boolean> {
   const { data } = await client.organizations.getOrganizationMembershipList({ organizationId })
-  const admins = data.filter((m) => m.role === "org:admin")
-  const isTargetAdmin = admins.some((m) => m.publicUserData?.userId === userId)
-  return isTargetAdmin && admins.length <= 1
+  return data.some((m) => m.publicUserData?.userId === userId && m.role === "org:admin")
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -39,13 +37,13 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const client = await clerkClient()
 
+  if (await isProtectedAdmin(client, organizationId, userId)) {
+    return jsonError("Admins are protected and can't have their role changed here", 400)
+  }
+
   if (parsed.data.tier === "member") {
     const role = await prisma.opsRole.findUnique({ where: { id: parsed.data.roleId } })
     if (!role) return jsonError("Unknown role", 400)
-
-    if (await isLastRemainingAdmin(client, organizationId, userId)) {
-      return jsonError("Cannot remove the last remaining admin", 400)
-    }
   }
 
   const membership = await client.organizations.updateOrganizationMembership({
@@ -96,8 +94,8 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { userId } = await params
   const client = await clerkClient()
 
-  if (await isLastRemainingAdmin(client, organizationId, userId)) {
-    return jsonError("Cannot remove the last remaining admin", 400)
+  if (await isProtectedAdmin(client, organizationId, userId)) {
+    return jsonError("Admins are protected and can't be removed here", 400)
   }
 
   const membership = await client.organizations.deleteOrganizationMembership({
