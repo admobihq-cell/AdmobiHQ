@@ -104,10 +104,10 @@ function RolesTableSkeleton() {
                 <TableHead className="sticky left-0 z-10 bg-card">Permission</TableHead>
                 <TableHead className="text-center">Admin</TableHead>
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <TableHead key={i} className="min-w-44 py-3 align-top">
+                  <TableHead key={i} className="min-w-32 py-3 align-top">
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-3 w-14" />
                     </div>
                   </TableHead>
                 ))}
@@ -260,37 +260,20 @@ export function RolesView() {
                     <TableHead className="sticky left-0 z-10 bg-card">Permission</TableHead>
                     <TableHead className="text-center">Admin</TableHead>
                     {roles.map((role) => (
-                      <TableHead key={role.id} className="min-w-44 py-3 align-top">
-                        <div className="space-y-1.5">
+                      <TableHead key={role.id} className="min-w-32 py-3 align-top">
+                        <div className="space-y-1">
                           <EditableRoleName
                             value={edits[role.id]?.name ?? role.name}
                             onChange={(name) => setRoleName(role.id, name)}
                           />
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-normal normal-case text-muted-foreground">
-                              {role.memberCount} member{role.memberCount === 1 ? "" : "s"}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              disabled={deleting || role.memberCount > 0}
-                              onClick={() => setDeleteTarget(role)}
-                              title={
-                                role.memberCount > 0
-                                  ? "Reassign members before deleting this role"
-                                  : "Delete role"
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                            </Button>
-                          </div>
+                          <span className="block text-xs font-normal normal-case text-muted-foreground">
+                            {role.memberCount} member{role.memberCount === 1 ? "" : "s"}
+                          </span>
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="min-w-44 py-3 align-top">
-                      <div className="space-y-1.5">
+                    <TableHead className="min-w-32 py-3 align-top">
+                      <div className="space-y-1">
                         <Input
                           placeholder="New role name"
                           value={newRoleName}
@@ -298,7 +281,7 @@ export function RolesView() {
                           disabled={creating}
                           className="h-8 text-sm font-medium"
                         />
-                        <span className="text-xs text-muted-foreground">New role</span>
+                        <span className="block text-xs text-muted-foreground">New role</span>
                       </div>
                     </TableHead>
                   </TableRow>
@@ -344,16 +327,33 @@ export function RolesView() {
                       const dirty = edit ? isDirty(edit, role) : false
                       return (
                         <TableCell key={role.id} className="text-center">
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={!dirty || savingId === role.id || !edit?.name.trim()}
-                            loading={savingId === role.id}
-                            loadingText="Saving…"
-                            onClick={() => void handleSave(role)}
-                          >
-                            Save
-                          </Button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={!dirty || savingId === role.id || !edit?.name.trim()}
+                              loading={savingId === role.id}
+                              loadingText="Saving…"
+                              onClick={() => void handleSave(role)}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={deleting || role.memberCount > 0}
+                              onClick={() => setDeleteTarget(role)}
+                              title={
+                                role.memberCount > 0
+                                  ? "Reassign members before deleting this role"
+                                  : "Delete role"
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                          </div>
                         </TableCell>
                       )
                     })}

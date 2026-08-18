@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@clerk/nextjs"
@@ -28,7 +28,16 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import {
   Select,
   SelectContent,
@@ -63,11 +72,13 @@ function TierSelect({
   roles,
   disabled,
   onChange,
+  triggerClassName = "w-40",
 }: {
   value: string
   roles: OpsRoleDto[]
   disabled?: boolean
   onChange: (input: TeamRoleUpdateInput) => void
+  triggerClassName?: string
 }) {
   return (
     <Select
@@ -78,7 +89,7 @@ function TierSelect({
       }}
       disabled={disabled}
     >
-      <SelectTrigger className="w-40">
+      <SelectTrigger className={triggerClassName}>
         <SelectValue placeholder="Choose a role" />
       </SelectTrigger>
       <SelectContent>
@@ -144,6 +155,7 @@ function MembersTableSkeleton() {
 export function TeamView() {
   const client = useOpsClient()
   const { userId: currentUserId } = useAuth()
+  const inviteEmailId = useId()
 
   const [team, setTeam] = useState<TeamDto | null>(null)
   const [roles, setRoles] = useState<OpsRoleDto[]>([])
@@ -151,6 +163,7 @@ export function TeamView() {
   const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<TeamMemberDto | null>(null)
 
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteTier, setInviteTier] = useState<TeamRoleUpdateInput>({ tier: "member", roleId: 0 })
   const [inviting, setInviting] = useState(false)
@@ -190,6 +203,7 @@ export function TeamView() {
       await client.team.invite(body)
       toast.success(`Invited ${inviteEmail.trim()}`)
       setInviteEmail("")
+      setInviteOpen(false)
       reload()
     } catch (err) {
       toast.error(formatApiError(err))
@@ -240,54 +254,75 @@ export function TeamView() {
 
   function handlePrefillInvite(candidate: NotYetInvitedDto) {
     setInviteEmail(candidate.email)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    setInviteOpen(true)
   }
 
   return (
     <div className="flex flex-1 flex-col gap-8">
-      <Card className="shadow-none">
-        <CardContent className="space-y-3 p-5">
-          <p className="text-sm font-semibold">Invite someone</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-1.5">
-              <Input
-                type="email"
-                placeholder="name@admobihq.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                disabled={inviting}
-              />
-            </div>
-            <TierSelect
-              value={
-                inviteTier.tier === "admin" ? ADMIN_VALUE : memberValue(inviteTier.roleId)
-              }
-              roles={roles}
-              disabled={inviting}
-              onChange={setInviteTier}
-            />
-            <Button
-              type="button"
-              onClick={() => void handleInvite()}
-              loading={inviting}
-              loadingText="Inviting…"
-              disabled={!inviteEmail.trim()}
-            >
+      <div className="flex justify-end">
+        <Dialog
+          open={inviteOpen}
+          onOpenChange={(open) => {
+            setInviteOpen(open)
+            if (!open) setInviteEmail("")
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button type="button">
               <UserPlus aria-hidden />
-              Invite
+              Invite someone
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite someone</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor={inviteEmailId}>Email</Label>
+                <Input
+                  id={inviteEmailId}
+                  type="email"
+                  placeholder="name@admobihq.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  disabled={inviting}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Role</Label>
+                <TierSelect
+                  value={
+                    inviteTier.tier === "admin" ? ADMIN_VALUE : memberValue(inviteTier.roleId)
+                  }
+                  roles={roles}
+                  disabled={inviting}
+                  onChange={setInviteTier}
+                  triggerClassName="w-full"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                onClick={() => void handleInvite()}
+                loading={inviting}
+                loadingText="Inviting…"
+                disabled={!inviteEmail.trim()}
+              >
+                <UserPlus aria-hidden />
+                Invite
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {team === null ? (
         <MembersTableSkeleton />
       ) : (
         <>
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Members
-            </p>
             <Card className="overflow-hidden p-0 shadow-none">
               <CardContent className="p-0">
                 <Table>
