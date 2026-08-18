@@ -6,8 +6,6 @@ import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -20,6 +18,7 @@ import {
   zoneTiers,
 } from "@/lib/seo/pricing-data"
 import { useAnimatedNumber } from "@/components/pricing/use-animated-number"
+import { NumberStepper } from "@/components/pricing/number-stepper"
 
 type ZoneChoiceId = (typeof zoneTiers)[number]["id"] | "all-zones"
 
@@ -42,11 +41,6 @@ const BIKES_MIN = 1
 const BIKES_MAX = 500
 const DAYS_MIN = 1
 const DAYS_MAX = 90
-
-function clamp(value: number, min: number, max: number): number {
-  if (Number.isNaN(value)) return min
-  return Math.min(max, Math.max(min, value))
-}
 
 function ReceiptRow({
   label,
@@ -71,8 +65,8 @@ export function BikeSimulator() {
   const [zoneId, setZoneId] = useState<ZoneChoiceId>("community")
   const [days, setDays] = useState(7)
 
-  const bikesId = useId()
   const daysId = useId()
+  const bikesId = useId()
 
   const zone = zoneChoices.find((z) => z.id === zoneId) ?? zoneChoices[0]!
 
@@ -93,21 +87,25 @@ export function BikeSimulator() {
     <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:items-start">
       <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="space-y-8">
-          <div className="grid gap-2">
-            <Label htmlFor={bikesId}>Number of bikes</Label>
-            <Input
+          <div className="grid gap-6 sm:grid-cols-2">
+            <NumberStepper
+              id={daysId}
+              label="Campaign length (days)"
+              value={days}
+              min={DAYS_MIN}
+              max={DAYS_MAX}
+              onChange={setDays}
+            />
+
+            <NumberStepper
               id={bikesId}
-              type="number"
-              inputMode="numeric"
+              label="Number of bikes"
+              value={bikes}
               min={BIKES_MIN}
               max={BIKES_MAX}
-              value={bikes}
-              onChange={(e) => setBikes(clamp(Number(e.target.value), BIKES_MIN, BIKES_MAX))}
-              className="h-10 max-w-[10rem] tabular-nums"
+              onChange={setBikes}
+              hint="10+ unlocks the 0.9x volume rate, 50+ unlocks 0.8x."
             />
-            <p className="text-muted-foreground text-xs">
-              10+ unlocks the 0.9x volume rate, 50+ unlocks 0.8x.
-            </p>
           </div>
 
           <fieldset className="space-y-3">
@@ -184,20 +182,6 @@ export function BikeSimulator() {
               Community zones double as Admobi&apos;s last-mile dispatch corridors — where bike enclosures see the most estate foot and gate traffic.
             </p>
           </fieldset>
-
-          <div className="grid gap-2 sm:max-w-[10rem]">
-            <Label htmlFor={daysId}>Campaign length (days)</Label>
-            <Input
-              id={daysId}
-              type="number"
-              inputMode="numeric"
-              min={DAYS_MIN}
-              max={DAYS_MAX}
-              value={days}
-              onChange={(e) => setDays(clamp(Number(e.target.value), DAYS_MIN, DAYS_MAX))}
-              className="h-10 max-w-[8rem] tabular-nums"
-            />
-          </div>
         </div>
       </div>
 

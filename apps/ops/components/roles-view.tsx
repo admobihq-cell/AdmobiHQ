@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Check, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { OPS_PERMISSIONS, type OpsPermission, type OpsRoleDto } from "@workspace/ops-contracts"
 
@@ -21,6 +21,14 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@workspace/ui/components/table"
 import { useOpsClient } from "@/lib/ops-client"
 
 const PERMISSION_LABELS: Record<OpsPermission, string> = {
@@ -38,96 +46,20 @@ const PERMISSION_LABELS: Record<OpsPermission, string> = {
   driver_applications: "Driver Applications",
 }
 
-function RoleCard({
-  role,
-  onSave,
-  onDelete,
-  saving,
-  deleting,
-}: {
-  role: OpsRoleDto
-  onSave: (roleId: number, name: string, permissions: OpsPermission[]) => Promise<void>
-  onDelete: (role: OpsRoleDto) => void
-  saving: boolean
-  deleting: boolean
-}) {
-  const [name, setName] = useState(role.name)
-  const [permissions, setPermissions] = useState<OpsPermission[]>(role.permissions)
+type RoleEdit = { name: string; permissions: OpsPermission[] }
 
-  const dirty = name !== role.name || permissions.length !== role.permissions.length ||
-    permissions.some((p) => !role.permissions.includes(p))
-
-  function toggle(permission: OpsPermission, checked: boolean) {
-    setPermissions((prev) =>
-      checked ? [...prev, permission] : prev.filter((p) => p !== permission),
-    )
-  }
-
+function isDirty(edit: RoleEdit, role: OpsRoleDto): boolean {
   return (
-    <Card className="shadow-none">
-      <CardContent className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-1.5">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="max-w-xs font-medium"
-            />
-            <p className="text-xs text-muted-foreground">
-              {role.memberCount} member{role.memberCount === 1 ? "" : "s"}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={deleting || role.memberCount > 0}
-            onClick={() => onDelete(role)}
-            title={
-              role.memberCount > 0
-                ? "Reassign members before deleting this role"
-                : "Delete role"
-            }
-          >
-            <Trash2 aria-hidden />
-          </Button>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {OPS_PERMISSIONS.map((permission) => (
-            <label
-              key={permission}
-              className="flex items-center gap-2 text-sm has-[:disabled]:cursor-not-allowed"
-            >
-              <Checkbox
-                checked={permissions.includes(permission)}
-                onCheckedChange={(checked) => toggle(permission, checked === true)}
-              />
-              {PERMISSION_LABELS[permission]}
-            </label>
-          ))}
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            size="sm"
-            disabled={!dirty || saving || !name.trim()}
-            loading={saving}
-            loadingText="Saving…"
-            onClick={() => void onSave(role.id, name.trim(), permissions)}
-          >
-            Save changes
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    edit.name !== role.name ||
+    edit.permissions.length !== role.permissions.length ||
+    edit.permissions.some((p) => !role.permissions.includes(p))
   )
 }
 
 export function RolesView() {
   const client = useOpsClient()
   const [roles, setRoles] = useState<OpsRoleDto[] | null>(null)
+  const [edits, setEdits] = useState<Record<number, RoleEdit>>({})
   const [savingId, setSavingId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<OpsRoleDto | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -146,11 +78,42 @@ export function RolesView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client])
 
-  async function handleSave(roleId: number, name: string, permissions: OpsPermission[]) {
-    setSavingId(roleId)
+  // Seeds edits for new roles without clobbering in-progress edits on reload.
+  useEffect(() => {
+    if (!roles) return
+    setEdits((prev) => {
+      const next: Record<number, RoleEdit> = {}
+      for (const role of roles) {
+        next[role.id] = prev[role.id] ?? { name: role.name, permissions: role.permissions }
+      }
+      return next
+    })
+  }, [roles])
+
+  function setRoleName(roleId: number, name: string) {
+    setEdits((prev) => ({ ...prev, [roleId]: { ...prev[roleId]!, name } }))
+  }
+
+  function togglePermission(roleId: number, permission: OpsPermission, checked: boolean) {
+    setEdits((prev) => {
+      const current = prev[roleId]!
+      const permissions = checked
+        ? [...current.permissions, permission]
+        : current.permissions.filter((p) => p !== permission)
+      return { ...prev, [roleId]: { ...current, permissions } }
+    })
+  }
+
+  async function handleSave(role: OpsRoleDto) {
+    const edit = edits[role.id]
+    if (!edit || !edit.name.trim()) return
+    setSavingId(role.id)
     try {
-      await client.roles.update(roleId, { name, permissions })
-      toast.success(`Updated "${name}"`)
+      await client.roles.update(role.id, {
+        name: edit.name.trim(),
+        permissions: edit.permissions,
+      })
+      toast.success(`Updated "${edit.name.trim()}"`)
       reload()
     } catch (err) {
       toast.error(formatApiError(err))
@@ -216,26 +179,113 @@ export function RolesView() {
       </Card>
 
       {roles === null ? (
-        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-96 w-full" />
       ) : (
-        <div className="grid gap-4">
-          {roles.map((role) => (
-            <RoleCard
-              key={role.id}
-              role={role}
-              onSave={handleSave}
-              onDelete={setDeleteTarget}
-              saving={savingId === role.id}
-              deleting={deleting}
-            />
-          ))}
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Permission matrix
+          </p>
+          <Card className="overflow-hidden p-0 shadow-none">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="sticky left-0 z-10 bg-card">Permission</TableHead>
+                    <TableHead className="text-center">Admin</TableHead>
+                    {roles.map((role) => (
+                      <TableHead key={role.id} className="min-w-44 py-3 align-top">
+                        <div className="space-y-1.5">
+                          <Input
+                            value={edits[role.id]?.name ?? role.name}
+                            onChange={(e) => setRoleName(role.id, e.target.value)}
+                            className="h-8 text-sm font-medium"
+                          />
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-normal normal-case text-muted-foreground">
+                              {role.memberCount} member{role.memberCount === 1 ? "" : "s"}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              disabled={deleting || role.memberCount > 0}
+                              onClick={() => setDeleteTarget(role)}
+                              title={
+                                role.memberCount > 0
+                                  ? "Reassign members before deleting this role"
+                                  : "Delete role"
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                          </div>
+                        </div>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {OPS_PERMISSIONS.map((permission) => (
+                    <TableRow key={permission}>
+                      <TableCell className="sticky left-0 z-10 bg-card font-medium">
+                        {PERMISSION_LABELS[permission]}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Check
+                          className="mx-auto h-4 w-4 text-muted-foreground"
+                          aria-label="Always included for Admins"
+                        />
+                      </TableCell>
+                      {roles.map((role) => (
+                        <TableCell key={role.id} className="text-center">
+                          <Checkbox
+                            checked={edits[role.id]?.permissions.includes(permission) ?? false}
+                            onCheckedChange={(checked) =>
+                              togglePermission(role.id, permission, checked === true)
+                            }
+                          />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell className="sticky left-0 z-10 bg-card" />
+                    <TableCell />
+                    {roles.map((role) => {
+                      const edit = edits[role.id]
+                      const dirty = edit ? isDirty(edit, role) : false
+                      return (
+                        <TableCell key={role.id} className="text-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={!dirty || savingId === role.id || !edit?.name.trim()}
+                            loading={savingId === role.id}
+                            loadingText="Saving…"
+                            onClick={() => void handleSave(role)}
+                          >
+                            Save
+                          </Button>
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <p className="text-xs text-muted-foreground">
+            Admins always have every permission and aren&apos;t edited here — manage admin
+            membership from the Members tab.
+          </p>
         </div>
       )}
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>Delete &quot;{deleteTarget?.name}&quot;?</AlertDialogTitle>
             <AlertDialogDescription>
               This can&apos;t be undone. Only roles with no members assigned can be deleted.
             </AlertDialogDescription>
