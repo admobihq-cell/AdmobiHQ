@@ -7,6 +7,7 @@ import type {
 } from "@workspace/ops-contracts"
 
 import type { OpsAccess } from "@/lib/auth"
+import { getDriverEmail } from "@/lib/driver-clerk"
 import { prisma } from "@/lib/prisma"
 
 export type RecordAuditEventInput = {
@@ -72,15 +73,16 @@ export function auditFromOpsUser(
   })
 }
 
-export function auditFromDriverUser(
+export async function auditFromDriverUser(
   userId: string,
   input: Omit<RecordAuditEventInput, "app" | "actor_type" | "actor_user_id" | "actor_email">,
 ): Promise<void> {
+  const actorEmail = await getDriverEmail(userId)
   return recordAuditEvent({
     app: "api",
     actor_type: "driver_user",
     actor_user_id: userId,
-    actor_email: null,
+    actor_email: actorEmail,
     action: input.action,
     entity_type: input.entity_type,
     entity_id: input.entity_id,
