@@ -19,7 +19,17 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Checkbox } from "@workspace/ui/components/checkbox"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Table,
@@ -85,7 +95,7 @@ function EditableRoleName({
       type="button"
       onClick={() => setEditing(true)}
       title="Click to rename"
-      className="rounded-sm text-left text-sm font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+      className="min-w-0 flex-1 truncate rounded-sm text-left text-sm font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring"
     >
       {value || "Untitled"}
     </button>
@@ -95,7 +105,10 @@ function EditableRoleName({
 function RolesTableSkeleton() {
   return (
     <div className="space-y-3">
-      <Skeleton className="h-4 w-36" />
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-4 w-36" />
+        <Skeleton className="h-8 w-24 rounded-lg" />
+      </div>
       <Card className="overflow-hidden p-0 shadow-none">
         <CardContent className="p-0">
           <Table>
@@ -104,11 +117,8 @@ function RolesTableSkeleton() {
                 <TableHead className="sticky left-0 z-10 bg-card">Permission</TableHead>
                 <TableHead className="text-center">Admin</TableHead>
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <TableHead key={i} className="min-w-32 py-3 align-top">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-3 w-14" />
-                    </div>
+                  <TableHead key={i} className="min-w-36 py-3 align-top">
+                    <Skeleton className="h-4 w-20" />
                   </TableHead>
                 ))}
               </TableRow>
@@ -147,6 +157,7 @@ export function RolesView() {
   const [savingId, setSavingId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<OpsRoleDto | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [newRoleName, setNewRoleName] = useState("")
   const [newRolePermissions, setNewRolePermissions] = useState<OpsPermission[]>([])
   const [creating, setCreating] = useState(false)
@@ -195,6 +206,11 @@ export function RolesView() {
     )
   }
 
+  function resetNewRole() {
+    setNewRoleName("")
+    setNewRolePermissions([])
+  }
+
   async function handleSave(role: OpsRoleDto) {
     const edit = edits[role.id]
     if (!edit || !edit.name.trim()) return
@@ -233,8 +249,8 @@ export function RolesView() {
     try {
       await client.roles.create({ name: newRoleName.trim(), permissions: newRolePermissions })
       toast.success(`Created "${newRoleName.trim()}"`)
-      setNewRoleName("")
-      setNewRolePermissions([])
+      resetNewRole()
+      setCreateOpen(false)
       reload()
     } catch (err) {
       toast.error(formatApiError(err))
@@ -249,9 +265,15 @@ export function RolesView() {
         <RolesTableSkeleton />
       ) : (
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Permission matrix
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Permission matrix
+            </p>
+            <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus aria-hidden />
+              Add role
+            </Button>
+          </div>
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
               <Table>
@@ -259,31 +281,51 @@ export function RolesView() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="sticky left-0 z-10 bg-card">Permission</TableHead>
                     <TableHead className="text-center">Admin</TableHead>
-                    {roles.map((role) => (
-                      <TableHead key={role.id} className="min-w-32 py-3 align-top">
-                        <div className="space-y-1">
-                          <EditableRoleName
-                            value={edits[role.id]?.name ?? role.name}
-                            onChange={(name) => setRoleName(role.id, name)}
-                          />
-                          <span className="block text-xs font-normal normal-case text-muted-foreground">
-                            {role.memberCount} member{role.memberCount === 1 ? "" : "s"}
-                          </span>
-                        </div>
-                      </TableHead>
-                    ))}
-                    <TableHead className="min-w-32 py-3 align-top">
-                      <div className="space-y-1">
-                        <Input
-                          placeholder="New role name"
-                          value={newRoleName}
-                          onChange={(e) => setNewRoleName(e.target.value)}
-                          disabled={creating}
-                          className="h-8 text-sm font-medium"
-                        />
-                        <span className="block text-xs text-muted-foreground">New role</span>
-                      </div>
-                    </TableHead>
+                    {roles.map((role) => {
+                      const edit = edits[role.id]
+                      const dirty = edit ? isDirty(edit, role) : false
+                      return (
+                        <TableHead key={role.id} className="min-w-36 py-3 align-top">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-1">
+                              <EditableRoleName
+                                value={edit?.name ?? role.name}
+                                onChange={(name) => setRoleName(role.id, name)}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                className="shrink-0 text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                                disabled={deleting || role.memberCount > 0}
+                                onClick={() => setDeleteTarget(role)}
+                                title={
+                                  role.memberCount > 0
+                                    ? "Reassign members before deleting this role"
+                                    : "Delete role"
+                                }
+                              >
+                                <Trash2 aria-hidden />
+                                <span className="sr-only">Delete role</span>
+                              </Button>
+                            </div>
+                            {dirty && (
+                              <Button
+                                type="button"
+                                size="xs"
+                                className="w-full"
+                                disabled={savingId === role.id || !edit?.name.trim()}
+                                loading={savingId === role.id}
+                                loadingText="Saving…"
+                                onClick={() => void handleSave(role)}
+                              >
+                                Save
+                              </Button>
+                            )}
+                          </div>
+                        </TableHead>
+                      )
+                    })}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -308,69 +350,8 @@ export function RolesView() {
                           />
                         </TableCell>
                       ))}
-                      <TableCell className="text-center">
-                        <Checkbox
-                          checked={newRolePermissions.includes(permission)}
-                          disabled={creating}
-                          onCheckedChange={(checked) =>
-                            toggleNewRolePermission(permission, checked === true)
-                          }
-                        />
-                      </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell className="sticky left-0 z-10 bg-card" />
-                    <TableCell />
-                    {roles.map((role) => {
-                      const edit = edits[role.id]
-                      const dirty = edit ? isDirty(edit, role) : false
-                      return (
-                        <TableCell key={role.id} className="text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled={!dirty || savingId === role.id || !edit?.name.trim()}
-                              loading={savingId === role.id}
-                              loadingText="Saving…"
-                              onClick={() => void handleSave(role)}
-                            >
-                              Save
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              disabled={deleting || role.memberCount > 0}
-                              onClick={() => setDeleteTarget(role)}
-                              title={
-                                role.memberCount > 0
-                                  ? "Reassign members before deleting this role"
-                                  : "Delete role"
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )
-                    })}
-                    <TableCell className="text-center">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={!newRoleName.trim() || creating}
-                        loading={creating}
-                        loadingText="Creating…"
-                        onClick={() => void handleCreate()}
-                      >
-                        <Plus aria-hidden />
-                        Create
-                      </Button>
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
             </CardContent>
@@ -381,6 +362,73 @@ export function RolesView() {
           </p>
         </div>
       )}
+
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open)
+          if (!open && !creating) resetNewRole()
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add role</DialogTitle>
+            <DialogDescription>
+              Name the role and choose which sections its members can access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-role-name">Role name</Label>
+              <Input
+                id="new-role-name"
+                autoFocus
+                placeholder="e.g. Support Lead"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                disabled={creating}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Permissions</Label>
+              <div className="max-h-64 space-y-0.5 overflow-y-auto rounded-lg border p-1">
+                {OPS_PERMISSIONS.map((permission) => (
+                  <label
+                    key={permission}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                  >
+                    <Checkbox
+                      checked={newRolePermissions.includes(permission)}
+                      disabled={creating}
+                      onCheckedChange={(checked) =>
+                        toggleNewRolePermission(permission, checked === true)
+                      }
+                    />
+                    {PERMISSION_LABELS[permission]}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={creating}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              disabled={!newRoleName.trim() || creating}
+              loading={creating}
+              loadingText="Creating…"
+              onClick={() => void handleCreate()}
+            >
+              <Plus aria-hidden />
+              Create role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
