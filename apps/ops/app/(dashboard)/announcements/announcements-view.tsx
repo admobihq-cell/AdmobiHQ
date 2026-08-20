@@ -83,10 +83,15 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
+  const [pageSize, setPageSize] = useState(25)
   const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
 
-  const refresh = async (targetPage = 1) => {
-    const result = await client.notifications.list({ page: targetPage, pageSize: 20, sortDir })
+  const refresh = async (targetPage = 1, targetPageSize = pageSize) => {
+    const result = await client.notifications.list({
+      page: targetPage,
+      pageSize: targetPageSize,
+      sortDir,
+    })
     setData(result)
   }
 
@@ -349,6 +354,11 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         totalPages={data.totalPages}
         total={data.total}
         onPageChange={(nextPage) => void refresh(nextPage)}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          void refresh(1, size)
+        }}
       />
 
       <AnnouncementFormDialog
