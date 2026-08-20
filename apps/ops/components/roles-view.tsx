@@ -39,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
+import { DataTable, type ColumnDef } from "@/components/ui/data-table"
 import { useOpsClient } from "@/lib/ops-client"
 
 const PERMISSION_LABELS: Record<OpsPermission, string> = {
@@ -259,6 +260,85 @@ export function RolesView() {
     }
   }
 
+  const permissionColumns: ColumnDef<OpsPermission, any>[] = roles
+    ? [
+        {
+          id: "permission",
+          header: "Permission",
+          meta: { className: "sticky left-0 z-10 bg-card font-medium" },
+          cell: ({ row }) => PERMISSION_LABELS[row.original],
+        },
+        {
+          id: "admin",
+          header: "Admin",
+          meta: { className: "text-center" },
+          cell: () => (
+            <Check
+              className="mx-auto h-4 w-4 text-muted-foreground"
+              aria-label="Always included for Admins"
+            />
+          ),
+        },
+        ...roles.map(
+          (role): ColumnDef<OpsPermission, any> => ({
+            id: `role-${role.id}`,
+            meta: { headerClassName: "min-w-36 py-3 align-top", cellClassName: "text-center" },
+            header: () => {
+              const edit = edits[role.id]
+              const dirty = edit ? isDirty(edit, role) : false
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1">
+                    <EditableRoleName
+                      value={edit?.name ?? role.name}
+                      onChange={(name) => setRoleName(role.id, name)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="shrink-0 text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                      disabled={deleting || role.memberCount > 0}
+                      onClick={() => setDeleteTarget(role)}
+                      title={
+                        role.memberCount > 0
+                          ? "Reassign members before deleting this role"
+                          : "Delete role"
+                      }
+                    >
+                      <Trash2 aria-hidden />
+                      <span className="sr-only">Delete role</span>
+                    </Button>
+                  </div>
+                  {dirty && (
+                    <Button
+                      type="button"
+                      size="xs"
+                      className="w-full"
+                      disabled={savingId === role.id || !edit?.name.trim()}
+                      loading={savingId === role.id}
+                      loadingText="Saving…"
+                      onClick={() => void handleSave(role)}
+                    >
+                      Save
+                    </Button>
+                  )}
+                </div>
+              )
+            },
+            cell: ({ row }) => (
+              <Checkbox
+                checked={edits[role.id]?.permissions.includes(row.original) ?? false}
+                onCheckedChange={(checked) =>
+                  togglePermission(role.id, row.original, checked === true)
+                }
+              />
+            ),
+          }),
+        ),
+      ]
+    : []
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       {roles === null ? (
@@ -276,84 +356,12 @@ export function RolesView() {
           </div>
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="sticky left-0 z-10 bg-card">Permission</TableHead>
-                    <TableHead className="text-center">Admin</TableHead>
-                    {roles.map((role) => {
-                      const edit = edits[role.id]
-                      const dirty = edit ? isDirty(edit, role) : false
-                      return (
-                        <TableHead key={role.id} className="min-w-36 py-3 align-top">
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-1">
-                              <EditableRoleName
-                                value={edit?.name ?? role.name}
-                                onChange={(name) => setRoleName(role.id, name)}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-xs"
-                                className="shrink-0 text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
-                                disabled={deleting || role.memberCount > 0}
-                                onClick={() => setDeleteTarget(role)}
-                                title={
-                                  role.memberCount > 0
-                                    ? "Reassign members before deleting this role"
-                                    : "Delete role"
-                                }
-                              >
-                                <Trash2 aria-hidden />
-                                <span className="sr-only">Delete role</span>
-                              </Button>
-                            </div>
-                            {dirty && (
-                              <Button
-                                type="button"
-                                size="xs"
-                                className="w-full"
-                                disabled={savingId === role.id || !edit?.name.trim()}
-                                loading={savingId === role.id}
-                                loadingText="Saving…"
-                                onClick={() => void handleSave(role)}
-                              >
-                                Save
-                              </Button>
-                            )}
-                          </div>
-                        </TableHead>
-                      )
-                    })}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {OPS_PERMISSIONS.map((permission) => (
-                    <TableRow key={permission}>
-                      <TableCell className="sticky left-0 z-10 bg-card font-medium">
-                        {PERMISSION_LABELS[permission]}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Check
-                          className="mx-auto h-4 w-4 text-muted-foreground"
-                          aria-label="Always included for Admins"
-                        />
-                      </TableCell>
-                      {roles.map((role) => (
-                        <TableCell key={role.id} className="text-center">
-                          <Checkbox
-                            checked={edits[role.id]?.permissions.includes(permission) ?? false}
-                            onCheckedChange={(checked) =>
-                              togglePermission(role.id, permission, checked === true)
-                            }
-                          />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={permissionColumns}
+                data={[...OPS_PERMISSIONS]}
+                getRowId={(permission) => permission}
+                headerRowClassName="hover:bg-transparent"
+              />
             </CardContent>
           </Card>
           <p className="text-xs text-muted-foreground">

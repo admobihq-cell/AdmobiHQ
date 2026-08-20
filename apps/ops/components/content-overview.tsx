@@ -2,21 +2,11 @@ import { BookOpen, FileImage, HelpCircle } from "lucide-react"
 
 import { StatCard } from "@/components/ui/stat-card"
 import { SectionHeading } from "@/components/ui/section-heading"
-import {
-  Card,
-  CardContent,
-} from "@workspace/ui/components/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
+import { Card, CardContent } from "@workspace/ui/components/card"
 
+import { ContentDraftsTable } from "@/components/content-drafts-table"
 import { getContentStats } from "@/lib/queries/content"
-import { formatBytes, formatDateTime } from "@/lib/format"
+import { formatBytes } from "@/lib/format"
 
 export async function ContentOverview() {
   const content = await getContentStats()
@@ -64,26 +54,7 @@ export async function ContentOverview() {
             {content.recentDrafts.length === 0 ? (
               <p className="p-6 text-sm text-muted-foreground">No drafts.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Updated</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {content.recentDrafts.map((draft) => (
-                    <TableRow key={`${draft.type}-${draft.id}`}>
-                      <TableCell className="font-medium">{draft.title}</TableCell>
-                      <TableCell className="capitalize">{draft.type}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDateTime(draft.updatedAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ContentDraftsTable drafts={content.recentDrafts} />
             )}
           </CardContent>
         </Card>

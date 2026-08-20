@@ -23,16 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
 
+import {
+  DataTable,
+  DataTableSortHeader,
+  type ColumnDef,
+  type SortingState,
+} from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { StatusBadge } from "@/components/status-badge"
@@ -59,6 +57,113 @@ function initials(name: string) {
     .join("")
 }
 
+function SupportLink({
+  id,
+  className,
+  children,
+}: {
+  id: number
+  className: string
+  children: React.ReactNode
+}) {
+  return (
+    <Link href={`/support/${id}`} className={className}>
+      {children}
+    </Link>
+  )
+}
+
+const columns: ColumnDef<SupportCaseDto, any>[] = [
+  {
+    accessorKey: "created_at",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="Date"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => (
+      <SupportLink id={row.original.id} className="block whitespace-nowrap text-muted-foreground">
+        {formatDateTime(row.original.created_at)}
+      </SupportLink>
+    ),
+  },
+  {
+    id: "subject",
+    header: "Subject",
+    cell: ({ row }) => (
+      <SupportLink id={row.original.id} className="flex items-center gap-2 font-medium">
+        <span
+          className={cn(
+            "size-1.5 shrink-0 rounded-full",
+            row.original.priority === "urgent"
+              ? "bg-destructive"
+              : row.original.priority === "high"
+                ? "bg-amber-500"
+                : "bg-transparent",
+          )}
+          aria-label={
+            row.original.priority === "urgent" || row.original.priority === "high"
+              ? `${formatLabel(row.original.priority)} priority`
+              : undefined
+          }
+        />
+        {row.original.subject}
+      </SupportLink>
+    ),
+  },
+  {
+    id: "contact",
+    header: "Contact",
+    cell: ({ row }) => (
+      <SupportLink id={row.original.id} className="flex items-center gap-2.5">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+          {initials(row.original.contact_name)}
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm">{row.original.contact_name}</span>
+          <span className="text-xs text-muted-foreground">{row.original.contact_email}</span>
+        </div>
+      </SupportLink>
+    ),
+  },
+  {
+    id: "channel",
+    header: "Channel",
+    cell: ({ row }) => (
+      <SupportLink id={row.original.id} className="block">
+        <Badge variant="outline">{formatLabel(row.original.channel)}</Badge>
+      </SupportLink>
+    ),
+  },
+  {
+    id: "category",
+    header: "Category",
+    cell: ({ row }) => (
+      <SupportLink id={row.original.id} className="flex items-center gap-1.5 text-muted-foreground">
+        <SupportCategoryIcon category={row.original.category} className="size-3.5" />
+        <span className="text-foreground">{formatLabel(row.original.category)}</span>
+      </SupportLink>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="Status"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => (
+      <SupportLink id={row.original.id} className="block">
+        <StatusBadge status={row.original.status} />
+      </SupportLink>
+    ),
+  },
+]
+
 export function SupportView() {
   const client = useOpsClient()
   const [data, setData] = useState<Paginated<SupportCaseDto> | null>(null)
@@ -68,8 +173,12 @@ export function SupportView() {
   const [status, setStatus] = useState<string>(ALL)
   const [category, setCategory] = useState<string>(ALL)
   const [page, setPage] = useState(1)
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const fetchSeq = useRef(0)
+  const sort = sorting[0]
+  const sortBy = sort?.id === "status" ? "status" : "created_at"
+  const sortDir = sort?.desc === false ? "asc" : "desc"
 
   const refresh = useCallback(async () => {
     const seq = ++fetchSeq.current
@@ -82,6 +191,8 @@ export function SupportView() {
         search: search || undefined,
         status: status === ALL ? undefined : status,
         category: category === ALL ? undefined : category,
+        sortBy,
+        sortDir,
       })
       if (seq !== fetchSeq.current) return
       setData(result)
@@ -91,7 +202,7 @@ export function SupportView() {
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, search, status, category, page])
+  }, [client, search, status, category, page, sortBy, sortDir])
 
   useEffect(() => {
     const timeout = setTimeout(() => void refresh(), search ? 300 : 0)
@@ -100,7 +211,7 @@ export function SupportView() {
 
   useEffect(() => {
     setPage(1)
-  }, [search, status, category])
+  }, [search, status, category, sortBy, sortDir])
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -171,98 +282,28 @@ export function SupportView() {
       ) : null}
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Subject</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Channel</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading && !data ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : !data?.items.length ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Inbox className="size-5 text-muted-foreground" />
-                    <p className="text-sm font-medium text-foreground">No cases yet.</p>
-                    <p className="text-xs text-muted-foreground">
-                      Requests from the landing page and customer apps will appear here.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              data.items.map((row) => (
-                <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40">
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
-                    <Link href={`/support/${row.id}`} className="block">
-                      {formatDateTime(row.created_at)}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/support/${row.id}`} className="flex items-center gap-2 font-medium">
-                      <span
-                        className={cn(
-                          "size-1.5 shrink-0 rounded-full",
-                          row.priority === "urgent"
-                            ? "bg-destructive"
-                            : row.priority === "high"
-                              ? "bg-amber-500"
-                              : "bg-transparent",
-                        )}
-                        aria-label={
-                          row.priority === "urgent" || row.priority === "high"
-                            ? `${formatLabel(row.priority)} priority`
-                            : undefined
-                        }
-                      />
-                      {row.subject}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/support/${row.id}`} className="flex items-center gap-2.5">
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
-                        {initials(row.contact_name)}
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm">{row.contact_name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {row.contact_email}
-                        </span>
-                      </div>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/support/${row.id}`} className="block">
-                      <Badge variant="outline">{formatLabel(row.channel)}</Badge>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/support/${row.id}`} className="flex items-center gap-1.5 text-muted-foreground">
-                      <SupportCategoryIcon category={row.category} className="size-3.5" />
-                      <span className="text-foreground">{formatLabel(row.category)}</span>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/support/${row.id}`} className="block">
-                      <StatusBadge status={row.status} />
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {loading && !data ? (
+          <div className="flex h-32 items-center justify-center">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : !data?.items.length ? (
+          <div className="flex h-40 flex-col items-center justify-center gap-1.5 text-center">
+            <Inbox className="size-5 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">No cases yet.</p>
+            <p className="text-xs text-muted-foreground">
+              Requests from the landing page and customer apps will appear here.
+            </p>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={data.items}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            getRowId={(row) => String(row.id)}
+            rowClassName={() => "cursor-pointer hover:bg-muted/40"}
+          />
+        )}
       </div>
 
       {data && data.totalPages > 1 ? (
