@@ -102,7 +102,7 @@ export function DataTable<TData>({
   sorting,
   onSortingChange,
   manualSorting = true,
-  rowSelection,
+  rowSelection = {},
   onRowSelectionChange,
   enableRowSelection,
   onRowClick,
