@@ -23,13 +23,12 @@ export function GoogleButton({ label, onPress, disabled }: GoogleButtonProps) {
       justifyContent: "center",
       gap: spacing.sm,
       borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
+      borderColor: disabled ? c.muted : c.border,
+      backgroundColor: disabled ? c.muted : c.surface,
       borderRadius: radius.xl,
       paddingVertical: 14,
-      opacity: disabled ? 0.5 : 1,
     },
-    label: { ...typography.headline, color: c.text },
+    label: { ...typography.headline, color: disabled ? c.mutedForeground : c.text },
   }))
 
   return (
@@ -45,7 +44,7 @@ export function GoogleButton({ label, onPress, disabled }: GoogleButtonProps) {
         }}
         onPress={onPress}
       >
-        <LogoGoogle size={18} color={colors.text} />
+        <LogoGoogle size={18} color={disabled ? colors.mutedForeground : colors.text} />
         <Text style={styles.label}>{label}</Text>
       </Pressable>
     </Animated.View>
