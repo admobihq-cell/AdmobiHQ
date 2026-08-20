@@ -29,6 +29,7 @@ export default async function DashboardLayout({
       permissions={access.permissions}
       userName={userName}
       orgName={access.orgName}
+      userId={access.user.id}
       pendingDriverApplicationsCount={pendingDriverApplicationsCount}
     >
       {children}

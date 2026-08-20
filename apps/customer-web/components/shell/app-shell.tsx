@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
 
 import { Logo } from "@workspace/ui/brand/logo"
 import {
@@ -29,9 +30,24 @@ import {
 } from "@workspace/ui/components/sidebar"
 import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
+import { TourProvider } from "@workspace/ui/components/tour-provider"
 
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
+import { customerTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
+
+function useSignedInUser() {
+  return useUser()
+}
+
+function useNoUser() {
+  return { user: null }
+}
+
+/** Same "pick the hook once at module load" pattern as nav-user.tsx —
+ * useUser() must never run unless ClerkProvider is mounted. */
+const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -66,62 +82,75 @@ export function AppShell({
   const pathname = usePathname()
   const currentNavHref = navItemForPath(pathname).href
   const navItems = visibleNavItems(new Set(enabledFlags))
+  const { user } = useUserIfEnabled()
 
   return (
-    <SidebarProvider>
-      <Sidebar variant="inset" collapsible="icon">
-        <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <Logo
-              markHeight={16}
-              wordmarkClassName="text-sm leading-none group-data-[collapsible=icon]:hidden"
-            />
-            <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
-              · Customer App
-            </span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Product</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={item.href === currentNavHref}
-                      className={activeSidebarLinkClassName}
-                      tooltip={item.label}
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border p-2">
-          <NavUser />
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <AppBreadcrumbs pathname={pathname} />
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
-        </header>
-        <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <TourProvider
+      app="customer"
+      userId={user?.id ?? null}
+      chapters={customerTourChapters}
+    >
+      <SidebarProvider>
+        <Sidebar variant="inset" collapsible="icon">
+          <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
+            <div
+              data-tour-id="tour-logo"
+              className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center"
+            >
+              <Logo
+                markHeight={16}
+                wordmarkClassName="text-sm leading-none group-data-[collapsible=icon]:hidden"
+              />
+              <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+                · Customer App
+              </span>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Product</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={item.href === currentNavHref}
+                        className={activeSidebarLinkClassName}
+                        tooltip={item.label}
+                      >
+                        <Link
+                          href={item.href}
+                          data-tour-id={`tour-nav-${item.label.toLowerCase()}`}
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter className="border-t border-sidebar-border p-2">
+            <NavUser />
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <AppBreadcrumbs pathname={pathname} />
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TourProvider>
   )
 }
