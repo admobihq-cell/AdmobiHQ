@@ -119,14 +119,13 @@ export function AuthPrimaryButton({
   const { animatedStyle, onPressIn, onPressOut } = usePressScale()
   const styles = useThemedStyles((c) => ({
     button: {
-      backgroundColor: c.primary,
+      backgroundColor: disabled ? c.muted : c.primary,
       borderRadius: radius.xl,
       paddingVertical: 15,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      opacity: disabled ? 0.5 : 1,
     },
-    label: { ...typography.headline, color: c.primaryForeground },
+    label: { ...typography.headline, color: disabled ? c.mutedForeground : c.primaryForeground },
   }))
 
   return (

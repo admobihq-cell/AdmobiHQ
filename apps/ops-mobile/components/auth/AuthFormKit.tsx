@@ -138,24 +138,24 @@ export function AuthPrimaryButton({
 }) {
   const styles = useThemedStyles((c) => ({
     button: {
-      backgroundColor: c.primary,
+      backgroundColor: disabled ? c.muted : c.primary,
       borderRadius: radius.xl,
       paddingVertical: 15,
       alignItems: "center" as const,
       justifyContent: "center" as const,
       marginTop: spacing.sm,
     },
-    label: { color: c.primaryForeground, fontSize: 16, fontWeight: "600" as const },
+    label: {
+      color: disabled ? c.mutedForeground : c.primaryForeground,
+      fontSize: 16,
+      fontWeight: "600" as const,
+    },
   }))
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.button,
-        disabled && layoutStyles.buttonDisabled,
-        pressed && !disabled && layoutStyles.pressed,
-      ]}
+      style={({ pressed }) => [styles.button, pressed && !disabled && layoutStyles.pressed]}
     >
       <Text style={styles.label}>{label}</Text>
     </Pressable>
