@@ -31,6 +31,8 @@ import {
   type PaginatedResponse,
   type PlatformFlagDto,
   type PlatformFlagUpdateInput,
+  type PlatformUserListDto,
+  type PlatformUserType,
   type StatsResponseDto,
   type SuccessResponse,
   type SupportCaseDetailDto,
@@ -167,6 +169,14 @@ export type OpsClient = {
     updateRole: (userId: string, body: TeamRoleUpdateInput) => Promise<TeamMemberDto>
     removeMember: (userId: string) => Promise<SuccessResponse>
     revokeInvitation: (invitationId: string) => Promise<SuccessResponse>
+  }
+  users: {
+    list: (params: {
+      type: PlatformUserType
+      query?: string
+      limit?: number
+      offset?: number
+    }) => Promise<PlatformUserListDto>
   }
   roles: {
     list: () => Promise<{ items: OpsRoleDto[] }>
@@ -420,6 +430,18 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         request<SuccessResponse>(`${apiPrefix}/team/invitations/${invitationId}`, {
           method: "DELETE",
         }),
+    },
+    users: {
+      list: (params) => {
+        const query = buildListQueryParams({
+          type: params.type,
+          query: params.query,
+          limit: params.limit,
+          offset: params.offset,
+        })
+        const qs = query.toString()
+        return request<PlatformUserListDto>(`${apiPrefix}/users${qs ? `?${qs}` : ""}`)
+      },
     },
     roles: {
       list: () => request<{ items: OpsRoleDto[] }>(`${apiPrefix}/roles`),
