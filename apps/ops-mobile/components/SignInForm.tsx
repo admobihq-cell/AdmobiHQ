@@ -310,7 +310,7 @@ export function SignInForm() {
       <Screen>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={layoutStyles.scrollContent} keyboardShouldPersistTaps="handled">
-            <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
+            <Animated.View entering={FadeInDown.duration(240)}>
               <View style={layoutStyles.iconWrap}>
                 <AuthIllustration source={require("@/assets/images/otp-illustration.png")} />
               </View>
@@ -369,7 +369,7 @@ export function SignInForm() {
     <Screen>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={layoutStyles.scrollContent} keyboardShouldPersistTaps="handled">
-          <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
+          <Animated.View entering={FadeInDown.duration(240)}>
             <View style={layoutStyles.iconWrap}>
               <IconBox icon={ShieldCheck} size={22} />
             </View>
