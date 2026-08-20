@@ -15,16 +15,19 @@ export const CLERK_PUBLISHABLE_KEY = trimEnv(
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 )
 
+/**
+ * Business API origin. "localhost" is never a usable fallback in a built app —
+ * it always points at the phone itself, not a dev machine — so unset env vars
+ * (e.g. an EAS build/profile missing EXPO_PUBLIC_API_URL) fall back to production.
+ */
 export const API_URL =
   trimEnv(
     process.env.EXPO_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_URL,
-  ) ?? "http://localhost:3003"
+  ) ?? "https://api.admobihq.com"
 
 /**
  * Marketing site origin — used to build CMS admin links (see lib/site-urls.ts),
- * opened via Linking.openURL in the device's browser. Unlike API_URL, "localhost"
- * is never a usable fallback here — it always points at the phone itself, not a
- * dev machine — so unset env vars fall back to production rather than localhost.
+ * opened via Linking.openURL in the device's browser.
  */
 export const WEB_URL =
   trimEnv(
