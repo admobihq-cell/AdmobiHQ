@@ -57,6 +57,8 @@ import { TablePagination } from "@/components/ui/table-pagination"
 // stays "" internally, translated only at this component's boundary.
 const ALL_STATUSES = "__all__"
 
+const DEFAULT_PAGE_SIZE = 25
+
 export type ColumnDef<T> = {
   key: string
   header: string
@@ -142,6 +144,7 @@ export function EntityPage<T extends { id: number }>({
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
   const [viewing, setViewing] = useState<T | null>(null)
@@ -187,7 +190,7 @@ export function EntityPage<T extends { id: number }>({
     try {
       const result = await resource.list({
         page,
-        pageSize: 20,
+        pageSize,
         ...(search ? { search } : {}),
         ...(statusFilter ? { status: statusFilter } : {}),
       })
@@ -204,18 +207,18 @@ export function EntityPage<T extends { id: number }>({
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [resource, page, search, statusFilter])
+  }, [resource, page, pageSize, search, statusFilter])
 
   useEffect(() => {
-    if (initialData && page === 1 && !search && !statusFilter) {
+    if (initialData && page === 1 && pageSize === DEFAULT_PAGE_SIZE && !search && !statusFilter) {
       return
     }
     void fetchData()
-  }, [fetchData, initialData, page, search, statusFilter])
+  }, [fetchData, initialData, page, pageSize, search, statusFilter])
 
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [page, search, apiPath])
+  }, [page, pageSize, search, apiPath])
 
   const toggleRow = (id: number, checked: boolean) => {
     setSelectedIds((current) => {
@@ -599,6 +602,11 @@ export function EntityPage<T extends { id: number }>({
           totalPages={data.totalPages}
           total={data.total}
           onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setPage(1)
+          }}
         />
       )}
 
