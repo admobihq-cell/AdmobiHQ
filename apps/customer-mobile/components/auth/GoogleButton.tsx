@@ -25,7 +25,7 @@ export function GoogleButton({ label, onPress, disabled }: GoogleButtonProps) {
       borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.surface,
-      borderRadius: radius.full,
+      borderRadius: radius.xl,
       paddingVertical: 14,
       opacity: disabled ? 0.5 : 1,
     },

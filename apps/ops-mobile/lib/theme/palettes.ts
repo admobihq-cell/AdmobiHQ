@@ -55,33 +55,41 @@ export const lightColors = {
   danger: "#C04A2F",
 } as const satisfies ThemeColors
 
-/** Dark palette — mirrors packages/ui globals.css .dark */
+/**
+ * Dark palette — computed by converting packages/ui globals.css .dark's
+ * OKLCH values to sRGB (Björn Ottosson's OKLab matrices), not hand-picked.
+ * Matches customer-mobile/driver-mobile's corrected values — the previous
+ * hex values here were eyeballed and drifted noticeably lighter/warmer than
+ * the web dark theme (e.g. background #1E1D24 vs the web-equivalent
+ * #11151F), which is why ops-mobile's dark mode and auth screens looked
+ * visibly different in color from the other two apps.
+ */
 export const darkColors = {
-  background: "#1E1D24",
-  foreground: "#F7F5F2",
-  card: "#27262E",
-  cardForeground: "#F7F5F2",
-  primary: "#D4845C",
-  primaryForeground: "#1E1D24",
-  secondary: "#3A3844",
-  secondaryForeground: "#F7F5F2",
-  muted: "#32313A",
-  mutedForeground: "#A8A4A0",
-  accent: "#3A3844",
-  accentForeground: "#F7F5F2",
-  destructive: "#E06B52",
-  destructiveMuted: "rgba(224, 107, 82, 0.12)",
-  border: "rgba(247, 245, 242, 0.12)",
-  input: "rgba(247, 245, 242, 0.14)",
-  ring: "#D4845C",
+  background: "#11151F",
+  foreground: "#F9F5EC",
+  card: "#171B27",
+  cardForeground: "#F9F5EC",
+  primary: "#D98854",
+  primaryForeground: "#11151F",
+  secondary: "#282D3C",
+  secondaryForeground: "#F9F5EC",
+  muted: "#232936",
+  mutedForeground: "#9DA4B7",
+  accent: "#272D3D",
+  accentForeground: "#F9F5EC",
+  destructive: "#E85854",
+  destructiveMuted: "rgba(232, 88, 84, 0.12)",
+  border: "rgba(249, 245, 236, 0.12)",
+  input: "rgba(249, 245, 236, 0.14)",
+  ring: "#D98854",
   success: "#3D9A66",
-  bg: "#1E1D24",
-  surface: "#27262E",
-  text: "#F7F5F2",
-  mutedSurface: "#32313A",
-  mutedText: "#A8A4A0",
-  accentSurface: "#3A3844",
-  danger: "#E06B52",
+  bg: "#11151F",
+  surface: "#171B27",
+  text: "#F9F5EC",
+  mutedSurface: "#232936",
+  mutedText: "#9DA4B7",
+  accentSurface: "#272D3D",
+  danger: "#E85854",
 } as const satisfies ThemeColors
 
 export type ThemeColorKey = keyof ThemeColors

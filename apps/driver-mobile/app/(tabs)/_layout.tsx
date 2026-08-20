@@ -1,9 +1,11 @@
+import { useState } from "react"
 import { Tabs } from "expo-router"
 import { Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AppBar } from "@/components/app/app-bar"
-import { Dashboard, Deliveries, Payouts, Routes, Settings, Wallet } from "@/components/icons"
+import { NavDrawer } from "@/components/app/nav-drawer"
+import { Dashboard, Deliveries, Settings, Wallet } from "@/components/icons"
 import { usePlatformFlags } from "@/lib/flags"
 import { useNavigationTheme } from "@/lib/theme"
 
@@ -23,10 +25,11 @@ export default function TabsLayout() {
   } = useNavigationTheme()
   const insets = useSafeAreaInsets()
   const flags = usePlatformFlags()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <AppBar />
+      <AppBar onMenuPress={() => setDrawerOpen(true)} />
       <Tabs
         screenOptions={{
           ...screenOptions,
@@ -53,39 +56,6 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="earnings"
-          options={{
-            title: "Earnings",
-            headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Earnings" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Wallet color={color} size={size - 2} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="routes"
-          options={{
-            title: "Routes",
-            headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Routes" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Routes color={color} size={size - 2} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="payouts"
-          options={{
-            title: "Payouts",
-            headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Payouts" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Payouts color={color} size={size - 2} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="deliveries"
           options={{
             title: "Deliveries",
@@ -101,6 +71,17 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="earnings"
+          options={{
+            title: "Earnings",
+            headerShown: false,
+            tabBarLabel: ({ color }) => <TabLabel label="Earnings" color={color} />,
+            tabBarIcon: ({ color, size }) => (
+              <Wallet color={color} size={size - 2} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="settings"
           options={{
             title: "Settings",
@@ -112,16 +93,36 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="routes"
+          options={{
+            title: "Routes",
+            headerShown: false,
+            // Reached from the menu drawer instead of the bottom bar, to
+            // keep the bar to the four most-used destinations.
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="payouts"
+          options={{
+            title: "Payouts",
+            headerShown: false,
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="support"
           options={{
             title: "Support",
             headerShown: false,
             // Kept off the tab bar to avoid crowding it — reached from the
-            // Settings screen and the dashboard's quick actions instead.
+            // menu drawer, the Settings screen, and the dashboard's quick
+            // actions instead.
             href: null,
           }}
         />
       </Tabs>
+      <NavDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </View>
   )
 }

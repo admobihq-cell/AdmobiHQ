@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -19,16 +22,18 @@ import { useSignIn } from "@clerk/clerk-expo"
 import { Mail, ShieldCheck } from "@/components/icons"
 import { ALLOWED_DOMAIN } from "@workspace/ops-contracts"
 
+import {
+  AuthIllustration,
+  AuthPrimaryButton,
+  AuthSecondaryButton,
+  AuthUsernameField,
+} from "@/components/auth/AuthFormKit"
 import { OtpCodeInput } from "@/components/otp-code-input"
 import {
-  Card,
-  EmailUsernameField,
   ErrorText,
   IconBox,
   Label,
-  PrimaryButton,
   Screen,
-  SecondaryButton,
   Subtitle,
   Title,
 } from "@/components/ui"
@@ -76,7 +81,11 @@ const layoutStyles = StyleSheet.create({
   },
   formCard: {
     marginBottom: spacing.md,
-    gap: spacing.sm,
+    gap: spacing.md,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
   },
 })
 
@@ -95,7 +104,7 @@ export function SignInForm() {
     },
     welcomeCta: {
       backgroundColor: c.primary,
-      borderRadius: radius.full,
+      borderRadius: radius.xl,
       paddingVertical: 16,
       paddingHorizontal: spacing.lg,
       alignItems: "center" as const,
@@ -299,100 +308,107 @@ export function SignInForm() {
   if (step === "code") {
     return (
       <Screen>
-        <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
-          <View style={layoutStyles.iconWrap}>
-            <IconBox icon={Mail} size={22} />
-          </View>
-          <Title>Check your email</Title>
-          <Subtitle>
-            Enter the 6-digit code sent to{" "}
-            <Text style={styles.emailHighlight}>{email.trim()}</Text>
-          </Subtitle>
-          <Card style={layoutStyles.formCard}>
-            <Label>Verification code</Label>
-            <OtpCodeInput
-              value={code}
-              onChange={setCode}
-              length={CODE_LENGTH}
-              disabled={submitting}
-              onComplete={(value) => {
-                void handleVerifyCode(value)
-              }}
-            />
-            <ErrorText>{error}</ErrorText>
-            <PrimaryButton
-              label={submitting ? "Verifying…" : "Verify and sign in"}
-              onPress={() => void handleVerifyCode()}
-              disabled={submitting || code.trim().length < CODE_LENGTH}
-            />
-            <SecondaryButton
-              label={
-                resendIn > 0
-                  ? `Resend code in ${resendIn}s`
-                  : submitting
-                    ? "Sending…"
-                    : "Resend code"
-              }
-              disabled={submitting || resendIn > 0}
-              onPress={() => void handleResendCode()}
-            />
-            <SecondaryButton
-              label="Use a different email"
-              disabled={submitting}
-              onPress={() => {
-                setStep("email")
-                setCode("")
-                setError(null)
-                setEmailAddressId(null)
-              }}
-            />
-          </Card>
-        </Animated.View>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <ScrollView contentContainerStyle={layoutStyles.scrollContent} keyboardShouldPersistTaps="handled">
+            <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
+              <View style={layoutStyles.iconWrap}>
+                <AuthIllustration source={require("@/assets/images/otp-illustration.png")} />
+              </View>
+              <Title>Check your email</Title>
+              <Subtitle>
+                Enter the 6-digit code sent to{" "}
+                <Text style={styles.emailHighlight}>{email.trim()}</Text>
+              </Subtitle>
+              <View style={layoutStyles.formCard}>
+                <Label>Verification code</Label>
+                <OtpCodeInput
+                  value={code}
+                  onChange={setCode}
+                  length={CODE_LENGTH}
+                  disabled={submitting}
+                  onComplete={(value) => {
+                    void handleVerifyCode(value)
+                  }}
+                />
+                <ErrorText>{error}</ErrorText>
+                <AuthPrimaryButton
+                  label={submitting ? "Verifying…" : "Verify and sign in"}
+                  onPress={() => void handleVerifyCode()}
+                  disabled={submitting || code.trim().length < CODE_LENGTH}
+                />
+                <AuthSecondaryButton
+                  label={
+                    resendIn > 0
+                      ? `Resend code in ${resendIn}s`
+                      : submitting
+                        ? "Sending…"
+                        : "Resend code"
+                  }
+                  disabled={submitting || resendIn > 0}
+                  onPress={() => void handleResendCode()}
+                />
+                <AuthSecondaryButton
+                  label="Use a different email"
+                  disabled={submitting}
+                  onPress={() => {
+                    setStep("email")
+                    setCode("")
+                    setError(null)
+                    setEmailAddressId(null)
+                  }}
+                />
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Screen>
     )
   }
 
   return (
     <Screen>
-      <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
-        <View style={layoutStyles.iconWrap}>
-          <IconBox icon={ShieldCheck} size={22} />
-        </View>
-        <Title>Work email</Title>
-        <Subtitle>
-          Enter your Admobi username — we&apos;ll email a one-time code to{" "}
-          <Text style={styles.emailHighlight}>{ALLOWED_DOMAIN}</Text> to
-          verify it&apos;s you.
-        </Subtitle>
-        <Card style={layoutStyles.formCard}>
-          <Label>Username</Label>
-          <EmailUsernameField
-            value={username}
-            onChangeText={setUsername}
-            domain={ALLOWED_DOMAIN}
-            autoFocus
-            onSubmitEditing={() => void handleSendCode()}
-          />
-          <ErrorText>{error}</ErrorText>
-          <PrimaryButton
-            label={submitting ? "Sending…" : "Send code"}
-            onPress={() => void handleSendCode()}
-            disabled={submitting || !emailAllowed || !isLoaded}
-            icon={Mail}
-          />
-          <SecondaryButton
-            label="Back"
-            disabled={submitting}
-            onPress={() => {
-              setStep("welcome")
-              setError(null)
-            }}
-          />
-        </Card>
-        <Text style={styles.footerNote}>
-          Staff access only. Customer accounts use a separate experience.
-        </Text>
-      </Animated.View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={layoutStyles.scrollContent} keyboardShouldPersistTaps="handled">
+          <Animated.View entering={FadeInDown.duration(320).springify().damping(18)}>
+            <View style={layoutStyles.iconWrap}>
+              <IconBox icon={ShieldCheck} size={22} />
+            </View>
+            <Title>Work email</Title>
+            <Subtitle>
+              Enter your Admobi username — we&apos;ll email a one-time code to{" "}
+              <Text style={styles.emailHighlight}>{ALLOWED_DOMAIN}</Text> to
+              verify it&apos;s you.
+            </Subtitle>
+            <View style={layoutStyles.formCard}>
+              <Label>Username</Label>
+              <AuthUsernameField
+                value={username}
+                onChangeText={setUsername}
+                domain={ALLOWED_DOMAIN}
+                autoFocus
+                onSubmitEditing={() => void handleSendCode()}
+              />
+              <ErrorText>{error}</ErrorText>
+              <AuthPrimaryButton
+                label={submitting ? "Sending…" : "Send code"}
+                onPress={() => void handleSendCode()}
+                disabled={submitting || !emailAllowed || !isLoaded}
+              />
+              <AuthSecondaryButton
+                label="Back"
+                disabled={submitting}
+                onPress={() => {
+                  setStep("welcome")
+                  setError(null)
+                }}
+              />
+            </View>
+            <Text style={styles.footerNote}>
+              Staff access only. Customer accounts use a separate experience.
+            </Text>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   )
 }

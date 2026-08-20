@@ -6,9 +6,8 @@ import Animated, { FadeInDown } from "react-native-reanimated"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import {
-  AuthCard,
   AuthErrorText,
-  AuthIconBadge,
+  AuthIllustration,
   AuthLabel,
   AuthPrimaryButton,
   AuthSecondaryButton,
@@ -18,7 +17,7 @@ import { AuthLegalLine } from "@/components/auth/AuthLegalLine"
 import { AuthLogo } from "@/components/auth/AuthLogo"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import { OtpCodeInput } from "@/components/auth/OtpCodeInput"
-import { Mail, Shield } from "@/components/icons"
+import { Mail } from "@/components/icons"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
@@ -62,13 +61,11 @@ export function SignInForm() {
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
     scrollContent: { flexGrow: 1, justifyContent: "center" },
-    formArea: { gap: spacing.lg, padding: spacing.xl },
-    title: { ...typography.title, color: c.text },
-    subtitle: { ...typography.body, color: c.mutedForeground },
+    formArea: { gap: spacing.xl, padding: spacing.xl },
+    title: { ...typography.largeTitle, color: c.text, textAlign: "center" },
+    subtitle: { ...typography.body, color: c.mutedForeground, textAlign: "center" },
     highlight: { color: c.text, fontWeight: "600" },
-    dividerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-    dividerLine: { flex: 1, height: 1, backgroundColor: c.border },
-    dividerLabel: { ...typography.caption, color: c.mutedForeground },
+    dividerLabel: { ...typography.caption, color: c.mutedForeground, textAlign: "center" },
     footerRow: { flexDirection: "row", justifyContent: "center", gap: spacing.xs },
     footerText: { ...typography.bodySm, color: c.mutedForeground },
     footerLink: { ...typography.bodySm, color: c.text, fontWeight: "600" },
@@ -149,8 +146,8 @@ export function SignInForm() {
           <View style={styles.formArea}>
             <AuthLogo />
             {step === "code" ? (
-              <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={{ gap: spacing.lg }}>
-                <AuthIconBadge icon={Shield} />
+              <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={{ gap: spacing.xl }}>
+                <AuthIllustration source={require("@/assets/images/otp-illustration.png")} />
                 <View style={{ gap: spacing.xs }}>
                   <Text style={styles.title}>Check your email</Text>
                   <Text style={styles.subtitle}>
@@ -158,15 +155,17 @@ export function SignInForm() {
                     <Text style={styles.highlight}>{email.trim()}</Text>
                   </Text>
                 </View>
-                <AuthCard>
-                  <AuthLabel>Verification code</AuthLabel>
-                  <OtpCodeInput
-                    value={code}
-                    onChange={setCode}
-                    length={CODE_LENGTH}
-                    disabled={submitting}
-                    onComplete={(value) => void handleVerifyCode(value)}
-                  />
+                <View style={{ gap: spacing.lg }}>
+                  <View style={{ gap: spacing.sm }}>
+                    <AuthLabel>Verification code</AuthLabel>
+                    <OtpCodeInput
+                      value={code}
+                      onChange={setCode}
+                      length={CODE_LENGTH}
+                      disabled={submitting}
+                      onComplete={(value) => void handleVerifyCode(value)}
+                    />
+                  </View>
                   <AuthErrorText>{error}</AuthErrorText>
                   <AuthPrimaryButton
                     label={submitting ? "Verifying…" : "Verify and sign in"}
@@ -182,18 +181,17 @@ export function SignInForm() {
                       setError(null)
                     }}
                   />
-                </AuthCard>
+                </View>
               </Animated.View>
             ) : (
-              <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={{ gap: spacing.lg }}>
+              <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={{ gap: spacing.xl }}>
                 <View style={{ gap: spacing.xs }}>
                   <Text style={styles.title}>Sign in to Admobi</Text>
                   <Text style={styles.subtitle}>We&apos;ll email you a one-time code.</Text>
                 </View>
-                <AuthCard>
-                  <View>
+                <View style={{ gap: spacing.lg }}>
+                  <View style={{ gap: spacing.sm }}>
                     <AuthLabel>Email address</AuthLabel>
-                    <View style={{ height: spacing.xs }} />
                     <AuthTextField
                       icon={Mail}
                       value={email}
@@ -215,18 +213,14 @@ export function SignInForm() {
                     onPress={() => void handleSendCode()}
                   />
 
-                  <View style={styles.dividerRow}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerLabel}>or</Text>
-                    <View style={styles.dividerLine} />
-                  </View>
+                  <Text style={styles.dividerLabel}>or</Text>
 
                   <GoogleButton
                     label={googleSubmitting ? "Opening Google…" : "Continue with Google"}
                     disabled={googleSubmitting}
                     onPress={() => void handleGoogleSignIn()}
                   />
-                </AuthCard>
+                </View>
 
                 <View style={{ gap: spacing.md }}>
                   <AuthLegalLine />
