@@ -19,6 +19,7 @@ import { GoogleButton } from "@/components/auth/GoogleButton"
 import { OtpCodeInput } from "@/components/auth/OtpCodeInput"
 import { Mail } from "@/components/icons"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { useWarmUpBrowser } from "@/lib/auth/use-warm-up-browser"
 import { spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
 
@@ -49,6 +50,7 @@ function clerkErrorMessage(err: unknown, fallback: string) {
 }
 
 export function SignInForm() {
+  useWarmUpBrowser()
   const { isLoaded, signIn, setActive } = useSignInIfEnabled()
   const { startSSOFlow } = useSSOIfEnabled()
   const [email, setEmail] = useState("")
@@ -132,6 +134,10 @@ export function SignInForm() {
         await setActiveFromSSO({ session: createdSessionId })
         return
       }
+      // Google completed but Clerk didn't return a session — e.g. this
+      // Google account needs to finish signing up first. Without this the
+      // screen just silently dropped the user back where they started.
+      setError("That Google account isn't linked to an account yet. Try signing up instead.")
     } catch (err) {
       setError(clerkErrorMessage(err, "Google sign-in failed."))
     } finally {

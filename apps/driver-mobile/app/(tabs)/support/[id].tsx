@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   View,
+  type View as ViewType,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -34,6 +35,8 @@ export default function SupportCaseScreen() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(true)
+  const screenRef = useRef<ViewType>(null)
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
 
   const load = useCallback(async () => {
     if (!Number.isFinite(caseId)) return
@@ -169,11 +172,24 @@ export default function SupportCaseScreen() {
   return (
     <>
       <Stack.Screen options={{ title: subject ?? "Request" }} />
-      <KeyboardAvoidingView
+      <View
+        ref={screenRef}
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        onLayout={() => {
+          // The persistent AppBar above the tab navigator plus this
+          // screen's own Stack header both add to the space above this
+          // view, and their combined height varies by device (safe-area
+          // insets) — a hardcoded offset left the composer under the
+          // keyboard on most phones. Measuring the real on-screen position
+          // works for every device and header/AppBar height.
+          screenRef.current?.measureInWindow((_x, y) => setKeyboardOffset(y))
+        }}
       >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={keyboardOffset}
+        >
         {loading ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
             <ActivityIndicator />
@@ -269,7 +285,8 @@ export default function SupportCaseScreen() {
             </View>
           </>
         )}
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </>
   )
 }
