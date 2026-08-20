@@ -125,6 +125,30 @@ export default function OpsLayout() {
             }}
           />
           <Tabs.Screen
+            name="team"
+            options={{
+              title: "Team",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="driver-applications"
+            options={{
+              title: "Driver applications",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="content"
+            options={{
+              title: "Content",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
             name="waitlist"
             options={{
               title: "Waitlist",
