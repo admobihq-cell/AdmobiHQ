@@ -13,6 +13,7 @@ export const customerTourChapters: TourChapter[] = [
       "You're in. Here's a two-minute lay of the land before you launch your first campaign.",
     selector: '[data-tour-id="tour-logo"]',
     placement: "bottomLeft",
+    type: "primary",
   },
   {
     key: "overview",
