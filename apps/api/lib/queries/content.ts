@@ -20,23 +20,23 @@ export async function getContentStats(): Promise<ContentStats | null> {
 
     const [blogRows, helpRows, mediaRow, draftRows] = await Promise.all([
       pg.query<{ _status: string; count: string }>(
-        `SELECT _status, COUNT(*)::text AS count FROM blog_posts GROUP BY _status`,
+        `SELECT _status, COUNT(*)::text AS count FROM cms.blog_posts GROUP BY _status`,
       ),
       pg.query<{ _status: string; count: string }>(
-        `SELECT _status, COUNT(*)::text AS count FROM help_articles GROUP BY _status`,
+        `SELECT _status, COUNT(*)::text AS count FROM cms.help_articles GROUP BY _status`,
       ),
       pg.query<{ count: string; total_size: string | null }>(
-        `SELECT COUNT(*)::text AS count, COALESCE(SUM(filesize), 0)::text AS total_size FROM media`,
+        `SELECT COUNT(*)::text AS count, COALESCE(SUM(filesize), 0)::text AS total_size FROM cms.media`,
       ),
       pg.query<{ id: number; title: string; type: string; updated_at: Date }>(
         `
         (
-          SELECT id, title, 'blog' AS type, updated_at FROM blog_posts WHERE _status = 'draft'
+          SELECT id, title, 'blog' AS type, updated_at FROM cms.blog_posts WHERE _status = 'draft'
           ORDER BY updated_at DESC LIMIT 5
         )
         UNION ALL
         (
-          SELECT id, title, 'help' AS type, updated_at FROM help_articles WHERE _status = 'draft'
+          SELECT id, title, 'help' AS type, updated_at FROM cms.help_articles WHERE _status = 'draft'
           ORDER BY updated_at DESC LIMIT 5
         )
         ORDER BY updated_at DESC
@@ -74,7 +74,8 @@ export async function getContentStats(): Promise<ContentStats | null> {
         updatedAt: r.updated_at.toISOString(),
       })),
     }
-  } catch {
+  } catch (error) {
+    console.error("[getContentStats]", error)
     return null
   }
 }
