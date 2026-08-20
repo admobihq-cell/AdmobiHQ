@@ -108,6 +108,7 @@ export function ActivityView() {
   const [action, setAction] = useState<string>(ALL)
   const [app, setApp] = useState<string>(ALL)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
 
   const fetchSeq = useRef(0)
@@ -119,7 +120,7 @@ export function ActivityView() {
     try {
       const result = await client.audit.list({
         page,
-        pageSize: 50,
+        pageSize,
         entity_type: entityType === ALL ? undefined : entityType,
         action: action === ALL ? undefined : action,
         app: app === ALL ? undefined : app,
@@ -134,7 +135,7 @@ export function ActivityView() {
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, entityType, action, app, page, sortDir])
+  }, [client, entityType, action, app, page, pageSize, sortDir])
 
   useEffect(() => {
     void refresh()
@@ -142,7 +143,7 @@ export function ActivityView() {
 
   useEffect(() => {
     setPage(1)
-  }, [entityType, action, app, sortDir])
+  }, [entityType, action, app, pageSize, sortDir])
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -232,17 +233,15 @@ export function ActivityView() {
         )}
       </div>
 
-      {data && data.totalPages > 1 ? (
+      {data && data.total > 0 ? (
         <TablePagination
           page={data.page}
           totalPages={data.totalPages}
           total={data.total}
           onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
         />
-      ) : data && data.total > 0 ? (
-        <p className="text-xs text-muted-foreground">
-          Showing {data.items.length} of {data.total} events
-        </p>
       ) : null}
     </div>
   )

@@ -95,14 +95,16 @@ export function DriverApplicationsView({
   const client = useOpsClient()
   const [data, setData] = useState(initialData)
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>("all")
+  const [pageSize, setPageSize] = useState(initialData.pageSize ?? 25)
   const [loading, setLoading] = useState(false)
 
   const load = useCallback(
-    async (page: number, statusFilter: string) => {
+    async (page: number, statusFilter: string, size: number) => {
       setLoading(true)
       try {
         const result = await client.driverApplications.list({
           page,
+          pageSize: size,
           status: statusFilter === "all" ? undefined : statusFilter,
         })
         setData(result)
@@ -117,7 +119,7 @@ export function DriverApplicationsView({
 
   useEffect(() => {
     if (status === "all" && data.page === initialData.page) return
-    void load(1, status)
+    void load(1, status, pageSize)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
@@ -150,12 +152,17 @@ export function DriverApplicationsView({
         )}
       </div>
 
-      {data.totalPages > 1 ? (
+      {data.total > 0 ? (
         <TablePagination
           page={data.page}
           totalPages={data.totalPages}
           total={data.total}
-          onPageChange={(page) => void load(page, status)}
+          onPageChange={(page) => void load(page, status, pageSize)}
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            void load(1, status, size)
+          }}
         />
       ) : null}
     </div>

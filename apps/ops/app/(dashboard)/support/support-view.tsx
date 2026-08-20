@@ -173,6 +173,7 @@ export function SupportView() {
   const [status, setStatus] = useState<string>(ALL)
   const [category, setCategory] = useState<string>(ALL)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
 
   const fetchSeq = useRef(0)
@@ -187,7 +188,7 @@ export function SupportView() {
     try {
       const result = await client.support.list({
         page,
-        pageSize: 50,
+        pageSize,
         search: search || undefined,
         status: status === ALL ? undefined : status,
         category: category === ALL ? undefined : category,
@@ -202,7 +203,7 @@ export function SupportView() {
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, search, status, category, page, sortBy, sortDir])
+  }, [client, search, status, category, page, pageSize, sortBy, sortDir])
 
   useEffect(() => {
     const timeout = setTimeout(() => void refresh(), search ? 300 : 0)
@@ -211,7 +212,7 @@ export function SupportView() {
 
   useEffect(() => {
     setPage(1)
-  }, [search, status, category, sortBy, sortDir])
+  }, [search, status, category, pageSize, sortBy, sortDir])
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -306,17 +307,15 @@ export function SupportView() {
         )}
       </div>
 
-      {data && data.totalPages > 1 ? (
+      {data && data.total > 0 ? (
         <TablePagination
           page={data.page}
           totalPages={data.totalPages}
           total={data.total}
           onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
         />
-      ) : data && data.total > 0 ? (
-        <p className="text-xs text-muted-foreground">
-          Showing {data.items.length} of {data.total} cases
-        </p>
       ) : null}
     </div>
   )

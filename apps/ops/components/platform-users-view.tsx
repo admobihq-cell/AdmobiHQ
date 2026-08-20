@@ -27,7 +27,7 @@ import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
-const PAGE_SIZE = 25
+const DEFAULT_PAGE_SIZE = 25
 
 /** Columns Clerk's admin API can actually sort by — see
  * apps/api/lib/platform-users.ts's PlatformUserSortField. Name and status
@@ -131,6 +131,7 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [sorting, setSorting] = useState<SortingState>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -149,8 +150,8 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
       const result = await client.users.list({
         type,
         query: search || undefined,
-        limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
         sortBy,
         sortDir,
       })
@@ -163,7 +164,7 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, type, search, page, sortBy, sortDir])
+  }, [client, type, search, page, pageSize, sortBy, sortDir])
 
   useEffect(() => {
     void fetchPage()
@@ -171,9 +172,9 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
 
   useEffect(() => {
     setPage(1)
-  }, [search, sortBy, sortDir])
+  }, [search, pageSize, sortBy, sortDir])
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -208,7 +209,14 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
       </Card>
 
       {!loading && !error && users.length > 0 ? (
-        <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+        />
       ) : null}
     </div>
   )
