@@ -13,6 +13,7 @@ export const driverTourChapters: TourChapter[] = [
       "Your account just got the green light. Take a minute to see where everything lives before your first shift.",
     selector: '[data-tour-id="tour-logo"]',
     placement: "bottomLeft",
+    type: "primary",
   },
   {
     key: "dashboard",
