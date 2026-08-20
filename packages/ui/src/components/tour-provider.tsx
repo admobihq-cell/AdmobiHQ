@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { ConfigProvider, Tour, type TourProps } from "antd"
+import { Button, ConfigProvider, Tour, type TourProps } from "antd"
 
 import { useTheme } from "@workspace/ui/components/theme-provider"
 import { buildAdmobiAntdTheme } from "@workspace/ui/lib/theme/antd-tour-theme"
@@ -26,6 +26,10 @@ export type TourChapter = {
    * than breaking the tour — no per-chapter visibility config needed. */
   selector: string
   placement?: NonNullable<TourProps["steps"]>[number]["placement"]
+  /** "primary" fills the card with the brand color (colorPrimary) instead of
+   * the neutral card background — use it sparingly, e.g. the opening step,
+   * for a branded moment without tinting every step. */
+  type?: "default" | "primary"
 }
 
 type TourContextValue = {
@@ -134,6 +138,7 @@ export function TourProvider({
           title: chapter.title,
           description: chapter.description,
           placement: chapter.placement ?? "right",
+          type: chapter.type ?? "default",
           target: () => resolveChapterTarget(chapter.selector) ?? document.body,
         })),
     [activeKeys, chapters]
@@ -148,7 +153,24 @@ export function TourProvider({
     <TourContext.Provider value={contextValue}>
       {children}
       <ConfigProvider theme={theme}>
-        <Tour open={mounted && open} onClose={handleClose} steps={steps} />
+        <Tour
+          open={mounted && open}
+          onClose={handleClose}
+          steps={steps}
+          actionsRender={(originNode, { current, total }) => {
+            // Nothing left to skip past on the last step — "Finish" already
+            // closes the tour via the default action node.
+            if (current >= total - 1) return originNode
+            return (
+              <div className="flex w-full items-center justify-between gap-2">
+                <Button type="text" size="small" onClick={handleClose}>
+                  Skip
+                </Button>
+                <div className="flex items-center gap-2">{originNode}</div>
+              </div>
+            )
+          }}
+        />
       </ConfigProvider>
     </TourContext.Provider>
   )

@@ -16,6 +16,7 @@ export const opsTourChapters: TourChapter[] = [
       "This is command central for Admobi's fleet and campaign operations. Quick tour, six stops.",
     selector: '[data-tour-id="tour-logo"]',
     placement: "bottomLeft",
+    type: "primary",
   },
   {
     key: "home",
