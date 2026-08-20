@@ -1,12 +1,13 @@
-import { Image, Platform, StyleSheet, Text, View } from "react-native"
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { Menu } from "@/components/icons"
 import { NotificationBellButton } from "@/components/notifications/notification-bell-button"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
-/** Persistent top bar shown above every tab — brand and theme access. */
-export function AppBar() {
+/** Persistent top bar shown above every tab — brand, theme access, and the menu button that opens NavDrawer for tabs that don't fit the bottom bar. */
+export function AppBar({ onMenuPress }: { onMenuPress: () => void }) {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
 
@@ -32,6 +33,19 @@ export function AppBar() {
       <View style={styles.actions}>
         <NotificationBellButton />
         <ThemeToggleButton />
+        <Pressable
+          onPress={onMenuPress}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.menuButton,
+            { backgroundColor: colors.muted, borderColor: colors.border },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Menu size={20} color={colors.text} />
+        </Pressable>
       </View>
     </View>
   )
@@ -70,5 +84,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+  },
+  menuButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pressed: {
+    opacity: 0.75,
   },
 })

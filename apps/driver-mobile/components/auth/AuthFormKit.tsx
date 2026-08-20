@@ -1,11 +1,12 @@
 import { useState } from "react"
 import {
+  Image,
   Pressable,
   Text,
   TextInput,
   View,
+  type ImageSourcePropType,
   type TextInputProps,
-  type ViewStyle,
 } from "react-native"
 import Animated, {
   useAnimatedStyle,
@@ -16,39 +17,15 @@ import Animated, {
 import type { AppIcon } from "@/components/icons"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-/** Bordered container that groups a form step — mirrors the ops-mobile Card. */
-export function AuthCard({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
-  const styles = useThemedStyles((c) => ({
-    card: {
-      backgroundColor: c.surface,
-      borderColor: c.border,
-      borderWidth: 1,
-      borderRadius: radius.xl,
-      padding: spacing.lg,
-      gap: spacing.md,
-    },
-  }))
-  return <View style={[styles.card, style]}>{children}</View>
-}
-
-export function AuthIconBadge({ icon: Icon }: { icon: AppIcon }) {
-  const colors = useThemeColors()
-  const styles = useThemedStyles((c) => ({
-    badge: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.accentSurface,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
-  }))
+/** Brand illustration for a form step — undraw-style artwork, decorative only. */
+export function AuthIllustration({ source }: { source: ImageSourcePropType }) {
   return (
-    <View style={styles.badge}>
-      <Icon color={colors.primary} size={20} />
-    </View>
+    <Image
+      source={source}
+      style={{ width: "100%", height: 168, alignSelf: "center" }}
+      resizeMode="contain"
+      importantForAccessibility="no"
+    />
   )
 }
 
@@ -80,17 +57,18 @@ export function AuthTextField({ icon: Icon, style, onFocus, onBlur, ...props }: 
       flexDirection: "row" as const,
       alignItems: "center" as const,
       gap: spacing.sm,
-      backgroundColor: c.surface,
+      backgroundColor: c.mutedSurface,
       borderWidth: 1.5,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.md,
+      borderColor: "transparent",
+      borderRadius: radius.xl,
+      paddingHorizontal: spacing.lg,
     },
-    rowFocused: { borderColor: c.ring },
-    rowBlurred: { borderColor: c.border },
+    rowFocused: { borderColor: c.ring, backgroundColor: c.surface },
+    rowBlurred: {},
     input: {
       flex: 1,
       color: c.text,
-      paddingVertical: 13,
+      paddingVertical: 15,
       fontSize: 16,
     },
   }))
@@ -142,7 +120,7 @@ export function AuthPrimaryButton({
   const styles = useThemedStyles((c) => ({
     button: {
       backgroundColor: c.primary,
-      borderRadius: radius.full,
+      borderRadius: radius.xl,
       paddingVertical: 15,
       alignItems: "center" as const,
       justifyContent: "center" as const,
