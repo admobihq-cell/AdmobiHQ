@@ -43,18 +43,12 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
 import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
+import { DataTable, type ColumnDef as TanStackColumnDef } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
 
@@ -369,6 +363,64 @@ export function EntityPage<T extends { id: number }>({
     }
   }
 
+  const tableColumns: TanStackColumnDef<T, any>[] = [
+    {
+      id: "select",
+      meta: { className: "w-10" },
+      header: () => (
+        <Checkbox
+          checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
+          onCheckedChange={(checked) => toggleAllOnPage(checked === true)}
+          aria-label="Select all on page"
+          disabled={loading || !data?.items.length}
+        />
+      ),
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={selectedIds.has(row.original.id)}
+            onCheckedChange={(checked) => toggleRow(row.original.id, checked === true)}
+            aria-label={`Select record #${row.original.id}`}
+          />
+        </div>
+      ),
+    },
+    ...columns.map(
+      (col): TanStackColumnDef<T, any> => ({
+        id: col.key,
+        header: col.header,
+        cell: ({ row }) => col.render(row.original),
+      }),
+    ),
+    {
+      id: "actions",
+      header: "Actions",
+      meta: { className: "w-[100px]" },
+      cell: ({ row }) => (
+        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setEditing(row.original)
+              setFormOpen(true)
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive"
+            onClick={() => setDeleteTarget(row.original)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHero title={title} description={description} />
@@ -512,93 +564,33 @@ export function EntityPage<T extends { id: number }>({
       )}
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={
-                    allPageSelected ? true : somePageSelected ? "indeterminate" : false
-                  }
-                  onCheckedChange={(checked) => toggleAllOnPage(checked === true)}
-                  aria-label="Select all on page"
-                  disabled={loading || !data?.items.length}
-                />
-              </TableHead>
-              {columns.map((col) => (
-                <TableHead key={col.key}>{col.header}</TableHead>
-              ))}
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <EntityTableSkeleton columnCount={columns.length} rows={5} bodyOnly selectable />
-            ) : fetchError ? (
-              <TableRow>
-                <TableCell colSpan={columns.length + 2} className="h-32 text-center">
-                  <p className="text-sm font-medium text-foreground">
-                    Couldn&apos;t load records
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Check your connection and try again.
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : !data?.items.length ? (
-              <TableRow>
-                <TableCell colSpan={columns.length + 2} className="h-32 text-center">
-                  <p className="text-sm font-medium text-foreground">{emptyMessage}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Try adjusting your search or add a new record.
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              data.items.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={selectedIds.has(row.id) ? "selected" : undefined}
-                  className="cursor-pointer hover:bg-muted/50 data-[state=selected]:bg-muted/50"
-                  onClick={() => setViewing(row)}
-                >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selectedIds.has(row.id)}
-                      onCheckedChange={(checked) => toggleRow(row.id, checked === true)}
-                      aria-label={`Select record #${row.id}`}
-                    />
-                  </TableCell>
-                  {columns.map((col) => (
-                    <TableCell key={col.key}>{col.render(row)}</TableCell>
-                  ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditing(row)
-                          setFormOpen(true)
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => setDeleteTarget(row)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {loading ? (
+          <EntityTableSkeleton columnCount={columns.length} rows={5} selectable />
+        ) : fetchError ? (
+          <div className="flex h-32 flex-col items-center justify-center text-center">
+            <p className="text-sm font-medium text-foreground">Couldn&apos;t load records</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Check your connection and try again.
+            </p>
+          </div>
+        ) : !data?.items.length ? (
+          <div className="flex h-32 flex-col items-center justify-center text-center">
+            <p className="text-sm font-medium text-foreground">{emptyMessage}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Try adjusting your search or add a new record.
+            </p>
+          </div>
+        ) : (
+          <DataTable
+            columns={tableColumns}
+            data={data.items}
+            getRowId={(row) => String(row.id)}
+            onRowClick={(row) => setViewing(row)}
+            rowClassName={(row) =>
+              cn("hover:bg-muted/50", selectedIds.has(row.id) && "bg-muted/50")
+            }
+          />
+        )}
       </div>
 
       {data && (

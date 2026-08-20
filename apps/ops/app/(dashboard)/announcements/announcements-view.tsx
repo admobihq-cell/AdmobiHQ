@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Eye, Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -28,19 +28,17 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
+import {
+  DataTable,
+  DataTableSortHeader,
+  type ColumnDef,
+  type SortingState,
+} from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime } from "@/lib/format"
@@ -84,11 +82,23 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [viewing, setViewing] = useState<AnnouncementDto | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
 
   const refresh = async (targetPage = 1) => {
-    const result = await client.notifications.list({ page: targetPage, pageSize: 20 })
+    const result = await client.notifications.list({ page: targetPage, pageSize: 20, sortDir })
     setData(result)
   }
+
+  const isFirstSort = useRef(true)
+  useEffect(() => {
+    if (isFirstSort.current) {
+      isFirstSort.current = false
+      return
+    }
+    void refresh(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortDir])
 
   const handleDelete = async () => {
     if (!pendingDelete) return
@@ -151,6 +161,158 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     })
   }
 
+  const columns: ColumnDef<AnnouncementDto, any>[] = [
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => (
+        <DataTableSortHeader
+          label="Sent"
+          sorted={column.getIsSorted()}
+          onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        />
+      ),
+      meta: { headerClassName: "w-[9%]", cellClassName: "max-w-0 truncate text-muted-foreground" },
+      cell: ({ row }) => (
+        <span title={formatDateTime(row.original.created_at)}>
+          {formatDateTime(row.original.created_at)}
+        </span>
+      ),
+    },
+    {
+      id: "title",
+      header: "Title",
+      meta: { headerClassName: "w-[14%]", cellClassName: "max-w-0 truncate font-medium" },
+      cell: ({ row }) => <span title={row.original.title}>{row.original.title}</span>,
+    },
+    {
+      id: "category",
+      header: "Category",
+      meta: { headerClassName: "w-[10%]", cellClassName: "max-w-0 overflow-hidden" },
+      cell: ({ row }) => <Badge variant="outline">{row.original.category ?? "announcement"}</Badge>,
+    },
+    {
+      id: "target",
+      header: "Target",
+      meta: { headerClassName: "w-[13%]", cellClassName: "max-w-0 truncate" },
+      cell: ({ row }) => {
+        const targets = describeAnnouncementTargets(row.original.target_apps)
+        return <span title={targets}>{targets}</span>
+      },
+    },
+    {
+      id: "message",
+      header: "Message",
+      meta: { headerClassName: "w-[26%]", cellClassName: "max-w-0" },
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className="block w-full truncate text-left text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          onClick={() => setViewing(row.original)}
+          title="View full announcement"
+        >
+          {row.original.body}
+        </button>
+      ),
+    },
+    {
+      id: "delivered",
+      header: "Delivered",
+      meta: { headerClassName: "w-[10%]", cellClassName: "max-w-0 truncate tabular-nums" },
+      cell: ({ row }) => {
+        const r = row.original
+        return (
+          <span
+            title={
+              r.invalid_count > 0
+                ? `${r.delivered_count}/${r.target_count} delivered · ${r.invalid_count} invalid`
+                : `${r.delivered_count}/${r.target_count} delivered`
+            }
+          >
+            {r.delivered_count}/{r.target_count}
+          </span>
+        )
+      },
+    },
+    {
+      id: "status",
+      header: "Status",
+      meta: { headerClassName: "w-[10%]", cellClassName: "max-w-0" },
+      cell: ({ row }) =>
+        row.original.deleted_at ? (
+          <Badge variant="destructive">Deleted</Badge>
+        ) : (
+          <Badge variant={row.original.status === "failed" ? "destructive" : "secondary"}>
+            {row.original.status}
+          </Badge>
+        ),
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      meta: { headerClassName: "w-[8%] text-right", cellClassName: "text-right" },
+      cell: ({ row }) => {
+        const announcement = row.original
+        return (
+          <div className="flex items-center justify-end gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="View announcement"
+                  onClick={() => setViewing(announcement)}
+                >
+                  <Eye />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Resend announcement"
+                  disabled={saving}
+                  onClick={() =>
+                    setPending({
+                      title: announcement.title,
+                      body: announcement.body,
+                      category: announcement.category ?? "announcement",
+                      targetApps: announcement.target_apps,
+                      mode: "resend",
+                      image_url: announcement.image_url,
+                    })
+                  }
+                >
+                  <RotateCcw />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Resend</TooltipContent>
+            </Tooltip>
+            {announcement.deleted_at ? null : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Delete announcement"
+                    className="text-destructive hover:text-destructive"
+                    disabled={deleting}
+                    onClick={() => setPendingDelete(announcement)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        )
+      },
+    },
+  ]
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHero
@@ -165,137 +327,21 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
       />
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none [&_[data-slot=table-container]]:overflow-hidden">
-        <Table className="table-fixed w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[9%]">Sent</TableHead>
-              <TableHead className="w-[14%]">Title</TableHead>
-              <TableHead className="w-[10%]">Category</TableHead>
-              <TableHead className="w-[13%]">Target</TableHead>
-              <TableHead className="w-[26%]">Message</TableHead>
-              <TableHead className="w-[10%]">Delivered</TableHead>
-              <TableHead className="w-[10%]">Status</TableHead>
-              <TableHead className="w-[8%] text-right">
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {!data.items.length ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
-                  <p className="text-sm font-medium text-foreground">No announcements yet.</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Sent broadcasts will appear here.
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              data.items.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="max-w-0 truncate text-muted-foreground" title={formatDateTime(row.created_at)}>
-                    {formatDateTime(row.created_at)}
-                  </TableCell>
-                  <TableCell className="max-w-0 truncate font-medium" title={row.title}>
-                    {row.title}
-                  </TableCell>
-                  <TableCell className="max-w-0 overflow-hidden">
-                    <Badge variant="outline">{row.category ?? "announcement"}</Badge>
-                  </TableCell>
-                  <TableCell className="max-w-0 truncate" title={describeAnnouncementTargets(row.target_apps)}>
-                    {describeAnnouncementTargets(row.target_apps)}
-                  </TableCell>
-                  <TableCell className="max-w-0">
-                    <button
-                      type="button"
-                      className="block w-full truncate text-left text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                      onClick={() => setViewing(row)}
-                      title="View full announcement"
-                    >
-                      {row.body}
-                    </button>
-                  </TableCell>
-                  <TableCell
-                    className="max-w-0 truncate tabular-nums"
-                    title={
-                      row.invalid_count > 0
-                        ? `${row.delivered_count}/${row.target_count} delivered · ${row.invalid_count} invalid`
-                        : `${row.delivered_count}/${row.target_count} delivered`
-                    }
-                  >
-                    {row.delivered_count}/{row.target_count}
-                  </TableCell>
-                  <TableCell className="max-w-0">
-                    {row.deleted_at ? (
-                      <Badge variant="destructive">Deleted</Badge>
-                    ) : (
-                      <Badge variant={row.status === "failed" ? "destructive" : "secondary"}>
-                        {row.status}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-0.5">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="View announcement"
-                            onClick={() => setViewing(row)}
-                          >
-                            <Eye />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>View</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Resend announcement"
-                            disabled={saving}
-                            onClick={() =>
-                              setPending({
-                                title: row.title,
-                                body: row.body,
-                                category: row.category ?? "announcement",
-                                targetApps: row.target_apps,
-                                mode: "resend",
-                                image_url: row.image_url,
-                              })
-                            }
-                          >
-                            <RotateCcw />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Resend</TooltipContent>
-                      </Tooltip>
-                      {row.deleted_at ? null : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label="Delete announcement"
-                              className="text-destructive hover:text-destructive"
-                              disabled={deleting}
-                              onClick={() => setPendingDelete(row)}
-                            >
-                              <Trash2 />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {!data.items.length ? (
+          <div className="flex h-32 flex-col items-center justify-center text-center">
+            <p className="text-sm font-medium text-foreground">No announcements yet.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Sent broadcasts will appear here.</p>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={data.items}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            getRowId={(row) => String(row.id)}
+            tableClassName="table-fixed w-full"
+          />
+        )}
       </div>
 
       <TablePagination
