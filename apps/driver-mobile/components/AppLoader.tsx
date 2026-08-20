@@ -1,0 +1,114 @@
+import { useEffect } from "react"
+import { Image, Text, View } from "react-native"
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated"
+
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
+
+type AppLoaderProps = {
+  title?: string
+  message?: string
+}
+
+export function AppLoader({ title = "Admobi Driver", message = "One moment" }: AppLoaderProps) {
+  const styles = useThemedStyles((c) => ({
+    container: {
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: spacing.xl,
+    },
+    logoWrap: {
+      width: 120,
+      height: 80,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: spacing.lg,
+    },
+    // logo-mark.png (not splash-icon.png) — the splash asset's wordmark is
+    // baked in cream-on-transparent for the black cold-boot splash and goes
+    // near-invisible on a themed (light) background. The mark alone is a
+    // single terracotta glyph that reads on either theme; `title` below
+    // supplies the wordmark in c.text so it stays legible in both themes.
+    logo: {
+      width: 84,
+      height: 46,
+    },
+    title: {
+      ...typography.headline,
+      fontSize: 20,
+      color: c.text,
+    },
+    message: {
+      ...typography.bodySm,
+      color: c.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    track: {
+      width: 120,
+      height: 3,
+      backgroundColor: c.muted,
+      borderRadius: radius.full,
+      overflow: "hidden" as const,
+      marginTop: spacing.lg,
+    },
+    bar: {
+      width: 48,
+      height: "100%" as const,
+      backgroundColor: c.primary,
+      borderRadius: radius.full,
+    },
+  }))
+  const logoScale = useSharedValue(1)
+  const barProgress = useSharedValue(0)
+
+  useEffect(() => {
+    logoScale.value = withRepeat(
+      withSequence(
+        withTiming(1.04, { duration: 900, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 900, easing: Easing.out(Easing.quad) }),
+      ),
+      -1,
+      false,
+    )
+    barProgress.value = withRepeat(
+      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
+      -1,
+      true,
+    )
+  }, [logoScale, barProgress])
+
+  const logoStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: logoScale.value }],
+  }))
+
+  const barStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: (barProgress.value - 0.5) * 48 }],
+    opacity: 0.55 + barProgress.value * 0.45,
+  }))
+
+  return (
+    <View style={styles.container}>
+      <Animated.View style={[styles.logoWrap, logoStyle]}>
+        <Image
+          source={require("@/assets/images/logo-mark.png")}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel={title}
+        />
+      </Animated.View>
+
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.message}>{message}</Text>
+
+      <View style={styles.track}>
+        <Animated.View style={[styles.bar, barStyle]} />
+      </View>
+    </View>
+  )
+}

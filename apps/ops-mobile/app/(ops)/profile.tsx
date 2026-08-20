@@ -27,8 +27,19 @@ import { spacing, typography, useThemeColors } from "@/lib/theme"
 const FLAG_COPY: Record<string, { label: string; description: string }> = {
   deliveries: {
     label: "Deliveries",
-    description: "Show the Deliveries placeholder in customer + driver apps",
+    description:
+      "Shows the Deliveries placeholder screens in customer-web, driver-web, and driver-mobile — the real booking/dispatch feature isn't built yet, this only controls whether the story is visible.",
   },
+}
+
+function formatUpdated(flag: PlatformFlagDto): string | null {
+  if (!flag.updated_by_email) return null
+  const when = new Date(flag.updated_at)
+  if (Number.isNaN(when.getTime())) return null
+  return `${flag.enabled ? "Enabled" : "Disabled"} by ${flag.updated_by_email} · ${when.toLocaleDateString(
+    "en-KE",
+    { day: "numeric", month: "short", year: "numeric" },
+  )}`
 }
 
 export default function ProfileScreen() {
@@ -200,6 +211,7 @@ export default function ProfileScreen() {
         flagCopy: { flex: 1, gap: 2 },
         flagLabel: { ...typography.section, color: colors.text },
         flagDescription: { ...typography.caption, color: colors.mutedForeground },
+        flagUpdated: { ...typography.caption, color: colors.mutedForeground, marginTop: 2 },
         footer: {
           padding: spacing.md,
           borderRadius: 12,
@@ -274,6 +286,7 @@ export default function ProfileScreen() {
                   label: flag.key,
                   description: "",
                 }
+                const updated = formatUpdated(flag)
                 return (
                   <View key={flag.key}>
                     {index > 0 ? <View style={styles.divider} /> : null}
@@ -285,6 +298,9 @@ export default function ProfileScreen() {
                         <Text style={styles.flagLabel}>{copy.label}</Text>
                         <Text style={styles.flagDescription}>
                           {copy.description}
+                        </Text>
+                        <Text style={styles.flagUpdated}>
+                          {updated ?? "Never changed · off by default"}
                         </Text>
                       </View>
                       <Switch

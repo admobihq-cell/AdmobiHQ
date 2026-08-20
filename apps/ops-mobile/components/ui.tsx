@@ -1,3 +1,4 @@
+import { useState } from "react"
 import type { AppIcon } from "@/components/icons"
 import {
   Pressable,
@@ -276,13 +277,13 @@ export function ErrorText({ children }: { children: React.ReactNode }) {
   return <Text style={styles.error}>{children}</Text>
 }
 
-export function Field(props: TextInputProps) {
+export function Field({ onFocus, onBlur, style, ...props }: TextInputProps) {
   const colors = useThemeColors()
+  const [focused, setFocused] = useState(false)
   const styles = useThemedStyles((c) => ({
     input: {
       backgroundColor: c.surface,
-      borderColor: c.input,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderRadius: radius.md,
       color: c.text,
       paddingHorizontal: spacing.md,
@@ -290,12 +291,22 @@ export function Field(props: TextInputProps) {
       marginBottom: spacing.md,
       fontSize: 16,
     },
+    inputFocused: { borderColor: c.ring },
+    inputBlurred: { borderColor: c.input },
   }))
   return (
     <TextInput
       placeholderTextColor={colors.mutedForeground}
-      style={styles.input}
+      style={[styles.input, focused ? styles.inputFocused : styles.inputBlurred, style]}
       autoCapitalize="none"
+      onFocus={(event) => {
+        setFocused(true)
+        onFocus?.(event)
+      }}
+      onBlur={(event) => {
+        setFocused(false)
+        onBlur?.(event)
+      }}
       {...props}
     />
   )
@@ -315,17 +326,19 @@ export function EmailUsernameField({
   onSubmitEditing?: () => void
 }) {
   const colors = useThemeColors()
+  const [focused, setFocused] = useState(false)
   const styles = useThemedStyles((c) => ({
     row: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       backgroundColor: c.surface,
-      borderColor: c.input,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderRadius: radius.md,
       paddingHorizontal: spacing.md,
       marginBottom: spacing.md,
     },
+    rowFocused: { borderColor: c.ring },
+    rowBlurred: { borderColor: c.input },
     input: {
       flex: 1,
       color: c.text,
@@ -339,7 +352,7 @@ export function EmailUsernameField({
     },
   }))
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, focused ? styles.rowFocused : styles.rowBlurred]}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -352,6 +365,8 @@ export function EmailUsernameField({
         returnKeyType="go"
         autoFocus={autoFocus}
         onSubmitEditing={onSubmitEditing}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         style={styles.input}
       />
       <Text style={styles.domain}>{domain}</Text>

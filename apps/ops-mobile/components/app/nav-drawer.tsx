@@ -13,12 +13,15 @@ import Animated, {
 import type { OpsPermission } from "@workspace/ops-contracts"
 
 import {
+  ClipboardList,
   FileText,
   LifeBuoy,
   Mail,
   Map,
+  Newspaper,
   Person,
   Radio,
+  Users,
   Wallet,
   X,
   type AppIcon,
@@ -37,9 +40,35 @@ type DrawerLink = {
   href: Parameters<ReturnType<typeof useRouter>["push"]>[0]
   /** Omitted for links every signed-in member can see regardless of role. */
   permission?: OpsPermission
+  /** Team & Roles management is gated on the admin role itself (requireOpsAdmin on web), not a granular permission. */
+  adminOnly?: boolean
 }
 
 const LINKS: DrawerLink[] = [
+  {
+    key: "team",
+    label: "Team",
+    description: "Members, invites & roles",
+    icon: Users,
+    href: "/(ops)/team",
+    adminOnly: true,
+  },
+  {
+    key: "driver-applications",
+    label: "Driver applications",
+    description: "Review and approve new drivers",
+    icon: ClipboardList,
+    href: "/(ops)/driver-applications",
+    permission: "driver_applications",
+  },
+  {
+    key: "content",
+    label: "Content",
+    description: "Blog, help & media snapshot",
+    icon: Newspaper,
+    href: "/(ops)/content",
+    permission: "content",
+  },
   {
     key: "support",
     label: "Support",
@@ -111,9 +140,10 @@ export function NavDrawer({
   const { role, permissions } = useOpsAccess()
   const progress = useSharedValue(0)
 
-  const visibleLinks = LINKS.filter(
-    (link) => !link.permission || role === "admin" || permissions.includes(link.permission),
-  )
+  const visibleLinks = LINKS.filter((link) => {
+    if (link.adminOnly) return role === "admin"
+    return !link.permission || role === "admin" || permissions.includes(link.permission)
+  })
 
   useEffect(() => {
     progress.value = withTiming(visible ? 1 : 0, { duration: 220 })
