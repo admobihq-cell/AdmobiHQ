@@ -117,27 +117,35 @@ export function AuthPrimaryButton({
   disabled?: boolean
 }) {
   const { animatedStyle, onPressIn, onPressOut } = usePressScale()
+  // Each conditional style is its own static entry so the `disabled` state
+  // is applied by composing styles at render time, not baked into the
+  // useThemedStyles() memo — that memo only recomputes when the theme
+  // (colors) changes, so a ternary inside the factory freezes at whatever
+  // `disabled` was on the first render and never updates again (e.g. the
+  // button stayed muted forever once the user typed a valid email).
   const styles = useThemedStyles((c) => ({
     button: {
-      backgroundColor: disabled ? c.muted : c.primary,
+      backgroundColor: c.primary,
       borderRadius: radius.xl,
       paddingVertical: 15,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    label: { ...typography.headline, color: disabled ? c.mutedForeground : c.primaryForeground },
+    buttonDisabled: { backgroundColor: c.muted },
+    label: { ...typography.headline, color: c.primaryForeground },
+    labelDisabled: { color: c.mutedForeground },
   }))
 
   return (
     <Animated.View style={animatedStyle}>
       <Pressable
-        style={styles.button}
+        style={[styles.button, disabled && styles.buttonDisabled]}
         disabled={disabled}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         onPress={onPress}
       >
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, disabled && styles.labelDisabled]}>{label}</Text>
       </Pressable>
     </Animated.View>
   )
@@ -156,13 +164,17 @@ export function AuthSecondaryButton({
     button: {
       paddingVertical: 10,
       alignItems: "center" as const,
-      opacity: disabled ? 0.5 : 1,
     },
+    buttonDisabled: { opacity: 0.5 },
     label: { ...typography.bodySm, color: c.mutedForeground, fontWeight: "600" as const },
   }))
 
   return (
-    <Pressable style={styles.button} disabled={disabled} onPress={onPress}>
+    <Pressable
+      style={[styles.button, disabled && styles.buttonDisabled]}
+      disabled={disabled}
+      onPress={onPress}
+    >
       <Text style={styles.label}>{label}</Text>
     </Pressable>
   )
