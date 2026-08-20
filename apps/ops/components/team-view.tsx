@@ -54,8 +54,26 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
+import {
+  DataTable,
+  DataTableSortHeader,
+  type ColumnDef,
+  type SortingState,
+} from "@/components/ui/data-table"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+
+function sortHeader(label: string) {
+  return function Header({ column }: { column: { getIsSorted: () => false | "asc" | "desc"; toggleSorting: (desc: boolean) => void } }) {
+    return (
+      <DataTableSortHeader
+        label={label}
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    )
+  }
+}
 
 /** Select values encode the tier/role choice as a single string: "admin" or "member:<roleId>". */
 const ADMIN_VALUE = "admin"
@@ -166,6 +184,9 @@ export function TeamView() {
   })
   const [inviting, setInviting] = useState(false)
 
+  const [membersSorting, setMembersSorting] = useState<SortingState>([])
+  const [invitationsSorting, setInvitationsSorting] = useState<SortingState>([])
+
   function reload() {
     client.team
       .list()
@@ -258,6 +279,142 @@ export function TeamView() {
     setInviteOpen(true)
   }
 
+  const memberColumns: ColumnDef<TeamMemberDto, any>[] = [
+    {
+      accessorKey: "email",
+      header: sortHeader("Email"),
+      cell: ({ row }) => {
+        const member = row.original
+        const isSelf = member.userId === currentUserId
+        return (
+          <span className="font-medium">
+            {member.email}
+            {isSelf ? (
+              <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+            ) : null}
+            {member.role === "member" && !member.roleId ? (
+              <span className="ml-2 text-xs text-muted-foreground">(no role assigned yet)</span>
+            ) : null}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: "role",
+      header: sortHeader("Role"),
+      cell: ({ row }) => {
+        const member = row.original
+        const locked = member.role === "admin"
+        const value = member.role === "admin" ? ADMIN_VALUE : member.roleId ? memberValue(member.roleId) : ""
+        return (
+          <div className="flex items-center gap-2">
+            <TierSelect
+              value={value}
+              roles={roles}
+              disabled={pendingUserId === member.userId || locked}
+              onChange={(input) => void handleRoleChange(member, input)}
+            />
+            {locked ? (
+              <span
+                className="text-xs text-muted-foreground"
+                title="Admins are protected — change their role in Clerk instead"
+              >
+                Protected
+              </span>
+            ) : null}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "joinedAt",
+      header: sortHeader("Joined"),
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{formatDateTime(row.original.joinedAt)}</span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      meta: { className: "w-24 text-right" },
+      cell: ({ row }) => {
+        const member = row.original
+        const locked = member.role === "admin"
+        return (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={pendingUserId === member.userId || locked}
+            title={locked ? "Admins are protected and can't be removed here" : undefined}
+            onClick={() => setRemoveTarget(member)}
+          >
+            Remove
+          </Button>
+        )
+      },
+    },
+  ]
+
+  const invitationColumns: ColumnDef<TeamInvitationDto, any>[] = [
+    {
+      accessorKey: "email",
+      header: sortHeader("Email"),
+      cell: ({ row }) => <span className="font-medium">{row.original.email}</span>,
+    },
+    {
+      accessorKey: "role",
+      header: sortHeader("Role"),
+      cell: ({ row }) => <RoleBadge role={row.original.role} />,
+    },
+    {
+      accessorKey: "createdAt",
+      header: sortHeader("Invited"),
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{formatDateTime(row.original.createdAt)}</span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      meta: { className: "w-24 text-right" },
+      cell: ({ row }) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={pendingInvitationId === row.original.id}
+          onClick={() => void handleRevoke(row.original)}
+        >
+          Revoke
+        </Button>
+      ),
+    },
+  ]
+
+  const notYetInvitedColumns: ColumnDef<NotYetInvitedDto, any>[] = [
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => <span className="font-medium">{row.original.email}</span>,
+    },
+    {
+      id: "actions",
+      header: "",
+      meta: { className: "text-right" },
+      cell: ({ row }) => (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => handlePrefillInvite(row.original)}
+        >
+          Add
+        </Button>
+      ),
+    },
+  ]
+
   return (
     <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-3">
@@ -327,86 +484,14 @@ export function TeamView() {
             {team === null ? (
               <MembersTableSkeleton />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead className="w-24" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {team.members.map((member) => {
-                    const isSelf = member.userId === currentUserId
-                    const locked = member.role === "admin"
-                    const value =
-                      member.role === "admin"
-                        ? ADMIN_VALUE
-                        : member.roleId
-                          ? memberValue(member.roleId)
-                          : ""
-                    return (
-                      <TableRow key={member.userId}>
-                        <TableCell className="font-medium">
-                          {member.email}
-                          {isSelf ? (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              (you)
-                            </span>
-                          ) : null}
-                          {member.role === "member" && !member.roleId ? (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              (no role assigned yet)
-                            </span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <TierSelect
-                              value={value}
-                              roles={roles}
-                              disabled={
-                                pendingUserId === member.userId || locked
-                              }
-                              onChange={(input) =>
-                                void handleRoleChange(member, input)
-                              }
-                            />
-                            {locked ? (
-                              <span
-                                className="text-xs text-muted-foreground"
-                                title="Admins are protected — change their role in Clerk instead"
-                              >
-                                Protected
-                              </span>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDateTime(member.joinedAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={pendingUserId === member.userId || locked}
-                            title={
-                              locked
-                                ? "Admins are protected and can't be removed here"
-                                : undefined
-                            }
-                            onClick={() => setRemoveTarget(member)}
-                          >
-                            Remove
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={memberColumns}
+                data={team.members}
+                manualSorting={false}
+                sorting={membersSorting}
+                onSortingChange={setMembersSorting}
+                getRowId={(member) => member.userId}
+              />
             )}
           </CardContent>
         </Card>
@@ -419,42 +504,14 @@ export function TeamView() {
           </p>
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Invited</TableHead>
-                    <TableHead className="w-24" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {team.invitations.map((invitation) => (
-                    <TableRow key={invitation.id}>
-                      <TableCell className="font-medium">
-                        {invitation.email}
-                      </TableCell>
-                      <TableCell>
-                        <RoleBadge role={invitation.role} />
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDateTime(invitation.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={pendingInvitationId === invitation.id}
-                          onClick={() => void handleRevoke(invitation)}
-                        >
-                          Revoke
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={invitationColumns}
+                data={team.invitations}
+                manualSorting={false}
+                sorting={invitationsSorting}
+                onSortingChange={setInvitationsSorting}
+                getRowId={(invitation) => invitation.id}
+              />
             </CardContent>
           </Card>
         </div>
@@ -471,27 +528,12 @@ export function TeamView() {
           </p>
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
-              <Table>
-                <TableBody>
-                  {team.notYetInvited.map((candidate) => (
-                    <TableRow key={candidate.userId}>
-                      <TableCell className="font-medium">
-                        {candidate.email}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePrefillInvite(candidate)}
-                        >
-                          Add
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={notYetInvitedColumns}
+                data={team.notYetInvited}
+                hideHeader
+                getRowId={(candidate) => candidate.userId}
+              />
             </CardContent>
           </Card>
         </div>

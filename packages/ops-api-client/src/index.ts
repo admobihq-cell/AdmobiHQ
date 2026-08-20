@@ -144,6 +144,7 @@ export type OpsClient = {
     list: (params?: {
       page?: number
       pageSize?: number
+      sortDir?: "asc" | "desc"
     }) => Promise<PaginatedResponse<AnnouncementDto>>
     delete: (id: number) => Promise<SuccessResponse>
     /**
@@ -176,6 +177,8 @@ export type OpsClient = {
       query?: string
       limit?: number
       offset?: number
+      sortBy?: "email" | "phone" | "createdAt"
+      sortDir?: "asc" | "desc"
     }) => Promise<PlatformUserListDto>
   }
   roles: {
@@ -365,6 +368,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         const query = buildListQueryParams({
           page: params?.page,
           pageSize: params?.pageSize,
+          sortDir: params?.sortDir,
         })
         const qs = query.toString()
         return request<PaginatedResponse<AnnouncementDto>>(
@@ -438,6 +442,8 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           query: params.query,
           limit: params.limit,
           offset: params.offset,
+          sortBy: params.sortBy,
+          sortDir: params.sortDir,
         })
         const qs = query.toString()
         return request<PlatformUserListDto>(`${apiPrefix}/users${qs ? `?${qs}` : ""}`)

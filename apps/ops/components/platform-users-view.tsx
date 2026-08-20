@@ -6,7 +6,6 @@ import type { PlatformUserDto, PlatformUserType } from "@workspace/ops-contracts
 
 import { formatApiError } from "@workspace/ops-api-client"
 import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -18,10 +17,23 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
+import {
+  DataTable,
+  DataTableSortHeader,
+  type ColumnDef,
+  type SortingState,
+} from "@/components/ui/data-table"
+import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
 const PAGE_SIZE = 25
+
+/** Columns Clerk's admin API can actually sort by — see
+ * apps/api/lib/platform-users.ts's PlatformUserSortField. Name and status
+ * have no server-side sort field, so those headers stay plain (unsortable). */
+type SortableField = "email" | "phone" | "createdAt"
+const SORTABLE_FIELDS: SortableField[] = ["email", "phone", "createdAt"]
 
 function StatusBadge({ status }: { status: PlatformUserDto["status"] }) {
   if (status === "banned") return <Badge variant="destructive">Banned</Badge>
@@ -66,52 +78,102 @@ function UsersTableSkeleton() {
   )
 }
 
+function sortHeader(label: string) {
+  return function Header({ column }: { column: { getIsSorted: () => false | "asc" | "desc"; toggleSorting: (desc: boolean) => void } }) {
+    return (
+      <DataTableSortHeader
+        label={label}
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    )
+  }
+}
+
+const columns: ColumnDef<PlatformUserDto, any>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+  },
+  {
+    accessorKey: "email",
+    header: sortHeader("Email"),
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">{row.original.email ?? "—"}</span>
+    ),
+  },
+  {
+    accessorKey: "phone",
+    header: sortHeader("Phone"),
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">{row.original.phone ?? "—"}</span>
+    ),
+  },
+  {
+    accessorKey: "createdAt",
+    header: sortHeader("Joined"),
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">{formatDateTime(row.original.createdAt)}</span>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+  },
+]
+
 export function PlatformUsersView({ type }: { type: PlatformUserType }) {
   const client = useOpsClient()
 
   const [users, setUsers] = useState<PlatformUserDto[]>([])
   const [total, setTotal] = useState(0)
-  const [hasMore, setHasMore] = useState(false)
   const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [sorting, setSorting] = useState<SortingState>([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const sort = sorting[0]
+  const sortBy = sort && SORTABLE_FIELDS.includes(sort.id as SortableField) ? (sort.id as SortableField) : undefined
+  const sortDir = sort?.desc ? "desc" : "asc"
 
   const fetchSeq = useRef(0)
 
-  const fetchPage = useCallback(
-    async (offset: number, append: boolean) => {
-      const seq = ++fetchSeq.current
-      if (append) setLoadingMore(true)
-      else setLoading(true)
-      setError(null)
-      try {
-        const result = await client.users.list({
-          type,
-          query: search || undefined,
-          limit: PAGE_SIZE,
-          offset,
-        })
-        if (seq !== fetchSeq.current) return
-        setUsers((prev) => (append ? [...prev, ...result.users] : result.users))
-        setTotal(result.total)
-        setHasMore(result.hasMore)
-      } catch (err) {
-        if (seq !== fetchSeq.current) return
-        setError(formatApiError(err))
-      } finally {
-        if (seq === fetchSeq.current) {
-          setLoading(false)
-          setLoadingMore(false)
-        }
-      }
-    },
-    [client, type, search],
-  )
+  const fetchPage = useCallback(async () => {
+    const seq = ++fetchSeq.current
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await client.users.list({
+        type,
+        query: search || undefined,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+        sortBy,
+        sortDir,
+      })
+      if (seq !== fetchSeq.current) return
+      setUsers(result.users)
+      setTotal(result.total)
+    } catch (err) {
+      if (seq !== fetchSeq.current) return
+      setError(formatApiError(err))
+    } finally {
+      if (seq === fetchSeq.current) setLoading(false)
+    }
+  }, [client, type, search, page, sortBy, sortDir])
 
   useEffect(() => {
-    void fetchPage(0, false)
+    void fetchPage()
   }, [fetchPage])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, sortBy, sortDir])
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -134,58 +196,19 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
           ) : users.length === 0 ? (
             <div className="p-6 text-sm text-muted-foreground">No users found.</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {user.email ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {user.phone ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDateTime(user.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={user.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={columns}
+              data={users}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              getRowId={(user) => user.id}
+            />
           )}
         </CardContent>
       </Card>
 
       {!loading && !error && users.length > 0 ? (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Showing {users.length} of {total}
-          </span>
-          {hasMore ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              loading={loadingMore}
-              loadingText="Loading…"
-              onClick={() => void fetchPage(users.length, true)}
-            >
-              Load more
-            </Button>
-          ) : null}
-        </div>
+        <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
       ) : null}
     </div>
   )

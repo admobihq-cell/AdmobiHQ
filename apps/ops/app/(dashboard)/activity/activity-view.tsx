@@ -23,14 +23,11 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
-
+  DataTable,
+  DataTableSortHeader,
+  type ColumnDef,
+  type SortingState,
+} from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime, truncate } from "@/lib/format"
@@ -46,6 +43,63 @@ type Paginated<T> = {
 
 const ALL = "__all__"
 
+const columns: ColumnDef<AuditEventDto, any>[] = [
+  {
+    accessorKey: "created_at",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="When"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap text-muted-foreground">
+        {formatDateTime(row.original.created_at)}
+      </span>
+    ),
+  },
+  {
+    id: "actor",
+    header: "Actor",
+    cell: ({ row }) => (
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-medium">{row.original.actor_email ?? "—"}</span>
+        <span className="text-xs text-muted-foreground">
+          {formatLabel(row.original.actor_type)}
+          {row.original.app ? ` · ${row.original.app}` : ""}
+        </span>
+      </div>
+    ),
+  },
+  {
+    id: "action",
+    header: "Action",
+    cell: ({ row }) => <Badge variant="secondary">{formatLabel(row.original.action)}</Badge>,
+  },
+  {
+    id: "entity",
+    header: "Entity",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {formatLabel(row.original.entity_type)}
+        {row.original.entity_id ? (
+          <span className="text-muted-foreground"> #{row.original.entity_id}</span>
+        ) : null}
+      </span>
+    ),
+  },
+  {
+    id: "summary",
+    header: "Summary",
+    cell: ({ row }) => (
+      <span className="max-w-md whitespace-normal break-words text-muted-foreground">
+        {truncate(row.original.summary, 100)}
+      </span>
+    ),
+  },
+]
+
 export function ActivityView() {
   const client = useOpsClient()
   const [data, setData] = useState<Paginated<AuditEventDto> | null>(null)
@@ -54,8 +108,10 @@ export function ActivityView() {
   const [action, setAction] = useState<string>(ALL)
   const [app, setApp] = useState<string>(ALL)
   const [page, setPage] = useState(1)
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const fetchSeq = useRef(0)
+  const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
 
   const refresh = useCallback(async () => {
     const seq = ++fetchSeq.current
@@ -67,6 +123,8 @@ export function ActivityView() {
         entity_type: entityType === ALL ? undefined : entityType,
         action: action === ALL ? undefined : action,
         app: app === ALL ? undefined : app,
+        sortBy: "created_at",
+        sortDir,
       })
       if (seq !== fetchSeq.current) return
       setData(result)
@@ -76,7 +134,7 @@ export function ActivityView() {
     } finally {
       if (seq === fetchSeq.current) setLoading(false)
     }
-  }, [client, entityType, action, app, page])
+  }, [client, entityType, action, app, page, sortDir])
 
   useEffect(() => {
     void refresh()
@@ -84,7 +142,7 @@ export function ActivityView() {
 
   useEffect(() => {
     setPage(1)
-  }, [entityType, action, app])
+  }, [entityType, action, app, sortDir])
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -151,72 +209,27 @@ export function ActivityView() {
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>When</TableHead>
-              <TableHead>Actor</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead>Entity</TableHead>
-              <TableHead>Summary</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading && !data ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center">
-                  <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : !data?.items.length ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center">
-                  <History className="mx-auto mb-2 size-5 text-muted-foreground" />
-                  <p className="text-sm font-medium text-foreground">
-                    No activity yet.
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Ops edits and public submissions will appear here.
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              data.items.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
-                    {formatDateTime(row.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium">
-                        {row.actor_email ?? "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatLabel(row.actor_type)}
-                        {row.app ? ` · ${row.app}` : ""}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{formatLabel(row.action)}</Badge>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {formatLabel(row.entity_type)}
-                    {row.entity_id ? (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        #{row.entity_id}
-                      </span>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="max-w-md whitespace-normal break-words text-muted-foreground">
-                    {truncate(row.summary, 100)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {loading && !data ? (
+          <div className="flex h-32 items-center justify-center">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : !data?.items.length ? (
+          <div className="flex h-32 flex-col items-center justify-center text-center">
+            <History className="mb-2 size-5 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">No activity yet.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ops edits and public submissions will appear here.
+            </p>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={data.items}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            getRowId={(row) => String(row.id)}
+          />
+        )}
       </div>
 
       {data && data.totalPages > 1 ? (

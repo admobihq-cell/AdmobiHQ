@@ -17,20 +17,14 @@ import { ComingSoonDialog } from "@/components/coming-soon-dialog"
 import { StatCard } from "@/components/ui/stat-card"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
+import { DataTable, DataTableSortHeader, type ColumnDef, type SortingState } from "@/components/ui/data-table"
 import {
   PLATFORM_ACTIVE_WALLETS,
   PLATFORM_MONEY_IN_30D,
   PLATFORM_MONEY_OUT_30D,
   PLATFORM_TRANSACTIONS,
   PLATFORM_WALLET_BALANCE,
+  type FinanceTransaction,
 } from "@/lib/placeholder-data"
 
 function formatCurrency(value: number) {
@@ -40,8 +34,70 @@ function formatCurrency(value: number) {
 const primaryActionTrigger =
   "border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
 
+const transactionColumns: ColumnDef<FinanceTransaction, any>[] = [
+  {
+    accessorKey: "label",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="Description"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 font-medium">
+        <Receipt
+          className={
+            row.original.kind === "credit"
+              ? "size-4 text-primary"
+              : "size-4 text-destructive"
+          }
+          aria-hidden
+        />
+        {row.original.label}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "meta",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="When"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => <span className="text-muted-foreground">{row.original.meta}</span>,
+  },
+  {
+    accessorKey: "amount",
+    header: ({ column }) => (
+      <div className="text-right">
+        <DataTableSortHeader
+          label="Amount"
+          sorted={column.getIsSorted()}
+          onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div
+        className={
+          row.original.kind === "credit"
+            ? "text-right font-medium text-emerald-600 dark:text-emerald-400"
+            : "text-right font-medium text-destructive"
+        }
+      >
+        {row.original.kind === "credit" ? "+" : "-"}
+        {formatCurrency(row.original.amount)}
+      </div>
+    ),
+  },
+]
+
 export function FinanceView() {
   const [hidden, setHidden] = useState(false)
+  const [sorting, setSorting] = useState<SortingState>([])
 
   return (
     <div className="flex flex-1 flex-col gap-8">
@@ -125,45 +181,14 @@ export function FinanceView() {
         />
         <Card className="shadow-none">
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>When</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {PLATFORM_TRANSACTIONS.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Receipt
-                          className={
-                            tx.kind === "credit"
-                              ? "size-4 text-primary"
-                              : "size-4 text-destructive"
-                          }
-                          aria-hidden
-                        />
-                        {tx.label}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{tx.meta}</TableCell>
-                    <TableCell
-                      className={
-                        tx.kind === "credit"
-                          ? "text-right font-medium text-emerald-600 dark:text-emerald-400"
-                          : "text-right font-medium text-destructive"
-                      }
-                    >
-                      {tx.kind === "credit" ? "+" : "-"}
-                      {formatCurrency(tx.amount)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={transactionColumns}
+              data={PLATFORM_TRANSACTIONS}
+              manualSorting={false}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              getRowId={(tx) => tx.id}
+            />
           </CardContent>
         </Card>
       </div>
