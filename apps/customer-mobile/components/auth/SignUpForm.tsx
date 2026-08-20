@@ -131,7 +131,7 @@ export function SignUpForm() {
           <View style={styles.formArea}>
             <AuthLogo />
             {step === "code" ? (
-              <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={{ gap: spacing.xl }}>
+              <Animated.View entering={FadeInDown.duration(240)} style={{ gap: spacing.xl }}>
                 <AuthIllustration source={require("@/assets/images/otp-illustration.png")} />
                 <View style={{ gap: spacing.xs }}>
                   <Text style={styles.title}>Check your email</Text>
@@ -169,7 +169,7 @@ export function SignUpForm() {
                 </View>
               </Animated.View>
             ) : (
-              <Animated.View entering={FadeInDown.duration(280).springify().damping(18)} style={{ gap: spacing.xl }}>
+              <Animated.View entering={FadeInDown.duration(240)} style={{ gap: spacing.xl }}>
                 <View style={{ gap: spacing.xs }}>
                   <Text style={styles.title}>Create your Admobi account</Text>
                   <Text style={styles.subtitle}>We&apos;ll email you a one-time code.</Text>
