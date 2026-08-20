@@ -50,8 +50,10 @@ import {
 } from "@workspace/ui/components/sidebar"
 import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
+import { TourProvider } from "@workspace/ui/components/tour-provider"
 
 import { NotificationBell } from "@/components/notification-bell"
+import { opsTourChapters } from "@/lib/tour-chapters"
 
 const navItems: Array<{
   href: string
@@ -62,7 +64,12 @@ const navItems: Array<{
   { href: "/home", label: "Home", icon: Home },
   { href: "/overview", label: "Overview", icon: BarChart3 },
   { href: "/map", label: "Map", icon: Map },
-  { href: "/leads", label: "Campaign Leads", icon: Megaphone, permission: "leads" },
+  {
+    href: "/leads",
+    label: "Campaign Leads",
+    icon: Megaphone,
+    permission: "leads",
+  },
   { href: "/fleet", label: "Fleet Partners", icon: Truck, permission: "fleet" },
   { href: "/drivers", label: "Drivers", icon: Car, permission: "drivers" },
   {
@@ -71,12 +78,32 @@ const navItems: Array<{
     icon: FileCheck2,
     permission: "driver_applications",
   },
-  { href: "/finances", label: "Finances", icon: Wallet, permission: "finances" },
+  {
+    href: "/finances",
+    label: "Finances",
+    icon: Wallet,
+    permission: "finances",
+  },
   { href: "/waitlist", label: "Waitlist", icon: Mail, permission: "waitlist" },
-  { href: "/media-kit", label: "Media Kit", icon: FileText, permission: "media_kit" },
-  { href: "/announcements", label: "Announcements", icon: Radio, permission: "announcements" },
+  {
+    href: "/media-kit",
+    label: "Media Kit",
+    icon: FileText,
+    permission: "media_kit",
+  },
+  {
+    href: "/announcements",
+    label: "Announcements",
+    icon: Radio,
+    permission: "announcements",
+  },
   { href: "/support", label: "Support", icon: LifeBuoy, permission: "support" },
-  { href: "/activity", label: "Activity", icon: History, permission: "activity" },
+  {
+    href: "/activity",
+    label: "Activity",
+    icon: History,
+    permission: "activity",
+  },
 ]
 
 const secondaryItems: Array<{
@@ -86,7 +113,12 @@ const secondaryItems: Array<{
   permission?: OpsPermission
   adminOnly?: boolean
 }> = [
-  { href: "/content", label: "Content (CMS)", icon: Users, permission: "content" },
+  {
+    href: "/content",
+    label: "Content (CMS)",
+    icon: Users,
+    permission: "content",
+  },
   { href: "/team", label: "Team", icon: UserCog, adminOnly: true },
   { href: "/settings", label: "Settings", icon: Settings, permission: "flags" },
 ]
@@ -101,9 +133,14 @@ function isNavItemActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function tourSlug(href: string): string {
+  return href.replace(/^\//, "").replace(/\//g, "-")
+}
+
 function OpsBreadcrumbs({ pathname }: { pathname: string }) {
   const current =
-    allNavItems.find((item) => isNavItemActive(pathname, item.href))?.label ?? "Home"
+    allNavItems.find((item) => isNavItemActive(pathname, item.href))?.label ??
+    "Home"
 
   return (
     <Breadcrumb>
@@ -128,6 +165,7 @@ export function OpsShell({
   permissions,
   userName,
   orgName,
+  userId,
   pendingDriverApplicationsCount = 0,
 }: {
   children: React.ReactNode
@@ -135,12 +173,17 @@ export function OpsShell({
   permissions: OpsPermission[]
   userName: string
   orgName: string | null
+  userId: string
   pendingDriverApplicationsCount?: number
 }) {
   const pathname = usePathname()
-  const canSee = (item: { permission?: OpsPermission; adminOnly?: boolean }) => {
+  const canSee = (item: {
+    permission?: OpsPermission
+    adminOnly?: boolean
+  }) => {
     if (item.adminOnly) return role === "admin"
-    if (item.permission) return role === "admin" || permissions.includes(item.permission)
+    if (item.permission)
+      return role === "admin" || permissions.includes(item.permission)
     return true
   }
   const visibleNavItems = navItems.filter(canSee)
@@ -148,100 +191,111 @@ export function OpsShell({
   const canSeeDriverApplications = canSee({ permission: "driver_applications" })
 
   return (
-    <SidebarProvider>
-      <Sidebar variant="inset" collapsible="icon">
-        <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <Logo
-              markHeight={16}
-              wordmarkClassName="text-sm leading-none group-data-[collapsible=icon]:hidden"
-            />
-            <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
-              · Ops Console
-            </span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Operations</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {visibleNavItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isNavItemActive(pathname, item.href)}
-                      className={activeSidebarLinkClassName}
-                      tooltip={item.label}
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                        {item.href === "/driver-applications" &&
-                        pendingDriverApplicationsCount > 0 ? (
-                          <Badge
-                            variant="secondary"
-                            className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
-                          >
-                            {pendingDriverApplicationsCount}
-                          </Badge>
-                        ) : null}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel>Content</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {visibleSecondaryItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isNavItemActive(pathname, item.href)}
-                      className={activeSidebarLinkClassName}
-                      tooltip={item.label}
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:px-0">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <UserButton />
-            <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-              <span className="truncate text-xs font-medium">{userName}</span>
-              <span className="truncate text-xs text-muted-foreground">
-                {orgName ?? "Admobi Ops"}
+    <TourProvider app="ops" userId={userId} chapters={opsTourChapters}>
+      <SidebarProvider>
+        <Sidebar variant="inset" collapsible="icon">
+          <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
+            <div
+              data-tour-id="tour-logo"
+              className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center"
+            >
+              <Logo
+                markHeight={16}
+                wordmarkClassName="text-sm leading-none group-data-[collapsible=icon]:hidden"
+              />
+              <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+                · Ops Console
               </span>
             </div>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <OpsBreadcrumbs pathname={pathname} />
-          <div className="ml-auto flex items-center gap-1">
-            {canSeeDriverApplications ? <NotificationBell /> : null}
-            <ThemeToggle />
-          </div>
-        </header>
-        <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Operations</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleNavItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isNavItemActive(pathname, item.href)}
+                        className={activeSidebarLinkClassName}
+                        tooltip={item.label}
+                      >
+                        <Link
+                          href={item.href}
+                          data-tour-id={`tour-nav-${tourSlug(item.href)}`}
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                          {item.href === "/driver-applications" &&
+                          pendingDriverApplicationsCount > 0 ? (
+                            <Badge
+                              variant="secondary"
+                              className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
+                            >
+                              {pendingDriverApplicationsCount}
+                            </Badge>
+                          ) : null}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Content</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleSecondaryItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isNavItemActive(pathname, item.href)}
+                        className={activeSidebarLinkClassName}
+                        tooltip={item.label}
+                      >
+                        <Link
+                          href={item.href}
+                          data-tour-id={`tour-nav-${tourSlug(item.href)}`}
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:px-0">
+            <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+              <UserButton />
+              <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-xs font-medium">{userName}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {orgName ?? "Admobi Ops"}
+                </span>
+              </div>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <OpsBreadcrumbs pathname={pathname} />
+            <div className="ml-auto flex items-center gap-1">
+              {canSeeDriverApplications ? <NotificationBell /> : null}
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TourProvider>
   )
 }

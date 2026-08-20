@@ -1,4 +1,4 @@
-import { Package, ShieldCheck, UserCircle, type LucideIcon } from "lucide-react"
+import { Compass, Package, ShieldCheck, UserCircle, type LucideIcon } from "lucide-react"
 
 export type SettingsNavItem = {
   href: string
@@ -25,6 +25,12 @@ export const settingsNavItems: SettingsNavItem[] = [
     label: "Delivery preferences",
     icon: Package,
     description: "Your opt-in for carrying deliveries",
+  },
+  {
+    href: "/settings/tour",
+    label: "Product tour",
+    icon: Compass,
+    description: "Replay the welcome tour or any chapter",
   },
 ]
 

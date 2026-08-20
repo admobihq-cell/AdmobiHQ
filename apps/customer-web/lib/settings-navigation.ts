@@ -1,4 +1,4 @@
-import { Bell, UserCircle, type LucideIcon } from "lucide-react"
+import { Bell, Compass, UserCircle, type LucideIcon } from "lucide-react"
 
 export type SettingsNavItem = {
   href: string
@@ -19,6 +19,12 @@ export const settingsNavItems: SettingsNavItem[] = [
     label: "Notifications",
     icon: Bell,
     description: "Campaign alerts and digests",
+  },
+  {
+    href: "/settings/tour",
+    label: "Product tour",
+    icon: Compass,
+    description: "Replay the welcome tour or any chapter",
   },
 ]
 
