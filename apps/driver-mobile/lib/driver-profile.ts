@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { useAuth } from "@clerk/clerk-expo"
 import type {
   DriverDocumentDto,
@@ -71,29 +71,91 @@ export function driverDocumentFileUrl(id: number): string {
   return `${API_URL}/v1/driver/documents/${id}/file`
 }
 
-export function useDriverProfile() {
-  const { getToken } = useAuth()
-  const [profile, setProfile] = useState<DriverProfileDto | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+let profileCache: DriverProfileDto | null = null
+let hasLoaded = false
+let loadError = false
+let inFlight: Promise<void> | null = null
+let lastUserId: string | null | undefined
+const listeners = new Set<() => void>()
 
-  const refetch = useCallback(async () => {
-    setError(false)
-    try {
-      const result = await fetchDriverProfile(getToken)
-      setProfile(result)
-    } catch {
-      setError(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [getToken])
+function notify() {
+  for (const listener of listeners) listener()
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function getProfileSnapshot() {
+  return profileCache
+}
+
+function getLoadedSnapshot() {
+  return hasLoaded
+}
+
+function getErrorSnapshot() {
+  return loadError
+}
+
+function runFetch(getToken: GetToken): Promise<void> {
+  inFlight = fetchDriverProfile(getToken)
+    .then((result) => {
+      profileCache = result
+      loadError = false
+    })
+    .catch(() => {
+      loadError = true
+    })
+    .finally(() => {
+      hasLoaded = true
+      inFlight = null
+      notify()
+    })
+  return inFlight
+}
+
+/**
+ * withProfileGate wraps every tab screen (Dashboard, Earnings, Routes,
+ * Deliveries, Payouts, Support) plus the settings verification section and
+ * the profile-setup flow all call useDriverProfile() independently — each
+ * used to fire its own /v1/driver/profile request and block its own screen
+ * behind a spinner until that specific call resolved, so switching tabs for
+ * the first time kept re-paying for data every other gate already had.
+ * Sharing one in-flight request and one cached result means the first
+ * screen to mount pays for the fetch once; every other gate mounted around
+ * the same time — or later, once loaded — renders from cache immediately.
+ */
+function loadProfile(getToken: GetToken): Promise<void> {
+  if (inFlight) return inFlight
+  if (hasLoaded) return Promise.resolve()
+  return runFetch(getToken)
+}
+
+export function useDriverProfile() {
+  const { getToken, userId } = useAuth()
+  const profile = useSyncExternalStore(subscribe, getProfileSnapshot)
+  const loaded = useSyncExternalStore(subscribe, getLoadedSnapshot)
+  const error = useSyncExternalStore(subscribe, getErrorSnapshot)
 
   useEffect(() => {
-    void refetch()
-  }, [refetch])
+    // The signed-in driver changed (sign-out, or a different driver signing
+    // in within the same app session) — the cached profile belongs to the
+    // previous session and must not leak into the new one.
+    if (userId !== lastUserId) {
+      lastUserId = userId
+      profileCache = null
+      hasLoaded = false
+      loadError = false
+      notify()
+    }
+    void loadProfile(getToken)
+  }, [getToken, userId])
 
-  return { profile, loading, error, refetch, getToken }
+  const refetch = useCallback(() => runFetch(getToken), [getToken])
+
+  return { profile, loading: !loaded, error, refetch, getToken }
 }
 
 /** Which profile-setup route a driver should land on next, given their
