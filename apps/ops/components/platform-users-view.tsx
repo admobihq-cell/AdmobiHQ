@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Search } from "lucide-react"
-import { toast } from "sonner"
 import type { PlatformUserDto, PlatformUserType } from "@workspace/ops-contracts"
 
 import { formatApiError } from "@workspace/ops-api-client"
