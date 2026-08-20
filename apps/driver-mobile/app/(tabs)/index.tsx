@@ -70,20 +70,21 @@ function DashboardScreen() {
       gap: spacing.sm,
     },
     actionChip: {
+      flexBasis: "47%" as const,
+      flexGrow: 1,
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      gap: 6,
-      paddingVertical: 10,
-      paddingHorizontal: spacing.md,
-      borderRadius: radius.full,
+      justifyContent: "center" as const,
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+      borderRadius: radius.xl,
       borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.surface,
     },
-    actionChipPressed: { opacity: 0.7 },
+    actionChipPressed: { opacity: 0.75 },
     actionChipText: {
-      ...typography.bodySm,
-      fontWeight: "600" as const,
+      ...typography.section,
       color: c.text,
     },
     activityCard: {
@@ -152,7 +153,7 @@ function DashboardScreen() {
         <View style={styles.actionsRow}>
           <Link href="/earnings" asChild>
             <Pressable style={({ pressed }) => [styles.actionChip, pressed && styles.actionChipPressed]}>
-              <Wallet size={16} color={colors.text} />
+              <Wallet size={20} color={colors.primary} />
               <Text style={styles.actionChipText}>Earnings</Text>
             </Pressable>
           </Link>
@@ -172,7 +173,7 @@ function DashboardScreen() {
           ) : null}
           <Link href="/support" asChild>
             <Pressable style={({ pressed }) => [styles.actionChip, pressed && styles.actionChipPressed]}>
-              <HelpCircle size={16} color={colors.text} />
+              <HelpCircle size={20} color={colors.primary} />
               <Text style={styles.actionChipText}>Get help</Text>
             </Pressable>
           </Link>
