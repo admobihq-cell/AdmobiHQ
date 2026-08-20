@@ -9,6 +9,7 @@ import {
   FileText,
   Home,
   History,
+  IdCard,
   LifeBuoy,
   Mail,
   Map,
@@ -120,6 +121,7 @@ const secondaryItems: Array<{
     permission: "content",
   },
   { href: "/team", label: "Team", icon: UserCog, adminOnly: true },
+  { href: "/users", label: "Users", icon: IdCard, adminOnly: true },
   { href: "/settings", label: "Settings", icon: Settings, permission: "flags" },
 ]
 
