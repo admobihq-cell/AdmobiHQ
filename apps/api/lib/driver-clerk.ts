@@ -6,7 +6,7 @@ import { createClerkClient } from "@clerk/backend"
  * reads CLERK_SECRET_KEY. See lib/driver-auth.ts's comment on why these two
  * instances must never be crossed.
  */
-const driverClerkClient = createClerkClient({
+export const driverClerkClient = createClerkClient({
   secretKey: process.env.DRIVER_CLERK_SECRET_KEY,
 })
 

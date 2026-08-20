@@ -4,6 +4,7 @@ const required = [
   "CLERK_SECRET_KEY",
   "CLERK_ORG_ID",
   "DRIVER_CLERK_SECRET_KEY",
+  "CUSTOMER_CLERK_SECRET_KEY",
 ] as const
 
 const optional = [
@@ -71,6 +72,20 @@ if (driverSecret && !driverSecret.startsWith("sk_")) {
 if (driverSecret && driverSecret === secret) {
   console.error(
     "[api env:check] DRIVER_CLERK_SECRET_KEY must not equal CLERK_SECRET_KEY — they are different Clerk instances (ops vs driver).",
+  )
+  invalid = true
+}
+
+const customerSecret = trimQuotes(process.env.CUSTOMER_CLERK_SECRET_KEY ?? "")
+if (customerSecret && !customerSecret.startsWith("sk_")) {
+  console.error(
+    "[api env:check] CUSTOMER_CLERK_SECRET_KEY must start with sk_test_ or sk_live_",
+  )
+  invalid = true
+}
+if (customerSecret && (customerSecret === secret || customerSecret === driverSecret)) {
+  console.error(
+    "[api env:check] CUSTOMER_CLERK_SECRET_KEY must not equal CLERK_SECRET_KEY or DRIVER_CLERK_SECRET_KEY — they are different Clerk instances (ops vs driver vs customer).",
   )
   invalid = true
 }
