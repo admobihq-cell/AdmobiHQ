@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { TeamDto } from "@workspace/ops-contracts"
+import type { TeamDto, TeamMemberDto } from "@workspace/ops-contracts"
 
 import { formatApiError } from "@workspace/ops-api-client"
 import { Badge } from "@workspace/ui/components/badge"
@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
+import { DataTable, DataTableSortHeader, type ColumnDef, type SortingState } from "@/components/ui/data-table"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -55,6 +56,44 @@ function MembersTableSkeleton() {
   )
 }
 
+const columns: ColumnDef<TeamMemberDto, any>[] = [
+  {
+    accessorKey: "email",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="Email"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => <span className="font-medium">{row.original.email}</span>,
+  },
+  {
+    accessorKey: "role",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="Role"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => <RoleBadge role={row.original.role} />,
+  },
+  {
+    accessorKey: "joinedAt",
+    header: ({ column }) => (
+      <DataTableSortHeader
+        label="Joined"
+        sorted={column.getIsSorted()}
+        onToggle={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">{formatDateTime(row.original.joinedAt)}</span>
+    ),
+  },
+]
+
 /** Read-only view of the ops org roster — same data as /team (see
  * components/team-view.tsx), without the invite/remove/role-edit controls,
  * which stay exclusive to /team. */
@@ -62,6 +101,7 @@ export function AdminsView() {
   const client = useOpsClient()
   const [team, setTeam] = useState<TeamDto | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sorting, setSorting] = useState<SortingState>([])
 
   useEffect(() => {
     client.team
@@ -78,28 +118,14 @@ export function AdminsView() {
         ) : team === null ? (
           <MembersTableSkeleton />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Joined</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {team.members.map((member) => (
-                <TableRow key={member.userId}>
-                  <TableCell className="font-medium">{member.email}</TableCell>
-                  <TableCell>
-                    <RoleBadge role={member.role} />
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDateTime(member.joinedAt)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={columns}
+            data={team.members}
+            manualSorting={false}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            getRowId={(member) => member.userId}
+          />
         )}
       </CardContent>
     </Card>
