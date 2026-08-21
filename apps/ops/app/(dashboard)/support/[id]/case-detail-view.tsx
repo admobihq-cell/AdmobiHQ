@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useUser } from "@clerk/nextjs"
 import { ArrowLeft, Lock, Phone, Send, UserCircle, X } from "lucide-react"
@@ -10,8 +11,8 @@ import {
   SUPPORT_PRIORITIES,
   SUPPORT_STATUSES,
   formatLabel,
-  type SupportCaseDetailDto,
   type SupportCaseUpdateInput,
+  type SupportMessageCreateInput,
 } from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
 
@@ -45,89 +46,61 @@ function initials(name: string) {
 
 export function CaseDetailView({ caseId }: { caseId: number }) {
   const client = useOpsClient()
+  const queryClient = useQueryClient()
   const { user } = useUser()
 
-  const [data, setData] = useState<SupportCaseDetailDto | null>(null)
-  const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState("")
   const [internalNote, setInternalNote] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [updating, setUpdating] = useState(false)
 
-  const load = useCallback(async () => {
-    try {
-      const result = await client.support.get(caseId)
-      setData(result)
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setLoading(false)
-    }
-  }, [client, caseId])
+  const caseQuery = useQuery({
+    queryKey: ["ops-support-case", caseId],
+    queryFn: () => client.support.get(caseId),
+  })
+  const data = caseQuery.data ?? null
+  const loading = caseQuery.isLoading
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load()
-  }, [load])
-
-  async function handleUpdate(
-    patch: Pick<SupportCaseUpdateInput, "status" | "priority">,
-  ) {
-    setUpdating(true)
-    try {
-      await client.support.update(caseId, patch)
-      await load()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setUpdating(false)
-    }
+  function invalidateCase() {
+    void queryClient.invalidateQueries({ queryKey: ["ops-support-case", caseId] })
+    void queryClient.invalidateQueries({ queryKey: ["ops-support"] })
   }
 
-  async function assignToMe() {
+  const updateMutation = useMutation({
+    mutationFn: (patch: SupportCaseUpdateInput) => client.support.update(caseId, patch),
+    onSuccess: invalidateCase,
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const updating = updateMutation.isPending
+
+  function handleUpdate(patch: Pick<SupportCaseUpdateInput, "status" | "priority">) {
+    updateMutation.mutate(patch)
+  }
+
+  function assignToMe() {
     if (!user) return
-    setUpdating(true)
-    try {
-      await client.support.update(caseId, {
-        assigned_to_clerk_id: user.id,
-        assigned_to_email: user.primaryEmailAddress?.emailAddress ?? null,
-      })
-      await load()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setUpdating(false)
-    }
+    updateMutation.mutate({
+      assigned_to_clerk_id: user.id,
+      assigned_to_email: user.primaryEmailAddress?.emailAddress ?? null,
+    })
   }
 
-  async function unassign() {
-    setUpdating(true)
-    try {
-      await client.support.update(caseId, {
-        assigned_to_clerk_id: null,
-        assigned_to_email: null,
-      })
-      await load()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setUpdating(false)
-    }
+  function unassign() {
+    updateMutation.mutate({ assigned_to_clerk_id: null, assigned_to_email: null })
   }
 
-  async function handleSend() {
-    if (sending || !reply.trim()) return
-    setSending(true)
-    try {
-      await client.support.reply(caseId, { body: reply.trim(), internal_note: internalNote })
+  const replyMutation = useMutation({
+    mutationFn: (body: SupportMessageCreateInput) => client.support.reply(caseId, body),
+    onSuccess: () => {
       setReply("")
       setInternalNote(false)
-      await load()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setSending(false)
-    }
+      invalidateCase()
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const sending = replyMutation.isPending
+
+  function handleSend() {
+    if (sending || !reply.trim()) return
+    replyMutation.mutate({ body: reply.trim(), internal_note: internalNote })
   }
 
   if (loading) {
@@ -200,7 +173,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
             <Select
               value={data.status}
               onValueChange={(value) =>
-                void handleUpdate({ status: value as SupportCaseUpdateInput["status"] })
+                handleUpdate({ status: value as SupportCaseUpdateInput["status"] })
               }
               disabled={updating}
             >
@@ -222,7 +195,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
             <Select
               value={data.priority}
               onValueChange={(value) =>
-                void handleUpdate({ priority: value as SupportCaseUpdateInput["priority"] })
+                handleUpdate({ priority: value as SupportCaseUpdateInput["priority"] })
               }
               disabled={updating}
             >
@@ -247,7 +220,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
                 {data.assigned_to_email}
                 <button
                   type="button"
-                  onClick={() => void unassign()}
+                  onClick={unassign}
                   disabled={updating}
                   aria-label="Unassign"
                   className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
@@ -256,7 +229,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
                 </button>
               </div>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void assignToMe()} disabled={updating}>
+              <Button variant="outline" size="sm" onClick={assignToMe} disabled={updating}>
                 <UserCircle className="size-3.5" />
                 Assign to me
               </Button>
@@ -344,7 +317,7 @@ export function CaseDetailView({ caseId }: { caseId: number }) {
             Internal note (not visible to customer)
           </label>
           <Button
-            onClick={() => void handleSend()}
+            onClick={handleSend}
             disabled={sending || !reply.trim()}
             variant={internalNote ? "outline" : "default"}
             className={cn(
