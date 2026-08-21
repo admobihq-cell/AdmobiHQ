@@ -1,6 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo"
 import { Stack } from "expo-router"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -103,8 +104,8 @@ export default function AccountSettingsScreen() {
   const [lastName, setLastName] = useState(user?.lastName ?? "")
   const [saving, setSaving] = useState(false)
   const [signOutVisible, setSignOutVisible] = useState(false)
-  const [sessions, setSessions] = useState<SessionRow[] | null>(null)
-  const [revokingId, setRevokingId] = useState<string | null>(null)
+
+  const queryClient = useQueryClient()
 
   const email = user?.primaryEmailAddress?.emailAddress
   const emailVerified = user?.primaryEmailAddress?.verification?.status === "verified"
@@ -113,32 +114,34 @@ export default function AccountSettingsScreen() {
   const googleAccount = user?.externalAccounts?.find((a) => a.provider === "google")
   const memberSince = formatMemberSince(user?.createdAt)
 
-  useEffect(() => {
-    if (!user) return
-    let cancelled = false
-    user
-      .getSessions()
-      .then((list) => {
-        if (cancelled) return
-        setSessions(
-          list.map((session) => ({
-            id: session.id,
-            isCurrent: session.id === sessionId,
-            label: sessionDeviceLabel(session.latestActivity),
-            location: sessionLocation(session.latestActivity),
-            lastActiveAt: session.lastActiveAt,
-            isMobile: Boolean(session.latestActivity?.isMobile),
-            revoke: () => session.revoke(),
-          })),
-        )
-      })
-      .catch(() => {
-        if (!cancelled) setSessions([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [user, sessionId])
+  const sessionsQuery = useQuery({
+    queryKey: ["customer-sessions", user?.id],
+    queryFn: async (): Promise<SessionRow[]> => {
+      const list = await user!.getSessions()
+      return list.map((session) => ({
+        id: session.id,
+        isCurrent: session.id === sessionId,
+        label: sessionDeviceLabel(session.latestActivity),
+        location: sessionLocation(session.latestActivity),
+        lastActiveAt: session.lastActiveAt,
+        isMobile: Boolean(session.latestActivity?.isMobile),
+        revoke: () => session.revoke(),
+      }))
+    },
+    enabled: Boolean(user),
+  })
+  const sessions = sessionsQuery.isError ? [] : (sessionsQuery.data ?? null)
+
+  const revokeMutation = useMutation({
+    mutationFn: (row: SessionRow) => row.revoke(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["customer-sessions", user?.id] })
+    },
+    onError: () => {
+      Alert.alert("Couldn't sign out that device", "Check your connection and try again.")
+    },
+  })
+  const revokingId = revokeMutation.isPending ? (revokeMutation.variables?.id ?? null) : null
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -278,16 +281,8 @@ export default function AccountSettingsScreen() {
     }
   }
 
-  async function handleRevoke(row: SessionRow) {
-    setRevokingId(row.id)
-    try {
-      await row.revoke()
-      setSessions((prev) => prev?.filter((s) => s.id !== row.id) ?? prev)
-    } catch {
-      Alert.alert("Couldn't sign out that device", "Check your connection and try again.")
-    } finally {
-      setRevokingId(null)
-    }
+  function handleRevoke(row: SessionRow) {
+    revokeMutation.mutate(row)
   }
 
   function startEditing() {
@@ -523,7 +518,7 @@ export default function AccountSettingsScreen() {
                       </View>
                       {!session.isCurrent ? (
                         <Pressable
-                          onPress={() => void handleRevoke(session)}
+                          onPress={() => handleRevoke(session)}
                           disabled={revokingId === session.id}
                           hitSlop={8}
                         >
