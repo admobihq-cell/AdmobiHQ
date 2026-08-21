@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Eye, Loader2, Plus, Radio, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -75,83 +76,83 @@ type AnnouncementsViewProps = {
 
 export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const client = useOpsClient()
-  const [data, setData] = useState(initialData)
+  const queryClient = useQueryClient()
+  const [page, setPage] = useState(initialData.page)
+  const [pageSize, setPageSize] = useState(initialData.pageSize)
   const [formOpen, setFormOpen] = useState(false)
   const [pending, setPending] = useState<PendingBroadcast | null>(null)
   const [pendingDelete, setPendingDelete] = useState<AnnouncementDto | null>(null)
   const [viewing, setViewing] = useState<AnnouncementDto | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
-  const [pageSize, setPageSize] = useState(25)
   const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
 
-  const refresh = async (targetPage = 1, targetPageSize = pageSize) => {
-    const result = await client.notifications.list({
-      page: targetPage,
-      pageSize: targetPageSize,
-      sortDir,
-    })
-    setData(result)
+  const announcementsQuery = useQuery({
+    queryKey: ["ops-announcements", { page, pageSize, sortDir }],
+    queryFn: () => client.notifications.list({ page, pageSize, sortDir }),
+    initialData:
+      page === initialData.page && pageSize === initialData.pageSize && sortDir === "desc"
+        ? initialData
+        : undefined,
+    placeholderData: keepPreviousData,
+  })
+  const data = announcementsQuery.data ?? initialData
+
+  function changeSort(updater: SortingState | ((old: SortingState) => SortingState)) {
+    setSorting(updater)
+    setPage(1)
   }
 
-  const isFirstSort = useRef(true)
-  useEffect(() => {
-    if (isFirstSort.current) {
-      isFirstSort.current = false
-      return
-    }
-    void refresh(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortDir])
-
-  const handleDelete = async () => {
-    if (!pendingDelete) return
-    setDeleting(true)
-    try {
-      await client.notifications.delete(pendingDelete.id)
+  const deleteMutation = useMutation({
+    mutationFn: (announcement: AnnouncementDto) => client.notifications.delete(announcement.id),
+    onSuccess: () => {
       toast.success("Announcement deleted")
       setPendingDelete(null)
-      await refresh()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setDeleting(false)
-    }
+      setPage(1)
+      void queryClient.invalidateQueries({ queryKey: ["ops-announcements"] })
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const deleting = deleteMutation.isPending
+  const handleDelete = () => {
+    if (!pendingDelete) return
+    deleteMutation.mutate(pendingDelete)
   }
 
-  const handleSend = async () => {
-    if (!pending) return
-    setSaving(true)
-    try {
-      let imageUrl = pending.image_url ?? undefined
-      if (pending.imageBlob) {
+  const sendMutation = useMutation({
+    mutationFn: async (broadcast: PendingBroadcast) => {
+      let imageUrl = broadcast.image_url ?? undefined
+      if (broadcast.imageBlob) {
         const uploaded = await client.notifications.uploadImage(
-          new File([pending.imageBlob], "announcement.jpg", { type: "image/jpeg" }),
+          new File([broadcast.imageBlob], "announcement.jpg", { type: "image/jpeg" }),
         )
         imageUrl = uploaded.url
       }
-      await client.notifications.broadcast({
-        title: pending.title,
-        body: pending.body,
-        category: pending.category as
+      return client.notifications.broadcast({
+        title: broadcast.title,
+        body: broadcast.body,
+        category: broadcast.category as
           | "announcement"
           | "campaign"
           | "billing"
           | "promo"
           | "system",
-        target_apps: pending.targetApps as ("customer-mobile" | "driver-mobile")[],
+        target_apps: broadcast.targetApps as ("customer-mobile" | "driver-mobile")[],
         image_url: imageUrl ?? null,
       })
-      toast.success(pending.mode === "resend" ? "Announcement resent" : "Announcement sent")
+    },
+    onSuccess: (_result, broadcast) => {
+      toast.success(broadcast.mode === "resend" ? "Announcement resent" : "Announcement sent")
       setPending(null)
       setFormOpen(false)
-      await refresh()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setSaving(false)
-    }
+      setPage(1)
+      void queryClient.invalidateQueries({ queryKey: ["ops-announcements"] })
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const saving = sendMutation.isPending
+  const handleSend = () => {
+    if (!pending) return
+    sendMutation.mutate(pending)
   }
 
   const queueNewAnnouncement = (values: AnnouncementFormValues) => {
@@ -342,7 +343,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
             columns={columns}
             data={data.items}
             sorting={sorting}
-            onSortingChange={setSorting}
+            onSortingChange={changeSort}
             getRowId={(row) => String(row.id)}
             tableClassName="table-fixed w-full"
           />
@@ -353,11 +354,11 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         page={data.page}
         totalPages={data.totalPages}
         total={data.total}
-        onPageChange={(nextPage) => void refresh(nextPage)}
+        onPageChange={setPage}
         pageSize={pageSize}
         onPageSizeChange={(size) => {
           setPageSize(size)
-          void refresh(1, size)
+          setPage(1)
         }}
       />
 
@@ -483,7 +484,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); void handleSend() }} disabled={saving}>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleSend() }} disabled={saving}>
               {saving ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : pending?.mode === "resend" ? (
@@ -516,7 +517,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault()
-                void handleDelete()
+                handleDelete()
               }}
               disabled={deleting}
             >
