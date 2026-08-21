@@ -306,7 +306,11 @@ export function EntityPage<T extends { id: number }>({
     onError: (e) => toast.error(formatApiError(e)),
   })
   const handleSubmit = async (values: Record<string, unknown>) => {
-    await saveMutation.mutateAsync(values)
+    // onError above already surfaces a toast; mutateAsync still rejects the
+    // returned promise on failure, and the JSX call site fires this with
+    // `void onSubmit(values)` — swallow here so a failed save doesn't also
+    // surface as an unhandled promise rejection (e.g. to Sentry).
+    await saveMutation.mutateAsync(values).catch(() => {})
   }
 
   const deleteMutation = useMutation({

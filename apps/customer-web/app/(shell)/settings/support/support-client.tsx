@@ -44,7 +44,11 @@ export function SupportClient() {
     enabled: hasIdentity,
   })
   const cases = casesQuery.data ?? []
-  const loadingCases = hasIdentity && casesQuery.isLoading
+  // Keep showing the skeleton while the session is still resolving (before
+  // hasIdentity can even be known) so a first-time-this-tab visitor doesn't
+  // flash the "no requests yet" empty state before the query has a chance
+  // to run.
+  const loadingCases = session.status === "loading" || (hasIdentity && casesQuery.isLoading)
 
   function handleCreated(caseId: number) {
     setNewRequestOpen(false)
