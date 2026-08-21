@@ -1,12 +1,13 @@
-import { useCallback, useState } from "react"
+import { useCallback } from "react"
 import { Stack, useFocusEffect, useRouter } from "expo-router"
+import { useQuery } from "@tanstack/react-query"
 import { Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { Add, ChevronRight, HelpCircle } from "@/components/icons"
 import { CategoryIcon, SupportStatusPill } from "@/components/support/support-ui"
-import { listMySupportCases, type SupportCase } from "@/lib/support"
+import { listMySupportCases } from "@/lib/support"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 export default function SupportSettingsScreen() {
@@ -14,23 +15,18 @@ export default function SupportSettingsScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
 
-  const [cases, setCases] = useState<SupportCase[]>([])
-  const [loading, setLoading] = useState(true)
+  const casesQuery = useQuery({
+    queryKey: ["customer-support-cases"],
+    queryFn: listMySupportCases,
+  })
+  const cases = casesQuery.data ?? []
+  const loading = casesQuery.isLoading
 
+  const refetchCases = casesQuery.refetch
   useFocusEffect(
     useCallback(() => {
-      let mounted = true
-      setLoading(true)
-      void listMySupportCases().then((items) => {
-        if (mounted) {
-          setCases(items)
-          setLoading(false)
-        }
-      })
-      return () => {
-        mounted = false
-      }
-    }, []),
+      void refetchCases()
+    }, [refetchCases]),
   )
 
   const styles = useThemedStyles((c) => ({
