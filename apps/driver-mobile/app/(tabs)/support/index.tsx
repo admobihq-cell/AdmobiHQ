@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react"
 import { useFocusEffect, useRouter } from "expo-router"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ActivityIndicator,
   Pressable,
@@ -29,55 +30,40 @@ export default function SupportScreen() {
   const colors = useThemeColors()
   const session = useDriverSession()
 
-  const [cases, setCases] = useState<SupportCase[]>([])
-  const [loadingCases, setLoadingCases] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const queryClient = useQueryClient()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [category, setCategory] = useState("driver")
   const [subject, setSubject] = useState("")
   const [message, setMessage] = useState("")
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const refreshCases = useCallback(async () => {
-    setLoadingCases(true)
-    try {
+  const casesQuery = useQuery({
+    queryKey: ["driver-support-cases"],
+    queryFn: async () => {
       const identity = await getStoredIdentity()
-      if (identity && session.status === "anonymous") {
-        setEmail((current) => current || identity.email)
-        setName((current) => current || identity.name)
-        const items = await listMySupportCases()
-        setCases(items)
-      }
-    } catch {
-      // best-effort — an empty list is a safe fallback
-    } finally {
-      setLoadingCases(false)
-    }
-  }, [session])
+      if (!identity) return []
+      setEmail((current) => current || identity.email)
+      setName((current) => current || identity.name)
+      return listMySupportCases()
+    },
+    enabled: session.status === "anonymous",
+  })
+  const cases = casesQuery.data ?? []
+  const loadingCases = casesQuery.isLoading
+  const refreshing = casesQuery.isRefetching
 
   useFocusEffect(
     useCallback(() => {
-      void refreshCases()
-    }, [refreshCases]),
+      void casesQuery.refetch()
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
   )
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    try {
-      const identity = await getStoredIdentity()
-      if (identity && session.status === "anonymous") {
-        const items = await listMySupportCases()
-        setCases(items)
-      }
-    } catch {
-      // best-effort — keep whatever cases are already shown
-    } finally {
-      setRefreshing(false)
-    }
-  }, [session])
+  const onRefresh = () => void casesQuery.refetch()
+
+  const [submitting, setSubmitting] = useState(false)
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -221,7 +207,7 @@ export default function SupportScreen() {
       })
       setSubject("")
       setMessage("")
-      await refreshCases()
+      await queryClient.invalidateQueries({ queryKey: ["driver-support-cases"] })
       router.push(`/support/${created.id}`)
     } catch {
       setError("Couldn't send your request. Check your connection and try again.")
@@ -238,7 +224,7 @@ export default function SupportScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={() => void onRefresh()}
+          onRefresh={onRefresh}
           tintColor={colors.primary}
           colors={[colors.primary]}
         />
