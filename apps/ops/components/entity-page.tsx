@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ChevronDown, Download, Loader2, Plus, Search, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { formatApiError, getApiBaseUrl } from "@workspace/ops-api-client"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
@@ -138,9 +139,7 @@ export function EntityPage<T extends { id: number }>({
     () => resolveOpsResource(opsClient, apiPath),
     [opsClient, apiPath],
   )
-  const [data, setData] = useState<Paginated<T> | null>(initialData ?? null)
-  const [loading, setLoading] = useState(!initialData)
-  const [fetchError, setFetchError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [page, setPage] = useState(1)
@@ -148,17 +147,45 @@ export function EntityPage<T extends { id: number }>({
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
   const [viewing, setViewing] = useState<T | null>(null)
-  const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null)
-  const [deleting, setDeleting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [bulkPending, setBulkPending] = useState(false)
   const [bulkConfirm, setBulkConfirm] = useState<{
     title: string
     description: string
     destructive?: boolean
     onConfirm: () => Promise<void>
   } | null>(null)
+
+  const listQueryKey = ["ops-entity", apiPath, { page, pageSize, search, statusFilter }] as const
+
+  const {
+    data,
+    isLoading: loading,
+    isError,
+    error: fetchErrorRaw,
+    refetch,
+  } = useQuery({
+    queryKey: listQueryKey,
+    queryFn: () =>
+      resource.list({
+        page,
+        pageSize,
+        ...(search ? { search } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
+      }) as unknown as Promise<Paginated<T>>,
+    initialData:
+      initialData && page === 1 && pageSize === DEFAULT_PAGE_SIZE && !search && !statusFilter
+        ? initialData
+        : undefined,
+    placeholderData: keepPreviousData,
+  })
+
+  const fetchError = isError
+    ? formatApiError(fetchErrorRaw, {
+        apiUrl: getApiBaseUrl(),
+        networkHint: `Cannot reach the ops API. Run \`npm run env:pull -w ops\` and confirm the API is running.`,
+      })
+    : null
 
   const pageIds = useMemo(
     () => data?.items.map((row) => row.id) ?? [],
@@ -180,41 +207,6 @@ export function EntityPage<T extends { id: number }>({
       label: column.header,
       render: column.render,
     }))
-
-  const fetchSeq = useRef(0)
-
-  const fetchData = useCallback(async () => {
-    const seq = ++fetchSeq.current
-    setLoading(true)
-    setFetchError(null)
-    try {
-      const result = await resource.list({
-        page,
-        pageSize,
-        ...(search ? { search } : {}),
-        ...(statusFilter ? { status: statusFilter } : {}),
-      })
-      // A slower, now-stale request can resolve after a newer one — ignore it.
-      if (seq !== fetchSeq.current) return
-      setData(result as unknown as Paginated<T>)
-    } catch (err) {
-      if (seq !== fetchSeq.current) return
-      const message = formatApiError(err, {
-        apiUrl: getApiBaseUrl(),
-        networkHint: `Cannot reach the ops API. Run \`npm run env:pull -w ops\` and confirm the API is running.`,
-      })
-      setFetchError(message)
-    } finally {
-      if (seq === fetchSeq.current) setLoading(false)
-    }
-  }, [resource, page, pageSize, search, statusFilter])
-
-  useEffect(() => {
-    if (initialData && page === 1 && pageSize === DEFAULT_PAGE_SIZE && !search && !statusFilter) {
-      return
-    }
-    void fetchData()
-  }, [fetchData, initialData, page, pageSize, search, statusFilter])
 
   useEffect(() => {
     setSelectedIds(new Set())
@@ -246,19 +238,17 @@ export function EntityPage<T extends { id: number }>({
     return resource.bulk(body as never)
   }
 
-  const runBulkAction = async (action: () => Promise<void>) => {
-    setBulkPending(true)
-    try {
-      await action()
+  const bulkMutation = useMutation({
+    mutationFn: (action: () => Promise<void>) => action(),
+    onSuccess: () => {
       clearSelection()
-      void fetchData()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setBulkPending(false)
-      setBulkConfirm(null)
-    }
-  }
+      void queryClient.invalidateQueries({ queryKey: ["ops-entity", apiPath] })
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+    onSettled: () => setBulkConfirm(null),
+  })
+
+  const runBulkAction = (action: () => Promise<void>) => bulkMutation.mutate(action)
 
   const handleBulkDelete = () => {
     const ids = Array.from(selectedIds)
@@ -301,40 +291,37 @@ export function EntityPage<T extends { id: number }>({
     toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
   }
 
-  const handleSubmit = async (values: Record<string, unknown>) => {
-    setSaving(true)
-    try {
-      if (editing) {
-        await resource.update(editing.id, values as never)
-      } else {
-        await resource.create(values as never)
-      }
+  const saveMutation = useMutation({
+    mutationFn: (values: Record<string, unknown>) =>
+      (editing
+        ? resource.update(editing.id, values as never)
+        : resource.create(values as never)) as unknown as Promise<T>,
+    onSuccess: () => {
       toast.success(editing ? "Updated" : "Created")
       setFormOpen(false)
       setEditing(null)
       setViewing(null)
-      void fetchData()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setSaving(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["ops-entity", apiPath] })
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const handleSubmit = async (values: Record<string, unknown>) => {
+    await saveMutation.mutateAsync(values)
   }
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      await resource.delete(deleteTarget.id)
+  const deleteMutation = useMutation({
+    mutationFn: (target: T) => resource.delete(target.id),
+    onSuccess: () => {
       toast.success("Deleted")
       setDeleteTarget(null)
       setViewing(null)
-      void fetchData()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setDeleting(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["ops-entity", apiPath] })
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const handleDelete = () => {
+    if (!deleteTarget) return
+    deleteMutation.mutate(deleteTarget)
   }
 
   const handleExport = () => {
@@ -351,20 +338,22 @@ export function EntityPage<T extends { id: number }>({
     downloadCsv(`${apiPath.replace(/^\/v1\//, "")}.csv`, toCsv(rows, csvColumns))
   }
 
-  const handleQuickStatusChange = async (status: string) => {
-    if (!viewing) return
-    setSaving(true)
-    try {
-      await resource.update(viewing.id, { status } as never)
+  const quickStatusMutation = useMutation({
+    mutationFn: (status: string) => {
+      if (!viewing) throw new Error("No record selected")
+      return resource.update(viewing.id, { status } as never) as unknown as Promise<T>
+    },
+    onSuccess: (_result, status) => {
       toast.success("Status updated")
-      setViewing({ ...viewing, status } as T)
-      void fetchData()
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setSaving(false)
-    }
-  }
+      setViewing((prev) => (prev ? ({ ...prev, status } as T) : prev))
+      void queryClient.invalidateQueries({ queryKey: ["ops-entity", apiPath] })
+    },
+    onError: (e) => toast.error(formatApiError(e)),
+  })
+  const handleQuickStatusChange = (status: string) => quickStatusMutation.mutate(status)
+
+  const saving = saveMutation.isPending || quickStatusMutation.isPending
+  const deleting = deleteMutation.isPending
 
   const tableColumns: TanStackColumnDef<T, any>[] = [
     {
@@ -481,8 +470,7 @@ export function EntityPage<T extends { id: number }>({
       {fetchError ? (
         <ApiErrorBanner
           message={fetchError}
-          onRetry={() => void fetchData()}
-          onDismiss={() => setFetchError(null)}
+          onRetry={() => void refetch()}
         />
       ) : null}
 
@@ -495,7 +483,7 @@ export function EntityPage<T extends { id: number }>({
             {statusBulkOptions && statusBulkOptions.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={bulkPending}>
+                  <Button variant="outline" size="sm" disabled={bulkMutation.isPending}>
                     Set status
                     <ChevronDown data-icon="inline-end" />
                   </Button>
@@ -517,7 +505,7 @@ export function EntityPage<T extends { id: number }>({
                 key={action.id}
                 variant={action.variant ?? "outline"}
                 size="sm"
-                disabled={bulkPending}
+                disabled={bulkMutation.isPending}
                 onClick={() => {
                   const ids = Array.from(selectedIds)
                   if (action.confirm) {
@@ -539,7 +527,7 @@ export function EntityPage<T extends { id: number }>({
               variant="outline"
               size="sm"
               onClick={handleBulkExport}
-              disabled={bulkPending}
+              disabled={bulkMutation.isPending}
             >
               <Download data-icon="inline-start" />
               Export selected
@@ -548,7 +536,7 @@ export function EntityPage<T extends { id: number }>({
               variant="destructive"
               size="sm"
               onClick={handleBulkDelete}
-              disabled={bulkPending}
+              disabled={bulkMutation.isPending}
             >
               <Trash2 data-icon="inline-start" />
               Delete
@@ -557,7 +545,7 @@ export function EntityPage<T extends { id: number }>({
               variant="ghost"
               size="sm"
               onClick={clearSelection}
-              disabled={bulkPending}
+              disabled={bulkMutation.isPending}
               aria-label="Clear selection"
             >
               <X />
@@ -733,27 +721,27 @@ export function EntityPage<T extends { id: number }>({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={bulkConfirm !== null} onOpenChange={() => !bulkPending && setBulkConfirm(null)}>
+      <AlertDialog open={bulkConfirm !== null} onOpenChange={() => !bulkMutation.isPending && setBulkConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{bulkConfirm?.title}</AlertDialogTitle>
             <AlertDialogDescription>{bulkConfirm?.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={bulkMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault()
                 if (bulkConfirm) void runBulkAction(bulkConfirm.onConfirm)
               }}
-              disabled={bulkPending}
+              disabled={bulkMutation.isPending}
               className={
                 bulkConfirm?.destructive
                   ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   : undefined
               }
             >
-              {bulkPending ? <Loader2 className="size-4 animate-spin" /> : "Confirm"}
+              {bulkMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
