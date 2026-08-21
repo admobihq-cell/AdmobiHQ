@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { Search } from "lucide-react"
 import type { PlatformUserDto, PlatformUserType } from "@workspace/ops-contracts"
 
@@ -127,48 +128,32 @@ const columns: ColumnDef<PlatformUserDto, any>[] = [
 export function PlatformUsersView({ type }: { type: PlatformUserType }) {
   const client = useOpsClient()
 
-  const [users, setUsers] = useState<PlatformUserDto[]>([])
-  const [total, setTotal] = useState(0)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [sorting, setSorting] = useState<SortingState>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   const sort = sorting[0]
   const sortBy = sort && SORTABLE_FIELDS.includes(sort.id as SortableField) ? (sort.id as SortableField) : undefined
   const sortDir = sort?.desc ? "desc" : "asc"
 
-  const fetchSeq = useRef(0)
-
-  const fetchPage = useCallback(async () => {
-    const seq = ++fetchSeq.current
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await client.users.list({
+  const usersQuery = useQuery({
+    queryKey: ["ops-platform-users", type, { search, page, pageSize, sortBy, sortDir }],
+    queryFn: () =>
+      client.users.list({
         type,
         query: search || undefined,
         limit: pageSize,
         offset: (page - 1) * pageSize,
         sortBy,
         sortDir,
-      })
-      if (seq !== fetchSeq.current) return
-      setUsers(result.users)
-      setTotal(result.total)
-    } catch (err) {
-      if (seq !== fetchSeq.current) return
-      setError(formatApiError(err))
-    } finally {
-      if (seq === fetchSeq.current) setLoading(false)
-    }
-  }, [client, type, search, page, pageSize, sortBy, sortDir])
-
-  useEffect(() => {
-    void fetchPage()
-  }, [fetchPage])
+      }),
+    placeholderData: keepPreviousData,
+  })
+  const users = usersQuery.data?.users ?? []
+  const total = usersQuery.data?.total ?? 0
+  const loading = usersQuery.isLoading
+  const error = usersQuery.isError ? formatApiError(usersQuery.error) : null
 
   useEffect(() => {
     setPage(1)
