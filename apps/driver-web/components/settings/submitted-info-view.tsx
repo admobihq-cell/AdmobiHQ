@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import type { DriverDocumentDto, DriverProfileDto } from "@workspace/ops-contracts"
 
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
@@ -35,30 +36,18 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 function DocumentThumb({ doc, getToken }: { doc: DriverDocumentDto; getToken: GetToken }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-  const [attempt, setAttempt] = useState(0)
+  const previewQuery = useQuery({
+    queryKey: ["driver-document-preview", doc.id],
+    queryFn: () => fetchDriverDocumentObjectUrl(getToken, doc.id),
+  })
+  const url = previewQuery.data ?? null
+  const failed = previewQuery.isError
 
   useEffect(() => {
-    let objectUrl: string | null = null
-    let cancelled = false
-    setFailed(false)
-    fetchDriverDocumentObjectUrl(getToken, doc.id)
-      .then((u) => {
-        if (cancelled) return
-        objectUrl = u
-        setUrl(u)
-      })
-      .catch((error) => {
-        console.error("[SubmittedInfoView] failed to load document preview:", error)
-        if (!cancelled) setFailed(true)
-      })
     return () => {
-      cancelled = true
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      if (url) URL.revokeObjectURL(url)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc.id, attempt])
+  }, [url])
 
   const label = DOCUMENT_LABELS[doc.type] ?? doc.type
 
@@ -76,7 +65,7 @@ function DocumentThumb({ doc, getToken }: { doc: DriverDocumentDto; getToken: Ge
       ) : failed ? (
         <button
           type="button"
-          onClick={() => setAttempt((n) => n + 1)}
+          onClick={() => void previewQuery.refetch()}
           className="flex h-36 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:bg-muted"
         >
           <span>Couldn&apos;t load preview</span>
