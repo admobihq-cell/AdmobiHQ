@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { SectionList, StyleSheet, Text, View } from "react-native"
 
 import { ActivityRow } from "@/components/activity/activity-row"
@@ -27,27 +28,27 @@ const CATEGORY_OPTIONS = ACTIVITY_CATEGORY_ORDER.map((key) => ({
 export default function ActivityScreen() {
   usePageHeader("Activity", { showBack: true, backHref: "/(ops)/dashboard" })
   const client = useOpsClient()
-  const [items, setItems] = useState<ActivityItem[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState<ActivityCategory | null>(null)
+  const [errorDismissed, setErrorDismissed] = useState(false)
 
-  const fetchActivity = useCallback(async () => {
-    try {
-      setError(null)
-      setLoading(true)
+  const activityQuery = useQuery({
+    queryKey: ["activity", "list"],
+    queryFn: async () => {
       const result = await client.audit.list({ page: 1, pageSize: 50 })
-      setItems(result.items.map(auditEventToActivityItem))
-    } catch (err) {
-      setError(formatOpsError(err, API_URL))
-    } finally {
-      setLoading(false)
-    }
-  }, [client])
+      return result.items.map(auditEventToActivityItem)
+    },
+  })
+  const items = activityQuery.data ?? []
+  const loading = activityQuery.isLoading
+  const error =
+    activityQuery.isError && !errorDismissed
+      ? formatOpsError(activityQuery.error, API_URL)
+      : null
 
-  useEffect(() => {
-    void fetchActivity()
-  }, [fetchActivity])
+  const onRetryActivity = () => {
+    setErrorDismissed(false)
+    void activityQuery.refetch()
+  }
 
   const sections = useMemo(() => {
     const filtered = category
@@ -112,8 +113,8 @@ export default function ActivityScreen() {
         <View style={styles.errorWrap}>
           <ApiErrorBanner
             message={error}
-            onRetry={() => void fetchActivity()}
-            onDismiss={() => setError(null)}
+            onRetry={onRetryActivity}
+            onDismiss={() => setErrorDismissed(true)}
           />
         </View>
       ) : null}
