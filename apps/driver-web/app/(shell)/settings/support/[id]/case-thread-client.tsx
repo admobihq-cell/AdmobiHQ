@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { ArrowLeft, Send, SearchX } from "lucide-react"
 import { toast } from "sonner"
@@ -26,54 +27,37 @@ function initials(name: string) {
 }
 
 export function CaseThreadClient({ caseId }: { caseId: number }) {
-  const [subject, setSubject] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
-  const [category, setCategory] = useState<string | null>(null)
-  const [createdAt, setCreatedAt] = useState<string | null>(null)
-  const [contactName, setContactName] = useState<string>("You")
-  const [messages, setMessages] = useState<SupportMessage[]>([])
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const queryClient = useQueryClient()
   const [reply, setReply] = useState("")
-  const [sending, setSending] = useState(false)
 
-  const load = useCallback(async () => {
-    if (!Number.isFinite(caseId)) return
-    const data = await getSupportCase(caseId)
-    if (data) {
-      setSubject(data.subject)
-      setStatus(data.status)
-      setCategory(data.category)
-      setCreatedAt(data.created_at)
-      setContactName(data.contact_name)
-      setMessages(data.messages)
-    } else {
-      setNotFound(true)
-    }
-    setLoading(false)
-  }, [caseId])
+  const caseQuery = useQuery({
+    queryKey: ["driver-support-case", caseId],
+    queryFn: () => getSupportCase(caseId),
+    enabled: Number.isFinite(caseId),
+    refetchInterval: POLL_INTERVAL_MS,
+  })
+  const loading = caseQuery.isLoading
+  const notFound = !caseQuery.isLoading && caseQuery.data === null
+  const subject = caseQuery.data?.subject ?? null
+  const status = caseQuery.data?.status ?? null
+  const category = caseQuery.data?.category ?? null
+  const createdAt = caseQuery.data?.created_at ?? null
+  const contactName = caseQuery.data?.contact_name ?? "You"
+  const messages: SupportMessage[] = caseQuery.data?.messages ?? []
 
-  useEffect(() => {
-    // Initial fetch plus poll — syncing from the API, an external system, is
-    // exactly what this effect is for.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load()
-    const interval = setInterval(() => void load(), POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [load])
-
-  async function handleSend() {
-    if (sending || !reply.trim()) return
-    setSending(true)
-    try {
-      await replyToSupportCase(caseId, reply.trim())
+  const replyMutation = useMutation({
+    mutationFn: (body: string) => replyToSupportCase(caseId, body),
+    onSuccess: () => {
       setReply("")
-      await load()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't send your reply.")
-    } finally {
-      setSending(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["driver-support-case", caseId] })
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Couldn't send your reply."),
+  })
+  const sending = replyMutation.isPending
+
+  function handleSend() {
+    if (sending || !reply.trim()) return
+    replyMutation.mutate(reply.trim())
   }
 
   return (
