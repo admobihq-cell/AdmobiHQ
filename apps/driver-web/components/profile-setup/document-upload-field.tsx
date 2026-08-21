@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { CheckCircle2, Upload } from "lucide-react"
 import type { DriverDocumentDto, DriverDocumentType } from "@workspace/ops-contracts"
@@ -30,36 +31,32 @@ export function DocumentUploadField({
 }) {
   const { getToken } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const previewQuery = useQuery({
+    queryKey: ["driver-document-preview", document?.id],
+    queryFn: () => fetchDriverDocumentObjectUrl(getToken, document!.id),
+    enabled: Boolean(document),
+  })
+  const previewUrl = previewQuery.data ?? null
+
+  // Object URLs aren't cache-safe across query-key changes — revoke the
+  // previous one whenever the URL this component is showing changes or it
+  // unmounts.
   useEffect(() => {
-    let objectUrl: string | null = null
-    let cancelled = false
-
-    if (document) {
-      fetchDriverDocumentObjectUrl(getToken, document.id)
-        .then((url) => {
-          if (cancelled) return
-          objectUrl = url
-          setPreviewUrl(url)
-        })
-        .catch(() => {
-          if (!cancelled) setPreviewUrl(null)
-        })
-    } else {
-      setPreviewUrl(null)
-    }
-
     return () => {
-      cancelled = true
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document?.id])
+  }, [previewUrl])
 
-  async function handleFile(file: File) {
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => uploadDriverDocument(getToken, type, file),
+    onSuccess: (doc) => onUploaded(doc),
+    onError: (err) => setError(err instanceof Error ? err.message : "Upload failed"),
+  })
+  const uploading = uploadMutation.isPending
+
+  function handleFile(file: File) {
     setError(null)
     if (!ALLOWED_TYPES.has(file.type)) {
       setError("Please upload a JPEG, PNG, or WebP image.")
@@ -69,16 +66,7 @@ export function DocumentUploadField({
       setError("File must be under 8MB.")
       return
     }
-
-    setUploading(true)
-    try {
-      const doc = await uploadDriverDocument(getToken, type, file)
-      onUploaded(doc)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed")
-    } finally {
-      setUploading(false)
-    }
+    uploadMutation.mutate(file)
   }
 
   return (
@@ -131,7 +119,7 @@ export function DocumentUploadField({
             onChange={(e) => {
               const file = e.target.files?.[0]
               e.target.value = ""
-              if (file) void handleFile(file)
+              if (file) handleFile(file)
             }}
           />
         </div>
