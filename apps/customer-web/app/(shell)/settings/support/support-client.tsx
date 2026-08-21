@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronRight, Inbox, Plus } from "lucide-react"
@@ -21,39 +22,29 @@ import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
 import { NewSupportRequestForm } from "@/components/support/new-support-request-form"
 import { SupportStatusBadge } from "@/components/support-status-badge"
 import { useCustomerSession } from "@/lib/auth/customer-session"
-import { getStoredIdentity, listMySupportCases, type SupportCase } from "@/lib/support-client"
+import { getStoredIdentity, listMySupportCases } from "@/lib/support-client"
 import { CategoryIcon } from "@/lib/support-categories"
 
 export function SupportClient() {
   const router = useRouter()
   const session = useCustomerSession()
-
-  const [cases, setCases] = useState<SupportCase[]>([])
-  const [loadingCases, setLoadingCases] = useState(true)
   const [newRequestOpen, setNewRequestOpen] = useState(false)
 
-  const refreshCases = useCallback(async () => {
-    setLoadingCases(true)
-    try {
-      const items = await listMySupportCases()
-      setCases(items)
-    } finally {
-      setLoadingCases(false)
-    }
-  }, [])
+  // getStoredIdentity() guards its own localStorage access, so it's safe to
+  // call during render — memoized on session status so its result stays
+  // referentially stable across re-renders.
+  const hasIdentity = useMemo(
+    () => session.status === "anonymous" && Boolean(getStoredIdentity()),
+    [session.status],
+  )
 
-  useEffect(() => {
-    if (session.status !== "anonymous") return
-    // Hydrating from localStorage — an external system — is exactly what
-    // this effect is for; it can only run client-side, once, after the
-    // session hook resolves.
-    if (getStoredIdentity()) {
-      void refreshCases()
-    } else {
-      setLoadingCases(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.status])
+  const casesQuery = useQuery({
+    queryKey: ["customer-support-cases"],
+    queryFn: listMySupportCases,
+    enabled: hasIdentity,
+  })
+  const cases = casesQuery.data ?? []
+  const loadingCases = hasIdentity && casesQuery.isLoading
 
   function handleCreated(caseId: number) {
     setNewRequestOpen(false)
