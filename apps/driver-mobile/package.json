@@ -32,6 +32,7 @@
     "@maplibre/maplibre-react-native": "^10.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@sentry/react-native": "~7.2.0",
+    "@tanstack/react-query": "^5.101.4",
     "@workspace/geo": "*",
     "@workspace/ops-contracts": "*",
     "expo": "~54.0.36",
