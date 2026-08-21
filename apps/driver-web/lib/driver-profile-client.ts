@@ -63,20 +63,19 @@ export async function deleteDriverDocument(getToken: GetToken, id: number): Prom
   await authedFetch(getToken, `/v1/driver/documents/${id}`, { method: "DELETE" })
 }
 
-/** Fetches a document's bytes through the authenticated proxy and returns an
- * object URL for preview — never a raw Cloudinary/Blob URL, since the file
- * route requires a bearer header a plain <img src> can't send. Caller must
- * URL.revokeObjectURL() the result when done (e.g. on unmount). */
-export async function fetchDriverDocumentObjectUrl(
-  getToken: GetToken,
-  id: number,
-): Promise<string> {
+/** Fetches a document's bytes through the authenticated proxy — never a raw
+ * Cloudinary/Blob URL, since the file route requires a bearer header a plain
+ * <img src> can't send. Returns the Blob itself rather than an object URL:
+ * object URLs must not be cached (they're revoked on unmount, and a cached
+ * revoked URL would silently serve a broken image to another consumer of
+ * the same query key), so callers derive their own revocable URL from this
+ * cacheable Blob via `URL.createObjectURL`. */
+export async function fetchDriverDocumentBlob(getToken: GetToken, id: number): Promise<Blob> {
   const res = await authedFetch(getToken, `/v1/driver/documents/${id}/file`, {
     // A read-only preview fetch should never hang indefinitely — bound it
     // so a stalled request surfaces as a retryable error instead of an
     // infinite skeleton.
     signal: AbortSignal.timeout(15000),
   })
-  const blob = await res.blob()
-  return URL.createObjectURL(blob)
+  return res.blob()
 }

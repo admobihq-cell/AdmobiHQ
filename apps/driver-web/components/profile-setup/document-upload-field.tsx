@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { CheckCircle2, Upload } from "lucide-react"
@@ -9,7 +9,7 @@ import type { DriverDocumentDto, DriverDocumentType } from "@workspace/ops-contr
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import {
-  fetchDriverDocumentObjectUrl,
+  fetchDriverDocumentBlob,
   uploadDriverDocument,
 } from "@/lib/driver-profile-client"
 
@@ -34,15 +34,20 @@ export function DocumentUploadField({
   const [error, setError] = useState<string | null>(null)
 
   const previewQuery = useQuery({
-    queryKey: ["driver-document-preview", document?.id],
-    queryFn: () => fetchDriverDocumentObjectUrl(getToken, document!.id),
+    queryKey: ["driver-document-blob", document?.id],
+    queryFn: () => fetchDriverDocumentBlob(getToken, document!.id),
     enabled: Boolean(document),
   })
-  const previewUrl = previewQuery.data ?? null
+  const previewBlob = previewQuery.data ?? null
 
-  // Object URLs aren't cache-safe across query-key changes — revoke the
-  // previous one whenever the URL this component is showing changes or it
-  // unmounts.
+  // The Blob is cached (shared with submitted-info-view.tsx's DocumentThumb
+  // for the same document id); the object URL derived from it is not — it's
+  // revoked on unmount/change, so caching the URL string itself would let a
+  // revoked URL leak into another mounted consumer of the same cache entry.
+  const previewUrl = useMemo(
+    () => (previewBlob ? URL.createObjectURL(previewBlob) : null),
+    [previewBlob],
+  )
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)

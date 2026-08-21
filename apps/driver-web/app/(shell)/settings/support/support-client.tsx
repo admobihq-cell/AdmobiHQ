@@ -43,11 +43,12 @@ export function SupportClient() {
 
   // getStoredIdentity() guards its own localStorage access for SSR/private
   // browsing, so it's safe to call during render — memoized on session
-  // status so it's not re-parsed (and re-triggering the effect below) every
-  // render.
+  // status (and identityVersion, bumped after a first-time submission
+  // stores an identity) so it's not re-parsed on every render.
+  const [identityVersion, setIdentityVersion] = useState(0)
   const identity = useMemo(
     () => (session.status === "anonymous" ? getStoredIdentity() : null),
-    [session.status],
+    [session.status, identityVersion],
   )
 
   useEffect(() => {
@@ -62,7 +63,11 @@ export function SupportClient() {
     enabled: Boolean(identity),
   })
   const cases = casesQuery.data ?? []
-  const loadingCases = Boolean(identity) && casesQuery.isLoading
+  // Keep showing the skeleton while the session is still resolving (before
+  // `identity` can even be known) so a first-time-this-tab visitor doesn't
+  // flash the "no requests yet" empty state before the query has a chance
+  // to run.
+  const loadingCases = session.status === "loading" || (Boolean(identity) && casesQuery.isLoading)
 
   const createCaseMutation = useMutation({
     mutationFn: (input: Parameters<typeof createSupportCase>[0]) => createSupportCase(input),
@@ -70,6 +75,11 @@ export function SupportClient() {
       setSubject("")
       setMessage("")
       toast.success(`Request sent — case #${created.id}`)
+      // A first-time submitter has no `identity` yet, so casesQuery has been
+      // sitting disabled — createSupportCase persists the identity to
+      // localStorage as a side effect, so bump the version to re-derive
+      // `identity` and flip the query enabled, in addition to invalidating.
+      setIdentityVersion((v) => v + 1)
       void queryClient.invalidateQueries({ queryKey: ["driver-support-cases"] })
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Couldn't send your request."),

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useAuth } from "@clerk/nextjs"
 import { ArrowLeft } from "lucide-react"
@@ -106,6 +107,7 @@ function DocumentPreview({
 
 export function DriverApplicationDetailView({ applicationId }: { applicationId: number }) {
   const client = useOpsClient()
+  const queryClient = useQueryClient()
   const [data, setData] = useState<DriverProfileDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [deciding, setDeciding] = useState<"rejected" | "changes_requested" | "unapprove" | null>(
@@ -147,6 +149,12 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
       toast.success(successMessage)
       setDeciding(null)
       setReason("")
+      // This detail view predates the TanStack Query migration and wasn't
+      // itself converted, but the list at /driver-applications now caches
+      // under ["ops-driver-applications"] (see driver-applications-view.tsx)
+      // — without this, a review decision here would leave that list
+      // showing the pre-decision status for up to staleTime.
+      void queryClient.invalidateQueries({ queryKey: ["ops-driver-applications"] })
       await load()
     } catch (e) {
       toast.error(formatApiError(e))
