@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { DriverDocumentDto, DriverProfileDto } from "@workspace/ops-contracts"
 
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
 
-import { fetchDriverDocumentObjectUrl, type GetToken } from "@/lib/driver-profile-client"
+import { fetchDriverDocumentBlob, type GetToken } from "@/lib/driver-profile-client"
 
 const DOCUMENT_LABELS: Record<string, string> = {
   national_id: "National ID",
@@ -37,12 +37,26 @@ function Field({ label, value }: { label: string; value: string }) {
 
 function DocumentThumb({ doc, getToken }: { doc: DriverDocumentDto; getToken: GetToken }) {
   const previewQuery = useQuery({
-    queryKey: ["driver-document-preview", doc.id],
-    queryFn: () => fetchDriverDocumentObjectUrl(getToken, doc.id),
+    queryKey: ["driver-document-blob", doc.id],
+    queryFn: () => fetchDriverDocumentBlob(getToken, doc.id),
   })
-  const url = previewQuery.data ?? null
+  const previewBlob = previewQuery.data ?? null
   const failed = previewQuery.isError
 
+  useEffect(() => {
+    if (previewQuery.isError) {
+      console.error(
+        "[SubmittedInfoView] failed to load document preview:",
+        previewQuery.error,
+      )
+    }
+  }, [previewQuery.isError, previewQuery.error])
+
+  // The Blob is cached (shared with document-upload-field.tsx's preview for
+  // the same document id); the object URL derived from it is not — it's
+  // revoked on unmount/change, so caching the URL string itself would let a
+  // revoked URL leak into another mounted consumer of the same cache entry.
+  const url = useMemo(() => (previewBlob ? URL.createObjectURL(previewBlob) : null), [previewBlob])
   useEffect(() => {
     return () => {
       if (url) URL.revokeObjectURL(url)

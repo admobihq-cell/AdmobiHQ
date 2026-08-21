@@ -8,7 +8,6 @@ import { useAuth } from "@clerk/nextjs"
 import type {
   NotYetInvitedDto,
   OpsRoleDto,
-  TeamDto,
   TeamInvitationDto,
   TeamMemberDto,
   TeamInviteInput,
@@ -75,6 +74,10 @@ function sortHeader(label: string) {
     )
   }
 }
+
+// Stable empty-array reference so the `roles` fallback doesn't retrigger the
+// seeding effect below on every render while rolesQuery is still loading.
+const EMPTY_ROLES: OpsRoleDto[] = []
 
 /** Select values encode the tier/role choice as a single string: "admin" or "member:<roleId>". */
 const ADMIN_VALUE = "admin"
@@ -197,7 +200,7 @@ export function TeamView() {
     queryKey: ["ops-roles"],
     queryFn: () => client.roles.list(),
   })
-  const roles = rolesQuery.data?.items ?? []
+  const roles = rolesQuery.data?.items ?? EMPTY_ROLES
 
   // Seeds the invite dialog's default role once roles arrive, without
   // clobbering an in-progress selection.
