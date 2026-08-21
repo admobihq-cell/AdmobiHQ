@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react"
 import { useFocusEffect, useRouter } from "expo-router"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ActivityIndicator,
   Pressable,
@@ -16,12 +16,7 @@ import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { ChevronRight, HelpCircle } from "@/components/icons"
 import { CategoryIcon, SUPPORT_CATEGORIES, SupportStatusPill } from "@/components/support/support-ui"
 import { useDriverSession } from "@/lib/auth/use-driver-session"
-import {
-  createSupportCase,
-  getStoredIdentity,
-  listMySupportCases,
-  type SupportCase,
-} from "@/lib/support"
+import { createSupportCase, getStoredIdentity, listMySupportCases } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 export default function SupportScreen() {
@@ -54,11 +49,11 @@ export default function SupportScreen() {
   const loadingCases = casesQuery.isLoading
   const refreshing = casesQuery.isRefetching
 
+  const refetchCases = casesQuery.refetch
   useFocusEffect(
     useCallback(() => {
-      void casesQuery.refetch()
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+      void refetchCases()
+    }, [refetchCases]),
   )
 
   const onRefresh = () => void casesQuery.refetch()
