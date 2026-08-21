@@ -2,7 +2,8 @@ import { useAuth, useUser } from "@clerk/clerk-expo"
 import Constants from "expo-constants"
 import { useRouter } from "expo-router"
 import * as Updates from "expo-updates"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { PlatformFlagDto, PlatformFlagKey } from "@workspace/ops-contracts"
@@ -59,38 +60,33 @@ export default function ProfileScreen() {
   const version = Constants.expoConfig?.version ?? "0.0.1"
 
   const opsClient = useOpsClient()
-  const [flags, setFlags] = useState<PlatformFlagDto[] | null>(null)
-  const [pendingFlagKey, setPendingFlagKey] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    let cancelled = false
-    opsClient.flags
-      .list()
-      .then((res) => {
-        if (!cancelled) setFlags(res.items)
-      })
-      .catch(() => {
-        // Best-effort — profile still works if flags fail to load.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [opsClient])
+  const flagsQuery = useQuery({
+    queryKey: ["platform-flags"],
+    queryFn: () => opsClient.flags.list(),
+  })
+  const flags = flagsQuery.data?.items ?? null
 
-  async function toggleFlag(flag: PlatformFlagDto) {
-    setPendingFlagKey(flag.key)
-    try {
-      const updated = await opsClient.flags.update({
+  const toggleFlagMutation = useMutation({
+    mutationFn: (flag: PlatformFlagDto) =>
+      opsClient.flags.update({
         key: flag.key as PlatformFlagKey,
         enabled: !flag.enabled,
-      })
-      setFlags((prev) => prev?.map((f) => (f.key === updated.key ? updated : f)) ?? prev)
-    } catch {
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["platform-flags"] })
+    },
+    onError: () => {
       Alert.alert("Couldn't update flag", "Check your connection and try again.")
-    } finally {
-      setPendingFlagKey(null)
-    }
+    },
+  })
+  function toggleFlag(flag: PlatformFlagDto) {
+    toggleFlagMutation.mutate(flag)
   }
+  const pendingFlagKey = toggleFlagMutation.isPending
+    ? (toggleFlagMutation.variables?.key ?? null)
+    : null
 
   const [checkingUpdate, setCheckingUpdate] = useState(false)
 
