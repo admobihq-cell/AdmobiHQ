@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { Inbox, Loader2, RefreshCw, Search } from "lucide-react"
 
@@ -37,14 +38,6 @@ import { StatusBadge } from "@/components/status-badge"
 import { SupportCategoryIcon } from "@/components/support-category-icon"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
-
-type Paginated<T> = {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
 
 const ALL = "__all__"
 
@@ -166,53 +159,47 @@ const columns: ColumnDef<SupportCaseDto, any>[] = [
 
 export function SupportView() {
   const client = useOpsClient()
-  const [data, setData] = useState<Paginated<SupportCaseDto> | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [fetchError, setFetchError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [status, setStatus] = useState<string>(ALL)
   const [category, setCategory] = useState<string>(ALL)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const fetchSeq = useRef(0)
   const sort = sorting[0]
   const sortBy = sort?.id === "status" ? "status" : "created_at"
   const sortDir = sort?.desc === false ? "asc" : "desc"
 
-  const refresh = useCallback(async () => {
-    const seq = ++fetchSeq.current
-    setLoading(true)
-    setFetchError(null)
-    try {
-      const result = await client.support.list({
+  // Debounce the search box before it feeds the query key, same 300ms the
+  // original hand-rolled refresh() used — an empty search applies instantly.
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(search), search ? 300 : 0)
+    return () => clearTimeout(timeout)
+  }, [search])
+
+  const supportQuery = useQuery({
+    queryKey: ["ops-support", { search: debouncedSearch, status, category, page, pageSize, sortBy, sortDir }],
+    queryFn: () =>
+      client.support.list({
         page,
         pageSize,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         status: status === ALL ? undefined : status,
         category: category === ALL ? undefined : category,
         sortBy,
         sortDir,
-      })
-      if (seq !== fetchSeq.current) return
-      setData(result)
-    } catch (e) {
-      if (seq !== fetchSeq.current) return
-      setFetchError(formatApiError(e))
-    } finally {
-      if (seq === fetchSeq.current) setLoading(false)
-    }
-  }, [client, search, status, category, page, pageSize, sortBy, sortDir])
-
-  useEffect(() => {
-    const timeout = setTimeout(() => void refresh(), search ? 300 : 0)
-    return () => clearTimeout(timeout)
-  }, [refresh, search])
+      }),
+    placeholderData: keepPreviousData,
+  })
+  const data = supportQuery.data ?? null
+  const loading = supportQuery.isLoading
+  const fetchError = supportQuery.isError ? formatApiError(supportQuery.error) : null
+  const refresh = () => supportQuery.refetch()
 
   useEffect(() => {
     setPage(1)
-  }, [search, status, category, pageSize, sortBy, sortDir])
+  }, [debouncedSearch, status, category, pageSize, sortBy, sortDir])
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -278,7 +265,6 @@ export function SupportView() {
         <ApiErrorBanner
           message={fetchError}
           onRetry={() => void refresh()}
-          onDismiss={() => setFetchError(null)}
         />
       ) : null}
 
