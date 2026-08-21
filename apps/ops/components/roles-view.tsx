@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Check, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { OPS_PERMISSIONS, type OpsPermission, type OpsRoleDto } from "@workspace/ops-contracts"
 
 import { formatApiError } from "@workspace/ops-api-client"
@@ -153,29 +154,20 @@ function RolesTableSkeleton() {
 
 export function RolesView() {
   const client = useOpsClient()
-  const [roles, setRoles] = useState<OpsRoleDto[] | null>(null)
+  const queryClient = useQueryClient()
   const [edits, setEdits] = useState<Record<number, RoleEdit>>({})
-  const [savingId, setSavingId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<OpsRoleDto | null>(null)
-  const [deleting, setDeleting] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [newRoleName, setNewRoleName] = useState("")
   const [newRolePermissions, setNewRolePermissions] = useState<OpsPermission[]>([])
-  const [creating, setCreating] = useState(false)
 
-  function reload() {
-    client.roles
-      .list()
-      .then((res) => setRoles(res.items))
-      .catch((err) => toast.error(formatApiError(err)))
-  }
+  const rolesQuery = useQuery({
+    queryKey: ["ops-roles"],
+    queryFn: () => client.roles.list(),
+  })
+  const roles = rolesQuery.data?.items ?? null
 
-  useEffect(() => {
-    reload()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client])
-
-  // Seeds edits for new roles without clobbering in-progress edits on reload.
+  // Seeds edits for new roles without clobbering in-progress edits on refetch.
   useEffect(() => {
     if (!roles) return
     setEdits((prev) => {
@@ -212,53 +204,53 @@ export function RolesView() {
     setNewRolePermissions([])
   }
 
-  async function handleSave(role: OpsRoleDto) {
+  const saveMutation = useMutation({
+    mutationFn: (role: OpsRoleDto) => {
+      const edit = edits[role.id]!
+      return client.roles.update(role.id, { name: edit.name.trim(), permissions: edit.permissions })
+    },
+    onSuccess: (_result, role) => {
+      toast.success(`Updated "${edits[role.id]!.name.trim()}"`)
+      void queryClient.invalidateQueries({ queryKey: ["ops-roles"] })
+    },
+    onError: (err) => toast.error(formatApiError(err)),
+  })
+  function handleSave(role: OpsRoleDto) {
     const edit = edits[role.id]
     if (!edit || !edit.name.trim()) return
-    setSavingId(role.id)
-    try {
-      await client.roles.update(role.id, {
-        name: edit.name.trim(),
-        permissions: edit.permissions,
-      })
-      toast.success(`Updated "${edit.name.trim()}"`)
-      reload()
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setSavingId(null)
-    }
+    saveMutation.mutate(role)
   }
+  const savingId = saveMutation.isPending ? saveMutation.variables?.id ?? null : null
 
-  async function handleDelete(role: OpsRoleDto) {
-    setDeleting(true)
-    try {
-      await client.roles.delete(role.id)
+  const deleteMutation = useMutation({
+    mutationFn: (role: OpsRoleDto) => client.roles.delete(role.id),
+    onSuccess: (_result, role) => {
       toast.success(`Deleted "${role.name}"`)
       setDeleteTarget(null)
-      reload()
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setDeleting(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["ops-roles"] })
+    },
+    onError: (err) => toast.error(formatApiError(err)),
+  })
+  function handleDelete(role: OpsRoleDto) {
+    deleteMutation.mutate(role)
   }
+  const deleting = deleteMutation.isPending
 
-  async function handleCreate() {
-    if (!newRoleName.trim()) return
-    setCreating(true)
-    try {
-      await client.roles.create({ name: newRoleName.trim(), permissions: newRolePermissions })
+  const createMutation = useMutation({
+    mutationFn: () => client.roles.create({ name: newRoleName.trim(), permissions: newRolePermissions }),
+    onSuccess: () => {
       toast.success(`Created "${newRoleName.trim()}"`)
       resetNewRole()
       setCreateOpen(false)
-      reload()
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setCreating(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["ops-roles"] })
+    },
+    onError: (err) => toast.error(formatApiError(err)),
+  })
+  function handleCreate() {
+    if (!newRoleName.trim()) return
+    createMutation.mutate()
   }
+  const creating = createMutation.isPending
 
   const permissionColumns: ColumnDef<OpsPermission, any>[] = roles
     ? [
@@ -318,7 +310,7 @@ export function RolesView() {
                       disabled={savingId === role.id || !edit?.name.trim()}
                       loading={savingId === role.id}
                       loadingText="Saving…"
-                      onClick={() => void handleSave(role)}
+                      onClick={() => handleSave(role)}
                     >
                       Save
                     </Button>
@@ -429,7 +421,7 @@ export function RolesView() {
               disabled={!newRoleName.trim() || creating}
               loading={creating}
               loadingText="Creating…"
-              onClick={() => void handleCreate()}
+              onClick={handleCreate}
             >
               <Plus aria-hidden />
               Create role
@@ -450,7 +442,7 @@ export function RolesView() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => deleteTarget && void handleDelete(deleteTarget)}
+              onClick={() => deleteTarget && handleDelete(deleteTarget)}
             >
               Delete
             </AlertDialogAction>
