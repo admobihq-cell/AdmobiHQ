@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Stack, useLocalSearchParams } from "expo-router"
 import {
   ActivityIndicator,
@@ -26,48 +27,31 @@ export default function SupportCaseScreen() {
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
 
-  const [subject, setSubject] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
-  const [category, setCategory] = useState<string | null>(null)
-  const [messages, setMessages] = useState<SupportMessage[]>([])
-  const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState("")
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const mountedRef = useRef(true)
+  const [replyError, setReplyError] = useState<string | null>(null)
   const screenRef = useRef<ViewType>(null)
   const [keyboardOffset, setKeyboardOffset] = useState(0)
 
-  const load = useCallback(async () => {
-    if (!Number.isFinite(caseId)) return
-    try {
-      const data = await getSupportCase(caseId)
-      if (!mountedRef.current) return
-      if (data) {
-        setSubject(data.subject)
-        setStatus(data.status)
-        setCategory(data.category)
-        setMessages(data.messages)
-      } else {
-        setError("This request isn't available on this device.")
-      }
-    } catch {
-      if (!mountedRef.current) return
-      setError("Couldn't load this request. Check your connection.")
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }, [caseId])
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    mountedRef.current = true
-    void load()
-    const interval = setInterval(() => void load(), POLL_INTERVAL_MS)
-    return () => {
-      mountedRef.current = false
-      clearInterval(interval)
-    }
-  }, [load])
+  const caseQuery = useQuery({
+    queryKey: ["driver-support-case", caseId],
+    queryFn: () => getSupportCase(caseId),
+    enabled: Number.isFinite(caseId),
+    refetchInterval: POLL_INTERVAL_MS,
+  })
+  const caseData = caseQuery.data
+  const subject = caseData?.subject ?? null
+  const status = caseData?.status ?? null
+  const category = caseData?.category ?? null
+  const messages = caseData?.messages ?? []
+  const loading = caseQuery.isLoading
+  const loadError = caseQuery.isError
+    ? "Couldn't load this request. Check your connection."
+    : caseQuery.isSuccess && caseData === null
+      ? "This request isn't available on this device."
+      : null
+  const error = replyError ?? loadError
 
   const scrollRef = useRef<ScrollView>(null)
 
@@ -154,19 +138,21 @@ export default function SupportCaseScreen() {
     errorText: { ...typography.bodySm, color: c.danger, padding: spacing.lg },
   }))
 
-  async function handleSend() {
-    if (sending || !reply.trim()) return
-    setSending(true)
-    try {
-      await replyToSupportCase(caseId, reply.trim())
+  const replyMutation = useMutation({
+    mutationFn: (body: string) => replyToSupportCase(caseId, body),
+    onSuccess: () => {
       setReply("")
-      await load()
+      setReplyError(null)
+      void queryClient.invalidateQueries({ queryKey: ["driver-support-case", caseId] })
       scrollRef.current?.scrollToEnd({ animated: true })
-    } catch {
-      setError("Couldn't send your reply. Try again.")
-    } finally {
-      setSending(false)
-    }
+    },
+    onError: () => setReplyError("Couldn't send your reply. Try again."),
+  })
+  const sending = replyMutation.isPending
+
+  function handleSend() {
+    if (sending || !reply.trim()) return
+    replyMutation.mutate(reply.trim())
   }
 
   return (
