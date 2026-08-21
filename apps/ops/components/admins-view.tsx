@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import type { TeamDto, TeamMemberDto } from "@workspace/ops-contracts"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import type { TeamMemberDto } from "@workspace/ops-contracts"
 
 import { formatApiError } from "@workspace/ops-api-client"
 import { Badge } from "@workspace/ui/components/badge"
@@ -99,16 +100,14 @@ const columns: ColumnDef<TeamMemberDto, any>[] = [
  * which stay exclusive to /team. */
 export function AdminsView() {
   const client = useOpsClient()
-  const [team, setTeam] = useState<TeamDto | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
 
-  useEffect(() => {
-    client.team
-      .list()
-      .then(setTeam)
-      .catch((err) => setError(formatApiError(err)))
-  }, [client])
+  const teamQuery = useQuery({
+    queryKey: ["ops-team"],
+    queryFn: () => client.team.list(),
+  })
+  const team = teamQuery.data ?? null
+  const error = teamQuery.isError ? formatApiError(teamQuery.error) : null
 
   return (
     <Card className="overflow-hidden p-0 shadow-none">
