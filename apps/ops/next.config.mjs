@@ -18,6 +18,7 @@ const nextConfig = {
     "@workspace/ops-contracts",
     "@workspace/ops-api-client",
     "@workspace/geo",
+    "@workspace/query-client",
   ],
   // Monorepo: stop Turbopack from using C:\Users\victo\ as the workspace root
   turbopack: {

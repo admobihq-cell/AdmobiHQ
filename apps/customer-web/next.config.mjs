@@ -15,6 +15,7 @@ const nextConfig = {
     "@workspace/ui",
     "@workspace/sentry-config",
     "@workspace/geo",
+    "@workspace/query-client",
   ],
   turbopack: {
     root: repoRoot,

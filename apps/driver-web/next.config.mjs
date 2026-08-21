@@ -17,6 +17,7 @@ const nextConfig = {
     "@workspace/ops-contracts",
     "@workspace/ops-api-client",
     "@workspace/geo",
+    "@workspace/query-client",
   ],
   turbopack: {
     root: repoRoot,
