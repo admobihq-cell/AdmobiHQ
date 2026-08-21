@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { ChevronRight, Inbox } from "lucide-react"
 import { toast } from "sonner"
@@ -25,15 +26,12 @@ import {
   createSupportCase,
   getStoredIdentity,
   listMySupportCases,
-  type SupportCase,
 } from "@/lib/support-client"
 import { CategoryIcon, SUPPORT_CATEGORIES } from "@/lib/support-categories"
 
 export function SupportClient() {
   const session = useDriverSession()
-
-  const [cases, setCases] = useState<SupportCase[]>([])
-  const [loadingCases, setLoadingCases] = useState(true)
+  const queryClient = useQueryClient()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -42,61 +40,57 @@ export function SupportClient() {
   )
   const [subject, setSubject] = useState("")
   const [message, setMessage] = useState("")
-  const [submitting, setSubmitting] = useState(false)
+
+  // getStoredIdentity() guards its own localStorage access for SSR/private
+  // browsing, so it's safe to call during render — memoized on session
+  // status so it's not re-parsed (and re-triggering the effect below) every
+  // render.
+  const identity = useMemo(
+    () => (session.status === "anonymous" ? getStoredIdentity() : null),
+    [session.status],
+  )
 
   useEffect(() => {
-    if (session.status !== "anonymous") return
-    // Hydrating form defaults from localStorage — an external system — is
-    // exactly what this effect is for; it can only run client-side, once,
-    // after the session hook resolves.
-    const identity = getStoredIdentity()
-    if (identity) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setName(identity.name)
-      setEmail(identity.email)
-      void refreshCases()
-    } else {
-      setLoadingCases(false)
-    }
-  }, [session.status])
+    if (!identity) return
+    setName(identity.name)
+    setEmail(identity.email)
+  }, [identity])
 
-  async function refreshCases() {
-    setLoadingCases(true)
-    try {
-      const items = await listMySupportCases()
-      setCases(items)
-    } finally {
-      setLoadingCases(false)
-    }
-  }
+  const casesQuery = useQuery({
+    queryKey: ["driver-support-cases"],
+    queryFn: listMySupportCases,
+    enabled: Boolean(identity),
+  })
+  const cases = casesQuery.data ?? []
+  const loadingCases = Boolean(identity) && casesQuery.isLoading
 
-  async function handleSubmit(e: React.FormEvent) {
+  const createCaseMutation = useMutation({
+    mutationFn: (input: Parameters<typeof createSupportCase>[0]) => createSupportCase(input),
+    onSuccess: (created) => {
+      setSubject("")
+      setMessage("")
+      toast.success(`Request sent — case #${created.id}`)
+      void queryClient.invalidateQueries({ queryKey: ["driver-support-cases"] })
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Couldn't send your request."),
+  })
+  const submitting = createCaseMutation.isPending
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (submitting || session.status !== "anonymous") return
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
       toast.error("Fill in your name, email, subject, and message.")
       return
     }
-
-    setSubmitting(true)
-    try {
-      const created = await createSupportCase({
-        contact_name: name.trim(),
-        contact_email: email.trim(),
-        anonymous_device_id: session.deviceId,
-        category,
-        subject: subject.trim(),
-        message: message.trim(),
-      })
-      setSubject("")
-      setMessage("")
-      toast.success(`Request sent — case #${created.id}`)
-      await refreshCases()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't send your request.")
-    } finally {
-      setSubmitting(false)
-    }
+    createCaseMutation.mutate({
+      contact_name: name.trim(),
+      contact_email: email.trim(),
+      anonymous_device_id: session.deviceId,
+      category,
+      subject: subject.trim(),
+      message: message.trim(),
+    })
   }
 
   return (
