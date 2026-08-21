@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { Bell } from "lucide-react"
 import type { DriverNotificationDto } from "@workspace/ops-contracts"
@@ -34,20 +35,19 @@ const TYPE_DOT: Record<string, string> = {
  * would be overkill. Opening the dropdown marks everything read. */
 export function NotificationBell() {
   const { getToken } = useAuth()
-  const [notifications, setNotifications] = useState<DriverNotificationDto[]>([])
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 
-  const load = useCallback(() => {
-    fetchDriverNotifications(getToken)
-      .then(setNotifications)
-      .catch(() => {})
-  }, [getToken])
+  const notificationsQuery = useQuery({
+    queryKey: ["driver-notifications"],
+    queryFn: () => fetchDriverNotifications(getToken),
+    refetchInterval: POLL_INTERVAL_MS,
+  })
+  const notifications = notificationsQuery.data ?? []
 
-  useEffect(() => {
-    load()
-    const interval = setInterval(load, POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [load])
+  const markReadMutation = useMutation({
+    mutationFn: () => markDriverNotificationsRead(getToken),
+  })
 
   const unreadCount = notifications.filter((n) => !n.read_at).length
 
@@ -55,8 +55,10 @@ export function NotificationBell() {
     setOpen(next)
     if (next && unreadCount > 0) {
       const readAt = new Date().toISOString()
-      setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? readAt })))
-      markDriverNotificationsRead(getToken).catch(() => {})
+      queryClient.setQueryData<DriverNotificationDto[]>(["driver-notifications"], (prev) =>
+        prev?.map((n) => ({ ...n, read_at: n.read_at ?? readAt })) ?? prev,
+      )
+      markReadMutation.mutate()
     }
   }
 
