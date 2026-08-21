@@ -13,7 +13,6 @@ import {
   ACTIVITY_CATEGORY_ORDER,
   auditEventToActivityItem,
   type ActivityCategory,
-  type ActivityItem,
 } from "@/lib/activity-feed"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
