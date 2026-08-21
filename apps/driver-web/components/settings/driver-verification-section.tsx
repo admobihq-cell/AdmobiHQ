@@ -1,9 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import { AlertCircle, CheckCircle2, ChevronDown, Clock, ShieldQuestion, X } from "lucide-react"
-import type { DriverProfileDto } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
@@ -62,24 +62,17 @@ const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
 
 export function DriverVerificationSection() {
   const { getToken } = useAuth()
-  const [profile, setProfile] = useState<DriverProfileDto | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [stepperOpen, setStepperOpen] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
 
-  const load = useCallback(() => {
-    setLoading(true)
-    fetchDriverProfileClient(getToken)
-      .then(setProfile)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [getToken])
+  const profileQuery = useQuery({
+    queryKey: ["driver-profile"],
+    queryFn: () => fetchDriverProfileClient(getToken),
+  })
+  const profile = profileQuery.data ?? null
 
-  useEffect(() => {
-    load()
-  }, [load])
-
-  if (loading || !profile) {
+  if (profileQuery.isLoading || !profile) {
     return <DriverVerificationSectionSkeleton />
   }
 
@@ -169,7 +162,7 @@ export function DriverVerificationSection() {
             <ProfileSetupStepper
               initialProfile={profile}
               onSubmitted={(updated) => {
-                setProfile(updated)
+                queryClient.setQueryData(["driver-profile"], updated)
                 setStepperOpen(false)
               }}
             />
