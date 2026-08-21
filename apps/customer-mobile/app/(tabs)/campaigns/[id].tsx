@@ -1,5 +1,6 @@
-import { useCallback, useState } from "react"
+import { useCallback } from "react"
 import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router"
+import { useQuery } from "@tanstack/react-query"
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -28,23 +29,18 @@ export default function CampaignDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
-  const [campaign, setCampaign] = useState<Campaign | null>(null)
-  const [loading, setLoading] = useState(true)
+  const campaignQuery = useQuery({
+    queryKey: ["campaign", id],
+    queryFn: () => getCampaignById(id),
+  })
+  const campaign = campaignQuery.data ?? null
+  const loading = campaignQuery.isLoading
 
+  const refetchCampaign = campaignQuery.refetch
   useFocusEffect(
     useCallback(() => {
-      let mounted = true
-      setLoading(true)
-      void getCampaignById(id).then((result) => {
-        if (mounted) {
-          setCampaign(result)
-          setLoading(false)
-        }
-      })
-      return () => {
-        mounted = false
-      }
-    }, [id]),
+      void refetchCampaign()
+    }, [refetchCampaign]),
   )
 
   const styles = useThemedStyles((c) => ({
