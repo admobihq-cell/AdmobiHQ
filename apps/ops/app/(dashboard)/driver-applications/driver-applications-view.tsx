@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { toast } from "sonner"
 import type { DriverApplicationListItemDto, PaginatedResponse } from "@workspace/ops-contracts"
@@ -93,42 +94,42 @@ export function DriverApplicationsView({
   initialData: PaginatedResponse<DriverApplicationListItemDto>
 }) {
   const client = useOpsClient()
-  const [data, setData] = useState(initialData)
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>("all")
+  const [page, setPage] = useState(initialData.page)
   const [pageSize, setPageSize] = useState(initialData.pageSize ?? 25)
-  const [loading, setLoading] = useState(false)
 
-  const load = useCallback(
-    async (page: number, statusFilter: string, size: number) => {
-      setLoading(true)
-      try {
-        const result = await client.driverApplications.list({
-          page,
-          pageSize: size,
-          status: statusFilter === "all" ? undefined : statusFilter,
-        })
-        setData(result)
-      } catch (e) {
-        toast.error(formatApiError(e))
-      } finally {
-        setLoading(false)
-      }
-    },
-    [client],
-  )
+  const applicationsQuery = useQuery({
+    queryKey: ["ops-driver-applications", { page, pageSize, status }],
+    queryFn: () =>
+      client.driverApplications.list({
+        page,
+        pageSize,
+        status: status === "all" ? undefined : status,
+      }),
+    initialData:
+      page === initialData.page && pageSize === (initialData.pageSize ?? 25) && status === "all"
+        ? initialData
+        : undefined,
+    placeholderData: keepPreviousData,
+  })
+  const data = applicationsQuery.data ?? initialData
+  const loading = applicationsQuery.isLoading
 
   useEffect(() => {
-    if (status === "all" && data.page === initialData.page) return
-    void load(1, status, pageSize)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+    if (applicationsQuery.isError) toast.error(formatApiError(applicationsQuery.error))
+  }, [applicationsQuery.isError, applicationsQuery.error])
+
+  function changeStatus(next: (typeof STATUS_FILTERS)[number]) {
+    setStatus(next)
+    setPage(1)
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHero title={DRIVER_APPLICATIONS_PAGE.title} description={DRIVER_APPLICATIONS_PAGE.description} />
 
       <div className="flex items-center gap-2">
-        <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+        <Select value={status} onValueChange={(v) => changeStatus(v as typeof status)}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -157,11 +158,11 @@ export function DriverApplicationsView({
           page={data.page}
           totalPages={data.totalPages}
           total={data.total}
-          onPageChange={(page) => void load(page, status, pageSize)}
+          onPageChange={setPage}
           pageSize={pageSize}
           onPageSizeChange={(size) => {
             setPageSize(size)
-            void load(1, status, size)
+            setPage(1)
           }}
         />
       ) : null}
