@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Send } from "@/components/icons"
 import { CategoryIcon, SupportStatusPill } from "@/components/support/support-ui"
-import { getSupportCase, replyToSupportCase, type SupportMessage } from "@/lib/support"
+import { getSupportCase, replyToSupportCase } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const POLL_INTERVAL_MS = 15_000
