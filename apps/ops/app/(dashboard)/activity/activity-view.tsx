@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { History, Loader2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -32,14 +33,6 @@ import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime, truncate } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
-
-type Paginated<T> = {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
 
 const ALL = "__all__"
 
@@ -102,8 +95,6 @@ const columns: ColumnDef<AuditEventDto, any>[] = [
 
 export function ActivityView() {
   const client = useOpsClient()
-  const [data, setData] = useState<Paginated<AuditEventDto> | null>(null)
-  const [loading, setLoading] = useState(true)
   const [entityType, setEntityType] = useState<string>(ALL)
   const [action, setAction] = useState<string>(ALL)
   const [app, setApp] = useState<string>(ALL)
@@ -111,14 +102,12 @@ export function ActivityView() {
   const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const fetchSeq = useRef(0)
   const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
 
-  const refresh = useCallback(async () => {
-    const seq = ++fetchSeq.current
-    setLoading(true)
-    try {
-      const result = await client.audit.list({
+  const activityQuery = useQuery({
+    queryKey: ["ops-activity", { entityType, action, app, page, pageSize, sortDir }],
+    queryFn: () =>
+      client.audit.list({
         page,
         pageSize,
         entity_type: entityType === ALL ? undefined : entityType,
@@ -126,20 +115,16 @@ export function ActivityView() {
         app: app === ALL ? undefined : app,
         sortBy: "created_at",
         sortDir,
-      })
-      if (seq !== fetchSeq.current) return
-      setData(result)
-    } catch (e) {
-      if (seq !== fetchSeq.current) return
-      toast.error(formatApiError(e))
-    } finally {
-      if (seq === fetchSeq.current) setLoading(false)
-    }
-  }, [client, entityType, action, app, page, pageSize, sortDir])
+      }),
+    placeholderData: keepPreviousData,
+  })
+  const data = activityQuery.data ?? null
+  const loading = activityQuery.isLoading
+  const refresh = () => activityQuery.refetch()
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    if (activityQuery.isError) toast.error(formatApiError(activityQuery.error))
+  }, [activityQuery.isError, activityQuery.error])
 
   useEffect(() => {
     setPage(1)
