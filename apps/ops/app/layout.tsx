@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { cookies } from "next/headers"
 
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
+import { QueryProvider } from "@workspace/query-client"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
@@ -61,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             afterSignOutUrl="/"
           >
             <TooltipProvider>
-              {children}
+              <QueryProvider>{children}</QueryProvider>
               <Toaster richColors position="top-right" />
             </TooltipProvider>
           </ClerkProvider>
