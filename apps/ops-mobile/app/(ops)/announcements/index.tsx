@@ -138,6 +138,7 @@ export default function AnnouncementsScreen() {
   const queryClient = useQueryClient()
   const [resendTarget, setResendTarget] = useState<AnnouncementDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AnnouncementDto | null>(null)
+  const [errorDismissed, setErrorDismissed] = useState(false)
 
   const query = useInfiniteQuery({
     queryKey: ["announcements", "list"],
@@ -152,11 +153,15 @@ export default function AnnouncementsScreen() {
     () => query.data?.pages.flatMap((page) => page.items) ?? [],
     [query.data],
   )
-  const error = query.isError ? formatOpsError(query.error, API_URL) : null
+  const error =
+    query.isError && !errorDismissed ? formatOpsError(query.error, API_URL) : null
   const loading = query.isPending
   const refreshing = query.isRefetching && !query.isFetchingNextPage
 
-  const onRefresh = () => void query.refetch()
+  const onRefresh = () => {
+    setErrorDismissed(false)
+    void query.refetch()
+  }
 
   const onEndReached = () => {
     if (!query.isFetchingNextPage && query.hasNextPage) void query.fetchNextPage()
@@ -223,7 +228,7 @@ export default function AnnouncementsScreen() {
         <ApiErrorBanner
           message={error}
           onRetry={onRefresh}
-          onDismiss={() => setError(null)}
+          onDismiss={() => setErrorDismissed(true)}
         />
       ) : null}
     </View>

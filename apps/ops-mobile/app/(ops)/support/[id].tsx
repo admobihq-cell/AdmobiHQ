@@ -18,7 +18,6 @@ import {
   formatLabel,
   SUPPORT_PRIORITIES,
   SUPPORT_STATUSES,
-  type SupportCaseDetailDto,
 } from "@workspace/ops-contracts"
 
 import { Call, CheckboxOff, CheckboxOn, Lock, Send, UserCircle, X } from "@/components/icons"
