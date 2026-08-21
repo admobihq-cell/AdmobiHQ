@@ -8,6 +8,7 @@ import { CookieConsentBanner } from "@workspace/ui/components/cookie-consent-ban
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { QueryProvider } from "@workspace/query-client"
 import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
 import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
 import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
@@ -72,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers>
           <ThemeProvider>
             <TooltipProvider>
-              {children}
+              <QueryProvider>{children}</QueryProvider>
               <Toaster richColors position="top-right" />
             </TooltipProvider>
           </ThemeProvider>
