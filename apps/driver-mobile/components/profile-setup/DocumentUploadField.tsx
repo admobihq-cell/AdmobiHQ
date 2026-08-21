@@ -1,5 +1,6 @@
 import * as ImagePicker from "expo-image-picker"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/clerk-expo"
 import { ActivityIndicator, Image, Pressable, Text, View } from "react-native"
 import type { DriverDocumentDto, DriverDocumentType } from "@workspace/ops-contracts"
@@ -35,9 +36,15 @@ export function DocumentUploadField({
   onUploaded: (doc: DriverDocumentDto) => void
 }) {
   const { getToken } = useAuth()
-  const [previewUri, setPreviewUri] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const previewQuery = useQuery({
+    queryKey: ["driver-document-preview", document?.id],
+    queryFn: () => fetchAsDataUri(getToken, driverDocumentFileUrl(document!.id)),
+    enabled: Boolean(document),
+  })
+  const previewUri = previewQuery.data ?? null
 
   const styles = useThemedStyles((c) => ({
     label: { ...typography.label, color: c.text },
@@ -72,25 +79,6 @@ export function DocumentUploadField({
     actionLabel: { ...typography.bodySm, fontWeight: "600" as const, color: c.text },
     error: { ...typography.caption, color: c.danger, marginTop: 4 },
   }))
-
-  useEffect(() => {
-    if (!document) {
-      setPreviewUri(null)
-      return
-    }
-    let cancelled = false
-    fetchAsDataUri(getToken, driverDocumentFileUrl(document.id))
-      .then((uri) => {
-        if (!cancelled) setPreviewUri(uri)
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewUri(null)
-      })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document?.id])
 
   async function upload(asset: ImagePicker.ImagePickerAsset) {
     setError(null)
