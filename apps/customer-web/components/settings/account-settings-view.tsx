@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Laptop, Mail, Pencil, ShieldCheck, Smartphone } from "lucide-react"
 import { useAuth, useUser } from "@clerk/nextjs"
 
@@ -106,14 +107,12 @@ type SessionRow = {
 export function AccountSettingsView() {
   const { user, isLoaded } = useUserIfEnabled()
   const { sessionId, signOut } = useAuthIfEnabled()
+  const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName ?? "")
   const [lastName, setLastName] = useState(user?.lastName ?? "")
-  const [saving, setSaving] = useState(false)
   const [signOutOpen, setSignOutOpen] = useState(false)
-  const [sessions, setSessions] = useState<SessionRow[] | null>(null)
-  const [revokingId, setRevokingId] = useState<string | null>(null)
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
   const email = user?.primaryEmailAddress?.emailAddress
@@ -122,31 +121,41 @@ export function AccountSettingsView() {
   const initials = getInitials(fullName)
   const memberSince = formatMemberSince(user?.createdAt)
 
-  useEffect(() => {
-    if (!user) return
-    let cancelled = false
-    user
-      .getSessions()
-      .then((list) => {
-        if (cancelled) return
-        setSessions(
-          list.map((session) => ({
-            id: session.id,
-            isCurrent: session.id === sessionId,
-            label: sessionDeviceLabel(session.latestActivity),
-            location: sessionLocation(session.latestActivity),
-            lastActiveAt: session.lastActiveAt,
-            revoke: () => session.revoke(),
-          })),
-        )
-      })
-      .catch(() => {
-        if (!cancelled) setSessions([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [user, sessionId])
+  const sessionsQueryKey = ["customer-clerk-sessions", user?.id, sessionId] as const
+  const sessionsQuery = useQuery({
+    queryKey: sessionsQueryKey,
+    queryFn: async () => {
+      const list = await user!.getSessions()
+      return list.map(
+        (session): SessionRow => ({
+          id: session.id,
+          isCurrent: session.id === sessionId,
+          label: sessionDeviceLabel(session.latestActivity),
+          location: sessionLocation(session.latestActivity),
+          lastActiveAt: session.lastActiveAt,
+          revoke: () => session.revoke(),
+        }),
+      )
+    },
+    enabled: Boolean(user),
+  })
+  const sessions = sessionsQuery.data ?? null
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (input: { firstName: string; lastName: string }) => user!.update(input),
+    onSuccess: () => setEditing(false),
+  })
+  const saving = updateProfileMutation.isPending
+
+  const revokeMutation = useMutation({
+    mutationFn: (row: SessionRow) => row.revoke(),
+    onSuccess: (_result, row) => {
+      queryClient.setQueryData<SessionRow[]>(sessionsQueryKey, (prev) =>
+        prev?.filter((s) => s.id !== row.id) ?? prev,
+      )
+    },
+  })
+  const revokingId = revokeMutation.isPending ? (revokeMutation.variables?.id ?? null) : null
 
   if (!isLoaded) return <AccountSettingsSkeleton />
 
@@ -156,25 +165,12 @@ export function AccountSettingsView() {
     setEditing(true)
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!user) return
-    setSaving(true)
-    try {
-      await user.update({ firstName: firstName.trim(), lastName: lastName.trim() })
-      setEditing(false)
-    } finally {
-      setSaving(false)
-    }
+    updateProfileMutation.mutate({ firstName: firstName.trim(), lastName: lastName.trim() })
   }
-
-  async function handleRevoke(row: SessionRow) {
-    setRevokingId(row.id)
-    try {
-      await row.revoke()
-      setSessions((prev) => prev?.filter((s) => s.id !== row.id) ?? prev)
-    } finally {
-      setRevokingId(null)
-    }
+  function handleRevoke(row: SessionRow) {
+    revokeMutation.mutate(row)
   }
 
   return (
@@ -244,7 +240,7 @@ export function AccountSettingsView() {
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    onClick={() => void handleSave()}
+                    onClick={handleSave}
                     loading={saving}
                     loadingText="Saving…"
                   >
@@ -367,7 +363,7 @@ export function AccountSettingsView() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => void handleRevoke(session)}
+                            onClick={() => handleRevoke(session)}
                             loading={revokingId === session.id}
                             loadingText="Signing out…"
                           >
