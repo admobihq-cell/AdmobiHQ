@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   FlatList,
   Pressable,
@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { AnnouncementDto } from "@workspace/ops-contracts"
 import { describeAnnouncementTargets, formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
@@ -134,97 +135,67 @@ export default function AnnouncementsScreen() {
     },
   }))
 
-  const [items, setItems] = useState<AnnouncementDto[]>([])
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
   const [resendTarget, setResendTarget] = useState<AnnouncementDto | null>(null)
-  const [resending, setResending] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<AnnouncementDto | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
-  const fetchPage = useCallback(
-    async (nextPage: number, replace = false) => {
-      try {
-        setError(null)
-        const result = await client.notifications.list({
-          page: nextPage,
-          pageSize: 20,
-        })
-        setItems((current) =>
-          replace ? result.items : [...current, ...result.items]
-        )
-        setPage(result.page)
-        setTotalPages(result.totalPages)
-      } catch (err) {
-        setError(formatOpsError(err, API_URL))
-      } finally {
-        setLoading(false)
-        setRefreshing(false)
-      }
-    },
-    [client]
+  const query = useInfiniteQuery({
+    queryKey: ["announcements", "list"],
+    queryFn: ({ pageParam }) =>
+      client.notifications.list({ page: pageParam, pageSize: 20 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+  })
+
+  const items = useMemo(
+    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    [query.data],
   )
+  const error = query.isError ? formatOpsError(query.error, API_URL) : null
+  const loading = query.isPending
+  const refreshing = query.isRefetching && !query.isFetchingNextPage
 
-  useEffect(() => {
-    setLoading(true)
-    void fetchPage(1, true)
-  }, [fetchPage])
-
-  const onRefresh = () => {
-    setRefreshing(true)
-    void fetchPage(1, true)
-  }
+  const onRefresh = () => void query.refetch()
 
   const onEndReached = () => {
-    if (loading || refreshing || page >= totalPages) return
-    setLoading(true)
-    void fetchPage(page + 1)
+    if (!query.isFetchingNextPage && query.hasNextPage) void query.fetchNextPage()
   }
 
-  const handleResend = async () => {
-    if (!resendTarget || resending) return
-    setResending(true)
-    try {
-      await client.notifications.broadcast({
-        title: resendTarget.title,
-        body: resendTarget.body,
-        category: (resendTarget.category ?? "announcement") as
+  const resendMutation = useMutation({
+    mutationFn: (target: AnnouncementDto) =>
+      client.notifications.broadcast({
+        title: target.title,
+        body: target.body,
+        category: (target.category ?? "announcement") as
           "announcement" | "campaign" | "billing" | "promo" | "system",
-        target_apps: resendTarget.target_apps as ("customer-mobile" | "driver-mobile")[],
-      })
+        target_apps: target.target_apps as ("customer-mobile" | "driver-mobile")[],
+      }),
+    onSuccess: () => {
       setResendTarget(null)
-      setRefreshing(true)
-      await fetchPage(1, true)
-    } catch (err) {
-      setError(formatOpsError(err, API_URL))
-      setResendTarget(null)
-    } finally {
-      setResending(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["announcements", "list"] })
+    },
+    onError: () => setResendTarget(null),
+  })
+  const handleResend = () => {
+    if (!resendTarget) return
+    resendMutation.mutate(resendTarget)
   }
+  const resending = resendMutation.isPending
 
-  const handleDelete = async () => {
-    if (!deleteTarget || deleting) return
-    setDeleting(true)
-    try {
-      await client.notifications.delete(deleteTarget.id)
-      const deletedAt = new Date().toISOString()
+  const deleteMutation = useMutation({
+    mutationFn: (target: AnnouncementDto) => client.notifications.delete(target.id),
+    onSuccess: () => {
       setDeleteTarget(null)
-      setItems((current) =>
-        current.map((item) =>
-          item.id === deleteTarget.id ? { ...item, deleted_at: deletedAt } : item,
-        ),
-      )
-    } catch (err) {
-      setError(formatOpsError(err, API_URL))
-      setDeleteTarget(null)
-    } finally {
-      setDeleting(false)
-    }
+      void queryClient.invalidateQueries({ queryKey: ["announcements", "list"] })
+    },
+    onError: () => setDeleteTarget(null),
+  })
+  const handleDelete = () => {
+    if (!deleteTarget) return
+    deleteMutation.mutate(deleteTarget)
   }
+  const deleting = deleteMutation.isPending
 
   const listHeader = (
     <View style={[styles.header, { paddingTop: spacing.md }]}>
@@ -251,10 +222,7 @@ export default function AnnouncementsScreen() {
       {error ? (
         <ApiErrorBanner
           message={error}
-          onRetry={() => {
-            setLoading(true)
-            void fetchPage(1, true)
-          }}
+          onRetry={onRefresh}
           onDismiss={() => setError(null)}
         />
       ) : null}
@@ -378,7 +346,7 @@ export default function AnnouncementsScreen() {
         }
         confirmLabel={resending ? "Sending…" : "Resend"}
         destructive
-        onConfirm={() => void handleResend()}
+        onConfirm={handleResend}
         onCancel={() => {
           if (!resending) setResendTarget(null)
         }}
@@ -394,7 +362,7 @@ export default function AnnouncementsScreen() {
         }
         confirmLabel={deleting ? "Deleting…" : "Delete"}
         destructive
-        onConfirm={() => void handleDelete()}
+        onConfirm={handleDelete}
         onCancel={() => {
           if (!deleting) setDeleteTarget(null)
         }}
