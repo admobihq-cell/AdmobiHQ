@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocalSearchParams } from "expo-router"
 import { useUser } from "@clerk/clerk-expo"
 import {
@@ -54,92 +55,78 @@ export default function SupportCaseDetailScreen() {
   const client = useOpsClient()
   const { user } = useUser()
 
-  const [data, setData] = useState<SupportCaseDetailDto | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [reply, setReply] = useState("")
   const [internalNote, setInternalNote] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [updating, setUpdating] = useState(false)
   const [statusPickerOpen, setStatusPickerOpen] = useState(false)
   const [priorityPickerOpen, setPriorityPickerOpen] = useState(false)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+
+  const queryClient = useQueryClient()
+
+  const caseQuery = useQuery({
+    queryKey: ["support", "detail", caseId],
+    queryFn: () => client.support.get(caseId),
+  })
+  const data = caseQuery.data ?? null
+  const loading = caseQuery.isLoading
+  const loadError = caseQuery.isError
+    ? formatOpsError(caseQuery.error, API_URL)
+    : null
+  const error = mutationError ?? loadError
 
   usePageHeader(data ? data.subject : "Support case", {
     showBack: true,
     backHref: "/(ops)/support",
   })
 
-  const load = useCallback(async () => {
-    try {
-      const result = await client.support.get(caseId)
-      setData(result)
-    } catch (e) {
-      setError(formatOpsError(e, API_URL))
-    } finally {
-      setLoading(false)
-    }
-  }, [client, caseId])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  async function updateCase(patch: { status?: string; priority?: string }) {
-    setUpdating(true)
-    try {
-      await client.support.update(caseId, patch as never)
-      await load()
-    } catch (e) {
-      setError(formatOpsError(e, API_URL))
-    } finally {
-      setUpdating(false)
-    }
+  function invalidateCase() {
+    void queryClient.invalidateQueries({ queryKey: ["support", "detail", caseId] })
+    void queryClient.invalidateQueries({ queryKey: ["support", "list"] })
   }
 
-  async function assignToMe() {
+  const updateMutation = useMutation({
+    mutationFn: (patch: {
+      status?: string
+      priority?: string
+      assigned_to_clerk_id?: string | null
+      assigned_to_email?: string | null
+    }) => client.support.update(caseId, patch as never),
+    onSuccess: invalidateCase,
+    onError: (e) => setMutationError(formatOpsError(e, API_URL)),
+  })
+  const updating = updateMutation.isPending
+
+  function updateCase(patch: { status?: string; priority?: string }) {
+    updateMutation.mutate(patch)
+  }
+
+  function assignToMe() {
     if (!user) return
-    setUpdating(true)
-    try {
-      await client.support.update(caseId, {
-        assigned_to_clerk_id: user.id,
-        assigned_to_email: user.primaryEmailAddress?.emailAddress ?? null,
-      })
-      await load()
-    } catch (e) {
-      setError(formatOpsError(e, API_URL))
-    } finally {
-      setUpdating(false)
-    }
+    updateMutation.mutate({
+      assigned_to_clerk_id: user.id,
+      assigned_to_email: user.primaryEmailAddress?.emailAddress ?? null,
+    })
   }
 
-  async function unassign() {
-    setUpdating(true)
-    try {
-      await client.support.update(caseId, {
-        assigned_to_clerk_id: null,
-        assigned_to_email: null,
-      } as never)
-      await load()
-    } catch (e) {
-      setError(formatOpsError(e, API_URL))
-    } finally {
-      setUpdating(false)
-    }
+  function unassign() {
+    updateMutation.mutate({ assigned_to_clerk_id: null, assigned_to_email: null })
   }
 
-  async function handleSend() {
-    if (sending || !reply.trim()) return
-    setSending(true)
-    try {
-      await client.support.reply(caseId, { body: reply.trim(), internal_note: internalNote })
+  const replyMutation = useMutation({
+    mutationFn: (body: { body: string; internal_note: boolean }) =>
+      client.support.reply(caseId, body),
+    onSuccess: () => {
       setReply("")
       setInternalNote(false)
-      await load()
-    } catch (e) {
-      setError(formatOpsError(e, API_URL))
-    } finally {
-      setSending(false)
-    }
+      invalidateCase()
+    },
+    onError: (e) => setMutationError(formatOpsError(e, API_URL)),
+  })
+  const sending = replyMutation.isPending
+
+  function handleSend() {
+    if (sending || !reply.trim()) return
+    replyMutation.mutate({ body: reply.trim(), internal_note: internalNote })
   }
 
   const styles = useThemedStyles((c) => ({
@@ -295,7 +282,10 @@ export default function SupportCaseDetailScreen() {
   if (!data) {
     return (
       <View style={{ flex: 1, padding: spacing.lg }}>
-        <ApiErrorBanner message={error ?? "Case not found."} onRetry={() => void load()} />
+        <ApiErrorBanner
+          message={loadError ?? "Case not found."}
+          onRetry={() => void caseQuery.refetch()}
+        />
       </View>
     )
   }
@@ -329,7 +319,7 @@ export default function SupportCaseDetailScreen() {
             </View>
           </View>
 
-          {error ? <ApiErrorBanner message={error} onDismiss={() => setError(null)} /> : null}
+          {error ? <ApiErrorBanner message={error} onDismiss={() => setMutationError(null)} /> : null}
 
           <View style={styles.controlsRow}>
             <Pressable style={styles.pill} onPress={() => setStatusPickerOpen(true)} disabled={updating}>
@@ -351,7 +341,7 @@ export default function SupportCaseDetailScreen() {
                 <Text style={styles.pillText}>{data.assigned_to_email}</Text>
                 <Pressable
                   style={styles.unassignButton}
-                  onPress={() => void unassign()}
+                  onPress={unassign}
                   disabled={updating}
                   accessibilityLabel="Unassign"
                 >
@@ -359,7 +349,7 @@ export default function SupportCaseDetailScreen() {
                 </Pressable>
               </View>
             ) : (
-              <Pressable style={styles.pill} onPress={() => void assignToMe()} disabled={updating}>
+              <Pressable style={styles.pill} onPress={assignToMe} disabled={updating}>
                 <UserCircle size={13} color={colors.mutedForeground} />
                 <Text style={styles.pillText}>Assign to me</Text>
               </Pressable>
@@ -495,7 +485,7 @@ export default function SupportCaseDetailScreen() {
         value={data.status}
         onSelect={(value) => {
           setStatusPickerOpen(false)
-          void updateCase({ status: value })
+          updateCase({ status: value })
         }}
       />
       <BottomSheetPicker
@@ -506,7 +496,7 @@ export default function SupportCaseDetailScreen() {
         value={data.priority}
         onSelect={(value) => {
           setPriorityPickerOpen(false)
-          void updateCase({ priority: value })
+          updateCase({ priority: value })
         }}
       />
     </>
