@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Stack, useFocusEffect } from "expo-router"
 import {
   ActivityIndicator,
@@ -77,29 +78,33 @@ export default function BillingSettingsScreen() {
   const insets = useSafeAreaInsets()
   const [hidden, setHidden] = useState(false)
 
-  const [balance, setBalance] = useState(PLACEHOLDER_WALLET_BALANCE)
-  const [autoReload, setAutoReload] = useState<AutoReloadSettings | null>(null)
-  const [loading, setLoading] = useState(true)
   const [panel, setPanel] = useState<Panel>(null)
   const [topUpAmount, setTopUpAmount] = useState("")
   const [thresholdInput, setThresholdInput] = useState("")
   const [showOlderTransactions, setShowOlderTransactions] = useState(false)
 
+  const queryClient = useQueryClient()
+
+  const walletQuery = useQuery({
+    queryKey: ["wallet"],
+    queryFn: async () => {
+      const [bal, reload] = await Promise.all([getWalletBalance(), getAutoReloadSettings()])
+      return { balance: bal, autoReload: reload }
+    },
+  })
+  const balance = walletQuery.data?.balance ?? PLACEHOLDER_WALLET_BALANCE
+  const autoReload = walletQuery.data?.autoReload ?? null
+  const loading = walletQuery.isLoading
+
+  useEffect(() => {
+    if (walletQuery.data) setThresholdInput(String(walletQuery.data.autoReload.threshold))
+  }, [walletQuery.data])
+
+  const refetchWallet = walletQuery.refetch
   useFocusEffect(
     useCallback(() => {
-      let mounted = true
-      setLoading(true)
-      void Promise.all([getWalletBalance(), getAutoReloadSettings()]).then(([bal, reload]) => {
-        if (!mounted) return
-        setBalance(bal)
-        setAutoReload(reload)
-        setThresholdInput(String(reload.threshold))
-        setLoading(false)
-      })
-      return () => {
-        mounted = false
-      }
-    }, []),
+      void refetchWallet()
+    }, [refetchWallet]),
   )
 
   const isLow = balance < LOW_BALANCE_THRESHOLD
@@ -312,19 +317,29 @@ export default function BillingSettingsScreen() {
     else setShowOlderTransactions(true)
   }
 
-  async function handleTopUp(amount: number) {
+  const topUpMutation = useMutation({
+    mutationFn: (amount: number) => topUpWallet(amount),
+    onSuccess: () => {
+      setPanel(null)
+      setTopUpAmount("")
+      void queryClient.invalidateQueries({ queryKey: ["wallet"] })
+    },
+  })
+  function handleTopUp(amount: number) {
     if (!amount || amount <= 0) return
-    const next = await topUpWallet(amount)
-    setBalance(next)
-    setPanel(null)
-    setTopUpAmount("")
+    topUpMutation.mutate(amount)
   }
 
-  async function handleSaveAutoReload(enabled: boolean) {
+  const saveAutoReloadMutation = useMutation({
+    mutationFn: (next: AutoReloadSettings) => setAutoReloadSettings(next),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["wallet"] })
+    },
+  })
+  function handleSaveAutoReload(enabled: boolean) {
     const threshold = Number(thresholdInput.replace(/[^0-9]/g, "")) || 20000
     const next: AutoReloadSettings = { enabled, threshold, topUpAmount: 30000 }
-    await setAutoReloadSettings(next)
-    setAutoReload(next)
+    saveAutoReloadMutation.mutate(next)
   }
 
   const visibleTransactions = showOlderTransactions
@@ -432,7 +447,7 @@ export default function BillingSettingsScreen() {
             />
             <Pressable
               style={styles.submit}
-              onPress={() => void handleTopUp(Number(topUpAmount.replace(/[^0-9]/g, "")))}
+              onPress={() => handleTopUp(Number(topUpAmount.replace(/[^0-9]/g, "")))}
             >
               <Text style={styles.submitText}>Add funds</Text>
             </Pressable>
@@ -446,7 +461,7 @@ export default function BillingSettingsScreen() {
               <Text style={styles.toggleLabel}>Reload automatically</Text>
               <Switch
                 value={autoReload.enabled}
-                onValueChange={(value) => void handleSaveAutoReload(value)}
+                onValueChange={handleSaveAutoReload}
                 trackColor={{ true: colors.primary }}
               />
             </View>
@@ -457,7 +472,7 @@ export default function BillingSettingsScreen() {
               placeholder="Reload when balance drops below (KES)"
               placeholderTextColor={colors.mutedForeground}
               keyboardType="number-pad"
-              onBlur={() => void handleSaveAutoReload(autoReload.enabled)}
+              onBlur={() => handleSaveAutoReload(autoReload.enabled)}
             />
           </View>
         ) : null}
