@@ -15,10 +15,12 @@
   "dependencies": {
     "@clerk/nextjs": "^7.7.3",
     "@sentry/nextjs": "^10.64.0",
+    "@tanstack/react-query": "^5.101.4",
     "@vercel/analytics": "^2.0.1",
     "@workspace/geo": "*",
     "@workspace/ops-api-client": "*",
     "@workspace/ops-contracts": "*",
+    "@workspace/query-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "dotenv": "^16.6.1",
