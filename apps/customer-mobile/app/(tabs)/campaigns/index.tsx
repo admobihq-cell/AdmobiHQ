@@ -1,12 +1,13 @@
 import { useCallback, useState } from "react"
 import { useFocusEffect, useRouter } from "expo-router"
+import { useQuery } from "@tanstack/react-query"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
 import { Add, Calendar, Location } from "@/components/icons"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { getCampaigns, type Campaign } from "@/lib/campaigns"
+import { getCampaigns } from "@/lib/campaigns"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const FILTERS = ["All", "Active", "Scheduled", "Draft", "Completed"] as const
@@ -17,35 +18,23 @@ export default function CampaignsScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [filter, setFilter] = useState<Filter>("All")
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
 
+  const campaignsQuery = useQuery({
+    queryKey: ["campaigns", "list"],
+    queryFn: getCampaigns,
+  })
+  const campaigns = campaignsQuery.data ?? []
+  const loading = campaignsQuery.isLoading
+  const refreshing = campaignsQuery.isRefetching
+
+  const refetchCampaigns = campaignsQuery.refetch
   useFocusEffect(
     useCallback(() => {
-      let mounted = true
-      setLoading(true)
-      void getCampaigns().then((items) => {
-        if (mounted) {
-          setCampaigns(items)
-          setLoading(false)
-        }
-      })
-      return () => {
-        mounted = false
-      }
-    }, []),
+      void refetchCampaigns()
+    }, [refetchCampaigns]),
   )
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    try {
-      const items = await getCampaigns()
-      setCampaigns(items)
-    } finally {
-      setRefreshing(false)
-    }
-  }, [])
+  const onRefresh = () => void campaignsQuery.refetch()
 
   const styles = useThemedStyles((c) => ({
     root: {
@@ -219,7 +208,7 @@ export default function CampaignsScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => void onRefresh()}
+            onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
