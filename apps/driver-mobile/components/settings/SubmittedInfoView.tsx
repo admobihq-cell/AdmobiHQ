@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Image, Pressable, Text, View } from "react-native"
 import type { DriverDocumentDto, DriverProfileDto } from "@workspace/ops-contracts"
 
@@ -32,6 +32,27 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
+async function loadDocumentPreview(
+  getToken: () => Promise<string | null>,
+  docId: number,
+): Promise<string> {
+  const token = await getToken()
+  const res = await fetch(driverDocumentFileUrl(docId), {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to load document preview (${res.status})`)
+  }
+  const blob = await res.blob()
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read preview"))
+    reader.readAsDataURL(blob)
+  })
+}
+
 function DocumentThumb({
   doc,
   getToken,
@@ -39,9 +60,10 @@ function DocumentThumb({
   doc: DriverDocumentDto
   getToken: () => Promise<string | null>
 }) {
-  const [uri, setUri] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-  const [attempt, setAttempt] = useState(0)
+  const previewQuery = useQuery({
+    queryKey: ["driver-document-preview", doc.id],
+    queryFn: () => loadDocumentPreview(getToken, doc.id),
+  })
   const styles = useThemedStyles((c) => ({
     label: { ...typography.caption, color: c.mutedText, marginBottom: spacing.xs },
     image: { width: "100%" as const, height: 120, borderRadius: radius.md, backgroundColor: c.mutedSurface },
@@ -60,49 +82,13 @@ function DocumentThumb({
     retryLabel: { ...typography.caption, color: c.text, fontWeight: "600" as const },
   }))
 
-  useEffect(() => {
-    let cancelled = false
-    setFailed(false)
-    async function load() {
-      try {
-        const token = await getToken()
-        const res = await fetch(driverDocumentFileUrl(doc.id), {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          signal: AbortSignal.timeout(15000),
-        })
-        if (cancelled) return
-        if (!res.ok) {
-          setFailed(true)
-          return
-        }
-        const blob = await res.blob()
-        const reader = new FileReader()
-        reader.onload = () => {
-          if (!cancelled) setUri(reader.result as string)
-        }
-        reader.onerror = () => {
-          if (!cancelled) setFailed(true)
-        }
-        reader.readAsDataURL(blob)
-      } catch (error) {
-        console.error("[SubmittedInfoView] failed to load document preview:", error)
-        if (!cancelled) setFailed(true)
-      }
-    }
-    void load()
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc.id, attempt])
-
   return (
     <View style={{ flex: 1, minWidth: 140 }}>
       <Text style={styles.label}>{DOCUMENT_LABELS[doc.type] ?? doc.type}</Text>
-      {uri ? (
-        <Image source={{ uri }} style={styles.image} resizeMode="cover" />
-      ) : failed ? (
-        <Pressable style={styles.retry} onPress={() => setAttempt((n) => n + 1)}>
+      {previewQuery.data ? (
+        <Image source={{ uri: previewQuery.data }} style={styles.image} resizeMode="cover" />
+      ) : previewQuery.isError ? (
+        <Pressable style={styles.retry} onPress={() => void previewQuery.refetch()}>
           <Text style={styles.retryText}>Couldn&apos;t load preview</Text>
           <Text style={styles.retryLabel}>Tap to retry</Text>
         </Pressable>
