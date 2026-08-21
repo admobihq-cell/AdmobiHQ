@@ -35,7 +35,7 @@
     "@tanstack/react-query": "^5.101.4",
     "@workspace/geo": "*",
     "@workspace/ops-contracts": "*",
-    "expo": "~54.0.36",
+    "expo": "~57.0.15",
     "expo-constants": "~18.0.13",
     "expo-crypto": "~15.0.9",
     "expo-dev-client": "~6.0.20",
