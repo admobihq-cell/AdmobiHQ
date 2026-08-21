@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react"
 import { UserPlus } from "lucide-react"
 import { toast } from "sonner"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import type {
   NotYetInvitedDto,
@@ -168,8 +169,8 @@ export function TeamView() {
   const { userId: currentUserId } = useAuth()
   const inviteEmailId = useId()
 
-  const [team, setTeam] = useState<TeamDto | null>(null)
-  const [roles, setRoles] = useState<OpsRoleDto[]>([])
+  const queryClient = useQueryClient()
+
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(
     null
@@ -182,53 +183,50 @@ export function TeamView() {
     tier: "member",
     roleId: 0,
   })
-  const [inviting, setInviting] = useState(false)
 
   const [membersSorting, setMembersSorting] = useState<SortingState>([])
   const [invitationsSorting, setInvitationsSorting] = useState<SortingState>([])
 
-  function reload() {
-    client.team
-      .list()
-      .then(setTeam)
-      .catch((err) => toast.error(formatApiError(err)))
-    client.roles
-      .list()
-      .then((res) => {
-        setRoles(res.items)
-        setInviteTier((prev) =>
-          prev.tier === "member" && !prev.roleId && res.items[0]
-            ? { tier: "member", roleId: res.items[0].id }
-            : prev
-        )
-      })
-      .catch((err) => toast.error(formatApiError(err)))
-  }
+  const teamQuery = useQuery({
+    queryKey: ["ops-team"],
+    queryFn: () => client.team.list(),
+  })
+  const team = teamQuery.data ?? null
 
+  const rolesQuery = useQuery({
+    queryKey: ["ops-roles"],
+    queryFn: () => client.roles.list(),
+  })
+  const roles = rolesQuery.data?.items ?? []
+
+  // Seeds the invite dialog's default role once roles arrive, without
+  // clobbering an in-progress selection.
   useEffect(() => {
-    reload()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client])
+    if (roles.length === 0) return
+    setInviteTier((prev) =>
+      prev.tier === "member" && !prev.roleId ? { tier: "member", roleId: roles[0]!.id } : prev,
+    )
+  }, [roles])
 
-  async function handleInvite() {
+  const inviteMutation = useMutation({
+    mutationFn: (body: TeamInviteInput) => client.team.invite(body),
+    onSuccess: () => {
+      toast.success(`Invited ${inviteEmail.trim()}`)
+      setInviteEmail("")
+      setInviteOpen(false)
+      void queryClient.invalidateQueries({ queryKey: ["ops-team"] })
+    },
+    onError: (err) => toast.error(formatApiError(err)),
+  })
+
+  function handleInvite() {
     if (!inviteEmail.trim()) return
     if (inviteTier.tier === "member" && !inviteTier.roleId) {
       toast.error("Create a role first")
       return
     }
-    setInviting(true)
-    try {
-      const body: TeamInviteInput = { email: inviteEmail.trim(), ...inviteTier }
-      await client.team.invite(body)
-      toast.success(`Invited ${inviteEmail.trim()}`)
-      setInviteEmail("")
-      setInviteOpen(false)
-      reload()
-    } catch (err) {
-      toast.error(formatApiError(err))
-    } finally {
-      setInviting(false)
-    }
+    const body: TeamInviteInput = { email: inviteEmail.trim(), ...inviteTier }
+    inviteMutation.mutate(body)
   }
 
   async function handleRoleChange(
@@ -239,7 +237,7 @@ export function TeamView() {
     try {
       await client.team.updateRole(member.userId, input)
       toast.success(`Updated ${member.email}'s role`)
-      reload()
+      await queryClient.invalidateQueries({ queryKey: ["ops-team"] })
     } catch (err) {
       toast.error(formatApiError(err))
     } finally {
@@ -253,7 +251,7 @@ export function TeamView() {
       await client.team.removeMember(member.userId)
       toast.success(`Removed ${member.email}`)
       setRemoveTarget(null)
-      reload()
+      await queryClient.invalidateQueries({ queryKey: ["ops-team"] })
     } catch (err) {
       toast.error(formatApiError(err))
     } finally {
@@ -266,7 +264,7 @@ export function TeamView() {
     try {
       await client.team.revokeInvitation(invitation.id)
       toast.success(`Revoked invitation for ${invitation.email}`)
-      reload()
+      await queryClient.invalidateQueries({ queryKey: ["ops-team"] })
     } catch (err) {
       toast.error(formatApiError(err))
     } finally {
@@ -447,7 +445,7 @@ export function TeamView() {
                         placeholder="name@admobihq.com"
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
-                        disabled={inviting}
+                        disabled={inviteMutation.isPending}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -459,7 +457,7 @@ export function TeamView() {
                             : memberValue(inviteTier.roleId)
                         }
                         roles={roles}
-                        disabled={inviting}
+                        disabled={inviteMutation.isPending}
                         onChange={setInviteTier}
                         triggerClassName="w-full"
                       />
@@ -468,8 +466,8 @@ export function TeamView() {
                   <DialogFooter>
                     <Button
                       type="button"
-                      onClick={() => void handleInvite()}
-                      loading={inviting}
+                      onClick={handleInvite}
+                      loading={inviteMutation.isPending}
                       loadingText="Inviting…"
                       disabled={!inviteEmail.trim()}
                     >
