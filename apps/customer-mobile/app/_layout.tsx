@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/clerk-expo"
 import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import * as Sentry from "@sentry/react-native"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -25,6 +26,15 @@ initSentry()
 // Required once at app root so the browser tab opened for Google OAuth
 // (via useSSO) closes and hands control back to the app after redirect.
 WebBrowser.maybeCompleteAuthSession()
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+})
 
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   if (!isAuthEnabled()) {
@@ -101,11 +111,13 @@ function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AppErrorBoundary>
-          <RootNavigator
-            ready={ready}
-            onboardingCompleted={onboardingCompleted}
-            onCompleteOnboarding={completeOnboarding}
-          />
+          <QueryClientProvider client={queryClient}>
+            <RootNavigator
+              ready={ready}
+              onboardingCompleted={onboardingCompleted}
+              onCompleteOnboarding={completeOnboarding}
+            />
+          </QueryClientProvider>
         </AppErrorBoundary>
       </ThemeProvider>
     </SafeAreaProvider>
