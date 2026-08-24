@@ -18,6 +18,38 @@ function TabLabel({
   )
 }
 
+function renderOverviewLabel({ color }: { color: string }) {
+  return <TabLabel label="Overview" color={color} />
+}
+
+function renderOverviewIcon({ color, size }: { color: string; size: number }) {
+  return <Overview color={color} size={size - 2} />
+}
+
+function renderCampaignsLabel({ color }: { color: string }) {
+  return <TabLabel label="Campaigns" color={color} />
+}
+
+function renderCampaignsIcon({ color, size }: { color: string; size: number }) {
+  return <Campaigns color={color} size={size - 2} />
+}
+
+function renderMapLabel({ color }: { color: string }) {
+  return <TabLabel label="Map" color={color} />
+}
+
+function renderMapIcon({ color, size }: { color: string; size: number }) {
+  return <Map color={color} size={size - 2} />
+}
+
+function renderSettingsLabel({ color }: { color: string }) {
+  return <TabLabel label="Settings" color={color} />
+}
+
+function renderSettingsIcon({ color, size }: { color: string; size: number }) {
+  return <Settings color={color} size={size - 2} />
+}
+
 export default function TabsLayout() {
   const {
     screenOptions,
@@ -50,10 +82,8 @@ export default function TabsLayout() {
           options={{
             title: "Overview",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Overview" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Overview color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderOverviewLabel,
+            tabBarIcon: renderOverviewIcon,
           }}
         />
         <Tabs.Screen
@@ -61,12 +91,8 @@ export default function TabsLayout() {
           options={{
             title: "Campaigns",
             headerShown: false,
-            tabBarLabel: ({ color }) => (
-              <TabLabel label="Campaigns" color={color} />
-            ),
-            tabBarIcon: ({ color, size }) => (
-              <Campaigns color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderCampaignsLabel,
+            tabBarIcon: renderCampaignsIcon,
           }}
         />
         <Tabs.Screen
@@ -74,10 +100,8 @@ export default function TabsLayout() {
           options={{
             title: "Map",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Map" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Map color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderMapLabel,
+            tabBarIcon: renderMapIcon,
           }}
         />
         <Tabs.Screen
@@ -85,10 +109,8 @@ export default function TabsLayout() {
           options={{
             title: "Settings",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Settings" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Settings color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderSettingsLabel,
+            tabBarIcon: renderSettingsIcon,
           }}
           listeners={({ navigation }) => ({
             tabPress: (e) => {

@@ -10,9 +10,10 @@ import {
   FillExtrusionLayer,
   MapView,
 } from "@maplibre/maplibre-react-native"
-import { useState } from "react"
-import { StyleSheet, View, useColorScheme } from "react-native"
+import { useEffect, useState } from "react"
+import { InteractionManager, StyleSheet, View, useColorScheme } from "react-native"
 
+import { SkeletonBlock } from "@/components/app/skeleton"
 import { CustomerMapHeader } from "@/components/maps/customer-map-header"
 import { spacing, useThemedStyles } from "@/lib/theme"
 
@@ -20,6 +21,7 @@ export function CustomerMapNative() {
   const scheme = useColorScheme()
   const dark = scheme === "dark"
   const [basemap, setBasemap] = useState<BasemapId>(DEFAULT_BASEMAP)
+  const [mapReady, setMapReady] = useState(false)
   const mapStyle = resolveBasemapStyleUrl(basemap, dark)
   const pitch = basemap === "streets3d" ? 52 : 0
   const styles = useThemedStyles((c) => ({
@@ -34,6 +36,13 @@ export function CustomerMapNative() {
     },
   }))
 
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setMapReady(true)
+    })
+    return () => task.cancel()
+  }, [])
+
   return (
     <View style={styles.root}>
       <CustomerMapHeader
@@ -43,46 +52,50 @@ export function CustomerMapNative() {
       />
 
       <View style={styles.mapWrap}>
-        <MapView
-          key={`${basemap}-${dark ? "dark" : "light"}`}
-          style={StyleSheet.absoluteFillObject}
-          mapStyle={mapStyle}
-          logoEnabled={false}
-          attributionPosition={{ bottom: 8, right: 8 }}
-          compassEnabled
-        >
-          <Camera
-            defaultSettings={{
-              centerCoordinate: NAIROBI_CENTER,
-              zoomLevel: NAIROBI_DEFAULT_ZOOM,
-              pitch,
-            }}
-          />
-
-          {basemap === "streets3d" ? (
-            <FillExtrusionLayer
-              id="buildings-3d"
-              sourceID="openmaptiles"
-              sourceLayerID="building"
-              style={{
-                fillExtrusionColor: dark ? "#4a4654" : "#c8c2b8",
-                fillExtrusionHeight: [
-                  "coalesce",
-                  ["get", "render_height"],
-                  ["get", "height"],
-                  12,
-                ],
-                fillExtrusionBase: [
-                  "coalesce",
-                  ["get", "render_min_height"],
-                  ["get", "min_height"],
-                  0,
-                ],
-                fillExtrusionOpacity: 0.7,
+        {mapReady ? (
+          <MapView
+            key={`${basemap}-${dark ? "dark" : "light"}`}
+            style={StyleSheet.absoluteFillObject}
+            mapStyle={mapStyle}
+            logoEnabled={false}
+            attributionPosition={{ bottom: 8, right: 8 }}
+            compassEnabled
+          >
+            <Camera
+              defaultSettings={{
+                centerCoordinate: NAIROBI_CENTER,
+                zoomLevel: NAIROBI_DEFAULT_ZOOM,
+                pitch,
               }}
             />
-          ) : null}
-        </MapView>
+
+            {basemap === "streets3d" ? (
+              <FillExtrusionLayer
+                id="buildings-3d"
+                sourceID="openmaptiles"
+                sourceLayerID="building"
+                style={{
+                  fillExtrusionColor: dark ? "#4a4654" : "#c8c2b8",
+                  fillExtrusionHeight: [
+                    "coalesce",
+                    ["get", "render_height"],
+                    ["get", "height"],
+                    12,
+                  ],
+                  fillExtrusionBase: [
+                    "coalesce",
+                    ["get", "render_min_height"],
+                    ["get", "min_height"],
+                    0,
+                  ],
+                  fillExtrusionOpacity: 0.7,
+                }}
+              />
+            ) : null}
+          </MapView>
+        ) : (
+          <SkeletonBlock style={{ width: "100%", height: "100%", borderRadius: 0 }} />
+        )}
       </View>
     </View>
   )

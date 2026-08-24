@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react"
-import { useFocusEffect, useRouter } from "expo-router"
+import { useState } from "react"
+import { useRouter } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -26,13 +26,6 @@ export default function CampaignsScreen() {
   const campaigns = campaignsQuery.data ?? []
   const loading = campaignsQuery.isLoading
   const refreshing = campaignsQuery.isRefetching
-
-  const refetchCampaigns = campaignsQuery.refetch
-  useFocusEffect(
-    useCallback(() => {
-      void refetchCampaigns()
-    }, [refetchCampaigns]),
-  )
 
   const onRefresh = () => void campaignsQuery.refetch()
 
