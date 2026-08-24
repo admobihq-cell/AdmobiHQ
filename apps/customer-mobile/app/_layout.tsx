@@ -9,6 +9,7 @@ import * as WebBrowser from "expo-web-browser"
 import { useEffect, useState } from "react"
 import { InteractionManager } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
+import { enableFreeze } from "react-native-screens"
 
 import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { AuthGate } from "@/components/AuthGate"
@@ -23,6 +24,9 @@ import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 import { usePushRegistration } from "@/lib/use-push-registration"
 
 initSentry()
+// Freeze backgrounded/blurred tab screens (e.g. notification polling,
+// a mounted MapView on an unfocused tab) instead of letting them keep running.
+enableFreeze(true)
 // Required once at app root so the browser tab opened for Google OAuth
 // (via useSSO) closes and hands control back to the app after redirect.
 WebBrowser.maybeCompleteAuthSession()

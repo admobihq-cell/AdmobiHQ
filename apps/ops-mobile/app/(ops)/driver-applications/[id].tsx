@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native"
+import { Modal, Pressable, ScrollView, Text, View } from "react-native"
+import { Image } from "expo-image"
 import { useLocalSearchParams } from "expo-router"
 import { useAuth } from "@clerk/clerk-expo"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -210,7 +211,8 @@ export default function DriverApplicationDetailScreen() {
                     <Image
                       source={{ uri, headers: authHeaders }}
                       style={styles.documentImage}
-                      resizeMode="cover"
+                      contentFit="cover"
+                      transition={150}
                     />
                   </Pressable>
                 )
@@ -294,7 +296,8 @@ export default function DriverApplicationDetailScreen() {
             <Image
               source={{ uri: lightbox.uri, headers: authHeaders }}
               style={styles.lightboxImage}
-              resizeMode="contain"
+              contentFit="contain"
+              transition={150}
             />
           ) : null}
           <Pressable style={styles.lightboxClose} onPress={() => setLightbox(null)} hitSlop={12}>
