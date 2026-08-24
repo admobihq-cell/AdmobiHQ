@@ -20,6 +20,55 @@ function TabLabel({ label, color }: { label: string; color: string }) {
   return <Text style={{ fontSize: 11, fontWeight: "600", color }}>{label}</Text>
 }
 
+function renderDashboardLabel({ color }: { color: string }) {
+  return <TabLabel label="Dashboard" color={color} />
+}
+function renderDashboardIcon({ color, size }: { color: string; size: number }) {
+  return <LayoutDashboard color={color} size={size - 2} strokeWidth={2.25} />
+}
+
+function renderLeadsLabel({ color }: { color: string }) {
+  return <TabLabel label="Leads" color={color} />
+}
+function renderLeadsIcon({ color, size }: { color: string; size: number }) {
+  return <Megaphone color={color} size={size - 2} strokeWidth={2.25} />
+}
+
+function renderFleetLabel({ color }: { color: string }) {
+  return <TabLabel label="Fleet" color={color} />
+}
+function renderFleetIcon({ color, size }: { color: string; size: number }) {
+  return <Truck color={color} size={size - 2} strokeWidth={2.25} />
+}
+
+function renderDriversLabel({ color }: { color: string }) {
+  return <TabLabel label="Drivers" color={color} />
+}
+function renderDriversIcon({ color, size }: { color: string; size: number }) {
+  return <Car color={color} size={size - 2} strokeWidth={2.25} />
+}
+
+function renderProfileLabel({ color }: { color: string }) {
+  return <TabLabel label="Profile" color={color} />
+}
+function renderProfileIcon({ color, size }: { color: string; size: number }) {
+  return <Person color={color} size={size - 2} strokeWidth={2.25} />
+}
+
+/**
+ * Owns the nav drawer's open/close state so toggling it doesn't force
+ * OpsLayout (and the <Tabs> navigator it renders) to re-render.
+ */
+function AppHeader() {
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  return (
+    <>
+      <AppBar onAvatarPress={() => setDrawerOpen(true)} />
+      <NavDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </>
+  )
+}
+
 export default function OpsLayout() {
   const {
     screenOptions,
@@ -29,7 +78,6 @@ export default function OpsLayout() {
     colors,
   } = useNavigationTheme()
   const insets = useSafeAreaInsets()
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const { role, permissions } = useOpsAccess()
   const canSee = (permission: "leads" | "fleet" | "drivers") =>
     role === "admin" || permissions.includes(permission)
@@ -37,7 +85,7 @@ export default function OpsLayout() {
   return (
     <PageHeaderProvider>
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <AppBar onAvatarPress={() => setDrawerOpen(true)} />
+        <AppHeader />
         <Tabs
           screenOptions={{
             ...screenOptions,
@@ -57,16 +105,8 @@ export default function OpsLayout() {
             options={{
               title: "Dashboard",
               headerShown: false,
-              tabBarLabel: ({ color }) => (
-                <TabLabel label="Dashboard" color={color} />
-              ),
-              tabBarIcon: ({ color, size }) => (
-                <LayoutDashboard
-                  color={color}
-                  size={size - 2}
-                  strokeWidth={2.25}
-                />
-              ),
+              tabBarLabel: renderDashboardLabel,
+              tabBarIcon: renderDashboardIcon,
             }}
           />
           <Tabs.Screen
@@ -75,12 +115,8 @@ export default function OpsLayout() {
               title: "Leads",
               headerShown: false,
               href: canSee("leads") ? undefined : null,
-              tabBarLabel: ({ color }) => (
-                <TabLabel label="Leads" color={color} />
-              ),
-              tabBarIcon: ({ color, size }) => (
-                <Megaphone color={color} size={size - 2} strokeWidth={2.25} />
-              ),
+              tabBarLabel: renderLeadsLabel,
+              tabBarIcon: renderLeadsIcon,
             }}
           />
           <Tabs.Screen
@@ -89,12 +125,8 @@ export default function OpsLayout() {
               title: "Fleet",
               headerShown: false,
               href: canSee("fleet") ? undefined : null,
-              tabBarLabel: ({ color }) => (
-                <TabLabel label="Fleet" color={color} />
-              ),
-              tabBarIcon: ({ color, size }) => (
-                <Truck color={color} size={size - 2} strokeWidth={2.25} />
-              ),
+              tabBarLabel: renderFleetLabel,
+              tabBarIcon: renderFleetIcon,
             }}
           />
           <Tabs.Screen
@@ -103,12 +135,8 @@ export default function OpsLayout() {
               title: "Drivers",
               headerShown: false,
               href: canSee("drivers") ? undefined : null,
-              tabBarLabel: ({ color }) => (
-                <TabLabel label="Drivers" color={color} />
-              ),
-              tabBarIcon: ({ color, size }) => (
-                <Car color={color} size={size - 2} strokeWidth={2.25} />
-              ),
+              tabBarLabel: renderDriversLabel,
+              tabBarIcon: renderDriversIcon,
             }}
           />
           <Tabs.Screen
@@ -116,12 +144,8 @@ export default function OpsLayout() {
             options={{
               title: "Profile",
               headerShown: false,
-              tabBarLabel: ({ color }) => (
-                <TabLabel label="Profile" color={color} />
-              ),
-              tabBarIcon: ({ color, size }) => (
-                <Person color={color} size={size - 2} strokeWidth={2.25} />
-              ),
+              tabBarLabel: renderProfileLabel,
+              tabBarIcon: renderProfileIcon,
             }}
           />
           <Tabs.Screen
@@ -213,7 +237,6 @@ export default function OpsLayout() {
             }}
           />
         </Tabs>
-        <NavDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       </View>
     </PageHeaderProvider>
   )

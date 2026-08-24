@@ -163,23 +163,26 @@ export function useResolvedTheme(): ResolvedTheme {
 
 export function useNavigationTheme() {
   const { colors, resolvedTheme } = useTheme()
-  return {
-    colors,
-    resolvedTheme,
-    statusBarStyle:
-      resolvedTheme === "dark" ? ("light" as const) : ("dark" as const),
-    screenOptions: {
-      headerStyle: { backgroundColor: colors.bg },
-      headerTintColor: colors.primary,
-      headerTitleStyle: { color: colors.text, fontWeight: "600" as const },
-      headerShadowVisible: false,
-      contentStyle: { backgroundColor: colors.bg },
-    },
-    tabBarStyle: {
-      backgroundColor: colors.surface,
-      borderTopColor: colors.border,
-    },
-    tabBarActiveTintColor: colors.primary,
-    tabBarInactiveTintColor: colors.mutedForeground,
-  }
+  return useMemo(
+    () => ({
+      colors,
+      resolvedTheme,
+      statusBarStyle:
+        resolvedTheme === "dark" ? ("light" as const) : ("dark" as const),
+      screenOptions: {
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.primary,
+        headerTitleStyle: { color: colors.text, fontWeight: "600" as const },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.bg },
+      },
+      tabBarStyle: {
+        backgroundColor: colors.surface,
+        borderTopColor: colors.border,
+      },
+      tabBarActiveTintColor: colors.primary,
+      tabBarInactiveTintColor: colors.mutedForeground,
+    }),
+    [colors, resolvedTheme]
+  )
 }

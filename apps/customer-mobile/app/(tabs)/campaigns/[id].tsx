@@ -1,5 +1,4 @@
-import { useCallback } from "react"
-import { Stack, useFocusEffect, useLocalSearchParams } from "expo-router"
+import { Stack, useLocalSearchParams } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -35,13 +34,6 @@ export default function CampaignDetailScreen() {
   })
   const campaign = campaignQuery.data ?? null
   const loading = campaignQuery.isLoading
-
-  const refetchCampaign = campaignQuery.refetch
-  useFocusEffect(
-    useCallback(() => {
-      void refetchCampaign()
-    }, [refetchCampaign]),
-  )
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },

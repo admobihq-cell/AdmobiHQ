@@ -15,6 +15,34 @@ function TabLabel({ label, color }: { label: string; color: string }) {
   )
 }
 
+function renderDashboardLabel({ color }: { color: string }) {
+  return <TabLabel label="Dashboard" color={color} />
+}
+function renderDashboardIcon({ color, size }: { color: string; size: number }) {
+  return <Dashboard color={color} size={size - 2} />
+}
+
+function renderDeliveriesLabel({ color }: { color: string }) {
+  return <TabLabel label="Deliveries" color={color} />
+}
+function renderDeliveriesIcon({ color, size }: { color: string; size: number }) {
+  return <Deliveries color={color} size={size - 2} />
+}
+
+function renderEarningsLabel({ color }: { color: string }) {
+  return <TabLabel label="Earnings" color={color} />
+}
+function renderEarningsIcon({ color, size }: { color: string; size: number }) {
+  return <Wallet color={color} size={size - 2} />
+}
+
+function renderSettingsLabel({ color }: { color: string }) {
+  return <TabLabel label="Settings" color={color} />
+}
+function renderSettingsIcon({ color, size }: { color: string; size: number }) {
+  return <Settings color={color} size={size - 2} />
+}
+
 export default function TabsLayout() {
   const {
     screenOptions,
@@ -49,10 +77,8 @@ export default function TabsLayout() {
           options={{
             title: "Dashboard",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Dashboard" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Dashboard color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderDashboardLabel,
+            tabBarIcon: renderDashboardIcon,
           }}
         />
         <Tabs.Screen
@@ -64,10 +90,8 @@ export default function TabsLayout() {
             // shared link to /deliveries still works, it just isn't tapped
             // into from here while the platform flag is off.
             href: flags.deliveries ? undefined : null,
-            tabBarLabel: ({ color }) => <TabLabel label="Deliveries" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Deliveries color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderDeliveriesLabel,
+            tabBarIcon: renderDeliveriesIcon,
           }}
         />
         <Tabs.Screen
@@ -75,10 +99,8 @@ export default function TabsLayout() {
           options={{
             title: "Earnings",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Earnings" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Wallet color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderEarningsLabel,
+            tabBarIcon: renderEarningsIcon,
           }}
         />
         <Tabs.Screen
@@ -86,10 +108,8 @@ export default function TabsLayout() {
           options={{
             title: "Settings",
             headerShown: false,
-            tabBarLabel: ({ color }) => <TabLabel label="Settings" color={color} />,
-            tabBarIcon: ({ color, size }) => (
-              <Settings color={color} size={size - 2} />
-            ),
+            tabBarLabel: renderSettingsLabel,
+            tabBarIcon: renderSettingsIcon,
           }}
         />
         <Tabs.Screen

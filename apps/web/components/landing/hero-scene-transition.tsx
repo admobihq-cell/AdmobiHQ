@@ -13,38 +13,12 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import { useTheme } from "@workspace/ui/components/theme-provider"
 
-/** Light → dark */
-const ENTER = {
-  duration: 2000,
-  glowDelay: 500,
-  glowDuration: 1200,
-  paletteReleaseAt: 0.68,
-  paletteCrossfade: 900,
-} as const
-
-/** Dark → light */
-const EXIT = {
-  duration: 3200,
-  glowDuration: 1560,
-} as const
-
 type HeroTransitionContextValue = {
   registerBackdrop: (el: SVGRectElement | null) => void
   registerGlow: (el: SVGEllipseElement | null) => void
 }
 
 const HeroTransitionContext = createContext<HeroTransitionContextValue | null>(null)
-
-function easeOut(t: number): number {
-  return 1 - Math.pow(1 - t, 2.8)
-}
-
-function easeEnterBackdrop(t: number): number {
-  if (t <= 0.12) {
-    return (t / 0.12) * 0.28
-  }
-  return 0.28 + easeOut((t - 0.12) / 0.88) * 0.72
-}
 
 function snapDusk(isDark: boolean, backdrop: SVGRectElement | null, glow: SVGEllipseElement | null) {
   const backdropOpacity = isDark ? 1 : 0
@@ -57,15 +31,12 @@ function snapDusk(isDark: boolean, backdrop: SVGRectElement | null, glow: SVGEll
 function useHeroTransitionEngine(shellRef: RefObject<HTMLDivElement | null>) {
   const { resolvedTheme } = useTheme()
   const lastTheme = useRef<"light" | "dark" | null>(null)
-  const cancelRef = useRef<(() => void) | null>(null)
   const backdropRef = useRef<SVGRectElement | null>(null)
   const glowRef = useRef<SVGEllipseElement | null>(null)
   const backdropOpacity = useRef(0)
   const glowOpacity = useRef(0)
-  const paletteMix = useRef(0)
 
   const setPaletteMix = (value: number) => {
-    paletteMix.current = value
     shellRef.current?.style.setProperty("--hero-palette-mix", String(value))
   }
 
@@ -85,113 +56,13 @@ function useHeroTransitionEngine(shellRef: RefObject<HTMLDivElement | null>) {
     const themeKey = resolvedTheme
     const isDark = resolvedTheme === "dark"
 
-    const cancel = () => {
-      if (cancelRef.current) {
-        cancelRef.current()
-        cancelRef.current = null
-      }
-    }
-
-    if (lastTheme.current === null) {
-      lastTheme.current = themeKey
-      const snapped = snapDusk(isDark, backdropRef.current, glowRef.current)
-      backdropOpacity.current = snapped.backdropOpacity
-      glowOpacity.current = snapped.glowOpacity
-      setPaletteMix(isDark ? 1 : 0)
-      return
-    }
-
     if (lastTheme.current === themeKey) return
     lastTheme.current = themeKey
 
-    cancel()
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (reducedMotion) {
-      const snapped = snapDusk(isDark, backdropRef.current, glowRef.current)
-      backdropOpacity.current = snapped.backdropOpacity
-      glowOpacity.current = snapped.glowOpacity
-      setPaletteMix(isDark ? 1 : 0)
-      return
-    }
-
-    const fromBackdrop = backdropOpacity.current
-    const fromGlow = glowOpacity.current
-    const backdrop = backdropRef.current
-    const glow = glowRef.current
-
-    if (isDark) {
-      setPaletteMix(0)
-      let paletteReleaseStart: number | null = null
-      const startAt = performance.now()
-      let raf = 0
-
-      const tick = (now: number) => {
-        const elapsed = now - startAt
-        const t = Math.min(1, elapsed / ENTER.duration)
-        const nextBackdrop =
-          fromBackdrop + (1 - fromBackdrop) * easeEnterBackdrop(t)
-
-        const glowElapsed = elapsed - ENTER.glowDelay
-        let nextGlow = fromGlow
-        if (glowElapsed > 0) {
-          const glowT = Math.min(1, glowElapsed / ENTER.glowDuration)
-          nextGlow = fromGlow + (0.18 - fromGlow) * easeOut(glowT)
-        }
-
-        backdropOpacity.current = nextBackdrop
-        glowOpacity.current = nextGlow
-        if (backdrop) backdrop.style.opacity = String(nextBackdrop)
-        if (glow) glow.style.opacity = String(nextGlow)
-
-        if (nextBackdrop >= ENTER.paletteReleaseAt) {
-          if (paletteReleaseStart === null) {
-            paletteReleaseStart = now
-          }
-          const mixT = Math.min(1, (now - paletteReleaseStart) / ENTER.paletteCrossfade)
-          setPaletteMix(easeOut(mixT))
-        } else {
-          paletteReleaseStart = null
-          setPaletteMix(0)
-        }
-
-        if (t < 1) {
-          raf = requestAnimationFrame(tick)
-        } else {
-          setPaletteMix(1)
-        }
-      }
-
-      raf = requestAnimationFrame(tick)
-      cancelRef.current = () => cancelAnimationFrame(raf)
-      return cancel
-    }
-
-    setPaletteMix(0)
-    const startAt = performance.now()
-    let raf = 0
-
-    const tick = (now: number) => {
-      const elapsed = now - startAt
-      const t = Math.min(1, elapsed / EXIT.duration)
-
-      const glowT = Math.min(1, elapsed / EXIT.glowDuration)
-      const nextGlow = fromGlow * (1 - easeOut(glowT))
-      const nextBackdrop = fromBackdrop * (1 - easeOut(t))
-
-      backdropOpacity.current = nextBackdrop
-      glowOpacity.current = nextGlow
-      if (backdrop) backdrop.style.opacity = String(nextBackdrop)
-      if (glow) glow.style.opacity = String(nextGlow)
-
-      if (t < 1) {
-        raf = requestAnimationFrame(tick)
-      }
-    }
-
-    raf = requestAnimationFrame(tick)
-    cancelRef.current = () => cancelAnimationFrame(raf)
-    return cancel
+    const snapped = snapDusk(isDark, backdropRef.current, glowRef.current)
+    backdropOpacity.current = snapped.backdropOpacity
+    glowOpacity.current = snapped.glowOpacity
+    setPaletteMix(isDark ? 1 : 0)
   }, [resolvedTheme, shellRef])
 
   return { registerBackdrop, registerGlow }
