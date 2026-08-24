@@ -1,7 +1,7 @@
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo"
 import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import * as Sentry from "@sentry/react-native"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
 import { Stack, useRouter, useSegments } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -23,18 +23,10 @@ import { useOpsPushNotifications } from "@/lib/use-ops-push"
 import { configurePushNotificationHandler } from "@/lib/push-notifications"
 import { initSentry } from "@/lib/sentry"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
+import { QUERY_CACHE_BUSTER, queryClient, queryPersister } from "@/lib/query-client"
 
 initSentry()
 configurePushNotificationHandler()
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-    },
-  },
-})
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash may already be hidden on fast refresh
@@ -254,9 +246,16 @@ function RootLayout() {
       <ThemeProvider>
         <AppErrorBoundary>
           <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
-            <QueryClientProvider client={queryClient}>
+            <PersistQueryClientProvider
+              client={queryClient}
+              persistOptions={{
+                persister: queryPersister,
+                maxAge: 24 * 60 * 60 * 1000,
+                buster: QUERY_CACHE_BUSTER,
+              }}
+            >
               <RootNavigator />
-            </QueryClientProvider>
+            </PersistQueryClientProvider>
           </ClerkProvider>
         </AppErrorBoundary>
       </ThemeProvider>
