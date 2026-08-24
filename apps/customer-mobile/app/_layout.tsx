@@ -1,7 +1,7 @@
 import { ClerkProvider } from "@clerk/clerk-expo"
 import { tokenCache } from "@clerk/clerk-expo/token-cache"
 import * as Sentry from "@sentry/react-native"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -19,6 +19,7 @@ import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 import { useOnboarding } from "@/lib/onboarding"
+import { QUERY_CACHE_BUSTER, queryClient, queryPersister } from "@/lib/query-client"
 import { initSentry } from "@/lib/sentry"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
 import { usePushRegistration } from "@/lib/use-push-registration"
@@ -30,15 +31,6 @@ enableFreeze(true)
 // Required once at app root so the browser tab opened for Google OAuth
 // (via useSSO) closes and hands control back to the app after redirect.
 WebBrowser.maybeCompleteAuthSession()
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-    },
-  },
-})
 
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   if (!isAuthEnabled()) {
@@ -115,13 +107,20 @@ function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AppErrorBoundary>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister: queryPersister,
+              maxAge: 24 * 60 * 60 * 1000,
+              buster: QUERY_CACHE_BUSTER,
+            }}
+          >
             <RootNavigator
               ready={ready}
               onboardingCompleted={onboardingCompleted}
               onCompleteOnboarding={completeOnboarding}
             />
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </AppErrorBoundary>
       </ThemeProvider>
     </SafeAreaProvider>
