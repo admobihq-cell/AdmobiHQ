@@ -6816,10 +6816,10 @@
     "semantic_hash": "c3ed3446ad87faa925f4c2582fb4f168"
   },
   "apps/web/components/landing/hero-scene-transition.tsx": {
-    "mtime": 1786728616.1415758,
-    "seen": 1787289578.6689744,
-    "ast_hash": "3d3b57f02fac160f166b64e7c9ac4392",
-    "semantic_hash": "3d3b57f02fac160f166b64e7c9ac4392"
+    "mtime": 1787602441.8921223,
+    "seen": 1787602754.408719,
+    "ast_hash": "d167b2257b5435b4d47bee227986024a",
+    "semantic_hash": ""
   },
   "apps/web/components/landing/hero.tsx": {
     "mtime": 1786728616.1445765,
@@ -7375,74 +7375,74 @@
   },
   "apps/web/prisma/migrations/20260815000000_baseline/migration.sql": {
     "mtime": 1786806846.0436645,
-    "seen": 1787415853.7199445,
-    "ast_hash": "",
+    "seen": 1787602754.4091268,
+    "ast_hash": "a9d2779f6bbfd6856395e17ea2a64e82",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/announcements-image-additive.sql": {
     "mtime": 1785692054.7398014,
-    "seen": 1787415853.7199492,
-    "ast_hash": "",
+    "seen": 1787602754.4091313,
+    "ast_hash": "2224bb3d95663fd210b961324815e162",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/announcements-soft-delete-additive.sql": {
     "mtime": 1785674370.6284294,
-    "seen": 1787415853.7199523,
-    "ast_hash": "",
+    "seen": 1787602754.4091356,
+    "ast_hash": "59a41ec1eefe68b025ba5e989db3cc82",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/audit-fixes-additive.sql": {
     "mtime": 1785787539.0011532,
-    "seen": 1787415853.7199554,
-    "ast_hash": "",
+    "seen": 1787602754.4091396,
+    "ast_hash": "19c00339e7d7f601717428e7d9fa8a6b",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/driver-notifications-additive.sql": {
     "mtime": 1786806863.0270793,
-    "seen": 1787415853.7199583,
-    "ast_hash": "",
+    "seen": 1787602754.409144,
+    "ast_hash": "b30d55aa5064eba52f38d1b85ad692cb",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/driver-profiles-additive.sql": {
     "mtime": 1786806863.029079,
-    "seen": 1787415853.7199607,
-    "ast_hash": "",
+    "seen": 1787602754.409148,
+    "ast_hash": "d8dc737747bc3c7b97ed8c34e19df87d",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/driver-push-and-targeting-additive.sql": {
     "mtime": 1786402428.6348834,
-    "seen": 1787415853.7199636,
-    "ast_hash": "",
+    "seen": 1787602754.409152,
+    "ast_hash": "6746581cba8351cbb535dcea9a6ffd43",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/isolate-payload-schema.sql": {
     "mtime": 1786806846.049689,
-    "seen": 1787415853.7199667,
-    "ast_hash": "",
+    "seen": 1787602754.4091558,
+    "ast_hash": "f9ce55c9cdfef6ee5f90e8fda5b643d8",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/ops-roles-additive.sql": {
     "mtime": 1786445557.721573,
-    "seen": 1787415853.7199693,
-    "ast_hash": "",
+    "seen": 1787602754.40916,
+    "ast_hash": "965e25f05aae6a490efb5214694653bf",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/ops-schema-additive.sql": {
     "mtime": 1785310447.7214446,
-    "seen": 1787415853.7199721,
-    "ast_hash": "",
+    "seen": 1787602754.4091637,
+    "ast_hash": "eafd63f31768058731740f825eff8240",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/platform-flags-additive.sql": {
     "mtime": 1786300938.775643,
-    "seen": 1787415853.7199752,
-    "ast_hash": "",
+    "seen": 1787602754.4091678,
+    "ast_hash": "b2a3530286c6840f8cbffeecf2c4cc70",
     "semantic_hash": ""
   },
   "apps/web/prisma/scripts/support-schema-additive.sql": {
     "mtime": 1785664335.773375,
-    "seen": 1787415853.719978,
-    "ast_hash": "",
+    "seen": 1787602754.4091718,
+    "ast_hash": "06ae42e95b96457661116bc2e0259876",
     "semantic_hash": ""
   },
   "apps/web/public/.impeccable/hook.cache.json": {
