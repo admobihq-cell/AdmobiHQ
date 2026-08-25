@@ -4,6 +4,7 @@ import {
   getAdmobiEmailError,
   isAdmobiEmail,
 } from "./allowed-email"
+import { ANNOUNCEMENT_TARGET_APPS } from "./enums"
 import {
   formatBytes,
   formatLabel,
@@ -91,5 +92,16 @@ describe("zod schemas", () => {
   it("rejects an invalid waitlist email", () => {
     const result = waitlistCreateSchema.safeParse({ email: "nope" })
     expect(result.success).toBe(false)
+  })
+})
+
+describe("announcement target apps", () => {
+  it("includes both mobile and web apps", () => {
+    expect(ANNOUNCEMENT_TARGET_APPS).toEqual([
+      "customer-mobile",
+      "driver-mobile",
+      "customer-web",
+      "driver-web",
+    ])
   })
 })

@@ -32,14 +32,21 @@ enableFreeze(true)
 // (via useSSO) closes and hands control back to the app after redirect.
 WebBrowser.maybeCompleteAuthSession()
 
+function PushRegistrationBridge({ children }: { children: React.ReactNode }) {
+  usePushRegistration()
+  return <>{children}</>
+}
+
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   if (!isAuthEnabled()) {
-    return <>{children}</>
+    return <PushRegistrationBridge>{children}</PushRegistrationBridge>
   }
 
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <AuthGate>{children}</AuthGate>
+      <PushRegistrationBridge>
+        <AuthGate>{children}</AuthGate>
+      </PushRegistrationBridge>
     </ClerkProvider>
   )
 }
@@ -91,7 +98,6 @@ function RootLayout() {
 
   useSplashBootstrap(ready)
   useOtaUpdates(ready)
-  usePushRegistration()
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {

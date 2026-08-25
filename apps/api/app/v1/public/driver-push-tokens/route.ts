@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { getDriverAccess } from "@/lib/driver-auth"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
 
   const { expoPushToken, platform, anonymousDeviceId } = parsed.data
 
+  // Same reasoning as the customer push-tokens route: auth is optional so a
+  // request without a usable token still registers the device.
+  const access = await getDriverAccess()
+  const clerkUserId = access.status === "authorized" ? access.userId : null
+
   try {
     await prisma.driverPushToken.upsert({
       where: { expo_push_token: expoPushToken },
@@ -21,10 +27,12 @@ export async function POST(req: Request) {
         expo_push_token: expoPushToken,
         platform: platform ?? null,
         anonymous_device_id: anonymousDeviceId ?? null,
+        clerk_user_id: clerkUserId,
       },
       update: {
         platform: platform ?? null,
         anonymous_device_id: anonymousDeviceId ?? null,
+        ...(clerkUserId ? { clerk_user_id: clerkUserId } : {}),
       },
     })
 

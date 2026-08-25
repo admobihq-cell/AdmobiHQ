@@ -89,7 +89,12 @@ export const ANNOUNCEMENT_CATEGORIES = [
 export type AnnouncementCategory = (typeof ANNOUNCEMENT_CATEGORIES)[number]
 
 /** Which installed app(s) an announcement/push broadcast is sent to. */
-export const ANNOUNCEMENT_TARGET_APPS = ["customer-mobile", "driver-mobile"] as const
+export const ANNOUNCEMENT_TARGET_APPS = [
+  "customer-mobile",
+  "driver-mobile",
+  "customer-web",
+  "driver-web",
+] as const
 export type AnnouncementTargetApp = (typeof ANNOUNCEMENT_TARGET_APPS)[number]
 
 export const AUDIT_APPS = [

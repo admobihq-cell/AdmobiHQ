@@ -20,6 +20,7 @@ import {
   ANNOUNCEMENT_TARGET_APP_OPTIONS,
   broadcastCreateSchema,
   describeAnnouncementTargets,
+  type AnnouncementTargetApp,
 } from "@workspace/ops-contracts"
 
 import { CheckboxOff, CheckboxOn, ImageIcon, X } from "@/components/icons"
@@ -227,7 +228,7 @@ export default function NewAnnouncementScreen() {
     title: string
     body: string
     category: "announcement" | "campaign" | "billing" | "promo" | "system"
-    target_apps: ("customer-mobile" | "driver-mobile")[]
+    target_apps: AnnouncementTargetApp[]
   }) {
     setSaving(true)
     setError(null)
