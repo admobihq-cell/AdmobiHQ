@@ -36,6 +36,7 @@ import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
+import { NotificationBell } from "@/components/shell/notification-bell"
 
 function useSignedInUser() {
   return useUser()
@@ -142,7 +143,8 @@ export function AppShell({
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <AppBreadcrumbs pathname={pathname} />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              {isAuthEnabled() ? <NotificationBell /> : null}
               <ThemeToggle />
             </div>
           </header>

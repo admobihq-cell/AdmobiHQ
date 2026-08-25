@@ -79,19 +79,23 @@ function saveIdentity(identity: SupportIdentity) {
   }
 }
 
-export async function createSupportCase(input: {
-  contact_name: string
-  contact_email: string
-  contact_phone?: string
-  anonymous_device_id: string
-  category: string
-  subject: string
-  message: string
-}): Promise<SupportCase & { accessToken: string }> {
+export async function createSupportCase(
+  input: {
+    contact_name: string
+    contact_email: string
+    contact_phone?: string
+    anonymous_device_id: string
+    category: string
+    subject: string
+    message: string
+  },
+  token?: string | null,
+): Promise<SupportCase & { accessToken: string }> {
   const res = await publicApiFetch<{
     data: SupportCase & { accessToken: string; identityToken?: string }
   }>("/support", {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: JSON.stringify({ ...input, channel: "customer-web" }),
   })
   if (!res.ok) throw new Error(res.message)
@@ -141,6 +145,14 @@ export async function listMySupportCases(): Promise<SupportCase[]> {
     `/support?email=${encodeURIComponent(identity.email)}`,
     { headers: { Authorization: `Bearer ${identity.token}` } },
   )
+  if (!res.ok) return []
+  return res.data.items
+}
+
+export async function listMySupportCasesForAccount(token: string): Promise<SupportCase[]> {
+  const res = await publicApiFetch<{ items: SupportCase[] }>("/support", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
   if (!res.ok) return []
   return res.data.items
 }

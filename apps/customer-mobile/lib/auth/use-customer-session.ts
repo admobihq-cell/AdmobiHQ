@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import * as Crypto from "expo-crypto"
+import { useAuth } from "@clerk/clerk-expo"
+
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 
 const DEVICE_ID_KEY = "admobi.customer.deviceId"
 
-/**
- * Dormant auth seam. `@clerk/clerk-expo` is already a dependency, but no
- * <ClerkProvider> is mounted and this always resolves "anonymous" today —
- * flipping EXPO_PUBLIC_AUTH_ENABLED on later (plus mounting ClerkProvider in
- * app/_layout.tsx) is what turns this into a real session, and every screen
- * that calls useCustomerSession() keeps working unchanged.
- */
 export type CustomerSession =
   | { status: "loading" }
   | { status: "anonymous"; deviceId: string }
+  | { status: "authenticated"; userId: string; deviceId: string }
 
 /** Shared with lib/push-registration.ts so push tokens can be tied to the
  * same per-device identity used for support cases, without needing a hook. */
@@ -26,7 +23,7 @@ export async function getOrCreateDeviceId(): Promise<string> {
   return id
 }
 
-export function useCustomerSession(): CustomerSession {
+function useDeviceId(): string | null {
   const [deviceId, setDeviceId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -43,6 +40,34 @@ export function useCustomerSession(): CustomerSession {
     }
   }, [])
 
+  return deviceId
+}
+
+function useAuthenticatedSession(deviceId: string | null): CustomerSession {
+  const { isSignedIn, userId } = useAuth()
+
+  if (!deviceId) return { status: "loading" }
+  if (isSignedIn && userId) return { status: "authenticated", userId, deviceId }
+  return { status: "anonymous", deviceId }
+}
+
+function useAnonymousSession(deviceId: string | null): CustomerSession {
   if (!deviceId) return { status: "loading" }
   return { status: "anonymous", deviceId }
+}
+
+/**
+ * isAuthEnabled() is fixed for the lifetime of a running app (read once from
+ * EXPO_PUBLIC_* env vars, never toggles at runtime), so picking the hook
+ * implementation once here — rather than branching inside useCustomerSession
+ * — keeps the actual hook call unconditional per render. useAuth() must
+ * never run unless ClerkProvider is mounted (app/_layout.tsx only mounts it
+ * when this same flag is on) — see apps/customer-web's identical pattern in
+ * lib/auth/customer-session.ts.
+ */
+const useSessionImpl = isAuthEnabled() ? useAuthenticatedSession : useAnonymousSession
+
+export function useCustomerSession(): CustomerSession {
+  const deviceId = useDeviceId()
+  return useSessionImpl(deviceId)
 }

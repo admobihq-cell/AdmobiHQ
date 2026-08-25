@@ -17,8 +17,11 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
+  fetchDriverAnnouncements,
   fetchDriverNotifications,
+  markDriverAnnouncementsRead,
   markDriverNotificationsRead,
+  type DriverAnnouncementDto,
 } from "@/lib/driver-notifications-client"
 
 const POLL_INTERVAL_MS = 60_000
@@ -28,6 +31,7 @@ const TYPE_DOT: Record<string, string> = {
   application_approved: "bg-emerald-500",
   application_rejected: "bg-red-500",
   application_changes_requested: "bg-orange-500",
+  announcement: "bg-blue-500",
 }
 
 /** Bell dropdown in the header, next to ThemeToggle. Polls rather than
@@ -43,10 +47,26 @@ export function NotificationBell() {
     queryFn: () => fetchDriverNotifications(getToken),
     refetchInterval: POLL_INTERVAL_MS,
   })
-  const notifications = notificationsQuery.data ?? []
+  const announcementsQuery = useQuery({
+    queryKey: ["driver-announcements"],
+    queryFn: () => fetchDriverAnnouncements(getToken),
+    refetchInterval: POLL_INTERVAL_MS,
+  })
+
+  const merged = [
+    ...(notificationsQuery.data ?? []).map((n) => ({ ...n, id: `lifecycle-${n.id}` })),
+    ...(announcementsQuery.data ?? []).map((a) => ({
+      ...a,
+      id: `announcement-${a.id}`,
+      type: "announcement" as const,
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const notifications = merged
 
   const markReadMutation = useMutation({
-    mutationFn: () => markDriverNotificationsRead(getToken),
+    mutationFn: async () => {
+      await Promise.all([markDriverNotificationsRead(getToken), markDriverAnnouncementsRead(getToken)])
+    },
   })
 
   const unreadCount = notifications.filter((n) => !n.read_at).length
@@ -57,6 +77,9 @@ export function NotificationBell() {
       const readAt = new Date().toISOString()
       queryClient.setQueryData<DriverNotificationDto[]>(["driver-notifications"], (prev) =>
         prev?.map((n) => ({ ...n, read_at: n.read_at ?? readAt })) ?? prev,
+      )
+      queryClient.setQueryData<DriverAnnouncementDto[]>(["driver-announcements"], (prev) =>
+        prev?.map((a) => ({ ...a, read_at: a.read_at ?? readAt })) ?? prev,
       )
       markReadMutation.mutate()
     }
