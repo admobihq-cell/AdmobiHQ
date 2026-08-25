@@ -1,18 +1,53 @@
 import { useEffect, useState } from "react"
+import { useAuth, useUser } from "@clerk/clerk-expo"
 import { Stack, useRouter } from "expo-router"
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { CategoryIcon, SUPPORT_CATEGORIES } from "@/components/support/support-ui"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useCustomerSession } from "@/lib/auth/use-customer-session"
 import { createSupportCase, getStoredIdentity } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+
+type ClerkSupportProfile = {
+  getToken: () => Promise<string | null>
+  fullName: string | null
+  email: string | null
+}
+
+// useAuth()/useUser() require a ClerkProvider ancestor, and app/_layout.tsx
+// only mounts ClerkProvider when isAuthEnabled() is true (see
+// AuthenticatedApp) — this screen renders under that same conditional tree,
+// so calling either hook unconditionally would crash whenever auth is
+// disabled. isAuthEnabled() is fixed for the app's lifetime, so pick the hook
+// implementation once at module load instead of branching inside a single
+// hook body — same pattern as lib/auth/use-customer-session.ts and
+// lib/use-push-registration.ts.
+function useClerkSupportProfileEnabled(): ClerkSupportProfile {
+  const { getToken } = useAuth()
+  const { user } = useUser()
+  return {
+    getToken,
+    fullName: user?.fullName ?? null,
+    email: user?.primaryEmailAddress?.emailAddress ?? null,
+  }
+}
+
+function useClerkSupportProfileDisabled(): ClerkSupportProfile {
+  return { getToken: async () => null, fullName: null, email: null }
+}
+
+const useClerkSupportProfile = isAuthEnabled()
+  ? useClerkSupportProfileEnabled
+  : useClerkSupportProfileDisabled
 
 export default function NewSupportRequestScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const session = useCustomerSession()
+  const { getToken, fullName, email: clerkEmail } = useClerkSupportProfile()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -31,6 +66,12 @@ export default function NewSupportRequestScreen() {
       setEmail((current) => current || identity.email)
     })
   }, [])
+
+  useEffect(() => {
+    if (session.status !== "authenticated") return
+    setName((current) => current || fullName || "")
+    setEmail((current) => current || clerkEmail || "")
+  }, [session.status, fullName, clerkEmail])
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -101,7 +142,7 @@ export default function NewSupportRequestScreen() {
   }))
 
   async function handleSubmit() {
-    if (submitting || session.status !== "anonymous") return
+    if (submitting || session.status === "loading") return
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
       setError("Fill in your name, email, subject, and message.")
       return
@@ -110,14 +151,18 @@ export default function NewSupportRequestScreen() {
     setSubmitting(true)
     setError(null)
     try {
-      const created = await createSupportCase({
-        contact_name: name.trim(),
-        contact_email: email.trim(),
-        anonymous_device_id: session.deviceId,
-        category,
-        subject: subject.trim(),
-        message: message.trim(),
-      })
+      const token = session.status === "authenticated" ? await getToken() : null
+      const created = await createSupportCase(
+        {
+          contact_name: name.trim(),
+          contact_email: email.trim(),
+          anonymous_device_id: session.deviceId,
+          category,
+          subject: subject.trim(),
+          message: message.trim(),
+        },
+        token,
+      )
       router.replace(`/settings/support/${created.id}`)
     } catch {
       setError("Couldn't send your request. Check your connection and try again.")

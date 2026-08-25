@@ -11,7 +11,7 @@ import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getBearerToken, mintIdentityTokenIfAbsent, toPublicCase, verifyIdentityToken } from "@/lib/support"
+import { getBearerToken, mintIdentityTokenIfAbsent, resolveSupportAuthor, resolveSupportAuthorFromBearer, toPublicCase, verifyIdentityToken } from "@/lib/support"
 import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
 
 export async function POST(req: Request) {
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
 
   const data = parsed.data
   const accessToken = generateAccessToken()
+  const { customerId, driverClerkUserId } = await resolveSupportAuthor(data.channel)
 
   try {
     const supportCase = await prisma.supportCase.create({
@@ -31,6 +32,8 @@ export async function POST(req: Request) {
         contact_email: data.contact_email,
         contact_phone: data.contact_phone ?? null,
         anonymous_device_id: data.anonymous_device_id ?? null,
+        customer_id: customerId,
+        driver_clerk_user_id: driverClerkUserId,
         access_token_hash: hashAccessToken(accessToken),
         channel: data.channel,
         category: data.category,
@@ -115,13 +118,28 @@ export async function GET(req: Request) {
   const limited = await checkRateLimit(req, "support-list", { limit: 20, windowSeconds: 60 })
   if (limited) return limited
 
-  const { searchParams } = new URL(req.url)
-  const email = searchParams.get("email")?.trim()
-  if (!email) return jsonError("email is required", 400)
-
   const token = getBearerToken(req)
   if (!token) return jsonError("Unauthorized", 401)
 
+  const { searchParams } = new URL(req.url)
+  const email = searchParams.get("email")?.trim()
+
+  if (!email) {
+    // No email param: this is the new account-based path.
+    const { authenticated, customerId, driverClerkUserId } = await resolveSupportAuthorFromBearer(token)
+    if (!authenticated) return jsonError("Unauthorized", 401)
+    if (!customerId && !driverClerkUserId) return NextResponse.json({ items: [] })
+
+    const cases = await prisma.supportCase.findMany({
+      where: customerId ? { customer_id: customerId } : { driver_clerk_user_id: driverClerkUserId! },
+      orderBy: { created_at: "desc" },
+      take: 50,
+    })
+    return NextResponse.json({ items: cases.map(toPublicCase) })
+  }
+
+  // Legacy path: email-level identity token, gated by the same
+  // mintIdentityTokenIfAbsent-issued token as before.
   const verified = await verifyIdentityToken(email, token)
   if (!verified) return jsonError("Unauthorized", 401)
 

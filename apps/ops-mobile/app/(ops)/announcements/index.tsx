@@ -9,7 +9,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import type { AnnouncementDto } from "@workspace/ops-contracts"
+import type { AnnouncementDto, AnnouncementTargetApp } from "@workspace/ops-contracts"
 import { describeAnnouncementTargets, formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
 
 import { Inbox, Plus, Radio, RefreshCcw, Trash } from "@/components/icons"
@@ -174,7 +174,7 @@ export default function AnnouncementsScreen() {
         body: target.body,
         category: (target.category ?? "announcement") as
           "announcement" | "campaign" | "billing" | "promo" | "system",
-        target_apps: target.target_apps as ("customer-mobile" | "driver-mobile")[],
+        target_apps: target.target_apps as AnnouncementTargetApp[],
       }),
     onSuccess: () => {
       setResendTarget(null)

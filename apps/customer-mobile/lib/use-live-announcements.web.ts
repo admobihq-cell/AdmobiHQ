@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { DEMO_ANNOUNCEMENTS } from "@/lib/demo/mock-data"
-import { announcementToNotificationItem, type NotificationItem } from "@/lib/notifications-data"
+import { announcementDeliveryToNotificationItem, type NotificationItem } from "@/lib/notifications-data"
 
 /**
  * Web build of useLiveAnnouncements — Metro resolves this over
@@ -14,7 +14,7 @@ export function useLiveAnnouncements() {
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(async () => {
-    setItems(DEMO_ANNOUNCEMENTS.map(announcementToNotificationItem))
+    setItems(DEMO_ANNOUNCEMENTS.map(announcementDeliveryToNotificationItem))
     setLoading(false)
   }, [])
 

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         action: "broadcast",
         entity_type: "announcement",
         entity_id: broadcast.id,
-        summary: `Broadcast "${broadcast.title}" to ${broadcast.target_count} devices`,
+        summary: `Broadcast "${broadcast.title}" to ${broadcast.target_count} recipients`,
       })
     } else {
       await recordAuditEvent({
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         action: "broadcast",
         entity_type: "announcement",
         entity_id: broadcast.id,
-        summary: `Broadcast "${broadcast.title}" to ${broadcast.target_count} devices (automated OTA release notice)`,
+        summary: `Broadcast "${broadcast.title}" to ${broadcast.target_count} recipients (automated OTA release notice)`,
       })
     }
 
