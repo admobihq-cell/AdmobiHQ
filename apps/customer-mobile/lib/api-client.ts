@@ -43,3 +43,21 @@ export async function getJson<T>(path: string, headers?: Record<string, string>)
 
   return (await res.json()) as T
 }
+
+export async function patchJson<T>(
+  path: string,
+  body: unknown,
+  headers?: Record<string, string>,
+): Promise<T> {
+  const res = await fetchWithRetry(`${API_URL}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Request to ${path} failed with status ${res.status}`)
+  }
+
+  return (await res.json()) as T
+}

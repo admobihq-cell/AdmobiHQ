@@ -229,6 +229,18 @@ export function AnnouncementFormDialog({
             />
           </div>
 
+          <p className="text-xs text-muted-foreground">
+            Use <code className="rounded bg-muted px-1 py-0.5">{"{{first_name}}"}</code> to
+            personalize with the recipient&apos;s first name.
+            {(title.includes("{{first_name}}") || body.includes("{{first_name}}")) && (
+              <span className="mt-1 block rounded-md border border-dashed p-2">
+                Preview: <strong>{title.replace(/\{\{\s*first_name\s*\}\}/g, "Jordan")}</strong>
+                <br />
+                {body.replace(/\{\{\s*first_name\s*\}\}/g, "Jordan")}
+              </span>
+            )}
+          </p>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={fileInputId}>Image (optional)</Label>
             <input

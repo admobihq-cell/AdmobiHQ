@@ -27,6 +27,7 @@
 **New files:**
 - `apps/api/lib/customer-auth.ts` — verifies a bearer token against the customer Clerk instance (mirrors `apps/api/lib/driver-auth.ts`).
 - `apps/api/lib/push/recipient-names.ts` — batched Clerk `firstName` lookup per audience, used by `broadcastAnnouncement()`.
+- `apps/api/lib/push/announcement-inbox.ts` — shared `listAnnouncementDeliveries`/`markAnnouncementDeliveriesRead` helpers; every announcement-inbox route (customer/driver × web/mobile) calls these instead of repeating Prisma queries.
 - `apps/api/app/v1/customer/announcements/route.ts` — `GET` a signed-in customer's `AnnouncementDelivery` rows.
 - `apps/api/app/v1/customer/announcements/read/route.ts` — `PATCH` marks them read.
 - `apps/api/app/v1/driver/announcements/route.ts` — `GET` a signed-in driver's `AnnouncementDelivery` rows.
@@ -614,7 +615,6 @@ git commit -m "feat(ops-contracts): add customer-web/driver-web as announcement 
 ### Task 6: Customer push-token route accepts an optional bearer token
 
 **Files:**
-- Modify: `apps/api/lib/validation/push-schemas.ts`
 - Modify: `apps/api/app/v1/public/push-tokens/route.ts`
 
 **Interfaces:**
@@ -1434,79 +1434,111 @@ git commit -m "feat(api): personalize announcements per recipient and target web
 
 ---
 
-### Task 12: `/v1/customer/announcements` — read + mark-read endpoints
+### Task 12: `/v1/customer/announcements` — shared inbox helper + read/mark-read endpoints
 
 **Files:**
+- Create: `apps/api/lib/push/announcement-inbox.ts`
 - Create: `apps/api/app/v1/customer/announcements/route.ts`
 - Create: `apps/api/app/v1/customer/announcements/read/route.ts`
 
 **Interfaces:**
 - Consumes: `requireCustomerAccess()` (Task 2).
-- Produces: `GET /v1/customer/announcements` → `AnnouncementDeliveryDto[]` (`{ id, title, body, image_url, category, read_at, created_at }`); `PATCH /v1/customer/announcements/read` → `{ success: true }`, marks every unread row for the caller as read.
+- Produces: `AnnouncementDeliveryDto` (`{ id, title, body, image_url, category, read_at, created_at }`), `listAnnouncementDeliveries(app: string, clerkUserId: string): Promise<AnnouncementDeliveryDto[]>`, `markAnnouncementDeliveriesRead(app: string, clerkUserId: string): Promise<void>` — this is the one place the `AnnouncementDelivery` read/mark-read query logic lives; Task 13 and Task 14 both call it instead of repeating the Prisma calls, so the four route pairs across customer/driver × web/mobile stay thin. `GET /v1/customer/announcements` → `AnnouncementDeliveryDto[]`; `PATCH /v1/customer/announcements/read` → `{ success: true }`, marks every unread row for the caller as read.
 
-- [ ] **Step 1: Create the GET route**
+- [ ] **Step 1: Create the shared inbox helper**
+
+```typescript
+import { prisma } from "@/lib/prisma"
+
+const LIST_LIMIT = 30
+
+export type AnnouncementDeliveryDto = {
+  id: number
+  title: string
+  body: string
+  image_url: string | null
+  category: string
+  read_at: string | null
+  created_at: string
+}
+
+/** Shared by every announcement-inbox route (customer/driver × web/mobile) —
+ * each route is just an access check plus a call into one of these two
+ * functions with the right `app` value, so the Prisma query logic exists
+ * exactly once. */
+export async function listAnnouncementDeliveries(
+  app: string,
+  clerkUserId: string,
+): Promise<AnnouncementDeliveryDto[]> {
+  const rows = await prisma.announcementDelivery.findMany({
+    where: { clerk_user_id: clerkUserId, app },
+    orderBy: { created_at: "desc" },
+    take: LIST_LIMIT,
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    image_url: row.image_url,
+    category: row.category,
+    read_at: row.read_at?.toISOString() ?? null,
+    created_at: row.created_at.toISOString(),
+  }))
+}
+
+export async function markAnnouncementDeliveriesRead(
+  app: string,
+  clerkUserId: string,
+): Promise<void> {
+  await prisma.announcementDelivery.updateMany({
+    where: { clerk_user_id: clerkUserId, app, read_at: null },
+    data: { read_at: new Date() },
+  })
+}
+```
+
+- [ ] **Step 2: Create the GET route**
 
 ```typescript
 import { NextResponse } from "next/server"
 
 import { requireCustomerAccess } from "@/lib/api-utils"
-import { prisma } from "@/lib/prisma"
-
-const LIST_LIMIT = 30
+import { listAnnouncementDeliveries } from "@/lib/push/announcement-inbox"
 
 export async function GET() {
   const auth = await requireCustomerAccess()
   if (auth.error) return auth.error
 
-  const rows = await prisma.announcementDelivery.findMany({
-    where: { clerk_user_id: auth.access.userId, app: "customer-web" },
-    orderBy: { created_at: "desc" },
-    take: LIST_LIMIT,
-  })
-
-  return NextResponse.json(
-    rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      body: row.body,
-      image_url: row.image_url,
-      category: row.category,
-      read_at: row.read_at?.toISOString() ?? null,
-      created_at: row.created_at.toISOString(),
-    })),
-  )
+  return NextResponse.json(await listAnnouncementDeliveries("customer-web", auth.access.userId))
 }
 ```
 
-Note: this route is scoped to `app: "customer-web"` — the customer-mobile client reads a *different* route (Task 13/15 add `customer-mobile`'s own filter, mirroring how `driver-web`'s and `driver-mobile`'s reads must not cross). If Task 15 ends up needing the exact same recipient (one account, one inbox across both surfaces), revisit this filter then — for now, per the spec's per-app `AnnouncementDelivery.app` column, each surface reads only its own rows.
+Note: this route is scoped to `app: "customer-web"` — the customer-mobile client reads a *different* route (Task 14 adds `customer-mobile`'s own pair, calling the same helper with `"customer-mobile"`, mirroring how `driver-web`'s and `driver-mobile`'s reads must not cross). Per the spec's per-app `AnnouncementDelivery.app` column, each surface reads only its own rows.
 
-- [ ] **Step 2: Create the PATCH read route**
+- [ ] **Step 3: Create the PATCH read route**
 
 ```typescript
 import { NextResponse } from "next/server"
 
 import { requireCustomerAccess } from "@/lib/api-utils"
-import { prisma } from "@/lib/prisma"
+import { markAnnouncementDeliveriesRead } from "@/lib/push/announcement-inbox"
 
 export async function PATCH() {
   const auth = await requireCustomerAccess()
   if (auth.error) return auth.error
 
-  await prisma.announcementDelivery.updateMany({
-    where: { clerk_user_id: auth.access.userId, app: "customer-web", read_at: null },
-    data: { read_at: new Date() },
-  })
-
+  await markAnnouncementDeliveriesRead("customer-web", auth.access.userId)
   return NextResponse.json({ success: true })
 }
 ```
 
-- [ ] **Step 3: Typecheck**
+- [ ] **Step 4: Typecheck**
 
 Run: `pnpm --filter api typecheck`
 Expected: exits 0.
 
-- [ ] **Step 4: Manual verification**
+- [ ] **Step 5: Manual verification**
 
 With a delivery row seeded for a test customer account (from Task 11's verification), call:
 
@@ -1517,10 +1549,10 @@ curl -s -X PATCH http://localhost:3003/v1/customer/announcements/read -H "Author
 
 Expected: first call returns the seeded row with `read_at: null`; second call returns `{"success":true}` and a follow-up GET shows `read_at` populated.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add apps/api/app/v1/customer/announcements
+git add apps/api/lib/push/announcement-inbox.ts apps/api/app/v1/customer/announcements
 git commit -m "feat(api): add authenticated customer announcements inbox endpoints"
 ```
 
@@ -1533,7 +1565,7 @@ git commit -m "feat(api): add authenticated customer announcements inbox endpoin
 - Create: `apps/api/app/v1/driver/announcements/read/route.ts`
 
 **Interfaces:**
-- Consumes: `requireDriverAccess()` (already exists, used by `apps/api/app/v1/driver/notifications/route.ts` as the pattern to mirror).
+- Consumes: `requireDriverAccess()` (already exists, used by `apps/api/app/v1/driver/notifications/route.ts` as the pattern to mirror), `listAnnouncementDeliveries`/`markAnnouncementDeliveriesRead` (Task 12 — `apps/api/lib/push/announcement-inbox.ts`, already built; this task only adds routes, no new query logic).
 - Produces: same DTO shape as Task 12, scoped to `app: "driver-web"`.
 
 - [ ] **Step 1: Create the GET route**
@@ -1542,31 +1574,13 @@ git commit -m "feat(api): add authenticated customer announcements inbox endpoin
 import { NextResponse } from "next/server"
 
 import { requireDriverAccess } from "@/lib/api-utils"
-import { prisma } from "@/lib/prisma"
-
-const LIST_LIMIT = 30
+import { listAnnouncementDeliveries } from "@/lib/push/announcement-inbox"
 
 export async function GET() {
   const auth = await requireDriverAccess()
   if (auth.error) return auth.error
 
-  const rows = await prisma.announcementDelivery.findMany({
-    where: { clerk_user_id: auth.access.userId, app: "driver-web" },
-    orderBy: { created_at: "desc" },
-    take: LIST_LIMIT,
-  })
-
-  return NextResponse.json(
-    rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      body: row.body,
-      image_url: row.image_url,
-      category: row.category,
-      read_at: row.read_at?.toISOString() ?? null,
-      created_at: row.created_at.toISOString(),
-    })),
-  )
+  return NextResponse.json(await listAnnouncementDeliveries("driver-web", auth.access.userId))
 }
 ```
 
@@ -1576,17 +1590,13 @@ export async function GET() {
 import { NextResponse } from "next/server"
 
 import { requireDriverAccess } from "@/lib/api-utils"
-import { prisma } from "@/lib/prisma"
+import { markAnnouncementDeliveriesRead } from "@/lib/push/announcement-inbox"
 
 export async function PATCH() {
   const auth = await requireDriverAccess()
   if (auth.error) return auth.error
 
-  await prisma.announcementDelivery.updateMany({
-    where: { clerk_user_id: auth.access.userId, app: "driver-web", read_at: null },
-    data: { read_at: new Date() },
-  })
-
+  await markAnnouncementDeliveriesRead("driver-web", auth.access.userId)
   return NextResponse.json({ success: true })
 }
 ```
@@ -1598,7 +1608,7 @@ Expected: exits 0.
 
 - [ ] **Step 4: Manual verification**
 
-Same as Task 12 Step 4, using a driver Clerk session token and `/v1/driver/announcements`.
+Same as Task 12 Step 5, using a driver Clerk session token and `/v1/driver/announcements`.
 
 - [ ] **Step 5: Commit**
 
@@ -1629,9 +1639,73 @@ These two new API endpoints (`/v1/customer/announcements`, `/v1/driver/announcem
 
 - [ ] **Step 1: Add the two missing mobile-scoped API routes**
 
-Create `apps/api/app/v1/customer/mobile-announcements/route.ts` and `apps/api/app/v1/customer/mobile-announcements/read/route.ts`, copying Task 12's two files verbatim except `app: "customer-web"` becomes `app: "customer-mobile"`.
+These call the same `listAnnouncementDeliveries`/`markAnnouncementDeliveriesRead` helper Task 12 created (`apps/api/lib/push/announcement-inbox.ts`) — each route is just an access check plus one call with the mobile `app` value, no new query logic.
 
-Create `apps/api/app/v1/driver/mobile-announcements/route.ts` and `apps/api/app/v1/driver/mobile-announcements/read/route.ts`, copying Task 13's two files verbatim except `app: "driver-web"` becomes `app: "driver-mobile"`.
+Create `apps/api/app/v1/customer/mobile-announcements/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server"
+
+import { requireCustomerAccess } from "@/lib/api-utils"
+import { listAnnouncementDeliveries } from "@/lib/push/announcement-inbox"
+
+export async function GET() {
+  const auth = await requireCustomerAccess()
+  if (auth.error) return auth.error
+
+  return NextResponse.json(await listAnnouncementDeliveries("customer-mobile", auth.access.userId))
+}
+```
+
+Create `apps/api/app/v1/customer/mobile-announcements/read/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server"
+
+import { requireCustomerAccess } from "@/lib/api-utils"
+import { markAnnouncementDeliveriesRead } from "@/lib/push/announcement-inbox"
+
+export async function PATCH() {
+  const auth = await requireCustomerAccess()
+  if (auth.error) return auth.error
+
+  await markAnnouncementDeliveriesRead("customer-mobile", auth.access.userId)
+  return NextResponse.json({ success: true })
+}
+```
+
+Create `apps/api/app/v1/driver/mobile-announcements/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server"
+
+import { requireDriverAccess } from "@/lib/api-utils"
+import { listAnnouncementDeliveries } from "@/lib/push/announcement-inbox"
+
+export async function GET() {
+  const auth = await requireDriverAccess()
+  if (auth.error) return auth.error
+
+  return NextResponse.json(await listAnnouncementDeliveries("driver-mobile", auth.access.userId))
+}
+```
+
+Create `apps/api/app/v1/driver/mobile-announcements/read/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server"
+
+import { requireDriverAccess } from "@/lib/api-utils"
+import { markAnnouncementDeliveriesRead } from "@/lib/push/announcement-inbox"
+
+export async function PATCH() {
+  const auth = await requireDriverAccess()
+  if (auth.error) return auth.error
+
+  await markAnnouncementDeliveriesRead("driver-mobile", auth.access.userId)
+  return NextResponse.json({ success: true })
+}
+```
 
 Run: `pnpm --filter api typecheck` — expected: exits 0.
 

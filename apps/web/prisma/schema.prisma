@@ -130,10 +130,12 @@ model CustomerPushToken {
   expo_push_token     String   @unique
   platform            String?
   anonymous_device_id String?
+  clerk_user_id       String?
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
   @@index([anonymous_device_id])
+  @@index([clerk_user_id])
   @@map("customer_push_tokens")
 }
 
@@ -142,10 +144,12 @@ model DriverPushToken {
   expo_push_token     String   @unique
   platform            String?
   anonymous_device_id String?
+  clerk_user_id       String?
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
   @@index([anonymous_device_id])
+  @@index([clerk_user_id])
   @@map("driver_push_tokens")
 }
 
@@ -166,11 +170,35 @@ model AnnouncementBroadcast {
   deleted_at       DateTime?
   deleted_by_email String?
 
-  tickets PushTicket[]
+  tickets    PushTicket[]
+  deliveries AnnouncementDelivery[]
 
   @@index([created_at])
   @@index([deleted_at])
   @@map("announcement_broadcasts")
+}
+
+/// One row per (broadcast, recipient) — written at send time for every
+/// resolved recipient across all four target apps. This is what a signed-in
+/// user's notification inbox reads from, so a delivery row only existing for
+/// recipients who were eligible at send time is what keeps a new account
+/// from ever seeing history from before they joined.
+model AnnouncementDelivery {
+  id            Int                   @id @default(autoincrement())
+  broadcast_id  Int
+  broadcast     AnnouncementBroadcast @relation(fields: [broadcast_id], references: [id], onDelete: Cascade)
+  clerk_user_id String
+  app           String
+  title         String
+  body          String
+  image_url     String?
+  category      String
+  read_at       DateTime?
+  created_at    DateTime              @default(now())
+
+  @@index([clerk_user_id, app, created_at])
+  @@index([broadcast_id])
+  @@map("announcement_deliveries")
 }
 
 /// One row per push message handed to Expo. A ticket only means Expo queued the
@@ -215,6 +243,7 @@ model SupportCase {
   id                    Int       @id @default(autoincrement())
   customer_id           Int?
   customer              Customer? @relation(fields: [customer_id], references: [id])
+  driver_clerk_user_id  String?
   contact_name          String
   contact_email         String
   contact_phone         String?
@@ -235,6 +264,7 @@ model SupportCase {
   @@index([status, created_at])
   @@index([contact_email])
   @@index([assigned_to_clerk_id])
+  @@index([driver_clerk_user_id])
   @@map("support_cases")
 }
 

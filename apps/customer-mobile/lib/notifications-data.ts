@@ -41,12 +41,13 @@ export const NOTIFICATION_CATEGORY_ORDER: NotificationCategory[] = [
 
 export const NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORY_ORDER
 
-export type AnnouncementBroadcastDto = {
+export type AnnouncementDeliveryDto = {
   id: number
   title: string
   body: string
   category?: string | null
   image_url?: string | null
+  read_at: string | null
   created_at: string
 }
 
@@ -89,7 +90,7 @@ function parseCategory(value: string | null | undefined): NotificationCategory {
   return "announcement"
 }
 
-export function announcementToNotificationItem(dto: AnnouncementBroadcastDto): NotificationItem {
+export function announcementDeliveryToNotificationItem(dto: AnnouncementDeliveryDto): NotificationItem {
   return {
     id: `announcement-${dto.id}`,
     category: parseCategory(dto.category),
@@ -97,7 +98,7 @@ export function announcementToNotificationItem(dto: AnnouncementBroadcastDto): N
     body: dto.body,
     imageUrl: dto.image_url ?? null,
     createdAt: dto.created_at,
-    read: false,
+    read: Boolean(dto.read_at),
     group: dayDiff(dto.created_at) <= 0 ? "today" : "earlier",
   }
 }

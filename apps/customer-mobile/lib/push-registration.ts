@@ -57,7 +57,9 @@ export async function getCustomerExpoPushToken(): Promise<string | null> {
   }
 }
 
-export async function registerCustomerPushToken(): Promise<void> {
+export async function registerCustomerPushToken(
+  getToken?: () => Promise<string | null>,
+): Promise<void> {
   if (!isNotificationsSupported()) return
 
   configureNotificationHandler()
@@ -75,9 +77,14 @@ export async function registerCustomerPushToken(): Promise<void> {
 
   const platform = Platform.OS === "ios" || Platform.OS === "android" ? Platform.OS : undefined
   const anonymousDeviceId = await getOrCreateDeviceId()
+  const token = await getToken?.().catch(() => null)
 
   try {
-    await postJson("/v1/public/push-tokens", { expoPushToken, platform, anonymousDeviceId })
+    await postJson(
+      "/v1/public/push-tokens",
+      { expoPushToken, platform, anonymousDeviceId },
+      token ? { Authorization: `Bearer ${token}` } : undefined,
+    )
   } catch (error) {
     Sentry.captureException(error, { tags: { flow: "push-token-post" } })
     throw error

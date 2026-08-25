@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import * as Crypto from "expo-crypto"
+import { useAuth } from "@clerk/clerk-expo"
+
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 
 const DEVICE_ID_KEY = "admobi.driver.deviceId"
 
-/**
- * Dormant auth seam. `@clerk/clerk-expo` is already a dependency, but no
- * <ClerkProvider> is mounted and this always resolves "anonymous" today —
- * flipping EXPO_PUBLIC_AUTH_ENABLED on later (plus mounting ClerkProvider in
- * app/_layout.tsx and switching to Clerk SMS OTP) is what turns this into a
- * real session, linked to the existing Driver CRM record by verified phone.
- * Every screen that calls useDriverSession() keeps working unchanged.
- */
 export type DriverSession =
   | { status: "loading" }
   | { status: "anonymous"; deviceId: string }
+  | { status: "authenticated"; userId: string; deviceId: string }
 
 export async function getOrCreateDeviceId(): Promise<string> {
   let id = await AsyncStorage.getItem(DEVICE_ID_KEY)
@@ -25,7 +21,7 @@ export async function getOrCreateDeviceId(): Promise<string> {
   return id
 }
 
-export function useDriverSession(): DriverSession {
+function useDeviceId(): string | null {
   const [deviceId, setDeviceId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -42,6 +38,27 @@ export function useDriverSession(): DriverSession {
     }
   }, [])
 
+  return deviceId
+}
+
+function useAuthenticatedSession(deviceId: string | null): DriverSession {
+  const { isSignedIn, userId } = useAuth()
+
+  if (!deviceId) return { status: "loading" }
+  if (isSignedIn && userId) return { status: "authenticated", userId, deviceId }
+  return { status: "anonymous", deviceId }
+}
+
+function useAnonymousSession(deviceId: string | null): DriverSession {
   if (!deviceId) return { status: "loading" }
   return { status: "anonymous", deviceId }
+}
+
+/** Same "pick the hook once at module load" pattern as customer-mobile's
+ * useCustomerSession — see that file's comment for why. */
+const useSessionImpl = isAuthEnabled() ? useAuthenticatedSession : useAnonymousSession
+
+export function useDriverSession(): DriverSession {
+  const deviceId = useDeviceId()
+  return useSessionImpl(deviceId)
 }

@@ -1,9 +1,7 @@
-import { useCallback, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
-import { useFocusEffect, useRouter } from "expo-router"
+import { useRouter } from "expo-router"
 
 import { Bell } from "@/components/icons"
-import { getReadNotificationIds } from "@/lib/notification-read-state"
 import { useLiveAnnouncements } from "@/lib/use-live-announcements"
 import { radius, useThemeColors } from "@/lib/theme"
 
@@ -11,17 +9,11 @@ export function NotificationBellButton() {
   const router = useRouter()
   const colors = useThemeColors()
   const { items } = useLiveAnnouncements()
-  const [readIds, setReadIds] = useState<Set<string>>(new Set())
 
-  // Re-check on focus so returning from the notifications screen (where
-  // items just got marked read) updates the badge immediately.
-  useFocusEffect(
-    useCallback(() => {
-      void getReadNotificationIds().then(setReadIds)
-    }, []),
-  )
-
-  const hasUnread = items.some((item) => !readIds.has(item.id))
+  // read now comes straight from the server (AnnouncementDelivery.read_at) —
+  // the shared react-query cache for useLiveAnnouncements() means this badge
+  // updates automatically once notifications.tsx marks the inbox read.
+  const hasUnread = items.some((item) => !item.read)
 
   return (
     <Pressable

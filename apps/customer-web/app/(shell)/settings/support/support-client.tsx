@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronRight, Inbox, Plus } from "lucide-react"
@@ -21,13 +22,36 @@ import {
 import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
 import { NewSupportRequestForm } from "@/components/support/new-support-request-form"
 import { SupportStatusBadge } from "@/components/support-status-badge"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useCustomerSession } from "@/lib/auth/customer-session"
-import { getStoredIdentity, listMySupportCases } from "@/lib/support-client"
+import {
+  getStoredIdentity,
+  listMySupportCases,
+  listMySupportCasesForAccount,
+} from "@/lib/support-client"
 import { CategoryIcon } from "@/lib/support-categories"
+
+function useSignedInAuth() {
+  return useAuth()
+}
+
+function useNoAuth() {
+  return { getToken: async () => null }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern as customer-session.ts —
+ * useAuth() must never run unless ClerkProvider is mounted. session.status
+ * can only be "authenticated" when isAuthEnabled() is true, but that gates
+ * the branch that *uses* getToken, not the hook call itself — so the call
+ * site still needs its own guard.
+ */
+const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 export function SupportClient() {
   const router = useRouter()
   const session = useCustomerSession()
+  const { getToken } = useAuthIfEnabled()
   const [newRequestOpen, setNewRequestOpen] = useState(false)
 
   // getStoredIdentity() guards its own localStorage access, so it's safe to
@@ -37,18 +61,26 @@ export function SupportClient() {
     () => session.status === "anonymous" && Boolean(getStoredIdentity()),
     [session.status],
   )
+  const isAuthenticated = session.status === "authenticated"
 
   const casesQuery = useQuery({
-    queryKey: ["customer-support-cases"],
-    queryFn: listMySupportCases,
-    enabled: hasIdentity,
+    queryKey: isAuthenticated ? ["customer-support-cases", "account"] : ["customer-support-cases"],
+    queryFn: async () => {
+      if (isAuthenticated) {
+        const token = await getToken()
+        return token ? listMySupportCasesForAccount(token) : []
+      }
+      return listMySupportCases()
+    },
+    enabled: hasIdentity || isAuthenticated,
   })
   const cases = casesQuery.data ?? []
   // Keep showing the skeleton while the session is still resolving (before
-  // hasIdentity can even be known) so a first-time-this-tab visitor doesn't
-  // flash the "no requests yet" empty state before the query has a chance
-  // to run.
-  const loadingCases = session.status === "loading" || (hasIdentity && casesQuery.isLoading)
+  // hasIdentity/isAuthenticated can even be known) so a first-time-this-tab
+  // visitor doesn't flash the "no requests yet" empty state before the
+  // query has a chance to run.
+  const loadingCases =
+    session.status === "loading" || ((hasIdentity || isAuthenticated) && casesQuery.isLoading)
 
   function handleCreated(caseId: number) {
     setNewRequestOpen(false)
