@@ -15,6 +15,23 @@ export function getBearerToken(req: Request): string | null {
 }
 
 /**
+ * Upserts the `Customer` row for a signed-in clerk_user_id. `Customer` is
+ * otherwise a dormant scaffold (see schema.prisma) with no automatic writer —
+ * unlike push-token registration for mobile, nothing marks a customer-web
+ * visitor as "known" just by them signing in and browsing. Call this from any
+ * authenticated customer-web/customer-mobile request that needs the caller to
+ * be a valid broadcast-announcement recipient (see collectWebRecipients in
+ * lib/push/broadcast-announcement.ts, which reads exactly this column).
+ */
+export async function ensureCustomerRecord(clerkUserId: string) {
+  return prisma.customer.upsert({
+    where: { clerk_user_id: clerkUserId },
+    create: { clerk_user_id: clerkUserId, email: `${clerkUserId}@placeholder.invalid` },
+    update: {},
+  })
+}
+
+/**
  * Resolves the signed-in account for a support case being created, based on
  * which app it's coming from. Never throws — an unauthenticated or
  * unverifiable caller just gets both ids as null, same as today's fully
@@ -27,11 +44,7 @@ export async function resolveSupportAuthor(
     const access = await getCustomerAccess()
     if (access.status !== "authorized") return { customerId: null, driverClerkUserId: null }
 
-    const customer = await prisma.customer.upsert({
-      where: { clerk_user_id: access.userId },
-      create: { clerk_user_id: access.userId, email: `${access.userId}@placeholder.invalid` },
-      update: {},
-    })
+    const customer = await ensureCustomerRecord(access.userId)
     return { customerId: customer.id, driverClerkUserId: null }
   }
 
