@@ -1,21 +1,26 @@
 import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@clerk/clerk-expo"
 
-import { getJson } from "@/lib/api-client"
-import {
-  announcementToNotificationItem,
-  type AnnouncementBroadcastDto,
-  type NotificationItem,
-} from "@/lib/notifications-data"
+import { fetchDriverAnnouncements } from "@/lib/announcements-client"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { announcementDeliveryToNotificationItem, type NotificationItem } from "@/lib/notifications-data"
 
-/** Fetches real ops broadcasts targeted at the driver app to merge alongside the notification feed. */
-export function useLiveAnnouncements() {
+type LiveAnnouncements = {
+  items: NotificationItem[]
+  loading: boolean
+  refetch: () => Promise<void>
+}
+
+/** Fetches this account's own delivered announcements — only what was sent
+ * while this account was a resolved recipient, never the full app-wide feed. */
+function useLiveAnnouncementsEnabled(): LiveAnnouncements {
+  const { getToken } = useAuth()
+
   const query = useQuery({
     queryKey: ["live-announcements"],
     queryFn: async (): Promise<NotificationItem[]> => {
-      const res = await getJson<{ items: AnnouncementBroadcastDto[] }>(
-        "/v1/public/announcements?app=driver-mobile",
-      )
-      return res.items.map(announcementToNotificationItem)
+      const items = await fetchDriverAnnouncements(getToken)
+      return items.map(announcementDeliveryToNotificationItem)
     },
   })
 
@@ -27,3 +32,23 @@ export function useLiveAnnouncements() {
     },
   }
 }
+
+// useAuth() throws without a mounted ClerkProvider, and app/_layout.tsx's
+// AuthenticatedApp only mounts ClerkProvider when isAuthEnabled() is true —
+// its disabled branch renders the same children (including this app's tabs,
+// where NotificationBellButton lives) with no ClerkProvider ancestor at all.
+// So this hook must never call useAuth() when auth is disabled. Same "pick
+// the hook implementation once at module load" pattern as
+// lib/use-push-registration.ts's useTokenGetter and
+// lib/auth/use-driver-session.ts's useSessionImpl.
+function useLiveAnnouncementsDisabled(): LiveAnnouncements {
+  return {
+    items: [],
+    loading: false,
+    refetch: async () => {},
+  }
+}
+
+export const useLiveAnnouncements = isAuthEnabled()
+  ? useLiveAnnouncementsEnabled
+  : useLiveAnnouncementsDisabled

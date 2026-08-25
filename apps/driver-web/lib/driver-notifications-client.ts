@@ -26,3 +26,24 @@ export async function fetchDriverNotifications(
 export async function markDriverNotificationsRead(getToken: GetToken): Promise<void> {
   await authedFetch(getToken, "/v1/driver/notifications/read", { method: "PATCH" })
 }
+
+export type DriverAnnouncementDto = {
+  id: number
+  title: string
+  body: string
+  image_url: string | null
+  category: string
+  read_at: string | null
+  created_at: string
+}
+
+export async function fetchDriverAnnouncements(
+  getToken: GetToken,
+): Promise<DriverAnnouncementDto[]> {
+  const res = await authedFetch(getToken, "/v1/driver/announcements")
+  return res.json()
+}
+
+export async function markDriverAnnouncementsRead(getToken: GetToken): Promise<void> {
+  await authedFetch(getToken, "/v1/driver/announcements/read", { method: "PATCH" })
+}

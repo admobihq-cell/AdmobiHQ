@@ -75,19 +75,26 @@ async function saveIdentity(identity: SupportIdentity) {
   await AsyncStorage.setItem(IDENTITY_KEY, JSON.stringify(merged))
 }
 
-export async function createSupportCase(input: {
-  contact_name: string
-  contact_email: string
-  contact_phone?: string
-  anonymous_device_id: string
-  category: string
-  subject: string
-  message: string
-}): Promise<SupportCase & { accessToken: string }> {
+export async function createSupportCase(
+  input: {
+    contact_name: string
+    contact_email: string
+    contact_phone?: string
+    anonymous_device_id: string
+    category: string
+    subject: string
+    message: string
+  },
+  token?: string | null,
+): Promise<SupportCase & { accessToken: string }> {
   const res = await postJson<{
     success: true
     data: SupportCase & { accessToken: string; identityToken?: string }
-  }>("/v1/public/support", { ...input, channel: "driver-mobile" })
+  }>(
+    "/v1/public/support",
+    { ...input, channel: "driver-mobile" },
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+  )
 
   await saveCaseToken(res.data.id, res.data.accessToken)
   await saveIdentity({
@@ -119,7 +126,14 @@ export async function replyToSupportCase(caseId: number, body: string): Promise<
   return res.data
 }
 
-export async function listMySupportCases(): Promise<SupportCase[]> {
+export async function listMySupportCases(token?: string | null): Promise<SupportCase[]> {
+  if (token) {
+    const res = await getJson<{ items: SupportCase[] }>("/v1/public/support", {
+      Authorization: `Bearer ${token}`,
+    })
+    return res.items
+  }
+
   const identity = await getStoredIdentity()
   if (!identity?.token) return []
 

@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
+import { useAuth } from "@clerk/clerk-expo"
 
 import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { Bell } from "@/components/icons"
 import { NotificationRow } from "@/components/notifications/notification-row"
 import { FilterChips } from "@/components/ui/filter-chips"
+import { markDriverAnnouncementsRead } from "@/lib/announcements-client"
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import {
   NOTIFICATION_CATEGORY_LABELS,
   NOTIFICATION_CATEGORY_ORDER,
   type NotificationCategory,
 } from "@/lib/notifications-data"
-import {
-  getReadNotificationIds,
-  markNotificationRead,
-  markNotificationsRead,
-} from "@/lib/notification-read-state"
 import { useLiveAnnouncements } from "@/lib/use-live-announcements"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
@@ -23,26 +21,36 @@ const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
   label: NOTIFICATION_CATEGORY_LABELS[key],
 }))
 
+// useAuth() throws without a mounted ClerkProvider. This screen is reached
+// from AuthenticatedApp (app/_layout.tsx), but that wrapper's disabled branch
+// renders the same children with no ClerkProvider when isAuthEnabled() is
+// false — so getToken must come from a hook that never calls useAuth() in
+// that case. Same "pick the hook implementation once at module load" pattern
+// as lib/use-push-registration.ts's useTokenGetter.
+function useTokenGetterEnabled(): () => Promise<string | null> {
+  const { getToken } = useAuth()
+  return getToken
+}
+
+function useTokenGetterDisabled(): () => Promise<string | null> {
+  return async () => null
+}
+
+const useTokenGetter = isAuthEnabled() ? useTokenGetterEnabled : useTokenGetterDisabled
+
 export default function NotificationsScreen() {
   const colors = useThemeColors()
+  const getToken = useTokenGetter()
   const [category, setCategory] = useState<NotificationCategory | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-  const [readIds, setReadIds] = useState<Set<string>>(new Set())
   // Tick so relative timestamps (5m ago → 6m ago) refresh while the screen is open.
   const [, setClock] = useState(0)
 
   const { items: liveItems, loading, refetch: refetchLive } = useLiveAnnouncements()
 
-  // Read state is per-device (AsyncStorage) — there's no account to store it
-  // against — so it's loaded once here rather than carried on each item.
-  useEffect(() => {
-    void getReadNotificationIds().then(setReadIds)
-  }, [])
-
-  const items = useMemo(
-    () => liveItems.map((item) => ({ ...item, read: readIds.has(item.id) })),
-    [liveItems, readIds],
-  )
+  // Read state now lives server-side (AnnouncementDelivery.read_at) and comes
+  // back on every item from useLiveAnnouncements() — no local tracking needed.
+  const items = liveItems
   const unreadCount = items.filter((item) => !item.read).length
 
   useEffect(() => {
@@ -56,16 +64,16 @@ export default function NotificationsScreen() {
     setRefreshing(false)
   }, [refetchLive])
 
-  const markRead = useCallback((id: string) => {
-    setReadIds((current) => (current.has(id) ? current : new Set(current).add(id)))
-    void markNotificationRead(id)
-  }, [])
+  // The API only supports marking the whole inbox read in one call (no
+  // per-item read endpoint yet), so both a single tap and "mark all as read"
+  // resolve to the same server-side call.
+  const markRead = useCallback(() => {
+    void markDriverAnnouncementsRead(getToken).then(() => refetchLive())
+  }, [getToken, refetchLive])
 
   const markAllRead = useCallback(() => {
-    const ids = items.map((item) => item.id)
-    setReadIds((current) => new Set([...current, ...ids]))
-    void markNotificationsRead(ids)
-  }, [items])
+    void markDriverAnnouncementsRead(getToken).then(() => refetchLive())
+  }, [getToken, refetchLive])
 
   const sections = useMemo(() => {
     const filtered = category ? items.filter((item) => item.category === category) : items
@@ -177,7 +185,7 @@ export default function NotificationsScreen() {
         )}
         ItemSeparatorComponent={() => <View style={styles.divider} />}
         renderItem={({ item }) => (
-          <NotificationRow item={item} onPress={() => markRead(item.id)} />
+          <NotificationRow item={item} onPress={() => markRead()} />
         )}
         ListEmptyComponent={
           loading ? (

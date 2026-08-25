@@ -240,15 +240,17 @@ export const ANNOUNCEMENT_FORM_FIELDS: FormFieldDef[] = [
 ]
 
 export const ANNOUNCEMENT_TARGET_APP_OPTIONS: FormFieldOption[] = [
-  { value: "customer-mobile", label: "Customers" },
-  { value: "driver-mobile", label: "Drivers" },
+  { value: "customer-mobile", label: "Customer mobile" },
+  { value: "driver-mobile", label: "Driver mobile" },
+  { value: "customer-web", label: "Customer web" },
+  { value: "driver-web", label: "Driver web" },
 ]
 
 const ANNOUNCEMENT_TARGET_APP_LABELS: Record<string, string> = Object.fromEntries(
   ANNOUNCEMENT_TARGET_APP_OPTIONS.map((option) => [option.value, option.label]),
 )
 
-/** "Customers" / "Drivers" / "Customers & Drivers" — shared copy for both admin surfaces. */
+/** Generates human-readable descriptions of announcement targets (e.g., "Customer mobile & Driver web") — shared copy for both admin surfaces. */
 export function describeAnnouncementTargets(apps: string[]): string {
   const labels = apps.map((app) => ANNOUNCEMENT_TARGET_APP_LABELS[app] ?? app)
   if (labels.length <= 1) return labels[0] ?? "no apps"

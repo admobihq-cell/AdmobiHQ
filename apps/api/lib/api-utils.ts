@@ -12,6 +12,7 @@ import {
 
 import { requireOpsAdmin, requireOpsPermission, requireOpsUser } from "@/lib/auth"
 import { requireDriverUser } from "@/lib/driver-auth"
+import { requireCustomerUser } from "@/lib/customer-auth"
 
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }
@@ -73,6 +74,21 @@ export async function requireDriverAccess(): Promise<
 > {
   try {
     const access = await requireDriverUser()
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Same shape as requireDriverAccess, but for the customer-facing routes —
+ * any authenticated customer-Clerk user, no org/role concept. */
+export async function requireCustomerAccess(): Promise<
+  | { access: Awaited<ReturnType<typeof requireCustomerUser>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireCustomerUser()
     return { access }
   } catch (e) {
     if (e instanceof Response) return { error: e as NextResponse }

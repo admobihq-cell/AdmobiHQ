@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { useAuth, useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 
 import { Button } from "@workspace/ui/components/button"
@@ -9,9 +10,38 @@ import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useCustomerSession } from "@/lib/auth/customer-session"
 import { createSupportCase, getStoredIdentity } from "@/lib/support-client"
 import { CategoryIcon, SUPPORT_CATEGORIES } from "@/lib/support-categories"
+
+function useSignedInUser() {
+  return useUser()
+}
+
+function useNoUser() {
+  return { user: null }
+}
+
+function useSignedInAuth() {
+  return useAuth()
+}
+
+function useNoAuth() {
+  return { getToken: async () => null }
+}
+
+/**
+ * Same "pick the hook once at module load" pattern as customer-session.ts /
+ * account-settings-view.tsx — useUser() / useAuth() must never run unless
+ * ClerkProvider is mounted (app/layout.tsx only mounts it when this same
+ * flag is on). session.status === "authenticated" can only occur when
+ * isAuthEnabled() is true, but that doesn't gate the hook *call* itself —
+ * without this indirection useAuth()/useUser() would still execute (and
+ * throw, no ClerkProvider in the tree) on every render when auth is off.
+ */
+const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
+const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 export function NewSupportRequestForm({
   onCreated,
@@ -19,10 +49,14 @@ export function NewSupportRequestForm({
   onCreated: (caseId: number) => void
 }) {
   const session = useCustomerSession()
+  const { getToken } = useAuthIfEnabled()
+  const { user } = useUserIfEnabled()
   const identity = getStoredIdentity()
 
-  const [name, setName] = useState(identity?.name ?? "")
-  const [email, setEmail] = useState(identity?.email ?? "")
+  const [name, setName] = useState(identity?.name ?? user?.fullName ?? "")
+  const [email, setEmail] = useState(
+    identity?.email ?? user?.primaryEmailAddress?.emailAddress ?? "",
+  )
   const [category, setCategory] = useState<(typeof SUPPORT_CATEGORIES)[number]["value"]>(
     "general",
   )
@@ -32,7 +66,7 @@ export function NewSupportRequestForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (submitting || session.status !== "anonymous") return
+    if (submitting || session.status === "loading") return
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
       toast.error("Fill in your name, email, subject, and message.")
       return
@@ -40,14 +74,18 @@ export function NewSupportRequestForm({
 
     setSubmitting(true)
     try {
-      const created = await createSupportCase({
-        contact_name: name.trim(),
-        contact_email: email.trim(),
-        anonymous_device_id: session.deviceId,
-        category,
-        subject: subject.trim(),
-        message: message.trim(),
-      })
+      const token = session.status === "authenticated" ? await getToken() : null
+      const created = await createSupportCase(
+        {
+          contact_name: name.trim(),
+          contact_email: email.trim(),
+          anonymous_device_id: session.deviceId,
+          category,
+          subject: subject.trim(),
+          message: message.trim(),
+        },
+        token,
+      )
       toast.success(`Request sent — case #${created.id}`)
       onCreated(created.id)
     } catch (err) {

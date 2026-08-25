@@ -1,6 +1,9 @@
 import type { SupportCase, SupportMessage } from "@prisma/client"
+import { verifyToken } from "@clerk/backend"
 
 import { timingSafeEqual } from "@/lib/api-utils"
+import { getCustomerAccess } from "@/lib/customer-auth"
+import { getDriverAccess } from "@/lib/driver-auth"
 import { prisma } from "@/lib/prisma"
 import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
 
@@ -9,6 +12,67 @@ export function getBearerToken(req: Request): string | null {
   if (!header?.startsWith("Bearer ")) return null
   const token = header.slice("Bearer ".length).trim()
   return token || null
+}
+
+/**
+ * Resolves the signed-in account for a support case being created, based on
+ * which app it's coming from. Never throws — an unauthenticated or
+ * unverifiable caller just gets both ids as null, same as today's fully
+ * anonymous flow.
+ */
+export async function resolveSupportAuthor(
+  channel: string,
+): Promise<{ customerId: number | null; driverClerkUserId: string | null }> {
+  if (channel === "customer-web" || channel === "customer-mobile") {
+    const access = await getCustomerAccess()
+    if (access.status !== "authorized") return { customerId: null, driverClerkUserId: null }
+
+    const customer = await prisma.customer.upsert({
+      where: { clerk_user_id: access.userId },
+      create: { clerk_user_id: access.userId, email: `${access.userId}@placeholder.invalid` },
+      update: {},
+    })
+    return { customerId: customer.id, driverClerkUserId: null }
+  }
+
+  if (channel === "driver-web" || channel === "driver-mobile") {
+    const access = await getDriverAccess()
+    if (access.status !== "authorized") return { customerId: null, driverClerkUserId: null }
+    return { customerId: null, driverClerkUserId: access.userId }
+  }
+
+  return { customerId: null, driverClerkUserId: null }
+}
+
+/**
+ * Account-based "my cases" lookup — tries customer, then driver, since the
+ * caller's app isn't known from a bare GET the way it is on create (no
+ * `channel` in the request). A token only verifies against the instance it
+ * was minted from, so at most one of these two resolves for any given caller.
+ */
+export async function resolveSupportAuthorFromBearer(
+  token: string,
+): Promise<{ authenticated: boolean; customerId: number | null; driverClerkUserId: string | null }> {
+  try {
+    const customerPayload = await verifyToken(token, { secretKey: process.env.CUSTOMER_CLERK_SECRET_KEY })
+    if (customerPayload.sub) {
+      const customer = await prisma.customer.findUnique({ where: { clerk_user_id: customerPayload.sub } })
+      return { authenticated: true, customerId: customer?.id ?? null, driverClerkUserId: null }
+    }
+  } catch {
+    // not a customer token — fall through to try driver
+  }
+
+  try {
+    const driverPayload = await verifyToken(token, { secretKey: process.env.DRIVER_CLERK_SECRET_KEY })
+    if (driverPayload.sub) {
+      return { authenticated: true, customerId: null, driverClerkUserId: driverPayload.sub }
+    }
+  } catch {
+    // not a driver token either
+  }
+
+  return { authenticated: false, customerId: null, driverClerkUserId: null }
 }
 
 /** Anonymous-access check: the token proves the caller owns this case, nothing more. */
