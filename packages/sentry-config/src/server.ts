@@ -8,12 +8,15 @@ type ServerSentryOptions = {
 }
 
 export function initServerSentry({ appName }: ServerSentryOptions): void {
+  const dsn = resolveSentryDsn()
+  if (!dsn) return
+
   Sentry.init({
-    dsn: resolveSentryDsn(),
+    dsn,
     environment: getSentryEnvironment(),
     tracesSampleRate: getTracesSampleRate(),
-    includeLocalVariables: true,
-    enableLogs: true,
+    includeLocalVariables: false,
+    enableLogs: false,
     initialScope: {
       tags: { app: appName },
     },

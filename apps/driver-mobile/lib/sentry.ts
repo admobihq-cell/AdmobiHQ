@@ -11,9 +11,10 @@ function resolveEnvironment(): string {
 
 export function initSentry() {
   Sentry.init({
-    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? SENTRY_DSN,
+    dsn: __DEV__ ? undefined : (process.env.EXPO_PUBLIC_SENTRY_DSN ?? SENTRY_DSN),
+    enabled: !__DEV__,
     environment: resolveEnvironment(),
-    tracesSampleRate: __DEV__ ? 1.0 : 0.1,
+    tracesSampleRate: 0.05,
     initialScope: {
       tags: { app: "driver-mobile" },
     },

@@ -24,7 +24,6 @@
     "@workspace/ops-contracts": "*",
     "@workspace/sentry-config": "^0.0.0",
     "antd": "^6.5.2",
-    "bull": "^4.16.5",
     "cloudinary": "^2.7.0",
     "dotenv": "^16.6.1",
     "next": "^16.2.11",
@@ -32,7 +31,6 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-email": "^6.3.0",
-    "redis": "^6.0.0",
     "resend": "^6.12.3",
     "zod": "3.25.76"
   },
