@@ -16,7 +16,7 @@ export async function fetchBlogSitemapPaths() {
   ]
 
   const connectionString = process.env.DATABASE_URL?.trim()
-  if (!connectionString) {
+  if (process.env.GITHUB_ACTIONS === "true" || !connectionString) {
     return base
   }
 
@@ -24,7 +24,7 @@ export async function fetchBlogSitemapPaths() {
 
   try {
     const result = await pool.query(
-      `SELECT slug FROM blog_posts
+      `SELECT slug FROM cms.blog_posts
        WHERE slug IS NOT NULL
          AND (_status = 'published' OR _status IS NULL)
        ORDER BY slug`,

@@ -11,7 +11,7 @@ import { getMediaAlt, getMediaUrl } from "@/lib/payload/media-url"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
 import { blogPageMetadata } from "@/lib/seo/site"
 
-export const revalidate = 3600
+export const revalidate = 21600
 
 type PageProps = {
   params: Promise<{ slug: string }>

@@ -16,7 +16,7 @@ export async function fetchHelpSitemapPaths() {
   ]
 
   const connectionString = process.env.DATABASE_URL?.trim()
-  if (!connectionString) {
+  if (process.env.GITHUB_ACTIONS === "true" || !connectionString) {
     return base
   }
 
@@ -24,7 +24,7 @@ export async function fetchHelpSitemapPaths() {
 
   try {
     const result = await pool.query(
-      `SELECT slug FROM help_articles
+      `SELECT slug FROM cms.help_articles
        WHERE slug IS NOT NULL
          AND (_status = 'published' OR _status IS NULL)
        ORDER BY slug`,

@@ -19,20 +19,23 @@ import { getSentryEnvironment, getTracesSampleRate } from "./environment.mjs"
 export function initClientSentry({
   appName,
   enableSessionReplay = false,
-  replaysSessionSampleRate = 0.1,
+  replaysSessionSampleRate = 0.02,
   requireConsent = false,
 }) {
   if (requireConsent && !hasFullConsent()) {
     return
   }
 
+  const dsn = resolvePublicSentryDsn()
+  if (!dsn) return
+
   Sentry.init({
-    dsn: resolvePublicSentryDsn(),
+    dsn,
     environment: getSentryEnvironment(),
     tracesSampleRate: getTracesSampleRate(),
     replaysSessionSampleRate: enableSessionReplay ? replaysSessionSampleRate : 0,
     replaysOnErrorSampleRate: enableSessionReplay ? 1.0 : 0,
-    enableLogs: true,
+    enableLogs: false,
     // Replay is added lazily below (when enabled) instead of listed here, so its
     // recorder (~100KB+) is code-split out of the initial bundle instead of
     // shipping to every visitor on first paint.
