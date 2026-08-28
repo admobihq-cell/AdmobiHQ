@@ -3,15 +3,12 @@ import { ClerkProvider } from "@clerk/nextjs"
 import { shadcn } from "@clerk/ui/themes"
 import { Analytics } from "@vercel/analytics/next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { cookies } from "next/headers"
 
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { QueryProvider } from "@workspace/query-client"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
-import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
 import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
-import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
 import { cn } from "@workspace/ui/lib/utils"
 
 import "@clerk/ui/themes/shadcn.css"
@@ -33,17 +30,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export const dynamic = "force-dynamic"
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
-  const serverTheme = getServerThemeClass(cookieStore.get(THEME_STORAGE_KEY)?.value)
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(geist.variable, geistMono.variable, serverTheme)}
+      className={cn(geist.variable, geistMono.variable)}
     >
       <head>
         <script

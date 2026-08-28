@@ -7,7 +7,7 @@ import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { getHelpIndexData, isPayloadConfigured } from "@/lib/payload/help-queries"
 import { pageMetadata } from "@/lib/seo/site"
 
-export const revalidate = 3600
+export const revalidate = 21600
 
 export const metadata: Metadata = pageMetadata({
   title: "Help center | taxi-top OOH guides & FAQs | Admobi Kenya",

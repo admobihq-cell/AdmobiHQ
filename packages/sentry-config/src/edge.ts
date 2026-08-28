@@ -8,11 +8,14 @@ type EdgeSentryOptions = {
 }
 
 export function initEdgeSentry({ appName }: EdgeSentryOptions): void {
+  const dsn = resolveSentryDsn()
+  if (!dsn) return
+
   Sentry.init({
-    dsn: resolveSentryDsn(),
+    dsn,
     environment: getSentryEnvironment(),
     tracesSampleRate: getTracesSampleRate(),
-    enableLogs: true,
+    enableLogs: false,
     initialScope: {
       tags: { app: appName },
     },

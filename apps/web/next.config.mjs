@@ -153,8 +153,6 @@ const nextConfig = {
         ...webpackConfig.resolve.fallback,
         ...CLIENT_NODE_FALLBACKS,
       }
-    } else {
-      webpackConfig.externals = [...(webpackConfig.externals || []), "bull", "redis"]
     }
 
     webpackConfig.plugins.push(

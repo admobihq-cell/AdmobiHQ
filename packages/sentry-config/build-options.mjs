@@ -7,12 +7,14 @@ export const SENTRY_PROJECT = "admobi-hq"
 
 /** Shared `withSentryConfig()` options for Next.js apps in this monorepo. */
 export function getSentryBuildPluginOptions() {
+  const disabled = process.env.SENTRY_DISABLED === "true"
   return {
     org: process.env.SENTRY_ORG ?? SENTRY_ORG,
     project: process.env.SENTRY_PROJECT ?? SENTRY_PROJECT,
     authToken: process.env.SENTRY_AUTH_TOKEN,
-    widenClientFileUpload: true,
+    widenClientFileUpload: !disabled,
     tunnelRoute: "/monitoring",
-    silent: !process.env.CI,
+    silent: disabled || !process.env.CI,
+    sourcemaps: disabled ? { disable: true } : undefined,
   }
 }

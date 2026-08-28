@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 import { SiteFooter } from "@/components/landing/site-footer"
@@ -39,7 +38,7 @@ const fontMono = Geist_Mono({
 // Without this, the layout's uncached getRecentBlogPosts() call below forces
 // every page under (marketing) — home, pricing, drivers, etc. — to render
 // dynamically on every request instead of being served from the ISR cache.
-export const revalidate = 3600
+export const revalidate = 21600
 
 const HOME_TITLE = "Taxi-top LED advertising in Nairobi | Admobi"
 const HOME_DESCRIPTION =
@@ -128,7 +127,6 @@ export default async function MarketingLayout({
           <WhatsappFab />
         </ThemeProvider>
         <Analytics />
-        <SpeedInsights />
         <CookieConsentBanner />
       </body>
     </html>
