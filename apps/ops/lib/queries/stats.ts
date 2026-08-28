@@ -2,7 +2,6 @@ import { subDays } from "date-fns"
 
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
-import { prisma } from "@/lib/prisma"
 import { getPgPool } from "@/lib/pg"
 
 export type { DateRangeKey }
@@ -21,58 +20,83 @@ export function getDateRangeStart(range: DateRangeKey): Date | null {
   }
 }
 
-function dateFilter(range: DateRangeKey) {
-  const start = getDateRangeStart(range)
-  return start ? { gte: start } : undefined
+type NamedCount = { name: string; value: number }
+
+type OverviewRow = {
+  leads: string
+  fleet: string
+  drivers: string
+  waitlist: string
+  media_kit: string
+  budget_mix: NamedCount[] | null
+  drivers_by_city: NamedCount[] | null
+  fleet_by_city: NamedCount[] | null
+  drivers_by_heard: NamedCount[] | null
 }
 
 export async function getOverviewStats(range: DateRangeKey = "30d") {
-  const createdAt = dateFilter(range)
-  const where = createdAt ? { created_at: createdAt } : {}
+  const start = getDateRangeStart(range)
+  const pool = getPgPool()
 
-  const [
-    leads,
-    fleet,
-    drivers,
-    waitlist,
-    mediaKit,
-    leadsByBudget,
-    driversByCity,
-    fleetByCity,
-    driversByHeard,
-  ] = await Promise.all([
-    prisma.lead.count({ where }),
-    prisma.fleetPartner.count({ where }),
-    prisma.driver.count({ where }),
-    prisma.waitlistEntry.count({ where }),
-    prisma.mediaKitRequest.count({ where }),
-    prisma.lead.groupBy({
-      by: ["budget_range"],
-      where,
-      _count: { id: true },
-    }),
-    prisma.driver.groupBy({
-      by: ["city"],
-      where,
-      _count: { id: true },
-    }),
-    prisma.fleetPartner.groupBy({
-      by: ["city"],
-      where,
-      _count: { id: true },
-    }),
-    prisma.driver.groupBy({
-      by: ["heard_about"],
-      where,
-      _count: { id: true },
-    }),
-  ])
+  const result = await pool.query<OverviewRow>(
+    `
+    WITH bounds AS (
+      SELECT $1::timestamptz AS start
+    ),
+    lead_rows AS (
+      SELECT budget_range
+      FROM leads, bounds
+      WHERE bounds.start IS NULL OR created_at >= bounds.start
+    ),
+    driver_rows AS (
+      SELECT city, heard_about
+      FROM drivers, bounds
+      WHERE bounds.start IS NULL OR created_at >= bounds.start
+    ),
+    fleet_rows AS (
+      SELECT city
+      FROM fleet_partners, bounds
+      WHERE bounds.start IS NULL OR created_at >= bounds.start
+    )
+    SELECT
+      (SELECT COUNT(*)::text FROM lead_rows) AS leads,
+      (SELECT COUNT(*)::text FROM fleet_rows) AS fleet,
+      (SELECT COUNT(*)::text FROM driver_rows) AS drivers,
+      (SELECT COUNT(*)::text FROM waitlist_entries, bounds
+        WHERE bounds.start IS NULL OR created_at >= bounds.start) AS waitlist,
+      (SELECT COUNT(*)::text FROM media_kit_requests, bounds
+        WHERE bounds.start IS NULL OR created_at >= bounds.start) AS media_kit,
+      (SELECT COALESCE(json_agg(json_build_object('name', COALESCE(budget_range, 'unknown'), 'value', c)), '[]'::json)
+         FROM (SELECT budget_range, COUNT(*)::int AS c FROM lead_rows GROUP BY budget_range) s
+      ) AS budget_mix,
+      (SELECT COALESCE(json_agg(json_build_object('name', city, 'value', c)), '[]'::json)
+         FROM (SELECT city, COUNT(*)::int AS c FROM driver_rows GROUP BY city) s
+      ) AS drivers_by_city,
+      (SELECT COALESCE(json_agg(json_build_object('name', city, 'value', c)), '[]'::json)
+         FROM (SELECT city, COUNT(*)::int AS c FROM fleet_rows GROUP BY city) s
+      ) AS fleet_by_city,
+      (SELECT COALESCE(json_agg(json_build_object('name', heard_about, 'value', c)), '[]'::json)
+         FROM (
+           SELECT heard_about, COUNT(*)::int AS c
+           FROM driver_rows
+           WHERE heard_about IS NOT NULL
+           GROUP BY heard_about
+         ) s
+      ) AS drivers_by_heard
+    `,
+    [start],
+  )
 
-  const total = leads + fleet + drivers + waitlist + mediaKit
+  const row = result.rows[0]
+  const leads = Number.parseInt(row?.leads ?? "0", 10)
+  const fleet = Number.parseInt(row?.fleet ?? "0", 10)
+  const drivers = Number.parseInt(row?.drivers ?? "0", 10)
+  const waitlist = Number.parseInt(row?.waitlist ?? "0", 10)
+  const mediaKit = Number.parseInt(row?.media_kit ?? "0", 10)
 
   return {
     totals: {
-      all: total,
+      all: leads + fleet + drivers + waitlist + mediaKit,
       leads,
       fleet,
       drivers,
@@ -86,24 +110,10 @@ export async function getOverviewStats(range: DateRangeKey = "30d") {
       { name: "Waitlist", value: waitlist },
       { name: "Media Kit", value: mediaKit },
     ],
-    budgetMix: leadsByBudget.map((b) => ({
-      name: b.budget_range ?? "unknown",
-      value: b._count.id,
-    })),
-    driversByCity: driversByCity.map((c) => ({
-      name: c.city,
-      value: c._count.id,
-    })),
-    fleetByCity: fleetByCity.map((c) => ({
-      name: c.city,
-      value: c._count.id,
-    })),
-    driversByHeard: driversByHeard
-      .filter((h) => h.heard_about)
-      .map((h) => ({
-        name: h.heard_about!,
-        value: h._count.id,
-      })),
+    budgetMix: row?.budget_mix ?? [],
+    driversByCity: row?.drivers_by_city ?? [],
+    fleetByCity: row?.fleet_by_city ?? [],
+    driversByHeard: row?.drivers_by_heard ?? [],
   }
 }
 

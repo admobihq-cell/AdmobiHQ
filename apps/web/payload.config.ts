@@ -47,6 +47,10 @@ export default buildConfig({
     schemaName: "cms",
     pool: {
       connectionString: payloadDatabaseUrl,
+      max: process.env.VERCEL ? 1 : payloadDatabaseUrl.includes("neon.tech") ? 3 : 10,
+      idleTimeoutMillis: 5_000,
+      connectionTimeoutMillis: 10_000,
+      allowExitOnIdle: true,
     },
     // Never auto-push: Drizzle would drop Prisma tables (leads, drivers, fleet_partners).
     push: false,

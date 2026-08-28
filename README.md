@@ -118,5 +118,7 @@ Docs are organized under `docs/` by app — `docs/shared/` (repo-wide), `docs/we
 | [docs/shared/ARCHITECTURE.md](docs/shared/ARCHITECTURE.md) | Repo layout and conventions |
 | [docs/shared/DATA-LAYER.md](docs/shared/DATA-LAYER.md) | Prisma vs Payload |
 | [docs/shared/ROADMAP.md](docs/shared/ROADMAP.md) | Actor-by-actor product roadmap |
+| [docs/shared/AUDIT-VALUATION.md](docs/shared/AUDIT-VALUATION.md) | Technical audit + KES reconstructive-cost valuation |
+| [docs/shared/FEATURE-INVENTORY.md](docs/shared/FEATURE-INVENTORY.md) | Every route/screen, integration, and architectural decision, with citations |
 | [PRODUCT.md](PRODUCT.md) | Audience, positioning, tone |
 | [DESIGN.md](DESIGN.md) | Visual system for marketing |

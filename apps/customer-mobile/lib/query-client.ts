@@ -12,12 +12,13 @@ export const QUERY_CACHE_BUSTER = "v1"
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      staleTime: 2 * 60_000,
       // Must be >= the persister's maxAge (24h) so TanStack Query doesn't
       // garbage-collect cached data in memory before it can be persisted
       // or reused on the next cold start.
       gcTime: 24 * 60 * 60 * 1000,
       retry: 1,
+      refetchIntervalInBackground: false,
     },
   },
 })
