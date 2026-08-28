@@ -32,6 +32,14 @@ export async function GET() {
     where: { clerk_user_id: auth.access.userId },
     orderBy: { created_at: "desc" },
     take: LIST_LIMIT,
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      body: true,
+      read_at: true,
+      created_at: true,
+    },
   })
 
   return NextResponse.json(rows.map(toDto))

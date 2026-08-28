@@ -24,6 +24,15 @@ export async function listAnnouncementDeliveries(
     where: { clerk_user_id: clerkUserId, app },
     orderBy: { created_at: "desc" },
     take: LIST_LIMIT,
+    select: {
+      id: true,
+      title: true,
+      body: true,
+      image_url: true,
+      category: true,
+      read_at: true,
+      created_at: true,
+    },
   })
 
   return rows.map((row) => ({

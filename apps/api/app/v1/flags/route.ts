@@ -5,6 +5,7 @@ import { PLATFORM_FLAG_KEYS, platformFlagUpdateSchema } from "@workspace/ops-con
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
+import { invalidatePublicConfigCache } from "@/lib/public-config-cache"
 
 export async function GET() {
   const auth = await requireOpsPermissionAccess("flags")
@@ -47,6 +48,8 @@ export async function PATCH(req: Request) {
     entity_id: flag.key,
     summary: `${enabled ? "Enabled" : "Disabled"} platform flag "${key}"`,
   })
+
+  invalidatePublicConfigCache()
 
   return NextResponse.json({
     key: flag.key,

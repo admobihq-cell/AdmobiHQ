@@ -40,11 +40,18 @@ function getSnapshot() {
  * means only the first caller pays for the fetch; everyone else — mounted
  * at the same time or later — reads the cached value immediately.
  */
+let lastRefreshAt = 0
+const MIN_REFRESH_MS = 5 * 60_000
+
 function refresh(): Promise<void> {
   if (inFlight) return inFlight
+  if (lastRefreshAt > 0 && Date.now() - lastRefreshAt < MIN_REFRESH_MS) {
+    return Promise.resolve()
+  }
   inFlight = fetchFlags()
     .then((next) => {
       flagsCache = next
+      lastRefreshAt = Date.now()
       notify()
     })
     .catch(() => {
@@ -60,7 +67,7 @@ function refresh(): Promise<void> {
  * Ops-controlled platform flags (e.g. "deliveries"). Fetched once on first
  * use and shared across every consumer, then refreshed whenever the app
  * returns to the foreground, so a toggle in ops propagates here within
- * about a minute without an app update — see docs/driver/DRIVER-APP.md for
+ * about five minutes without an app update — see docs/driver/DRIVER-APP.md for
  * the full design.
  */
 export function usePlatformFlags(): Record<string, boolean> {
