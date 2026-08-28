@@ -6,7 +6,7 @@ import { getBlogIndexData } from "@/lib/payload/blog-queries"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
 import { blogPageMetadata } from "@/lib/seo/site"
 
-export const revalidate = 3600
+export const revalidate = 21600
 
 export const metadata: Metadata = blogPageMetadata({
   title: "Blog | taxi-top OOH insights & campaigns | Admobi Kenya",

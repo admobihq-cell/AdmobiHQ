@@ -1,4 +1,5 @@
 import { subDays } from "date-fns"
+import { unstable_cache } from "next/cache"
 
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
@@ -34,7 +35,7 @@ type OverviewRow = {
   drivers_by_heard: NamedCount[] | null
 }
 
-export async function getOverviewStats(range: DateRangeKey = "30d") {
+async function queryOverviewStats(range: DateRangeKey) {
   const start = getDateRangeStart(range)
   const pool = getPgPool()
 
@@ -117,7 +118,15 @@ export async function getOverviewStats(range: DateRangeKey = "30d") {
   }
 }
 
-export async function getSubmissionsOverTime(days = 30) {
+export function getOverviewStats(range: DateRangeKey = "30d") {
+  return unstable_cache(
+    () => queryOverviewStats(range),
+    ["ops-overview-stats", range],
+    { revalidate: 60 },
+  )()
+}
+
+async function querySubmissionsOverTime(days: number) {
   const start = subDays(new Date(), days)
   const pool = getPgPool()
 
@@ -145,4 +154,12 @@ export async function getSubmissionsOverTime(days = 30) {
     day: row.day,
     count: Number.parseInt(row.count, 10),
   }))
+}
+
+export function getSubmissionsOverTime(days = 30) {
+  return unstable_cache(
+    () => querySubmissionsOverTime(days),
+    ["ops-submissions-over-time", String(days)],
+    { revalidate: 60 },
+  )()
 }

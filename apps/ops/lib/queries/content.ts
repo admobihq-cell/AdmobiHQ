@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache"
+
 import { getPgPool } from "@/lib/pg"
 
 export type ContentStats = {
@@ -20,7 +22,7 @@ type ContentStatsRow = {
   drafts: Array<{ id: number; title: string; type: string; updated_at: string }> | null
 }
 
-export async function getContentStats(): Promise<ContentStats | null> {
+async function queryContentStats(): Promise<ContentStats | null> {
   if (!process.env.DATABASE_URL) return null
 
   try {
@@ -87,4 +89,10 @@ export async function getContentStats(): Promise<ContentStats | null> {
     console.error("[getContentStats]", error)
     return null
   }
+}
+
+export function getContentStats(): Promise<ContentStats | null> {
+  return unstable_cache(queryContentStats, ["ops-content-stats"], {
+    revalidate: 60,
+  })()
 }
