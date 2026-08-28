@@ -21,8 +21,6 @@ import {
 } from "@/lib/announcements-client"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 
-const POLL_INTERVAL_MS = 60_000
-
 function useSignedInAuth() {
   return useAuth()
 }
@@ -46,7 +44,7 @@ export function NotificationBell() {
   const notificationsQuery = useQuery({
     queryKey: ["customer-announcements"],
     queryFn: () => fetchCustomerAnnouncements(getToken),
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchOnWindowFocus: true,
   })
   const notifications = notificationsQuery.data ?? []
 

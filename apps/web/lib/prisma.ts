@@ -5,7 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { attachDatabasePool } from "@vercel/functions"
 import { Pool } from "pg"
 
-import { resolveDatabaseUrl } from "@/lib/resolve-database-url"
+import { resolveRuntimeDatabaseUrl } from "@/lib/resolve-database-url"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -13,17 +13,18 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPool(): Pool {
-  const connectionString = resolveDatabaseUrl()
+  const connectionString = resolveRuntimeDatabaseUrl()
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set. Add it to apps/web/.env.local")
   }
 
   const isServerless = Boolean(process.env.VERCEL)
+  const isNeon = connectionString.includes("neon.tech")
 
   const pool = new Pool({
     connectionString,
-    max: isServerless ? 1 : 10,
-    idleTimeoutMillis: isServerless ? 5_000 : 30_000,
+    max: isServerless ? 1 : isNeon ? 3 : 10,
+    idleTimeoutMillis: 5_000,
     connectionTimeoutMillis: 10_000,
     allowExitOnIdle: true,
   })

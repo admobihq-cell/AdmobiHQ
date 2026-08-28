@@ -1,4 +1,5 @@
-import type { SupportCase, SupportMessage } from "@prisma/client"
+import type { Customer, SupportCase, SupportMessage } from "@prisma/client"
+import { Prisma } from "@prisma/client"
 import { verifyToken } from "@clerk/backend"
 
 import { timingSafeEqual } from "@/lib/api-utils"
@@ -14,6 +15,9 @@ export function getBearerToken(req: Request): string | null {
   return token || null
 }
 
+const CUSTOMER_CACHE_TTL_MS = 10 * 60_000
+const customerCache = new Map<string, { customer: Customer; expiresAt: number }>()
+
 /**
  * Upserts the `Customer` row for a signed-in clerk_user_id. `Customer` is
  * otherwise a dormant scaffold (see schema.prisma) with no automatic writer —
@@ -22,13 +26,54 @@ export function getBearerToken(req: Request): string | null {
  * authenticated customer-web/customer-mobile request that needs the caller to
  * be a valid broadcast-announcement recipient (see collectWebRecipients in
  * lib/push/broadcast-announcement.ts, which reads exactly this column).
+ *
+ * Cached per warm lambda so announcement inbox requests do not write on
+ * every hit — a write every 60s was keeping Neon compute from suspending.
  */
 export async function ensureCustomerRecord(clerkUserId: string) {
-  return prisma.customer.upsert({
+  const cached = customerCache.get(clerkUserId)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.customer
+  }
+
+  const existing = await prisma.customer.findUnique({
     where: { clerk_user_id: clerkUserId },
-    create: { clerk_user_id: clerkUserId, email: `${clerkUserId}@placeholder.invalid` },
-    update: {},
   })
+  if (existing) {
+    customerCache.set(clerkUserId, {
+      customer: existing,
+      expiresAt: Date.now() + CUSTOMER_CACHE_TTL_MS,
+    })
+    return existing
+  }
+
+  try {
+    const created = await prisma.customer.create({
+      data: {
+        clerk_user_id: clerkUserId,
+        email: `${clerkUserId}@placeholder.invalid`,
+      },
+    })
+    customerCache.set(clerkUserId, {
+      customer: created,
+      expiresAt: Date.now() + CUSTOMER_CACHE_TTL_MS,
+    })
+    return created
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const raced = await prisma.customer.findUnique({
+        where: { clerk_user_id: clerkUserId },
+      })
+      if (raced) {
+        customerCache.set(clerkUserId, {
+          customer: raced,
+          expiresAt: Date.now() + CUSTOMER_CACHE_TTL_MS,
+        })
+        return raced
+      }
+    }
+    throw error
+  }
 }
 
 /**
