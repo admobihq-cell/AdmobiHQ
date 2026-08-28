@@ -30,6 +30,15 @@ export async function GET(req: Request) {
       orderBy: { created_at: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
+      select: {
+        id: true,
+        full_name: true,
+        phone: true,
+        city: true,
+        status: true,
+        submitted_at: true,
+        created_at: true,
+      },
     }),
     prisma.driverProfile.count({ where }),
   ])

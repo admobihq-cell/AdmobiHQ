@@ -24,8 +24,6 @@ import {
   type DriverAnnouncementDto,
 } from "@/lib/driver-notifications-client"
 
-const POLL_INTERVAL_MS = 60_000
-
 const TYPE_DOT: Record<string, string> = {
   application_submitted: "bg-amber-500",
   application_approved: "bg-emerald-500",
@@ -34,9 +32,9 @@ const TYPE_DOT: Record<string, string> = {
   announcement: "bg-blue-500",
 }
 
-/** Bell dropdown in the header, next to ThemeToggle. Polls rather than
- * pushing — low volume (application lifecycle events only), so a websocket
- * would be overkill. Opening the dropdown marks everything read. */
+/** Bell dropdown in the header, next to ThemeToggle. Refetches on focus
+ * rather than polling — a 60s interval kept Neon compute from suspending.
+ * Opening the dropdown marks everything read. */
 export function NotificationBell() {
   const { getToken } = useAuth()
   const queryClient = useQueryClient()
@@ -45,12 +43,12 @@ export function NotificationBell() {
   const notificationsQuery = useQuery({
     queryKey: ["driver-notifications"],
     queryFn: () => fetchDriverNotifications(getToken),
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchOnWindowFocus: true,
   })
   const announcementsQuery = useQuery({
     queryKey: ["driver-announcements"],
     queryFn: () => fetchDriverAnnouncements(getToken),
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchOnWindowFocus: true,
   })
 
   const merged = [

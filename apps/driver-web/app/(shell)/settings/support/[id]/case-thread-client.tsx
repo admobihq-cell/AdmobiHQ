@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ArrowLeft, Send, SearchX } from "lucide-react"
 import { toast } from "sonner"
 
+import { refetchIntervalWhenVisible } from "@workspace/query-client"
 import { Button } from "@workspace/ui/components/button"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
@@ -15,7 +16,7 @@ import { SupportStatusBadge } from "@/components/support-status-badge"
 import { getSupportCase, replyToSupportCase, type SupportMessage } from "@/lib/support-client"
 import { CategoryIcon, getCategoryLabel } from "@/lib/support-categories"
 
-const POLL_INTERVAL_MS = 15_000
+const POLL_INTERVAL_MS = 30_000
 
 function initials(name: string) {
   return name
@@ -34,7 +35,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
     queryKey: ["driver-support-case", caseId],
     queryFn: () => getSupportCase(caseId),
     enabled: Number.isFinite(caseId),
-    refetchInterval: POLL_INTERVAL_MS,
+    refetchInterval: refetchIntervalWhenVisible(POLL_INTERVAL_MS),
   })
   const loading = caseQuery.isLoading
   const notFound = !caseQuery.isLoading && caseQuery.data === null

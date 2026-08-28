@@ -9,7 +9,7 @@ export async function GET() {
   if (auth.error) return auth.error
 
   // customer-web has no push-token-style "register on launch" call, so this
-  // poll (fired every 60s while the bell is mounted, see notification-bell.tsx)
+  // poll (fired on window focus while the bell is mounted, see notification-bell.tsx)
   // doubles as that: it's what makes the caller a valid recipient the next
   // time ops broadcasts to "Customer web" (see collectWebRecipients).
   await ensureCustomerRecord(auth.access.userId)
