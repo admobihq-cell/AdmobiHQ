@@ -12,45 +12,54 @@ export type ContentStats = {
   }>
 }
 
+type ContentStatsRow = {
+  blog: Record<string, number> | null
+  help: Record<string, number> | null
+  media_count: string
+  media_size: string
+  drafts: Array<{ id: number; title: string; type: string; updated_at: string }> | null
+}
+
 export async function getContentStats(): Promise<ContentStats | null> {
   if (!process.env.DATABASE_URL) return null
 
   try {
     const pg = getPgPool()
-
-    const [blogRows, helpRows, mediaRow, draftRows] = await Promise.all([
-      pg.query<{ _status: string; count: string }>(
-        `SELECT _status, COUNT(*)::text AS count FROM cms.blog_posts GROUP BY _status`,
-      ),
-      pg.query<{ _status: string; count: string }>(
-        `SELECT _status, COUNT(*)::text AS count FROM cms.help_articles GROUP BY _status`,
-      ),
-      pg.query<{ count: string; total_size: string | null }>(
-        `SELECT COUNT(*)::text AS count, COALESCE(SUM(filesize), 0)::text AS total_size FROM cms.media`,
-      ),
-      pg.query<{ id: number; title: string; type: string; updated_at: Date }>(
-        `
+    const result = await pg.query<ContentStatsRow>(
+      `
+      SELECT
+        (SELECT COALESCE(json_object_agg(_status, c), '{}'::json)
+           FROM (SELECT _status, COUNT(*)::int AS c FROM cms.blog_posts GROUP BY _status) s
+        ) AS blog,
+        (SELECT COALESCE(json_object_agg(_status, c), '{}'::json)
+           FROM (SELECT _status, COUNT(*)::int AS c FROM cms.help_articles GROUP BY _status) s
+        ) AS help,
+        (SELECT COUNT(*)::text FROM cms.media) AS media_count,
+        (SELECT COALESCE(SUM(filesize), 0)::text FROM cms.media) AS media_size,
         (
-          SELECT id, title, 'blog' AS type, updated_at FROM cms.blog_posts WHERE _status = 'draft'
-          ORDER BY updated_at DESC LIMIT 5
-        )
-        UNION ALL
-        (
-          SELECT id, title, 'help' AS type, updated_at FROM cms.help_articles WHERE _status = 'draft'
-          ORDER BY updated_at DESC LIMIT 5
-        )
-        ORDER BY updated_at DESC
-        LIMIT 10
-        `,
-      ),
-    ])
+          SELECT COALESCE(json_agg(json_build_object(
+            'id', id, 'title', title, 'type', type, 'updated_at', updated_at
+          ) ORDER BY updated_at DESC), '[]'::json)
+          FROM (
+            SELECT * FROM (
+              SELECT id, title, 'blog' AS type, updated_at FROM cms.blog_posts WHERE _status = 'draft'
+              ORDER BY updated_at DESC LIMIT 5
+            ) blog_drafts
+            UNION ALL
+            SELECT * FROM (
+              SELECT id, title, 'help' AS type, updated_at FROM cms.help_articles WHERE _status = 'draft'
+              ORDER BY updated_at DESC LIMIT 5
+            ) help_drafts
+            ORDER BY updated_at DESC
+            LIMIT 10
+          ) drafts
+        ) AS drafts
+      `,
+    )
 
-    const blogStatus = Object.fromEntries(
-      blogRows.rows.map((r) => [r._status, Number.parseInt(r.count, 10)]),
-    )
-    const helpStatus = Object.fromEntries(
-      helpRows.rows.map((r) => [r._status, Number.parseInt(r.count, 10)]),
-    )
+    const row = result.rows[0]
+    const blogStatus = row?.blog ?? {}
+    const helpStatus = row?.help ?? {}
 
     return {
       blog: {
@@ -64,14 +73,14 @@ export async function getContentStats(): Promise<ContentStats | null> {
         draft: helpStatus.draft ?? 0,
       },
       media: {
-        total: Number.parseInt(mediaRow.rows[0]?.count ?? "0", 10),
-        totalSize: Number.parseInt(mediaRow.rows[0]?.total_size ?? "0", 10),
+        total: Number.parseInt(row?.media_count ?? "0", 10),
+        totalSize: Number.parseInt(row?.media_size ?? "0", 10),
       },
-      recentDrafts: draftRows.rows.map((r) => ({
+      recentDrafts: (row?.drafts ?? []).map((r) => ({
         id: r.id,
         title: r.title,
         type: r.type,
-        updatedAt: r.updated_at.toISOString(),
+        updatedAt: typeof r.updated_at === "string" ? r.updated_at : new Date(r.updated_at).toISOString(),
       })),
     }
   } catch (error) {

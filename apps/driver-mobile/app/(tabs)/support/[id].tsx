@@ -19,7 +19,7 @@ import { CategoryIcon, SupportStatusPill } from "@/components/support/support-ui
 import { getSupportCase, replyToSupportCase } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-const POLL_INTERVAL_MS = 15_000
+const POLL_INTERVAL_MS = 30_000
 
 export default function SupportCaseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()

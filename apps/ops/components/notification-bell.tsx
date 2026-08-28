@@ -17,7 +17,6 @@ import {
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
-const POLL_INTERVAL_MS = 60_000
 const PREVIEW_LIMIT = 8
 
 /** Ops's "inbox" is the driver-applications review queue itself, so this
@@ -41,8 +40,15 @@ export function NotificationBell() {
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load()
+    }
+    window.addEventListener("focus", load)
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      window.removeEventListener("focus", load)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
   }, [load])
 
   return (
