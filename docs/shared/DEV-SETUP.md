@@ -10,7 +10,7 @@ Command reference for running **Admobi** locally: marketing site (`apps/web`), b
 
 | Requirement | Notes |
 |-------------|--------|
-| **Node.js ≥ 20** | `node -v` |
+| **Node.js ≥ 22** | `node -v` (root `engines` pin; CI uses 22) |
 | **npm 11** | Repo pins `npm@11.12.1` via `packageManager` |
 | **Postgres** | Hosted URL (e.g. Neon) in `DATABASE_URL` — not required to run Postgres on localhost |
 | **Infisical CLI** (optional) | For `env:pull` / team secrets — [infisical.com/docs](https://infisical.com/docs) |
@@ -84,11 +84,10 @@ Open:
 |-----|------|
 | http://localhost:3000 | Marketing site |
 | http://localhost:3000/admin | Payload CMS |
-| http://localhost:3003 | **Business API** (`/v1`, `/v1/public`) |
 | http://localhost:3003 | **Business API** (`/v1`, `/v1/public`, `/v1/health`) |
 | http://localhost:3001 | **Ops console** (Clerk auth, @admobihq.com) |
-| http://localhost:3002 | **Customer app** (sidebar shell, no auth yet) |
-| http://localhost:3004 | **Driver app** (sidebar shell, no auth yet — [DRIVER-APP.md](../driver/DRIVER-APP.md)) |
+| http://localhost:3002 | **Customer app** (Clerk flag-gated — [APP.md](../customer/APP.md)) |
+| http://localhost:3004 | **Driver app** (Clerk flag-gated — [DRIVER-APP.md](../driver/DRIVER-APP.md)) |
 
 **Prefer `npm run dev`** (webpack). Use `npm run dev:turbo -w web` only if you accept less-tested Payload + Turbopack behaviour.
 
@@ -352,7 +351,7 @@ Full guide: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md) — local dev, debug APKs, EA
 | `npm run mobile:apk:local:driver` | Local debug APK for driver (needs Metro — dev only) |
 | `npm run mobile:apk:eas:ops` | **EAS cloud preview APK** for ops — share with team |
 | `npm run mobile:apk:eas:customer` | **EAS cloud preview APK** for customer — share with team |
-| `npm run mobile:apk:eas:driver` | **EAS cloud preview APK** for driver — share with team (needs `eas init` first) |
+| `npm run mobile:apk:eas:driver` | **EAS cloud preview APK** for driver — share with team |
 | `npm run update:preview -w ops-mobile` | Push OTA JS update to ops preview installs |
 | `npm run update:preview -w customer-mobile` | Push OTA JS update to customer preview installs |
 | `npm run update:preview -w driver-mobile` | Push OTA JS update to driver preview installs |
@@ -471,9 +470,9 @@ See [API.md](../api/API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 | [API.md](../api/API.md) | Business API routes, Infisical, deployment |
 | [DATA-LAYER.md](./DATA-LAYER.md) | Prisma = backend, Payload = CMS; migration rules |
 | [OPS-ADMIN.md](../ops/OPS-ADMIN.md) | Ops console |
-| [APP.md](../customer/APP.md) | Customer app scaffold |
+| [APP.md](../customer/APP.md) | Customer / advertiser web app |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Vercel, Infisical, five projects |
-| [DRIVER-APP.md](../driver/DRIVER-APP.md) | Driver app scaffold plan, platform flags |
+| [DRIVER-APP.md](../driver/DRIVER-APP.md) | Driver web + Expo, platform flags |
 | [HELP-CMS.md](../web/HELP-CMS.md) | Help center, Payload migrations, admin build |
 | [BLOG-CMS.md](../web/BLOG-CMS.md) | Blog subdomain, media, seed posts |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Repo layout, all apps, CI |

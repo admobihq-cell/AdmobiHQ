@@ -2,7 +2,7 @@
 
 A reproducible, engineer-facing reference for everything the monorepo actually contains: every route/screen per app, every third-party integration wired in, the data model, and the architectural decisions behind them — with file citations throughout. Built so a second engineer can independently re-derive the LOC figures and effort estimate in [AUDIT-VALUATION.md](./AUDIT-VALUATION.md) rather than take them on faith.
 
-Compiled by direct repository inspection on 2026-08-27. All paths are relative to the repo root.
+Compiled by direct repository inspection on 2026-08-27; living-doc corrections 2026-08-29. All paths are relative to the repo root.
 
 ---
 
@@ -68,17 +68,17 @@ Collections (`apps/web/collections/`): **BlogPosts**, **HelpArticles**, **HelpCa
 
 ### 1.3 `apps/ops` — internal operations console
 
-**26 pages.** Sign-in/sign-up (Clerk), then a dashboard shell: Home, Overview (stats + quick links), Map, Leads, Fleet, Drivers, Waitlist, Media Kit, Driver Applications (+ detail/review), Announcements, Support (+ thread detail), Finances, Activity (audit feed), Content (links to Payload admin), Team, Team Roles, Users → Customers, Users → Admins, Settings → Flags (feature-flag toggle UI), Settings → Tour (product-tour replay).
+**27 pages.** Sign-in/sign-up (Clerk), then a dashboard shell: Home, Overview (stats + quick links), Map, Leads, Fleet, Drivers, Waitlist, Media Kit, Driver Applications (+ detail/review), Announcements, Support (+ thread detail), Finances, Activity (audit feed), Content (links to Payload admin), Team, Team Roles, Users → Customers, Users → Admins, Settings → Flags (feature-flag toggle UI), Settings → Tour (product-tour replay).
 
 Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by design** — it holds no data of its own; every CRUD action calls `apps/api`.
 
 ### 1.4 `apps/customer-web` — advertiser web console
 
-**18 pages** — 3 real, working sections gate behind auth patterns shared with driver-web:
+**18 pages** — same auth patterns as driver-web. Campaign UIs are fixture-backed; Reports is the remaining Coming-soon page:
 
 | Route | Status |
 |---|---|
-| `/`, `/campaigns`, `/campaigns/[id]`, `/map` | **Real** — overview, campaign list/detail, coverage map |
+| `/`, `/campaigns`, `/campaigns/[id]`, `/map` | **UI real, fixture-backed** — overview and campaign list/detail/create use local demo data (`getCampaigns()`), not Prisma; Map uses `@workspace/geo` |
 | `/deliveries`, `/deliveries/[id]` | **Real, feature-flag gated** — redirects to `/` unless the `deliveries` platform flag is on |
 | `/reports` | **Placeholder** — generic `ComingSoon` component, not implemented |
 | `/settings/billing` | **Real** — wallet/billing view |
@@ -114,7 +114,7 @@ Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by de
 |---|---:|---|
 | `apps/web` | 18 pages + 2 API + 5 collections | All real |
 | `apps/api` | 65 route handlers | All real |
-| `apps/ops` | 26 pages | All real (UI-only by design) |
+| `apps/ops` | 27 pages | All real (UI-only by design) |
 | `apps/customer-web` | 18 pages | 15 real, 2 flag-gated, 1 placeholder |
 | `apps/driver-web` | 15 pages | 12 real, 1 flag-gated, 1 placeholder |
 | `apps/ops-mobile` | 56 screens | All real |
@@ -132,7 +132,7 @@ Every third-party service actually wired into the code — confirmed by reading 
 
 `apps/api/lib/cloudinary.ts` wraps the `cloudinary` v2 SDK. Real usage is in `apps/api/lib/driver-document-storage.ts`: driver documents (National ID, profile photo, KRA PIN certificate, payout proof) upload with `type: "authenticated"` — signed-URL-only, never public — under `driver-documents/{profileId}/{type}/{uploadId}`. `fetchDriverDocument()` mints a signed, size-capped URL server-side and streams it through the API; the signed URL itself never reaches a client directly. Callers: `apps/api/app/v1/driver/documents/*`, `apps/api/app/v1/driver-applications/*`.
 
-*Note: `docs/web/ANNOUNCEMENT-IMAGES-PLAN.md` (written 2026-08-02) states no Cloudinary existed at that time and proposed Vercel Blob for announcement images. Cloudinary was added afterward, scoped specifically to driver documents — announcement images did ship on Vercel Blob as that plan proposed. Worth updating that doc's "confirmed no Cloudinary" line so it doesn't read as stale/contradictory.*
+*Announcement images shipped on Vercel Blob as [ANNOUNCEMENT-IMAGES-PLAN.md](../web/ANNOUNCEMENT-IMAGES-PLAN.md) proposed. Cloudinary was added afterward, scoped to driver documents.*
 
 ### Clerk — three independent instances + one verification-only wiring
 
@@ -144,7 +144,7 @@ No shared session between instances; no satellite domains.
 | Customer | `apps/customer-web/app/layout.tsx` | `apps/customer-mobile/app/_layout.tsx` | None — email + Google |
 | Driver | `apps/driver-web/app/layout.tsx` | `apps/driver-mobile/app/_layout.tsx` | None — email + Google |
 
-`apps/api/middleware.ts` runs `clerkMiddleware()` with no provider of its own — it verifies bearer JWTs against whichever instance issued them. `apps/api/lib/support.ts` explicitly tries the customer Clerk secret, then the driver Clerk secret, to disambiguate a bearer token's origin app when the calling surface isn't otherwise known. All web/mobile Clerk mounts are conditional on the `AUTH_ENABLED` / `NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED` feature flag, defaulting off.
+`apps/api/middleware.ts` runs `clerkMiddleware()` for CORS/session cookies on ops-origin calls; it does **not** verify customer or driver tokens. Those use dedicated modules: `apps/api/lib/auth.ts` (ops), `customer-auth.ts`, `driver-auth.ts`. `apps/api/lib/support.ts` tries the customer Clerk secret, then the driver Clerk secret, to disambiguate a bearer token when the calling surface isn't otherwise known. **Ops** and **ops-mobile** mount Clerk unconditionally. Customer and driver web/mobile mounts are conditional on `NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED`, defaulting off.
 
 ### Resend — transactional email
 
@@ -247,7 +247,7 @@ A third-party agency quoted a phased build of a comparable taxi-top/OOH advertis
 |---|---|
 | Client registration, dashboard | ✅✅ Far exceeded — `customer-web`/`customer-mobile` full dashboards (campaigns, map, billing, support), not a single portal page |
 | Campaign status tracking (Pending/Approved/Live/Completed) | ✅ Built — status badges/filters confirmed in `customer-mobile` campaign screens |
-| Online booking | ⚠️ Partial — `campaigns/new` exists on `customer-mobile`; `customer-web` has campaign list/detail but no confirmed campaign-creation page yet |
+| Online booking | ⚠️ Partial — `campaigns/new` on `customer-mobile`; `customer-web` has list/detail plus `new-campaign-form.tsx`, all local demo data (no API persist) |
 | Campaign calendar | ❌ **Missing** — no dedicated calendar view found |
 | Invoice generation | ❌ **Missing** — no invoicing logic found; a billing/wallet *view* exists but doesn't generate invoices |
 | Payment confirmation | ❌ **Missing** — follows from no payment gateway existing yet |
