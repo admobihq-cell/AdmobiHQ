@@ -26,6 +26,10 @@ export default async function HelpPage() {
       })
     : { categories: [], articles: [] }
 
+  if (data.articles.length === 0) {
+    noStore()
+  }
+
   return (
     <>
       <MarketingPageJsonLd

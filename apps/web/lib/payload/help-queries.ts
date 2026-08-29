@@ -69,7 +69,7 @@ export function getCachedHelpIndexData(): Promise<{
   categories: HelpCategory[]
   articles: HelpArticleListItem[]
 }> {
-  return unstable_cache(getHelpIndexData, ["marketing-help-index"], {
+  return unstable_cache(getHelpIndexData, ["marketing-help-index-v2"], {
     revalidate: MARKETING_REVALIDATE_SECONDS,
     tags: [MARKETING_HELP_INDEX_TAG],
   })()
