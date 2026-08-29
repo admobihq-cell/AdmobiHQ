@@ -48,10 +48,18 @@ export function resolveRuntimeDatabaseUrl(): string | undefined {
   return raw ? preferNeonPooledConnectionString(raw) : undefined
 }
 
+/**
+ * Payload/Drizzle uses prepared statements and `SET search_path` for the `cms`
+ * schema. Neon's PgBouncer pooler (transaction mode) drops those, so admin and
+ * public CMS reads come back empty or 500. Keep the direct host here; Prisma
+ * still goes through `resolveRuntimeDatabaseUrl()` / the pooler.
+ */
 export function resolvePayloadDatabaseUrl(): string | undefined {
   const dedicated = process.env.PAYLOAD_DATABASE_URL?.trim()
-  const raw = dedicated || resolveDatabaseUrl()
-  return raw ? preferNeonPooledConnectionString(raw) : undefined
+  if (dedicated) {
+    return dedicated
+  }
+  return resolveDatabaseUrl()
 }
 
 function isBuildTimeWithoutDatabase(): boolean {

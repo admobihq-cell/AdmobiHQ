@@ -35,8 +35,8 @@ The Infisical/Vercel team is **Hobby**: **4 Active CPU hours/month shared across
 
 | Layer | What it does |
 |-------|----------------|
-| Static brand PNGs | `app/icon.png` + `app/apple-icon.png` in all five apps; marketing `app/opengraph-image.png`; `apps/web/public/logo.png` (rewrite `/logo` → `/logo.png`). Regenerate with `npm run brand:icons`. Do not add `icon.tsx` / `ImageResponse` routes back. |
-| Probe middleware | Marketing Edge middleware 404s scanner paths (`lib/seo/bot-probes.ts`) without Node, Payload, or Neon. |
+| Static brand PNGs | `app/icon.png` + `app/apple-icon.png` in apps that have a root `app/layout.tsx`. Marketing web has two root layouts, so `/icon`, `/apple-icon`, and `/opengraph-image` are `public/*.png` plus rewrites (same as `/logo`). Regenerate with `npm run brand:icons`. Do not add `icon.tsx` / `ImageResponse` routes back. |
+| Probe middleware | Marketing Edge middleware 404s scanner paths (`lib/seo/bot-probes.ts`) without Node, Payload, or Neon. Matcher skips `/admin` and `/api` so Payload still works. |
 | Static 404 | [`apps/web/app/global-not-found.tsx`](../../apps/web/app/global-not-found.tsx) — no `cookies()`, no CMS. |
 | Marketing ISR | `export const revalidate = 86400` on marketing page/layout files (Next.js requires a numeric literal). Query helpers use `MARKETING_REVALIDATE_SECONDS`. CMS hooks `revalidateTag(..., "max")` + `revalidatePath` on publish. Header/blog/help queries use `unstable_cache`. |
 | Skip rebuilds | Each app `vercel.json` sets `ignoreCommand` to `node ../../scripts/vercel-ignore-build.mjs` — docs-only (and other-app) commits do not rebuild, so they do not wipe ISR. |

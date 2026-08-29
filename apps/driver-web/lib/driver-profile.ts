@@ -1,7 +1,9 @@
 import { auth } from "@clerk/nextjs/server"
 import { unstable_cache } from "next/cache"
+import { unstable_rethrow } from "next/navigation"
 import type { DriverProfileDto } from "@workspace/ops-contracts"
 
+import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { apiPublicUrl } from "@/lib/site-urls"
 
 export type DriverProfileFetchResult =
@@ -36,6 +38,10 @@ async function fetchDriverProfileDto(token: string): Promise<DriverProfileDto> {
  * (and Neon) on every request. Keyed by userId so profiles cannot leak.
  * Failures throw and are not cached. */
 export async function fetchDriverProfile(): Promise<DriverProfileFetchResult> {
+  if (!isAuthEnabled()) {
+    return { status: "error" }
+  }
+
   try {
     const { userId, getToken } = await auth()
     const token = await getToken()
@@ -51,6 +57,9 @@ export async function fetchDriverProfile(): Promise<DriverProfileFetchResult> {
     )()
     return { status: "ok", profile }
   } catch (error) {
+    // auth() reads headers(); catching that during SSG hides the dynamic
+    // bailout from Next and the route is prerendered without a session.
+    unstable_rethrow(error)
     console.error("[fetchDriverProfile] threw:", error)
     return { status: "error" }
   }

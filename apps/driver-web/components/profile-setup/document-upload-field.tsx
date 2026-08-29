@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useAuth } from "@clerk/nextjs"
 import { CheckCircle2, Upload } from "lucide-react"
 import type { DriverDocumentDto, DriverDocumentType } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
+import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   fetchDriverDocumentBlob,
   uploadDriverDocument,
@@ -29,7 +29,7 @@ export function DocumentUploadField({
   document: DriverDocumentDto | undefined
   onUploaded: (doc: DriverDocumentDto) => void
 }) {
-  const { getToken } = useAuth()
+  const { getToken } = useAuthIfEnabled()
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
 

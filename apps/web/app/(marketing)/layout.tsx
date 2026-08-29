@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { unstable_noStore as noStore } from "next/cache"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 
@@ -96,6 +97,7 @@ export default async function MarketingLayout({
   const recentPosts = isPayloadConfigured()
     ? await getCachedRecentBlogPosts(3).catch((error) => {
         console.error("[site-header] Failed to load recent posts:", error)
+        noStore()
         return []
       })
     : []

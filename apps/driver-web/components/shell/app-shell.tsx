@@ -148,7 +148,7 @@ export function AppShell({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DriverBreadcrumbs pathname={pathname} />
             <div className="ml-auto flex items-center gap-1">
-              <NotificationBell />
+              {isAuthEnabled() ? <NotificationBell /> : null}
               <ThemeToggle />
             </div>
           </header>
