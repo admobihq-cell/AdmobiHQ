@@ -38,7 +38,7 @@ The Infisical/Vercel team is **Hobby**: **4 Active CPU hours/month shared across
 | Static brand PNGs | `app/icon.png` + `app/apple-icon.png` in all five apps; marketing `app/opengraph-image.png`; `apps/web/public/logo.png` (rewrite `/logo` → `/logo.png`). Regenerate with `npm run brand:icons`. Do not add `icon.tsx` / `ImageResponse` routes back. |
 | Probe middleware | Marketing Edge middleware 404s scanner paths (`lib/seo/bot-probes.ts`) without Node, Payload, or Neon. |
 | Static 404 | [`apps/web/app/global-not-found.tsx`](../../apps/web/app/global-not-found.tsx) — no `cookies()`, no CMS. |
-| Marketing ISR | `revalidate = 86400` (`MARKETING_REVALIDATE_SECONDS`). CMS hooks `revalidateTag(..., "max")` + `revalidatePath` on publish. Header/blog/help queries use `unstable_cache`. |
+| Marketing ISR | `export const revalidate = 86400` on marketing page/layout files (Next.js requires a numeric literal). Query helpers use `MARKETING_REVALIDATE_SECONDS`. CMS hooks `revalidateTag(..., "max")` + `revalidatePath` on publish. Header/blog/help queries use `unstable_cache`. |
 | Skip rebuilds | Each app `vercel.json` sets `ignoreCommand` to `node ../../scripts/vercel-ignore-build.mjs` — docs-only (and other-app) commits do not rebuild, so they do not wipe ISR. |
 | Flags | `GET /v1/public/config` — 5 min in-memory cache, skip rate-limit on hit, `Cache-Control: s-maxage=300`. Customer/driver fetch `revalidate: 300`. Ops stats and driver profile caches are also 300s. |
 | Images | `images.minimumCacheTTL` 31 days on marketing; long Cache-Control on static icons. |
