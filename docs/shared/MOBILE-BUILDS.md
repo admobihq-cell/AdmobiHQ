@@ -1,24 +1,24 @@
 # Mobile builds, APKs, and OTA updates
 
-Guide for **Expo** apps in this monorepo: local dev, installable APKs, team distribution, and over-the-air (OTA) JS updates.
+Guide for the **three Expo apps** in this monorepo: local dev, installable APKs, team distribution, and over-the-air (OTA) JS updates.
 
-**Related:** [APP-MOBILE.md](../customer/APP-MOBILE.md) (customer app) · [DEV-SETUP.md](./DEV-SETUP.md) · [DEPLOYMENT.md](./DEPLOYMENT.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
+**Related:** [APP-MOBILE.md](../customer/APP-MOBILE.md) (customer) · [MOBILE-OPS.md](../ops/MOBILE-OPS.md) (ops) · [DRIVER-APP.md](../driver/DRIVER-APP.md) (driver) · [DEV-SETUP.md](./DEV-SETUP.md) · [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
 
-## Two apps
+## Three apps
 
-| | **Ops** | **Customer** |
-|---|---------|--------------|
-| Folder | `apps/ops-mobile` | `apps/customer-mobile` |
-| Display name | Admobi Ops | Admobi |
-| Android package | `com.admobihq.ops` | `com.admobihq.app` |
-| EAS slug | `admobihq-ops` | `admobihq-app` |
-| EAS project | `@admobimedia/admobihq-ops` | `@admobimedia/admobihq-app` |
-| Metro port | **8081** | **8082** |
-| Auth | Clerk (ops staff) | None |
-| Config | [`apps/ops-mobile/app.json`](../../apps/ops-mobile/app.json) | [`apps/customer-mobile/app.json`](../../apps/customer-mobile/app.json) |
-| EAS profiles | [`apps/ops-mobile/eas.json`](../../apps/ops-mobile/eas.json) | [`apps/customer-mobile/eas.json`](../../apps/customer-mobile/eas.json) |
+| | **Ops** | **Customer** | **Driver** |
+|---|---------|--------------|------------|
+| Folder | `apps/ops-mobile` | `apps/customer-mobile` | `apps/driver-mobile` |
+| Display name | Admobi Ops | Admobi | Admobi Driver |
+| Android package | `com.admobihq.ops` | `com.admobihq.app` | `com.admobihq.driver` |
+| EAS slug | `admobihq-ops` | `admobihq-app` | `admobihq-driver` |
+| EAS project | `@admobimedia/admobihq-ops` | `@admobimedia/admobihq-app` | `@admobimedia/admobihq-driver` |
+| Metro port | **8081** | **8082** | **8083** |
+| Auth | Clerk (ops staff, always on) | Clerk (flag-gated) | Clerk (flag-gated) |
+| Config | [`apps/ops-mobile/app.json`](../../apps/ops-mobile/app.json) | [`apps/customer-mobile/app.json`](../../apps/customer-mobile/app.json) | [`apps/driver-mobile/app.json`](../../apps/driver-mobile/app.json) |
+| EAS profiles | [`apps/ops-mobile/eas.json`](../../apps/ops-mobile/eas.json) | [`apps/customer-mobile/eas.json`](../../apps/customer-mobile/eas.json) | [`apps/driver-mobile/eas.json`](../../apps/driver-mobile/eas.json) |
 
 Always run **`eas` commands from the app folder**, not the repo root. On PowerShell use `;` instead of `&&`:
 
@@ -40,10 +40,12 @@ cd apps\customer-mobile; npx eas-cli build -p android --profile preview
 
 ```bash
 npm run dev -w ops-mobile          # ops, port 8081
-npm run dev -w customer-mobile      # customer, port 8082
-npm run dev:all                # both + web stack (Turbo TUI — press `i` on a task to send keys to Expo)
-npm run dev:mobile             # ops, clears Metro cache
-npm run dev:mobile:customer    # customer, clears Metro cache
+npm run dev -w customer-mobile   # customer, port 8082
+npm run dev -w driver-mobile     # driver, port 8083
+npm run dev:all                  # web stack + all three Expo apps
+npm run dev:mobile               # ops, clears Metro cache
+npm run dev:mobile:customer      # customer, clears Metro cache
+npm run dev:mobile:driver       # driver, clears Metro cache
 ```
 
 Expo Go cannot show your native splash or launcher icon. The apps include a **JS splash** (`BrandedSplashScreen`) so Admobi branding still appears while loading.
@@ -53,9 +55,10 @@ Expo Go cannot show your native splash or launcher icon. The apps include a **JS
 Built with Gradle after `expo prebuild`:
 
 ```bash
-npm run mobile:apk:local           # both apps
+npm run mobile:apk:local           # all three apps
 npm run mobile:apk:local:ops       # ops only
 npm run mobile:apk:local:customer  # customer only
+npm run mobile:apk:local:driver    # driver only
 ```
 
 Output:
@@ -63,6 +66,7 @@ Output:
 ```
 apps/ops-mobile/android/app/build/outputs/apk/debug/app-debug.apk
 apps/customer-mobile/android/app/build/outputs/apk/debug/app-debug.apk
+apps/driver-mobile/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 **Requires:** Android SDK (Android Studio), `JAVA_HOME` pointing at Android Studio JBR, network for Gradle deps.

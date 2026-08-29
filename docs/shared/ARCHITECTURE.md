@@ -8,17 +8,17 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 
 ## 2. Stack at a glance
 
-- **Next.js 16.1.6** (App Router, Turbopack dev mode) — [apps/web/package.json](../../apps/web/package.json)
+- **Next.js 16.2** (App Router, webpack dev by default; Turbopack optional) — [apps/web/package.json](../../apps/web/package.json)
 - **React 19.2** — server components by default, `"use client"` opt-in
 - **TypeScript 5.9** — strict, NodeNext at the base, Bundler resolution for Next
 - **Tailwind v4** (`@tailwindcss/postcss`) — config-less, all tokens in CSS
-- **Turborepo 2.8** — task orchestration across the workspace
+- **Turborepo 2.9** — task orchestration across the workspace
 - **npm workspaces** (npm 11) — package linking; no pnpm
-- **Geist + Geist Mono** via `next/font/google` — wired in [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx)
+- **Geist + Geist Mono** via `next/font/google` — wired in [apps/web/app/(marketing)/layout.tsx](../../apps/web/app/(marketing)/layout.tsx)
 - **react-hook-form + zod** — every form on the site
 - **Radix Slot + class-variance-authority** — primitive composition pattern in `@workspace/ui`
 - **next-themes** — light/dark mode toggle
-- **Node ≥ 20** (engines pin)
+- **Node ≥ 22** (engines pin; CI uses Node 22)
 
 ## 3. Repo layout
 
@@ -28,17 +28,19 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 │   ├── web/                         Marketing site + Payload CMS (:3000)
 │   ├── api/                         Business REST API (:3003)
 │   ├── ops/                         Internal ops console UI (:3001, Clerk)
-│   ├── customer-web/                Customer app scaffold (:3002)
-│   ├── driver-web/                  Driver app scaffold (:3004)
+│   ├── customer-web/                Advertiser web app (:3002)
+│   ├── driver-web/                  Driver web app (:3004)
 │   ├── ops-mobile/                  Expo ops mobile app
-│   ├── customer-mobile/             Expo customer app (Clerk, customer instance)
-│   └── driver-mobile/               Expo driver app (Clerk, driver instance)
+│   ├── customer-mobile/             Expo customer app (Clerk, flag-gated)
+│   └── driver-mobile/               Expo driver app (Clerk, flag-gated)
 ├── packages/
 │   ├── ui/                          Shared UI primitives + design tokens + mapcn
 │   ├── geo/                         Nairobi map fixtures (corridors, coverage, plays)
 │   ├── ops-api-client/              Typed client for /v1 admin + public API
 │   ├── ops-contracts/               Shared Zod schemas and DTOs
+│   ├── query-client/               Shared TanStack Query client + provider
 │   ├── sentry-config/               Shared Sentry init helpers
+│   ├── vitest-config/               Shared Vitest config
 │   ├── eslint-config/               Flat-config ESLint presets
 │   └── typescript-config/           Base and Next-flavoured tsconfigs
 ├── .agents/
@@ -62,11 +64,11 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 | **Web** | `apps/web` | Public marketing, Payload CMS at `/admin` |
 | **API** | `apps/api` | Business REST at `api.admobihq.com` — public forms + ops CRUD |
 | **Ops** | `apps/ops` | Staff console UI at `ops.admobihq.com` — calls API, Clerk `@admobihq.com` |
-| **App** | `apps/customer-web` | Customer product at `app.admobihq.com` — scaffold + Map |
-| **Driver web** | `apps/driver-web` | Driver product at `driver.admobihq.com` — scaffold: Earnings, Routes, Payouts, flag-gated Deliveries |
-| **Ops mobile** | `apps/ops-mobile` | Expo app for ops staff — calls API with Clerk JWT. See [MOBILE-OPS.md](../ops/MOBILE-OPS.md) |
-| **Customer mobile** | `apps/customer-mobile` | Expo customer app — Clerk sign-in live (flag-gated); Map tab with MapLibre. See [APP-MOBILE.md](../customer/APP-MOBILE.md) |
-| **Driver mobile** | `apps/driver-mobile` | Expo driver app — Clerk sign-in live (flag-gated); same tab set as driver-web. See [DRIVER-APP.md](../driver/DRIVER-APP.md) |
+| **App** | `apps/customer-web` | Customer product at `app.admobihq.com` — campaigns (demo data), Map, support; Clerk flag-gated. See [APP.md](../customer/APP.md) |
+| **Driver web** | `apps/driver-web` | Driver product at `driver.admobihq.com` — earnings/routes UI, profile-setup, flag-gated Deliveries |
+| **Ops mobile** | `apps/ops-mobile` | Expo app for ops staff — calls API with Clerk JWT (always on). See [MOBILE-OPS.md](../ops/MOBILE-OPS.md) |
+| **Customer mobile** | `apps/customer-mobile` | Expo customer app — Clerk sign-in flag-gated; Map tab with MapLibre. See [APP-MOBILE.md](../customer/APP-MOBILE.md) |
+| **Driver mobile** | `apps/driver-mobile` | Expo driver app — Clerk sign-in flag-gated; same tab set as driver-web. See [DRIVER-APP.md](../driver/DRIVER-APP.md) |
 
 See [API.md](../api/API.md), [OPS-ADMIN.md](../ops/OPS-ADMIN.md), [APP.md](../customer/APP.md), [APP-MOBILE.md](../customer/APP-MOBILE.md), [DRIVER-APP.md](../driver/DRIVER-APP.md), [MOBILE-OPS.md](../ops/MOBILE-OPS.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md), and [DEPLOYMENT.md](./DEPLOYMENT.md).
 
@@ -80,17 +82,21 @@ Workspaces are declared in [package.json](../../package.json):
 
 ### 4.1 Routing
 
-App Router. Two top-level groupings:
+App Router. Marketing pages live in a route group that **is** the marketing shell (there is no root `app/layout.tsx` and no `app/page.tsx` outside the group):
 
-- [`app/page.tsx`](../../apps/web/app/page.tsx) — `/` — the landing page. Renders [`<LandingPage />`](../../apps/web/components/landing/landing-page.tsx). **Not** inside the `(marketing)` route group, so it does **not** get the marketing-layout shell; the landing page composes its own `SiteHeader` + sections + `SiteFooter` + `MobileStickyCta`.
-- [`app/(marketing)/`](../../apps/web/app/(marketing)/) — route group. Its [`layout.tsx`](../../apps/web/app/(marketing)/layout.tsx) wraps children with `<SiteHeader />` only. Pages under it:
+- [`app/(marketing)/`](../../apps/web/app/(marketing)/) — [`layout.tsx`](../../apps/web/app/(marketing)/layout.tsx) wraps every public page with `ThemeProvider`, `<SiteHeader />`, `<SiteFooter />`, and `<WhatsappFab />`. Pages under it:
+  - `/` — landing page (`page.tsx` in this group). Renders [`<LandingPage />`](../../apps/web/components/landing/landing-page.tsx)
   - `/drivers` — driver onboarding form
   - `/media-kit` — media kit request form
   - `/partner-fleet` — fleet partner inquiry form
   - `/products-solutions` — static product showcase
+  - `/product-demo` — in-browser product demo
   - `/start-campaign` — campaign brief form
-  - `/help` — help center index (Payload CMS)
-  - `/help/[slug]` — help article (Payload CMS, ISR)
+  - `/pricing` — pricing + campaign cost simulator
+  - `/blog`, `/blog/[slug]` — blog (Payload CMS, ISR)
+  - `/help`, `/help/[slug]`, `/help/contact` — help center (Payload CMS, ISR)
+  - `/privacy`, `/terms` — legal
+  - `/design-system` — internal token/component reference (noindex)
 
 - [`app/(payload)/`](../../apps/web/app/(payload)/) — Payload admin and REST API (not wrapped by marketing header):
   - `/admin` — content admin UI
@@ -100,14 +106,16 @@ Help and blog content are defined in [`apps/web/collections/`](../../apps/web/co
 
 Every page is either fully static (SSR/SSG) or a client component for forms. Help and blog routes use ISR (`revalidate = 3600`). Form API routes are server-rendered on demand.
 
-### 4.2 Root layout
+### 4.2 Marketing layout
 
-[`app/layout.tsx`](../../apps/web/app/layout.tsx) wraps every route. It:
+[`app/(marketing)/layout.tsx`](../../apps/web/app/(marketing)/layout.tsx) wraps every public marketing route. It:
 
 1. Loads the Geist + Geist Mono fonts and assigns them to `--font-sans` / `--font-mono` CSS variables.
 2. Imports the global stylesheet from `@workspace/ui/globals.css` (which re-exports [packages/ui/src/styles/globals.css](../../packages/ui/src/styles/globals.css)).
-3. Wraps children in `<ThemeProvider>` (light / dark toggle) and mounts `<WhatsappFab />` so the floating WhatsApp button shows on every route.
-4. Sets `<html lang="en" className="scroll-smooth antialiased font-sans">` and global metadata (title template, OG defaults, `locale: "en_KE"`).
+3. Wraps children in `<ThemeProvider>` and mounts `<SiteHeader />`, `<SiteFooter />`, and `<WhatsappFab />`.
+4. Sets `<html lang="en">` and global metadata (title template, OG defaults, `locale: "en_KE"`).
+
+Payload routes use a separate root layout under `app/(payload)/`.
 
 ### 4.3 Business API (`apps/api`)
 
@@ -119,9 +127,12 @@ Marketing forms and ops admin CRUD are served by the dedicated API app — not f
 | `POST /v1/public/drivers` | Driver enrollment | Public |
 | `POST /v1/public/waitlist` | Waitlist signup | Public |
 | `POST /v1/public/media-kit` | Media kit request | Public |
-| `/v1/leads`, `/v1/fleet`, `/v1/drivers`, `/v1/waitlist`, `/v1/media-kit` | Ops CRUD (+ `[id]`, `bulk`) | Clerk JWT |
-| `GET /v1/stats` | Dashboard metrics | Clerk JWT |
+| `/v1/leads`, `/v1/fleet`, `/v1/drivers`, `/v1/waitlist`, `/v1/media-kit` | Ops CRUD (+ `[id]`, `bulk`) | Ops Clerk JWT |
+| `/v1/customer/*`, `/v1/driver/*` | Advertiser inboxes; driver profile/docs/notifications | Customer / driver Clerk JWT |
+| `GET /v1/stats` | Dashboard metrics | Ops Clerk JWT |
 | `GET /v1/health` | Smoke test | Public |
+
+Full map: [API.md](../api/API.md). Auth modules: [AUTH.md](./AUTH.md).
 
 Clients use [`@workspace/ops-api-client`](../../packages/ops-api-client/src/index.ts):
 
@@ -177,11 +188,7 @@ Re-exported via [packages/ui/package.json](../../packages/ui/package.json) under
 - `@workspace/ui/lib/utils` → [packages/ui/src/lib/utils.ts](../../packages/ui/src/lib/utils.ts) (the `cn()` helper)
 - `@workspace/ui/globals.css` → [packages/ui/src/styles/globals.css](../../packages/ui/src/styles/globals.css)
 
-**Primitives currently exported:**
-
-- [`button.tsx`](../../packages/ui/src/components/button.tsx) — CVA variants (`default`, `outline`, `secondary`, `ghost`, `destructive`, `link`); sizes (`xs`, `sm`, `default`, `lg`, `icon`, `icon-sm`, `icon-lg`); supports `asChild` via Radix `Slot`.
-- [`input.tsx`](../../packages/ui/src/components/input.tsx) — text input with focus-visible and `aria-invalid` styling.
-- [`label.tsx`](../../packages/ui/src/components/label.tsx) — form label with peer-disabled treatment.
+**Primitives:** dozens of shadcn/Radix components under [packages/ui/src/components/](../../packages/ui/src/components) (button, input, label, dialog, sheet, sidebar, map wrappers, cookie-consent, …). Consume as `@workspace/ui/components/<name>`.
 
 To add a new primitive, drop the file under `packages/ui/src/components/` and consume it from `@workspace/ui/components/<name>`. Next.js transpiles the package via `transpilePackages: ["@workspace/ui"]` in [next.config.mjs](../../apps/web/next.config.mjs).
 
@@ -248,7 +255,7 @@ The `zod` version is pinned to `3.25.76` via a workspace-root [package.json](../
 All orchestrated by Turbo. Run from the repo root:
 
 ```bash
-npm run dev              # pull Infisical secrets + start web, api, ops, app
+npm run dev              # pull Infisical secrets + start web, api, ops, customer-web, driver-web
 npm run dev:skip-pull    # start without re-pulling secrets
 npm run build            # turbo build — production build, depends on ^build for packages
 npm run lint             # turbo lint
@@ -274,10 +281,10 @@ npx eslint .
 
 Two workflows under [.github/workflows/](../../.github/workflows):
 
-- [`pr.yml`](../../.github/workflows/pr.yml) — runs on PR open / synchronize / reopen against `master`. Node 20 + npm cache + Turbo cache → verify GitHub secrets → `npm ci` → `prisma generate` → **CMS migrate + seed** → `typecheck` → `lint` → `build`.
+- [`pr.yml`](../../.github/workflows/pr.yml) — runs on PR open / synchronize / reopen against `master` (and `main`). Node **22** + npm cache + Turbo cache → `npm ci` → `prisma generate` → `typecheck` → `lint` → `build`. Does **not** run CMS migrate/seed (that was waking Neon on every PR).
 - [`master.yml`](../../.github/workflows/master.yml) — same job on push to `master`. Has a placeholder deploy step (commented out) ready for a `VERCEL_TOKEN` secret.
 
-Job env vars are wired from **repository secrets** (`DATABASE_URL`, `PAYLOAD_SECRET`, and optional keys from [`.env.example`](../../.env.example)). See [DEV-SETUP.md](./DEV-SETUP.md) § GitHub Actions secrets.
+Job env vars are wired from **repository secrets** (`PAYLOAD_SECRET`, Clerk keys, URLs, and optional keys from [`.env.example`](../../.env.example)). `DATABASE_URL` is **not** injected in CI. See [DEV-SETUP.md](./DEV-SETUP.md) § GitHub Actions secrets.
 
 Both set `TURBO_UI=false` for non-interactive output.
 
@@ -303,8 +310,8 @@ Key cross-app variables:
 
 | Variable | Used by |
 |----------|---------|
-| `NEXT_PUBLIC_API_URL` | web, api, ops, customer-web (build-time) — business API origin |
-| `EXPO_PUBLIC_API_URL` | ops-mobile (mapped from `NEXT_PUBLIC_API_URL` on env pull) |
+| `NEXT_PUBLIC_API_URL` | web, api, ops, customer-web, driver-web (build-time) — business API origin |
+| `EXPO_PUBLIC_API_URL` | ops-mobile, customer-mobile, driver-mobile (mapped from `NEXT_PUBLIC_API_URL` on env pull) |
 | `DATABASE_URL` | web, api, ops (ops uses direct Prisma for server-rendered stats) |
 | `CLERK_*` | api, ops, ops-mobile, customer-web, customer-mobile, driver-web, driver-mobile (three separate instances — see [AUTH.md](./AUTH.md)) |
 | `PAYLOAD_SECRET` | web only |
@@ -344,7 +351,7 @@ From the impeccable shared design laws:
 
 ### 14.2 New marketing page
 
-1. Create `apps/web/app/(marketing)/<route>/page.tsx`. It picks up the marketing layout (which renders `SiteHeader`) automatically.
+1. Create `apps/web/app/(marketing)/<route>/page.tsx`. It picks up the marketing layout (`SiteHeader`, `SiteFooter`, `WhatsappFab`) automatically.
 2. If it's a form page, follow the existing pattern: Zod schema + `react-hook-form` + `fetch(publicApiUrl("/<resource>"), …)`.
 3. If it needs new server logic, add `apps/api/app/v1/public/<resource>/route.ts` and wire validation in `apps/api/lib/validation/`. For ops CRUD, add under `apps/api/app/v1/<resource>/`.
 
