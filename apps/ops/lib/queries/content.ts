@@ -93,6 +93,6 @@ async function queryContentStats(): Promise<ContentStats | null> {
 
 export function getContentStats(): Promise<ContentStats | null> {
   return unstable_cache(queryContentStats, ["ops-content-stats"], {
-    revalidate: 60,
+    revalidate: 300,
   })()
 }

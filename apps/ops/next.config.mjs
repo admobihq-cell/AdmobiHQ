@@ -20,9 +20,24 @@ const nextConfig = {
     "@workspace/geo",
     "@workspace/query-client",
   ],
+  images: {
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+  },
   // Monorepo: stop Turbopack from using C:\Users\victo\ as the workspace root
   turbopack: {
     root: repoRoot,
+  },
+  async headers() {
+    return [
+      {
+        source: "/icon",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/apple-icon",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ]
   },
 }
 

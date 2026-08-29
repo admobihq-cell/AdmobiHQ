@@ -12,8 +12,23 @@ const repoRoot = path.join(appDir, "../..")
 const nextConfig = {
   outputFileTracingRoot: repoRoot,
   transpilePackages: ["@workspace/sentry-config", "@workspace/ops-contracts"],
+  images: {
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+  },
   turbopack: {
     root: repoRoot,
+  },
+  async headers() {
+    return [
+      {
+        source: "/icon",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/apple-icon",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ]
   },
 }
 

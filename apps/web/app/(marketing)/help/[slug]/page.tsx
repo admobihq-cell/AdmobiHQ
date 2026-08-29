@@ -8,9 +8,10 @@ import {
   getRelatedHelpArticles,
   isPayloadConfigured,
 } from "@/lib/payload/help-queries"
+import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import { pageMetadata } from "@/lib/seo/site"
 
-export const revalidate = 21600
+export const revalidate = MARKETING_REVALIDATE_SECONDS
 
 type PageProps = {
   params: Promise<{ slug: string }>

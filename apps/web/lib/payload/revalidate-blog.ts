@@ -1,8 +1,13 @@
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "payload"
+
+import { MARKETING_BLOG_INDEX_TAG, MARKETING_HEADER_POSTS_TAG } from "@/lib/seo/isr"
 
 function revalidateBlogPaths(slug?: string | null) {
   try {
+    revalidateTag(MARKETING_HEADER_POSTS_TAG, "max")
+    revalidateTag(MARKETING_BLOG_INDEX_TAG, "max")
+    revalidatePath("/", "layout")
     revalidatePath("/blog")
     if (slug) {
       revalidatePath(`/blog/${slug}`)

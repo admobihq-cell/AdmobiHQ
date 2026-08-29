@@ -137,14 +137,14 @@ export async function listDriverApplications(
 
 /** Powers the pending-review badge on the "Driver Applications" nav item —
  * ops's review queue doubles as its notification inbox, so this is the only
- * "unread count" that app needs. Cached ~60s so dashboard nav does not hit
+ * "unread count" that app needs. Cached ~5 minutes so dashboard nav does not hit
  * Neon on every page change. */
 export const getPendingDriverApplicationsCount = unstable_cache(
   async (): Promise<number> => {
     return prisma.driverProfile.count({ where: { status: "submitted" } })
   },
   ["ops-pending-driver-applications"],
-  { revalidate: 60 },
+  { revalidate: 300 },
 )
 
 export async function listFleetPartners(
