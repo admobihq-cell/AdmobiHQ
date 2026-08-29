@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 
 import { imageSearchPlugin } from "@payload-bites/image-search"
 import { postgresAdapter } from "@payloadcms/db-postgres"
-import { lexicalEditor } from "@payloadcms/richtext-lexical"
+import { EXPERIMENTAL_TableFeature, lexicalEditor } from "@payloadcms/richtext-lexical"
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob"
 import { attachDatabasePool } from "@vercel/functions"
 import { buildConfig } from "payload"
@@ -35,7 +35,9 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, HelpCategories, HelpArticles, BlogPosts],
-  editor: lexicalEditor(),
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [...defaultFeatures, EXPERIMENTAL_TableFeature()],
+  }),
   secret: process.env.PAYLOAD_SECRET || "dev-only-change-me",
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
