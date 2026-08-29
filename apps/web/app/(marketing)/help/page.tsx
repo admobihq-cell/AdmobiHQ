@@ -5,10 +5,9 @@ import { Container } from "@/components/landing/container"
 import { HelpArticleSearch } from "@/components/help/help-article-search"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { getCachedHelpIndexData, isPayloadConfigured } from "@/lib/payload/help-queries"
-import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import { pageMetadata } from "@/lib/seo/site"
 
-export const revalidate = MARKETING_REVALIDATE_SECONDS
+export const revalidate = 86400
 
 export const metadata: Metadata = pageMetadata({
   title: "Help center | taxi-top OOH guides & FAQs | Admobi Kenya",

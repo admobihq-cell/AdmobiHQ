@@ -9,10 +9,9 @@ import {
 } from "@/lib/payload/blog-queries"
 import { getMediaAlt, getMediaUrl } from "@/lib/payload/media-url"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
-import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import { blogPageMetadata } from "@/lib/seo/site"
 
-export const revalidate = MARKETING_REVALIDATE_SECONDS
+export const revalidate = 86400
 
 type PageProps = {
   params: Promise<{ slug: string }>
