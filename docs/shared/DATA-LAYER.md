@@ -64,7 +64,7 @@ Both stacks usually share the same Postgres URL (`DATABASE_URL`). Table names ar
 | Environment variable | Used by |
 |---------------------|---------|
 | `DATABASE_URL` | Prisma in web, api, ops (required for form APIs and ops server stats) |
-| `PAYLOAD_DATABASE_URL` | Optional; Payload only. If unset, Payload falls back to `DATABASE_URL` **without** rewriting it to Neon's PgBouncer pooler (Drizzle prepared statements and the `cms` schema break on the pooler). Prisma still uses the pooled URL. |
+| `PAYLOAD_DATABASE_URL` | Optional; Payload only. If unset, Payload falls back to `DATABASE_URL`. On Vercel it is rewritten to Neon's PgBouncer pooler (same as Prisma) — the unpooled compute host times out from Fluid. Drizzle schema-qualifies `cms.*` tables. |
 | `PAYLOAD_SECRET` | Payload admin and API (web only) |
 | `BLOB_READ_WRITE_TOKEN` | Payload media (Vercel Blob), optional locally |
 

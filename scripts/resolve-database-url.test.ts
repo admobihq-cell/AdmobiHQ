@@ -25,11 +25,13 @@ test("Prisma runtime URL is rewritten to the Neon pooler", () => {
   }
 })
 
-test("Payload URL stays on the direct Neon host (Drizzle + cms schema)", () => {
+test("Payload URL stays on the direct Neon host locally (migrations)", () => {
   const prevDb = process.env.DATABASE_URL
   const prevPayload = process.env.PAYLOAD_DATABASE_URL
+  const prevVercel = process.env.VERCEL
   process.env.DATABASE_URL = DIRECT
   delete process.env.PAYLOAD_DATABASE_URL
+  delete process.env.VERCEL
   try {
     const url = resolvePayloadDatabaseUrl()
     assert.ok(url)
@@ -41,6 +43,40 @@ test("Payload URL stays on the direct Neon host (Drizzle + cms schema)", () => {
       delete process.env.PAYLOAD_DATABASE_URL
     } else {
       process.env.PAYLOAD_DATABASE_URL = prevPayload
+    }
+    if (prevVercel === undefined) {
+      delete process.env.VERCEL
+    } else {
+      process.env.VERCEL = prevVercel
+    }
+  }
+})
+
+test("Payload on Vercel uses the Neon pooler (direct host times out from Fluid)", () => {
+  const prevDb = process.env.DATABASE_URL
+  const prevPayload = process.env.PAYLOAD_DATABASE_URL
+  const prevVercel = process.env.VERCEL
+  process.env.DATABASE_URL = DIRECT
+  delete process.env.PAYLOAD_DATABASE_URL
+  process.env.VERCEL = "1"
+  try {
+    const url = resolvePayloadDatabaseUrl()
+    assert.ok(url)
+    assert.equal(
+      new URL(url).hostname,
+      "ep-cool-name-123456-pooler.us-east-2.aws.neon.tech",
+    )
+  } finally {
+    process.env.DATABASE_URL = prevDb
+    if (prevPayload === undefined) {
+      delete process.env.PAYLOAD_DATABASE_URL
+    } else {
+      process.env.PAYLOAD_DATABASE_URL = prevPayload
+    }
+    if (prevVercel === undefined) {
+      delete process.env.VERCEL
+    } else {
+      process.env.VERCEL = prevVercel
     }
   }
 })

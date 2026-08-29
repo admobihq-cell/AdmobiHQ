@@ -9,6 +9,7 @@ import { importMap } from "./admin/importMap.js"
 import "./custom.scss"
 
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 type Args = {
   children: ReactNode
