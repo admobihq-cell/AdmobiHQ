@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@clerk/nextjs"
 import type { DriverProfileDto } from "@workspace/ops-contracts"
 
 import { Stepper as StepIndicator, type StepperStep } from "@workspace/ui/components/stepper"
 import { ProfileStep } from "@/components/profile-setup/steps/profile-step"
 import { ReviewStep } from "@/components/profile-setup/steps/review-step"
 import { TaxPayoutStep } from "@/components/profile-setup/steps/tax-payout-step"
+import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 
 const STEP_LABELS = ["Profile", "Tax & payout", "Review"]
 
@@ -48,7 +48,7 @@ export function ProfileSetupStepper({
   initialProfile: DriverProfileDto
   onSubmitted: (profile: DriverProfileDto) => void
 }) {
-  const { getToken } = useAuth()
+  const { getToken } = useAuthIfEnabled()
   const [profile, setProfile] = useState(initialProfile)
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStepIndex(initialProfile))
 

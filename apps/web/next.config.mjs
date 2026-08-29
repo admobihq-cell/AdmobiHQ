@@ -108,6 +108,9 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      { source: "/icon", destination: "/icon.png" },
+      { source: "/apple-icon", destination: "/apple-icon.png" },
+      { source: "/opengraph-image", destination: "/opengraph-image.png" },
       { source: "/logo", destination: "/logo.png" },
       // apps/customer-mobile's web export (public/app-demo, see its
       // export:web-demo script) is served under its exact index.html file —
@@ -146,6 +149,25 @@ const nextConfig = {
       },
       {
         source: "/logo",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/icon.png",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/apple-icon.png",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/opengraph-image.png",
         headers: [
           { key: "X-Robots-Tag", value: "noindex" },
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },

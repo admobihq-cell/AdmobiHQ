@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { unstable_noStore as noStore } from "next/cache"
 import Link from "next/link"
 
 import { Container } from "@/components/landing/container"
@@ -20,6 +21,7 @@ export default async function HelpPage() {
   const data = isPayloadConfigured()
     ? await getCachedHelpIndexData().catch((error) => {
         console.error("[help] Failed to load articles:", error)
+        noStore()
         return { categories: [], articles: [] }
       })
     : { categories: [], articles: [] }

@@ -85,8 +85,14 @@ async function main() {
   }
 
   console.log(`\n${path.relative(ROOT, path.join(ROOT, "apps", "web"))}`)
-  await writePng(path.join(ROOT, "apps", "web", "app", "opengraph-image.png"), await generateOpenGraph())
+  const ogBuffer = await (await generateOpenGraph()).png().toBuffer()
+  await writePng(path.join(ROOT, "apps", "web", "app", "opengraph-image.png"), sharp(ogBuffer))
   await writePng(path.join(ROOT, "apps", "web", "public", "logo.png"), sharp(logoBuffer))
+  // Marketing web has two root layouts and no app/layout.tsx, so Next does
+  // not serve app/icon.png at /icon. Same public-file + rewrite pattern as logo.
+  await writePng(path.join(ROOT, "apps", "web", "public", "icon.png"), sharp(iconBuffer))
+  await writePng(path.join(ROOT, "apps", "web", "public", "apple-icon.png"), sharp(appleBuffer))
+  await writePng(path.join(ROOT, "apps", "web", "public", "opengraph-image.png"), sharp(ogBuffer))
 }
 
 main().catch((error) => {
