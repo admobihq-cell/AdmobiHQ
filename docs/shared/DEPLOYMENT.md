@@ -27,6 +27,26 @@ Five **separate Vercel projects** from one GitHub repo. Each project has its own
 
 ---
 
+## Fluid compute and caching
+
+The five Next.js apps run on **Vercel Fluid** (Node.js serverless), not Edge — except marketing [`apps/web/middleware.ts`](../../apps/web/middleware.ts), which is Edge. Neon Postgres is a **separate** compute meter from Vercel CPU.
+
+The Infisical/Vercel team is **Hobby**: **4 Active CPU hours/month shared across all five projects**. Frequent master deploys reset ISR; Satori `ImageResponse` icons/OG and Payload on every marketing request are what used to burn the quota. Current mitigations:
+
+| Layer | What it does |
+|-------|----------------|
+| Static brand PNGs | `app/icon.png` + `app/apple-icon.png` in all five apps; marketing `app/opengraph-image.png`; `apps/web/public/logo.png` (rewrite `/logo` → `/logo.png`). Regenerate with `npm run brand:icons`. Do not add `icon.tsx` / `ImageResponse` routes back. |
+| Probe middleware | Marketing Edge middleware 404s scanner paths (`lib/seo/bot-probes.ts`) without Node, Payload, or Neon. |
+| Static 404 | [`apps/web/app/global-not-found.tsx`](../../apps/web/app/global-not-found.tsx) — no `cookies()`, no CMS. |
+| Marketing ISR | `revalidate = 86400` (`MARKETING_REVALIDATE_SECONDS`). CMS hooks `revalidateTag(..., "max")` + `revalidatePath` on publish. Header/blog/help queries use `unstable_cache`. |
+| Skip rebuilds | Each app `vercel.json` sets `ignoreCommand` to `node ../../scripts/vercel-ignore-build.mjs` — docs-only (and other-app) commits do not rebuild, so they do not wipe ISR. |
+| Flags | `GET /v1/public/config` — 5 min in-memory cache, skip rate-limit on hit, `Cache-Control: s-maxage=300`. Customer/driver fetch `revalidate: 300`. Ops stats and driver profile caches are also 300s. |
+| Images | `images.minimumCacheTTL` 31 days on marketing; long Cache-Control on static icons. |
+
+Hobby still has one Vercel Cron per day (the API push-receipts job). That cron is not the CPU problem.
+
+---
+
 ## Domain map
 
 | App | Vercel root | Production | Staging (`staging` branch) | Local |
@@ -115,6 +135,8 @@ Infisical holds **all** keys below. Each Vercel project only needs **its row** �
 ## Vercel — five projects
 
 Use the **same GitHub repo** with **five** Vercel projects (create each in Vercel → Add New → Project → same repo, different root directory).
+
+Each app ships a `vercel.json`. All five set `ignoreCommand` to `node ../../scripts/vercel-ignore-build.mjs` (skip rebuild when the commit does not touch that app). API also declares the daily cron.
 
 Suggested project names (yours may differ): **Admobi Web**, **Admobi API**, **Admobi Ops**, **Admobi App**, **Admobi Driver**.
 
@@ -406,7 +428,7 @@ First Android build generates a **keystore stored on Expo** (remote credentials)
 - [ ] Sidebar shell loads at `driver.admobihq.com`
 - [ ] Routes `/`, `/routes`, `/payouts`, `/settings` render (Earnings, Routes, Payouts, Settings)
 - [ ] `/deliveries` redirects to `/` while the `deliveries` platform flag is off
-- [ ] Toggling the `deliveries` flag in ops (`/settings`) surfaces the Deliveries tab within ~60s, no redeploy
+- [ ] Toggling the `deliveries` flag in ops (`/settings`) surfaces the Deliveries tab within ~5 minutes, no redeploy
 - [ ] `GET /api/health` returns `{ ok: true, service: "admobi-driver" }`
 
 ### Mobile (preview APK)

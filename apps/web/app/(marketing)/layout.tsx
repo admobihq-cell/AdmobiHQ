@@ -9,8 +9,9 @@ import { WhatsappFab } from "@/components/landing/whatsapp-fab"
 import { JsonLd } from "@/components/seo/json-ld"
 import { ThemeProvider } from "@/components/theme-provider"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
-import { getRecentBlogPosts } from "@/lib/payload/blog-queries"
+import { getCachedRecentBlogPosts } from "@/lib/payload/blog-queries"
 import { websiteJsonLd } from "@/lib/seo/schema"
+import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import {
   DEFAULT_OG_IMAGE,
   INDEXABLE_ROBOTS,
@@ -35,10 +36,9 @@ const fontMono = Geist_Mono({
   fallback: ["courier new", "monospace"],
 })
 
-// Without this, the layout's uncached getRecentBlogPosts() call below forces
-// every page under (marketing) — home, pricing, drivers, etc. — to render
-// dynamically on every request instead of being served from the ISR cache.
-export const revalidate = 21600
+// Cached header posts + this ISR window keep marketing pages on the CDN.
+// CMS publish hooks revalidate on demand (see revalidate-blog.ts).
+export const revalidate = MARKETING_REVALIDATE_SECONDS
 
 const HOME_TITLE = "Taxi-top LED advertising in Nairobi | Admobi"
 const HOME_DESCRIPTION =
@@ -94,7 +94,7 @@ export default async function MarketingLayout({
   children: React.ReactNode
 }>) {
   const recentPosts = isPayloadConfigured()
-    ? await getRecentBlogPosts(3).catch((error) => {
+    ? await getCachedRecentBlogPosts(3).catch((error) => {
         console.error("[site-header] Failed to load recent posts:", error)
         return []
       })

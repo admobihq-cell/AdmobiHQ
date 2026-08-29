@@ -1,8 +1,15 @@
-import type { BlogPost, Media } from "@/payload-types"
+import { unstable_cache } from "next/cache"
+
+import type { BlogPost } from "@/payload-types"
 
 import { getPayloadClient } from "@/lib/payload/get-payload"
 import { isMediaPopulated } from "@/lib/payload/media-url"
 import type { BlogPostDoc, BlogPostListItem } from "@/lib/payload/types"
+import {
+  MARKETING_BLOG_INDEX_TAG,
+  MARKETING_HEADER_POSTS_TAG,
+  MARKETING_REVALIDATE_SECONDS,
+} from "@/lib/seo/isr"
 
 function toListItem(post: BlogPost): BlogPostListItem | null {
   if (!post.slug?.trim() || !post.title?.trim()) {
@@ -66,6 +73,21 @@ export async function getRecentBlogPosts(limit = 3): Promise<BlogPostListItem[]>
     console.warn("[blog-queries] Failed to fetch recent posts, returning empty:", error)
     return []
   }
+}
+
+export function getCachedRecentBlogPosts(limit = 3): Promise<BlogPostListItem[]> {
+  return unstable_cache(
+    () => getRecentBlogPosts(limit),
+    ["marketing-header-posts", String(limit)],
+    { revalidate: MARKETING_REVALIDATE_SECONDS, tags: [MARKETING_HEADER_POSTS_TAG] },
+  )()
+}
+
+export function getCachedBlogIndexData(): Promise<{ posts: BlogPostListItem[] }> {
+  return unstable_cache(getBlogIndexData, ["marketing-blog-index"], {
+    revalidate: MARKETING_REVALIDATE_SECONDS,
+    tags: [MARKETING_BLOG_INDEX_TAG],
+  })()
 }
 
 export async function getBlogPostSlugs(): Promise<string[]> {

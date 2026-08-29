@@ -21,7 +21,7 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | Path | Auth | Purpose |
 |------|------|---------|
 | `GET /v1/health` | None | Smoke test |
-| `GET /v1/public/config` | None (rate-limited) | Platform flags (`deliveries`, …) |
+| `GET /v1/public/config` | None (CDN + in-memory cache; rate-limited on cache miss) | Platform flags (`deliveries`, …) |
 | `POST /v1/public/leads` | None (CORS) | Campaign + fleet partner forms |
 | `POST /v1/public/drivers` | None | Driver enrollment |
 | `POST /v1/public/waitlist` | None | Waitlist signup |
@@ -86,6 +86,8 @@ Comparison is constant-time (`timingSafeEqual` in `lib/api-utils.ts`) — do not
 ## Rate limiting
 
 All `/v1/public/*` routes (and the support reply/list routes) call `checkRateLimit(req, bucket, { limit, windowSeconds })` from `apps/api/lib/rate-limit.ts` as their first line — a sliding-window limiter backed by Upstash Redis, keyed by client IP.
+
+**Exception:** `GET /v1/public/config` serves an in-memory cache (5 minutes per isolate) before rate-limiting. Cache hits skip Redis and Neon, and responses set `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`. Ops `PATCH /v1/flags` calls `invalidatePublicConfigCache()` so the next miss sees the new value. Customer/driver Next.js apps poll with `revalidate: 300`.
 
 **Fails open** when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are unset — requests pass through unthrottled rather than erroring, so local dev and any environment missing those vars keeps working. Confirm they're set before relying on this in production.
 

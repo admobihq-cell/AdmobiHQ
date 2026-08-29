@@ -32,7 +32,7 @@ async function fetchDriverProfileDto(token: string): Promise<DriverProfileDto> {
  * here must NOT silently let an unapproved driver through — callers should
  * show a retry state on { status: "error" }, never treat it as approved.
  *
- * Cached per Clerk user for 60s so shell navigations do not hit the API
+ * Cached per Clerk user for 5 minutes so shell navigations do not hit the API
  * (and Neon) on every request. Keyed by userId so profiles cannot leak.
  * Failures throw and are not cached. */
 export async function fetchDriverProfile(): Promise<DriverProfileFetchResult> {
@@ -47,7 +47,7 @@ export async function fetchDriverProfile(): Promise<DriverProfileFetchResult> {
     const profile = await unstable_cache(
       () => fetchDriverProfileDto(token),
       ["driver-profile", userId],
-      { revalidate: 60 },
+      { revalidate: 300 },
     )()
     return { status: "ok", profile }
   } catch (error) {

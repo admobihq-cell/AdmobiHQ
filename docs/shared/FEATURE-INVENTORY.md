@@ -34,8 +34,8 @@ Enumerated from `app/**/page.tsx` and `app/**/route.ts` (Next.js apps) or Expo R
 | `/start-campaign` | Campaign lead-capture form → `/v1/public/leads` |
 | `/media-kit` | Media kit request form → `/v1/public/media-kit` |
 | `/pricing` | Pricing page with live campaign cost simulator |
-| `/blog`, `/blog/[slug]` | Blog index + post (Payload-backed, ISR `revalidate=3600`) |
-| `/help`, `/help/[slug]` | Help center index + article (Payload-backed) |
+| `/blog`, `/blog/[slug]` | Blog index + post (Payload-backed, ISR `revalidate=86400` + on-demand tags) |
+| `/help`, `/help/[slug]` | Help center index + article (Payload-backed, same ISR) |
 | `/help/contact` | Contact-support form (creates a support case) |
 | `/design-system` | Internal token/component reference (noindex) |
 | `/privacy`, `/terms` | Legal pages |
@@ -44,7 +44,7 @@ Enumerated from `app/**/page.tsx` and `app/**/route.ts` (Next.js apps) or Expo R
 | `(payload)/api/[...slug]` | Payload REST API catch-all |
 | `/api/sentry-example` | Dev-only Sentry exception test endpoint |
 
-Collections (`apps/web/collections/`): **BlogPosts**, **HelpArticles**, **HelpCategories** (draft/publish, ISR revalidation hooks on change), **Users** (Payload's own admin auth, unrelated to Clerk), **Media** (Vercel Blob-backed uploads with generated thumbnail/card/hero sizes).
+Collections (`apps/web/collections/`): **BlogPosts**, **HelpArticles**, **HelpCategories** (draft/publish; hooks call `revalidateTag` + `revalidatePath`), **Users** (Payload's own admin auth, unrelated to Clerk), **Media** (Vercel Blob-backed uploads with generated thumbnail/card/hero sizes).
 
 ### 1.2 `apps/api` — business API (route handlers only, no UI)
 
@@ -64,7 +64,7 @@ Collections (`apps/web/collections/`): **BlogPosts**, **HelpArticles**, **HelpCa
 | Announcements/push | `notifications`, `[id]`, `broadcast`, `broadcast-image`, `public/announcements`, `customer/announcements(+read)`, `customer/mobile-announcements(+read)`, `driver/announcements(+read)`, `driver/mobile-announcements(+read)` | Broadcast compose + 4 separate per-surface inboxes |
 | Push tokens/receipts | `push-tokens`, `public/push-tokens`, `public/driver-push-tokens`, `push-receipts/check` | Expo token registration + cron-gated receipt reconciliation |
 | Team / roles | `team`, `team/[userId]`, `team/invitations/[invitationId]`, `roles`, `roles/[roleId]` | Clerk-backed staff management, custom RBAC |
-| Public config | `public/config` | Unauthenticated feature-flag poll, used by every client app on launch |
+| Public config | `public/config` | Unauthenticated flag poll; 5 min in-memory + `s-maxage=300`; rate-limit only on cache miss |
 
 ### 1.3 `apps/ops` — internal operations console
 
@@ -177,7 +177,7 @@ Shared via `packages/sentry-config` (`@sentry/nextjs ^10.64.0` for web, api, ops
 
 ### Feature flags
 
-`PlatformFlag` model — public/unauthenticated to *read* (flags are visibility toggles, never secrets), Clerk ops JWT required to *write*. Currently one flag in production use: `deliveries`. Ops toggles it from `apps/ops/app/(dashboard)/settings/(prefs)/flags/page.tsx`; every client fetches `/v1/public/config` with a 60-second Next.js cache (`revalidate: 60`), fails closed to an empty flag set on any error ("flags are additive UI, never load-bearing" — `apps/driver-web/lib/flags.ts`). This is the mechanism behind the ~60-second, no-redeploy propagation documented in DEPLOYMENT.md.
+`PlatformFlag` model — public/unauthenticated to *read* (flags are visibility toggles, never secrets), Clerk ops JWT required to *write*. Currently one flag in production use: `deliveries`. Ops toggles it from `apps/ops/app/(dashboard)/settings/(prefs)/flags/page.tsx`; every client fetches `/v1/public/config` with a 5-minute Next.js cache (`revalidate: 300`), fails closed to an empty flag set on any error ("flags are additive UI, never load-bearing" — `apps/driver-web/lib/flags.ts`). The API also keeps an in-memory 5-minute cache and sets `s-maxage=300` so CDN/edge can serve repeats without waking Neon. This is the mechanism behind the ~5-minute, no-redeploy propagation documented in DEPLOYMENT.md.
 
 ### Support case identity system
 
@@ -209,12 +209,12 @@ TanStack Query v5 (`@tanstack/react-query ^5.101.4`), react-hook-form v7 + `@hoo
 
 ## 4. Architectural decisions worth flagging to a reviewer
 
-- **Five independent Vercel projects, not one multi-tenant router.** `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, `app.admobihq.com`, `driver.admobihq.com` are five separate Vercel projects sharing one GitHub repo, each with its own root directory, domain, and env vars. Only 3 `middleware.ts` files exist repo-wide (`api`, `customer-web`, `driver-web`), each handling CORS/session concerns for its own single app — none does cross-app hostname routing. See [ARCHITECTURE.md](./ARCHITECTURE.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
+- **Five independent Vercel projects, not one multi-tenant router.** `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, `app.admobihq.com`, `driver.admobihq.com` are five separate Vercel projects sharing one GitHub repo, each with its own root directory, domain, and env vars. Four `middleware.ts` files exist repo-wide: `apps/web` (Edge 404 for scanner/probe paths), plus `api`, `customer-web`, and `driver-web` for CORS/session. None does cross-app hostname routing. Each app has a `vercel.json`; API also defines the daily cron, and all five set `ignoreCommand` so docs-only commits skip Fluid rebuilds. See [ARCHITECTURE.md](./ARCHITECTURE.md) and [DEPLOYMENT.md](./DEPLOYMENT.md).
 - **Deploy ordering is a real operational constraint.** `NEXT_PUBLIC_API_URL` is inlined at build time, so the API must deploy before any frontend redeploys after an API URL change — undocumented deploy-order mistakes are the most likely source of a "why is prod broken" incident.
 - **Dual ORM on one Postgres instance, additive-only.** Prisma owns business data, Payload owns editorial content, tables are name-disjoint, and the team's own docs carry an explicit warning against `db push` on the shared database.
 - **Rate limiting fails open.** Missing Upstash credentials silently disable throttling rather than erroring — correct for local dev, a real production risk if forgotten during a Vercel env migration.
 - **`packages/mobile-ui` is an empty scaffold** — no source code exists despite the name. The three Expo apps currently style themselves independently.
-- **Test coverage is 3 files repo-wide** — see [AUDIT-VALUATION.md §4](./AUDIT-VALUATION.md#4-devops-deployment--production-hygiene) for the full breakdown. Any re-derivation of "hours to reach production quality" should treat test-writing as largely unstarted work, not a rounding error.
+- **Test coverage is still thin** — Vitest for `packages/geo` and `packages/ops-contracts`, Playwright marketing smoke, plus script tests for `vercel-ignore-build` and bot-probe paths. Product surfaces (`ops`, `api` handlers, customer/driver apps) remain largely untested. See [AUDIT-VALUATION.md §4](./AUDIT-VALUATION.md#4-devops-deployment--production-hygiene).
 - **CI builds and gates; it does not deploy.** The Vercel deploy step in `master.yml` is written but commented out — production deploys ride on Vercel's Git integration, not the GitHub Actions pipeline.
 
 ---
@@ -299,7 +299,7 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 | **Idempotent writes** | Waitlist signup upserts by email rather than inserting duplicates on repeat submission | `apps/api/app/v1/public/waitlist/route.ts` |
 | **Audit logging** | Single write path (`recordAuditEvent`) for every mutating action, explicitly designed to never block or fail the operation it's auditing | `apps/api/lib/audit.ts` |
 | **Rate limiting** | Sliding-window limiter keyed by client IP on every public, unauthenticated route; deliberately fails open (unthrottled) rather than failing the request when the backing store is unconfigured | `apps/api/lib/rate-limit.ts` |
-| **Feature flagging** | Runtime, ops-controlled visibility toggles (`PlatformFlag`) — public to read, Clerk-gated to write, 60-second client cache, fails closed to "off" on any error so a flag can never crash a client | `apps/web/prisma/schema.prisma:305`, `apps/driver-web/lib/flags.ts:10-30` |
+| **Feature flagging** | Runtime, ops-controlled visibility toggles (`PlatformFlag`) — public to read, Clerk-gated to write, 5-minute fetch + CDN cache, fails closed to "off" on any error so a flag can never crash a client | `apps/web/prisma/schema.prisma`, `apps/driver-web/lib/flags.ts`, `apps/api/app/v1/public/config/route.ts` |
 
 ### 7.3 Messaging & delivery
 
@@ -313,13 +313,13 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 
 | Pattern | Implementation | Where |
 |---|---|---|
-| **Multi-layer caching** | Build-time ISR (`revalidate: 3600` on blog/help), request-time fetch caching (`revalidate: 60` on the feature-flag poll), and client-side query caching (TanStack Query, 30s stale time) — three different cache lifetimes matched to three different volatility profiles | `apps/web/app/(marketing)/blog/[slug]/page.tsx`, `apps/driver-web/lib/flags.ts`, `packages/query-client/src/client.ts` |
+| **Multi-layer caching** | Marketing ISR (`revalidate: 86400` plus on-demand `revalidateTag` on CMS publish), request-time fetch caching (`revalidate: 300` on the feature-flag poll, matching API `s-maxage=300`), and client-side query caching (TanStack Query, 30s stale time) | `apps/web/lib/seo/isr.ts`, `apps/driver-web/lib/flags.ts`, `packages/query-client/src/client.ts` |
 | **Health checks** | Liveness endpoint per backend surface, used in the team's own deployment smoke tests | `apps/api/app/v1/health/route.ts`, equivalent `/api/health` on customer-web/driver-web |
 | **Scheduled jobs** | One production cron (Vercel Cron, daily) reconciling push-notification delivery receipts | `apps/api/vercel.json` |
 | **Observability** | Error tracking + performance monitoring on every app (5 Next.js apps via `@sentry/nextjs`, 3 Expo apps via `@sentry/react-native`), sharing one config package | `packages/sentry-config/` |
 | **Centralized secrets management** | Infisical, 3 environments (dev/staging/prod) × 8 apps, pulled to `.env.local` per app rather than hand-copied | `docs/shared/DEPLOYMENT.md` §Infisical environments |
 | **CI gating** | Every PR runs install → `prisma generate` → typecheck → lint → build → unit tests → Playwright e2e before merge is allowed | `.github/workflows/pr.yml`, `.github/workflows/master.yml` |
 | **Schema migration discipline** | Additive-only convention enforced by team documentation (not by tooling) on a shared Postgres instance carrying two ORMs | `docs/shared/DATA-LAYER.md` §Migration rules |
-| **Automated testing** | Present, but minimal — 2 Vitest unit files, 1 Playwright smoke spec, repo-wide. This is a real gap, not a strength; listed here for completeness rather than as a checked box | See §4 above and `AUDIT-VALUATION.md` §4 |
+| **Automated testing** | Present, but still thin — 2 Vitest package files, 1 Playwright smoke spec, plus `npm run test:scripts` (ignore-build + bot probes). Product-route coverage is the real gap | See §4 above and `AUDIT-VALUATION.md` §4 |
 
 None of this list is unusual for a mature product — that's the point of including it. What's notable for a system at this stage is less any single pattern and more the *count* of them implemented consistently across 8 apps by one small team: RBAC, soft-delete, idempotency, audit logging, rate limiting, feature flags, signed-URL storage, and multi-layer caching are the kind of infrastructure many funded startups still lack a year into building, not scaffolding a vendor quote like §6's would typically include at any phase.
