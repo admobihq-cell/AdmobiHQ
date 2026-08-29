@@ -107,6 +107,7 @@ async function findBySlug(payload: Payload, collection: "help-categories" | "hel
   const result = await payload.find({
     collection,
     limit: 1,
+    draft: true,
     where: { slug: { equals: slug } },
   })
   return result.docs[0] ?? null
@@ -293,6 +294,8 @@ async function seed() {
       body: article.body as never,
       sortOrder: article.sortOrder,
       featured: article.featured,
+      // `draft: false` alone does not flip existing rows off `draft`.
+      _status: "published" as const,
     }
 
     const existingArticle = await findBySlug(payload, "help-articles", article.slug)
