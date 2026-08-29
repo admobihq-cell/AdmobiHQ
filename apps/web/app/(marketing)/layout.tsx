@@ -11,7 +11,6 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
 import { getCachedRecentBlogPosts } from "@/lib/payload/blog-queries"
 import { websiteJsonLd } from "@/lib/seo/schema"
-import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import {
   DEFAULT_OG_IMAGE,
   INDEXABLE_ROBOTS,
@@ -38,7 +37,8 @@ const fontMono = Geist_Mono({
 
 // Cached header posts + this ISR window keep marketing pages on the CDN.
 // CMS publish hooks revalidate on demand (see revalidate-blog.ts).
-export const revalidate = MARKETING_REVALIDATE_SECONDS
+// Literal required — Next cannot statically analyze imported revalidate values.
+export const revalidate = 86400
 
 const HOME_TITLE = "Taxi-top LED advertising in Nairobi | Admobi"
 const HOME_DESCRIPTION =

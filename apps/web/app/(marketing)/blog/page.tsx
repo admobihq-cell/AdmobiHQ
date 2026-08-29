@@ -4,10 +4,9 @@ import { BlogIndex } from "@/components/blog/blog-index"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { getCachedBlogIndexData } from "@/lib/payload/blog-queries"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
-import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import { blogPageMetadata } from "@/lib/seo/site"
 
-export const revalidate = MARKETING_REVALIDATE_SECONDS
+export const revalidate = 86400
 
 export const metadata: Metadata = blogPageMetadata({
   title: "Blog | taxi-top OOH insights & campaigns | Admobi Kenya",
