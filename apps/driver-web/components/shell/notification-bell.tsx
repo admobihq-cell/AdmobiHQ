@@ -42,13 +42,27 @@ export function NotificationBell() {
 
   const notificationsQuery = useQuery({
     queryKey: ["driver-notifications"],
-    queryFn: () => fetchDriverNotifications(getToken),
-    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      try {
+        return await fetchDriverNotifications(getToken)
+      } catch {
+        return []
+      }
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
   })
   const announcementsQuery = useQuery({
     queryKey: ["driver-announcements"],
-    queryFn: () => fetchDriverAnnouncements(getToken),
-    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      try {
+        return await fetchDriverAnnouncements(getToken)
+      } catch {
+        return []
+      }
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
   })
 
   const merged = [

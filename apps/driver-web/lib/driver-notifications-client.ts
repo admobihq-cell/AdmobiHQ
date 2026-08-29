@@ -8,7 +8,11 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
   const headers = new Headers(init?.headers)
   if (token) headers.set("Authorization", `Bearer ${token}`)
 
-  const res = await fetch(`${apiPublicUrl()}${path}`, { ...init, headers })
+  const res = await fetch(`${apiPublicUrl()}${path}`, {
+    ...init,
+    headers,
+    signal: init?.signal ?? AbortSignal.timeout(1500),
+  })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new Error(body?.error ?? `Request failed (${res.status})`)
