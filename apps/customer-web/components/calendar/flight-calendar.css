@@ -1,0 +1,126 @@
+.flight-calendar {
+  --fc-border-color: var(--border);
+  --fc-page-bg-color: var(--card);
+  --fc-neutral-bg-color: var(--muted);
+  --fc-neutral-text-color: var(--muted-foreground);
+  --fc-today-bg-color: color-mix(in oklch, var(--primary) 8%, transparent);
+  --fc-now-indicator-color: var(--primary);
+  --fc-highlight-color: color-mix(in oklch, var(--primary) 14%, transparent);
+  --fc-event-bg-color: var(--primary);
+  --fc-event-border-color: var(--primary);
+  --fc-event-text-color: var(--primary-foreground);
+  --fc-list-event-hover-bg-color: var(--muted);
+  --fc-page-text-color: var(--foreground);
+  --fc-small-font-size: 0.75rem;
+}
+
+.flight-calendar .fc {
+  font-family: var(--font-sans);
+}
+
+.flight-calendar .fc-theme-standard .fc-scrollgrid,
+.flight-calendar .fc-theme-standard td,
+.flight-calendar .fc-theme-standard th {
+  border-color: var(--border);
+}
+
+.flight-calendar .fc-col-header-cell-cushion,
+.flight-calendar .fc-daygrid-day-number,
+.flight-calendar .fc-list-day-cushion,
+.flight-calendar .fc-timegrid-slot-label-cushion {
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.flight-calendar .fc-col-header-cell-cushion {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  padding: 0.65rem 0.25rem;
+}
+
+.flight-calendar .fc-daygrid-day-number {
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  padding: 0.4rem 0.5rem;
+}
+
+.flight-calendar .fc-daygrid-day-top {
+  flex-direction: row;
+}
+
+.flight-calendar .fc-day-today .fc-daygrid-day-number {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 999px;
+  width: 1.65rem;
+  height: 1.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0.35rem 0.4rem;
+}
+
+.flight-calendar .fc-day-other {
+  background: color-mix(in oklch, var(--muted) 55%, transparent);
+}
+
+.flight-calendar .fc-event {
+  border: 0;
+  border-radius: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.05rem 0.35rem;
+  cursor: pointer;
+}
+
+.flight-calendar .flight-event--active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.flight-calendar .flight-event--scheduled {
+  background: color-mix(in oklch, var(--primary) 18%, var(--card));
+  color: var(--primary);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--primary) 28%, transparent);
+}
+
+.flight-calendar .flight-event--draft {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.flight-calendar .flight-event--completed {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.flight-calendar .fc-timegrid-event {
+  padding: 0.2rem 0.4rem;
+}
+
+.flight-calendar .fc-list-event-dot {
+  border-color: var(--primary);
+}
+
+.flight-calendar .fc-list-day-cushion {
+  background: var(--muted);
+}
+
+.flight-calendar .fc-more-link {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.flight-calendar .fc-highlight {
+  background: var(--fc-highlight-color);
+}
+
+.flight-calendar .fc .fc-daygrid-body-unbalanced .fc-daygrid-day-events {
+  min-height: 2.5rem;
+}
