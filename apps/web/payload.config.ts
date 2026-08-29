@@ -7,6 +7,7 @@ import { imageSearchPlugin } from "@payload-bites/image-search"
 import { postgresAdapter } from "@payloadcms/db-postgres"
 import { lexicalEditor } from "@payloadcms/richtext-lexical"
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob"
+import { attachDatabasePool } from "@vercel/functions"
 import { buildConfig } from "payload"
 import sharp from "sharp"
 
@@ -47,11 +48,12 @@ export default buildConfig({
     schemaName: "cms",
     pool: {
       connectionString: payloadDatabaseUrl,
-      // Direct Neon host (not the pooler) — Drizzle prepared statements and
-      // `cms` search_path do not survive PgBouncer transaction mode.
-      max: process.env.VERCEL ? 1 : payloadDatabaseUrl.includes("neon.tech") ? 3 : 10,
+      // Neon scale-to-zero often needs >10s to accept TCP. max: 1 plus parallel
+      // finds (header + page, categories + articles) queued waiters on the same
+      // connect timeout — that is the production admin/blog outage.
+      max: process.env.VERCEL ? 2 : payloadDatabaseUrl.includes("neon.tech") ? 3 : 10,
       idleTimeoutMillis: 10_000,
-      connectionTimeoutMillis: 10_000,
+      connectionTimeoutMillis: process.env.VERCEL ? 30_000 : 10_000,
       allowExitOnIdle: true,
     },
     // Never auto-push: Drizzle would drop Prisma tables (leads, drivers, fleet_partners).
@@ -68,6 +70,9 @@ export default buildConfig({
     pool?.on("error", (err) => {
       payload.logger.error({ err }, "Postgres pool idle client error")
     })
+    if (process.env.VERCEL && pool) {
+      attachDatabasePool(pool)
+    }
   },
   plugins: [
     ...(blobToken
