@@ -47,8 +47,10 @@ export default buildConfig({
     schemaName: "cms",
     pool: {
       connectionString: payloadDatabaseUrl,
+      // Direct Neon host (not the pooler) — Drizzle prepared statements and
+      // `cms` search_path do not survive PgBouncer transaction mode.
       max: process.env.VERCEL ? 1 : payloadDatabaseUrl.includes("neon.tech") ? 3 : 10,
-      idleTimeoutMillis: 5_000,
+      idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 10_000,
       allowExitOnIdle: true,
     },

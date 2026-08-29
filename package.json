@@ -34,7 +34,7 @@
     "env:pull:mobile-stack:staging": "npm run env:pull:staging -w api && npm run env:pull:staging -w ops-mobile && npm run env:pull:staging -w customer-mobile && npm run env:pull:staging -w driver-mobile",
     "mobile:assets:sync": "node scripts/sync-mobile-brand-assets.mjs",
     "brand:icons": "node scripts/generate-web-brand-icons.mjs",
-    "test:scripts": "node --test scripts/vercel-ignore-build.test.mjs && npx tsx --test scripts/bot-probes.test.ts",
+    "test:scripts": "node --test scripts/vercel-ignore-build.test.mjs && npx tsx --test scripts/bot-probes.test.ts scripts/resolve-database-url.test.ts",
     "mobile:prebuild": "npm run prebuild:android -w ops-mobile && npm run prebuild:android -w customer-mobile && npm run prebuild:android -w driver-mobile",
     "mobile:prebuild:ios": "npm run prebuild:ios -w ops-mobile && npm run prebuild:ios -w customer-mobile && npm run prebuild:ios -w driver-mobile",
     "mobile:apk:local": "node scripts/build-apk-local.mjs all",

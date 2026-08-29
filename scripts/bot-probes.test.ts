@@ -4,7 +4,7 @@ import test from "node:test"
 import { isProbePath } from "../apps/web/lib/seo/bot-probes.ts"
 
 test("real marketing routes are not probes", () => {
-  for (const path of ["/", "/pricing", "/help", "/help/contact", "/blog", "/partner-fleet", "/admin"]) {
+  for (const path of ["/", "/pricing", "/help", "/help/contact", "/blog", "/partner-fleet", "/admin", "/admin/login"]) {
     assert.equal(isProbePath(path), false, path)
   }
 })
