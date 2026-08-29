@@ -49,17 +49,22 @@ export function resolveRuntimeDatabaseUrl(): string | undefined {
 }
 
 /**
- * Payload/Drizzle uses prepared statements and `SET search_path` for the `cms`
- * schema. Neon's PgBouncer pooler (transaction mode) drops those, so admin and
- * public CMS reads come back empty or 500. Keep the direct host here; Prisma
- * still goes through `resolveRuntimeDatabaseUrl()` / the pooler.
+ * Payload on Vercel must use the Neon pooler. The unpooled compute host is
+ * IPv6-first and routinely exceeds `pg` connect timeouts from Fluid
+ * (`timeout exceeded when trying to connect`). Drizzle already emits
+ * `"cms"."table"` SQL when `schemaName` is set, so search_path is not required.
+ * Local/migrations can keep a direct URL.
  */
 export function resolvePayloadDatabaseUrl(): string | undefined {
   const dedicated = process.env.PAYLOAD_DATABASE_URL?.trim()
-  if (dedicated) {
-    return dedicated
+  const raw = dedicated || resolveDatabaseUrl()
+  if (!raw) {
+    return undefined
   }
-  return resolveDatabaseUrl()
+  if (process.env.VERCEL) {
+    return preferNeonPooledConnectionString(raw)
+  }
+  return raw
 }
 
 function isBuildTimeWithoutDatabase(): boolean {
