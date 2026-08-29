@@ -117,7 +117,7 @@ Favicon, Apple icon, OG image, and `/logo` are **static PNGs** (`app/icon.png`, 
 3. Wraps children in `<ThemeProvider>` and mounts `<SiteHeader />`, `<SiteFooter />`, and `<WhatsappFab />`. Header blog teasers come from `unstable_cache` (tag `marketing-header-posts`), not a fresh Payload query on every request.
 4. Sets `<html lang="en">` and global metadata (title template, OG defaults, `locale: "en_KE"`).
 
-[`middleware.ts`](../../apps/web/middleware.ts) runs on **Edge** and 404s scanner/probe paths (`lib/seo/bot-probes.ts`) without invoking Node, Payload, or Neon. [`global-not-found.tsx`](../../apps/web/app/global-not-found.tsx) is a static 404 — no `cookies()`, no CMS. Payload is cached per Fluid isolate in [`get-payload.ts`](../../apps/web/lib/payload/get-payload.ts).
+[`middleware.ts`](../../apps/web/middleware.ts) runs on **Edge** and 404s scanner/probe paths (`lib/seo/bot-probes.ts`) without invoking Node, Payload, or Neon. The matcher **excludes** `/admin` and `/api` so Payload's admin UI and REST/server functions are not cloned through Edge. [`global-not-found.tsx`](../../apps/web/app/global-not-found.tsx) is a static 404 — no `cookies()`, no CMS. Payload is cached per Fluid isolate in [`get-payload.ts`](../../apps/web/lib/payload/get-payload.ts).
 
 Payload routes use a separate root layout under `app/(payload)/`.
 

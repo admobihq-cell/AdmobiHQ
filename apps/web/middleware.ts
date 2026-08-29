@@ -18,7 +18,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Payload admin, REST (`/api/*`), and server functions must not run through
+  // Edge middleware — Next clones the request and Payload auth/cookies break.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|brand/|app-demo/|icon$|apple-icon$|opengraph-image|logo$).*)",
+    "/((?!admin(?:/|$)|api(?:/|$)|monitoring(?:/|$)|_next/static|_next/image|favicon.ico|brand/|app-demo/|icon(?:\\.png)?$|apple-icon(?:\\.png)?$|opengraph-image(?:\\.png)?$|logo(?:\\.png)?$).*)",
   ],
 }
