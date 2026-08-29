@@ -9,6 +9,15 @@ export const AUDIENCE_LABELS: Record<HelpAudience, string> = {
   general: "General",
 }
 
+export const HELP_ROLE_FILTERS = [
+  { value: "all", label: "Everyone" },
+  { value: "advertiser", label: "Advertisers" },
+  { value: "driver", label: "Drivers" },
+  { value: "fleet", label: "Fleet" },
+] as const
+
+export type HelpRoleFilter = (typeof HELP_ROLE_FILTERS)[number]["value"]
+
 export type HelpCategoryDoc = HelpCategory
 
 export type HelpArticleListItem = {

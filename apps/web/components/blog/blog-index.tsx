@@ -63,13 +63,7 @@ export function BlogIndex({ posts }: BlogIndexProps) {
         <section className="py-14 sm:py-20">
           <Container>
             <p className="text-muted-foreground max-w-xl text-base leading-relaxed">
-              No published blog posts yet. In{" "}
-              <code className="text-foreground">/admin</code>, open each post and click{" "}
-              <strong className="text-foreground">Publish</strong> (drafts are visible in admin but
-              hidden here). Add a cover image in <strong className="text-foreground">Media</strong>{" "}
-              if you have not. For local or preview data, run{" "}
-              <code className="text-foreground">npm run seed:blog -w web</code> against the same{" "}
-              <code className="text-foreground">DATABASE_URL</code> this deployment uses.
+              Nothing to show here right now. Check back soon.
             </p>
           </Container>
         </section>

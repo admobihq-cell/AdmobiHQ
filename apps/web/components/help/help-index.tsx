@@ -1,27 +1,46 @@
 import Link from "next/link"
 
-type ArticleCardProps = {
+import { cn } from "@workspace/ui/lib/utils"
+
+type ArticleRowProps = {
   href: string
   title: string
-  excerpt: string
-  meta?: string
+  excerpt?: string
+  index?: number
+  className?: string
 }
 
-export function ArticleCard({ href, title, excerpt, meta }: ArticleCardProps) {
+export function ArticleRow({ href, title, excerpt, index, className }: ArticleRowProps) {
   return (
     <Link
       href={href}
-      className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-6 transition-colors hover:border-foreground/20"
+      className={cn(
+        "group grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1 py-3 focus-visible:ring-ring rounded-sm focus-visible:ring-2 focus-visible:outline-none",
+        className,
+      )}
     >
-      {meta ? (
-        <p className="text-muted-foreground font-mono text-[0.65rem] uppercase tracking-wider">
-          {meta}
-        </p>
-      ) : null}
-      <h3 className="text-foreground text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
-        {title}
-      </h3>
-      <p className="text-muted-foreground text-sm leading-relaxed">{excerpt}</p>
+      {typeof index === "number" ? (
+        <span className="text-muted-foreground font-mono text-[0.7rem] tabular-nums">
+          {String(index).padStart(2, "0")}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className="text-muted-foreground/70 translate-y-px text-sm transition-colors group-hover:text-primary"
+        >
+          →
+        </span>
+      )}
+      <span className="min-w-0">
+        <span className="text-foreground group-hover:text-primary text-[0.95rem] font-medium tracking-tight transition-colors sm:text-base">
+          {title}
+        </span>
+        {excerpt ? (
+          <span className="text-muted-foreground mt-1 block text-sm leading-relaxed">
+            {excerpt}
+          </span>
+        ) : null}
+      </span>
     </Link>
   )
 }
