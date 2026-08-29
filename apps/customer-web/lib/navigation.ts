@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  CalendarDays,
   HelpCircle,
   LayoutDashboard,
   Map,
@@ -31,6 +32,12 @@ export const appNavItems: AppNavItem[] = [
     label: "Campaigns",
     icon: Megaphone,
     description: "Create and manage out-of-home campaigns from this workspace.",
+  },
+  {
+    href: "/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
+    description: "Plan campaign flights on a shared month calendar.",
   },
   {
     href: "/settings/billing",
