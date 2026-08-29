@@ -7,21 +7,47 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
+import {
+  FLIGHT_DURATIONS,
+  endsOnFromDuration,
+  formatFlightDates,
+  type FlightDuration,
+} from "@/lib/campaign-calendar"
 import { createCampaign, formatLabelFor, type CampaignFormat } from "@/lib/campaigns"
 
 const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
 const FORMATS: CampaignFormat[] = ["taxi_top", "delivery_bike", "both"]
-const DURATIONS = ["1 day", "1 week", "1 month", "3 months"] as const
 
-export function NewCampaignForm({ onCreated }: { onCreated?: () => void }) {
+export function NewCampaignForm({
+  onCreated,
+  initialStartsOn,
+  initialEndsOn,
+}: {
+  onCreated?: () => void
+  initialStartsOn?: string | null
+  initialEndsOn?: string | null
+}) {
   const router = useRouter()
   const [name, setName] = useState("")
   const [market, setMarket] = useState<(typeof MARKETS)[number]>("CBD")
   const [format, setFormat] = useState<CampaignFormat>("taxi_top")
-  const [duration, setDuration] = useState<(typeof DURATIONS)[number]>("1 week")
+  const [duration, setDuration] = useState<FlightDuration>("1 week")
+  const [useSelectedEnd, setUseSelectedEnd] = useState(
+    Boolean(initialStartsOn && initialEndsOn && initialStartsOn !== initialEndsOn),
+  )
   const [budget, setBudget] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const endsOn =
+    initialStartsOn == null
+      ? null
+      : useSelectedEnd && initialEndsOn
+        ? initialEndsOn
+        : endsOnFromDuration(initialStartsOn, duration)
+
+  const flightPreview =
+    initialStartsOn && endsOn ? formatFlightDates(initialStartsOn, endsOn) : null
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,6 +71,8 @@ export function NewCampaignForm({ onCreated }: { onCreated?: () => void }) {
         format,
         budgetKes,
         duration,
+        startsOn: initialStartsOn ?? null,
+        endsOn,
       })
       onCreated?.()
       router.push(`/campaigns/${created.id}`)
@@ -110,8 +138,11 @@ export function NewCampaignForm({ onCreated }: { onCreated?: () => void }) {
 
       <div className="space-y-2">
         <Label>Flight length</Label>
+        {flightPreview ? (
+          <p className="text-xs text-muted-foreground">Window: {flightPreview}</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
-          {DURATIONS.map((option) => {
+          {FLIGHT_DURATIONS.map((option) => {
             const active = option === duration
             return (
               <Button
@@ -120,7 +151,10 @@ export function NewCampaignForm({ onCreated }: { onCreated?: () => void }) {
                 size="sm"
                 variant={active ? "default" : "outline"}
                 className={cn(!active && "text-muted-foreground")}
-                onClick={() => setDuration(option)}
+                onClick={() => {
+                  setDuration(option)
+                  setUseSelectedEnd(false)
+                }}
               >
                 {option}
               </Button>

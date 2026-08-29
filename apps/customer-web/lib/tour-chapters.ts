@@ -29,6 +29,13 @@ export const customerTourChapters: TourChapter[] = [
     selector: '[data-tour-id="tour-nav-campaigns"]',
   },
   {
+    key: "calendar",
+    title: "Plan on the calendar",
+    description:
+      "See every flight on a month grid, catch overlaps, and drop unscheduled drafts onto a start day.",
+    selector: '[data-tour-id="tour-nav-calendar"]',
+  },
+  {
     key: "wallet",
     title: "Fund your campaigns",
     description:
