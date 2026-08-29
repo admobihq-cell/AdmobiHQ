@@ -47,6 +47,10 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Graphify knowledge graph (local agent index only — regenerate with `graphify update .`)
+graphify-out/
+**/graphify-out/
+
 # Cache
 .cache/
 .eslintcache
