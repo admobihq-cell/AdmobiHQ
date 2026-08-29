@@ -122,7 +122,7 @@ export function getOverviewStats(range: DateRangeKey = "30d") {
   return unstable_cache(
     () => queryOverviewStats(range),
     ["ops-overview-stats", range],
-    { revalidate: 60 },
+    { revalidate: 300 },
   )()
 }
 
@@ -160,6 +160,6 @@ export function getSubmissionsOverTime(days = 30) {
   return unstable_cache(
     () => querySubmissionsOverTime(days),
     ["ops-submissions-over-time", String(days)],
-    { revalidate: 60 },
+    { revalidate: 300 },
   )()
 }

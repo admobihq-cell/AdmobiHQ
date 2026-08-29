@@ -15,31 +15,37 @@ import { checkRateLimit } from "@/lib/rate-limit"
  * Every customer/driver app reads this on launch/foreground so an ops
  * toggle propagates without a deploy. */
 export async function GET(req: Request) {
-  const limited = await checkRateLimit(req, "public-config", { limit: 60, windowSeconds: 60 })
-  if (limited) return limited
-
   try {
     const cached = getCachedPublicFlags()
-    const rows =
-      cached ??
-      (await prisma.platformFlag.findMany({
-        select: { key: true, enabled: true },
-      }))
-    if (!cached) setCachedPublicFlags(rows)
-
-    const byKey = new Map(rows.map((row) => [row.key, row.enabled]))
-
-    const flags: PublicConfigDto["flags"] = {}
-    for (const key of PLATFORM_FLAG_KEYS) {
-      flags[key] = byKey.get(key) ?? false
+    if (cached) {
+      return jsonFlags(cached)
     }
 
-    return NextResponse.json(
-      { flags } satisfies PublicConfigDto,
-      { headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" } },
-    )
+    const limited = await checkRateLimit(req, "public-config", { limit: 60, windowSeconds: 60 })
+    if (limited) return limited
+
+    const rows = await prisma.platformFlag.findMany({
+      select: { key: true, enabled: true },
+    })
+    setCachedPublicFlags(rows)
+
+    return jsonFlags(rows)
   } catch (error) {
     console.error("[public/config] failed:", error)
     return jsonError("Failed to load config", 500)
   }
+}
+
+function jsonFlags(rows: { key: string; enabled: boolean }[]) {
+  const byKey = new Map(rows.map((row) => [row.key, row.enabled]))
+
+  const flags: PublicConfigDto["flags"] = {}
+  for (const key of PLATFORM_FLAG_KEYS) {
+    flags[key] = byKey.get(key) ?? false
+  }
+
+  return NextResponse.json(
+    { flags } satisfies PublicConfigDto,
+    { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
+  )
 }

@@ -25,7 +25,7 @@ Canonical metadata and JSON-LD use `https://admobihq.com/blog` (same origin as t
 2. **Blog posts** — Create a post, set cover image, author name, publish date, and write the body in Lexical.
 3. **Inline images** — Use the upload control in the editor (or drag/drop) to insert images from **Media**.
 4. **Publish** — Drafts stay hidden on `/blog` until published.
-5. ISR (`revalidate = 3600`) and publish hooks refresh `/blog` and the article URL.
+5. ISR (`revalidate = 86400` in [`lib/seo/isr.ts`](../../apps/web/lib/seo/isr.ts)) is the time-based fallback. Publish hooks call `revalidateTag` (`marketing-blog-index`, `marketing-header-posts`) and `revalidatePath` so `/blog` and the article URL refresh immediately.
 
 ### Fields worth filling
 

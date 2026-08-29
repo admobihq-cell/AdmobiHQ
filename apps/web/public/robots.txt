@@ -31,6 +31,9 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
+Disallow: /wp-admin/
+Disallow: /wp-content/
+Disallow: /xmlrpc.php
 
 # AI Search & Answer Engines
 User-agent: GPTBot
@@ -73,6 +76,9 @@ Allow: /
 User-agent: *
 Disallow: /api/
 Disallow: /admin/
+Disallow: /wp-admin/
+Disallow: /wp-content/
+Disallow: /xmlrpc.php
 
 
 

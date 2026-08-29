@@ -77,6 +77,7 @@ const nextConfig = {
   transpilePackages: ["@workspace/ui", "@workspace/sentry-config", "@workspace/ops-api-client", "@payload-bites/image-search"],
   images: {
     remotePatterns: mediaImagePatterns,
+    minimumCacheTTL: 60 * 60 * 24 * 31,
   },
   // Payload DB adapters pull in drizzle-kit/esbuild; must not be bundled (Turbopack dev especially).
   serverExternalPackages: [
@@ -107,6 +108,7 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      { source: "/logo", destination: "/logo.png" },
       // apps/customer-mobile's web export (public/app-demo, see its
       // export:web-demo script) is served under its exact index.html file —
       // Next's static handling doesn't do directory-index resolution — but
@@ -124,12 +126,42 @@ const nextConfig = {
 
     return [
       {
+        source: "/icon",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/apple-icon",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
         source: "/opengraph-image",
-        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
       },
       {
         source: "/logo",
-        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/logo.png",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/brand/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
       },
       {
         source: "/:path*",

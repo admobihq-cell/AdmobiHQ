@@ -332,6 +332,13 @@ Schema: [`apps/web/prisma/schema.prisma`](../../apps/web/prisma/schema.prisma). 
 
 `dev` and `prebuild` run `fix-importmap` automatically. If admin shows `worker_threads` / `child_process` errors, run `npm run generate:importmap -w web` and restart dev. Details: [HELP-CMS.md](../web/HELP-CMS.md#payload-admin-build-worker_threads--child_process).
 
+### Brand assets and deploy-skip tests
+
+| Command | When to run |
+|---------|-------------|
+| `npm run brand:icons` | After changing `apps/web/public/brand/logo-mark.png` — writes static favicon / apple-icon / OG / `logo.png` for all five Next.js apps. See [DEPLOYMENT.md](./DEPLOYMENT.md#fluid-compute-and-caching). |
+| `npm run test:scripts` | After editing `scripts/vercel-ignore-build.mjs` or `apps/web/lib/seo/bot-probes.ts` |
+
 ### Mobile (Expo)
 
 Full guide: [MOBILE-BUILDS.md](./MOBILE-BUILDS.md) — local dev, debug APKs, EAS preview APKs, OTA updates, keystores.
@@ -451,7 +458,7 @@ See [API.md](../api/API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 | `db:push` wants to drop `help_*` tables | **Stop** — use Scenario B; never push over CMS |
 | Payload migrate fails | `env:check`; confirm DB reachable; SSL URL from Neon |
 | `/admin` build error `worker_threads` | `npm run generate:importmap -w web`; use `dev` not raw `next dev` |
-| `/help` or `/blog` empty but `/admin` works | Posts are **drafts** — click **Publish** in admin; or preview DB has no seed (run `seed:*` against that `DATABASE_URL`); preview may cache empty pages for up to 1h (`revalidate = 3600`) — redeploy or wait |
+| `/help` or `/blog` empty but `/admin` works | Posts are **drafts** — click **Publish** in admin; or preview DB has no seed (run `seed:*` against that `DATABASE_URL`); preview may cache empty pages for up to 24h (`revalidate = 86400`) unless a publish hook ran — republish, redeploy, or wait |
 | Import map reverted in git | Run `generate:importmap`; commit stub import if intentional |
 | Next “wrong workspace root” warning | Extra `package-lock.json` outside repo — see `outputFileTracingRoot` in `next.config.mjs` |
 | Prisma client out of date | `cd apps/web && npx prisma generate` |

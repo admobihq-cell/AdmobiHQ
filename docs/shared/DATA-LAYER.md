@@ -53,7 +53,7 @@ Editorial and CMS concerns only:
 | `blog_posts`, `media` | Blog (`/blog`) and uploads |
 | `users`, `payload_*` | Payload admin auth and system |
 
-Public pages read Payload via server components and [`apps/web/lib/payload/*-queries.ts`](../../apps/web/lib/payload). Marketers edit content at `/admin`.
+Public pages read Payload via server components and [`apps/web/lib/payload/*-queries.ts`](../../apps/web/lib/payload). Those queries go through `unstable_cache` (24h + tags in [`lib/seo/isr.ts`](../../apps/web/lib/seo/isr.ts)); `getPayloadClient()` reuses one Payload instance per Fluid isolate. Marketers edit content at `/admin`.
 
 Payload does **not** store campaign leads, drivers, or fleet partners.
 

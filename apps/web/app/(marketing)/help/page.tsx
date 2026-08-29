@@ -4,10 +4,11 @@ import Link from "next/link"
 import { Container } from "@/components/landing/container"
 import { HelpArticleSearch } from "@/components/help/help-article-search"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
-import { getHelpIndexData, isPayloadConfigured } from "@/lib/payload/help-queries"
+import { getCachedHelpIndexData, isPayloadConfigured } from "@/lib/payload/help-queries"
+import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import { pageMetadata } from "@/lib/seo/site"
 
-export const revalidate = 21600
+export const revalidate = MARKETING_REVALIDATE_SECONDS
 
 export const metadata: Metadata = pageMetadata({
   title: "Help center | taxi-top OOH guides & FAQs | Admobi Kenya",
@@ -18,7 +19,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default async function HelpPage() {
   const data = isPayloadConfigured()
-    ? await getHelpIndexData().catch((error) => {
+    ? await getCachedHelpIndexData().catch((error) => {
         console.error("[help] Failed to load articles:", error)
         return { categories: [], articles: [] }
       })

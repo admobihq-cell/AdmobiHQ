@@ -110,7 +110,7 @@ If you need Turbopack for unrelated work, `npm run dev:turbo -w web` may work af
 1. Create or edit **Help categories** (audience, sort order).
 2. Create **Help articles** with title, slug, excerpt, body (Lexical), and category.
 3. **Publish** drafts from the admin UI (drafts are hidden on `/help`).
-4. ISR (`revalidate = 3600`) refreshes pages; collection hooks also call `revalidatePath` on publish.
+4. ISR (`revalidate = 86400` in [`lib/seo/isr.ts`](../../apps/web/lib/seo/isr.ts)) is the time-based fallback. Collection hooks also call `revalidateTag` (`marketing-help-index`) and `revalidatePath` on publish.
 
 Optional SEO fields: `seoTitle`, `seoDescription` per article.
 

@@ -2,6 +2,8 @@
 
 Ground-truth architectural audit of the Admobi monorepo, compiled by direct repository inspection (`git ls-files`, package manifests, GitHub Actions, EAS/Vercel config) on 2026-08-27, followed by a reconstructive-cost valuation in Kenya Shillings (KES) for balance-sheet purposes.
 
+Deployment and caching facts in §4 (and the middleware count in §2) were updated 2026-08-29 to match current `vercel.json`, Fluid CPU mitigations, and marketing Edge probe middleware. Valuation line counts and the KES ledger are unchanged from the 2026-08-27 snapshot.
+
 Also published as an interactive report: [Admobi Reconstruction Ledger](https://claude.ai/code/artifact/70be5f48-5458-46db-8e93-f181391cdc33).
 
 **Headline numbers:** 94,424 real lines of code · 8 apps / 9 shared packages · 3 test files repo-wide · 22 Prisma models + 5 CMS collections · KES 49.9M point-estimate valuation (range KES 44.6M–65.9M).
@@ -88,7 +90,7 @@ Every app builds and runs real routes — nothing in this repository is a bare N
 
 The original brief assumed a shared Next.js middleware layer doing host-based multi-tenant routing. That is not what is built, and the actual answer is more mundane and just as production-viable: **five independent Vercel projects** — `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, `app.admobihq.com`, `driver.admobihq.com` — each with its own root directory in the same repo, its own domain assignment in Vercel, and (for three of them) its own independent Clerk application instance.
 
-Only three `middleware.ts` files exist in the whole repo (`apps/api`, `apps/customer-web`, `apps/driver-web`), and each handles a single app's concerns — CORS preflight and Clerk session gating within that one deployment — not cross-app hostname rewriting. No file anywhere reads `req.headers.get('host')` or routes by subdomain. The "network" is a deployment topology, not a routing algorithm.
+Four `middleware.ts` files exist in the whole repo: `apps/web` (Edge 404 for scanner/probe paths, no Node/Payload), plus `apps/api`, `apps/customer-web`, and `apps/driver-web` for CORS/session within that one deployment. None does cross-app hostname rewriting. No file anywhere reads `req.headers.get('host')` or routes by subdomain. The "network" is a deployment topology, not a routing algorithm.
 
 ---
 
@@ -122,7 +124,7 @@ Admobi runs a deliberate split, documented and enforced by convention rather tha
 
 ### Deployment topology
 
-Five Vercel projects deploy from the same repository via Vercel's native Git integration — not via a scripted CI deploy step. Only **one** `vercel.json` exists in the entire repo (`apps/api`, defining a single daily cron); the other four apps rely on Vercel's zero-config Next.js detection. Three Expo/EAS projects carry identical, genuine `development` / `preview` / `production` build profiles. Android release automation exists for all three mobile apps — two sign locally via Gradle keystore, one builds through EAS — publishing APKs to GitHub Releases on tag push. **No iOS release workflow exists yet**, and there is no Dockerfile anywhere in the repository: the deployment path is entirely Vercel- and EAS-native, with no containerized fallback.
+Five Vercel projects deploy from the same repository via Vercel's native Git integration — not via a scripted CI deploy step. Each of the five Next.js apps has a `vercel.json` with `ignoreCommand` (`scripts/vercel-ignore-build.mjs`) so commits that do not touch that app skip a Fluid rebuild. `apps/api/vercel.json` also defines the single daily push-receipts cron. Three Expo/EAS projects carry identical, genuine `development` / `preview` / `production` build profiles. Android release automation exists for all three mobile apps — two sign locally via Gradle keystore, one builds through EAS — publishing APKs to GitHub Releases on tag push. **No iOS release workflow exists yet**, and there is no Dockerfile anywhere in the repository: the deployment path is entirely Vercel- and EAS-native, with no containerized fallback.
 
 ### CI/CD
 
@@ -130,7 +132,7 @@ Five GitHub Actions workflows. `pr.yml` and `master.yml` gate every change to `m
 
 ### Testing coverage — the most material gap
 
-> **Finding.** The entire monorepo contains **3 test files**: two Vitest unit tests (`packages/geo`, `packages/ops-contracts`) and one Playwright spec asserting four unauthenticated marketing pages return 200. There is **zero** test coverage for `ops`, `api`, `customer-web`, `driver-web`, or any of the three mobile apps. The `test` task in `turbo.json` is correctly wired into the build graph — it simply has almost nothing to run.
+> **Finding.** Product-route coverage is still the gap. Two Vitest unit tests (`packages/geo`, `packages/ops-contracts`), one Playwright spec asserting four unauthenticated marketing pages return 200, and later script tests (`npm run test:scripts`) for ignore-build and bot-probe paths. There is **zero** handler/UI test coverage for `ops`, `api`, `customer-web`, `driver-web`, or any of the three mobile apps. The `test` task in `turbo.json` is correctly wired into the build graph — it simply has almost nothing to run for the product surfaces.
 
 | | |
 |---|---|

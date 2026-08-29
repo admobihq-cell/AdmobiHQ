@@ -104,7 +104,9 @@ App Router. Marketing pages live in a route group that **is** the marketing shel
 
 Help and blog content are defined in [`apps/web/collections/`](../../apps/web/collections) and fetched via [`lib/payload/`](../../apps/web/lib/payload). **Prisma** owns leads, drivers, and fleet data; **Payload** is CMS-only. Business form POST handlers live in [`apps/api`](../../apps/api) — see [API.md](../api/API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 
-Every page is either fully static (SSR/SSG) or a client component for forms. Help and blog routes use ISR (`revalidate = 3600`). Form API routes are server-rendered on demand.
+Every page is either fully static (SSR/SSG) or a client component for forms. Help, blog, and the marketing layout use ISR (`revalidate = 86400` via `MARKETING_REVALIDATE_SECONDS` in [`lib/seo/isr.ts`](../../apps/web/lib/seo/isr.ts)). CMS publish hooks call `revalidateTag` / `revalidatePath` so live pages update without waiting for the 24h fallback. Form API routes are server-rendered on demand.
+
+Favicon, Apple icon, OG image, and `/logo` are **static PNGs** (`app/icon.png`, `app/apple-icon.png`, `app/opengraph-image.png`, `public/logo.png` rewritten from `/logo`). Do not reintroduce `ImageResponse` / Satori route handlers — they burn Fluid CPU on every crawler hit. Regenerate with `npm run brand:icons`.
 
 ### 4.2 Marketing layout
 
@@ -112,8 +114,10 @@ Every page is either fully static (SSR/SSG) or a client component for forms. Hel
 
 1. Loads the Geist + Geist Mono fonts and assigns them to `--font-sans` / `--font-mono` CSS variables.
 2. Imports the global stylesheet from `@workspace/ui/globals.css` (which re-exports [packages/ui/src/styles/globals.css](../../packages/ui/src/styles/globals.css)).
-3. Wraps children in `<ThemeProvider>` and mounts `<SiteHeader />`, `<SiteFooter />`, and `<WhatsappFab />`.
+3. Wraps children in `<ThemeProvider>` and mounts `<SiteHeader />`, `<SiteFooter />`, and `<WhatsappFab />`. Header blog teasers come from `unstable_cache` (tag `marketing-header-posts`), not a fresh Payload query on every request.
 4. Sets `<html lang="en">` and global metadata (title template, OG defaults, `locale: "en_KE"`).
+
+[`middleware.ts`](../../apps/web/middleware.ts) runs on **Edge** and 404s scanner/probe paths (`lib/seo/bot-probes.ts`) without invoking Node, Payload, or Neon. [`global-not-found.tsx`](../../apps/web/app/global-not-found.tsx) is a static 404 — no `cookies()`, no CMS. Payload is cached per Fluid isolate in [`get-payload.ts`](../../apps/web/lib/payload/get-payload.ts).
 
 Payload routes use a separate root layout under `app/(payload)/`.
 
@@ -123,6 +127,7 @@ Marketing forms and ops admin CRUD are served by the dedicated API app — not f
 
 | Route | Purpose | Auth |
 |-------|---------|------|
+| `GET /v1/public/config` | Platform flags (`deliveries`, …) | Public (CDN + in-memory cache, 5 min) |
 | `POST /v1/public/leads` | Campaign + fleet partner forms | Public (CORS) |
 | `POST /v1/public/drivers` | Driver enrollment | Public |
 | `POST /v1/public/waitlist` | Waitlist signup | Public |
