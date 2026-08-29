@@ -43,8 +43,15 @@ export function NotificationBell() {
 
   const notificationsQuery = useQuery({
     queryKey: ["customer-announcements"],
-    queryFn: () => fetchCustomerAnnouncements(getToken),
-    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      try {
+        return await fetchCustomerAnnouncements(getToken)
+      } catch {
+        return []
+      }
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
   })
   const notifications = notificationsQuery.data ?? []
 
