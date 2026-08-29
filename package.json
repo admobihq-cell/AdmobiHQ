@@ -100,7 +100,7 @@
   ],
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "expo": "~54.0.35",
+    "expo": "~57.0.18",
     "expo-router": "~6.0.23",
     "metro": "^0.83.3",
     "metro-config": "^0.83.3",

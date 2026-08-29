@@ -37,7 +37,7 @@
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-persist-client": "^5.102.3",
     "@workspace/geo": "*",
-    "expo": "~54.0.36",
+    "expo": "~57.0.18",
     "expo-auth-session": "~7.0.11",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
