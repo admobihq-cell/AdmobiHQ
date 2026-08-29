@@ -12,7 +12,7 @@ export type HeadingAnchor = {
   text: string
 }
 
-function slugify(text: string): string {
+export function slugifyHeading(text: string): string {
   return text
     .toLowerCase()
     .trim()
@@ -34,7 +34,7 @@ export function extractHeadingIds(
       if (node.type === "heading" && (node.tag === "h2" || node.tag === "h3")) {
         const text = collectText(node.children ?? [])
         if (text) {
-          headings.push({ id: slugify(text), text })
+          headings.push({ id: slugifyHeading(text), text })
         }
       }
       if (node.children?.length) {

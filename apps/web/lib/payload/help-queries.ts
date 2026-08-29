@@ -69,7 +69,7 @@ export function getCachedHelpIndexData(): Promise<{
   categories: HelpCategory[]
   articles: HelpArticleListItem[]
 }> {
-  return unstable_cache(getHelpIndexData, ["marketing-help-index-v2"], {
+  return unstable_cache(getHelpIndexData, ["marketing-help-index-v3"], {
     revalidate: MARKETING_REVALIDATE_SECONDS,
     tags: [MARKETING_HELP_INDEX_TAG],
   })()
@@ -126,24 +126,19 @@ export async function getHelpArticleBySlug(slug: string): Promise<HelpArticleDoc
 
 export async function getRelatedHelpArticles(
   article: HelpArticleDoc,
-  limit = 3,
+  limit = 4,
 ): Promise<HelpArticleListItem[]> {
   const payload = await getPayloadClient()
-
-  const categoryId =
-    typeof article.category === "object" ? article.category.id : article.category
+  const categoryId = article.category.id
+  const audience = article.category.audience
 
   const result = await payload.find({
     collection: "help-articles",
     depth: 1,
-    limit: limit + 1,
+    limit: 50,
+    pagination: false,
     where: {
       and: [
-        {
-          category: {
-            equals: categoryId,
-          },
-        },
         {
           id: {
             not_equals: article.id,
@@ -155,10 +150,16 @@ export async function getRelatedHelpArticles(
     ...PUBLIC_FIND,
   })
 
-  return result.docs
+  const items = result.docs
     .map(toListItem)
     .filter((item): item is HelpArticleListItem => item !== null)
-    .slice(0, limit)
+
+  const sameCategory = items.filter((item) => item.category.id === categoryId)
+  const sameAudience = items.filter(
+    (item) => item.category.id !== categoryId && item.category.audience === audience,
+  )
+
+  return [...sameCategory, ...sameAudience].slice(0, limit)
 }
 
 export function isPayloadConfigured(): boolean {
