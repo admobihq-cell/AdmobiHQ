@@ -15,15 +15,18 @@ Monorepo for **Admobi**: the public marketing site, business API, internal ops c
 | `apps/web` | Next.js marketing site + Payload CMS | `:3000` |
 | `apps/api` | Business REST API (`/v1`, `/v1/public`) | `:3003` |
 | `apps/ops` | Internal ops console (Clerk, UI only) | `:3001` |
-| `apps/customer-web` | Customer product scaffold | `:3002` |
-| `apps/driver-web` | Driver app scaffold (earnings, routes, payouts) | `:3004` |
+| `apps/customer-web` | Advertiser web app | `:3002` |
+| `apps/driver-web` | Driver web app (earnings, routes, payouts) | `:3004` |
 | `apps/ops-mobile` | Expo ops mobile app (Clerk) | Expo `:8081` |
-| `apps/customer-mobile` | Expo customer app (no Clerk) | Expo `:8082` |
-| `apps/driver-mobile` | Expo driver app (no Clerk yet) | Expo `:8083` |
+| `apps/customer-mobile` | Expo customer app (Clerk, flag-gated) | Expo `:8082` |
+| `apps/driver-mobile` | Expo driver app (Clerk, flag-gated) | Expo `:8083` |
 | `packages/ui` | Shared design system (Tailwind v4, shadcn/Radix, mapcn) |
 | `packages/geo` | Nairobi corridor / coverage map fixtures |
 | `packages/ops-api-client` | Typed HTTP client for admin + public API URLs |
 | `packages/ops-contracts` | Shared Zod schemas and DTOs |
+| `packages/query-client` | Shared TanStack Query client + provider |
+| `packages/sentry-config` | Shared Sentry init helpers |
+| `packages/vitest-config` | Shared Vitest config |
 | `packages/eslint-config` | Workspace ESLint presets |
 | `packages/typescript-config` | Shared `tsconfig` bases |
 
@@ -49,8 +52,8 @@ npm run dev                                        # pull secrets + start web, a
 | http://localhost:3000/admin | Payload CMS |
 | http://localhost:3003 | Business API |
 | http://localhost:3001 | Ops console |
-| http://localhost:3002 | Customer app scaffold |
-| http://localhost:3004 | Driver app scaffold |
+| http://localhost:3002 | Customer app |
+| http://localhost:3004 | Driver app |
 
 Skip Infisical pull if `.env.local` files already exist: `npm run dev:skip-pull`.
 
@@ -110,9 +113,9 @@ Docs are organized under `docs/` by app — `docs/shared/` (repo-wide), `docs/we
 | [docs/api/API.md](docs/api/API.md) | Business API routes and deployment |
 | [docs/ops/OPS-ADMIN.md](docs/ops/OPS-ADMIN.md) | Ops console |
 | [docs/customer/APP.md](docs/customer/APP.md) | Customer web app |
-| [docs/customer/APP-MOBILE.md](docs/customer/APP-MOBILE.md) | Customer Expo app (no Clerk) |
-| [docs/ops/MOBILE-OPS.md](docs/ops/MOBILE-OPS.md) | Ops Expo app (Clerk) |
-| [docs/driver/DRIVER-APP.md](docs/driver/DRIVER-APP.md) | Driver web + Expo app scaffold, platform flags |
+| [docs/customer/APP-MOBILE.md](docs/customer/APP-MOBILE.md) | Customer Expo app (Clerk, flag-gated) |
+| [docs/ops/MOBILE-OPS.md](docs/ops/MOBILE-OPS.md) | Ops Expo app (Clerk, always on) |
+| [docs/driver/DRIVER-APP.md](docs/driver/DRIVER-APP.md) | Driver web + Expo app, platform flags |
 | [docs/shared/MOBILE-BUILDS.md](docs/shared/MOBILE-BUILDS.md) | APK builds, EAS, OTA updates |
 | [docs/shared/DEPLOYMENT.md](docs/shared/DEPLOYMENT.md) | Vercel, Infisical, domains, EAS mobile |
 | [docs/shared/ARCHITECTURE.md](docs/shared/ARCHITECTURE.md) | Repo layout and conventions |

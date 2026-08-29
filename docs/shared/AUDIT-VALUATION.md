@@ -34,8 +34,8 @@ Stripping generated artifacts, lockfiles, tooling scaffolding, binary assets, an
 | `apps/driver-mobile` | Expo driver app | 9,206 |
 | `apps/api` | Business REST API | 7,925 |
 | `packages/ui` | Design system | 7,102 |
-| `apps/customer-web` | Customer web scaffold | 5,873 |
-| `apps/driver-web` | Driver web scaffold | 5,536 |
+| `apps/customer-web` | Advertiser web console | 5,873 |
+| `apps/driver-web` | Driver web console | 5,536 |
 | `packages/ops-contracts` | Zod DTOs | 1,401 |
 | `scripts/` & root tooling | Dev/build scripts | 1,224 |
 | `packages/ops-api-client` | Typed HTTP client | 728 |
@@ -52,8 +52,8 @@ apps/
 ├── web             Next.js 16.2 + Payload CMS — marketing, blog, help center
 ├── api             Next.js route handlers only — ~60+ /v1 endpoints, no UI
 ├── ops             Ops console — Clerk-gated, calls api for all data
-├── customer-web    Customer web — populated scaffold, no DB of its own yet
-├── driver-web      Driver web — populated scaffold, feature-flag gated
+├── customer-web    Advertiser web — demo campaign data, calls API for support/announcements
+├── driver-web      Driver web — profile-setup + demo earnings; Deliveries flag-gated
 ├── ops-mobile      Expo — staff app, Clerk, EAS-built
 ├── customer-mobile Expo — advertiser app, Clerk (flag-gated), EAS-built
 └── driver-mobile   Expo — driver app, Clerk (flag-gated), EAS-built
@@ -78,8 +78,8 @@ Every app builds and runs real routes — nothing in this repository is a bare N
 | `web` | ✅ Production | Next.js 16.2, Payload CMS | Payload admin only | 5 CMS collections, real forms → Prisma, ISR help/blog. Owns the canonical Prisma schema file. |
 | `api` | ✅ Production | Next.js (route handlers only) | Clerk, per-route | ~60+ `/v1` routes, 22 Prisma models, one Vercel cron. |
 | `ops` | ⚠️ Populated console | Next.js 16.2 | Clerk (`@admobihq.com` only) | 20 dashboard routes/features with real loading states; UI-only — every write goes through the API, ops holds no data itself. |
-| `customer-web` | ⚠️ Populated scaffold | Next.js 16.2 | Clerk (own instance) | Campaigns, deliveries, map, reports, billing screens render; no dedicated database yet — pre-login-phase per the team's own docs. |
-| `driver-web` | ⚠️ Populated scaffold | Next.js 16.2 | Clerk (own instance) | Earnings, routes, payouts real; Deliveries sits behind a feature flag toggled live from ops. |
+| `customer-web` | ⚠️ UI live, demo data | Next.js 16.2 | Clerk (own instance, flag-gated) | Campaigns/map/billing/support render; campaigns are local fixtures, not Prisma. Reports still Coming soon. |
+| `driver-web` | ⚠️ UI live, demo earnings | Next.js 16.2 | Clerk (own instance, flag-gated) | Earnings/routes UI real (illustrative numbers); profile-setup hits the API; Deliveries behind the `deliveries` flag. |
 | `ops-mobile` | ✅ Production | Expo SDK 54, RN 0.81 | Clerk JWT → api | Real EAS build profiles (dev/preview/production), MapLibre, Sentry RN. |
 | `customer-mobile` | ⚠️ Flag-gated | Expo SDK 54, RN 0.81 | Clerk (flag-gated) | Sign-in live behind a flag; EAS configured; also ships a web-export demo build. |
 | `driver-mobile` | 🚩 Earliest-stage | Expo SDK 54, RN 0.81 | Clerk (flag-gated) | Same EAS profile shape as the other two, but missing the shared `ops-api-client` dependency they both carry. |
@@ -182,4 +182,4 @@ Holding hours and the two percentage premiums fixed and swapping the labor rate 
 
 ### Limitations of Method A
 
-This is a replacement-cost floor, not a market, income, or going-concern valuation — it prices the labor to retype this system, not the business built on top of it. It does not capture brand, domain, or customer-relationship value, and it should be read alongside Sections 2–4: three of eight apps are populated scaffolds without a dedicated database yet, mobile parity is uneven, and test coverage across the platform is close to zero. A buyer or auditor weighing this figure against risk should treat those findings as a discount factor applied on top of, not instead of, the reconstruction cost above.
+This is a replacement-cost floor, not a market, income, or going-concern valuation — it prices the labor to retype this system, not the business built on top of it. It does not capture brand, domain, or customer-relationship value, and it should be read alongside Sections 2–4: customer and driver UIs are still fixture-backed (no campaign/earnings APIs yet), mobile parity is uneven, and test coverage across the platform is close to zero. A buyer or auditor weighing this figure against risk should treat those findings as a discount factor applied on top of, not instead of, the reconstruction cost above.

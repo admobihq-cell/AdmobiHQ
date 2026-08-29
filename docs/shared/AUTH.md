@@ -6,22 +6,22 @@ How sign-in, sessions, organizations, and role/permission checks work across eve
 
 ## 1. The short version
 
-Every app-facing surface now has real, wired Clerk sign-in — that's new as of the `fe5369d → 3c5202d → a600269` commit sequence (2026-08-11), which replaced the customer/driver auth scaffolding with working email-code + Google sign-in.
+Every app-facing surface has wired Clerk sign-in. Customer and driver sessions are **flag-gated**; ops is always on. The API verifies all three Clerk instances on the routes that belong to each actor.
 
 | App | Sign-in UI | Session gating | Backend API auth |
 |---|---|---|---|
-| `apps/ops` | ✅ live | ✅ live | ✅ live |
-| `apps/ops-mobile` | ✅ live | ✅ live (native) | ✅ live |
-| `apps/customer-web` | ✅ built | ✅ built, **flag-gated** | ❌ no protected API yet |
-| `apps/customer-mobile` | ✅ built | ✅ built, **flag-gated** | ❌ no protected API yet |
-| `apps/driver-web` | ✅ built | ✅ built, **flag-gated** | ❌ no protected API yet |
-| `apps/driver-mobile` | ✅ built | ✅ built, **flag-gated** | ❌ no protected API yet |
+| `apps/ops` | ✅ live | ✅ live | ✅ live (ops JWT) |
+| `apps/ops-mobile` | ✅ live | ✅ live (native) | ✅ live (ops JWT) |
+| `apps/customer-web` | ✅ built | ✅ built, **flag-gated** | ✅ `/v1/customer/*` (announcements); support can use a customer JWT |
+| `apps/customer-mobile` | ✅ built | ✅ built, **flag-gated** | ✅ same customer routes + push tokens |
+| `apps/driver-web` | ✅ built | ✅ built, **flag-gated** | ✅ `/v1/driver/*` (profile, documents, notifications, announcements) |
+| `apps/driver-mobile` | ✅ built | ✅ built, **flag-gated** | ✅ same driver routes + push tokens |
 | `apps/web` | — none — | — | — |
 
 Two caveats worth internalizing before assuming "auth is done" for a given environment:
 
-- **Customer and driver auth is feature-flagged** (`NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED`, §4). The flag is deliberately kept out of the shared Infisical sync, so whether it's live in any given deployment depends on that environment's own Vercel/EAS settings, not on anything in this repo.
-- **No backend enforcement yet for customer/driver.** [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) only verifies the **ops** Clerk instance. Signing into customer-web or driver-web gets you a session and gates that app's own pages, but there is no `/v1/customer/*` or `/v1/driver/*` route for that token to call yet, and no `CustomerUser`/driver-role table in the database. That's [ROADMAP.md](./ROADMAP.md) §7 milestone 2, still open.
+- **Customer and driver auth is feature-flagged** (`NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED`, §4). The flag is deliberately kept out of the shared Infisical sync, so whether it's live in any given deployment depends on that environment's own Vercel/EAS settings, not on anything in this repo. Ops and ops-mobile have no such flag — they are always on.
+- **Protected customer/driver APIs exist, but the product role model is still incomplete.** [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) still verifies only the **ops** instance. Customer tokens are verified in [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts); driver tokens in [apps/api/lib/driver-auth.ts](../../apps/api/lib/driver-auth.ts). There is still no `CustomerUser` team table, and the CRM `Driver` model has no `clerk_user_id` (driver-app identity lives on `DriverProfile` instead). Campaign booking APIs are not backend-backed yet. That's [ROADMAP.md](./ROADMAP.md) §7 milestone 2, still partly open.
 
 ---
 
@@ -93,7 +93,7 @@ All three apps' Clerk secrets live in the **same flat Infisical project/environm
 
 | App | Env vars |
 |---|---|
-| `apps/api` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID` |
+| `apps/api` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID`, `CUSTOMER_CLERK_SECRET_KEY`, `DRIVER_CLERK_SECRET_KEY` |
 | `apps/ops` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID` |
 | `apps/ops-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
 | `apps/customer-web` | `NEXT_PUBLIC_AUTH_ENABLED`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
@@ -123,16 +123,24 @@ Ops and ops-mobile have no such flag — they're always on.
 
 ## 5. Server-side verification, organizations, and roles
 
-### Token verification — ops instance only
+### Token verification — three issuers
 
-[apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) resolves a request's identity two ways, in order:
+The API verifies Clerk JWTs against the instance that issued them. There is no single "whichever instance" verifier:
+
+| Module | Instance | Used by |
+|---|---|---|
+| [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) | Ops (`CLERK_SECRET_KEY`) | `/v1/*` admin routes via `requireOpsAccess()` / `requireOpsUser()` |
+| [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts) | Customer (`CUSTOMER_CLERK_SECRET_KEY`) | `/v1/customer/*` via `requireCustomerAccess()` |
+| [apps/api/lib/driver-auth.ts](../../apps/api/lib/driver-auth.ts) | Driver (`DRIVER_CLERK_SECRET_KEY`) | `/v1/driver/*` and driver-application self-service via `requireDriverAccess()` |
+
+Ops `auth.ts` resolves identity two ways, in order:
 
 1. **Cookie session** (`auth()` from `@clerk/nextjs/server`) — same-origin calls from `apps/ops`.
 2. **Bearer JWT** (`Authorization: Bearer <token>`) — cross-origin calls from `apps/ops-mobile`, verified with `verifyToken(bearer, { secretKey: process.env.CLERK_SECRET_KEY })`.
 
-There is **no equivalent path for customer or driver tokens** — `apps/api` has zero references to `CUSTOMER_CLERK*`/`DRIVER_CLERK*`, and no `/v1/customer/*` or `/v1/driver/*` routes exist yet. `apps/ops/lib/auth.ts` is a near-duplicate of the API version, minus the Bearer-token branch (ops is same-origin) and plus `resolveOpsOrgName()` for display in the ops shell footer.
+Customer and driver modules verify **Bearer tokens only** (those apps are always cross-origin). Helpers live in [apps/api/lib/api-utils.ts](../../apps/api/lib/api-utils.ts). [apps/api/lib/support.ts](../../apps/api/lib/support.ts) tries the customer secret, then the driver secret, when a support identity token might be a Clerk JWT. `apps/ops/lib/auth.ts` is a near-duplicate of the ops API version, minus the Bearer-token branch (ops is same-origin) and plus `resolveOpsOrgName()` for display in the ops shell footer.
 
-Edge middleware ([apps/api/middleware.ts](../../apps/api/middleware.ts)) deliberately does **not** call `auth.protect()` — Edge rejects valid Expo Bearer tokens, so every protected route enforces auth itself via `requireOpsUser()` / `requireOpsAdmin()` / `requireOpsPermission()`.
+Edge middleware ([apps/api/middleware.ts](../../apps/api/middleware.ts)) deliberately does **not** call `auth.protect()` — Edge rejects valid Expo Bearer tokens, so every protected route enforces auth itself via `requireOpsUser()` / `requireOpsAdmin()` / `requireOpsPermission()` / `requireCustomerAccess()` / `requireDriverAccess()`.
 
 ### Organizations
 
@@ -141,7 +149,7 @@ Clerk Organizations exist as a **binary access gate for ops**, not multi-tenant 
 1. Email isn't `@admobihq.com` → `forbidden`.
 2. Email passes, but no membership in the `CLERK_ORG_ID` org → `forbidden`.
 
-Customer and driver instances have **no** organization concept — every signed-in user there is just an individual account. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) does not exist in the schema yet; it's still a planning note.
+Customer and driver instances have **no** organization concept — every signed-in user there is just an individual account. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) does not exist in the schema yet. `Customer.clerk_user_id` is nullable and is not populated by any route today.
 
 ### Roles — two layers, ops only
 
@@ -172,7 +180,7 @@ The closed set of assignable permissions ([packages/ops-contracts/src/enums.ts](
 
 ```
 leads · fleet · drivers · waitlist · media_kit · announcements ·
-support · finances · content · flags · activity
+support · finances · content · flags · activity · driver_applications
 ```
 
 `resolveOpsPermissions()` in `apps/api/lib/auth.ts` computes the effective set per request (all of them for `admin`, the assigned `OpsRole.permissions` for `member`) and caches it 60s per user. `getOpsAccess()` returns a discriminated union — `unauthenticated | forbidden | authorized` — that every route handler narrows before doing anything else.
@@ -186,16 +194,16 @@ All of this is exposed in the ops console itself, under **Team** ([apps/ops/app/
 - **Creating/editing/deleting custom roles** (`/v1/roles`, `/v1/roles/[roleId]`) — admin-only CRUD over `OpsRole`. Deleting a role that still has members assigned is blocked (`400`, "Reassign them first") rather than silently orphaning assignments.
 - Every one of these actions writes an audit event (`ops_role` / `team_member` / `team_invitation` entity types) through the same `auditFromOpsUser()` path every other ops mutation uses — nothing here is exempt from the audit trail.
 
-The `Driver` CRM model ([schema.prisma](../../apps/web/prisma/schema.prisma)) predates the new driver-web/driver-mobile apps and has **no `clerk_user_id` field** — there is currently no database link between a signed-in driver-app account and a `Driver` CRM record. `Customer.clerk_user_id` exists but is nullable and unpopulated by any route today.
+The CRM `Driver` model ([schema.prisma](../../apps/web/prisma/schema.prisma)) is still the marketing/ops lead-capture table and has **no `clerk_user_id`**. Driver-app identity is `DriverProfile.clerk_user_id` (profile-setup + ops review). Those two rows are not joined today. `Customer.clerk_user_id` exists but is nullable and unpopulated by any route today.
 
 ---
 
 ## 6. What's left
 
-Tracked in [ROADMAP.md](./ROADMAP.md) §7, milestone 2 ("Customer auth"):
+Tracked in [ROADMAP.md](./ROADMAP.md) §7, milestone 2. Sign-in, session gating, and the first protected customer/driver route trees are shipped. Remaining:
 
-- Multi-issuer JWT verification in `apps/api/lib/auth.ts` (customer + driver instances, alongside the existing ops path).
-- `/v1/customer/*` and `/v1/driver/*` protected route trees.
 - A `CustomerUser` (or equivalent) table linking customer Clerk users to a `Customer` billing entity with an owner/member role — the customer-side analogue of `OpsRoleAssignment`.
-- A `clerk_user_id` on `Driver` (or a new link table) so a signed-in driver-app account resolves to a CRM `Driver` row.
+- A join from a signed-in driver-app account (`DriverProfile.clerk_user_id`) to the CRM `Driver` row (or a `clerk_user_id` on `Driver`).
+- Campaign / zone / wallet APIs under `/v1/customer/*` (announcements and support are live; booking is still local demo data).
+- Earnings / routes / payout APIs under `/v1/driver/*` (profile, documents, notifications, and announcements are live; earnings wait on telemetry).
 - A decision on whether `NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED` should move into Infisical once customer/driver auth is meant to be live by default, rather than toggled per-environment by hand.
