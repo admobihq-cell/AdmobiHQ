@@ -68,7 +68,7 @@ Deliveries ships as **placeholder screens behind one ops-controlled platform fla
 ### Flag storage and API
 
 - **Prisma:** `PlatformFlag` (`key` PK, `enabled`, …) in [schema.prisma](../../apps/web/prisma/schema.prisma), seeded `deliveries: false`. Additive SQL: `npm run db:platform-flags -w web`. **Not** `prisma db push` (would drop Payload tables).
-- **Read:** [`GET /v1/public/config`](../../apps/api/app/v1/public/config/route.ts) — `{ flags: { deliveries: boolean } }`. Next.js: `revalidate: 60`. Expo: fetch on launch and AppState foreground.
+- **Read:** [`GET /v1/public/config`](../../apps/api/app/v1/public/config/route.ts) — `{ flags: { deliveries: boolean } }`. Next.js: `revalidate: 300` (API also caches 5 minutes in-memory and via `s-maxage=300`). Expo: fetch on launch and AppState foreground.
 - **Write:** [`GET/PATCH /v1/flags`](../../apps/api/app/v1/flags/route.ts) — ops JWT, audit entity `platform_flag`.
 - Ops web: Settings → Flags. Ops mobile: Settings. Contracts in `@workspace/ops-contracts`; client in `@workspace/ops-api-client`.
 

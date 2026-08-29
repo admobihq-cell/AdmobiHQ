@@ -1,8 +1,11 @@
+import { unstable_cache } from "next/cache"
+
 import type { HelpArticle, HelpCategory } from "@/payload-types"
 
 import { getPayloadClient } from "@/lib/payload/get-payload"
 import { resolvePayloadDatabaseUrl } from "@/lib/resolve-database-url"
 import type { HelpArticleDoc, HelpArticleListItem } from "@/lib/payload/types"
+import { MARKETING_HELP_INDEX_TAG, MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 
 function isCategoryPopulated(
   category: HelpArticle["category"] | HelpCategory,
@@ -56,6 +59,16 @@ export async function getHelpIndexData(): Promise<{
     categories: categoriesResult.docs,
     articles,
   }
+}
+
+export function getCachedHelpIndexData(): Promise<{
+  categories: HelpCategory[]
+  articles: HelpArticleListItem[]
+}> {
+  return unstable_cache(getHelpIndexData, ["marketing-help-index"], {
+    revalidate: MARKETING_REVALIDATE_SECONDS,
+    tags: [MARKETING_HELP_INDEX_TAG],
+  })()
 }
 
 export async function getHelpArticleSlugs(): Promise<string[]> {

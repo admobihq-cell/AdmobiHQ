@@ -1,19 +1,14 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { cookies } from "next/headers"
 
 import { NotFoundPage } from "@workspace/ui/components/not-found-page"
-import { THEME_STORAGE_KEY } from "@workspace/ui/lib/theme/config"
 import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
-import { getServerThemeClass } from "@workspace/ui/lib/theme/persist"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Container } from "@/components/landing/container"
 import { SiteFooter } from "@/components/landing/site-footer"
 import { SiteHeader } from "@/components/landing/site-header"
 import { ThemeProvider } from "@/components/theme-provider"
-import { isPayloadConfigured } from "@/lib/payload/help-queries"
-import { getRecentBlogPosts } from "@/lib/payload/blog-queries"
 
 import "@workspace/ui/globals.css"
 
@@ -37,19 +32,10 @@ export const metadata: Metadata = {
 
 /**
  * Global unmatched-route 404 (Next.js 15.4+ / 16).
- * Required when the app uses multiple root layouts (`(marketing)` / `(payload)`),
- * because segment `not-found.tsx` files only run when `notFound()` is called
- * inside that segment — not for arbitrary unknown URLs.
+ * Must stay static: no cookies(), no Payload. Scanner 404s were booting
+ * Neon on every probe.
  */
-export default async function GlobalNotFound() {
-  const cookieStore = await cookies()
-  const serverTheme = getServerThemeClass(
-    cookieStore.get(THEME_STORAGE_KEY)?.value,
-  )
-  const recentPosts = isPayloadConfigured()
-    ? await getRecentBlogPosts(3).catch(() => [])
-    : []
-
+export default function GlobalNotFound() {
   return (
     <html
       lang="en"
@@ -59,7 +45,6 @@ export default async function GlobalNotFound() {
         fontMono.variable,
         "font-sans",
         geist.variable,
-        serverTheme,
       )}
     >
       <head>
@@ -70,7 +55,7 @@ export default async function GlobalNotFound() {
       </head>
       <body className="bg-background text-foreground">
         <ThemeProvider>
-          <SiteHeader recentPosts={recentPosts} />
+          <SiteHeader recentPosts={[]} />
           <main>
             <Container>
               <NotFoundPage
