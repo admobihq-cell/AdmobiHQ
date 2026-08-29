@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { unstable_noStore as noStore } from "next/cache"
 
 import { BlogIndex } from "@/components/blog/blog-index"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
@@ -18,6 +19,7 @@ export default async function BlogPage() {
   const data = isPayloadConfigured()
     ? await getCachedBlogIndexData().catch((error) => {
         console.error("[blog] Failed to load posts:", error)
+        noStore()
         return { posts: [] }
       })
     : { posts: [] }

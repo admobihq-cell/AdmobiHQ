@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useAuth } from "@clerk/nextjs"
 import { Bell } from "lucide-react"
 import type { DriverNotificationDto } from "@workspace/ops-contracts"
 
@@ -16,6 +15,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   fetchDriverAnnouncements,
   fetchDriverNotifications,
@@ -36,7 +36,7 @@ const TYPE_DOT: Record<string, string> = {
  * rather than polling — a 60s interval kept Neon compute from suspending.
  * Opening the dropdown marks everything read. */
 export function NotificationBell() {
-  const { getToken } = useAuth()
+  const { getToken } = useAuthIfEnabled()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 

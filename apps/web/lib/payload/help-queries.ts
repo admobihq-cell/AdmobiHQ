@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache"
 import type { HelpArticle, HelpCategory } from "@/payload-types"
 
 import { getPayloadClient } from "@/lib/payload/get-payload"
+import { PUBLIC_FIND, PUBLISHED_WHERE } from "@/lib/payload/public-find"
 import { resolvePayloadDatabaseUrl } from "@/lib/resolve-database-url"
 import type { HelpArticleDoc, HelpArticleListItem } from "@/lib/payload/types"
 import { MARKETING_HELP_INDEX_TAG, MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
@@ -41,6 +42,7 @@ export async function getHelpIndexData(): Promise<{
       sort: "sortOrder",
       limit: 100,
       pagination: false,
+      ...PUBLIC_FIND,
     }),
     payload.find({
       collection: "help-articles",
@@ -48,6 +50,8 @@ export async function getHelpIndexData(): Promise<{
       sort: "sortOrder",
       limit: 200,
       pagination: false,
+      where: PUBLISHED_WHERE,
+      ...PUBLIC_FIND,
     }),
   ])
 
@@ -79,6 +83,8 @@ export async function getHelpArticleSlugs(): Promise<string[]> {
     depth: 0,
     limit: 500,
     pagination: false,
+    where: PUBLISHED_WHERE,
+    ...PUBLIC_FIND,
     select: {
       slug: true,
     },
@@ -95,10 +101,16 @@ export async function getHelpArticleBySlug(slug: string): Promise<HelpArticleDoc
     depth: 1,
     limit: 1,
     where: {
-      slug: {
-        equals: slug,
-      },
+      and: [
+        {
+          slug: {
+            equals: slug,
+          },
+        },
+        PUBLISHED_WHERE,
+      ],
     },
+    ...PUBLIC_FIND,
   })
 
   const article = result.docs[0]
@@ -137,8 +149,10 @@ export async function getRelatedHelpArticles(
             not_equals: article.id,
           },
         },
+        PUBLISHED_WHERE,
       ],
     },
+    ...PUBLIC_FIND,
   })
 
   return result.docs
