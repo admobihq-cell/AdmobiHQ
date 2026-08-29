@@ -19,7 +19,7 @@ Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC
 
 ### Routes (dashboard)
 
-Home, Overview, **Map** (network corridors / active units / city anchors via mapcn), Campaign Leads, Fleet Partners, Drivers, Waitlist, Media Kit, Announcements, **Activity** (audit trail), Content (CMS).
+Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, Waitlist, Media Kit, Announcements, Support, **Finances**, **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, tour).
 
 ### Activity / audit
 
@@ -65,14 +65,14 @@ npm run env:check -w ops
 Or start everything with auto-pull:
 
 ```bash
-npm run dev                      # web + api + ops + app
+npm run dev                      # web + api + ops + customer-web + driver-web
 ```
 
 ## Local development
 
 ```bash
 npm install
-npm run dev                      # pulls secrets + starts web, api, ops, app
+npm run dev                      # pulls secrets + starts web, api, ops, customer-web, driver-web
 # Or ops only (API must be running for CRUD):
 npm run dev -w api & npm run dev -w ops
 ```

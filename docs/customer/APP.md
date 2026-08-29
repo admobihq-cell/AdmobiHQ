@@ -1,6 +1,6 @@
 # Customer web app (`apps/customer-web`)
 
-Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
+Advertiser product at **`app.admobihq.com`**. Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md). Auth: [AUTH.md](../shared/AUTH.md).
 
 **Deployment:** [DEPLOYMENT.md](../shared/DEPLOYMENT.md) · **Local dev:** [DEV-SETUP.md](../shared/DEV-SETUP.md)
 
@@ -11,16 +11,28 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 | Production | `https://app.admobihq.com` |
 | Staging | `https://app.staging.admobihq.com` |
 | Local dev | `http://localhost:3002` |
-| Business API (future) | `https://api.admobihq.com` |
+| Business API | `https://api.admobihq.com` (prod), `http://localhost:3003` (local) |
 
-## Current scope (scaffold only)
+## Current scope
 
-- Sidebar app shell (Overview, Campaigns, **Map**, Reports, Settings)
-- Overview / Campaigns / Reports / Settings show a **Coming soon** empty state
-- **Map** (`/map`) — mapcn (MapLibre) with booked corridors, coverage zones, and proof-of-play clusters (demo Nairobi data via `@workspace/geo`)
-- **Authentication** — Clerk sign-in/sign-up now live (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED`; the rest of the app (Campaigns, Reports, Settings) is still not wired to a protected backend API. Full reference: [AUTH.md](../shared/AUTH.md)
+Sidebar app shell. What is real vs placeholder:
+
+| Route | Status |
+|-------|--------|
+| `/` Overview | Working UI (local/demo numbers, not API stats) |
+| `/campaigns`, `/campaigns/[id]` | Working UI + create form; **local demo store** (`getCampaigns()`), not Prisma |
+| `/map` | mapcn/MapLibre with `@workspace/geo` Nairobi fixtures |
+| `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
+| `/reports` | **Coming soon** |
+| `/settings/billing` | Wallet/billing view (no payment gateway) |
+| `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
+| `/settings/account`, `/settings/notifications`, `/settings/tour` | Working UI |
+| `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
+
+Announcements inbox and support hit `/v1/customer/*` and `/v1/public/support*` when auth is on. Campaign booking APIs are still [ROADMAP.md](../shared/ROADMAP.md) milestone 2/4.
+
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
-- Mobile twin: [APP-MOBILE.md](./APP-MOBILE.md) (`apps/customer-mobile`, same Clerk instance). Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
+- Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
 ## Secrets (Infisical)
 
@@ -29,18 +41,18 @@ Scaffold for the Admobi **customer product** at **`app.admobihq.com`**.
 | `NEXT_PUBLIC_APP_URL` | Recommended | `http://localhost:3002` (dev), `https://app.admobihq.com` (prod) |
 | `NEXT_PUBLIC_WEB_URL` | Optional | Link back to marketing site |
 | `NEXT_PUBLIC_OPS_URL` | Optional | Cross-link to ops console |
-| `NEXT_PUBLIC_API_URL` | Optional | For future product features calling the business API |
+| `NEXT_PUBLIC_API_URL` | Yes (for support, announcements, flags) | Business API origin |
 | `NEXT_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts at all — see [AUTH.md](../shared/AUTH.md) §4 |
 | `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` | Required when auth is enabled | Customer Clerk instance — see [AUTH.md](../shared/AUTH.md) §4 |
 
-No database vars until the product phase — auth is the one exception, see [AUTH.md](../shared/AUTH.md).
+No database vars on this app — Prisma lives in `apps/api` / `apps/web`. Auth is the one exception, see [AUTH.md](../shared/AUTH.md).
 
 ### Pull locally
 
 ```bash
 npm run env:pull -w customer-web
 npm run env:check -w customer-web
-npm run dev -w customer-web
+npm run dev:customer-web
 ```
 
 Or start with all core apps: `npm run dev`.
@@ -56,6 +68,6 @@ Separate Vercel project (third customer-facing app; fourth in the monorepo):
 | Production Branch | `master` |
 | Build | `cd ../.. && npm run build -w customer-web` if default fails |
 
-Sync **only app env vars** from Infisical — not the full web secret set.
+Sync **only app env vars** from Infisical — not the full web secret set. Include customer Clerk keys when `NEXT_PUBLIC_AUTH_ENABLED=true`.
 
 Domains: `app.admobihq.com` (prod), `app.staging.admobihq.com` (`staging` branch).

@@ -17,9 +17,9 @@ npm run dev -w customer-mobile        # Metro on port 8082
 npm run dev:clear -w customer-mobile  # same, clears Metro cache
 ```
 
-Or with the rest of the stack: `npm run dev:all` (starts ops `ops-mobile` and `customer-mobile`).
+Or with the rest of the stack: `npm run dev:all` (starts ops-mobile, customer-mobile, and driver-mobile).
 
-Metro for this app listens on **port 8082** (ops mobile uses **8081**) so `npm run dev:all` can run both. Dev scripts use `--host lan` so physical devices on the same Wi‑Fi can load the dev client (scan QR or open the network URL). If Expo CLI crashes on startup with `Body is unusable`, retry with `expo start --port 8082 --offline` (disables LAN).
+Metro for this app listens on **port 8082** (ops **8081**, driver **8083**) so `npm run dev:all` can run all three. Dev scripts use `--host lan` so physical devices on the same Wi‑Fi can load the dev client (scan QR or open the network URL). If Expo CLI crashes on startup with `Body is unusable`, retry with `expo start --port 8082 --offline` (disables LAN).
 
 ---
 
@@ -36,9 +36,9 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 | Variable | Required | Notes |
 |----------|----------|--------|
 | `EXPO_PUBLIC_APP_URL` | Optional | Web customer origin (`http://localhost:3002`) |
-| `EXPO_PUBLIC_API_URL` | Optional | Business API for future product calls |
-
-No `CLERK_*` keys.
+| `EXPO_PUBLIC_API_URL` | Yes (for support, announcements, flags, push) | Business API |
+| `EXPO_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts — see [AUTH.md](../shared/AUTH.md) §4 |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Required when auth is enabled | Customer Clerk publishable key (mapped on `env:pull`) |
 
 ---
 
@@ -51,7 +51,7 @@ No `CLERK_*` keys.
 | Scheme | `admobihq-app` |
 | EAS slug | `admobihq-app` |
 
-`lib/auth/use-customer-session.ts` is a separate, anonymous-only session hook — not yet wired to the real Clerk sign-in state above, even though `ClerkProvider` is mounted. It generates and persists a random `anonymousDeviceId` (via `getOrCreateDeviceId()`) on first launch. This same ID backs both the support-case identity-token flow (see [API.md](../api/API.md#support-case-identity-token)) and push-token registration (`lib/push-registration.ts` sends it alongside the Expo push token), so a support case opened from a device can eventually be tied back to that device's push notifications.
+`lib/auth/use-customer-session.ts` still persists an `anonymousDeviceId` (via `getOrCreateDeviceId()`) for support-case identity tokens and push registration when Clerk is off or the user has not signed in. When `EXPO_PUBLIC_AUTH_ENABLED` is on, `<AuthGate>` uses the Clerk session for route protection; the anonymous device id remains the fallback identity for public support and push-token rows.
 
 ---
 

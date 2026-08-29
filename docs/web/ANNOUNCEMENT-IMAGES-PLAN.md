@@ -1,6 +1,10 @@
 # Announcement images — research findings & implementation plan
 
-Status: **planning, not yet implemented.** This document captures (1) the as-is research into how the announcement/broadcast feature works today, and (2) the proposed plan for adding image upload support to it, including a storage-provider comparison. Written before any schema/DB changes were applied.
+Status: **implemented** (2026). `broadcastCreateSchema` includes `image_url`; `POST /v1/notifications/broadcast-image` uploads to Vercel Blob; ops-mobile compose uses `expo-image-picker`; Prisma additive SQL is `npm run db:announcements-image -w web`. See [FEATURE-INVENTORY.md](../shared/FEATURE-INVENTORY.md) (Vercel Blob + announcements).
+
+The rest of this file is the original research/plan from before that work shipped. Treat it as historical context, not current-state.
+
+---
 
 ---
 

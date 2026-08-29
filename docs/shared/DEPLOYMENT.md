@@ -13,12 +13,12 @@ Five **separate Vercel projects** from one GitHub repo. Each project has its own
 | | **Web** | **API** | **Ops** | **App** | **Driver** |
 |---|---------|---------|---------|---------|------------|
 | **Repo path** | `apps/web` | `apps/api` | `apps/ops` | `apps/customer-web` | `apps/driver-web` |
-| **Purpose** | Marketing site + Payload CMS | Business REST API (`/v1`) | Internal admin UI | Customer product (scaffold) | Driver product (scaffold) |
+| **Purpose** | Marketing site + Payload CMS | Business REST API (`/v1`) | Internal admin UI | Advertiser product | Driver product |
 | **Production** | [admobihq.com](https://admobihq.com) | [api.admobihq.com](https://api.admobihq.com) | [ops.admobihq.com](https://ops.admobihq.com) | [app.admobihq.com](https://app.admobihq.com) | [driver.admobihq.com](https://driver.admobihq.com) |
 | **Staging** (`staging` branch) | staging.admobihq.com | api.staging.admobihq.com | ops.staging.admobihq.com | app.staging.admobihq.com | driver.staging.admobihq.com |
 | **Local port** | `:3000` | `:3003` | `:3001` | `:3002` | `:3004` |
-| **Auth** | Payload at `/admin` | Clerk on `/v1/*` (admin); public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, `/auth/login`) | Clerk (own instance, `/auth/login`) |
-| **Database** | Prisma + Payload (owner) | Prisma (shared) | — (UI calls API) | None yet | None yet |
+| **Auth** | Payload at `/admin` | Ops JWT on `/v1/*`; customer/driver JWTs on `/v1/customer/*` and `/v1/driver/*`; public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, flag-gated) | Clerk (own instance, flag-gated) |
+| **Database** | Prisma + Payload (owner) | Prisma (shared) | Prisma read (server stats); CRUD via API | None (calls API) | None (calls API) |
 | **Build** | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` |
 
 **Branch → deploy:** push to `staging` → preview/staging domains on all five projects; merge to `master` → production domains.
@@ -100,6 +100,11 @@ Infisical holds **all** keys below. Each Vercel project only needs **its row** �
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | — | ✓ | ✓ | — | — | API + ops; **redeploy after change** |
 | `CLERK_SECRET_KEY` | — | ✓ | ✓ | — | — | API + ops |
 | `API_CORS_ORIGINS` | — | ✓ | — | — | — | Cross-origin callers (web, ops, app, driver, Expo) |
+| `CUSTOMER_CLERK_SECRET_KEY` | — | ✓ | — | ✓ (when auth on) | — | Customer instance: API `/v1/customer/*` + customer-web middleware |
+| `DRIVER_CLERK_SECRET_KEY` | — | ✓ | — | — | ✓ (when auth on) | Driver instance: API `/v1/driver/*` + driver-web middleware |
+| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` | — | — | — | ✓ (when auth on) | — | Customer web Clerk |
+| `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` | — | — | — | — | ✓ (when auth on) | Driver web Clerk |
+| `CLERK_ENCRYPTION_KEY` | — | — | — | ✓ (when auth on) | ✓ (when auth on) | Required for dynamic Clerk keys |
 | `BLOB_READ_WRITE_TOKEN` | ✓ | — | — | — | — | Payload media uploads |
 | `RESEND_*`, `REDIS_URL`, etc. | — | ✓ | — | — | — | Public form emails (see DEV-SETUP) |
 
@@ -119,7 +124,7 @@ Suggested project names (yours may differ): **Admobi Web**, **Admobi API**, **Ad
 |---------|--------|
 | Root Directory | `apps/web` |
 | Framework | Next.js |
-| Node.js | 20.x |
+| Node.js | 22.x |
 | Include files outside root | **Enabled** |
 | Production Branch | `master` |
 | Build Command | Default, or `cd ../.. && npm run build -w web` |
@@ -156,7 +161,7 @@ After first prod deploy: run Payload migrate + seed once if CMS is empty ([BLOG-
 - Production: `api.admobihq.com`
 - Staging: `api.staging.admobihq.com` → **`staging` branch**
 
-**API env vars:** `DATABASE_URL`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `NEXT_PUBLIC_API_URL`, `API_CORS_ORIGINS`, `resend_api_key`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `REDIS_URL`, `CRON_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+**API env vars:** `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `DRIVER_CLERK_SECRET_KEY`, `NEXT_PUBLIC_API_URL`, `API_CORS_ORIGINS`, `resend_api_key`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `REDIS_URL`, `CRON_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 
 `CRON_SECRET` gates the Vercel Cron push-receipts sweep and system-triggered broadcasts (see [API.md](../api/API.md#service-to-service-auth)). `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` back rate limiting on public routes — the API **fails open** (no throttling, not a 500) if either is unset, so it's safe to deploy without them, just not safe to stay that way in production. See [API.md](../api/API.md#rate-limiting).
 
@@ -194,7 +199,7 @@ Ops is UI-only; CRUD calls go to `NEXT_PUBLIC_API_URL/v1/*`.
 - Production: `app.admobihq.com`
 - Staging: `app.staging.admobihq.com` → **`staging` branch**
 
-**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_API_URL` (optional cross-links). No auth secrets required until the product login phase.
+**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_API_URL`. When auth is on: `NEXT_PUBLIC_AUTH_ENABLED=true`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
 
 Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-app" }`.
 
@@ -212,7 +217,7 @@ Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admob
 - Production: `driver.admobihq.com`
 - Staging: `driver.staging.admobihq.com` → **`staging` branch**
 
-**Driver env vars:** `NEXT_PUBLIC_DRIVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`. No auth secrets required until the driver login phase (see [DRIVER-APP.md](../driver/DRIVER-APP.md)).
+**Driver env vars:** `NEXT_PUBLIC_DRIVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`. When auth is on: `NEXT_PUBLIC_AUTH_ENABLED=true`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
 
 Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-driver" }`.
 
@@ -313,7 +318,7 @@ Mobile apps (Android APK) are **not** deployed on Vercel — they use **EAS Buil
 
 ## Mobile distribution (EAS)
 
-Android APKs for ops and customer Expo apps are built and distributed via **Expo Application Services (EAS)**, not Vercel.
+Android APKs for the three Expo apps (ops, customer, driver) are built and distributed via **Expo Application Services (EAS)**, not Vercel.
 
 | App | Folder | EAS slug | Android package |
 |-----|--------|----------|-----------------|
@@ -392,7 +397,8 @@ First Android build generates a **keystore stored on Expo** (remote credentials)
 ### App production
 
 - [ ] Sidebar shell loads at `app.admobihq.com`
-- [ ] Routes `/`, `/campaigns`, `/reports`, `/settings` show coming-soon states
+- [ ] Overview, Campaigns, Map, Settings load; `/reports` is still Coming soon
+- [ ] `/deliveries` redirects to `/` while the `deliveries` platform flag is off
 - [ ] `GET /api/health` returns `{ ok: true }`
 
 ### Driver production
@@ -409,7 +415,7 @@ After a new EAS preview build or OTA update:
 
 - [ ] Ops APK installs and Clerk sign-in works against production/staging API
 - [ ] Customer APK installs and opens without Metro
-- [ ] Driver APK installs and opens without Metro (requires `eas init` — see [DRIVER-APP.md](../driver/DRIVER-APP.md))
+- [ ] Driver APK installs and opens without Metro
 - [ ] Admobi splash and launcher icon show correctly (not Expo Go defaults)
 - [ ] OTA: push `eas update --channel preview`, reopen app, change is visible
 
@@ -439,7 +445,7 @@ Use this when going live:
   - `npm run db:platform-flags -w web`
   - `npm run db:driver-push-and-targeting -w web`
 - [ ] **GitHub:** Clerk + URL secrets added for CI
-- [ ] **Expo / EAS:** Logged in; all three mobile projects linked (`admobihq-ops`, `admobihq-app`, `admobihq-driver` — driver needs `eas init` first, see [DRIVER-APP.md](../driver/DRIVER-APP.md)); preview APKs built for team testing
+- [ ] **Expo / EAS:** Logged in; all three mobile projects linked (`admobihq-ops`, `admobihq-app`, `admobihq-driver`); preview APKs built for team testing
 
 ---
 
