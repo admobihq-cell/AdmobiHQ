@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Calendar, MapPin, Plus } from "lucide-react"
+import { CalendarDays, MapPin, Plus } from "lucide-react"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import { NewCampaignForm } from "@/components/campaigns/new-campaign-form"
@@ -48,15 +48,23 @@ export function CampaignsView() {
 
   return (
     <div className="relative flex flex-1 flex-col gap-8 pb-20">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-          Workspace
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">Campaigns</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Create, schedule, and monitor out-of-home flights. Campaigns you create here are saved
-          on this device.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            Workspace
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">Campaigns</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Create, schedule, and monitor out-of-home flights. Campaigns you create here are saved
+            on this device.
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/calendar">
+            <CalendarDays data-icon="inline-start" />
+            Calendar
+          </Link>
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -94,7 +102,7 @@ export function CampaignsView() {
                     {campaign.market}
                   </p>
                   <p className="flex items-center gap-2">
-                    <Calendar className="size-3.5 shrink-0" />
+                    <CalendarDays className="size-3.5 shrink-0" />
                     {campaign.dates}
                   </p>
                 </div>

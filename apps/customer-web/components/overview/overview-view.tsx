@@ -1,5 +1,6 @@
 import Link from "next/link"
 import {
+  CalendarDays,
   Eye,
   Map,
   Megaphone,
@@ -56,6 +57,12 @@ export function OverviewView() {
             <Link href="/campaigns">
               <Megaphone className="size-4" />
               View campaigns
+            </Link>
+          </Button>
+          <Button variant="outline" className="h-11 gap-2" asChild>
+            <Link href="/calendar">
+              <CalendarDays className="size-4" />
+              Plan calendar
             </Link>
           </Button>
           <Button variant="outline" className="h-11 gap-2" asChild>
