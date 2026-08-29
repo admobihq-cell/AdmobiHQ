@@ -1,6 +1,6 @@
 type FlagRow = { key: string; enabled: boolean }
 
-const PUBLIC_CONFIG_TTL_MS = 60_000
+const PUBLIC_CONFIG_TTL_MS = 300_000
 
 let cache: { rows: FlagRow[]; expiresAt: number } | null = null
 

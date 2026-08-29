@@ -2,11 +2,12 @@ import type { Metadata } from "next"
 
 import { BlogIndex } from "@/components/blog/blog-index"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
-import { getBlogIndexData } from "@/lib/payload/blog-queries"
+import { getCachedBlogIndexData } from "@/lib/payload/blog-queries"
 import { isPayloadConfigured } from "@/lib/payload/help-queries"
+import { MARKETING_REVALIDATE_SECONDS } from "@/lib/seo/isr"
 import { blogPageMetadata } from "@/lib/seo/site"
 
-export const revalidate = 21600
+export const revalidate = MARKETING_REVALIDATE_SECONDS
 
 export const metadata: Metadata = blogPageMetadata({
   title: "Blog | taxi-top OOH insights & campaigns | Admobi Kenya",
@@ -16,7 +17,7 @@ export const metadata: Metadata = blogPageMetadata({
 
 export default async function BlogPage() {
   const data = isPayloadConfigured()
-    ? await getBlogIndexData().catch((error) => {
+    ? await getCachedBlogIndexData().catch((error) => {
         console.error("[blog] Failed to load posts:", error)
         return { posts: [] }
       })

@@ -1,5 +1,7 @@
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "payload"
+
+import { MARKETING_HELP_INDEX_TAG } from "@/lib/seo/isr"
 
 /**
  * ISR revalidation only works inside a Next.js server context (admin publish, etc.).
@@ -7,6 +9,7 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
  */
 function revalidateHelpPaths(slug?: string | null) {
   try {
+    revalidateTag(MARKETING_HELP_INDEX_TAG, "max")
     revalidatePath("/help")
     if (slug) {
       revalidatePath(`/help/${slug}`)

@@ -1,6 +1,10 @@
 import config from "@payload-config"
-import { getPayload } from "payload"
+import { getPayload, type Payload } from "payload"
 
-export async function getPayloadClient() {
-  return getPayload({ config })
+let payloadPromise: Promise<Payload> | undefined
+
+/** One Payload instance per Fluid isolate — avoid re-init + sharp on every RSC. */
+export function getPayloadClient() {
+  payloadPromise ??= getPayload({ config })
+  return payloadPromise
 }
