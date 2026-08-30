@@ -49,7 +49,7 @@ export function NotificationBell() {
   })
 
   const items = (query.data?.pages ?? [])
-    .flatMap((page) => page.items)
+    .flatMap((page) => page?.items ?? [])
     .slice(0, PEEK_LIMIT)
     .map(announcementToFeedItem)
   const unread = unreadCount(items)

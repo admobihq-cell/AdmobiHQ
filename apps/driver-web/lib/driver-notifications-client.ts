@@ -49,6 +49,14 @@ export type DriverAnnouncementPage = {
   next_cursor: number | null
 }
 
+/** Tolerates both the paginated `{ items, next_cursor }` shape and the older
+ * bare-array response, so web and API can roll out in either order. */
+function normalizePage<T>(raw: unknown): { items: T[]; next_cursor: number | null } {
+  if (Array.isArray(raw)) return { items: raw as T[], next_cursor: null }
+  const page = raw as { items?: T[]; next_cursor?: number | null } | null
+  return { items: page?.items ?? [], next_cursor: page?.next_cursor ?? null }
+}
+
 export async function fetchDriverNotifications(
   getToken: GetToken,
   options: { cursor?: number | null; limit?: number } = {},
@@ -57,7 +65,7 @@ export async function fetchDriverNotifications(
     getToken,
     `/v1/driver/notifications${pageQuery(options)}`,
   )
-  return res.json()
+  return normalizePage<DriverNotificationDto>(await res.json())
 }
 
 export async function markDriverNotificationsRead(
@@ -87,7 +95,7 @@ export async function fetchDriverAnnouncements(
     getToken,
     `/v1/driver/announcements${pageQuery(options)}`,
   )
-  return res.json()
+  return normalizePage<DriverAnnouncementDto>(await res.json())
 }
 
 export async function markDriverAnnouncementsRead(
