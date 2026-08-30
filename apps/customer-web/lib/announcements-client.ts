@@ -15,6 +15,8 @@ export type CustomerAnnouncementDto = {
 export type CustomerAnnouncementPage = {
   items: CustomerAnnouncementDto[]
   next_cursor: number | null
+  /** Total unread, independent of how many pages are loaded. */
+  unread_count: number
 }
 
 type GetToken = ReturnType<typeof useAuth>["getToken"]
@@ -41,12 +43,20 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
  * bare-array response, so web and API can roll out in either order. */
 function normalizePage(raw: unknown): CustomerAnnouncementPage {
   if (Array.isArray(raw)) {
-    return { items: raw as CustomerAnnouncementDto[], next_cursor: null }
+    const items = raw as CustomerAnnouncementDto[]
+    return {
+      items,
+      next_cursor: null,
+      unread_count: items.filter((item) => !item.read_at).length,
+    }
   }
   const page = raw as Partial<CustomerAnnouncementPage> | null
+  const items = page?.items ?? []
   return {
-    items: page?.items ?? [],
+    items,
     next_cursor: page?.next_cursor ?? null,
+    unread_count:
+      page?.unread_count ?? items.filter((item) => !item.read_at).length,
   }
 }
 

@@ -18,8 +18,6 @@ import {
   markDriverNotificationsRead,
   setDriverAnnouncementRead,
   setDriverNotificationRead,
-  type DriverAnnouncementPage,
-  type DriverNotificationPage,
 } from "@/lib/driver-notifications-client"
 import {
   announcementToFeedItem,
@@ -32,9 +30,18 @@ const LIFECYCLE_KEY = ["driver-notifications"] as const
 
 type Options = { limit?: number }
 
+/** Structural view both inbox page shapes satisfy — lets one patcher serve
+ * either cache without fighting the discriminated union. */
+type AnyInboxPage = {
+  items: Array<{ id: number; read_at: string | null }>
+  next_cursor: number | null
+  unread_count: number
+}
+
 /** Drives both the header bell and the /notifications page: two cursor-paginated
  * sources (announcements + application-lifecycle events) merged into one
- * newest-first feed, with optimistic read toggles that keep both caches honest. */
+ * newest-first feed, with optimistic read toggles that keep both caches — and
+ * the server-provided unread totals — honest. */
 export function useDriverNotifications({ limit = 25 }: Options = {}) {
   const { getToken } = useAuthIfEnabled()
   const queryClient = useQueryClient()
@@ -72,42 +79,36 @@ export function useDriverNotifications({ limit = 25 }: Options = {}) {
     )
   }, [announcementsQuery.data, lifecycleQuery.data])
 
-  function patchAnnouncement(id: number, read: boolean) {
-    const readAt = read ? new Date().toISOString() : null
-    queryClient.setQueryData<InfiniteData<DriverAnnouncementPage>>(
-      ANNOUNCEMENTS_KEY,
-      (data) =>
-        data
-          ? {
-              ...data,
-              pages: data.pages.map((page) => ({
-                ...page,
-                items: page.items.map((item) =>
-                  item.id === id ? { ...item, read_at: readAt } : item,
-                ),
-              })),
-            }
-          : data,
-    )
-  }
+  const unreadCount =
+    (announcementsQuery.data?.pages[0]?.unread_count ?? 0) +
+    (lifecycleQuery.data?.pages[0]?.unread_count ?? 0)
 
-  function patchLifecycle(id: number, read: boolean) {
+  function patch(
+    key: typeof ANNOUNCEMENTS_KEY | typeof LIFECYCLE_KEY,
+    target: "all" | number,
+    read: boolean,
+  ) {
     const readAt = read ? new Date().toISOString() : null
-    queryClient.setQueryData<InfiniteData<DriverNotificationPage>>(
-      LIFECYCLE_KEY,
-      (data) =>
-        data
-          ? {
-              ...data,
-              pages: data.pages.map((page) => ({
-                ...page,
-                items: page.items.map((item) =>
-                  item.id === id ? { ...item, read_at: readAt } : item,
-                ),
-              })),
-            }
-          : data,
-    )
+    queryClient.setQueryData<InfiniteData<AnyInboxPage>>(key, (data) => {
+      if (!data) return data
+      let delta = 0
+      const pages = data.pages.map((page) => ({
+        ...page,
+        items: page.items.map((item) => {
+          if (target !== "all" && item.id !== target) return item
+          if (read && !item.read_at) delta -= 1
+          if (!read && item.read_at) delta += 1
+          return { ...item, read_at: readAt }
+        }),
+      }))
+      const base = data.pages[0]?.unread_count ?? 0
+      const nextUnread =
+        target === "all" && read ? 0 : Math.max(0, base + delta)
+      return {
+        ...data,
+        pages: pages.map((page) => ({ ...page, unread_count: nextUnread })),
+      }
+    })
   }
 
   const setReadMutation = useMutation({
@@ -121,8 +122,11 @@ export function useDriverNotifications({ limit = 25 }: Options = {}) {
     onMutate: ({ feedId, read }) => {
       const parsed = parseFeedId(feedId)
       if (!parsed) return
-      if (parsed.source === "announcement") patchAnnouncement(parsed.id, read)
-      else patchLifecycle(parsed.id, read)
+      patch(
+        parsed.source === "announcement" ? ANNOUNCEMENTS_KEY : LIFECYCLE_KEY,
+        parsed.id,
+        read,
+      )
     },
   })
 
@@ -133,30 +137,8 @@ export function useDriverNotifications({ limit = 25 }: Options = {}) {
         markDriverNotificationsRead(getToken),
       ]).then(() => undefined),
     onMutate: () => {
-      const readAt = new Date().toISOString()
-      const markAll = <T extends DriverAnnouncementPage | DriverNotificationPage>(
-        data: InfiniteData<T> | undefined,
-      ) =>
-        data
-          ? {
-              ...data,
-              pages: data.pages.map((page) => ({
-                ...page,
-                items: page.items.map((item) => ({
-                  ...item,
-                  read_at: item.read_at ?? readAt,
-                })),
-              })),
-            }
-          : data
-      queryClient.setQueryData<InfiniteData<DriverAnnouncementPage>>(
-        ANNOUNCEMENTS_KEY,
-        markAll,
-      )
-      queryClient.setQueryData<InfiniteData<DriverNotificationPage>>(
-        LIFECYCLE_KEY,
-        markAll,
-      )
+      patch(ANNOUNCEMENTS_KEY, "all", true)
+      patch(LIFECYCLE_KEY, "all", true)
     },
   })
 
@@ -166,13 +148,17 @@ export function useDriverNotifications({ limit = 25 }: Options = {}) {
 
   return {
     items,
+    unreadCount,
     isPending: announcementsQuery.isPending || lifecycleQuery.isPending,
     isFetchingMore:
       announcementsQuery.isFetchingNextPage ||
       lifecycleQuery.isFetchingNextPage,
     hasMore,
     loadMore: () => {
-      if (announcementsQuery.hasNextPage && !announcementsQuery.isFetchingNextPage) {
+      if (
+        announcementsQuery.hasNextPage &&
+        !announcementsQuery.isFetchingNextPage
+      ) {
         void announcementsQuery.fetchNextPage()
       }
       if (lifecycleQuery.hasNextPage && !lifecycleQuery.isFetchingNextPage) {
