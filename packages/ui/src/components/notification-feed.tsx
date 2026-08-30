@@ -121,42 +121,23 @@ export function NotificationFeed({
     return [...seen.keys()].sort((a, b) => a.localeCompare(b))
   }, [items])
 
-  // A filter that no longer matches anything (e.g. its category paged out) falls back to All.
-  React.useEffect(() => {
-    if (
-      filter !== ALL &&
-      filter !== UNREAD &&
-      !categories.includes(filter)
-    ) {
-      setFilter(ALL)
-    }
-  }, [filter, categories])
+  // A filter whose category has since paged out just reads as "All" — derived,
+  // not stored, so there's no effect round-trip.
+  const activeFilter =
+    filter !== ALL && filter !== UNREAD && !categories.includes(filter)
+      ? ALL
+      : filter
 
   const visible = React.useMemo(() => {
-    if (filter === ALL) return items
-    if (filter === UNREAD) return items.filter((item) => !item.readAt)
-    return items.filter((item) => item.category === filter)
-  }, [items, filter])
+    if (activeFilter === ALL) return items
+    if (activeFilter === UNREAD) return items.filter((item) => !item.readAt)
+    return items.filter((item) => item.category === activeFilter)
+  }, [items, activeFilter])
 
   const groups = React.useMemo(
     () => groupNotificationsByDate(visible, now),
     [visible, now],
   )
-
-  // Track which ids we've already rendered so only genuinely new arrivals animate in.
-  const knownIds = React.useRef<Set<string> | null>(null)
-  const isFirstRender = knownIds.current === null
-  const freshIds = React.useMemo(() => {
-    const previous = knownIds.current ?? new Set<string>()
-    const fresh = new Set<string>()
-    if (!isFirstRender) {
-      for (const item of items) {
-        if (!previous.has(item.id)) fresh.add(item.id)
-      }
-    }
-    knownIds.current = new Set(items.map((item) => item.id))
-    return fresh
-  }, [items, isFirstRender])
 
   const sentinelRef = React.useRef<HTMLDivElement>(null)
   React.useEffect(() => {
@@ -243,12 +224,12 @@ export function NotificationFeed({
 
       <div className="flex flex-wrap items-center gap-1.5 border-b pb-3">
         <FilterChip
-          active={filter === ALL}
+          active={activeFilter === ALL}
           onClick={() => setFilter(ALL)}
           label="All"
         />
         <FilterChip
-          active={filter === UNREAD}
+          active={activeFilter === UNREAD}
           onClick={() => setFilter(UNREAD)}
           label="Unread"
           count={totalUnread}
@@ -259,7 +240,7 @@ export function NotificationFeed({
             {categories.map((category) => (
               <FilterChip
                 key={category}
-                active={filter === category}
+                active={activeFilter === category}
                 onClick={() => setFilter(category)}
                 label={category}
               />
@@ -300,7 +281,7 @@ export function NotificationFeed({
                         key={item.id}
                         layout={!reduceMotion}
                         variants={rowVariants}
-                        initial={freshIds.has(item.id) ? "hidden" : false}
+                        initial="hidden"
                         animate="shown"
                         data-notification-row
                         role="listitem"
@@ -333,7 +314,7 @@ export function NotificationFeed({
                         />
 
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- remote CDN thumbnail
+                          // Plain img: remote CDN thumbnail, no Next Image in this shared package.
                           <img
                             src={item.imageUrl}
                             alt=""
@@ -423,7 +404,7 @@ export function NotificationFeed({
             </div>
           ) : (
             <p className="py-6 text-center text-xs text-muted-foreground/70">
-              That's everything from the last while.
+              Nothing older to load.
             </p>
           )}
         </div>
