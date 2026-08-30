@@ -22,7 +22,7 @@ export function NotificationsView({
     <div className="flex flex-1 flex-col gap-6">
       <PageHero
         title="Notifications"
-        description="Driver applications, support cases, and announcements that need eyes — newest first. Marking one read clears it from your queue on this device."
+        description="New submissions and open review work — campaign leads, fleet and driver signups, waitlist and media-kit requests, support cases, and driver applications — newest first, filtered to your permissions. Marking one read clears it from your queue on this device."
       />
 
       <NotificationFeed
@@ -35,7 +35,7 @@ export function NotificationsView({
         onMarkUnread={(item) => notifications.markUnread(item.id)}
         onMarkAllRead={notifications.markAllRead}
         emptyTitle="Nothing needs attention"
-        emptyDescription="New driver applications, support cases, and announcements will show up here."
+        emptyDescription="New leads, signups, requests, support cases, and driver applications will show up here."
       />
     </div>
   )

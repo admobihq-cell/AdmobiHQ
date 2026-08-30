@@ -192,9 +192,17 @@ export function OpsShell({
   }
   const canSeeNotifications =
     role === "admin" ||
-    (["driver_applications", "support", "announcements"] as OpsPermission[]).some(
-      (permission) => permissions.includes(permission),
-    )
+    (
+      [
+        "driver_applications",
+        "support",
+        "leads",
+        "fleet",
+        "drivers",
+        "waitlist",
+        "media_kit",
+      ] as OpsPermission[]
+    ).some((permission) => permissions.includes(permission))
   const visibleNavItems = navItems.filter(
     (item) =>
       canSee(item) && (item.href !== "/notifications" || canSeeNotifications),
