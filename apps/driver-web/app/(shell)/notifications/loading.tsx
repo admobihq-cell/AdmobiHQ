@@ -8,7 +8,7 @@ export default function NotificationsLoading() {
         <Skeleton className="h-4 w-full max-w-md" />
       </div>
 
-      <div className="max-w-2xl space-y-4">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-7 w-32" />
