@@ -346,13 +346,13 @@ export function NotificationFeed({
                             <time
                               dateTime={item.createdAt}
                               title={formatAbsoluteTime(item.createdAt)}
-                              className="shrink-0 text-xs text-muted-foreground tabular-nums"
+                              className="shrink-0 text-xs text-muted-foreground tabular-nums transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
                             >
                               {formatRelativeTime(item.createdAt, now)}
                             </time>
                           </div>
                           {item.body ? (
-                            <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+                            <p className="mt-0.5 line-clamp-2 max-w-2xl text-sm text-muted-foreground">
                               {item.body}
                             </p>
                           ) : null}
