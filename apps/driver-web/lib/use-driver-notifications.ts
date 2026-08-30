@@ -61,10 +61,10 @@ export function useDriverNotifications({ limit = 25 }: Options = {}) {
 
   const items = useMemo<NotificationFeedItem[]>(() => {
     const announcements = (announcementsQuery.data?.pages ?? [])
-      .flatMap((page) => page.items)
+      .flatMap((page) => page?.items ?? [])
       .map(announcementToFeedItem)
     const lifecycle = (lifecycleQuery.data?.pages ?? [])
-      .flatMap((page) => page.items)
+      .flatMap((page) => page?.items ?? [])
       .map(lifecycleToFeedItem)
     return [...announcements, ...lifecycle].sort(
       (a, b) =>

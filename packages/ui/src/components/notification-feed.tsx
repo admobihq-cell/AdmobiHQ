@@ -87,7 +87,7 @@ const ALL: FilterId = "__all__"
 const UNREAD: FilterId = "__unread__"
 
 export function NotificationFeed({
-  items,
+  items: rawItems,
   isLoading = false,
   isFetchingMore = false,
   hasMore = false,
@@ -105,6 +105,12 @@ export function NotificationFeed({
   const [filter, setFilter] = React.useState<FilterId>(ALL)
   const listRef = React.useRef<HTMLDivElement>(null)
 
+  // Defensive: a mid-rollout API can hand back a stale shape; never let a
+  // nullish row reach the render.
+  const items = React.useMemo(
+    () => rawItems.filter((item): item is NotificationFeedItem => Boolean(item?.id)),
+    [rawItems],
+  )
   const totalUnread = unreadCount(items)
 
   const categories = React.useMemo(() => {
