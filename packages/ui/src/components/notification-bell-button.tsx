@@ -68,17 +68,11 @@ export const NotificationBellButton = React.forwardRef<
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         key={bump}
       >
-        <Bell
-          aria-hidden
-          className={cn(
-            "size-5 transition-colors",
-            hasUnread && "text-primary",
-          )}
-        />
+        <Bell aria-hidden className="size-5" />
         {hasUnread ? (
           <span
             aria-hidden
-            className="absolute inset-0 -z-10 m-auto size-7 rounded-full bg-primary/10"
+            className="absolute inset-0 -z-10 m-auto size-7 rounded-full bg-destructive/10"
           />
         ) : null}
       </motion.span>
@@ -100,8 +94,8 @@ export const NotificationBellButton = React.forwardRef<
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
               "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center",
-              "rounded-full border-2 border-background bg-primary px-1",
-              "text-[10px] leading-none font-semibold tabular-nums text-primary-foreground",
+              "rounded-full border-2 border-background bg-destructive px-1",
+              "text-[10px] leading-none font-semibold tabular-nums text-white",
             )}
           >
             {display}

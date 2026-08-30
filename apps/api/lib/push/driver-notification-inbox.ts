@@ -8,6 +8,8 @@ const PAGE_LIMIT_MAX = 50
 export type DriverNotificationInboxPage = {
   items: DriverNotificationDto[]
   next_cursor: number | null
+  /** Total unread lifecycle notifications, independent of pagination. */
+  unread_count: number
 }
 
 const NOTIFICATION_SELECT = {
@@ -47,13 +49,18 @@ export async function listDriverNotificationsPage(
     Math.max(1, options.limit ?? PAGE_LIMIT_DEFAULT),
   )
 
-  const rows = await prisma.driverNotification.findMany({
-    where: { clerk_user_id: clerkUserId },
-    orderBy: [{ created_at: "desc" }, { id: "desc" }],
-    take: limit + 1,
-    ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
-    select: NOTIFICATION_SELECT,
-  })
+  const [rows, unread_count] = await Promise.all([
+    prisma.driverNotification.findMany({
+      where: { clerk_user_id: clerkUserId },
+      orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      select: NOTIFICATION_SELECT,
+    }),
+    prisma.driverNotification.count({
+      where: { clerk_user_id: clerkUserId, read_at: null },
+    }),
+  ])
 
   const hasMore = rows.length > limit
   const page = hasMore ? rows.slice(0, limit) : rows
@@ -61,6 +68,7 @@ export async function listDriverNotificationsPage(
   return {
     items: page.map(toDto),
     next_cursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+    unread_count,
   }
 }
 
