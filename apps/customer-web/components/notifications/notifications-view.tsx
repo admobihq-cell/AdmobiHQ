@@ -42,7 +42,7 @@ export function NotificationsView() {
   const items = useMemo<NotificationFeedItem[]>(
     () =>
       (query.data?.pages ?? [])
-        .flatMap((page) => page.items)
+        .flatMap((page) => page?.items ?? [])
         .map(announcementToFeedItem),
     [query.data],
   )
