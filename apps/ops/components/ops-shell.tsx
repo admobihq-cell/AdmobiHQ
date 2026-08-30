@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
+  Bell,
   Car,
   FileCheck2,
   FileText,
@@ -63,6 +64,7 @@ const navItems: Array<{
   permission?: OpsPermission
 }> = [
   { href: "/home", label: "Home", icon: Home },
+  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/overview", label: "Overview", icon: BarChart3 },
   { href: "/map", label: "Map", icon: Map },
   {
@@ -188,9 +190,16 @@ export function OpsShell({
       return role === "admin" || permissions.includes(item.permission)
     return true
   }
-  const visibleNavItems = navItems.filter(canSee)
+  const canSeeNotifications =
+    role === "admin" ||
+    (["driver_applications", "support", "announcements"] as OpsPermission[]).some(
+      (permission) => permissions.includes(permission),
+    )
+  const visibleNavItems = navItems.filter(
+    (item) =>
+      canSee(item) && (item.href !== "/notifications" || canSeeNotifications),
+  )
   const visibleSecondaryItems = secondaryItems.filter(canSee)
-  const canSeeDriverApplications = canSee({ permission: "driver_applications" })
 
   return (
     <TourProvider app="ops" userId={userId} chapters={opsTourChapters}>
@@ -289,7 +298,9 @@ export function OpsShell({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <OpsBreadcrumbs pathname={pathname} />
             <div className="ml-auto flex items-center gap-1">
-              {canSeeDriverApplications ? <NotificationBell /> : null}
+              {canSeeNotifications ? (
+                <NotificationBell role={role} permissions={permissions} />
+              ) : null}
               <ThemeToggle />
             </div>
           </header>
