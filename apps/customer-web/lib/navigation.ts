@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bell,
   CalendarDays,
   HelpCircle,
   LayoutDashboard,
@@ -57,6 +58,12 @@ export const appNavItems: AppNavItem[] = [
     label: "Reports",
     icon: BarChart3,
     description: "Performance metrics and delivery reports will live here.",
+  },
+  {
+    href: "/notifications",
+    label: "Notifications",
+    icon: Bell,
+    description: "Announcements and account updates from the Admobi team.",
   },
   {
     href: "/deliveries",

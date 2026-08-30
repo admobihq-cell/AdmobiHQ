@@ -1,4 +1,5 @@
 import {
+  Bell,
   HelpCircle,
   LayoutDashboard,
   Package,
@@ -41,6 +42,12 @@ export const driverNavItems: DriverNavItem[] = [
     label: "Payouts",
     icon: Package,
     description: "Pending and settled payouts will be tracked here.",
+  },
+  {
+    href: "/notifications",
+    label: "Notifications",
+    icon: Bell,
+    description: "Application updates and announcements from the Admobi team.",
   },
   {
     href: "/deliveries",
