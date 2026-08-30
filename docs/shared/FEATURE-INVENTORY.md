@@ -2,17 +2,17 @@
 
 A reproducible, engineer-facing reference for everything the monorepo actually contains: every route/screen per app, every third-party integration wired in, the data model, and the architectural decisions behind them — with file citations throughout. Built so a second engineer can independently re-derive the LOC figures and effort estimate in [AUDIT-VALUATION.md](./AUDIT-VALUATION.md) rather than take them on faith.
 
-Compiled by direct repository inspection on 2026-08-27; living-doc corrections 2026-08-29. All paths are relative to the repo root.
+Compiled by direct repository inspection on 2026-08-27; living-doc corrections 2026-08-29; LOC and surface counts re-derived 2026-08-30 (after `graphify-out/` left version control and a week of feature work — campaign calendar, cross-app notifications system, per-item read APIs, ops home header). All paths are relative to the repo root.
 
 ---
 
 ## 0. How to reproduce the LOC numbers
 
 ```bash
-git ls-files                      # 2,187 tracked files, 3,022,965 lines total
+git ls-files                      # 1,964 tracked files, 422,259 lines total (2026-08-30)
 ```
 
-The headline 3.02M-line total is dominated by non-code artifacts — see [AUDIT-VALUATION.md §1](./AUDIT-VALUATION.md#1-architectural-overview--lines-of-code) for the full breakdown of what to exclude (`graphify-out/`, `.agents/`/`.claude/` tooling, `package-lock.json`). After excluding those, plus native `android/`/`ios/` Expo build directories, `node_modules`, and generated files, real hand-written TS/TSX/JS across `apps/*` and `packages/*` totals **94,424 lines**. Any recount should exclude the same categories to land on a comparable number; a rough eyeball pass that doesn't exclude native mobile directories will land closer to ~120K.
+`graphify-out/` (previously ~2.5M lines, 83% of the tracked repo) is now gitignored, so the headline dropped from the 3.02M / 2,187 recorded on 2026-08-27. What remains still isn't all code — see [AUDIT-VALUATION.md §1](./AUDIT-VALUATION.md#1-architectural-overview--lines-of-code) for the exclusions (`package-lock.json` ≈ 37K lines, `.agents/`/`.claude/` skill markdown ≈ 16K, docs ≈ 29K, the generated `apps/web/public/app-demo/` Expo export). After excluding those, plus native `android/`/`ios/` Expo build directories, `node_modules`, tests, and `.d.ts`, real hand-written TS/TSX/JS across `apps/*`, `packages/*`, `scripts/`, and repo-root tooling totals **96,053 lines**. Any recount should exclude the same categories to land on a comparable number.
 
 ---
 
@@ -48,7 +48,7 @@ Collections (`apps/web/collections/`): **BlogPosts**, **HelpArticles**, **HelpCa
 
 ### 1.2 `apps/api` — business API (route handlers only, no UI)
 
-**65 route handlers** under `/v1/`, grouped by resource:
+**68 route handlers** under `/v1/`, grouped by resource:
 
 | Resource | Routes | Notes |
 |---|---|---|
@@ -61,40 +61,45 @@ Collections (`apps/web/collections/`): **BlogPosts**, **HelpArticles**, **HelpCa
 | Waitlist | `waitlist`, `[id]`, `bulk`, `public/waitlist` | Full CRUD + public signup (upsert by email) |
 | Media kit | `media-kit`, `[id]`, `bulk`, `public/media-kit` | Full CRUD + public intake |
 | Support | `support`, `[id]`, `[id]/messages`, `public/support`, `public/support/[id]`, `public/support/[id]/messages` | Ops inbox + token-authenticated public case access |
-| Announcements/push | `notifications`, `[id]`, `broadcast`, `broadcast-image`, `public/announcements`, `customer/announcements(+read)`, `customer/mobile-announcements(+read)`, `driver/announcements(+read)`, `driver/mobile-announcements(+read)` | Broadcast compose + 4 separate per-surface inboxes |
+| Announcements/push | `notifications`, `[id]`, `broadcast`, `broadcast-image`, `public/announcements`, `customer/announcements(+[id] read/unread, +read)`, `customer/mobile-announcements(+read)`, `driver/announcements(+[id], +read)`, `driver/notifications(+[id], +read)`, `driver/mobile-announcements(+read)` | Broadcast compose + per-surface inboxes; the web inboxes are cursor-paginated with `unread_count` and per-item read/unread |
 | Push tokens/receipts | `push-tokens`, `public/push-tokens`, `public/driver-push-tokens`, `push-receipts/check` | Expo token registration + cron-gated receipt reconciliation |
 | Team / roles | `team`, `team/[userId]`, `team/invitations/[invitationId]`, `roles`, `roles/[roleId]` | Clerk-backed staff management, custom RBAC |
 | Public config | `public/config` | Unauthenticated flag poll; 5 min in-memory + `s-maxage=300`; rate-limit only on cache miss |
 
 ### 1.3 `apps/ops` — internal operations console
 
-**27 pages.** Sign-in/sign-up (Clerk), then a dashboard shell: Home, Overview (stats + quick links), Map, Leads, Fleet, Drivers, Waitlist, Media Kit, Driver Applications (+ detail/review), Announcements, Support (+ thread detail), Finances, Activity (audit feed), Content (links to Payload admin), Team, Team Roles, Users → Customers, Users → Admins, Settings → Flags (feature-flag toggle UI), Settings → Tour (product-tour replay).
+**27 pages.** Sign-in/sign-up (Clerk), then a dashboard shell: Home, Overview (stats + quick links), Map, Leads, Fleet, Drivers, Waitlist, Media Kit, Driver Applications (+ detail/review), Announcements, Support (+ thread detail), Finances, Activity (audit feed), Content (links to Payload admin), Team, Team Roles, Users → Customers, Users → Admins, Settings → Flags (feature-flag toggle UI), Settings → Tour (product-tour replay), and **Notifications** — a permission-filtered "attention queue" that aggregates open review work (submitted driver applications, live support cases) and new public-form submissions (campaign/fleet/driver leads, waitlist, media-kit) client-side from existing ops-API endpoints, with a per-browser "triaged" flag; the header bell shares it. Not linked in the sidebar — the route just exists.
 
 Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by design** — it holds no data of its own; every CRUD action calls `apps/api`.
 
 ### 1.4 `apps/customer-web` — advertiser web console
 
-**18 pages** — same auth patterns as driver-web. Campaign UIs are fixture-backed; Reports is the remaining Coming-soon page:
+**21 pages** — same auth patterns as driver-web. Campaign UIs are fixture-backed; Reports is the remaining Coming-soon page:
 
 | Route | Status |
 |---|---|
 | `/`, `/campaigns`, `/campaigns/[id]`, `/map` | **UI real, fixture-backed** — overview and campaign list/detail/create use local demo data (`getCampaigns()`), not Prisma; Map uses `@workspace/geo` |
+| `/calendar` | **Real, fixture-backed** — FullCalendar month/week/day planner; drag to reschedule a flight, drag a range to plan one; planning persists to `localStorage` |
+| `/notifications` | **Real** — dedicated announcements/updates feed backed by `AnnouncementDelivery`; cursor-paginated, date-grouped, filterable, per-item read/unread; the header bell is a peek onto the same data |
 | `/deliveries`, `/deliveries/[id]` | **Real, feature-flag gated** — redirects to `/` unless the `deliveries` platform flag is on |
 | `/reports` | **Placeholder** — generic `ComingSoon` component, not implemented |
 | `/settings/billing` | **Real** — wallet/billing view |
 | `/settings/support`, `/settings/support/[id]` | **Real** — support case list + thread |
-| `/settings/account`, `/settings/notifications`, `/settings/tour` | **Real** |
+| `/settings/account`, `/settings/notifications` (preferences), `/settings/tour` | **Real** |
 | `/auth/login`, `/auth/login/advertiser`, `/auth/signup`, `/auth/signup/advertiser`, `/auth/sso-callback/advertiser` | Clerk auth flow (own instance) |
+
+`/notifications` is a reachable route but deliberately not a sidebar link (entered from the header bell); `/calendar` is in the sidebar.
 
 ### 1.5 `apps/driver-web` — driver web console
 
-**15 pages**, same shell pattern as customer-web:
+**16 pages**, same shell pattern as customer-web:
 
 | Route | Status |
 |---|---|
 | `/` (dashboard) | **Real** |
 | `/deliveries` | **Real, feature-flag gated** |
 | `/earnings`, `/routes` | **Real** |
+| `/notifications` | **Real** — merges application-lifecycle events (`DriverNotification`) and announcements into one cursor-paginated feed; header bell shares it. Not a sidebar link |
 | `/payouts` | **Placeholder** — `ComingSoon`, "ops settles earnings manually" |
 | `/settings/profile`, `/settings/account`, `/settings/preferences`, `/settings/tour` | **Real** |
 | `/settings/support`, `/settings/support/[id]` | **Real** |
@@ -113,14 +118,14 @@ Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by de
 | App | Routes/pages/screens | Real / gated / placeholder |
 |---|---:|---|
 | `apps/web` | 18 pages + 2 API + 5 collections | All real |
-| `apps/api` | 65 route handlers | All real |
+| `apps/api` | 68 route handlers | All real |
 | `apps/ops` | 27 pages | All real (UI-only by design) |
-| `apps/customer-web` | 18 pages | 15 real, 2 flag-gated, 1 placeholder |
-| `apps/driver-web` | 15 pages | 12 real, 1 flag-gated, 1 placeholder |
+| `apps/customer-web` | 21 pages | 18 real, 2 flag-gated, 1 placeholder |
+| `apps/driver-web` | 16 pages | 13 real, 1 flag-gated, 1 placeholder |
 | `apps/ops-mobile` | 56 screens | All real |
 | `apps/customer-mobile` | 20 screens | All real |
 | `apps/driver-mobile` | 19 screens | 17 real (1 flag-gated), 1 placeholder |
-| **Total** | **~249 distinct surfaces** | |
+| **Total** | **~253 distinct surfaces** | |
 
 ---
 
@@ -214,14 +219,14 @@ TanStack Query v5 (`@tanstack/react-query ^5.101.4`), react-hook-form v7 + `@hoo
 - **Dual ORM on one Postgres instance, additive-only.** Prisma owns business data, Payload owns editorial content, tables are name-disjoint, and the team's own docs carry an explicit warning against `db push` on the shared database.
 - **Rate limiting fails open.** Missing Upstash credentials silently disable throttling rather than erroring — correct for local dev, a real production risk if forgotten during a Vercel env migration.
 - **`packages/mobile-ui` is an empty scaffold** — no source code exists despite the name. The three Expo apps currently style themselves independently.
-- **Test coverage is still thin** — Vitest for `packages/geo` and `packages/ops-contracts`, Playwright marketing smoke, plus script tests for `vercel-ignore-build` and bot-probe paths. Product surfaces (`ops`, `api` handlers, customer/driver apps) remain largely untested. See [AUDIT-VALUATION.md §4](./AUDIT-VALUATION.md#4-devops-deployment--production-hygiene).
+- **Test coverage is still thin** — 6 test files / 337 lines: Vitest for `packages/geo` and `packages/ops-contracts`, Playwright marketing smoke, plus script tests for `vercel-ignore-build`, bot-probe paths, and database-URL resolution. Product surfaces (`ops`, `api` handlers, customer/driver apps) remain largely untested. See [AUDIT-VALUATION.md §4](./AUDIT-VALUATION.md#4-devops-deployment--production-hygiene).
 - **CI builds and gates; it does not deploy.** The Vercel deploy step in `master.yml` is written but commented out — production deploys ride on Vercel's Git integration, not the GitHub Actions pipeline.
 
 ---
 
 ## 5. How this maps to the valuation
 
-[AUDIT-VALUATION.md](./AUDIT-VALUATION.md) derives its hours estimate from the 94,424-line total in §0 above, at a stated blended throughput of 15 lines/hour. To re-derive independently: take the per-app LOC breakdown in [AUDIT-VALUATION.md §1](./AUDIT-VALUATION.md#1-architectural-overview--lines-of-code) (or re-run the `git ls-files` methodology yourself), apply your own hourly rate and throughput assumption, and layer in the two percentage premiums and two flat capitalizations from the ledger. The route/screen counts and real-vs-placeholder status in §1 above are what should inform any per-app weighting — an app with 3 of its 15 pages still placeholder should not be priced as if it were fully built out.
+[AUDIT-VALUATION.md](./AUDIT-VALUATION.md) derives its hours estimate from the 96,053-line total in §0 above, at a stated blended throughput of 15 lines/hour. To re-derive independently: take the per-app LOC breakdown in [AUDIT-VALUATION.md §1](./AUDIT-VALUATION.md#1-architectural-overview--lines-of-code) (or re-run the `git ls-files` methodology yourself), apply your own hourly rate and throughput assumption, and layer in the two percentage premiums and two flat capitalizations from the ledger. The route/screen counts and real-vs-placeholder status in §1 above are what should inform any per-app weighting — an app with 3 of its 15 pages still placeholder should not be priced as if it were fully built out.
 
 ---
 
@@ -248,7 +253,7 @@ A third-party agency quoted a phased build of a comparable taxi-top/OOH advertis
 | Client registration, dashboard | ✅✅ Far exceeded — `customer-web`/`customer-mobile` full dashboards (campaigns, map, billing, support), not a single portal page |
 | Campaign status tracking (Pending/Approved/Live/Completed) | ✅ Built — status badges/filters confirmed in `customer-mobile` campaign screens |
 | Online booking | ⚠️ Partial — `campaigns/new` on `customer-mobile`; `customer-web` has list/detail plus `new-campaign-form.tsx`, all local demo data (no API persist) |
-| Campaign calendar | ❌ **Missing** — no dedicated calendar view found |
+| Campaign calendar | ✅ Built — `customer-web` `/calendar`: FullCalendar month/week/day/agenda planner with drag-to-reschedule and drag-a-range-to-plan; still `localStorage`-backed, not API-persisted |
 | Invoice generation | ❌ **Missing** — no invoicing logic found; a billing/wallet *view* exists but doesn't generate invoices |
 | Payment confirmation | ❌ **Missing** — follows from no payment gateway existing yet |
 
@@ -295,7 +300,7 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 |---|---|---|
 | **Boundary schema validation** | Zod schemas validate the same shape on the client (`react-hook-form` + `@hookform/resolvers/zod`) and the server (route handlers) — one schema, not two hand-kept-in-sync copies | `@workspace/ops-contracts/src/schemas.ts`, consumed in both `apps/api/app/v1/**` and every form in `apps/web`/`apps/ops`/mobile |
 | **Soft deletion** | `deleted_at DateTime?` (nullable, indexed) on at least 6 models rather than hard `DELETE` — preserves audit history and supports recovery | `apps/web/prisma/schema.prisma:28,52,76,94,108,170` |
-| **Pagination** | Offset-style `page`/`pageSize` query params on every list endpoint, default page size 20 | `apps/api/app/v1/leads/route.ts:18` and equivalent across `fleet`, `drivers`, `waitlist`, `media-kit`, `support`, `team` list routes |
+| **Pagination** | Offset-style `page`/`pageSize` on the back-office list endpoints (default page size 20); cursor-style `?cursor=` + `next_cursor` on the web notification inboxes, which stream full history rather than a fixed window | `apps/api/app/v1/leads/route.ts:18` (offset); `apps/api/lib/push/announcement-inbox.ts`, `apps/api/lib/push/driver-notification-inbox.ts` (cursor) |
 | **Idempotent writes** | Waitlist signup upserts by email rather than inserting duplicates on repeat submission | `apps/api/app/v1/public/waitlist/route.ts` |
 | **Audit logging** | Single write path (`recordAuditEvent`) for every mutating action, explicitly designed to never block or fail the operation it's auditing | `apps/api/lib/audit.ts` |
 | **Rate limiting** | Sliding-window limiter keyed by client IP on every public, unauthenticated route; deliberately fails open (unthrottled) rather than failing the request when the backing store is unconfigured | `apps/api/lib/rate-limit.ts` |
@@ -320,6 +325,6 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 | **Centralized secrets management** | Infisical, 3 environments (dev/staging/prod) × 8 apps, pulled to `.env.local` per app rather than hand-copied | `docs/shared/DEPLOYMENT.md` §Infisical environments |
 | **CI gating** | Every PR runs install → `prisma generate` → typecheck → lint → build → unit tests → Playwright e2e before merge is allowed | `.github/workflows/pr.yml`, `.github/workflows/master.yml` |
 | **Schema migration discipline** | Additive-only convention enforced by team documentation (not by tooling) on a shared Postgres instance carrying two ORMs | `docs/shared/DATA-LAYER.md` §Migration rules |
-| **Automated testing** | Present, but still thin — 2 Vitest package files, 1 Playwright smoke spec, plus `npm run test:scripts` (ignore-build + bot probes). Product-route coverage is the real gap | See §4 above and `AUDIT-VALUATION.md` §4 |
+| **Automated testing** | Present, but still thin — 6 test files / 337 lines: 2 Vitest package specs, 1 Playwright marketing smoke spec, plus `npm run test:scripts` (ignore-build, bot probes, database-URL resolution). Product-route coverage is the real gap | See §4 above and `AUDIT-VALUATION.md` §4 |
 
 None of this list is unusual for a mature product — that's the point of including it. What's notable for a system at this stage is less any single pattern and more the *count* of them implemented consistently across 8 apps by one small team: RBAC, soft-delete, idempotency, audit logging, rate limiting, feature flags, signed-URL storage, and multi-layer caching are the kind of infrastructure many funded startups still lack a year into building, not scaffolding a vendor quote like §6's would typically include at any phase.
