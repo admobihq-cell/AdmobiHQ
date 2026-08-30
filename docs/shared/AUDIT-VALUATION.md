@@ -2,48 +2,52 @@
 
 Ground-truth architectural audit of the Admobi monorepo, compiled by direct repository inspection (`git ls-files`, package manifests, GitHub Actions, EAS/Vercel config) on 2026-08-27, followed by a reconstructive-cost valuation in Kenya Shillings (KES) for balance-sheet purposes.
 
-Deployment and caching facts in §4 (and the middleware count in §2) were updated 2026-08-29 to match current `vercel.json`, Fluid CPU mitigations, and marketing Edge probe middleware. Valuation line counts and the KES ledger are unchanged from the 2026-08-27 snapshot.
+Deployment and caching facts in §4 (and the middleware count in §2) were updated 2026-08-29 to match current `vercel.json`, Fluid CPU mitigations, and marketing Edge probe middleware.
 
-Also published as an interactive report: [Admobi Reconstruction Ledger](https://claude.ai/code/artifact/70be5f48-5458-46db-8e93-f181391cdc33).
+**Line counts, the workspace table, and the KES ledger were re-derived 2026-08-30** after `graphify-out/` was moved out of version control (it had been ~83% of the tracked repo) and after a week of feature work — the campaign calendar, the cross-app notifications system and dedicated `/notifications` pages, per-item read APIs, and the ops home header. Methodology is unchanged from the 2026-08-27 snapshot; `apps/web` is now measured with the generated `public/app-demo/` Expo web export fully excluded.
 
-**Headline numbers:** 94,424 real lines of code · 8 apps / 9 shared packages · 3 test files repo-wide · 22 Prisma models + 5 CMS collections · KES 49.9M point-estimate valuation (range KES 44.6M–65.9M).
+Also published as an interactive report: [Admobi Reconstruction Ledger](https://claude.ai/code/artifact/70be5f48-5458-46db-8e93-f181391cdc33) (reflects the 2026-08-27 figures; this document supersedes it).
+
+**Headline numbers:** 96,053 real lines of code · 8 apps / 9 shared packages · 6 test files repo-wide · 22 Prisma models + 5 CMS collections · KES 50.7M point-estimate valuation (range KES 45.3M–66.9M).
 
 ---
 
 ## 1. Architectural Overview & Lines of Code
 
-The repository carries **3,022,965** tracked lines across **2,187** files. That headline number is not a measure of engineering effort — most of it is not code the team wrote.
+The repository carries **422,259** tracked lines across **1,964** files (`git ls-files`, 2026-08-30). That number dropped from the 3,022,965 / 2,187 recorded on 2026-08-27 because `graphify-out/` — the cached output of a knowledge-graph tool, previously ~2.5M lines and 83% of the tracked repo, including a duplicate copy inside `apps/web/graphify-out/` — is now gitignored and untracked. Even at 422K, the headline is not a measure of engineering effort.
 
-> **Correction to the working figure.** 2,510,273 lines (83% of the repository) are `graphify-out/` — the cached output of a knowledge-graph tool run against this same codebase, including a second, duplicate copy committed inside `apps/web/graphify-out/graph.json` (129,840 lines on its own). A further ~145,000 lines sit in `.agents/` and `.claude/` — Claude Code agent-skill tooling, not product code — and 37,527 lines are the `package-lock.json` dependency manifest. None of this is custom engineering output, and none of it belongs in a reconstruction-cost estimate.
+> **What the 422K still includes that isn't product code.** 37,214 lines are the `package-lock.json` dependency manifest; ~16,400 lines are `.agents/` and `.claude/` Claude Code agent-skill markdown, not product code; ~29,400 lines are documentation; and `apps/web/public/app-demo/` is a generated Expo web export (~7,900 lines). None belongs in a reconstruction-cost estimate.
 
 Stripping generated artifacts, lockfiles, tooling scaffolding, binary assets, and config down to genuine hand-written TypeScript/TSX/JavaScript across the eight applications and nine shared packages leaves a real, defensible codebase of:
 
 | Metric | Value |
 |---|---|
-| Real application + package code | **94,424 lines** |
-| Config & build wiring | ~9,700 lines |
-| Documentation | 28,868 lines |
-| Test code | 195 lines / 3 files |
+| Real application + package code | **96,053 lines** |
+| Config & build wiring | ~6,600 lines |
+| Documentation | 29,394 lines |
+| Test code | 337 lines / 6 files |
 
 ### Real code by workspace (TypeScript / TSX / JS only)
 
 | Workspace | Role | Lines |
 |---|---|---:|
-| `apps/ops-mobile` | Expo ops app | 17,083 |
-| `apps/web` | Marketing site + Payload CMS | 16,819 |
-| `apps/ops` | Ops console | 10,729 |
-| `apps/customer-mobile` | Expo customer app | 10,062 |
-| `apps/driver-mobile` | Expo driver app | 9,206 |
-| `apps/api` | Business REST API | 7,925 |
-| `packages/ui` | Design system | 7,102 |
-| `apps/customer-web` | Advertiser web console | 5,873 |
-| `apps/driver-web` | Driver web console | 5,536 |
-| `packages/ops-contracts` | Zod DTOs | 1,401 |
-| `scripts/` & root tooling | Dev/build scripts | 1,224 |
-| `packages/ops-api-client` | Typed HTTP client | 728 |
-| `packages/geo` | Nairobi map fixtures | 413 |
-| `packages/sentry-config, eslint-config, query-client, vitest-config` | Shared tooling | 323 |
-| **Total real application code** | | **94,424** |
+| `apps/ops-mobile` | Expo ops app | 17,065 |
+| `apps/web` | Marketing site + Payload CMS | 15,317 |
+| `apps/ops` | Ops console | 11,073 |
+| `apps/customer-mobile` | Expo customer app | 10,088 |
+| `apps/driver-mobile` | Expo driver app | 9,218 |
+| `apps/api` | Business REST API | 8,101 |
+| `packages/ui` | Design system | 7,998 |
+| `apps/customer-web` | Advertiser web console | 6,976 |
+| `apps/driver-web` | Driver web console | 5,885 |
+| `packages/ops-contracts` | Zod DTOs | 1,400 |
+| `scripts/` & root tooling | Dev/build scripts | 1,438 |
+| `packages/ops-api-client` | Typed HTTP client | 727 |
+| `packages/geo` | Nairobi map fixtures | 418 |
+| `packages/sentry-config, eslint-config, query-client, vitest-config` | Shared tooling | 349 |
+| **Total real application code** | | **96,053** |
+
+The 2026-08-30 recount is +1,629 lines net over the 2026-08-27 figure. Growth is concentrated in `packages/ui` (+896: shared `NotificationFeed` / bell / peek / skeleton components), `apps/customer-web` (+1,103: `/notifications` + `/calendar` views and the FullCalendar planner), `apps/driver-web` (+349), `apps/ops` (+344), and `apps/api` (+176: per-item read routes and cursor pagination). `apps/web` reads ~1,500 lower because this count is now strictly everything outside `apps/web/public/` (i.e. the generated `app-demo/` Expo export is fully excluded); its hand-written `app/`, `components/`, `lib/`, and `collections/` code is stable.
 
 ### Workspace map
 
@@ -52,7 +56,7 @@ A single GitHub repository, orchestrated by **Turborepo 2.9** over **npm workspa
 ```
 apps/
 ├── web             Next.js 16.2 + Payload CMS — marketing, blog, help center
-├── api             Next.js route handlers only — ~60+ /v1 endpoints, no UI
+├── api             Next.js route handlers only — 68 /v1 endpoints, no UI
 ├── ops             Ops console — Clerk-gated, calls api for all data
 ├── customer-web    Advertiser web — demo campaign data, calls API for support/announcements
 ├── driver-web      Driver web — profile-setup + demo earnings; Deliveries flag-gated
@@ -60,7 +64,7 @@ apps/
 ├── customer-mobile Expo — advertiser app, Clerk (flag-gated), EAS-built
 └── driver-mobile   Expo — driver app, Clerk (flag-gated), EAS-built
 packages/
-├── ui              34 components + OKLCH token system
+├── ui              41 components + OKLCH token system
 ├── mobile-ui       empty — no source, unused scaffold
 ├── ops-contracts   Zod schemas / DTOs, ~30-40 definitions
 ├── ops-api-client  Hand-rolled typed fetch client
@@ -78,9 +82,9 @@ Every app builds and runs real routes — nothing in this repository is a bare N
 | App | Status | Stack | Auth | Notes |
 |---|---|---|---|---|
 | `web` | ✅ Production | Next.js 16.2, Payload CMS | Payload admin only | 5 CMS collections, real forms → Prisma, ISR help/blog. Owns the canonical Prisma schema file. |
-| `api` | ✅ Production | Next.js (route handlers only) | Clerk, per-route | ~60+ `/v1` routes, 22 Prisma models, one Vercel cron. |
-| `ops` | ⚠️ Populated console | Next.js 16.2 | Clerk (`@admobihq.com` only) | 20 dashboard routes/features with real loading states; UI-only — every write goes through the API, ops holds no data itself. |
-| `customer-web` | ⚠️ UI live, demo data | Next.js 16.2 | Clerk (own instance, flag-gated) | Campaigns/map/billing/support render; campaigns are local fixtures, not Prisma. Reports still Coming soon. |
+| `api` | ✅ Production | Next.js (route handlers only) | Clerk, per-route | 68 `/v1` route handlers, 22 Prisma models, one Vercel cron. |
+| `ops` | ⚠️ Populated console | Next.js 16.2 | Clerk (`@admobihq.com` only) | ~21 dashboard routes/features (incl. a permission-filtered `/notifications` attention queue) with real loading states; UI-only — every write goes through the API, ops holds no data itself. |
+| `customer-web` | ⚠️ UI live, demo data | Next.js 16.2 | Clerk (own instance, flag-gated) | Campaigns/calendar/map/billing/support/notifications render; campaigns are local fixtures, not Prisma. Reports still Coming soon. |
 | `driver-web` | ⚠️ UI live, demo earnings | Next.js 16.2 | Clerk (own instance, flag-gated) | Earnings/routes UI real (illustrative numbers); profile-setup hits the API; Deliveries behind the `deliveries` flag. |
 | `ops-mobile` | ✅ Production | Expo SDK 54, RN 0.81 | Clerk JWT → api | Real EAS build profiles (dev/preview/production), MapLibre, Sentry RN. |
 | `customer-mobile` | ⚠️ Flag-gated | Expo SDK 54, RN 0.81 | Clerk (flag-gated) | Sign-in live behind a flag; EAS configured; also ships a web-export demo build. |
@@ -98,7 +102,7 @@ Four `middleware.ts` files exist in the whole repo: `apps/web` (Edge 404 for sca
 
 ### Design system — `@workspace/ui`
 
-**34 components** in a shadcn/Radix-composition style (button, dialog, sheet, table, sidebar, tour-provider, map, chart, and product-specific composites like `auth-split-shell`), plus a full **OKLCH token system** — light and dark themes sharing role names (`--background`, `--primary`, `--muted`, a five-step chart palette, a sidebar palette), a radius scale, and three motion keyframes gated behind `prefers-reduced-motion`. Consumed via three explicit entry points and transpiled directly into Next.js — there is no separate build step.
+**41 components** in a shadcn/Radix-composition style (button, dialog, sheet, table, sidebar, tour-provider, map, chart, and product-specific composites like `auth-split-shell` and the shared `notification-feed` / `notification-bell-button` / `notification-peek` set), plus a full **OKLCH token system** — light and dark themes sharing role names (`--background`, `--primary`, `--muted`, a five-step chart palette, a sidebar palette), a radius scale, and three motion keyframes gated behind `prefers-reduced-motion`. Consumed via three explicit entry points and transpiled directly into Next.js — there is no separate build step.
 
 > **Flagged.** `packages/mobile-ui` — the presumed mobile counterpart — contains **no source code**. It is an empty scaffold (a stray Turbo cache log is the only file present). The three Expo apps currently style themselves independently; there is no shared native design system yet.
 
@@ -132,7 +136,7 @@ Five GitHub Actions workflows. `pr.yml` and `master.yml` gate every change to `m
 
 ### Testing coverage — the most material gap
 
-> **Finding.** Product-route coverage is still the gap. Two Vitest unit tests (`packages/geo`, `packages/ops-contracts`), one Playwright spec asserting four unauthenticated marketing pages return 200, and later script tests (`npm run test:scripts`) for ignore-build and bot-probe paths. There is **zero** handler/UI test coverage for `ops`, `api`, `customer-web`, `driver-web`, or any of the three mobile apps. The `test` task in `turbo.json` is correctly wired into the build graph — it simply has almost nothing to run for the product surfaces.
+> **Finding.** Product-route coverage is still the gap. Six test files repo-wide (337 lines): two Vitest unit tests (`packages/geo`, `packages/ops-contracts`), one Playwright spec asserting unauthenticated marketing pages return 200, and three script tests (`npm run test:scripts`) covering ignore-build, bot-probe paths, and database-URL resolution. There is **zero** handler/UI test coverage for `ops`, `api`, `customer-web`, `driver-web`, or any of the three mobile apps. The `test` task in `turbo.json` is correctly wired into the build graph — it simply has almost nothing to run for the product surfaces.
 
 | | |
 |---|---|
@@ -151,22 +155,22 @@ A replacement-cost appraisal: what it would take a Nairobi-tier senior engineeri
 
 | | |
 |---|---|
-| **Basis** | 94,424 lines of real, custom TypeScript/TSX/JS across 8 apps and 9 shared packages — the corrected figure from Section 1, not the raw 3.1M repository line count. |
+| **Basis** | 96,053 lines of real, custom TypeScript/TSX/JS across 8 apps and 9 shared packages — the recounted figure from Section 1 (2026-08-30), not the raw repository line count. |
 | **Throughput** | 15 lines/hour per senior engineer, blended for design, type-safe implementation, integration, and deployment configuration in a Next.js + Expo + dual-ORM stack of genuine (not toy) architectural complexity. |
-| **Core hours** | 94,424 ÷ 15 ≈ **6,300 hours** of core coding labor. |
+| **Core hours** | 96,053 ÷ 15 ≈ **6,400 hours** of core coding labor. |
 | **Team mix** | 1 Senior Lead at KES 7,500/hr + 3 Mid-to-Senior engineers at KES 5,000/hr → blended rate **KES 5,625/hr**. |
 
 ### Itemized asset valuation ledger — point estimate (blended team rate)
 
 | Line item | Basis | KES |
 |---|---|---:|
-| Core engineering coding labor | 6,300 hrs × KES 5,625 | 35,437,500 |
-| Multi-tenant & subdomain routing premium | +20% of base labor | 7,087,500 |
-| Shared contracts & design primitives premium | +15% of base labor | 5,315,625 |
-| **Subtotal — engineering labor** | | **47,840,625** |
+| Core engineering coding labor | 6,400 hrs × KES 5,625 | 36,000,000 |
+| Multi-tenant & subdomain routing premium | +20% of base labor | 7,200,000 |
+| Shared contracts & design primitives premium | +15% of base labor | 5,400,000 |
+| **Subtotal — engineering labor** | | **48,600,000** |
 | DevOps infrastructure & deployment pipeline capitalization | Flat | 1,200,000 |
 | Live production storefront & CMS layer | Flat | 900,000 |
-| **Total capitalized value — point estimate** | | **49,940,625** |
+| **Total capitalized value — point estimate** | | **50,700,000** |
 
 The two premiums are levied against real coordination cost even though the "multi-tenant" system turned out to be five discrete deployments rather than a shared router: three independent Clerk instances, cross-app URL/env wiring, and strict deploy-ordering (API first, then every frontend) all cost real engineering hours regardless of the architecture chosen. The DevOps and CMS lines are held deliberately modest, reflecting what Section 4 actually found — deploys still ride on Vercel's Git integration rather than a scripted pipeline, and test-gate depth is minimal.
 
@@ -176,11 +180,11 @@ Holding hours and the two percentage premiums fixed and swapping the labor rate 
 
 | Scenario | Rate | Total |
 |---|---|---:|
-| Low | All Mid-to-Senior, KES 5,000/hr | **KES 44,625,000** |
-| Point estimate | Blended team (1 lead + 3 mid-senior) | **KES 49,940,625** |
-| High | All Senior Lead, KES 7,500/hr | **KES 65,887,500** |
+| Low | All Mid-to-Senior, KES 5,000/hr | **KES 45,300,000** |
+| Point estimate | Blended team (1 lead + 3 mid-senior) | **KES 50,700,000** |
+| High | All Senior Lead, KES 7,500/hr | **KES 66,900,000** |
 
-**Recommended balance-sheet range: KES 45,000,000 – 66,000,000**, intangible assets, with KES 49.9M as the defensible point estimate under the stated blended team assumption.
+**Recommended balance-sheet range: KES 45,000,000 – 67,000,000**, intangible assets, with KES 50.7M as the defensible point estimate under the stated blended team assumption.
 
 ### Limitations of Method A
 
