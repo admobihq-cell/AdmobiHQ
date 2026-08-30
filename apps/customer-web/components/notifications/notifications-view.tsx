@@ -116,7 +116,6 @@ export function NotificationsView() {
       </div>
 
       <NotificationFeed
-        className="max-w-2xl"
         items={items}
         isLoading={query.isPending}
         isFetchingMore={query.isFetchingNextPage}

@@ -26,7 +26,6 @@ export function NotificationsView({
       />
 
       <NotificationFeed
-        className="max-w-2xl"
         items={notifications.items}
         isLoading={notifications.isPending}
         onOpen={(item) => {
