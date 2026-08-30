@@ -19,7 +19,7 @@ import {
 } from "framer-motion"
 
 import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { NotificationFeedSkeleton } from "@workspace/ui/components/notification-feed-skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   formatAbsoluteTime,
@@ -250,7 +250,7 @@ export function NotificationFeed({
       </div>
 
       {isLoading ? (
-        <FeedSkeleton />
+        <NotificationFeedSkeleton chrome={false} />
       ) : showEmpty ? (
         <EmptyState
           filtered={filteredEmpty}
@@ -451,27 +451,6 @@ function FilterChip({
         </span>
       ) : null}
     </button>
-  )
-}
-
-function FeedSkeleton() {
-  return (
-    <div className="divide-y">
-      <Skeleton className="my-2 h-3 w-16" />
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="flex gap-3 py-3 pr-2 pl-4">
-          <Skeleton className="mt-0.5 size-9 shrink-0 rounded-md" />
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <Skeleton className="h-3.5 w-1/3" />
-              <Skeleton className="h-3 w-10" />
-            </div>
-            <Skeleton className="h-3 w-full max-w-md" />
-            <Skeleton className="h-2.5 w-20" />
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }
 

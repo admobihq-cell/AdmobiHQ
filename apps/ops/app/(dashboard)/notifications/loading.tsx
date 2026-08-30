@@ -6,7 +6,7 @@ export default function NotificationsLoading() {
     <div className="flex flex-1 flex-col gap-6">
       <div className="space-y-2">
         <Skeleton className="h-8 w-44" />
-        <Skeleton className="h-4 w-80 max-w-full" />
+        <Skeleton className="h-4 w-full max-w-2xl" />
       </div>
 
       <NotificationFeedSkeleton />
