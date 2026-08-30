@@ -1,99 +1,65 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { Bell } from "lucide-react"
-import type { DriverApplicationListItemDto } from "@workspace/ops-contracts"
+import { useRouter } from "next/navigation"
+import type { OpsPermission, OpsRole } from "@workspace/ops-contracts"
 
-import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { NotificationBellButton } from "@workspace/ui/components/notification-bell-button"
+import { NotificationPeek } from "@workspace/ui/components/notification-peek"
+import { unreadCount } from "@workspace/ui/lib/notifications"
 
-import { formatDateTime } from "@/lib/format"
-import { useOpsClient } from "@/lib/ops-client"
+import { useOpsNotifications } from "@/lib/use-ops-notifications"
 
-const PREVIEW_LIMIT = 8
+const PEEK_LIMIT = 6
 
-/** Ops's "inbox" is the driver-applications review queue itself, so this
- * shows the live pending list rather than a separate read/unread log — the
- * badge is a real backlog count, not an unread count. Only rendered for
- * users with the driver_applications permission (see ops-shell.tsx). */
-export function NotificationBell() {
-  const client = useOpsClient()
-  const [items, setItems] = useState<DriverApplicationListItemDto[]>([])
-  const [total, setTotal] = useState(0)
+/**
+ * Ops's attention queue: submitted driver applications, live support cases, and
+ * recent announcements the viewer can see, merged newest-first. The badge is the
+ * count of items not yet triaged in this browser; the full list lives at
+ * /notifications.
+ */
+export function NotificationBell({
+  role,
+  permissions,
+}: {
+  role: OpsRole
+  permissions: OpsPermission[]
+}) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const notifications = useOpsNotifications({ role, permissions })
 
-  const load = useCallback(() => {
-    client.driverApplications
-      .list({ status: "submitted", pageSize: PREVIEW_LIMIT })
-      .then((res) => {
-        setItems(res.items)
-        setTotal(res.total)
-      })
-      .catch(() => {})
-  }, [client])
-
-  useEffect(() => {
-    load()
-    const onVisible = () => {
-      if (document.visibilityState === "visible") load()
-    }
-    window.addEventListener("focus", load)
-    document.addEventListener("visibilitychange", onVisible)
-    return () => {
-      window.removeEventListener("focus", load)
-      document.removeEventListener("visibilitychange", onVisible)
-    }
-  }, [load])
+  const items = notifications.items.slice(0, PEEK_LIMIT)
+  const unread = unreadCount(items)
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" className="relative" aria-label="Pending driver applications">
-          <Bell aria-hidden />
-          {total > 0 ? (
-            <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-medium text-destructive-foreground">
-              {total > 9 ? "9+" : total}
-            </span>
-          ) : null}
-        </Button>
+        <NotificationBellButton unreadCount={unread} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 min-w-80">
-        <DropdownMenuLabel>Pending applications</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {items.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-            Nothing waiting on review
-          </p>
-        ) : (
-          <div className="-mx-1 max-h-80 space-y-0.5 overflow-y-auto px-1">
-            {items.map((item) => (
-              <Link
-                key={item.id}
-                href={`/driver-applications/${item.id}`}
-                className="block rounded-md px-1 py-2 text-sm hover:bg-accent"
-              >
-                <p className="font-medium">{item.full_name ?? "Driver application"}</p>
-                <p className="text-xs text-muted-foreground">
-                  Submitted {formatDateTime(item.submitted_at)}
-                </p>
-              </Link>
-            ))}
-            {total > items.length ? (
-              <Link
-                href="/driver-applications"
-                className="block rounded-md px-1 py-2 text-center text-xs font-medium text-primary hover:underline"
-              >
-                View all {total} pending
-              </Link>
-            ) : null}
-          </div>
-        )}
+      <DropdownMenuContent align="end" className="w-80 min-w-80 p-0">
+        <NotificationPeek
+          items={items}
+          unread={unread}
+          isLoading={notifications.isPending}
+          allHref="/notifications"
+          linkComponent={Link}
+          onMarkAllRead={notifications.markAllRead}
+          onNavigate={() => setOpen(false)}
+          onItemClick={(item) => {
+            notifications.markRead(item.id)
+            if (item.href) {
+              setOpen(false)
+              router.push(item.href)
+            }
+          }}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   )
