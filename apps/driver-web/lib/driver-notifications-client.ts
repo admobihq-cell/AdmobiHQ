@@ -29,9 +29,12 @@ function pageQuery(options: { cursor?: number | null; limit?: number }) {
   return qs ? `?${qs}` : ""
 }
 
+type WithReadAt = { read_at: string | null }
+
 export type DriverNotificationPage = {
   items: DriverNotificationDto[]
   next_cursor: number | null
+  unread_count: number
 }
 
 export type DriverAnnouncementDto = {
@@ -47,14 +50,31 @@ export type DriverAnnouncementDto = {
 export type DriverAnnouncementPage = {
   items: DriverAnnouncementDto[]
   next_cursor: number | null
+  unread_count: number
 }
 
-/** Tolerates both the paginated `{ items, next_cursor }` shape and the older
- * bare-array response, so web and API can roll out in either order. */
-function normalizePage<T>(raw: unknown): { items: T[]; next_cursor: number | null } {
-  if (Array.isArray(raw)) return { items: raw as T[], next_cursor: null }
-  const page = raw as { items?: T[]; next_cursor?: number | null } | null
-  return { items: page?.items ?? [], next_cursor: page?.next_cursor ?? null }
+/** Tolerates both the paginated `{ items, next_cursor, unread_count }` shape and
+ * the older bare-array response, so web and API can roll out in either order. */
+function normalizePage<T extends WithReadAt>(
+  raw: unknown,
+): { items: T[]; next_cursor: number | null; unread_count: number } {
+  const countUnread = (items: T[]) =>
+    items.filter((item) => !item.read_at).length
+  if (Array.isArray(raw)) {
+    const items = raw as T[]
+    return { items, next_cursor: null, unread_count: countUnread(items) }
+  }
+  const page = raw as {
+    items?: T[]
+    next_cursor?: number | null
+    unread_count?: number
+  } | null
+  const items = page?.items ?? []
+  return {
+    items,
+    next_cursor: page?.next_cursor ?? null,
+    unread_count: page?.unread_count ?? countUnread(items),
+  }
 }
 
 export async function fetchDriverNotifications(

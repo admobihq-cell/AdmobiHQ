@@ -39,8 +39,8 @@ export function NotificationPeek({
 }: NotificationPeekProps) {
   const LinkComponent = linkComponent ?? "a"
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center justify-between px-3 py-2.5">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between px-3 py-2.5">
         <p className="text-sm font-medium">Notifications</p>
         <Button
           type="button"
@@ -55,11 +55,11 @@ export function NotificationPeek({
       </div>
 
       {items.length === 0 ? (
-        <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+        <p className="shrink-0 border-t px-3 py-8 text-center text-sm text-muted-foreground">
           {isLoading ? "Loading…" : "You're all caught up"}
         </p>
       ) : (
-        <ul className="max-h-96 overflow-y-auto border-t">
+        <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t">
           {items.map((item) => {
             const isUnread = !item.readAt
             return (
@@ -109,7 +109,7 @@ export function NotificationPeek({
       <LinkComponent
         href={allHref}
         onClick={onNavigate}
-        className="flex items-center justify-between border-t px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-muted/50"
+        className="flex shrink-0 items-center justify-between border-t px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-muted/50"
       >
         View all notifications
         <ArrowRight className="size-3.5" />

@@ -35,15 +35,19 @@ export function NotificationBell({
   const [open, setOpen] = useState(false)
   const notifications = useOpsNotifications({ role, permissions })
 
+  // Count across the whole triage list, not just the peek window.
+  const unread = unreadCount(notifications.items)
   const items = notifications.items.slice(0, PEEK_LIMIT)
-  const unread = unreadCount(items)
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <NotificationBellButton unreadCount={unread} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 min-w-80 p-0">
+      <DropdownMenuContent
+        align="end"
+        className="flex max-h-[min(28rem,var(--radix-dropdown-menu-content-available-height))] w-80 min-w-80 flex-col overflow-y-hidden p-0"
+      >
         <NotificationPeek
           items={items}
           unread={unread}

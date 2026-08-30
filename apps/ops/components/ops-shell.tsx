@@ -4,7 +4,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
-  Bell,
   Car,
   FileCheck2,
   FileText,
@@ -64,7 +63,6 @@ const navItems: Array<{
   permission?: OpsPermission
 }> = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/overview", label: "Overview", icon: BarChart3 },
   { href: "/map", label: "Map", icon: Map },
   {
@@ -127,7 +125,12 @@ const secondaryItems: Array<{
   { href: "/settings", label: "Settings", icon: Settings, permission: "flags" },
 ]
 
-const allNavItems = [...navItems, ...secondaryItems]
+/** Routes that exist and need a breadcrumb label but never render in the sidebar. */
+const hiddenNavItems: Array<{ href: string; label: string }> = [
+  { href: "/notifications", label: "Notifications" },
+]
+
+const allNavItems = [...navItems, ...secondaryItems, ...hiddenNavItems]
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -203,10 +206,7 @@ export function OpsShell({
         "media_kit",
       ] as OpsPermission[]
     ).some((permission) => permissions.includes(permission))
-  const visibleNavItems = navItems.filter(
-    (item) =>
-      canSee(item) && (item.href !== "/notifications" || canSeeNotifications),
-  )
+  const visibleNavItems = navItems.filter(canSee)
   const visibleSecondaryItems = secondaryItems.filter(canSee)
 
   return (

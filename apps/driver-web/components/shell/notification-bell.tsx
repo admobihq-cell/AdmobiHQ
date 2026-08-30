@@ -11,7 +11,6 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { NotificationBellButton } from "@workspace/ui/components/notification-bell-button"
 import { NotificationPeek } from "@workspace/ui/components/notification-peek"
-import { unreadCount } from "@workspace/ui/lib/notifications"
 
 import { useDriverNotifications } from "@/lib/use-driver-notifications"
 
@@ -24,17 +23,22 @@ const PEEK_LIMIT = 6
 export function NotificationBell() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const notifications = useDriverNotifications({ limit: PEEK_LIMIT })
+  // Same limit/key as the /notifications page so they share one cache — the
+  // bell just shows the first slice.
+  const notifications = useDriverNotifications()
 
   const items = notifications.items.slice(0, PEEK_LIMIT)
-  const unread = unreadCount(items)
+  const unread = notifications.unreadCount
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <NotificationBellButton unreadCount={unread} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 min-w-80 p-0">
+      <DropdownMenuContent
+        align="end"
+        className="flex max-h-[min(28rem,var(--radix-dropdown-menu-content-available-height))] w-80 min-w-80 flex-col overflow-y-hidden p-0"
+      >
         <NotificationPeek
           items={items}
           unread={unread}
