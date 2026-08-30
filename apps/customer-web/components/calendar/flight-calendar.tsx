@@ -20,6 +20,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { CalendarGridSkeleton } from "@/components/calendar/campaign-calendar-skeleton"
 import {
   exclusiveEndIso,
   inclusiveEndIso,
@@ -61,6 +63,14 @@ export function FlightCalendar({
   const calendarRef = useRef<FullCalendar>(null)
   const [title, setTitle] = useState("")
   const [view, setView] = useState<CalendarViewId>("dayGridMonth")
+  // FullCalendar renders collapsed for a frame on mount; hold a skeleton over it
+  // until its first layout pass (datesSet), with a timeout as a safety net.
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const id = setTimeout(() => setReady(true), 1500)
+    return () => clearTimeout(id)
+  }, [])
 
   const events = useMemo(
     () => campaigns.map(campaignToEvent).filter((event): event is EventInput => event !== null),
@@ -76,6 +86,7 @@ export function FlightCalendar({
     const nextView = info.view.type as CalendarViewId
     if (nextView !== view) setView(nextView)
     setTitle(info.view.title)
+    setReady(true)
     onDatesChange(toDayIso(info.start), inclusiveEndIso(toDayIso(info.end)))
   }
 
@@ -169,37 +180,49 @@ export function FlightCalendar({
         </div>
       </div>
 
-      <div className="flight-calendar overflow-hidden rounded-xl bg-card p-2 ring-1 ring-foreground/10 md:p-3">
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={false}
-          height="auto"
-          firstDay={1}
-          navLinks
-          nowIndicator
-          selectable
-          selectMirror
-          editable
-          eventStartEditable
-          eventDurationEditable
-          dayMaxEventRows={4}
-          allDayText="Flights"
-          slotMinTime="06:00:00"
-          slotMaxTime="21:00:00"
-          events={events}
-          datesSet={handleDatesSet}
-          dateClick={handleDateClick}
-          select={handleSelect}
-          eventClick={handleEventClick}
-          eventDrop={(info: EventDropArg) =>
-            persistEventRange(info.event.id, info.event.start, info.event.end, info.revert)
-          }
-          eventResize={(info: EventResizeDoneArg) =>
-            persistEventRange(info.event.id, info.event.start, info.event.end, info.revert)
-          }
-        />
+      <div
+        className={cn(
+          "flight-calendar relative overflow-hidden rounded-xl bg-card p-2 ring-1 ring-foreground/10 md:p-3",
+          !ready && "min-h-[34rem]",
+        )}
+      >
+        <div className={cn(!ready && "invisible")}>
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+            initialView="dayGridMonth"
+            headerToolbar={false}
+            height="auto"
+            firstDay={1}
+            navLinks
+            nowIndicator
+            selectable
+            selectMirror
+            editable
+            eventStartEditable
+            eventDurationEditable
+            dayMaxEventRows={4}
+            allDayText="Flights"
+            slotMinTime="06:00:00"
+            slotMaxTime="21:00:00"
+            events={events}
+            datesSet={handleDatesSet}
+            dateClick={handleDateClick}
+            select={handleSelect}
+            eventClick={handleEventClick}
+            eventDrop={(info: EventDropArg) =>
+              persistEventRange(info.event.id, info.event.start, info.event.end, info.revert)
+            }
+            eventResize={(info: EventResizeDoneArg) =>
+              persistEventRange(info.event.id, info.event.start, info.event.end, info.revert)
+            }
+          />
+        </div>
+        {!ready ? (
+          <div className="pointer-events-none absolute inset-2 md:inset-3">
+            <CalendarGridSkeleton className="h-full" />
+          </div>
+        ) : null}
       </div>
     </div>
   )
