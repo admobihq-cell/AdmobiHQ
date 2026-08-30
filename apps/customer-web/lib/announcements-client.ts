@@ -37,6 +37,19 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
   return res
 }
 
+/** Tolerates both the paginated `{ items, next_cursor }` shape and the older
+ * bare-array response, so web and API can roll out in either order. */
+function normalizePage(raw: unknown): CustomerAnnouncementPage {
+  if (Array.isArray(raw)) {
+    return { items: raw as CustomerAnnouncementDto[], next_cursor: null }
+  }
+  const page = raw as Partial<CustomerAnnouncementPage> | null
+  return {
+    items: page?.items ?? [],
+    next_cursor: page?.next_cursor ?? null,
+  }
+}
+
 export async function fetchCustomerAnnouncements(
   getToken: GetToken,
   options: { cursor?: number | null; limit?: number } = {},
@@ -49,7 +62,7 @@ export async function fetchCustomerAnnouncements(
     getToken,
     `/v1/customer/announcements${qs ? `?${qs}` : ""}`,
   )
-  return res.json()
+  return normalizePage(await res.json())
 }
 
 export async function markCustomerAnnouncementsRead(
