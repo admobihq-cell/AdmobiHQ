@@ -18,6 +18,8 @@ export type AnnouncementInboxPage = {
   items: AnnouncementDeliveryDto[]
   /** Pass back as `?cursor=` to fetch the next (older) page, or null at the end. */
   next_cursor: number | null
+  /** Total unread for this inbox, independent of pagination — for the bell badge. */
+  unread_count: number
 }
 
 const DELIVERY_SELECT = {
@@ -80,15 +82,18 @@ export async function listAnnouncementDeliveriesPage(
     Math.max(1, options.limit ?? PAGE_LIMIT_DEFAULT),
   )
 
-  const rows = await prisma.announcementDelivery.findMany({
-    where: { clerk_user_id: clerkUserId, app },
-    orderBy: [{ created_at: "desc" }, { id: "desc" }],
-    take: limit + 1,
-    ...(options.cursor
-      ? { cursor: { id: options.cursor }, skip: 1 }
-      : {}),
-    select: DELIVERY_SELECT,
-  })
+  const [rows, unread_count] = await Promise.all([
+    prisma.announcementDelivery.findMany({
+      where: { clerk_user_id: clerkUserId, app },
+      orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      select: DELIVERY_SELECT,
+    }),
+    prisma.announcementDelivery.count({
+      where: { clerk_user_id: clerkUserId, app, read_at: null },
+    }),
+  ])
 
   const hasMore = rows.length > limit
   const page = hasMore ? rows.slice(0, limit) : rows
@@ -96,6 +101,7 @@ export async function listAnnouncementDeliveriesPage(
   return {
     items: page.map(toDto),
     next_cursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+    unread_count,
   }
 }
 

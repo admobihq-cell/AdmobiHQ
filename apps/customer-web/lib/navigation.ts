@@ -19,6 +19,8 @@ export type AppNavItem = {
   description: string
   /** Only shown when the matching platform flag is enabled — see lib/flags.ts. */
   flag?: string
+  /** Route exists (and resolves breadcrumbs) but never renders in the sidebar. */
+  hidden?: boolean
 }
 
 export const appNavItems: AppNavItem[] = [
@@ -64,6 +66,7 @@ export const appNavItems: AppNavItem[] = [
     label: "Notifications",
     icon: Bell,
     description: "Announcements and account updates from the Admobi team.",
+    hidden: true,
   },
   {
     href: "/deliveries",
@@ -99,5 +102,7 @@ export function navItemForPath(pathname: string): AppNavItem {
 }
 
 export function visibleNavItems(enabledFlags: Set<string>): AppNavItem[] {
-  return appNavItems.filter((item) => !item.flag || enabledFlags.has(item.flag))
+  return appNavItems.filter(
+    (item) => !item.hidden && (!item.flag || enabledFlags.has(item.flag)),
+  )
 }

@@ -16,6 +16,8 @@ export type DriverNavItem = {
   description: string
   /** Only shown when the matching platform flag is enabled — see lib/flags.ts. */
   flag?: string
+  /** Route exists (and resolves breadcrumbs) but never renders in the sidebar. */
+  hidden?: boolean
 }
 
 export const driverNavItems: DriverNavItem[] = [
@@ -48,6 +50,7 @@ export const driverNavItems: DriverNavItem[] = [
     label: "Notifications",
     icon: Bell,
     description: "Application updates and announcements from the Admobi team.",
+    hidden: true,
   },
   {
     href: "/deliveries",
@@ -90,5 +93,7 @@ export function navItemForPath(pathname: string): DriverNavItem {
 }
 
 export function visibleNavItems(enabledFlags: Set<string>): DriverNavItem[] {
-  return driverNavItems.filter((item) => !item.flag || enabledFlags.has(item.flag))
+  return driverNavItems.filter(
+    (item) => !item.hidden && (!item.flag || enabledFlags.has(item.flag)),
+  )
 }
