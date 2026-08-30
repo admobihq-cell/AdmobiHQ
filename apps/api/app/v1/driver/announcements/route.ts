@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server"
 
 import { requireDriverAccess } from "@/lib/api-utils"
-import { listAnnouncementDeliveries } from "@/lib/push/announcement-inbox"
+import { listAnnouncementDeliveriesPage } from "@/lib/push/announcement-inbox"
 
-export async function GET() {
+export async function GET(req: Request) {
   const auth = await requireDriverAccess()
   if (auth.error) return auth.error
 
-  return NextResponse.json(await listAnnouncementDeliveries("driver-web", auth.access.userId))
+  const url = new URL(req.url)
+  const cursor = Number(url.searchParams.get("cursor")) || null
+  const limit = Number(url.searchParams.get("limit")) || undefined
+
+  return NextResponse.json(
+    await listAnnouncementDeliveriesPage("driver-web", auth.access.userId, {
+      cursor,
+      limit,
+    }),
+  )
 }
