@@ -2,7 +2,7 @@ import { useCallback } from "react"
 import { useAuth } from "@clerk/clerk-expo"
 import { Stack, useFocusEffect, useRouter } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
-import { Pressable, ScrollView, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { SkeletonCaseRows } from "@/components/app/skeleton"
@@ -152,6 +152,14 @@ export default function SupportSettingsScreen() {
             },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={casesQuery.isRefetching}
+              onRefresh={() => void refetchCases()}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         >
           <View style={styles.hero}>
             <Text style={styles.title}>Help &amp; contact</Text>

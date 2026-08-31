@@ -4,6 +4,7 @@ import { Stack, useFocusEffect } from "expo-router"
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Switch,
@@ -356,6 +357,14 @@ export default function BillingSettingsScreen() {
           { paddingBottom: insets.bottom + spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={walletQuery.isRefetching}
+            onRefresh={() => void refetchWallet()}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <View style={styles.hero}>
           <View style={styles.heroIconTile}>
