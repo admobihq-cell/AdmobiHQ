@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useRouter } from "expo-router"
+import { useMemo, useState } from "react"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import {
   ActivityIndicator,
   Pressable,
@@ -10,6 +10,7 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { formatFlightDates } from "@/lib/campaign-calendar"
 import { createCampaign, formatLabelFor, type CampaignFormat } from "@/lib/campaigns"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
@@ -21,6 +22,15 @@ export default function NewCampaignScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
+
+  const params = useLocalSearchParams<{ startsOn?: string; endsOn?: string }>()
+  const plannedStart = typeof params.startsOn === "string" ? params.startsOn : null
+  const plannedEnd =
+    typeof params.endsOn === "string" ? params.endsOn : plannedStart
+  const plannedLabel = useMemo(
+    () => (plannedStart && plannedEnd ? formatFlightDates(plannedStart, plannedEnd) : null),
+    [plannedStart, plannedEnd],
+  )
 
   const [name, setName] = useState("")
   const [market, setMarket] = useState<(typeof MARKETS)[number]>("CBD")
@@ -35,6 +45,19 @@ export default function NewCampaignScreen() {
     container: { padding: spacing.lg, gap: spacing.xl },
     intro: { gap: spacing.xs },
     introBody: { ...typography.bodySm, color: c.mutedForeground },
+    plannedCard: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: c.primary,
+      backgroundColor: `${c.primary}12`,
+    },
+    plannedLabelText: { ...typography.label, color: c.text, fontWeight: "700" as const },
+    plannedCaption: { ...typography.caption, color: c.mutedForeground },
     fieldGroup: { gap: spacing.sm },
     label: { ...typography.label, color: c.text },
     input: {
@@ -111,6 +134,8 @@ export default function NewCampaignScreen() {
         format,
         budgetKes,
         duration,
+        startsOn: plannedStart,
+        endsOn: plannedEnd,
       })
       router.replace(`/campaigns/${created.id}`)
     } catch {
@@ -131,6 +156,18 @@ export default function NewCampaignScreen() {
           account manager before a flight goes live.
         </Text>
       </View>
+
+      {plannedLabel ? (
+        <View style={styles.plannedCard}>
+          <View>
+            <Text style={styles.plannedCaption}>Flight window</Text>
+            <Text style={styles.plannedLabelText}>{plannedLabel}</Text>
+          </View>
+          <Pressable onPress={() => router.setParams({ startsOn: "", endsOn: "" })}>
+            <Text style={styles.plannedCaption}>Clear</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Campaign name *</Text>
@@ -185,7 +222,7 @@ export default function NewCampaignScreen() {
         </View>
       </View>
 
-      <View style={styles.fieldGroup}>
+      <View style={[styles.fieldGroup, plannedLabel && { display: "none" }]}>
         <Text style={styles.label}>Flight length</Text>
         <View style={styles.chipGrid}>
           {DURATIONS.map((option) => {

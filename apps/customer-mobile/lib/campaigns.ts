@@ -1,6 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import type { CampaignStatus } from "@/components/ui/status-badge"
+import {
+  endsOnFromDuration,
+  formatFlightDates,
+  isFlightDuration,
+  parseDisplayDates,
+  type FlightDuration,
+} from "@/lib/campaign-calendar"
 import { formatCurrency } from "@/lib/wallet"
 
 export type CampaignFormat = "taxi_top" | "delivery_bike" | "both"
@@ -14,6 +21,10 @@ export type Campaign = {
   impressions: string
   budget: string
   format: CampaignFormat
+  /** Inclusive flight start, `YYYY-MM-DD`. Absent/null when the campaign is unscheduled. */
+  startsOn?: string | null
+  /** Inclusive flight end, `YYYY-MM-DD`. */
+  endsOn?: string | null
   /** True for campaigns created on-device (this demo/app instance), false for the seeded examples. */
   createdLocally: boolean
 }
@@ -40,6 +51,8 @@ const SEED_CAMPAIGNS: Campaign[] = [
     impressions: "482k",
     budget: "KES 180,000",
     format: "taxi_top",
+    startsOn: "2026-06-01",
+    endsOn: "2026-08-31",
     createdLocally: false,
   },
   {
@@ -51,6 +64,8 @@ const SEED_CAMPAIGNS: Campaign[] = [
     impressions: "318k",
     budget: "KES 145,000",
     format: "both",
+    startsOn: "2026-07-01",
+    endsOn: "2026-09-15",
     createdLocally: false,
   },
   {
@@ -62,6 +77,8 @@ const SEED_CAMPAIGNS: Campaign[] = [
     impressions: "—",
     budget: "KES 95,000",
     format: "taxi_top",
+    startsOn: "2026-08-04",
+    endsOn: "2026-09-03",
     createdLocally: false,
   },
   {
@@ -73,16 +90,27 @@ const SEED_CAMPAIGNS: Campaign[] = [
     impressions: "—",
     budget: "KES 60,000",
     format: "delivery_bike",
+    startsOn: null,
+    endsOn: null,
     createdLocally: false,
   },
 ]
 
 let cache: Campaign[] | null = null
 
+/** Backfill structured flight dates from the legacy display string when possible. */
+function hydrateCampaign(campaign: Campaign): Campaign {
+  if (campaign.startsOn && campaign.endsOn) return campaign
+  const parsed = parseDisplayDates(campaign.dates)
+  if (!parsed) return campaign
+  return { ...campaign, startsOn: parsed.startsOn, endsOn: parsed.endsOn }
+}
+
 async function readAll(): Promise<Campaign[]> {
   if (cache) return cache
   const raw = await AsyncStorage.getItem(STORAGE_KEY)
-  cache = raw ? (JSON.parse(raw) as Campaign[]) : SEED_CAMPAIGNS
+  const parsed = raw ? (JSON.parse(raw) as Campaign[]) : SEED_CAMPAIGNS
+  cache = parsed.map(hydrateCampaign)
   return cache
 }
 
@@ -106,19 +134,77 @@ export async function createCampaign(input: {
   format: CampaignFormat
   budgetKes: number
   duration: string
+  startsOn?: string | null
+  endsOn?: string | null
 }): Promise<Campaign> {
   const all = await readAll()
+  const startsOn = input.startsOn || null
+  const endsOn =
+    input.endsOn ||
+    (startsOn && isFlightDuration(input.duration)
+      ? endsOnFromDuration(startsOn, input.duration)
+      : null)
+  const dates = startsOn && endsOn ? formatFlightDates(startsOn, endsOn) : input.duration
   const campaign: Campaign = {
     id: `local-${Date.now()}`,
     name: input.name,
-    status: "draft",
+    status: startsOn ? "scheduled" : "draft",
     market: input.market,
-    dates: input.duration,
+    dates,
     impressions: "—",
     budget: formatCurrency(input.budgetKes),
     format: input.format,
+    startsOn,
+    endsOn,
     createdLocally: true,
   }
   await writeAll([campaign, ...all])
   return campaign
+}
+
+/** Place an unscheduled draft on a start day, defaulting its length by duration. */
+export async function scheduleCampaign(
+  id: string,
+  startsOn: string,
+  duration: FlightDuration = "1 week",
+): Promise<Campaign | null> {
+  const all = await readAll()
+  const index = all.findIndex((campaign) => campaign.id === id)
+  if (index < 0) return null
+  const current = all[index]!
+  const endsOn = endsOnFromDuration(startsOn, duration)
+  const next: Campaign = {
+    ...current,
+    startsOn,
+    endsOn,
+    dates: formatFlightDates(startsOn, endsOn),
+    status: current.status === "draft" ? "scheduled" : current.status,
+  }
+  const updated = [...all]
+  updated[index] = next
+  await writeAll(updated)
+  return next
+}
+
+/** Move or resize an existing flight window to an explicit start/end. */
+export async function rescheduleCampaign(
+  id: string,
+  startsOn: string,
+  endsOn: string,
+): Promise<Campaign | null> {
+  const all = await readAll()
+  const index = all.findIndex((campaign) => campaign.id === id)
+  if (index < 0) return null
+  const current = all[index]!
+  const next: Campaign = {
+    ...current,
+    startsOn,
+    endsOn,
+    dates: formatFlightDates(startsOn, endsOn),
+    status: current.status === "draft" ? "scheduled" : current.status,
+  }
+  const updated = [...all]
+  updated[index] = next
+  await writeAll(updated)
+  return next
 }
