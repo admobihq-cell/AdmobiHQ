@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Modal, Pressable, ScrollView, Text, View } from "react-native"
+import { Modal, Pressable, RefreshControl, ScrollView, Text, View } from "react-native"
 import { Image } from "expo-image"
 import { useLocalSearchParams } from "expo-router"
 import { useAuth } from "@clerk/clerk-expo"
@@ -16,7 +16,7 @@ import { Card, DestructiveButton, Field, PrimaryButton, SecondaryButton } from "
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
-import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const DOCUMENT_LABELS: Record<string, string> = {
   national_id: "National ID",
@@ -38,6 +38,7 @@ export default function DriverApplicationDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id: string }>()
   const id = Number.parseInt(rawId ?? "", 10)
   const client = useOpsClient()
+  const colors = useThemeColors()
   const queryClient = useQueryClient()
   const { getToken } = useAuth()
 
@@ -163,7 +164,17 @@ export default function DriverApplicationDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={detailQuery.isRefetching}
+            onRefresh={() => void detailQuery.refetch()}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
             <Text style={styles.name}>{data.full_name ?? "Driver application"}</Text>
