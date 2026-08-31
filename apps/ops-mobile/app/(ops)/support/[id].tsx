@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -296,7 +297,18 @@ export default function SupportCaseDetailScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          refreshControl={
+            <RefreshControl
+              refreshing={caseQuery.isRefetching}
+              onRefresh={() => void caseQuery.refetch()}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
           <View style={styles.header}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initials(data.contact_name)}</Text>
