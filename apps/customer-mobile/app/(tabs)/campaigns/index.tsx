@@ -5,19 +5,22 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
-import { Add, Calendar, Location } from "@/components/icons"
+import { CampaignCalendarView } from "@/components/calendar/campaign-calendar-view"
+import { Add, Calendar, List, Location } from "@/components/icons"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { getCampaigns } from "@/lib/campaigns"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const FILTERS = ["All", "Active", "Scheduled", "Draft", "Completed"] as const
 type Filter = (typeof FILTERS)[number]
+type ViewMode = "list" | "calendar"
 
 export default function CampaignsScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const [filter, setFilter] = useState<Filter>("All")
+  const [mode, setMode] = useState<ViewMode>("list")
 
   const campaignsQuery = useQuery({
     queryKey: ["campaigns", "list"],
@@ -60,6 +63,35 @@ export default function CampaignsScreen() {
       ...typography.body,
       color: c.mutedForeground,
       marginTop: spacing.xs,
+    },
+    segment: {
+      flexDirection: "row" as const,
+      alignSelf: "flex-start" as const,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      padding: 3,
+      gap: 3,
+    },
+    segmentButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 999,
+    },
+    segmentButtonActive: {
+      backgroundColor: c.primary,
+    },
+    segmentText: {
+      ...typography.label,
+      color: c.mutedForeground,
+      fontWeight: "600" as const,
+    },
+    segmentTextActive: {
+      color: c.primaryForeground,
     },
     filters: {
       gap: spacing.sm,
@@ -216,36 +248,78 @@ export default function CampaignsScreen() {
           </Text>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          {FILTERS.map((item) => {
-            const active = filter === item
-            return (
-              <Pressable
-                key={item}
-                onPress={() => setFilter(item)}
-                style={[styles.filterChip, active && styles.filterChipActive]}
-              >
-                <Text style={[styles.filterText, active && styles.filterTextActive]}>
-                  {item}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
+        <View style={styles.segment}>
+          <Pressable
+            onPress={() => setMode("list")}
+            style={[styles.segmentButton, mode === "list" && styles.segmentButtonActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: mode === "list" }}
+          >
+            <List
+              color={mode === "list" ? colors.primaryForeground : colors.mutedForeground}
+              size={15}
+            />
+            <Text style={[styles.segmentText, mode === "list" && styles.segmentTextActive]}>
+              List
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setMode("calendar")}
+            style={[styles.segmentButton, mode === "calendar" && styles.segmentButtonActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: mode === "calendar" }}
+          >
+            <Calendar
+              color={mode === "calendar" ? colors.primaryForeground : colors.mutedForeground}
+              size={15}
+            />
+            <Text style={[styles.segmentText, mode === "calendar" && styles.segmentTextActive]}>
+              Calendar
+            </Text>
+          </Pressable>
+        </View>
 
-        {loading ? (
-          <SkeletonCampaignCards count={4} />
-        ) : visible.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No campaigns match this filter yet.</Text>
-          </View>
+        {mode === "calendar" ? (
+          loading ? (
+            <SkeletonCampaignCards count={3} />
+          ) : (
+            <CampaignCalendarView
+              campaigns={campaigns}
+              onChanged={() => void campaignsQuery.refetch()}
+            />
+          )
         ) : (
-          <View style={styles.list}>
-            {visible.map((campaign) => (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filters}
+            >
+              {FILTERS.map((item) => {
+                const active = filter === item
+                return (
+                  <Pressable
+                    key={item}
+                    onPress={() => setFilter(item)}
+                    style={[styles.filterChip, active && styles.filterChipActive]}
+                  >
+                    <Text style={[styles.filterText, active && styles.filterTextActive]}>
+                      {item}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+
+            {loading ? (
+              <SkeletonCampaignCards count={4} />
+            ) : visible.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No campaigns match this filter yet.</Text>
+              </View>
+            ) : (
+              <View style={styles.list}>
+                {visible.map((campaign) => (
               <Pressable
                 key={campaign.id}
                 style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -278,9 +352,11 @@ export default function CampaignsScreen() {
                     <Text style={styles.metricValue}>{campaign.budget}</Text>
                   </View>
                 </View>
-              </Pressable>
-            ))}
-          </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
