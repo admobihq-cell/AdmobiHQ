@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowLeft, Send, SearchX } from "lucide-react"
 import { toast } from "sonner"
 
-import { refetchIntervalWhenVisible } from "@workspace/query-client"
+import { refetchIntervalWhileActive } from "@workspace/query-client"
 import { Button } from "@workspace/ui/components/button"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
@@ -16,7 +16,10 @@ import { SupportStatusBadge } from "@/components/support-status-badge"
 import { getSupportCase, replyToSupportCase, type SupportMessage } from "@/lib/support-client"
 import { CategoryIcon, getCategoryLabel } from "@/lib/support-categories"
 
-const POLL_INTERVAL_MS = 30_000
+const POLL_INTERVAL_MS = 60_000
+/** Once a case is resolved/closed there's nothing left to poll for — stop
+ * touching the DB rather than hold the compute awake every minute. */
+const SETTLED_STATUSES = new Set(["resolved", "closed"])
 
 function initials(name: string) {
   return name
@@ -35,7 +38,10 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
     queryKey: ["customer-support-case", caseId],
     queryFn: () => getSupportCase(caseId),
     enabled: Number.isFinite(caseId),
-    refetchInterval: refetchIntervalWhenVisible(POLL_INTERVAL_MS),
+    refetchInterval: refetchIntervalWhileActive(
+      POLL_INTERVAL_MS,
+      (data) => data != null && SETTLED_STATUSES.has(data.status),
+    ),
   })
   const loading = caseQuery.isLoading
   const notFound = !caseQuery.isLoading && caseQuery.data === null

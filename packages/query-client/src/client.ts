@@ -1,8 +1,18 @@
 import { QueryClient } from "@tanstack/react-query"
 
-/** Poll only while the tab is visible so background tabs don't keep Neon awake. */
-export function refetchIntervalWhenVisible(ms: number): () => number | false {
-  return () => {
+/**
+ * `refetchInterval` value that polls every `ms` while the tab is visible, and
+ * stops entirely once `isSettled(data)` is true — e.g. a resolved support
+ * thread. A backgrounded tab or a settled query then makes zero requests, so
+ * nothing holds the scale-to-zero database awake at the poll cadence. Reopening
+ * the tab still refetches immediately via the default `refetchOnWindowFocus`.
+ */
+export function refetchIntervalWhileActive<TData>(
+  ms: number,
+  isSettled?: (data: TData | undefined) => boolean,
+): (query: { state: { data: TData | undefined } }) => number | false {
+  return (query) => {
+    if (isSettled?.(query.state.data)) return false
     if (typeof document !== "undefined" && document.hidden) return false
     return ms
   }
