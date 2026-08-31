@@ -18,6 +18,9 @@ export const BlogPosts: CollectionConfig = {
   },
   versions: {
     drafts: true,
+    // Bound the `cms._blog_posts_v` table — 25 revisions of history per post is
+    // plenty, and it keeps draft churn from growing it unbounded.
+    maxPerDoc: 25,
   },
   access: {
     read: ({ req }) => {
