@@ -1,0 +1,6 @@
+# Caddyfile configuration for n8n
+# Replace n8n.yourdomain.com with your actual domain
+
+n8n.yourdomain.com {
+    reverse_proxy localhost:5678
+}
