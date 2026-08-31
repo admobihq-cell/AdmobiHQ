@@ -1,2 +1,2 @@
-export { createQueryClient, refetchIntervalWhenVisible } from "./client"
+export { createQueryClient, refetchIntervalWhileActive } from "./client"
 export { QueryProvider } from "./provider"
