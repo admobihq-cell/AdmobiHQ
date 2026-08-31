@@ -14,6 +14,9 @@ export const HelpArticles: CollectionConfig = {
   },
   versions: {
     drafts: true,
+    // Bound the `cms._help_articles_v` table — 25 revisions of history per
+    // article is plenty, and it keeps draft churn from growing it unbounded.
+    maxPerDoc: 25,
   },
   access: {
     read: ({ req }) => {
