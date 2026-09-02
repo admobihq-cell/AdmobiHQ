@@ -109,6 +109,10 @@ const navItems: Array<{
 
 const secondaryItems: Array<{
   href: string
+  /** Where the link actually goes, when it differs from the active-match base
+   * (e.g. Settings highlights on /settings/* but links straight to its first
+   * tab so there's no /settings → /settings/flags redirect hop). */
+  linkHref?: string
   label: string
   icon: typeof Users
   permission?: OpsPermission
@@ -122,7 +126,13 @@ const secondaryItems: Array<{
   },
   { href: "/team", label: "Team", icon: UserCog, adminOnly: true },
   { href: "/users", label: "Users", icon: IdCard, adminOnly: true },
-  { href: "/settings", label: "Settings", icon: Settings, permission: "flags" },
+  {
+    href: "/settings",
+    linkHref: "/settings/flags",
+    label: "Settings",
+    icon: Settings,
+    permission: "flags",
+  },
 ]
 
 /** Routes that exist and need a breadcrumb label but never render in the sidebar. */
@@ -275,7 +285,7 @@ export function OpsShell({
                         tooltip={item.label}
                       >
                         <Link
-                          href={item.href}
+                          href={item.linkHref ?? item.href}
                           data-tour-id={`tour-nav-${tourSlug(item.href)}`}
                         >
                           <item.icon />
