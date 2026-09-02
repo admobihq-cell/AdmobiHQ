@@ -4,6 +4,7 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -25,7 +26,33 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
       <Body style={emailStyles.main}>
         <Container style={emailStyles.container}>
           <Section style={emailStyles.header}>
-            <Text style={emailStyles.brand}>Admobi</Text>
+            <Link href="https://admobihq.com" style={{ textDecoration: "none" }}>
+              <table
+                role="presentation"
+                align="center"
+                cellPadding={0}
+                cellSpacing={0}
+                border={0}
+                style={{ margin: "0 auto" }}
+              >
+                <tbody>
+                  <tr>
+                    <td style={{ paddingRight: "10px", verticalAlign: "middle" }}>
+                      <Img
+                        src="https://admobihq.com/brand/logo-mark.png"
+                        width={40}
+                        height={22}
+                        alt=""
+                        style={{ display: "block" }}
+                      />
+                    </td>
+                    <td style={{ verticalAlign: "middle" }}>
+                      <Text style={emailStyles.brand}>Admobi</Text>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </Link>
           </Section>
 
           <Section style={emailStyles.content}>{children}</Section>

@@ -427,3 +427,28 @@ model AuditEvent {
   @@index([app, created_at])
   @@map("audit_events")
 }
+
+/// A third-party tool or service the business pays for or depends on.
+/// Managed from ops → Settings → Integrations (admin only). `cost` is the
+/// per-cycle price in `currency`; convert to a monthly USD figure in the app.
+model Integration {
+  id               Int      @id @default(autoincrement())
+  name             String
+  category         String   @default("infrastructure") // infrastructure, email, search-analytics, monitoring, automation, payments, developer, ai
+  purpose          String   @default("")
+  url              String   @default("")
+  plan             String   @default("")
+  cost             Decimal  @default(0) @db.Decimal(12, 2)
+  currency         String   @default("USD") // USD, EUR, KES
+  billing_cycle    String   @default("monthly") // monthly, annual, usage, free
+  status           String   @default("active") // active, trial, review, canceled
+  owner            String   @default("")
+  notes            String   @default("")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  updated_by_email String?
+
+  @@index([category])
+  @@index([status])
+  @@map("integrations")
+}
