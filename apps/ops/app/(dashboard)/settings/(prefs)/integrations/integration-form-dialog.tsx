@@ -13,19 +13,24 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 
 import {
   BILLING_CYCLES,
   CATEGORIES,
+  CATEGORY_COLOR,
   CURRENCIES,
   STATUSES,
   STATUS_LABEL,
 } from "@/lib/integration-costs"
 import type { IntegrationDto } from "@/lib/queries/integrations"
-
-const selectClass =
-  "border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
 
 const CYCLE_LABEL: Record<string, string> = {
   monthly: "Monthly",
@@ -115,33 +120,37 @@ export function IntegrationFormDialog({ open, onOpenChange, integration, saving,
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="integration-category">Category</Label>
-              <select
-                id="integration-category"
-                className={selectClass}
-                value={values.category}
-                onChange={(e) => set("category", e.target.value)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={values.category} onValueChange={(v) => set("category", v)}>
+                <SelectTrigger id="integration-category" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      <span
+                        className="size-2 rounded-sm"
+                        style={{ backgroundColor: CATEGORY_COLOR[c.value] }}
+                      />
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="integration-status">Status</Label>
-              <select
-                id="integration-status"
-                className={selectClass}
-                value={values.status}
-                onChange={(e) => set("status", e.target.value)}
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABEL[s]}
-                  </option>
-                ))}
-              </select>
+              <Select value={values.status} onValueChange={(v) => set("status", v)}>
+                <SelectTrigger id="integration-status" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUS_LABEL[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -170,18 +179,21 @@ export function IntegrationFormDialog({ open, onOpenChange, integration, saving,
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="integration-billing">Billing</Label>
-              <select
-                id="integration-billing"
-                className={selectClass}
+              <Select
                 value={values.billing_cycle}
-                onChange={(e) => set("billing_cycle", e.target.value)}
+                onValueChange={(v) => set("billing_cycle", v)}
               >
-                {BILLING_CYCLES.map((c) => (
-                  <option key={c} value={c}>
-                    {CYCLE_LABEL[c]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="integration-billing" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BILLING_CYCLES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CYCLE_LABEL[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="integration-cost">Cost</Label>
@@ -197,19 +209,22 @@ export function IntegrationFormDialog({ open, onOpenChange, integration, saving,
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="integration-currency">Currency</Label>
-              <select
-                id="integration-currency"
-                className={selectClass}
+              <Select
                 value={values.currency}
-                onChange={(e) => set("currency", e.target.value)}
+                onValueChange={(v) => set("currency", v)}
                 disabled={costDisabled}
               >
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="integration-currency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           {costDisabled ? (
