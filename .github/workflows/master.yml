@@ -5,164 +5,26 @@ on:
     branches:
       - master
 
-# Nothing in this workflow pushes commits, comments on PRs, or touches
-# releases — checkout is all it needs. (The commented-out deploy job below
-# uses its own VERCEL_TOKEN secret, not GITHUB_TOKEN, so this doesn't
-# affect it.)
 permissions:
   contents: read
 
-env:
-  TURBO_UI: false # Disable TUI — it requires an interactive terminal
-  NEXT_TELEMETRY_DISABLED: 1
+concurrency:
+  group: master
+  cancel-in-progress: false
 
 jobs:
   ci:
-    name: Lint, Typecheck & Build
-    runs-on: ubuntu-latest
-    env:
-      SENTRY_DISABLED: "true"
-      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
-      NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL != '' && secrets.NEXT_PUBLIC_SERVER_URL || 'https://admobihq.com' }}
-      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
-      API_KEY_PEXELS: ${{ secrets.API_KEY_PEXELS }}
-      resend_api_key: ${{ secrets.RESEND_API_KEY }}
-      SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-      TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-      NEXT_PUBLIC_OPS_URL: ${{ secrets.NEXT_PUBLIC_OPS_URL != '' && secrets.NEXT_PUBLIC_OPS_URL || 'https://ops.admobihq.com' }}
-      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL != '' && secrets.NEXT_PUBLIC_APP_URL || 'https://app.admobihq.com' }}
-      NEXT_PUBLIC_WEB_URL: ${{ secrets.NEXT_PUBLIC_WEB_URL != '' && secrets.NEXT_PUBLIC_WEB_URL || 'https://admobihq.com' }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: cd apps/web && npx prisma generate
-
-      - name: Cache Turbo
-        uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-  unit:
-    name: Unit Tests (Vitest)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Cache Turbo
-        uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-unit-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-unit-
-            ${{ runner.os }}-turbo-
-
-      - name: Run unit tests
-        run: npm run test
-
-  e2e:
-    name: E2E Tests (Playwright)
-    runs-on: ubuntu-latest
-    needs: ci
-    env:
-      SENTRY_DISABLED: "true"
-      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
-      NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL != '' && secrets.NEXT_PUBLIC_SERVER_URL || 'https://admobihq.com' }}
-      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
-      API_KEY_PEXELS: ${{ secrets.API_KEY_PEXELS }}
-      resend_api_key: ${{ secrets.RESEND_API_KEY }}
-      SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-      TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-      NEXT_PUBLIC_OPS_URL: ${{ secrets.NEXT_PUBLIC_OPS_URL != '' && secrets.NEXT_PUBLIC_OPS_URL || 'https://ops.admobihq.com' }}
-      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL != '' && secrets.NEXT_PUBLIC_APP_URL || 'https://app.admobihq.com' }}
-      NEXT_PUBLIC_WEB_URL: ${{ secrets.NEXT_PUBLIC_WEB_URL != '' && secrets.NEXT_PUBLIC_WEB_URL || 'https://admobihq.com' }}
-      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: cd apps/web && npx prisma generate
-
-      - name: Cache Turbo
-        uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Build web
-        run: npm run build -w web
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Upload Playwright report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-master
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
-          if-no-files-found: ignore
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    with:
+      # Direct pushes to master never went through a PR — run the full suite,
+      # e2e included. A squash-merged PR lands a commit whose message ends
+      # "(...#123)"; e2e already passed on that PR, so skip the ~10 min browser
+      # run and let lint/typecheck/build/unit be the merge-integration gate.
+      # ponytail: heuristic on the squash-merge commit message. If you switch
+      # merge strategy, update this — plain merge commits start "Merge pull
+      # request #", rebase merges leave no marker at all (would run e2e).
+      run-e2e: ${{ !contains(github.event.head_commit.message, '(#') }}
 
   # Uncomment when ready to deploy
   # deploy:
