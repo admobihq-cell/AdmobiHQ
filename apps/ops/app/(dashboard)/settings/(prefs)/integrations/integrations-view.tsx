@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import {
   ArrowUpRight,
   Boxes,
-  CircleDollarSign,
   Gift,
   Loader2,
   Pencil,
@@ -14,7 +13,14 @@ import {
   TrendingUp,
 } from "lucide-react"
 import { toast } from "sonner"
+import { Cell, Pie, PieChart } from "recharts"
 
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@workspace/ui/components/chart"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -95,6 +101,22 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
   const [sorting, setSorting] = useState<SortingState>([{ id: "cost", desc: true }])
 
   const summary = useMemo(() => totals(integrations), [integrations])
+
+  const pieData = useMemo(
+    () =>
+      summary.byCategory
+        .filter((c) => c.monthly > 0)
+        .sort((a, b) => b.monthly - a.monthly)
+        .map((c) => ({ name: c.label, value: c.monthly, color: c.color })),
+    [summary],
+  )
+  const chartConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        pieData.map((slice) => [slice.name, { label: slice.name, color: slice.color }]),
+      ) satisfies ChartConfig,
+    [pieData],
+  )
 
   function handleSubmit(values: IntegrationFormValues) {
     startTransition(async () => {
@@ -290,8 +312,6 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
     },
   ]
 
-  const maxCategory = Math.max(1, ...summary.byCategory.map((c) => c.monthly))
-
   return (
     <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-2">
@@ -335,22 +355,23 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
       ) : (
         <>
           <Card className="border-0 bg-primary text-primary-foreground shadow-none">
-            <CardContent className="space-y-6 p-6 md:p-8">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground/85">
-                <CircleDollarSign className="size-4" aria-hidden />
-                Recurring monthly spend
-              </div>
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <p className="text-4xl font-semibold tracking-tight tabular-nums">
-                  {formatUsd(summary.monthlyUsd)}
+            <CardContent className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 p-4 md:p-5">
+              <div className="space-y-0.5">
+                <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-primary-foreground/80">
+                  Recurring monthly spend
                 </p>
-                <p className="text-lg text-primary-foreground/80 tabular-nums">
-                  ≈ {formatKes(summary.monthlyKes)}
+                <p className="flex items-baseline gap-2">
+                  <span className="text-2xl font-semibold tracking-tight tabular-nums">
+                    {formatUsd(summary.monthlyUsd)}
+                  </span>
+                  <span className="text-sm text-primary-foreground/80 tabular-nums">
+                    ≈ {formatKes(summary.monthlyKes)}
+                  </span>
                 </p>
               </div>
-              <p className="text-sm text-primary-foreground/75">
-                {formatUsd(summary.annualUsd)} / year · rates as of {RATES_AS_OF} (1&nbsp;USD&nbsp;=&nbsp;
-                {USD_KES}&nbsp;KES, 1&nbsp;EUR&nbsp;=&nbsp;{EUR_USD}&nbsp;USD)
+              <p className="text-[0.7rem] text-primary-foreground/70">
+                {formatUsd(summary.annualUsd)} / year · {RATES_AS_OF} · 1&nbsp;USD&nbsp;=&nbsp;{USD_KES}&nbsp;KES
+                · 1&nbsp;EUR&nbsp;=&nbsp;{EUR_USD}&nbsp;USD
               </p>
             </CardContent>
           </Card>
@@ -375,28 +396,59 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
               title="Spend by category"
               description="Share of the fixed monthly total"
             />
-            <div className="space-y-2">
-              {summary.byCategory
-                .slice()
-                .sort((a, b) => b.monthly - a.monthly)
-                .map((c) => (
-                  <div key={c.value} className="flex items-center gap-3 text-sm">
-                    <span className="w-36 shrink-0 truncate text-muted-foreground">{c.label}</span>
-                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <span
-                        className="block h-full rounded-full"
-                        style={{
-                          width: `${Math.max(2, (c.monthly / maxCategory) * 100)}%`,
-                          backgroundColor: c.color,
-                        }}
+            <Card className="shadow-none">
+              <CardContent className="flex flex-col items-center gap-6 p-6 sm:flex-row">
+                {pieData.length > 0 ? (
+                  <ChartContainer
+                    config={chartConfig}
+                    className="aspect-square h-48 shrink-0"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            nameKey="name"
+                            hideLabel
+                            formatter={(value) => formatUsd(Number(value), true)}
+                          />
+                        }
                       />
-                    </span>
-                    <span className="w-28 shrink-0 text-right tabular-nums">
-                      {c.monthly > 0 ? formatUsd(c.monthly, true) : "—"}
-                    </span>
-                  </div>
-                ))}
-            </div>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={44}
+                        strokeWidth={2}
+                      >
+                        {pieData.map((slice) => (
+                          <Cell key={slice.name} fill={slice.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                ) : (
+                  <p className="py-8 text-sm text-muted-foreground">
+                    No paid subscriptions yet.
+                  </p>
+                )}
+
+                <ul className="grid flex-1 gap-2 text-sm">
+                  {pieData.map((slice) => (
+                    <li key={slice.name} className="flex items-center gap-2.5">
+                      <span
+                        className="size-2.5 shrink-0 rounded-sm"
+                        style={{ backgroundColor: slice.color }}
+                      />
+                      <span className="flex-1 truncate">{slice.name}</span>
+                      <span className="tabular-nums">{formatUsd(slice.value, true)}</span>
+                      <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">
+                        {Math.round((slice.value / summary.monthlyUsd) * 100)}%
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-4">
