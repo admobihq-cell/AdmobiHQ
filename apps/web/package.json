@@ -27,6 +27,8 @@
     "db:ops-roles": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/ops-roles-additive.sql",
     "db:driver-profiles": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/driver-profiles-additive.sql",
     "db:driver-notifications": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/driver-notifications-additive.sql",
+    "db:integrations": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/integrations-additive.sql",
+    "db:integrations:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/integrations-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",
