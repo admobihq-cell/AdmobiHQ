@@ -27,6 +27,12 @@ const nextConfig = {
   turbopack: {
     root: repoRoot,
   },
+  async redirects() {
+    return [
+      // Land straight on the first settings tab — no /settings render + hop.
+      { source: "/settings", destination: "/settings/flags", permanent: false },
+    ]
+  },
   async headers() {
     return [
       {
