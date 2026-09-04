@@ -27,7 +27,12 @@ import type { BlogPostListItem } from "@/lib/payload/types"
 import { Container } from "./container"
 import { Logo } from "./logo"
 
-type NavChild = { href: string; label: string; description: string; icon: LucideIcon }
+type NavChild = {
+  href: string
+  label: string
+  description: string
+  icon: LucideIcon
+}
 
 type NavItem =
   | { kind: "link"; href: string; label: string }
@@ -122,11 +127,22 @@ const triggerClass = `${linkClass} inline-flex items-center gap-1 pe-1.5`
 const panelClass =
   "border-border bg-background animate-in fade-in-0 slide-in-from-top-1 motion-reduce:animate-none absolute left-0 top-full z-50 mt-2 rounded-xl border p-2 shadow-lg duration-150 ease-out"
 
-/** Popover open state: hover-intent open/close plus outside-click and Escape dismissal. */
-function usePopover<T extends HTMLElement>() {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<T>(null)
+/**
+ * Coordinates every desktop nav dropdown so at most one is ever open. Moving
+ * the pointer from one trigger straight to another switches instantly (both
+ * flip in the same state update, so there's never a frame where two panels
+ * are open at once) — only leaving the whole nav area waits out a short
+ * grace period before closing, so hover-intent survives the trigger-to-panel
+ * gap.
+ */
+function useNavMenu() {
+  const [active, setActive] = useState<string | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Tracks which label was opened by hover-intent, so a click landing right
+  // after (moving the mouse in to click always fires mouseenter first)
+  // confirms/keeps it open instead of toggling it shut again.
+  const hoverActiveLabel = useRef<string | null>(null)
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
@@ -135,60 +151,36 @@ function usePopover<T extends HTMLElement>() {
     }
   }
 
-  // Tracks whether the panel is currently open because of mouse hover-intent, so a
-  // click that lands right after the hover-open (moving the mouse in to click always
-  // fires mouseenter first) confirms/keeps it open instead of toggling it shut again.
-  const hoverActive = useRef(false)
-
-  const openNow = () => {
-    hoverActive.current = true
+  const activate = (label: string) => {
+    hoverActiveLabel.current = label
     clearCloseTimer()
-    setOpen(true)
+    setActive(label)
   }
 
   const closeSoon = () => {
-    hoverActive.current = false
+    hoverActiveLabel.current = null
     clearCloseTimer()
-    closeTimer.current = setTimeout(() => setOpen(false), 150)
+    closeTimer.current = setTimeout(() => setActive(null), 150)
   }
 
   const closeNow = () => {
-    hoverActive.current = false
+    hoverActiveLabel.current = null
     clearCloseTimer()
-    setOpen(false)
+    setActive(null)
   }
 
-  const handleTriggerClick = () => {
-    if (hoverActive.current) {
-      setOpen(true)
+  const toggle = (label: string) => {
+    if (hoverActiveLabel.current === label) {
+      setActive(label)
       return
     }
-    setOpen((v) => !v)
+    clearCloseTimer()
+    setActive((current) => (current === label ? null : label))
   }
-
-  useEffect(() => {
-    if (!open) return
-
-    function onPointerDown(event: MouseEvent) {
-      if (rootRef.current?.contains(event.target as Node)) return
-      closeNow()
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeNow()
-    }
-
-    document.addEventListener("mousedown", onPointerDown)
-    document.addEventListener("keydown", onKeyDown)
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown)
-      document.removeEventListener("keydown", onKeyDown)
-    }
-  }, [open])
 
   useEffect(() => clearCloseTimer, [])
 
-  return { open, rootRef, openNow, closeSoon, closeNow, toggle: handleTriggerClick }
+  return { active, activate, closeSoon, closeNow, toggle }
 }
 
 function NavChildCard({
@@ -205,15 +197,19 @@ function NavChildCard({
     <Link
       href={item.href}
       role={role}
-      className="focus-visible:ring-ring flex items-start gap-3 rounded-lg p-2.5 outline-none transition-colors hover:bg-muted focus-visible:ring-2"
+      className="flex items-start gap-3 rounded-lg p-2.5 transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
       onClick={onNavigate}
     >
-      <span className="border-border bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg border">
-        <Icon className="text-foreground size-4" aria-hidden />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
+        <Icon className="size-4 text-foreground" aria-hidden />
       </span>
       <span className="flex flex-col gap-0.5 pt-0.5">
-        <span className="text-foreground text-sm font-medium leading-none">{item.label}</span>
-        <span className="text-muted-foreground text-xs leading-snug">{item.description}</span>
+        <span className="text-sm leading-none font-medium text-foreground">
+          {item.label}
+        </span>
+        <span className="text-xs leading-snug text-muted-foreground">
+          {item.description}
+        </span>
       </span>
     </Link>
   )
@@ -238,15 +234,21 @@ function BlogPreviewCard({
       <Link
         href={`/blog/${post.slug}`}
         role={role}
-        className="focus-visible:ring-ring flex items-center gap-3 rounded-lg p-2 outline-none transition-colors hover:bg-muted focus-visible:ring-2"
+        className="flex items-center gap-3 rounded-lg p-2 transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         onClick={onNavigate}
       >
-        <span className="border-border bg-muted relative block size-12 shrink-0 overflow-hidden rounded-md border">
+        <span className="relative block size-12 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
           {imageUrl ? (
-            <Image src={imageUrl} alt={alt} fill className="object-cover" sizes="48px" />
+            <Image
+              src={imageUrl}
+              alt={alt}
+              fill
+              className="object-cover"
+              sizes="48px"
+            />
           ) : null}
         </span>
-        <span className="text-foreground line-clamp-2 text-sm font-medium leading-snug">
+        <span className="line-clamp-2 text-sm leading-snug font-medium text-foreground">
           {post.title}
         </span>
       </Link>
@@ -257,15 +259,21 @@ function BlogPreviewCard({
     <Link
       href={`/blog/${post.slug}`}
       role={role}
-      className="focus-visible:ring-ring flex flex-col gap-2 rounded-lg p-2 outline-none transition-colors hover:bg-muted focus-visible:ring-2"
+      className="flex flex-col gap-2 rounded-lg p-2 transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
       onClick={onNavigate}
     >
-      <span className="border-border bg-muted relative block aspect-[16/10] w-full shrink-0 overflow-hidden rounded-md border">
+      <span className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden rounded-md border border-border bg-muted">
         {imageUrl ? (
-          <Image src={imageUrl} alt={alt} fill className="object-cover" sizes="160px" />
+          <Image
+            src={imageUrl}
+            alt={alt}
+            fill
+            className="object-cover"
+            sizes="160px"
+          />
         ) : null}
       </span>
-      <span className="text-foreground line-clamp-2 text-sm font-medium leading-snug">
+      <span className="line-clamp-2 text-sm leading-snug font-medium text-foreground">
         {post.title}
       </span>
     </Link>
@@ -275,40 +283,46 @@ function BlogPreviewCard({
 /** Nav trigger that opens its panel on hover-intent as well as click/tap, on the whole label + chevron. */
 function NavPopover({
   label,
+  isOpen,
+  onActivate,
+  onToggle,
+  onClose,
   panelClassName,
   render,
 }: {
   label: string
+  isOpen: boolean
+  onActivate: () => void
+  onToggle: () => void
+  onClose: () => void
   panelClassName: string
   render: (close: () => void) => ReactNode
 }) {
-  const { open, rootRef, openNow, closeSoon, closeNow, toggle } = usePopover<HTMLDivElement>()
   const menuId = useId()
 
   return (
-    <div
-      ref={rootRef}
-      className="relative flex items-center"
-      onMouseEnter={openNow}
-      onMouseLeave={closeSoon}
-    >
+    <div className="relative flex items-center" onMouseEnter={onActivate}>
       <button
         type="button"
         className={triggerClass}
-        aria-expanded={open}
+        aria-expanded={isOpen}
         aria-haspopup="true"
         aria-controls={menuId}
-        onClick={toggle}
+        onClick={onToggle}
       >
         {label}
         <ChevronDown
-          className={`size-3.5 shrink-0 opacity-70 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`size-3.5 shrink-0 opacity-70 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           aria-hidden
         />
       </button>
-      {open ? (
-        <div id={menuId} role="menu" className={`${panelClass} ${panelClassName}`}>
-          {render(closeNow)}
+      {isOpen ? (
+        <div
+          id={menuId}
+          role="menu"
+          className={`${panelClass} ${panelClassName}`}
+        >
+          {render(onClose)}
         </div>
       ) : null}
     </div>
@@ -318,10 +332,18 @@ function NavPopover({
 function DesktopNavItem({
   item,
   recentPosts,
+  isOpen,
+  onActivate,
+  onToggle,
+  onClose,
   onNavigate,
 }: {
   item: NavItem
   recentPosts: BlogPostListItem[]
+  isOpen: boolean
+  onActivate: () => void
+  onToggle: () => void
+  onClose: () => void
   onNavigate?: () => void
 }) {
   if (item.kind === "link") {
@@ -336,7 +358,15 @@ function DesktopNavItem({
     return (
       <NavPopover
         label={item.label}
-        panelClassName={item.children.length > 1 ? "grid w-[30rem] grid-cols-2 gap-1" : "w-[19rem]"}
+        isOpen={isOpen}
+        onActivate={onActivate}
+        onToggle={onToggle}
+        onClose={onClose}
+        panelClassName={
+          item.children.length > 1
+            ? "grid w-[30rem] grid-cols-2 gap-1"
+            : "w-[19rem]"
+        }
         render={(close) => (
           <>
             {item.children.map((child) => (
@@ -367,17 +397,21 @@ function DesktopNavItem({
   return (
     <NavPopover
       label={item.label}
+      isOpen={isOpen}
+      onActivate={onActivate}
+      onToggle={onToggle}
+      onClose={onClose}
       panelClassName="w-[32rem]"
       render={(close) => (
         <>
           <div className="flex items-center justify-between px-1 pb-2">
-            <span className="text-muted-foreground text-[0.65rem] font-medium uppercase tracking-[0.18em]">
+            <span className="text-[0.65rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
               Latest posts
             </span>
             <Link
               href={BLOG_PATH}
               role="menuitem"
-              className="text-foreground text-xs font-medium underline-offset-4 hover:underline"
+              className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
               onClick={() => {
                 close()
                 onNavigate?.()
@@ -420,7 +454,7 @@ function MobileNavItem({
         {item.label}
       </Link>
       {item.kind === "links" ? (
-        <ul className="border-border ms-3 flex flex-col gap-0.5 border-s ps-3">
+        <ul className="ms-3 flex flex-col gap-0.5 border-s border-border ps-3">
           {item.children.map((child) => (
             <li key={child.href}>
               <NavChildCard item={child} onNavigate={onNavigate} />
@@ -429,10 +463,14 @@ function MobileNavItem({
         </ul>
       ) : null}
       {item.kind === "blog" && recentPosts.length > 0 ? (
-        <ul className="border-border ms-3 flex flex-col gap-0.5 border-s ps-3">
+        <ul className="ms-3 flex flex-col gap-0.5 border-s border-border ps-3">
           {recentPosts.map((post) => (
             <li key={post.id}>
-              <BlogPreviewCard post={post} orientation="horizontal" onNavigate={onNavigate} />
+              <BlogPreviewCard
+                post={post}
+                orientation="horizontal"
+                onNavigate={onNavigate}
+              />
             </li>
           ))}
         </ul>
@@ -449,6 +487,29 @@ export function SiteHeader({
   const [open, setOpen] = useState(false)
   const closeMobile = () => setOpen(false)
 
+  const { active, activate, closeSoon, closeNow, toggle } = useNavMenu()
+  const desktopNavRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (!active) return
+
+    function onPointerDown(event: MouseEvent) {
+      if (desktopNavRef.current?.contains(event.target as Node)) return
+      closeNow()
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeNow()
+    }
+
+    document.addEventListener("mousedown", onPointerDown)
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown)
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [active, closeNow])
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background">
       <Container className="flex h-14 items-center justify-between gap-4 sm:h-16">
@@ -459,14 +520,27 @@ export function SiteHeader({
           <Logo />
         </Link>
         <nav
+          ref={desktopNavRef}
           aria-label="Primary"
           className="hidden flex-wrap items-center justify-end gap-1 lg:flex"
+          onMouseLeave={closeSoon}
         >
           {navItems.map((item) => (
-            <DesktopNavItem key={item.href} item={item} recentPosts={recentPosts} />
+            <DesktopNavItem
+              key={item.href}
+              item={item}
+              recentPosts={recentPosts}
+              isOpen={active === item.label}
+              onActivate={() => activate(item.label)}
+              onToggle={() => toggle(item.label)}
+              onClose={closeNow}
+            />
           ))}
           <ThemeToggle />
-          <span className="mx-1 hidden h-6 w-px bg-border xl:block" aria-hidden />
+          <span
+            className="mx-1 hidden h-6 w-px bg-border xl:block"
+            aria-hidden
+          />
           <Button asChild size="sm" variant="outline" className="ml-2 shrink-0">
             <Link href="/partner-fleet">Partner your fleet</Link>
           </Button>
@@ -494,7 +568,9 @@ export function SiteHeader({
         >
           <Container className="flex flex-col gap-4 py-4">
             <div className="flex items-center justify-between border-b border-border pb-4">
-              <span className="text-sm font-medium text-foreground">Appearance</span>
+              <span className="text-sm font-medium text-foreground">
+                Appearance
+              </span>
               <ThemeToggle />
             </div>
             <nav aria-label="Mobile primary" className="flex flex-col gap-2">
@@ -508,7 +584,12 @@ export function SiteHeader({
               ))}
             </nav>
             <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
-              <Button asChild variant="outline" size="sm" className="w-full sm:flex-1">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="w-full sm:flex-1"
+              >
                 <Link href="/partner-fleet" onClick={closeMobile}>
                   Partner your fleet
                 </Link>
