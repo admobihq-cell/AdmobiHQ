@@ -20,6 +20,7 @@ import {
   HOURS_PER_DAY,
   LEAD_CITIES,
   LEAD_STATUSES,
+  OPS_PERMISSIONS,
   PLATFORM_FLAG_KEYS,
   RIDEHAIL_PLATFORMS,
   SUPPORT_CATEGORIES,
@@ -219,6 +220,15 @@ export const broadcastCreateSchema = z.object({
     .default(["customer-mobile"]),
 })
 
+export const documentExportRequestSchema = z.object({
+  entity: z.enum(OPS_PERMISSIONS),
+  title: z.string().min(1).max(200),
+  headers: z.array(z.string()).min(1).max(20),
+  // Matches the current-page/selected-rows scope CSV export already
+  // uses — this is not a full-dataset export.
+  rows: z.array(z.array(z.string())).max(500),
+})
+
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>
 export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>
 export type FleetCreateInput = z.infer<typeof fleetCreateSchema>
@@ -242,3 +252,4 @@ export type BroadcastCreateInput = z.infer<typeof broadcastCreateSchema>
 export type SupportCaseCreateInput = z.infer<typeof supportCaseCreateSchema>
 export type SupportMessageCreateInput = z.infer<typeof supportMessageCreateSchema>
 export type SupportCaseUpdateInput = z.infer<typeof supportCaseUpdateSchema>
+export type DocumentExportRequest = z.infer<typeof documentExportRequestSchema>
