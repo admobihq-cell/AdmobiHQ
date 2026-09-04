@@ -46,7 +46,8 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
+import { downloadBlob, downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
+import { buildStyledXlsx } from "@/lib/xlsx"
 import { apiPathToPermission, resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 import { DataTable, type ColumnDef as TanStackColumnDef } from "@/components/ui/data-table"
@@ -333,6 +334,18 @@ export function EntityPage<T extends { id: number }>({
     }
   }
 
+  const handleBulkExportExcel = async () => {
+    if (!selectedRows.length) return
+    const excelColumns = columns.filter((c) => c.csv)
+    const headers = excelColumns.map((c) => c.header)
+    const rows = selectedRows.map((row) =>
+      excelColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    const blob = await buildStyledXlsx(title, headers, rows)
+    downloadBlob(`${apiPath.replace(/^\/v1\//, "")}-selected.xlsx`, blob)
+    toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
+  }
+
   const saveMutation = useMutation({
     mutationFn: (values: Record<string, unknown>) =>
       (editing
@@ -403,6 +416,17 @@ export function EntityPage<T extends { id: number }>({
     } catch (e) {
       toast.error(formatApiError(e))
     }
+  }
+
+  const handleExportExcel = async () => {
+    if (!data?.items.length) return
+    const excelColumns = columns.filter((c) => c.csv)
+    const headers = excelColumns.map((c) => c.header)
+    const rows = data.items.map((row) =>
+      excelColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    const blob = await buildStyledXlsx(title, headers, rows)
+    downloadBlob(`${apiPath.replace(/^\/v1\//, "")}.xlsx`, blob)
   }
 
   const quickStatusMutation = useMutation({
@@ -506,10 +530,13 @@ export function EntityPage<T extends { id: number }>({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExport}>Export as CSV</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleExportExcel()}>
+              Export as Excel
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => void handleExportPdf()}>
               Export as PDF
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExport}>Export as CSV</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         {statusFilterOptions?.length ? (
@@ -610,10 +637,13 @@ export function EntityPage<T extends { id: number }>({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleBulkExport}>Export as CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleBulkExportExcel()}>
+                  Export as Excel
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => void handleBulkExportPdf()}>
                   Export as PDF
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBulkExport}>Export as CSV</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
