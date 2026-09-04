@@ -12,6 +12,11 @@ const repoRoot = path.join(appDir, "../..")
 const nextConfig = {
   outputFileTracingRoot: repoRoot,
   transpilePackages: ["@workspace/sentry-config", "@workspace/ops-contracts"],
+  // takumi-pdf loads a WASM asset via a Node-native path; letting webpack
+  // bundle/rewrite that reference breaks it ("path argument must be of
+  // type string ... Received an instance of URL"). Keeping it external
+  // means Node requires it directly at runtime instead.
+  serverExternalPackages: ["takumi-pdf"],
   images: {
     minimumCacheTTL: 60 * 60 * 24 * 31,
   },
