@@ -46,8 +46,8 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
-import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
+import { downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
+import { apiPathToPermission, resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 import { DataTable, type ColumnDef as TanStackColumnDef } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
@@ -310,6 +310,29 @@ export function EntityPage<T extends { id: number }>({
     toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
   }
 
+  const handleBulkExportPdf = async () => {
+    if (!selectedRows.length) return
+    const pdfColumns = columns.filter((c) => c.csv)
+    const headers = pdfColumns.map((c) => c.header)
+    const rows = selectedRows.map((row) =>
+      pdfColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    try {
+      const blob = await opsClient.documents.exportPdf({
+        entity: apiPathToPermission(apiPath),
+        title,
+        headers,
+        rows,
+      })
+      downloadPdf(`${apiPath.replace(/^\/v1\//, "")}-selected.pdf`, blob)
+      toast.success(
+        `Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`,
+      )
+    } catch (e) {
+      toast.error(formatApiError(e))
+    }
+  }
+
   const saveMutation = useMutation({
     mutationFn: (values: Record<string, unknown>) =>
       (editing
@@ -360,6 +383,26 @@ export function EntityPage<T extends { id: number }>({
       )
     })
     downloadCsv(`${apiPath.replace(/^\/v1\//, "")}.csv`, toCsv(rows, csvColumns))
+  }
+
+  const handleExportPdf = async () => {
+    if (!data?.items.length) return
+    const pdfColumns = columns.filter((c) => c.csv)
+    const headers = pdfColumns.map((c) => c.header)
+    const rows = data.items.map((row) =>
+      pdfColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    try {
+      const blob = await opsClient.documents.exportPdf({
+        entity: apiPathToPermission(apiPath),
+        title,
+        headers,
+        rows,
+      })
+      downloadPdf(`${apiPath.replace(/^\/v1\//, "")}.pdf`, blob)
+    } catch (e) {
+      toast.error(formatApiError(e))
+    }
   }
 
   const quickStatusMutation = useMutation({
@@ -454,10 +497,21 @@ export function EntityPage<T extends { id: number }>({
             }}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} disabled={!data?.items.length}>
-          <Download data-icon="inline-start" />
-          Export CSV
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!data?.items.length}>
+              <Download data-icon="inline-start" />
+              Export
+              <ChevronDown data-icon="inline-end" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExport}>Export as CSV</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleExportPdf()}>
+              Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {statusFilterOptions?.length ? (
           <Select
             value={statusFilter || ALL_STATUSES}
@@ -547,15 +601,21 @@ export function EntityPage<T extends { id: number }>({
                 {action.label}
               </Button>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkExport}
-              disabled={bulkMutation.isPending}
-            >
-              <Download data-icon="inline-start" />
-              Export selected
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={bulkMutation.isPending}>
+                  <Download data-icon="inline-start" />
+                  Export selected
+                  <ChevronDown data-icon="inline-end" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleBulkExport}>Export as CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleBulkExportPdf()}>
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="destructive"
               size="sm"
