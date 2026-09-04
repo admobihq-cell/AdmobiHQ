@@ -70,6 +70,13 @@ export type DriverDto = {
   heard_about: string | null
   status: string | null
   notes: string | null
+  vehicle_make_model: string | null
+  vehicle_year: string | null
+  vehicle_ownership: string | null
+  routes_areas: string | null
+  hours_per_day: string | null
+  platforms: string[]
+  applicant_message: string | null
   created_at: string
   updated_at: string
 }

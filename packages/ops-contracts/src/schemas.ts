@@ -14,13 +14,16 @@ import {
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
+  HOURS_PER_DAY,
   LEAD_CITIES,
   LEAD_STATUSES,
   PLATFORM_FLAG_KEYS,
+  RIDEHAIL_PLATFORMS,
   SUPPORT_CATEGORIES,
   SUPPORT_CHANNELS,
   SUPPORT_PRIORITIES,
   SUPPORT_STATUSES,
+  VEHICLE_OWNERSHIP,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
 } from "./enums"
@@ -65,6 +68,13 @@ export const driverCreateSchema = z.object({
   heard_about: z.enum(HEARD_ABOUT).optional(),
   status: z.enum(DRIVER_STATUSES).optional(),
   notes: z.string().optional(),
+  vehicle_make_model: z.string().optional(),
+  vehicle_year: z.string().optional(),
+  vehicle_ownership: z.enum(VEHICLE_OWNERSHIP).optional(),
+  routes_areas: z.string().optional(),
+  hours_per_day: z.enum(HOURS_PER_DAY).optional(),
+  platforms: z.array(z.enum(RIDEHAIL_PLATFORMS)).optional(),
+  applicant_message: z.string().optional(),
 })
 
 export const driverUpdateSchema = driverCreateSchema.partial()

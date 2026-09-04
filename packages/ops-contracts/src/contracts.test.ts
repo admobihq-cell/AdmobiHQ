@@ -11,7 +11,7 @@ import {
   formatRelativeTime,
   parseId,
 } from "./format"
-import { leadCreateSchema, waitlistCreateSchema } from "./schemas"
+import { driverCreateSchema, leadCreateSchema, waitlistCreateSchema } from "./schemas"
 
 describe("allowed email", () => {
   it("accepts @admobihq.com addresses", () => {
@@ -92,6 +92,41 @@ describe("zod schemas", () => {
   it("rejects an invalid waitlist email", () => {
     const result = waitlistCreateSchema.safeParse({ email: "nope" })
     expect(result.success).toBe(false)
+  })
+
+  it("accepts a driver payload with all new qualifying fields", () => {
+    const result = driverCreateSchema.safeParse({
+      name: "Sam K",
+      phone: "0700000000",
+      city: "Nairobi",
+      vehicle_make_model: "Toyota Vitz",
+      vehicle_year: "2016",
+      vehicle_ownership: "owned",
+      routes_areas: "Kilimani, Lavington",
+      hours_per_day: "8_12",
+      platforms: ["uber", "bolt"],
+      applicant_message: "Available weekday evenings",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a driver payload with an unknown vehicle_ownership", () => {
+    const result = driverCreateSchema.safeParse({
+      name: "Sam K",
+      phone: "0700000000",
+      city: "Nairobi",
+      vehicle_ownership: "spaceship",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts a driver payload omitting every new field", () => {
+    const result = driverCreateSchema.safeParse({
+      name: "Sam K",
+      phone: "0700000000",
+      city: "Nairobi",
+    })
+    expect(result.success).toBe(true)
   })
 })
 

@@ -58,6 +58,15 @@ export const driverJoinSchema = z.object({
   vehicleType: z.enum(["taxi", "delivery_bike", "three_wheeler", "other"]),
   daysPerWeek: z.enum(["1_2", "3_4", "5_6", "daily"]),
   heardAbout: z.enum(["whatsapp", "facebook", "friend", "roadside", "other"]),
+  vehicleMakeModel: z.string().trim().max(120).optional(),
+  vehicleYear: z.string().trim().max(20).optional(),
+  vehicleOwnership: z.enum(["owned", "rented", "financed"]).optional(),
+  routesAreas: z.string().trim().max(500).optional(),
+  hoursPerDay: z.enum(["under_4", "4_8", "8_12", "over_12"]).optional(),
+  platforms: z
+    .array(z.enum(["uber", "bolt", "little", "faras", "independent"]))
+    .optional(),
+  applicantMessage: z.string().trim().max(2000).optional(),
   consent: z
     .boolean()
     .refine(
