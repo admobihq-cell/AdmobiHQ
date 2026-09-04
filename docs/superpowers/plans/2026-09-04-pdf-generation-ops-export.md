@@ -266,7 +266,7 @@ git commit -m "spike: verify takumi-pdf renders in apps/api"
 - Consumes: nothing from Task 1 directly (no import from `render-pdf.ts`) — these are pure presentational components, testable by rendering them into a real PDF and checking the bytes are non-empty, same as Task 1.
 - Produces: `DocumentShell({ title, subtitle?, children }): ReactElement` and `DataTable({ headers, rows }): ReactElement` — Task 3's `EntityExportPdf` composes both.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // apps/api/lib/pdf/primitives/primitives.test.tsx
@@ -296,7 +296,7 @@ describe("pdf primitives", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 cd apps/api
@@ -305,7 +305,7 @@ npx vitest run lib/pdf/primitives/primitives.test.tsx
 
 Expected: FAIL — neither primitive file exists yet.
 
-- [ ] **Step 3: Write `document-shell.tsx`**
+- [x] **Step 3: Write `document-shell.tsx`**
 
 ```tsx
 // apps/api/lib/pdf/primitives/document-shell.tsx
@@ -318,9 +318,9 @@ import type { ReactElement, ReactNode } from "react"
 const BRAND_COLOR = "#b45309"
 
 /** Page frame every generated document shares: wordmark, title, optional
- * subtitle, and a footer. No logo image — Takumi's image-loading behavior
- * (local file vs remote URL vs data URI) isn't verified yet, and an ops
- * export doesn't need branding polish; revisit when a customer-facing
+ * subtitle, and a footer. No logo image — Takumi doesn't fetch remote
+ * images itself (pre-fetched bytes only, confirmed in Task 1), and an
+ * ops export doesn't need branding polish; revisit when a customer-facing
  * document needs it. */
 export function DocumentShell({
   title,
@@ -350,7 +350,14 @@ export function DocumentShell({
 }
 ```
 
-- [ ] **Step 4: Write `data-table.tsx`**
+- [x] **Step 4: Write `data-table.tsx`**
+
+Uses real `<table>`/`<thead>`/`<tbody>` markup rather than flex divs —
+Takumi's README (confirmed in Task 1) documents that a `<thead>` repeats
+at the top of every page a table continues onto, and column x-positions
+stay aligned across pages. Ops exports can run to hundreds of rows (the
+API schema caps at 500), so multi-page overflow is a real case, not an
+edge case — a flex-div table would lose its header on page 2 onward.
 
 ```tsx
 // apps/api/lib/pdf/primitives/data-table.tsx
@@ -367,32 +374,33 @@ export function DataTable({
   rows: string[][]
 }): ReactElement {
   return (
-    <div tw="flex flex-col w-full border border-gray-200">
-      <div tw="flex bg-gray-100 border-b border-gray-200">
-        {headers.map((header, i) => (
-          <div key={i} tw="flex-1 p-2 text-[10px] font-semibold text-gray-700">
-            {header}
-          </div>
-        ))}
-      </div>
-      {rows.map((row, i) => (
-        <div
-          key={i}
-          tw={`flex border-b border-gray-100 ${i % 2 === 1 ? "bg-gray-50" : ""}`}
-        >
-          {row.map((cell, j) => (
-            <div key={j} tw="flex-1 p-2 text-[10px] text-gray-800">
-              {cell}
-            </div>
+    <table tw="w-full border border-gray-200 text-[10px]" style={{ borderCollapse: "collapse" }}>
+      <thead>
+        <tr tw="bg-gray-100">
+          {headers.map((header, i) => (
+            <th key={i} tw="p-2 text-left font-semibold text-gray-700 border-b border-gray-200">
+              {header}
+            </th>
           ))}
-        </div>
-      ))}
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, i) => (
+          <tr key={i} tw={i % 2 === 1 ? "bg-gray-50" : ""}>
+            {row.map((cell, j) => (
+              <td key={j} tw="p-2 text-gray-800 border-b border-gray-100">
+                {cell}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 ```bash
 cd apps/api
@@ -401,7 +409,7 @@ npx vitest run lib/pdf/primitives/primitives.test.tsx
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/lib/pdf/primitives/
