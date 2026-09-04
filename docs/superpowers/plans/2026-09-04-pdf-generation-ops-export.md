@@ -920,7 +920,7 @@ git commit -m "feat: add documents.exportPdf to the ops API client"
 mirrors have no tests either) — this task is verified manually in Task 7,
 consistent with how the rest of this file is already tested.
 
-- [ ] **Step 1: Add `downloadPdf` to `apps/ops/lib/format.ts`**
+- [x] **Step 1: Add `downloadPdf` to `apps/ops/lib/format.ts`**
 
 Add directly below the existing `downloadCsv`:
 
@@ -935,7 +935,7 @@ export function downloadPdf(filename: string, blob: Blob) {
 }
 ```
 
-- [ ] **Step 2: Add `apiPathToPermission` to `apps/ops/lib/ops-client.ts`**
+- [x] **Step 2: Add `apiPathToPermission` to `apps/ops/lib/ops-client.ts`**
 
 Add directly below `resolveOpsResource`, mirroring its exact switch shape
 (explicit cases, not a string-replace trick, so a future sixth entity
@@ -966,7 +966,7 @@ This needs `OpsPermission` imported — add to the top of the file:
 import type { OpsPermission } from "@workspace/ops-contracts"
 ```
 
-- [ ] **Step 3: Add PDF-export handlers in `entity-page.tsx`**
+- [x] **Step 3: Add PDF-export handlers in `entity-page.tsx`**
 
 Directly below the existing `handleExport` function (the one ending
 around line 363), add:
@@ -1028,7 +1028,7 @@ import { downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
 import { apiPathToPermission, resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 ```
 
-- [ ] **Step 4: Replace the toolbar "Export CSV" button with a dropdown**
+- [x] **Step 4: Replace the toolbar "Export CSV" button with a dropdown**
 
 Find (around line 457):
 
@@ -1059,7 +1059,7 @@ Replace with:
         </DropdownMenu>
 ```
 
-- [ ] **Step 5: Replace the bulk "Export selected" button with a dropdown**
+- [x] **Step 5: Replace the bulk "Export selected" button with a dropdown**
 
 Find (around line 550):
 
@@ -1095,7 +1095,7 @@ Replace with:
             </DropdownMenu>
 ```
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 ```bash
 cd apps/ops
@@ -1104,7 +1104,7 @@ npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/ops/lib/format.ts apps/ops/lib/ops-client.ts apps/ops/components/entity-page.tsx
