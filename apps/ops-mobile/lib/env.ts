@@ -16,14 +16,40 @@ export const CLERK_PUBLISHABLE_KEY = trimEnv(
 )
 
 /**
- * Business API origin. "localhost" is never a usable fallback in a built app —
- * it always points at the phone itself, not a dev machine — so unset env vars
- * (e.g. an EAS build/profile missing EXPO_PUBLIC_API_URL) fall back to production.
+ * localhost / private-LAN hosts only reach a dev machine on the same network.
+ * In a release build (preview or production APK) they're dead ends, so a baked-in
+ * LAN IP — env:pull rewrites localhost → the builder's LAN IP — is treated the
+ * same as unset and falls back to production. Kept as-is in __DEV__ so physical
+ * devices can still hit the local API.
  */
+function isUnreachableInRelease(url: string): boolean {
+  if (__DEV__) return false
+  try {
+    const { hostname } = new URL(url)
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      /^10\./.test(hostname) ||
+      /^192\.168\./.test(hostname) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Business API origin. Unset env vars (e.g. an EAS build/profile missing
+ * EXPO_PUBLIC_API_URL) and unreachable localhost/LAN URLs fall back to production.
+ */
+const configuredApiUrl = trimEnv(
+  process.env.EXPO_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_URL,
+)
 export const API_URL =
-  trimEnv(
-    process.env.EXPO_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_URL,
-  ) ?? "https://api.admobihq.com"
+  configuredApiUrl && !isUnreachableInRelease(configuredApiUrl)
+    ? configuredApiUrl
+    : "https://api.admobihq.com"
 
 /**
  * Marketing site origin — used to build CMS admin links (see lib/site-urls.ts),
