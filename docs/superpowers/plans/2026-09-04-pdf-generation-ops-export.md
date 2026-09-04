@@ -783,7 +783,7 @@ git commit -m "feat: add POST /v1/ops/documents/export route"
 - Consumes: `POST /v1/ops/documents/export` (Task 4).
 - Produces: `opsClient.documents.exportPdf(body: DocumentExportRequest): Promise<Blob>` — Task 6's `entity-page.tsx` calls exactly this.
 
-- [ ] **Step 1: Add a blob-returning fetch helper**
+- [x] **Step 1: Add a blob-returning fetch helper**
 
 Add `type DocumentExportRequest` to the existing multi-line `import {
 ... } from "@workspace/ops-contracts"` block at the top of the file (it
@@ -845,7 +845,7 @@ reused as-is:
   }
 ```
 
-- [ ] **Step 2: Add `documents` to the `OpsClient` type**
+- [x] **Step 2: Add `documents` to the `OpsClient` type**
 
 Find `export type OpsClient = {` (around line 95) and add a sibling to
 `me`:
@@ -862,7 +862,7 @@ export type OpsClient = {
   // ... (rest of the existing type is unchanged)
 ```
 
-- [ ] **Step 3: Add `documents` to the returned client object**
+- [x] **Step 3: Add `documents` to the returned client object**
 
 Find the `return {` inside `createOpsClient` (around line 333) and add a
 sibling to `me`, mirroring the existing `pushTokens.register` method
@@ -885,7 +885,7 @@ right below it (same `POST` + `JSON.stringify(body)` shape, just returning
     // ... (rest unchanged)
 ```
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 ```bash
 cd packages/ops-api-client
@@ -895,7 +895,7 @@ npx tsc --noEmit
 Expected: no errors. (This package has no test suite of its own — its
 consumer, `apps/ops`, is exercised manually in Task 6/7.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ops-api-client/src/index.ts

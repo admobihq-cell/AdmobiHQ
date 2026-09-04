@@ -7,6 +7,7 @@ import {
   type BroadcastCreateInput,
   type BulkResponse,
   type DateRangeKey,
+  type DocumentExportRequest,
   type DriverApplicationListItemDto,
   type DriverBulkInput,
   type DriverCreateInput,
@@ -62,7 +63,7 @@ import { formatApiError, formatApiErrorResponse } from "./format-error"
 import { publicApiFetch, type PublicApiResult } from "./public-fetch"
 
 export { OpsApiError, getApiBaseUrl, publicApiUrl, formatApiError, formatApiErrorResponse, publicApiFetch }
-export type { PublicApiResult }
+export type { PublicApiResult, DocumentExportRequest }
 
 export type OpsClientOptions = {
   /** Base URL for the API, e.g. `https://api.admobihq.com` or `http://localhost:3003`. */
@@ -95,6 +96,9 @@ type EntityResource<
 export type OpsClient = {
   me: {
     get: () => Promise<MeDto>
+  }
+  documents: {
+    exportPdf: (body: DocumentExportRequest) => Promise<Blob>
   }
   leads: EntityResource<
     LeadDto,
@@ -284,6 +288,47 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
     return (await res.json()) as T
   }
 
+  async function requestBlob(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<Blob> {
+    const token = await options.getToken()
+    const headers = new Headers(init.headers)
+    if (!headers.has("Content-Type") && init.body) {
+      headers.set("Content-Type", "application/json")
+    }
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`)
+    }
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), requestTimeoutMs)
+    let res: Response
+    try {
+      res = await fetchImpl(`${baseUrl}${path}`, {
+        ...init,
+        headers,
+        signal: controller.signal,
+      })
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new OpsApiError(
+          "Request timed out. Check your connection and try again.",
+          408,
+        )
+      }
+      throw err
+    } finally {
+      clearTimeout(timer)
+    }
+
+    if (!res.ok) {
+      throw await parseError(res)
+    }
+
+    return res.blob()
+  }
+
   function createEntityResource<
     TDto,
     TCreate,
@@ -333,6 +378,13 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   return {
     me: {
       get: () => request<MeDto>(`${apiPrefix}/me`),
+    },
+    documents: {
+      exportPdf: (body: DocumentExportRequest) =>
+        requestBlob(`${apiPrefix}/ops/documents/export`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
     },
     leads: createEntityResource(`${apiPrefix}/leads`),
     fleet: createEntityResource(`${apiPrefix}/fleet`),
