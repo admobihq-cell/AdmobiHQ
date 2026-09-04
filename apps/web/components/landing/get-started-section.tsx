@@ -19,6 +19,8 @@ import { Container } from "./container"
 
 export function GetStartedSection() {
   const [email, setEmail] = useState("")
+  const [name, setName] = useState("")
+  const [persona, setPersona] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle",
   )
@@ -30,7 +32,11 @@ export function GetStartedSection() {
     setErrorMessage(null)
     const result = await publicApiFetch<{ success?: boolean }>("/waitlist", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({
+        email,
+        ...(name.trim() ? { name: name.trim() } : {}),
+        ...(persona ? { persona } : {}),
+      }),
     })
     if (!result.ok) {
       setErrorMessage(result.message)
@@ -42,6 +48,8 @@ export function GetStartedSection() {
 
   function handleReset() {
     setEmail("")
+    setName("")
+    setPersona("")
     setErrorMessage(null)
     setStatus("idle")
   }
@@ -112,6 +120,29 @@ export function GetStartedSection() {
             <Label htmlFor="notify-email" className="text-foreground">
               Stay updated on city launches and network news.
             </Label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input
+                aria-label="Your name (optional)"
+                placeholder="Your name (optional)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={status === "loading"}
+                className="sm:flex-1"
+              />
+              <select
+                aria-label="I am a"
+                value={persona}
+                onChange={(e) => setPersona(e.target.value)}
+                disabled={status === "loading"}
+                className="border-input focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base outline-none focus-visible:ring-3 sm:w-48 md:text-sm"
+              >
+                <option value="">I am a…</option>
+                <option value="advertiser">Advertiser</option>
+                <option value="driver">Driver</option>
+                <option value="fleet">Fleet operator</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
               <Input
                 id="notify-email"

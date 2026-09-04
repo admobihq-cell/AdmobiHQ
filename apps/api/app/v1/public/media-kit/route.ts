@@ -30,6 +30,9 @@ export async function POST(req: Request) {
       data: {
         name: parsed.data.name,
         email: parsed.data.email,
+        company: parsed.data.company || null,
+        role: parsed.data.role || null,
+        use_case: parsed.data.useCase || null,
       },
     })
 

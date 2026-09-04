@@ -21,6 +21,13 @@ type Driver = {
   heard_about: string | null
   status: string | null
   notes: string | null
+  vehicle_make_model: string | null
+  vehicle_year: string | null
+  vehicle_ownership: string | null
+  routes_areas: string | null
+  hours_per_day: string | null
+  platforms: string[]
+  applicant_message: string | null
   created_at: string
 }
 
@@ -72,6 +79,33 @@ export function DriversView({ initialData }: DriversViewProps) {
           render: (r) => formatLabel(r.heard_about),
         },
         {
+          key: "vehicle_make_model",
+          label: "Vehicle",
+          render: (r) =>
+            [r.vehicle_make_model, r.vehicle_year].filter(Boolean).join(" · ") || "—",
+        },
+        {
+          key: "vehicle_ownership",
+          label: "Ownership",
+          render: (r) => formatLabel(r.vehicle_ownership),
+        },
+        { key: "routes_areas", label: "Routes / areas", render: (r) => r.routes_areas ?? "—" },
+        {
+          key: "hours_per_day",
+          label: "Hours / day",
+          render: (r) => formatLabel(r.hours_per_day),
+        },
+        {
+          key: "platforms",
+          label: "Platforms",
+          render: (r) => (r.platforms.length ? r.platforms.map(formatLabel).join(", ") : "—"),
+        },
+        {
+          key: "applicant_message",
+          label: "Applicant message",
+          render: (r) => r.applicant_message ?? "—",
+        },
+        {
           key: "status",
           label: "Status",
           render: (r) => <StatusBadge status={r.status} />,
@@ -99,6 +133,12 @@ export function DriversView({ initialData }: DriversViewProps) {
           header: "Source",
           render: (r) => formatLabel(r.heard_about),
           csv: (r) => r.heard_about,
+        },
+        {
+          key: "vehicle_ownership",
+          header: "Ownership",
+          render: (r) => formatLabel(r.vehicle_ownership),
+          csv: (r) => r.vehicle_ownership,
         },
         {
           key: "status",

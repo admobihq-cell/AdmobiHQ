@@ -8,6 +8,7 @@
     "start": "next start --port 3003",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
     "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
     "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
@@ -40,10 +41,12 @@
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
+    "@workspace/vitest-config": "*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.39.2",
     "prisma": "^7.8.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

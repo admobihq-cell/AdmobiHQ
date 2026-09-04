@@ -22,7 +22,12 @@ export default function MediaKitDetailScreen() {
       sections={(item) => [
         {
           title: "Contact",
-          fields: [{ label: "Email", value: item.email, copyable: true }],
+          fields: [
+            { label: "Email", value: item.email, copyable: true },
+            { label: "Company", value: item.company },
+            { label: "Role", value: item.role },
+            { label: "Evaluating for", value: item.use_case },
+          ],
         },
         {
           title: "Metadata",

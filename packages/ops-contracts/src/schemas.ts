@@ -5,24 +5,31 @@ import {
   ANNOUNCEMENT_CATEGORIES,
   ANNOUNCEMENT_TARGET_APPS,
   BUDGET_RANGES,
+  CAMPAIGN_OBJECTIVES,
   CITIES,
+  CREATIVE_STATUS,
   DATE_RANGE_KEYS,
   DAYS_PER_WEEK,
   DRIVER_DOCUMENT_TYPES,
   DRIVER_PAYOUT_METHODS,
   DRIVER_STATUSES,
+  FLEET_EV_STATUS,
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
+  HOURS_PER_DAY,
   LEAD_CITIES,
   LEAD_STATUSES,
   PLATFORM_FLAG_KEYS,
+  RIDEHAIL_PLATFORMS,
   SUPPORT_CATEGORIES,
   SUPPORT_CHANNELS,
   SUPPORT_PRIORITIES,
   SUPPORT_STATUSES,
+  VEHICLE_OWNERSHIP,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
+  WAITLIST_PERSONA,
 } from "./enums"
 
 export const leadCreateSchema = z.object({
@@ -36,6 +43,10 @@ export const leadCreateSchema = z.object({
   budget_range: z.enum(BUDGET_RANGES).optional(),
   additional_info: z.string().optional(),
   status: z.enum(LEAD_STATUSES).optional(),
+  objective: z.enum(CAMPAIGN_OBJECTIVES).optional(),
+  industry: z.string().optional(),
+  creative_status: z.enum(CREATIVE_STATUS).optional(),
+  target_audience: z.string().optional(),
 })
 
 export const leadUpdateSchema = leadCreateSchema.partial()
@@ -51,6 +62,10 @@ export const fleetCreateSchema = z.object({
   vehicles_active: z.enum(VEHICLES_ACTIVE).optional(),
   notes: z.string().optional(),
   status: z.enum(FLEET_STATUSES).optional(),
+  taxi_count: z.string().optional(),
+  bike_count: z.string().optional(),
+  operating_cities: z.array(z.enum(CITIES)).optional(),
+  ev_status: z.enum(FLEET_EV_STATUS).optional(),
 })
 
 export const fleetUpdateSchema = fleetCreateSchema.partial()
@@ -65,6 +80,13 @@ export const driverCreateSchema = z.object({
   heard_about: z.enum(HEARD_ABOUT).optional(),
   status: z.enum(DRIVER_STATUSES).optional(),
   notes: z.string().optional(),
+  vehicle_make_model: z.string().optional(),
+  vehicle_year: z.string().optional(),
+  vehicle_ownership: z.enum(VEHICLE_OWNERSHIP).optional(),
+  routes_areas: z.string().optional(),
+  hours_per_day: z.enum(HOURS_PER_DAY).optional(),
+  platforms: z.array(z.enum(RIDEHAIL_PLATFORMS)).optional(),
+  applicant_message: z.string().optional(),
 })
 
 export const driverUpdateSchema = driverCreateSchema.partial()
@@ -72,6 +94,8 @@ export const driverUpdateSchema = driverCreateSchema.partial()
 export const waitlistCreateSchema = z.object({
   email: z.string().trim().email(),
   source: z.string().optional(),
+  name: z.string().optional(),
+  persona: z.enum(WAITLIST_PERSONA).optional(),
 })
 
 export const waitlistUpdateSchema = waitlistCreateSchema.partial()
@@ -79,6 +103,9 @@ export const waitlistUpdateSchema = waitlistCreateSchema.partial()
 export const mediaKitCreateSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
+  company: z.string().optional(),
+  role: z.string().optional(),
+  use_case: z.string().optional(),
 })
 
 export const mediaKitUpdateSchema = mediaKitCreateSchema.partial()
