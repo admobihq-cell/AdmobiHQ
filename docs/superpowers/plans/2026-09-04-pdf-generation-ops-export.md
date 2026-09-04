@@ -1146,13 +1146,13 @@ the five entities (or by temporarily editing a role in the ops team
 settings), confirm that entity's "Export as PDF" fails with an
 authorization error rather than silently succeeding.
 
-- [ ] **Step 4: Delete the throwaway spike route**
+- [x] **Step 4: Delete the throwaway spike route**
 
 ```bash
 rm -rf apps/api/app/v1/spike-pdf-test
 ```
 
-- [ ] **Step 5: Final typecheck across both apps**
+- [x] **Step 5: Final typecheck across both apps**
 
 ```bash
 cd apps/api && npx tsc --noEmit
@@ -1161,7 +1161,7 @@ cd apps/ops && npx tsc --noEmit
 
 Expected: no errors in either.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
