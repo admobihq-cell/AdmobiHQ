@@ -30,6 +30,13 @@ export async function POST(req: Request) {
           day: "numeric",
         })}
       />,
+      {
+        metadata: {
+          title: `Admobi — ${title}`,
+          authors: ["Admobi"],
+          creationDate: new Date().toISOString().slice(0, 10),
+        },
+      },
     )
     return new NextResponse(Buffer.from(bytes), {
       status: 200,
