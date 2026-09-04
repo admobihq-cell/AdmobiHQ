@@ -42,7 +42,7 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
           key: "created_at",
           header: "Joined",
           render: (r) => formatDateTime(r.created_at),
-          csv: (r) => r.created_at,
+          csv: (r) => formatDateTime(r.created_at),
         },
         { key: "email", header: "Email", render: (r) => r.email, csv: (r) => r.email },
         {
