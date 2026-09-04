@@ -74,7 +74,7 @@ export async function listDrivers(
   } = {},
 ): Promise<SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.driver.findMany>>[number]>> {
   const parsed = parsePagination(params)
-  const where: Prisma.DriverWhereInput = {}
+  const where: Prisma.DriverWhereInput = { deleted_at: null }
 
   if (parsed.search) {
     where.OR = [
@@ -153,7 +153,7 @@ export async function listFleetPartners(
   SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.fleetPartner.findMany>>[number]>
 > {
   const parsed = parsePagination(params)
-  const where: Prisma.FleetPartnerWhereInput = {}
+  const where: Prisma.FleetPartnerWhereInput = { deleted_at: null }
 
   if (parsed.search) {
     where.OR = [
@@ -185,7 +185,7 @@ export async function listLeads(
     ...params,
     sortBy: params.sortBy ?? "created_at",
   })
-  const where: Prisma.LeadWhereInput = {}
+  const where: Prisma.LeadWhereInput = { deleted_at: null }
 
   if (parsed.search) {
     where.OR = [
@@ -222,7 +222,7 @@ export async function listWaitlist(
   SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.waitlistEntry.findMany>>[number]>
 > {
   const parsed = parsePagination(params)
-  const where: Prisma.WaitlistEntryWhereInput = {}
+  const where: Prisma.WaitlistEntryWhereInput = { deleted_at: null }
 
   if (parsed.search) {
     where.email = { contains: parsed.search, mode: "insensitive" }
@@ -247,7 +247,7 @@ export async function listMediaKitRequests(
   SerializedPaginatedResult<Awaited<ReturnType<typeof prisma.mediaKitRequest.findMany>>[number]>
 > {
   const parsed = parsePagination(params)
-  const where: Prisma.MediaKitRequestWhereInput = {}
+  const where: Prisma.MediaKitRequestWhereInput = { deleted_at: null }
 
   if (parsed.search) {
     where.OR = [
