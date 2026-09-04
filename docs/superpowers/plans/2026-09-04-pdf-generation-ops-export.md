@@ -428,7 +428,7 @@ git commit -m "feat: add PDF document-shell and data-table primitives"
 - Consumes: `DocumentShell`, `DataTable` (Task 2).
 - Produces: `EntityExportPdf({ title, headers, rows, generatedAt }): ReactElement` — Task 4's route renders exactly this component with the request body's data.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // apps/api/lib/pdf/templates/entity-export-pdf.test.tsx
@@ -464,7 +464,7 @@ describe("EntityExportPdf", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 cd apps/api
@@ -473,7 +473,7 @@ npx vitest run lib/pdf/templates/entity-export-pdf.test.tsx
 
 Expected: FAIL — the template file doesn't exist yet.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```tsx
 // apps/api/lib/pdf/templates/entity-export-pdf.tsx
@@ -504,7 +504,7 @@ export function EntityExportPdf({
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 cd apps/api
@@ -513,7 +513,7 @@ npx vitest run lib/pdf/templates/entity-export-pdf.test.tsx
 
 Expected: PASS (both tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/lib/pdf/templates/
