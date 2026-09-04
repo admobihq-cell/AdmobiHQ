@@ -1,4 +1,5 @@
 import type { ReactElement } from "react"
+import { BRAND_COLOR, BRAND_COLOR_LIGHT } from "@/lib/pdf/render-pdf"
 
 /** Generic header-row + data-rows table. Every cell is a plain string —
  * callers format numbers/dates/labels before passing them in, the same
@@ -18,9 +19,13 @@ export function DataTable({
   return (
     <table tw="w-full border border-gray-200 text-[10px]" style={{ borderCollapse: "collapse" }}>
       <thead>
-        <tr tw="bg-gray-100">
+        <tr style={{ backgroundColor: BRAND_COLOR_LIGHT }}>
           {headers.map((header, i) => (
-            <th key={i} tw="p-2 text-left font-semibold text-gray-700 border-b border-gray-200">
+            <th
+              key={i}
+              tw="p-2 text-left font-semibold border-b"
+              style={{ color: BRAND_COLOR, borderColor: BRAND_COLOR }}
+            >
               {header}
             </th>
           ))}
