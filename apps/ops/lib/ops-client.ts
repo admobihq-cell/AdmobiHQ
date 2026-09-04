@@ -7,6 +7,7 @@ import {
   getApiBaseUrl,
   type OpsClient,
 } from "@workspace/ops-api-client"
+import type { OpsPermission } from "@workspace/ops-contracts"
 
 export function useOpsClient(): OpsClient {
   const { getToken } = useAuth()
@@ -33,6 +34,23 @@ export function resolveOpsResource(client: OpsClient, apiPath: string) {
       return client.waitlist
     case "/v1/media-kit":
       return client.mediaKit
+    default:
+      throw new Error(`Unknown ops API path: ${apiPath}`)
+  }
+}
+
+export function apiPathToPermission(apiPath: string): OpsPermission {
+  switch (apiPath) {
+    case "/v1/leads":
+      return "leads"
+    case "/v1/fleet":
+      return "fleet"
+    case "/v1/drivers":
+      return "drivers"
+    case "/v1/waitlist":
+      return "waitlist"
+    case "/v1/media-kit":
+      return "media_kit"
     default:
       throw new Error(`Unknown ops API path: ${apiPath}`)
   }
