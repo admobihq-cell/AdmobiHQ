@@ -4,6 +4,7 @@ import {
   CITIES,
   DAYS_PER_WEEK,
   DRIVER_STATUSES,
+  FLEET_EV_STATUS,
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
@@ -243,12 +244,7 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
   {
     name: "ev_status",
     label: "Electric vehicles",
-    options: [
-      { value: "none", label: "None" },
-      { value: "some", label: "Some" },
-      { value: "mostly", label: "Mostly" },
-      { value: "all", label: "All" },
-    ],
+    options: enumOptions(FLEET_EV_STATUS),
     section: "Fleet details",
   },
   {

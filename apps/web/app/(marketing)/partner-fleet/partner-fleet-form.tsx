@@ -216,11 +216,11 @@ export default function PartnerFleetForm() {
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="pf-taxis">Number of taxis</Label>
-          <Input id="pf-taxis" type="number" min={0} step={1} {...register("taxiCount", { valueAsNumber: true })} />
+          <Input id="pf-taxis" type="number" min={0} step={1} {...register("taxiCount", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="pf-bikes">Number of bikes</Label>
-          <Input id="pf-bikes" type="number" min={0} step={1} {...register("bikeCount", { valueAsNumber: true })} />
+          <Input id="pf-bikes" type="number" min={0} step={1} {...register("bikeCount", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })} />
         </div>
       </div>
 
