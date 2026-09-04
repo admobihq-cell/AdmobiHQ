@@ -103,12 +103,33 @@ export default function DriversClient() {
       vehicleType: "taxi",
       daysPerWeek: "3_4",
       heardAbout: "whatsapp",
+      vehicleMakeModel: "",
+      vehicleYear: "",
+      vehicleOwnership: "owned",
+      routesAreas: "",
+      hoursPerDay: "4_8",
+      platforms: [],
+      applicantMessage: "",
       consent: false,
     },
   })
 
   const { register, handleSubmit, formState, reset } = form
   const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
+
+  const platformsWatch = form.watch("platforms")?.slice() ?? []
+  const platformOptions = [
+    { value: "uber", label: "Uber" },
+    { value: "bolt", label: "Bolt" },
+    { value: "little", label: "Little" },
+    { value: "faras", label: "Faras" },
+    { value: "independent", label: "Independent" },
+  ] as const
+  function togglePlatform(key: (typeof platformOptions)[number]["value"]) {
+    const curr = platformsWatch.slice()
+    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    form.setValue("platforms", next, { shouldValidate: true })
+  }
 
   async function onSubmit(data: DriverJoinInput) {
     await submit(data)
@@ -305,6 +326,67 @@ export default function DriversClient() {
                   <option value="5_6">5–6</option>
                   <option value="daily">Every day</option>
                 </select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dr-make">Vehicle make &amp; model</Label>
+                <Input id="dr-make" placeholder="Toyota Vitz" {...register("vehicleMakeModel")} />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dr-year">Vehicle year</Label>
+                <Input id="dr-year" inputMode="numeric" placeholder="2016" {...register("vehicleYear")} />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dr-ownership">Is the vehicle yours?</Label>
+                <select id="dr-ownership" className={selectClass} {...register("vehicleOwnership")}>
+                  <option value="owned">I own it</option>
+                  <option value="rented">I rent it</option>
+                  <option value="financed">On finance / loan</option>
+                </select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dr-routes">Areas you usually drive</Label>
+                <Input id="dr-routes" placeholder="e.g. Kilimani, CBD, Rongai" {...register("routesAreas")} />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dr-hours">Hours on the road on a typical day</Label>
+                <select id="dr-hours" className={selectClass} {...register("hoursPerDay")}>
+                  <option value="under_4">Under 4</option>
+                  <option value="4_8">4–8</option>
+                  <option value="8_12">8–12</option>
+                  <option value="over_12">Over 12</option>
+                </select>
+              </div>
+
+              <fieldset className="space-y-3">
+                <legend className="mb-1 text-sm font-medium text-foreground">Which apps do you drive on?</legend>
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  {platformOptions.map((p) => (
+                    <label key={p.value} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                      <input
+                        type="checkbox"
+                        className="border-input accent-primary size-4 rounded border"
+                        checked={platformsWatch.includes(p.value)}
+                        onChange={() => togglePlatform(p.value)}
+                      />
+                      {p.label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className="grid gap-2">
+                <Label htmlFor="dr-msg">Anything else we should know? (optional)</Label>
+                <textarea
+                  id="dr-msg"
+                  rows={3}
+                  className="border-input placeholder:text-muted-foreground focus-visible:ring-ring/50 focus-visible:border-ring flex min-h-20 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-3 md:text-sm"
+                  {...register("applicantMessage")}
+                />
               </div>
 
               <div className="grid gap-2">

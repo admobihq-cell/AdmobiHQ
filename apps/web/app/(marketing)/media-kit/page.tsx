@@ -27,7 +27,7 @@ export default function MediaKitPage() {
     formState: { errors, isSubmitting },
   } = useForm<MediaKitInput>({
     resolver: zodResolver(mediaKitSchema),
-    defaultValues: { name: "", email: "" },
+    defaultValues: { name: "", email: "", company: "", role: "", useCase: "" },
   })
 
   async function onSubmit(data: MediaKitInput) {
@@ -83,6 +83,18 @@ export default function MediaKitPage() {
                   {errors.email.message}
                 </p>
               ) : null}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="mk-company">Company (optional)</Label>
+              <Input id="mk-company" autoComplete="organization" {...register("company")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="mk-role">Your role (optional)</Label>
+              <Input id="mk-role" autoComplete="organization-title" {...register("role")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="mk-usecase">What are you evaluating Admobi for? (optional)</Label>
+              <Input id="mk-usecase" {...register("useCase")} />
             </div>
             {submitError ? (
               <ApiErrorBanner message={submitError} onDismiss={dismissError} />

@@ -16,8 +16,8 @@ export const CampaignConfirmation = ({ name, company }: CampaignConfirmationProp
 
     <Text style={emailStyles.paragraph}>
       We have your brief for <strong>{company}</strong>. A member of the Admobi
-      team will reply within one business day with availability, pricing, and a
-      proposed flight plan.
+      team will reach out in 3 to 7 working days with availability, pricing, and
+      a proposed flight plan.
     </Text>
 
     <Text style={emailStyles.label}>What we will cover</Text>
