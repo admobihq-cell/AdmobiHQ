@@ -3,7 +3,14 @@
 import Link from "next/link"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Car, Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
+import {
+  Car,
+  Check,
+  ClipboardList,
+  Cpu,
+  Smartphone,
+  Wallet,
+} from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -17,6 +24,10 @@ import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { useLeadForm } from "@/components/forms/use-lead-form"
 import { Container } from "@/components/landing/container"
+import {
+  IsoCrossPattern,
+  NodeGardenPattern,
+} from "@/components/landing/pattern-shapes"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { driverFaqItems } from "@/lib/seo/faq-data"
 
@@ -90,8 +101,15 @@ const eligibility = [
 ]
 
 export default function DriversClient() {
-  const { submitted, submitError, dismissError, honeypot, setHoneypot, submit, reset: resetLeadForm } =
-    useLeadForm({ endpoint: "/drivers" })
+  const {
+    submitted,
+    submitError,
+    dismissError,
+    honeypot,
+    setHoneypot,
+    submit,
+    reset: resetLeadForm,
+  } = useLeadForm({ endpoint: "/drivers" })
 
   const form = useForm<DriverJoinInput>({
     resolver: zodResolver(driverJoinSchema),
@@ -115,7 +133,8 @@ export default function DriversClient() {
   })
 
   const { register, handleSubmit, formState, reset } = form
-  const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
+  const radioClass =
+    "border-input accent-primary size-4 shrink-0 rounded-full border"
 
   const platformsWatch = form.watch("platforms")?.slice() ?? []
   const platformOptions = [
@@ -127,7 +146,9 @@ export default function DriversClient() {
   ] as const
   function togglePlatform(key: (typeof platformOptions)[number]["value"]) {
     const curr = platformsWatch.slice()
-    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    const next = curr.includes(key)
+      ? curr.filter((v) => v !== key)
+      : [...curr, key]
     form.setValue("platforms", next, { shouldValidate: true })
   }
 
@@ -142,22 +163,28 @@ export default function DriversClient() {
 
   return (
     <div className="border-b border-border pb-14 sm:pb-20">
-      <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
+      <section className="relative isolate overflow-hidden border-b border-border bg-foreground py-14 text-background sm:py-20 lg:py-24">
+        <NodeGardenPattern colorClassName="text-background/70" />
         <Container>
           <div className="max-w-2xl space-y-6">
             <div className="space-y-3">
-              <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
+              <p className="text-[0.7rem] font-medium tracking-[0.2em] text-background/65 uppercase sm:text-xs">
                 Driver program · Kenya cities
               </p>
-              <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
+              <h1 className="text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-[2.75rem]">
                 Earn more on every ride
               </h1>
-              <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
-                Carry an Admobi screen on your taxi or bike and get paid monthly. No extra work, just drive
-                as usual.
+              <p className="max-w-[58ch] text-lg leading-relaxed text-background/82 sm:text-xl">
+                Carry an Admobi screen on your taxi or bike and get paid
+                monthly. No extra work, just drive as usual.
               </p>
             </div>
-            <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="bg-background text-foreground hover:bg-background/90"
+            >
               <Link href="#raise-hand">Raise your hand</Link>
             </Button>
           </div>
@@ -174,11 +201,15 @@ export default function DriversClient() {
               const Icon = step.icon
               return (
                 <div key={step.title} className="space-y-3">
-                  <div className="bg-muted/40 text-foreground flex size-11 items-center justify-center rounded-xl border border-border">
+                  <div className="flex size-11 items-center justify-center rounded-xl border border-border bg-muted/40 text-foreground">
                     <Icon className="size-5" aria-hidden />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">{step.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{step.detail}</p>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {step.detail}
+                  </p>
                 </div>
               )
             })}
@@ -186,7 +217,7 @@ export default function DriversClient() {
         </Container>
       </section>
 
-      <section className="border-border border-t py-14 sm:py-20">
+      <section className="border-t border-border py-14 sm:py-20">
         <Container>
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             What you need to know
@@ -197,15 +228,19 @@ export default function DriversClient() {
                 key={card.heading}
                 className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6"
               >
-                <h3 className="text-base font-semibold text-foreground">{card.heading}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{card.body}</p>
+                <h3 className="text-base font-semibold text-foreground">
+                  {card.heading}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {card.body}
+                </p>
               </div>
             ))}
           </div>
         </Container>
       </section>
 
-      <section className="border-border border-t py-14 sm:py-20">
+      <section className="border-t border-border py-14 sm:py-20">
         <Container>
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             Who can apply?
@@ -213,7 +248,7 @@ export default function DriversClient() {
           <ul className="mt-8 max-w-xl space-y-4">
             {eligibility.map((item) => (
               <li key={item} className="flex gap-3 text-base text-foreground">
-                <span className="text-primary mt-0.5 shrink-0">
+                <span className="mt-0.5 shrink-0 text-primary">
                   <Check className="size-5" aria-hidden />
                 </span>
                 <span className="leading-relaxed">{item}</span>
@@ -225,224 +260,335 @@ export default function DriversClient() {
 
       <FaqDetails items={driverFaqItems} heading="Driver FAQ" />
 
-      <section id="raise-hand" className="scroll-mt-24 border-border border-t py-14 sm:py-20">
+      <section
+        id="raise-hand"
+        className="scroll-mt-24 border-t border-border py-14 sm:py-20"
+      >
         <Container>
-          <div className="max-w-xl space-y-2">
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-              Raise your hand
-            </h2>
-            <p className="text-muted-foreground text-base leading-relaxed">
-              Takes 2 minutes. We&apos;ll be in touch within 3 days.
-            </p>
-          </div>
+          <div className="lg:grid lg:grid-cols-[1fr_0.8fr] lg:items-start lg:gap-16">
+            <div>
+              <div className="max-w-xl space-y-2">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+                  Raise your hand
+                </h2>
+                <p className="text-base leading-relaxed text-muted-foreground">
+                  Takes 2 minutes. We&apos;ll be in touch within 3 days.
+                </p>
+              </div>
 
-          {submitted ? (
-            <div className="mt-10">
-              <SubmissionSuccess
-                icon={Car}
-                title="You're in the queue"
-                message="We've got your details. Someone from our driver team will call or WhatsApp you within 3 business days to confirm eligibility and schedule your install."
-                onReset={handleReset}
+              {submitted ? (
+                <div className="mt-10">
+                  <SubmissionSuccess
+                    icon={Car}
+                    title="You're in the queue"
+                    message="We've got your details. Someone from our driver team will call or WhatsApp you within 3 business days to confirm eligibility and schedule your install."
+                    onReset={handleReset}
+                  />
+                </div>
+              ) : (
+                <form
+                  className="mt-10 max-w-xl space-y-8"
+                  noValidate
+                  onSubmit={handleSubmit(onSubmit)}
+                >
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-name">Name *</Label>
+                    <Input
+                      id="dr-name"
+                      autoComplete="name"
+                      {...register("name")}
+                    />
+                    {formState.errors.name ? (
+                      <p
+                        className="text-xs font-medium text-destructive"
+                        role="alert"
+                      >
+                        {formState.errors.name.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-phone">Phone / WhatsApp *</Label>
+                    <Input
+                      id="dr-phone"
+                      type="tel"
+                      autoComplete="tel"
+                      {...register("phone")}
+                    />
+                    {formState.errors.phone ? (
+                      <p
+                        className="text-xs font-medium text-destructive"
+                        role="alert"
+                      >
+                        {formState.errors.phone.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-email">Email (optional)</Label>
+                    <Input
+                      id="dr-email"
+                      type="email"
+                      autoComplete="email"
+                      {...register("email")}
+                    />
+                    {formState.errors.email ? (
+                      <p
+                        className="text-xs font-medium text-destructive"
+                        role="alert"
+                      >
+                        {formState.errors.email.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-city">City *</Label>
+                    <select
+                      id="dr-city"
+                      className={selectClass}
+                      {...register("city")}
+                    >
+                      <option value="Nairobi">Nairobi</option>
+                      <option value="Mombasa">Mombasa</option>
+                      <option value="Kisumu">Kisumu</option>
+                    </select>
+                  </div>
+
+                  <fieldset className="space-y-3">
+                    <legend className="mb-1 text-sm font-medium text-foreground">
+                      Vehicle type *
+                    </legend>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="radio"
+                          value="taxi"
+                          className={radioClass}
+                          {...register("vehicleType")}
+                        />
+                        Taxi
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="radio"
+                          value="delivery_bike"
+                          className={radioClass}
+                          {...register("vehicleType")}
+                        />
+                        Delivery bike
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="radio"
+                          value="three_wheeler"
+                          className={radioClass}
+                          {...register("vehicleType")}
+                        />
+                        Three-wheeler
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="radio"
+                          value="other"
+                          className={radioClass}
+                          {...register("vehicleType")}
+                        />
+                        Other
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-days">
+                      How many days a week do you drive? *
+                    </Label>
+                    <select
+                      id="dr-days"
+                      className={selectClass}
+                      {...register("daysPerWeek")}
+                    >
+                      <option value="1_2">1–2</option>
+                      <option value="3_4">3–4</option>
+                      <option value="5_6">5–6</option>
+                      <option value="daily">Every day</option>
+                    </select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-make">Vehicle make &amp; model</Label>
+                    <Input
+                      id="dr-make"
+                      placeholder="Toyota Vitz"
+                      {...register("vehicleMakeModel")}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-year">Vehicle year</Label>
+                    <Input
+                      id="dr-year"
+                      inputMode="numeric"
+                      placeholder="2016"
+                      {...register("vehicleYear")}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-ownership">Is the vehicle yours?</Label>
+                    <select
+                      id="dr-ownership"
+                      className={selectClass}
+                      {...register("vehicleOwnership")}
+                    >
+                      <option value="owned">I own it</option>
+                      <option value="rented">I rent it</option>
+                      <option value="financed">On finance / loan</option>
+                    </select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-routes">Areas you usually drive</Label>
+                    <Input
+                      id="dr-routes"
+                      placeholder="e.g. Kilimani, CBD, Rongai"
+                      {...register("routesAreas")}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-hours">
+                      Hours on the road on a typical day
+                    </Label>
+                    <select
+                      id="dr-hours"
+                      className={selectClass}
+                      {...register("hoursPerDay")}
+                    >
+                      <option value="under_4">Under 4</option>
+                      <option value="4_8">4–8</option>
+                      <option value="8_12">8–12</option>
+                      <option value="over_12">Over 12</option>
+                    </select>
+                  </div>
+
+                  <fieldset className="space-y-3">
+                    <legend className="mb-1 text-sm font-medium text-foreground">
+                      Which apps do you drive on?
+                    </legend>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                      {platformOptions.map((p) => (
+                        <label
+                          key={p.value}
+                          className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                        >
+                          <input
+                            type="checkbox"
+                            className="size-4 rounded border border-input accent-primary"
+                            checked={platformsWatch.includes(p.value)}
+                            onChange={() => togglePlatform(p.value)}
+                          />
+                          {p.label}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-msg">
+                      Anything else we should know? (optional)
+                    </Label>
+                    <textarea
+                      id="dr-msg"
+                      rows={3}
+                      className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+                      {...register("applicantMessage")}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="dr-heard">
+                      How did you hear about Admobi?
+                    </Label>
+                    <select
+                      id="dr-heard"
+                      className={selectClass}
+                      {...register("heardAbout")}
+                    >
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="friend">Friend</option>
+                      <option value="roadside">Roadside</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <label className="flex items-start gap-3 text-sm text-foreground">
+                    <input
+                      type="checkbox"
+                      className="mt-1 size-4 shrink-0 rounded border border-input accent-primary"
+                      {...register("consent")}
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <Link
+                        href="/privacy"
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
+                        privacy policy
+                      </Link>{" "}
+                      and understand these are the working terms described
+                      above.
+                    </span>
+                  </label>
+                  {formState.errors.consent ? (
+                    <p
+                      className="text-xs font-medium text-destructive"
+                      role="alert"
+                    >
+                      {formState.errors.consent.message}
+                    </p>
+                  ) : null}
+
+                  {submitError ? (
+                    <ApiErrorBanner
+                      message={submitError}
+                      onDismiss={dismissError}
+                    />
+                  ) : null}
+
+                  <HoneypotField value={honeypot} onChange={setHoneypot} />
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={formState.isSubmitting}
+                    loading={formState.isSubmitting}
+                    loadingText="Sending…"
+                    size="lg"
+                  >
+                    Raise my hand
+                  </Button>
+                </form>
+              )}
+
+              <p className="mt-10 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                Admobi is not an employer. Drivers participate as independent
+                contractors. Payouts are subject to active screen hours verified
+                by GPS.
+              </p>
+            </div>
+
+            <div className="relative isolate mt-12 hidden overflow-hidden rounded-2xl border border-border bg-muted/20 lg:mt-0 lg:block lg:aspect-[4/5]">
+              <IsoCrossPattern
+                className="opacity-100"
+                maskImage="radial-gradient(ellipse 75% 75% at 50% 45%, black, transparent 75%)"
+                colorClassName="text-primary/35"
               />
             </div>
-          ) : (
-            <form className="mt-10 max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid gap-2">
-                <Label htmlFor="dr-name">Name *</Label>
-                <Input id="dr-name" autoComplete="name" {...register("name")} />
-                {formState.errors.name ? (
-                  <p className="text-destructive text-xs font-medium" role="alert">
-                    {formState.errors.name.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-phone">Phone / WhatsApp *</Label>
-                <Input id="dr-phone" type="tel" autoComplete="tel" {...register("phone")} />
-                {formState.errors.phone ? (
-                  <p className="text-destructive text-xs font-medium" role="alert">
-                    {formState.errors.phone.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-email">Email (optional)</Label>
-                <Input id="dr-email" type="email" autoComplete="email" {...register("email")} />
-                {formState.errors.email ? (
-                  <p className="text-destructive text-xs font-medium" role="alert">
-                    {formState.errors.email.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-city">City *</Label>
-                <select id="dr-city" className={selectClass} {...register("city")}>
-                  <option value="Nairobi">Nairobi</option>
-                  <option value="Mombasa">Mombasa</option>
-                  <option value="Kisumu">Kisumu</option>
-                </select>
-              </div>
-
-              <fieldset className="space-y-3">
-                <legend className="mb-1 text-sm font-medium text-foreground">Vehicle type *</legend>
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                    <input type="radio" value="taxi" className={radioClass} {...register("vehicleType")} />
-                    Taxi
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                    <input
-                      type="radio"
-                      value="delivery_bike"
-                      className={radioClass}
-                      {...register("vehicleType")}
-                    />
-                    Delivery bike
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                    <input
-                      type="radio"
-                      value="three_wheeler"
-                      className={radioClass}
-                      {...register("vehicleType")}
-                    />
-                    Three-wheeler
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                    <input type="radio" value="other" className={radioClass} {...register("vehicleType")} />
-                    Other
-                  </label>
-                </div>
-              </fieldset>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-days">How many days a week do you drive? *</Label>
-                <select id="dr-days" className={selectClass} {...register("daysPerWeek")}>
-                  <option value="1_2">1–2</option>
-                  <option value="3_4">3–4</option>
-                  <option value="5_6">5–6</option>
-                  <option value="daily">Every day</option>
-                </select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-make">Vehicle make &amp; model</Label>
-                <Input id="dr-make" placeholder="Toyota Vitz" {...register("vehicleMakeModel")} />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-year">Vehicle year</Label>
-                <Input id="dr-year" inputMode="numeric" placeholder="2016" {...register("vehicleYear")} />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-ownership">Is the vehicle yours?</Label>
-                <select id="dr-ownership" className={selectClass} {...register("vehicleOwnership")}>
-                  <option value="owned">I own it</option>
-                  <option value="rented">I rent it</option>
-                  <option value="financed">On finance / loan</option>
-                </select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-routes">Areas you usually drive</Label>
-                <Input id="dr-routes" placeholder="e.g. Kilimani, CBD, Rongai" {...register("routesAreas")} />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-hours">Hours on the road on a typical day</Label>
-                <select id="dr-hours" className={selectClass} {...register("hoursPerDay")}>
-                  <option value="under_4">Under 4</option>
-                  <option value="4_8">4–8</option>
-                  <option value="8_12">8–12</option>
-                  <option value="over_12">Over 12</option>
-                </select>
-              </div>
-
-              <fieldset className="space-y-3">
-                <legend className="mb-1 text-sm font-medium text-foreground">Which apps do you drive on?</legend>
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  {platformOptions.map((p) => (
-                    <label key={p.value} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                      <input
-                        type="checkbox"
-                        className="border-input accent-primary size-4 rounded border"
-                        checked={platformsWatch.includes(p.value)}
-                        onChange={() => togglePlatform(p.value)}
-                      />
-                      {p.label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-msg">Anything else we should know? (optional)</Label>
-                <textarea
-                  id="dr-msg"
-                  rows={3}
-                  className="border-input placeholder:text-muted-foreground focus-visible:ring-ring/50 focus-visible:border-ring flex min-h-20 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-3 md:text-sm"
-                  {...register("applicantMessage")}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dr-heard">How did you hear about Admobi?</Label>
-                <select id="dr-heard" className={selectClass} {...register("heardAbout")}>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="friend">Friend</option>
-                  <option value="roadside">Roadside</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <label className="flex items-start gap-3 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  className="border-input accent-primary mt-1 size-4 shrink-0 rounded border"
-                  {...register("consent")}
-                />
-                <span>
-                  I agree to the{" "}
-                  <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
-                    privacy policy
-                  </Link>{" "}
-                  and understand these are the working terms described above.
-                </span>
-              </label>
-              {formState.errors.consent ? (
-                <p className="text-destructive text-xs font-medium" role="alert">
-                  {formState.errors.consent.message}
-                </p>
-              ) : null}
-
-              {submitError ? (
-                <ApiErrorBanner message={submitError} onDismiss={dismissError} />
-              ) : null}
-
-              <HoneypotField value={honeypot} onChange={setHoneypot} />
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={formState.isSubmitting}
-                loading={formState.isSubmitting}
-                loadingText="Sending…"
-                size="lg"
-              >
-                Raise my hand
-              </Button>
-            </form>
-          )}
-
-          <p className="text-muted-foreground mt-10 max-w-2xl text-xs leading-relaxed">
-            Admobi is not an employer. Drivers participate as independent contractors. Payouts are
-            subject to active screen hours verified by GPS.
-          </p>
+          </div>
         </Container>
       </section>
     </div>

@@ -4,6 +4,7 @@ import { Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Container } from "@/components/landing/container"
+import { ChevronPattern } from "@/components/landing/pattern-shapes"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { fleetFaqItems } from "@/lib/seo/faq-data"
@@ -99,22 +100,35 @@ export default function PartnerFleetPage() {
       />
 
       <div className="border-b border-border pb-14 sm:pb-20">
-        <section className="border-border border-b bg-foreground text-background py-14 sm:py-20 lg:py-24">
+        <section className="relative isolate overflow-hidden border-b border-border bg-foreground py-14 text-background sm:py-20 lg:py-24">
+          <ChevronPattern
+            maskImage="radial-gradient(ellipse 60% 90% at 100% 0%, black, transparent 70%)"
+            colorClassName="text-background/70"
+          />
           <Container>
             <div className="max-w-2xl space-y-6">
               <div className="space-y-3">
-                <p className="text-background/65 text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
+                <p className="text-[0.7rem] font-medium tracking-[0.2em] text-background/65 uppercase sm:text-xs">
                   Fleet partnership · Kenya rollout
                 </p>
-                <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-[2.75rem]">
-                  Earn revenue from fleet advertising in Kenya, partner with Admobi
+                <h1 className="text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-[2.75rem]">
+                  Earn revenue from fleet advertising in Kenya, partner with
+                  Admobi
                 </h1>
-                <p className="text-background/82 max-w-[58ch] text-lg leading-relaxed sm:text-xl">
-                  Register taxis or delivery bikes with Admobi. We install connected screens, sell the media, and share
-                  revenue while you keep routes and dispatch your own way. Fleet advertising in Kenya is now a passive income stream, no ads management, no hardware costs.
+                <p className="max-w-[58ch] text-lg leading-relaxed text-background/82 sm:text-xl">
+                  Register taxis or delivery bikes with Admobi. We install
+                  connected screens, sell the media, and share revenue while you
+                  keep routes and dispatch your own way. Fleet advertising in
+                  Kenya is now a passive income stream, no ads management, no
+                  hardware costs.
                 </p>
               </div>
-              <Button asChild size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="bg-background text-foreground hover:bg-background/90"
+              >
                 <Link href="#request-deck">Request partnership deck</Link>
               </Button>
             </div>
@@ -131,11 +145,15 @@ export default function PartnerFleetPage() {
                 const Icon = step.icon
                 return (
                   <div key={step.title} className="space-y-3">
-                    <div className="bg-muted/40 text-foreground flex size-11 items-center justify-center rounded-xl border border-border">
+                    <div className="flex size-11 items-center justify-center rounded-xl border border-border bg-muted/40 text-foreground">
                       <Icon className="size-5" aria-hidden />
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">{step.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{step.detail}</p>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {step.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {step.detail}
+                    </p>
                   </div>
                 )
               })}
@@ -143,7 +161,7 @@ export default function PartnerFleetPage() {
           </Container>
         </section>
 
-        <section className="border-border border-t py-14 sm:py-20">
+        <section className="border-t border-border py-14 sm:py-20">
           <Container>
             <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
               What you need to know
@@ -154,15 +172,19 @@ export default function PartnerFleetPage() {
                   key={card.heading}
                   className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6"
                 >
-                  <h3 className="text-base font-semibold text-foreground">{card.heading}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{card.body}</p>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {card.heading}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {card.body}
+                  </p>
                 </div>
               ))}
             </div>
           </Container>
         </section>
 
-        <section className="border-border border-t py-14 sm:py-20">
+        <section className="border-t border-border py-14 sm:py-20">
           <Container>
             <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
               Who fits first
@@ -170,7 +192,7 @@ export default function PartnerFleetPage() {
             <ul className="mt-8 max-w-xl space-y-4">
               {eligibility.map((item) => (
                 <li key={item} className="flex gap-3 text-base text-foreground">
-                  <span className="text-primary mt-0.5 shrink-0">
+                  <span className="mt-0.5 shrink-0 text-primary">
                     <Check className="size-5" aria-hidden />
                   </span>
                   <span className="leading-relaxed">{item}</span>
@@ -182,22 +204,26 @@ export default function PartnerFleetPage() {
 
         <FaqDetails items={fleetFaqItems} heading="Partnership FAQ" />
 
-        <section id="request-deck" className="scroll-mt-24 border-border border-t py-14 sm:py-20">
+        <section
+          id="request-deck"
+          className="scroll-mt-24 border-t border-border py-14 sm:py-20"
+        >
           <Container>
             <div className="max-w-xl space-y-2">
               <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
                 Request partnership deck
               </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Share operational basics. Expect a structured follow-up inside two business days.
+              <p className="text-base leading-relaxed text-muted-foreground">
+                Share operational basics. Expect a structured follow-up inside
+                two business days.
               </p>
             </div>
 
             <PartnerFleetForm />
 
-            <p className="text-muted-foreground mt-10 max-w-2xl text-xs leading-relaxed">
-              Admobi contracts with licensed fleet partners. Final economics sit in your signed agreement, not on this
-              marketing page.
+            <p className="mt-10 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+              Admobi contracts with licensed fleet partners. Final economics sit
+              in your signed agreement, not on this marketing page.
             </p>
           </Container>
         </section>
