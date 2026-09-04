@@ -36,6 +36,10 @@ export const fleetLeadSchema = z.object({
     .min(1, "Pick at least one fleet type"),
   vehicleCount: z.coerce.number().int().min(1),
   vehiclesActive: z.enum(["yes", "no", "some"]),
+  taxiCount: z.coerce.number().int().min(0).optional(),
+  bikeCount: z.coerce.number().int().min(0).optional(),
+  operatingCities: z.array(z.enum(["Nairobi", "Mombasa", "Kisumu"])).optional(),
+  evStatus: z.enum(["none", "some", "mostly", "all"]).optional(),
   notes: z.string().trim().optional(),
   consent: z
     .boolean()

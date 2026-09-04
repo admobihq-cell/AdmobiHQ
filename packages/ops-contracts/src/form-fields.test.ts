@@ -4,6 +4,9 @@ import {
   DRIVER_FORM_FIELDS,
   driverFormFromRecord,
   driverFormToPayload,
+  FLEET_FORM_FIELDS,
+  fleetFormFromRecord,
+  fleetFormToPayload,
 } from "./form-fields"
 
 describe("driver form mappers", () => {
@@ -48,6 +51,49 @@ describe("driver form mappers", () => {
         "hours_per_day",
         "platforms",
         "applicant_message",
+      ]),
+    )
+  })
+})
+
+describe("fleet form mappers", () => {
+  it("round-trips composition + EV fields incl. operating_cities array", () => {
+    const record = {
+      id: 1,
+      email: "ops@fleet.co.ke",
+      company_name: "Acme Cabs",
+      primary_contact_name: "Jo",
+      phone: "0700000000",
+      city: "Nairobi",
+      fleet_types: ["taxi"],
+      fleet_size: "50",
+      vehicles_active: "yes",
+      notes: null,
+      status: "pending",
+      taxi_count: "40",
+      bike_count: "10",
+      operating_cities: ["Nairobi", "Mombasa"],
+      ev_status: "some",
+      created_at: "2026-09-04T00:00:00.000Z",
+      updated_at: "2026-09-04T00:00:00.000Z",
+    } as never
+
+    const payload = fleetFormToPayload(fleetFormFromRecord(record))
+
+    expect(payload.taxi_count).toBe("40")
+    expect(payload.bike_count).toBe("10")
+    expect(payload.operating_cities).toEqual(["Nairobi", "Mombasa"])
+    expect(payload.ev_status).toBe("some")
+  })
+
+  it("exposes the new fields in FLEET_FORM_FIELDS", () => {
+    const names = FLEET_FORM_FIELDS.map((f) => f.name)
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "taxi_count",
+        "bike_count",
+        "operating_cities",
+        "ev_status",
       ]),
     )
   })

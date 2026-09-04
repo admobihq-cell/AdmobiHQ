@@ -116,6 +116,12 @@ export async function POST(req: Request) {
           fleet_types: parsed.data.fleetTypes,
           fleet_size: String(parsed.data.vehicleCount),
           vehicles_active: parsed.data.vehiclesActive,
+          taxi_count:
+            parsed.data.taxiCount != null ? String(parsed.data.taxiCount) : null,
+          bike_count:
+            parsed.data.bikeCount != null ? String(parsed.data.bikeCount) : null,
+          operating_cities: parsed.data.operatingCities ?? [],
+          ev_status: parsed.data.evStatus || null,
           notes: parsed.data.notes || '',
         },
       })
@@ -153,7 +159,18 @@ export async function POST(req: Request) {
           submitterPhone: parsed.data.phone,
           submitterCompany: parsed.data.fleetOrCompanyName,
           submitterCity: parsed.data.city,
-          additionalInfo: parsed.data.notes,
+          additionalInfo: [
+            `Fleet types: ${parsed.data.fleetTypes.join(", ")}`,
+            `Vehicles: ${parsed.data.vehicleCount}`,
+            parsed.data.taxiCount != null && `Taxis: ${parsed.data.taxiCount}`,
+            parsed.data.bikeCount != null && `Bikes: ${parsed.data.bikeCount}`,
+            parsed.data.operatingCities?.length &&
+              `Operating cities: ${parsed.data.operatingCities.join(", ")}`,
+            parsed.data.evStatus && `EVs: ${parsed.data.evStatus}`,
+            parsed.data.notes && `Notes: ${parsed.data.notes}`,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         })
 
         await sendEmail(

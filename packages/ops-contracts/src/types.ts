@@ -55,6 +55,10 @@ export type FleetPartnerDto = {
   vehicles_active: string | null
   notes: string | null
   status: string | null
+  taxi_count: string | null
+  bike_count: string | null
+  operating_cities: string[]
+  ev_status: string | null
   created_at: string
   updated_at: string
 }

@@ -22,6 +22,10 @@ type FleetPartner = {
   vehicles_active: string | null
   status: string | null
   notes: string | null
+  taxi_count: string | null
+  bike_count: string | null
+  operating_cities: string[]
+  ev_status: string | null
   created_at: string
 }
 
@@ -73,6 +77,18 @@ export function FleetView({ initialData }: FleetViewProps) {
           label: "Vehicles active",
           render: (r) => formatLabel(r.vehicles_active),
         },
+        { key: "taxi_count", label: "Taxis", render: (r) => r.taxi_count ?? "—" },
+        { key: "bike_count", label: "Bikes", render: (r) => r.bike_count ?? "—" },
+        {
+          key: "operating_cities",
+          label: "Operating cities",
+          render: (r) => (r.operating_cities.length ? r.operating_cities.join(", ") : "—"),
+        },
+        {
+          key: "ev_status",
+          label: "Electric vehicles",
+          render: (r) => formatLabel(r.ev_status),
+        },
         {
           key: "status",
           label: "Status",
@@ -110,6 +126,12 @@ export function FleetView({ initialData }: FleetViewProps) {
           header: "Size",
           render: (r) => r.fleet_size ?? "—",
           csv: (r) => r.fleet_size,
+        },
+        {
+          key: "ev_status",
+          header: "EVs",
+          render: (r) => formatLabel(r.ev_status),
+          csv: (r) => r.ev_status,
         },
         {
           key: "status",

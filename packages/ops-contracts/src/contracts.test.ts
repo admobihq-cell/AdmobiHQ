@@ -11,7 +11,12 @@ import {
   formatRelativeTime,
   parseId,
 } from "./format"
-import { driverCreateSchema, leadCreateSchema, waitlistCreateSchema } from "./schemas"
+import {
+  driverCreateSchema,
+  fleetCreateSchema,
+  leadCreateSchema,
+  waitlistCreateSchema,
+} from "./schemas"
 
 describe("allowed email", () => {
   it("accepts @admobihq.com addresses", () => {
@@ -127,6 +132,35 @@ describe("zod schemas", () => {
       city: "Nairobi",
     })
     expect(result.success).toBe(true)
+  })
+
+  it("accepts a fleet payload with the new composition + EV fields", () => {
+    const result = fleetCreateSchema.safeParse({
+      email: "ops@fleet.co.ke",
+      company_name: "Acme Cabs",
+      primary_contact_name: "Jo",
+      phone: "0700000000",
+      city: "Nairobi",
+      fleet_types: ["taxi"],
+      taxi_count: "40",
+      bike_count: "10",
+      operating_cities: ["Nairobi", "Mombasa"],
+      ev_status: "some",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a fleet payload with an unknown ev_status", () => {
+    const result = fleetCreateSchema.safeParse({
+      email: "ops@fleet.co.ke",
+      company_name: "Acme Cabs",
+      primary_contact_name: "Jo",
+      phone: "0700000000",
+      city: "Nairobi",
+      fleet_types: ["taxi"],
+      ev_status: "hydrogen",
+    })
+    expect(result.success).toBe(false)
   })
 })
 

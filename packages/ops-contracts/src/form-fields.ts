@@ -231,6 +231,26 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
     options: enumOptions(VEHICLES_ACTIVE),
     section: "Fleet details",
   },
+  { name: "taxi_count", label: "Number of taxis", section: "Fleet details" },
+  { name: "bike_count", label: "Number of bikes", section: "Fleet details" },
+  {
+    name: "operating_cities",
+    label: "Operating cities",
+    multi: true,
+    options: enumOptions(CITIES),
+    section: "Fleet details",
+  },
+  {
+    name: "ev_status",
+    label: "Electric vehicles",
+    options: [
+      { value: "none", label: "None" },
+      { value: "some", label: "Some" },
+      { value: "mostly", label: "Mostly" },
+      { value: "all", label: "All" },
+    ],
+    section: "Fleet details",
+  },
   {
     name: "status",
     label: "Status",
@@ -421,6 +441,12 @@ export function fleetFormToPayload(
     fleet_types: fleetTypes as FleetCreateInput["fleet_types"],
     fleet_size: values.fleet_size?.trim() || undefined,
     vehicles_active: (values.vehicles_active?.trim() || undefined) as FleetCreateInput["vehicles_active"],
+    taxi_count: values.taxi_count?.trim() || undefined,
+    bike_count: values.bike_count?.trim() || undefined,
+    operating_cities: splitCsv(values.operating_cities).filter((c) =>
+      (CITIES as readonly string[]).includes(c),
+    ) as FleetCreateInput["operating_cities"],
+    ev_status: (values.ev_status?.trim() || undefined) as FleetCreateInput["ev_status"],
     status: (values.status?.trim() || undefined) as FleetCreateInput["status"],
     notes: values.notes?.trim() || undefined,
   }
@@ -436,6 +462,10 @@ export function fleetFormFromRecord(record: FleetPartnerDto): Record<string, str
     fleet_types: record.fleet_types.join(", "),
     fleet_size: record.fleet_size ?? "",
     vehicles_active: record.vehicles_active ?? "",
+    taxi_count: record.taxi_count ?? "",
+    bike_count: record.bike_count ?? "",
+    operating_cities: record.operating_cities.join(", "),
+    ev_status: record.ev_status ?? "",
     status: record.status ?? "pending",
     notes: record.notes ?? "",
   }

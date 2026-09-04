@@ -11,6 +11,7 @@ import {
   DRIVER_DOCUMENT_TYPES,
   DRIVER_PAYOUT_METHODS,
   DRIVER_STATUSES,
+  FLEET_EV_STATUS,
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
@@ -54,6 +55,10 @@ export const fleetCreateSchema = z.object({
   vehicles_active: z.enum(VEHICLES_ACTIVE).optional(),
   notes: z.string().optional(),
   status: z.enum(FLEET_STATUSES).optional(),
+  taxi_count: z.string().optional(),
+  bike_count: z.string().optional(),
+  operating_cities: z.array(z.enum(CITIES)).optional(),
+  ev_status: z.enum(FLEET_EV_STATUS).optional(),
 })
 
 export const fleetUpdateSchema = fleetCreateSchema.partial()
