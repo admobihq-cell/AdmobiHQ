@@ -211,7 +211,10 @@ export async function GET() {
       <span>PDF spike — if you can read this in a PDF viewer, Takumi works.</span>
     </div>,
   )
-  return new Response(bytes, {
+  // Buffer.from(), not the raw Uint8Array: TypeScript 5.9's generic
+  // Uint8Array<ArrayBufferLike> isn't structurally assignable to BodyInit
+  // in this lib config — a real typecheck error, not a hypothetical.
+  return new Response(Buffer.from(bytes), {
     status: 200,
     headers: { "Content-Type": "application/pdf" },
   })
@@ -525,7 +528,13 @@ git commit -m "feat: add EntityExportPdf template"
 ## Task 4: API route — `POST /v1/ops/documents/export`
 
 **Files:**
-- Modify: `apps/api/lib/validation/schemas.ts` (add `documentExportRequestSchema`)
+- Modify: `packages/ops-contracts/src/schemas.ts` (add
+  `documentExportRequestSchema` — **not** `apps/api/lib/validation/schemas.ts`,
+  which turns out to be a pure barrel: `export * from
+  "@workspace/ops-contracts/schemas"`, no local definitions of its own.
+  Every other request schema, e.g. `driverCreateSchema`, actually lives in
+  `packages/ops-contracts/src/schemas.ts` and flows through that
+  re-export — this one does too.)
 - Modify: `apps/api/vitest.config.ts` (widen `include` — see Step 1)
 - Create: `apps/api/app/v1/ops/documents/export/route.tsx`
 - Create: `apps/api/app/v1/ops/documents/export/route.test.ts`
@@ -534,19 +543,41 @@ git commit -m "feat: add EntityExportPdf template"
 - Consumes: `renderPdf` (Task 1), `EntityExportPdf` (Task 3), `requireOpsPermissionAccess`/`jsonError`/`parseJsonBody` (`@/lib/api-utils`, pre-existing), `OPS_PERMISSIONS` (`@workspace/ops-contracts`, pre-existing).
 - Produces: `documentExportRequestSchema: ZodSchema<{ entity: OpsPermission; title: string; headers: string[]; rows: string[][] }>`, and the route itself at `POST /v1/ops/documents/export`, which Task 5's client method calls.
 
-- [ ] **Step 1: Widen the vitest include glob to cover route handlers**
+- [x] **Step 1: Widen the vitest include glob and resolve the `@/` alias**
 
 `apps/api/vitest.config.ts` (already modified once in Task 1, to add the
 `esbuild.jsx` options) still only discovers tests under `lib/**` — every
 existing test in this app lives there, so route handlers have never had
-a test of their own. This task adds the first one, so widen the
-`include` glob too or Step 3's test will silently never run. Add
-`"app/**/*.{test,spec}.{ts,tsx}"` to the existing `include` array,
-leaving Task 1's `esbuild` block as-is:
+a test of their own. Widen the `include` glob or Step 3's test will
+silently never run.
+
+Separately, and for the same underlying reason: every existing test file
+in this app uses relative imports only (`lead-schemas.test.ts` imports
+`from "./lead-schemas"`, never `@/lib/...`) — because the `@/*` → `./*`
+alias in `apps/api/tsconfig.json` is understood by Next's own bundler,
+not by Vitest's. The route in Step 5 imports `@/lib/api-utils`,
+`@/lib/pdf/render-pdf`, etc. (matching every other route in this app,
+e.g. `apps/api/app/v1/drivers/route.ts`), so without a matching
+`resolve.alias`, Vitest fails with `Cannot find package '@/lib/api-utils'`
+the moment it tries to load the route module — not a hypothetical, this
+is what actually happens if you skip this step. Fix both in one edit:
 
 ```ts
 // apps/api/vitest.config.ts
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+import { mergeConfig } from "vitest/config"
+
+import shared from "@workspace/vitest-config/node"
+
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
 export default mergeConfig(shared, {
+  resolve: {
+    alias: {
+      "@": dirname,
+    },
+  },
   esbuild: {
     jsx: "automatic",
     jsxImportSource: "react",
@@ -560,14 +591,14 @@ export default mergeConfig(shared, {
 })
 ```
 
-- [ ] **Step 2: Add the request schema**
+- [x] **Step 2: Add the request schema**
 
-Open `apps/api/lib/validation/schemas.ts` and add near the other request
-schemas (do not remove or reorder existing exports):
+Open `packages/ops-contracts/src/schemas.ts`. Add `OPS_PERMISSIONS` to the
+existing multi-line `import { ... } from "./enums"` block at the top, then
+add the schema near the end, alongside the other schema definitions (do
+not remove or reorder existing exports):
 
 ```ts
-import { OPS_PERMISSIONS } from "@workspace/ops-contracts"
-
 export const documentExportRequestSchema = z.object({
   entity: z.enum(OPS_PERMISSIONS),
   title: z.string().min(1).max(200),
@@ -578,11 +609,23 @@ export const documentExportRequestSchema = z.object({
 })
 ```
 
+Then add the matching type export alongside the file's other `z.infer<>`
+exports at the very end of the file:
+
+```ts
+export type DocumentExportRequest = z.infer<typeof documentExportRequestSchema>
+```
+
+`documentExportRequestSchema` reaches `apps/api` automatically through
+the existing barrel (`apps/api/lib/validation/schemas.ts`'s `export *`),
+so the route in Step 5 imports it from `@/lib/validation/schemas` exactly
+as planned — no change needed there.
+
 (If `z` isn't already imported at the top of this file, add
 `import { z } from "zod"` — check first, most validation-schema files in
 this codebase already import it.)
 
-- [ ] **Step 3: Write the failing test**
+- [x] **Step 3: Write the failing test**
 
 ```ts
 // apps/api/app/v1/ops/documents/export/route.test.ts
@@ -635,7 +678,7 @@ describe("POST /v1/ops/documents/export", () => {
 })
 ```
 
-- [ ] **Step 4: Run test to verify it fails**
+- [x] **Step 4: Run test to verify it fails**
 
 ```bash
 cd apps/api
@@ -644,7 +687,7 @@ npx vitest run app/v1/ops/documents/export/route.test.ts
 
 Expected: FAIL — `route.tsx` doesn't exist yet.
 
-- [ ] **Step 5: Write the route**
+- [x] **Step 5: Write the route**
 
 ```tsx
 // apps/api/app/v1/ops/documents/export/route.tsx
@@ -681,7 +724,9 @@ export async function POST(req: Request) {
         })}
       />,
     )
-    return new NextResponse(bytes, {
+    // Buffer.from(), not the raw Uint8Array — see the note on this same
+    // pattern in Task 1's spike route.
+    return new NextResponse(Buffer.from(bytes), {
       status: 200,
       headers: { "Content-Type": "application/pdf" },
     })
@@ -695,7 +740,7 @@ export async function POST(req: Request) {
 }
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 ```bash
 cd apps/api
@@ -704,10 +749,26 @@ npx vitest run app/v1/ops/documents/export/route.test.ts
 
 Expected: PASS (both tests).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Typecheck**
 
 ```bash
-git add apps/api/lib/validation/schemas.ts apps/api/vitest.config.ts apps/api/app/v1/ops/documents/
+cd apps/api
+npx tsc --noEmit
+```
+
+Expected: no errors. If you hit `Type 'Uint8Array<ArrayBufferLike>' is
+not assignable to parameter of type 'BodyInit'` on the route's
+`NextResponse` call — a real TypeScript 5.9 friction point, not
+hypothetical — wrap the bytes: `new NextResponse(Buffer.from(bytes), {
+... })` instead of passing `bytes` directly. Apply the same fix to Task
+1's spike route (`apps/api/app/v1/spike-pdf-test/route.tsx`) if it has
+the same unwrapped `Response(bytes, ...)` — it typechecks clean today
+only because Task 1 had no typecheck step of its own.
+
+- [x] **Step 8: Commit**
+
+```bash
+git add packages/ops-contracts/src/schemas.ts apps/api/vitest.config.ts apps/api/app/v1/ops/documents/ apps/api/app/v1/spike-pdf-test/route.tsx
 git commit -m "feat: add POST /v1/ops/documents/export route"
 ```
 
@@ -722,22 +783,18 @@ git commit -m "feat: add POST /v1/ops/documents/export route"
 - Consumes: `POST /v1/ops/documents/export` (Task 4).
 - Produces: `opsClient.documents.exportPdf(body: DocumentExportRequest): Promise<Blob>` — Task 6's `entity-page.tsx` calls exactly this.
 
-- [ ] **Step 1: Add the request type and a blob-returning fetch helper**
+- [ ] **Step 1: Add a blob-returning fetch helper**
 
-Add `type OpsPermission` to the existing multi-line `import { ... } from
-"@workspace/ops-contracts"` block at the top of the file (it already
-imports many sibling types from this package the same way, e.g.
-`LeadDto`). Then, alongside the other type exports (before `export type
-OpsClientOptions`), add:
-
-```ts
-export type DocumentExportRequest = {
-  entity: OpsPermission
-  title: string
-  headers: string[]
-  rows: string[][]
-}
-```
+Add `type DocumentExportRequest` to the existing multi-line `import {
+... } from "@workspace/ops-contracts"` block at the top of the file (it
+already imports many sibling types from this package the same way, e.g.
+`LeadDto`) — reuse the type Task 4 derived from the real Zod schema
+(`z.infer<typeof documentExportRequestSchema>`) rather than declaring a
+second, parallel type here that could drift out of sync with it. Re-export
+it alongside this file's other pass-through type exports (near `export
+type { PublicApiResult }`) so `apps/ops` can import it from
+`@workspace/ops-api-client` without reaching into `ops-contracts`
+directly, matching how this file already re-exports other types.
 
 Inside `createOpsClient`, directly after the existing `async function
 request<T>(...)` definition (the one ending around line 285 with `return
