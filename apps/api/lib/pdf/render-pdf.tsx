@@ -1,11 +1,7 @@
-import { readFile } from "node:fs/promises"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
 import type { ReactElement } from "react"
 import { render, type PdfMetadata } from "takumi-pdf"
 import { PageNumber, TotalPages } from "takumi-pdf/primitives"
-
-const dirname = path.dirname(fileURLToPath(import.meta.url))
+import { LOGO_MARK_BYTES } from "./logo-mark"
 
 /** Approximate sRGB match for this project's --primary token
  * (oklch(0.48 0.14 43)) — PDF rendering needs a literal color, not a CSS
@@ -19,12 +15,6 @@ export const BRAND_COLOR_LIGHT = "#fef3e2"
  * not fetch images itself, so the actual bytes are supplied below via
  * the `images` render option, keyed by this same string. */
 export const LOGO_SRC = "admobi-logo-mark.png"
-
-let logoBytes: Promise<Uint8Array> | null = null
-function getLogoBytes(): Promise<Uint8Array> {
-  logoBytes ??= readFile(path.join(dirname, "../../public/brand/logo-mark.png"))
-  return logoBytes
-}
 
 function DocumentFooter(): ReactElement {
   return (
@@ -48,11 +38,10 @@ export async function renderPdf(
   options: { metadata?: PdfMetadata } = {},
 ): Promise<Uint8Array> {
   try {
-    const data = await getLogoBytes()
     return await render(element, {
       size: "a4",
       footer: <DocumentFooter />,
-      images: [{ src: LOGO_SRC, data }],
+      images: [{ src: LOGO_SRC, data: LOGO_MARK_BYTES }],
       metadata: options.metadata,
     })
   } catch (error) {
