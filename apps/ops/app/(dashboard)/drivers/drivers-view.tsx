@@ -117,7 +117,7 @@ export function DriversView({ initialData }: DriversViewProps) {
           key: "created_at",
           header: "Date",
           render: (r) => formatDateTime(r.created_at),
-          csv: (r) => r.created_at,
+          csv: (r) => formatDateTime(r.created_at),
         },
         { key: "name", header: "Name", render: (r) => r.name, csv: (r) => r.name },
         { key: "phone", header: "Phone", render: (r) => r.phone, csv: (r) => r.phone },
