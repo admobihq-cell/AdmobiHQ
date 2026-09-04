@@ -2,6 +2,8 @@ import { z } from "zod"
 
 export const waitlistSchema = z.object({
   email: z.string().trim().min(1, "Enter your email").email("Use a valid email address."),
+  name: z.string().trim().max(120).optional(),
+  persona: z.enum(["advertiser", "driver", "fleet", "other"]).optional(),
 })
 
 export const campaignLeadSchema = z.object({
@@ -93,6 +95,9 @@ export const driverJoinSchema = z.object({
 export const mediaKitSchema = z.object({
   name: z.string().trim().min(1, "Enter your name"),
   email: z.string().trim().email("Use a valid email address."),
+  company: z.string().trim().max(120).optional(),
+  role: z.string().trim().max(120).optional(),
+  useCase: z.string().trim().max(2000).optional(),
 })
 
 export const supportContactSchema = z.object({

@@ -282,12 +282,27 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
 
 export const WAITLIST_FORM_FIELDS: FormFieldDef[] = [
   { name: "email", label: "Email", type: "email", required: true, section: "Details" },
+  { name: "name", label: "Name", section: "Details" },
+  {
+    name: "persona",
+    label: "They are a",
+    options: [
+      { value: "advertiser", label: "Advertiser" },
+      { value: "driver", label: "Driver" },
+      { value: "fleet", label: "Fleet operator" },
+      { value: "other", label: "Other" },
+    ],
+    section: "Details",
+  },
   { name: "source", label: "Source", placeholder: "homepage", section: "Details" },
 ]
 
 export const MEDIA_KIT_FORM_FIELDS: FormFieldDef[] = [
   { name: "name", label: "Name", required: true, section: "Contact" },
   { name: "email", label: "Email", type: "email", required: true, section: "Contact" },
+  { name: "company", label: "Company", section: "Details" },
+  { name: "role", label: "Role", section: "Details" },
+  { name: "use_case", label: "Evaluating for", type: "multiline", section: "Details" },
 ]
 
 export const ANNOUNCEMENT_FORM_FIELDS: FormFieldDef[] = [
@@ -505,6 +520,8 @@ export function waitlistFormToPayload(
   return {
     email: values.email?.trim(),
     source: values.source?.trim() || undefined,
+    name: values.name?.trim() || undefined,
+    persona: (values.persona?.trim() || undefined) as WaitlistCreateInput["persona"],
   }
 }
 
@@ -514,6 +531,8 @@ export function waitlistFormFromRecord(
   return {
     email: record.email,
     source: record.source ?? "",
+    name: record.name ?? "",
+    persona: record.persona ?? "",
   }
 }
 
@@ -523,6 +542,9 @@ export function mediaKitFormToPayload(
   return {
     name: values.name?.trim(),
     email: values.email?.trim(),
+    company: values.company?.trim() || undefined,
+    role: values.role?.trim() || undefined,
+    use_case: values.use_case?.trim() || undefined,
   }
 }
 
@@ -532,5 +554,8 @@ export function mediaKitFormFromRecord(
   return {
     name: record.name,
     email: record.email,
+    company: record.company ?? "",
+    role: record.role ?? "",
+    use_case: record.use_case ?? "",
   }
 }

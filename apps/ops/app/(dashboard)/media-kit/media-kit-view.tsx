@@ -12,6 +12,9 @@ type MediaKitRequest = {
   id: number
   name: string
   email: string
+  company: string | null
+  role: string | null
+  use_case: string | null
   created_at: string
 }
 
@@ -44,6 +47,15 @@ export function MediaKitView({ initialData }: MediaKitViewProps) {
         },
         { key: "name", header: "Name", render: (r) => r.name, csv: (r) => r.name },
         { key: "email", header: "Email", render: (r) => r.email, csv: (r) => r.email },
+        { key: "company", header: "Company", render: (r) => r.company ?? "—", csv: (r) => r.company },
+      ]}
+      detailFields={[
+        { key: "name", label: "Name", render: (r) => r.name },
+        { key: "email", label: "Email", render: (r) => r.email },
+        { key: "company", label: "Company", render: (r) => r.company ?? "—" },
+        { key: "role", label: "Role", render: (r) => r.role ?? "—" },
+        { key: "use_case", label: "Evaluating for", render: (r) => r.use_case ?? "—" },
+        { key: "created_at", label: "Date", render: (r) => formatDateTime(r.created_at) },
       ]}
       renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
         <SimpleFormDialog

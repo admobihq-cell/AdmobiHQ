@@ -143,6 +143,8 @@ export type WaitlistEntryDto = {
   id: number
   email: string
   source: string | null
+  name: string | null
+  persona: string | null
   created_at: string
   updated_at: string
 }
@@ -151,6 +153,9 @@ export type MediaKitRequestDto = {
   id: number
   name: string
   email: string
+  company: string | null
+  role: string | null
+  use_case: string | null
   created_at: string
   updated_at: string
 }

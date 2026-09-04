@@ -29,6 +29,7 @@ import {
   VEHICLE_OWNERSHIP,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
+  WAITLIST_PERSONA,
 } from "./enums"
 
 export const leadCreateSchema = z.object({
@@ -93,6 +94,8 @@ export const driverUpdateSchema = driverCreateSchema.partial()
 export const waitlistCreateSchema = z.object({
   email: z.string().trim().email(),
   source: z.string().optional(),
+  name: z.string().optional(),
+  persona: z.enum(WAITLIST_PERSONA).optional(),
 })
 
 export const waitlistUpdateSchema = waitlistCreateSchema.partial()
@@ -100,6 +103,9 @@ export const waitlistUpdateSchema = waitlistCreateSchema.partial()
 export const mediaKitCreateSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
+  company: z.string().optional(),
+  role: z.string().optional(),
+  use_case: z.string().optional(),
 })
 
 export const mediaKitUpdateSchema = mediaKitCreateSchema.partial()

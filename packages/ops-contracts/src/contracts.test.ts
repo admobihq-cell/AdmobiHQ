@@ -15,6 +15,7 @@ import {
   driverCreateSchema,
   fleetCreateSchema,
   leadCreateSchema,
+  mediaKitCreateSchema,
   waitlistCreateSchema,
 } from "./schemas"
 
@@ -184,6 +185,39 @@ describe("zod schemas", () => {
       email: "jane@brand.co.ke",
       company_name: "Brand Co",
       creative_status: "telepathy",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts a media-kit payload with the optional profile fields", () => {
+    const result = mediaKitCreateSchema.safeParse({
+      name: "Ada",
+      email: "ada@agency.co.ke",
+      company: "Agency X",
+      role: "Media planner",
+      use_case: "Q1 taxi-top campaign for a bank client",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("still accepts a bare media-kit payload", () => {
+    const result = mediaKitCreateSchema.safeParse({ name: "Ada", email: "ada@agency.co.ke" })
+    expect(result.success).toBe(true)
+  })
+
+  it("accepts a waitlist payload with name + persona", () => {
+    const result = waitlistCreateSchema.safeParse({
+      email: "hi@example.com",
+      name: "Riri",
+      persona: "advertiser",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a waitlist payload with an unknown persona", () => {
+    const result = waitlistCreateSchema.safeParse({
+      email: "hi@example.com",
+      persona: "astronaut",
     })
     expect(result.success).toBe(false)
   })
