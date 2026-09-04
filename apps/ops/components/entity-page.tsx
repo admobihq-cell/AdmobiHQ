@@ -238,6 +238,24 @@ export function EntityPage<T extends { id: number }>({
     return resource.bulk(body as never)
   }
 
+  // Drop rows from every cached page of this entity's list immediately, so a
+  // deleted record can't linger on screen for the ~1s an invalidate+refetch
+  // takes to come back. The invalidate still runs afterwards to reconcile
+  // pagination (a page that's now one row short pulls the next row in).
+  const dropFromListCache = (removed: Set<number>) => {
+    queryClient.setQueriesData<Paginated<T>>(
+      { queryKey: ["ops-entity", apiPath] },
+      (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.filter((row) => !removed.has(row.id)),
+              total: Math.max(0, old.total - removed.size),
+            }
+          : old,
+    )
+  }
+
   const bulkMutation = useMutation({
     mutationFn: (action: () => Promise<void>) => action(),
     onSuccess: () => {
@@ -258,6 +276,7 @@ export function EntityPage<T extends { id: number }>({
       destructive: true,
       onConfirm: async () => {
         const result = await postBulk({ action: "delete", ids })
+        dropFromListCache(new Set(ids))
         toast.success(`Deleted ${result.count} record${result.count === 1 ? "" : "s"}`)
       },
     })
@@ -315,10 +334,11 @@ export function EntityPage<T extends { id: number }>({
 
   const deleteMutation = useMutation({
     mutationFn: (target: T) => resource.delete(target.id),
-    onSuccess: () => {
+    onSuccess: (_result, target) => {
       toast.success("Deleted")
       setDeleteTarget(null)
       setViewing(null)
+      dropFromListCache(new Set([target.id]))
       void queryClient.invalidateQueries({ queryKey: ["ops-entity", apiPath] })
     },
     onError: (e) => toast.error(formatApiError(e)),

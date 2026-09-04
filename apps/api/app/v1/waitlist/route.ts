@@ -44,6 +44,8 @@ export async function POST(req: Request) {
     data: {
       email: parsed.data.email,
       source: parsed.data.source ?? "manual",
+      name: parsed.data.name ?? null,
+      persona: parsed.data.persona ?? null,
     },
   })
 

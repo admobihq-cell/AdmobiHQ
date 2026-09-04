@@ -72,6 +72,45 @@ export const HEARD_ABOUT = [
 ] as const
 export type HeardAbout = (typeof HEARD_ABOUT)[number]
 
+export const VEHICLE_OWNERSHIP = ["owned", "rented", "financed"] as const
+export type VehicleOwnership = (typeof VEHICLE_OWNERSHIP)[number]
+
+export const HOURS_PER_DAY = ["under_4", "4_8", "8_12", "over_12"] as const
+export type HoursPerDay = (typeof HOURS_PER_DAY)[number]
+
+/** Ride-hailing / delivery platforms a driver or fleet operates on. */
+export const RIDEHAIL_PLATFORMS = [
+  "uber",
+  "bolt",
+  "little",
+  "faras",
+  "independent",
+] as const
+export type RidehailPlatform = (typeof RIDEHAIL_PLATFORMS)[number]
+
+export const FLEET_EV_STATUS = ["none", "some", "mostly", "all"] as const
+export type FleetEvStatus = (typeof FLEET_EV_STATUS)[number]
+
+export const CAMPAIGN_OBJECTIVES = [
+  "awareness",
+  "launch",
+  "promo",
+  "footfall",
+  "other",
+] as const
+export type CampaignObjective = (typeof CAMPAIGN_OBJECTIVES)[number]
+
+export const CREATIVE_STATUS = ["ready", "needs_design", "not_sure"] as const
+export type CreativeStatus = (typeof CREATIVE_STATUS)[number]
+
+export const WAITLIST_PERSONA = [
+  "advertiser",
+  "driver",
+  "fleet",
+  "other",
+] as const
+export type WaitlistPersona = (typeof WAITLIST_PERSONA)[number]
+
 export const VEHICLES_ACTIVE = ["yes", "no", "some"] as const
 export type VehiclesActive = (typeof VEHICLES_ACTIVE)[number]
 

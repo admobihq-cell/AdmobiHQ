@@ -1,14 +1,17 @@
 import {
   AD_FORMATS,
   BUDGET_RANGES,
+  CAMPAIGN_OBJECTIVES,
   CITIES,
   DAYS_PER_WEEK,
   DRIVER_STATUSES,
+  FLEET_EV_STATUS,
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
   LEAD_CITIES,
   LEAD_STATUSES,
+  RIDEHAIL_PLATFORMS,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
 } from "./enums"
@@ -103,10 +106,33 @@ export const LEAD_FORM_FIELDS: FormFieldDef[] = [
     section: "Campaign",
   },
   {
+    name: "objective",
+    label: "Objective",
+    options: enumOptions(CAMPAIGN_OBJECTIVES),
+    section: "Campaign",
+  },
+  { name: "industry", label: "Industry", section: "Campaign" },
+  {
+    name: "creative_status",
+    label: "Creative status",
+    options: [
+      { value: "ready", label: "Artwork ready" },
+      { value: "needs_design", label: "Needs design help" },
+      { value: "not_sure", label: "Not sure yet" },
+    ],
+    section: "Campaign",
+  },
+  {
     name: "status",
     label: "Status",
     options: enumOptions(LEAD_STATUSES),
     section: "Campaign",
+  },
+  {
+    name: "target_audience",
+    label: "Target audience",
+    type: "multiline",
+    section: "Notes",
   },
   {
     name: "additional_info",
@@ -144,6 +170,47 @@ export const DRIVER_FORM_FIELDS: FormFieldDef[] = [
     label: "Heard about",
     options: enumOptions(HEARD_ABOUT),
     section: "Details",
+  },
+  {
+    name: "vehicle_make_model",
+    label: "Vehicle make & model",
+    section: "Vehicle",
+  },
+  { name: "vehicle_year", label: "Vehicle year", section: "Vehicle" },
+  {
+    name: "vehicle_ownership",
+    label: "Ownership",
+    options: [
+      { value: "owned", label: "Owned" },
+      { value: "rented", label: "Rented" },
+      { value: "financed", label: "Financed" },
+    ],
+    section: "Vehicle",
+  },
+  { name: "routes_areas", label: "Routes / areas", section: "Driving" },
+  {
+    name: "hours_per_day",
+    label: "Hours per day",
+    options: [
+      { value: "under_4", label: "Under 4" },
+      { value: "4_8", label: "4–8" },
+      { value: "8_12", label: "8–12" },
+      { value: "over_12", label: "Over 12" },
+    ],
+    section: "Driving",
+  },
+  {
+    name: "platforms",
+    label: "Platforms",
+    multi: true,
+    options: enumOptions(RIDEHAIL_PLATFORMS),
+    section: "Driving",
+  },
+  {
+    name: "applicant_message",
+    label: "Applicant message",
+    type: "multiline",
+    section: "Driving",
   },
   {
     name: "status",
@@ -189,6 +256,21 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
     options: enumOptions(VEHICLES_ACTIVE),
     section: "Fleet details",
   },
+  { name: "taxi_count", label: "Number of taxis", section: "Fleet details" },
+  { name: "bike_count", label: "Number of bikes", section: "Fleet details" },
+  {
+    name: "operating_cities",
+    label: "Operating cities",
+    multi: true,
+    options: enumOptions(CITIES),
+    section: "Fleet details",
+  },
+  {
+    name: "ev_status",
+    label: "Electric vehicles",
+    options: enumOptions(FLEET_EV_STATUS),
+    section: "Fleet details",
+  },
   {
     name: "status",
     label: "Status",
@@ -200,12 +282,27 @@ export const FLEET_FORM_FIELDS: FormFieldDef[] = [
 
 export const WAITLIST_FORM_FIELDS: FormFieldDef[] = [
   { name: "email", label: "Email", type: "email", required: true, section: "Details" },
+  { name: "name", label: "Name", section: "Details" },
+  {
+    name: "persona",
+    label: "They are a",
+    options: [
+      { value: "advertiser", label: "Advertiser" },
+      { value: "driver", label: "Driver" },
+      { value: "fleet", label: "Fleet operator" },
+      { value: "other", label: "Other" },
+    ],
+    section: "Details",
+  },
   { name: "source", label: "Source", placeholder: "homepage", section: "Details" },
 ]
 
 export const MEDIA_KIT_FORM_FIELDS: FormFieldDef[] = [
   { name: "name", label: "Name", required: true, section: "Contact" },
   { name: "email", label: "Email", type: "email", required: true, section: "Contact" },
+  { name: "company", label: "Company", section: "Details" },
+  { name: "role", label: "Role", section: "Details" },
+  { name: "use_case", label: "Evaluating for", type: "multiline", section: "Details" },
 ]
 
 export const ANNOUNCEMENT_FORM_FIELDS: FormFieldDef[] = [
@@ -298,6 +395,10 @@ export function leadFormToPayload(
     duration: values.duration?.trim() || undefined,
     budget_range: (values.budget_range?.trim() || undefined) as LeadCreateInput["budget_range"],
     additional_info: values.additional_info?.trim() || undefined,
+    objective: (values.objective?.trim() || undefined) as LeadCreateInput["objective"],
+    industry: values.industry?.trim() || undefined,
+    creative_status: (values.creative_status?.trim() || undefined) as LeadCreateInput["creative_status"],
+    target_audience: values.target_audience?.trim() || undefined,
     status: (values.status?.trim() || undefined) as LeadCreateInput["status"],
   }
 }
@@ -314,6 +415,10 @@ export function leadFormFromRecord(record: LeadDto): Record<string, string> {
     budget_range: record.budget_range ?? "",
     status: record.status ?? "new",
     additional_info: record.additional_info ?? "",
+    objective: record.objective ?? "",
+    industry: record.industry ?? "",
+    creative_status: record.creative_status ?? "",
+    target_audience: record.target_audience ?? "",
   }
 }
 
@@ -328,6 +433,15 @@ export function driverFormToPayload(
     vehicle_type: (values.vehicle_type?.trim() || undefined) as DriverCreateInput["vehicle_type"],
     days_per_week: (values.days_per_week?.trim() || undefined) as DriverCreateInput["days_per_week"],
     heard_about: (values.heard_about?.trim() || undefined) as DriverCreateInput["heard_about"],
+    vehicle_make_model: values.vehicle_make_model?.trim() || undefined,
+    vehicle_year: values.vehicle_year?.trim() || undefined,
+    vehicle_ownership: (values.vehicle_ownership?.trim() || undefined) as DriverCreateInput["vehicle_ownership"],
+    routes_areas: values.routes_areas?.trim() || undefined,
+    hours_per_day: (values.hours_per_day?.trim() || undefined) as DriverCreateInput["hours_per_day"],
+    platforms: splitCsv(values.platforms).filter((p) =>
+      (RIDEHAIL_PLATFORMS as readonly string[]).includes(p),
+    ) as DriverCreateInput["platforms"],
+    applicant_message: values.applicant_message?.trim() || undefined,
     status: (values.status?.trim() || undefined) as DriverCreateInput["status"],
     notes: values.notes?.trim() || undefined,
   }
@@ -342,6 +456,13 @@ export function driverFormFromRecord(record: DriverDto): Record<string, string> 
     vehicle_type: record.vehicle_type ?? "",
     days_per_week: record.days_per_week ?? "",
     heard_about: record.heard_about ?? "",
+    vehicle_make_model: record.vehicle_make_model ?? "",
+    vehicle_year: record.vehicle_year ?? "",
+    vehicle_ownership: record.vehicle_ownership ?? "",
+    routes_areas: record.routes_areas ?? "",
+    hours_per_day: record.hours_per_day ?? "",
+    platforms: record.platforms.join(", "),
+    applicant_message: record.applicant_message ?? "",
     status: record.status ?? "pending",
     notes: record.notes ?? "",
   }
@@ -363,6 +484,12 @@ export function fleetFormToPayload(
     fleet_types: fleetTypes as FleetCreateInput["fleet_types"],
     fleet_size: values.fleet_size?.trim() || undefined,
     vehicles_active: (values.vehicles_active?.trim() || undefined) as FleetCreateInput["vehicles_active"],
+    taxi_count: values.taxi_count?.trim() || undefined,
+    bike_count: values.bike_count?.trim() || undefined,
+    operating_cities: splitCsv(values.operating_cities).filter((c) =>
+      (CITIES as readonly string[]).includes(c),
+    ) as FleetCreateInput["operating_cities"],
+    ev_status: (values.ev_status?.trim() || undefined) as FleetCreateInput["ev_status"],
     status: (values.status?.trim() || undefined) as FleetCreateInput["status"],
     notes: values.notes?.trim() || undefined,
   }
@@ -378,6 +505,10 @@ export function fleetFormFromRecord(record: FleetPartnerDto): Record<string, str
     fleet_types: record.fleet_types.join(", "),
     fleet_size: record.fleet_size ?? "",
     vehicles_active: record.vehicles_active ?? "",
+    taxi_count: record.taxi_count ?? "",
+    bike_count: record.bike_count ?? "",
+    operating_cities: record.operating_cities.join(", "),
+    ev_status: record.ev_status ?? "",
     status: record.status ?? "pending",
     notes: record.notes ?? "",
   }
@@ -389,6 +520,8 @@ export function waitlistFormToPayload(
   return {
     email: values.email?.trim(),
     source: values.source?.trim() || undefined,
+    name: values.name?.trim() || undefined,
+    persona: (values.persona?.trim() || undefined) as WaitlistCreateInput["persona"],
   }
 }
 
@@ -398,6 +531,8 @@ export function waitlistFormFromRecord(
   return {
     email: record.email,
     source: record.source ?? "",
+    name: record.name ?? "",
+    persona: record.persona ?? "",
   }
 }
 
@@ -407,6 +542,9 @@ export function mediaKitFormToPayload(
   return {
     name: values.name?.trim(),
     email: values.email?.trim(),
+    company: values.company?.trim() || undefined,
+    role: values.role?.trim() || undefined,
+    use_case: values.use_case?.trim() || undefined,
   }
 }
 
@@ -416,5 +554,8 @@ export function mediaKitFormFromRecord(
   return {
     name: record.name,
     email: record.email,
+    company: record.company ?? "",
+    role: record.role ?? "",
+    use_case: record.use_case ?? "",
   }
 }
