@@ -39,6 +39,13 @@ export async function POST(req: Request) {
         vehicle_type: parsed.data.vehicleType,
         days_per_week: parsed.data.daysPerWeek,
         heard_about: parsed.data.heardAbout,
+        vehicle_make_model: parsed.data.vehicleMakeModel || null,
+        vehicle_year: parsed.data.vehicleYear || null,
+        vehicle_ownership: parsed.data.vehicleOwnership || null,
+        routes_areas: parsed.data.routesAreas || null,
+        hours_per_day: parsed.data.hoursPerDay || null,
+        platforms: parsed.data.platforms ?? [],
+        applicant_message: parsed.data.applicantMessage || null,
       },
     })
 
@@ -74,7 +81,19 @@ export async function POST(req: Request) {
         submitterEmail: parsed.data.email || 'No email',
         submitterPhone: parsed.data.phone,
         submitterCity: parsed.data.city,
-        additionalInfo: `Vehicle: ${parsed.data.vehicleType}, Days/week: ${parsed.data.daysPerWeek}`,
+        additionalInfo: [
+          `Vehicle: ${parsed.data.vehicleType}`,
+          parsed.data.vehicleMakeModel && `Make/model: ${parsed.data.vehicleMakeModel}`,
+          parsed.data.vehicleYear && `Year: ${parsed.data.vehicleYear}`,
+          parsed.data.vehicleOwnership && `Ownership: ${parsed.data.vehicleOwnership}`,
+          `Days/week: ${parsed.data.daysPerWeek}`,
+          parsed.data.hoursPerDay && `Hours/day: ${parsed.data.hoursPerDay}`,
+          parsed.data.routesAreas && `Routes: ${parsed.data.routesAreas}`,
+          parsed.data.platforms?.length && `Platforms: ${parsed.data.platforms.join(", ")}`,
+          parsed.data.applicantMessage && `Message: ${parsed.data.applicantMessage}`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         // No per-record route for leads (list + edit-sheet only) — link to
         // the Drivers list itself rather than a non-existent detail page.
         reviewUrl: reviewUrl('/drivers'),

@@ -11,7 +11,13 @@ import {
   formatRelativeTime,
   parseId,
 } from "./format"
-import { leadCreateSchema, waitlistCreateSchema } from "./schemas"
+import {
+  driverCreateSchema,
+  fleetCreateSchema,
+  leadCreateSchema,
+  mediaKitCreateSchema,
+  waitlistCreateSchema,
+} from "./schemas"
 
 describe("allowed email", () => {
   it("accepts @admobihq.com addresses", () => {
@@ -91,6 +97,128 @@ describe("zod schemas", () => {
 
   it("rejects an invalid waitlist email", () => {
     const result = waitlistCreateSchema.safeParse({ email: "nope" })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts a driver payload with all new qualifying fields", () => {
+    const result = driverCreateSchema.safeParse({
+      name: "Sam K",
+      phone: "0700000000",
+      city: "Nairobi",
+      vehicle_make_model: "Toyota Vitz",
+      vehicle_year: "2016",
+      vehicle_ownership: "owned",
+      routes_areas: "Kilimani, Lavington",
+      hours_per_day: "8_12",
+      platforms: ["uber", "bolt"],
+      applicant_message: "Available weekday evenings",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a driver payload with an unknown vehicle_ownership", () => {
+    const result = driverCreateSchema.safeParse({
+      name: "Sam K",
+      phone: "0700000000",
+      city: "Nairobi",
+      vehicle_ownership: "spaceship",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts a driver payload omitting every new field", () => {
+    const result = driverCreateSchema.safeParse({
+      name: "Sam K",
+      phone: "0700000000",
+      city: "Nairobi",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("accepts a fleet payload with the new composition + EV fields", () => {
+    const result = fleetCreateSchema.safeParse({
+      email: "ops@fleet.co.ke",
+      company_name: "Acme Cabs",
+      primary_contact_name: "Jo",
+      phone: "0700000000",
+      city: "Nairobi",
+      fleet_types: ["taxi"],
+      taxi_count: "40",
+      bike_count: "10",
+      operating_cities: ["Nairobi", "Mombasa"],
+      ev_status: "some",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a fleet payload with an unknown ev_status", () => {
+    const result = fleetCreateSchema.safeParse({
+      email: "ops@fleet.co.ke",
+      company_name: "Acme Cabs",
+      primary_contact_name: "Jo",
+      phone: "0700000000",
+      city: "Nairobi",
+      fleet_types: ["taxi"],
+      ev_status: "hydrogen",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts a lead payload with the new campaign-intent fields", () => {
+    const result = leadCreateSchema.safeParse({
+      contact_name: "Jane Doe",
+      email: "jane@brand.co.ke",
+      company_name: "Brand Co",
+      cities: ["Nairobi"],
+      ad_formats: ["taxi_top"],
+      objective: "launch",
+      industry: "FMCG",
+      creative_status: "needs_design",
+      target_audience: "Urban 18-34",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a lead payload with an unknown creative_status", () => {
+    const result = leadCreateSchema.safeParse({
+      contact_name: "Jane Doe",
+      email: "jane@brand.co.ke",
+      company_name: "Brand Co",
+      creative_status: "telepathy",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts a media-kit payload with the optional profile fields", () => {
+    const result = mediaKitCreateSchema.safeParse({
+      name: "Ada",
+      email: "ada@agency.co.ke",
+      company: "Agency X",
+      role: "Media planner",
+      use_case: "Q1 taxi-top campaign for a bank client",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("still accepts a bare media-kit payload", () => {
+    const result = mediaKitCreateSchema.safeParse({ name: "Ada", email: "ada@agency.co.ke" })
+    expect(result.success).toBe(true)
+  })
+
+  it("accepts a waitlist payload with name + persona", () => {
+    const result = waitlistCreateSchema.safeParse({
+      email: "hi@example.com",
+      name: "Riri",
+      persona: "advertiser",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a waitlist payload with an unknown persona", () => {
+    const result = waitlistCreateSchema.safeParse({
+      email: "hi@example.com",
+      persona: "astronaut",
+    })
     expect(result.success).toBe(false)
   })
 })

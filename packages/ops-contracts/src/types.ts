@@ -37,6 +37,10 @@ export type LeadDto = {
   duration: string | null
   budget_range: string | null
   campaign_start_date: string | null
+  objective: string | null
+  industry: string | null
+  creative_status: string | null
+  target_audience: string | null
   additional_info: string | null
   status: string | null
   created_at: string
@@ -55,6 +59,10 @@ export type FleetPartnerDto = {
   vehicles_active: string | null
   notes: string | null
   status: string | null
+  taxi_count: string | null
+  bike_count: string | null
+  operating_cities: string[]
+  ev_status: string | null
   created_at: string
   updated_at: string
 }
@@ -70,6 +78,13 @@ export type DriverDto = {
   heard_about: string | null
   status: string | null
   notes: string | null
+  vehicle_make_model: string | null
+  vehicle_year: string | null
+  vehicle_ownership: string | null
+  routes_areas: string | null
+  hours_per_day: string | null
+  platforms: string[]
+  applicant_message: string | null
   created_at: string
   updated_at: string
 }
@@ -128,6 +143,8 @@ export type WaitlistEntryDto = {
   id: number
   email: string
   source: string | null
+  name: string | null
+  persona: string | null
   created_at: string
   updated_at: string
 }
@@ -136,6 +153,9 @@ export type MediaKitRequestDto = {
   id: number
   name: string
   email: string
+  company: string | null
+  role: string | null
+  use_case: string | null
   created_at: string
   updated_at: string
 }

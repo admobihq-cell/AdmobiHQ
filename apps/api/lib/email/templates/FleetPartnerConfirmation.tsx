@@ -19,7 +19,7 @@ export const FleetPartnerConfirmation = ({
 
     <Text style={emailStyles.paragraph}>
       We have your application for <strong>{company}</strong>. Our partnerships
-      team will review it and respond within two business days to schedule a
+      team will review it and reach out in 3 to 7 working days to schedule a
       call.
     </Text>
 

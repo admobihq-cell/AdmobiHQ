@@ -10,6 +10,8 @@ type WaitlistUpsertRow = {
   id: number
   email: string
   source: string | null
+  name: string | null
+  persona: string | null
   created_at: Date
   updated_at: Date
   deleted_at: Date | null
@@ -45,14 +47,18 @@ export async function POST(req: Request) {
     // that comparison race under concurrency).
     const result = await pool.query<WaitlistUpsertRow>(
       `
-      INSERT INTO waitlist_entries (email, source, created_at, updated_at)
-      VALUES ($1, 'homepage', now(), now())
+      INSERT INTO waitlist_entries (email, source, name, persona, created_at, updated_at)
+      VALUES ($1, 'homepage', $2, $3, now(), now())
       ON CONFLICT (email) DO UPDATE
-        SET deleted_at = NULL, deleted_by_email = NULL, updated_at = now()
-      RETURNING id, email, source, created_at, updated_at, deleted_at, deleted_by_email,
-        (xmax = 0) AS inserted
+        SET deleted_at = NULL,
+            deleted_by_email = NULL,
+            name = COALESCE(EXCLUDED.name, waitlist_entries.name),
+            persona = COALESCE(EXCLUDED.persona, waitlist_entries.persona),
+            updated_at = now()
+      RETURNING id, email, source, name, persona, created_at, updated_at,
+        deleted_at, deleted_by_email, (xmax = 0) AS inserted
       `,
-      [parsed.data.email],
+      [parsed.data.email, parsed.data.name ?? null, parsed.data.persona ?? null],
     )
     const row = result.rows[0]!
 
@@ -79,6 +85,8 @@ export async function POST(req: Request) {
       id: row.id,
       email: row.email,
       source: row.source,
+      name: row.name,
+      persona: row.persona,
       created_at: row.created_at,
       updated_at: row.updated_at,
       deleted_at: row.deleted_at,
