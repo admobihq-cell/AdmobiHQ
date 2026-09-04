@@ -39,6 +39,11 @@ export default function StartCampaignPage() {
       adFormats: [],
       duration: "1_week",
       budget: "not_sure",
+      objective: undefined,
+      industry: "",
+      campaignStartDate: "",
+      creativeStatus: undefined,
+      targetAudience: "",
       brief: "",
       consent: false,
     },
@@ -244,6 +249,49 @@ export default function StartCampaignPage() {
                 <option value="500k_plus">KSh 500,000+</option>
                 <option value="not_sure">Not sure yet</option>
               </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="sc-objective">Campaign objective</Label>
+              <select id="sc-objective" className={selectClass} {...register("objective")}>
+                <option value="">Select…</option>
+                <option value="awareness">Brand awareness</option>
+                <option value="launch">Product / service launch</option>
+                <option value="promo">Promotion / offer</option>
+                <option value="footfall">Drive footfall / store visits</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="sc-industry">Industry</Label>
+              <Input id="sc-industry" placeholder="e.g. FMCG, fintech, retail" {...register("industry")} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="sc-start">Preferred start date</Label>
+              <Input id="sc-start" type="date" {...register("campaignStartDate")} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="sc-creative">Creative status</Label>
+              <select id="sc-creative" className={selectClass} {...register("creativeStatus")}>
+                <option value="">Select…</option>
+                <option value="ready">Artwork ready to go</option>
+                <option value="needs_design">Need design help</option>
+                <option value="not_sure">Not sure yet</option>
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="sc-audience">Who are you trying to reach? (optional)</Label>
+              <textarea
+                id="sc-audience"
+                rows={3}
+                placeholder="Age, location, interests, the customer you picture."
+                className="border-input placeholder:text-muted-foreground focus-visible:ring-ring/50 aria-invalid:border-destructive focus-visible:border-ring flex min-h-20 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-3 md:text-sm"
+                {...register("targetAudience")}
+              />
             </div>
 
             <div className="grid gap-2">

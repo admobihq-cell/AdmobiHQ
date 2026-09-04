@@ -1,6 +1,7 @@
 import {
   AD_FORMATS,
   BUDGET_RANGES,
+  CAMPAIGN_OBJECTIVES,
   CITIES,
   DAYS_PER_WEEK,
   DRIVER_STATUSES,
@@ -103,6 +104,29 @@ export const LEAD_FORM_FIELDS: FormFieldDef[] = [
     label: "Budget",
     options: enumOptions(BUDGET_RANGES),
     section: "Campaign",
+  },
+  {
+    name: "objective",
+    label: "Objective",
+    options: enumOptions(CAMPAIGN_OBJECTIVES),
+    section: "Campaign",
+  },
+  { name: "industry", label: "Industry", section: "Campaign" },
+  {
+    name: "creative_status",
+    label: "Creative status",
+    options: [
+      { value: "ready", label: "Artwork ready" },
+      { value: "needs_design", label: "Needs design help" },
+      { value: "not_sure", label: "Not sure yet" },
+    ],
+    section: "Campaign",
+  },
+  {
+    name: "target_audience",
+    label: "Target audience",
+    type: "multiline",
+    section: "Notes",
   },
   {
     name: "status",
@@ -356,6 +380,10 @@ export function leadFormToPayload(
     duration: values.duration?.trim() || undefined,
     budget_range: (values.budget_range?.trim() || undefined) as LeadCreateInput["budget_range"],
     additional_info: values.additional_info?.trim() || undefined,
+    objective: (values.objective?.trim() || undefined) as LeadCreateInput["objective"],
+    industry: values.industry?.trim() || undefined,
+    creative_status: (values.creative_status?.trim() || undefined) as LeadCreateInput["creative_status"],
+    target_audience: values.target_audience?.trim() || undefined,
     status: (values.status?.trim() || undefined) as LeadCreateInput["status"],
   }
 }
@@ -372,6 +400,10 @@ export function leadFormFromRecord(record: LeadDto): Record<string, string> {
     budget_range: record.budget_range ?? "",
     status: record.status ?? "new",
     additional_info: record.additional_info ?? "",
+    objective: record.objective ?? "",
+    industry: record.industry ?? "",
+    creative_status: record.creative_status ?? "",
+    target_audience: record.target_audience ?? "",
   }
 }
 

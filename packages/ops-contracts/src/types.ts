@@ -37,6 +37,10 @@ export type LeadDto = {
   duration: string | null
   budget_range: string | null
   campaign_start_date: string | null
+  objective: string | null
+  industry: string | null
+  creative_status: string | null
+  target_audience: string | null
   additional_info: string | null
   status: string | null
   created_at: string

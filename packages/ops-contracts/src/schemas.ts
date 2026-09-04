@@ -5,7 +5,9 @@ import {
   ANNOUNCEMENT_CATEGORIES,
   ANNOUNCEMENT_TARGET_APPS,
   BUDGET_RANGES,
+  CAMPAIGN_OBJECTIVES,
   CITIES,
+  CREATIVE_STATUS,
   DATE_RANGE_KEYS,
   DAYS_PER_WEEK,
   DRIVER_DOCUMENT_TYPES,
@@ -40,6 +42,10 @@ export const leadCreateSchema = z.object({
   budget_range: z.enum(BUDGET_RANGES).optional(),
   additional_info: z.string().optional(),
   status: z.enum(LEAD_STATUSES).optional(),
+  objective: z.enum(CAMPAIGN_OBJECTIVES).optional(),
+  industry: z.string().optional(),
+  creative_status: z.enum(CREATIVE_STATUS).optional(),
+  target_audience: z.string().optional(),
 })
 
 export const leadUpdateSchema = leadCreateSchema.partial()

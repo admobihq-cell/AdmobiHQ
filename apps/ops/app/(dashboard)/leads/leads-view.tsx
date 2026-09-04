@@ -20,6 +20,11 @@ type Lead = {
   ad_formats: string[]
   duration: string | null
   budget_range: string | null
+  campaign_start_date: string | null
+  objective: string | null
+  industry: string | null
+  creative_status: string | null
+  target_audience: string | null
   status: string | null
   additional_info: string | null
   created_at: string
@@ -78,6 +83,27 @@ export function LeadsView({ initialData }: LeadsViewProps) {
           render: (r) => formatLabel(r.budget_range),
         },
         {
+          key: "objective",
+          label: "Objective",
+          render: (r) => formatLabel(r.objective),
+        },
+        { key: "industry", label: "Industry", render: (r) => r.industry ?? "—" },
+        {
+          key: "campaign_start_date",
+          label: "Start date",
+          render: (r) => (r.campaign_start_date ? formatDateTime(r.campaign_start_date) : "—"),
+        },
+        {
+          key: "creative_status",
+          label: "Creative status",
+          render: (r) => formatLabel(r.creative_status),
+        },
+        {
+          key: "target_audience",
+          label: "Target audience",
+          render: (r) => r.target_audience ?? "—",
+        },
+        {
           key: "status",
           label: "Status",
           render: (r) => <StatusBadge status={r.status} />,
@@ -118,6 +144,12 @@ export function LeadsView({ initialData }: LeadsViewProps) {
           header: "Budget",
           render: (r) => formatLabel(r.budget_range),
           csv: (r) => r.budget_range,
+        },
+        {
+          key: "objective",
+          header: "Objective",
+          render: (r) => formatLabel(r.objective),
+          csv: (r) => r.objective,
         },
         {
           key: "status",

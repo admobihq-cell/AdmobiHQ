@@ -162,6 +162,31 @@ describe("zod schemas", () => {
     })
     expect(result.success).toBe(false)
   })
+
+  it("accepts a lead payload with the new campaign-intent fields", () => {
+    const result = leadCreateSchema.safeParse({
+      contact_name: "Jane Doe",
+      email: "jane@brand.co.ke",
+      company_name: "Brand Co",
+      cities: ["Nairobi"],
+      ad_formats: ["taxi_top"],
+      objective: "launch",
+      industry: "FMCG",
+      creative_status: "needs_design",
+      target_audience: "Urban 18-34",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a lead payload with an unknown creative_status", () => {
+    const result = leadCreateSchema.safeParse({
+      contact_name: "Jane Doe",
+      email: "jane@brand.co.ke",
+      company_name: "Brand Co",
+      creative_status: "telepathy",
+    })
+    expect(result.success).toBe(false)
+  })
 })
 
 describe("announcement target apps", () => {

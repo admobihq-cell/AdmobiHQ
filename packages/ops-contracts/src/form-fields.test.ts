@@ -7,6 +7,9 @@ import {
   FLEET_FORM_FIELDS,
   fleetFormFromRecord,
   fleetFormToPayload,
+  LEAD_FORM_FIELDS,
+  leadFormFromRecord,
+  leadFormToPayload,
 } from "./form-fields"
 
 describe("driver form mappers", () => {
@@ -94,6 +97,50 @@ describe("fleet form mappers", () => {
         "bike_count",
         "operating_cities",
         "ev_status",
+      ]),
+    )
+  })
+})
+
+describe("lead form mappers", () => {
+  it("round-trips the new campaign-intent fields", () => {
+    const record = {
+      id: 1,
+      contact_name: "Jane Doe",
+      email: "jane@brand.co.ke",
+      company_name: "Brand Co",
+      phone: null,
+      audience: "campaign",
+      cities: ["Nairobi"],
+      ad_formats: ["taxi_top"],
+      duration: "1_week",
+      budget_range: "not_sure",
+      campaign_start_date: null,
+      additional_info: null,
+      status: "new",
+      objective: "launch",
+      industry: "FMCG",
+      creative_status: "needs_design",
+      target_audience: "Urban 18-34",
+      created_at: "2026-09-04T00:00:00.000Z",
+      updated_at: "2026-09-04T00:00:00.000Z",
+    } as never
+
+    const payload = leadFormToPayload(leadFormFromRecord(record))
+    expect(payload.objective).toBe("launch")
+    expect(payload.industry).toBe("FMCG")
+    expect(payload.creative_status).toBe("needs_design")
+    expect(payload.target_audience).toBe("Urban 18-34")
+  })
+
+  it("exposes the new fields in LEAD_FORM_FIELDS", () => {
+    const names = LEAD_FORM_FIELDS.map((f) => f.name)
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "objective",
+        "industry",
+        "creative_status",
+        "target_audience",
       ]),
     )
   })

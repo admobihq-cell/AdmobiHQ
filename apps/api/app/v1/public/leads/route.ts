@@ -46,8 +46,14 @@ export async function POST(req: Request) {
           ad_formats: parsed.data.adFormats,
           duration: parsed.data.duration,
           budget_range: parsed.data.budget,
-          campaign_start_date: null,
+          campaign_start_date: parsed.data.campaignStartDate
+            ? new Date(parsed.data.campaignStartDate)
+            : null,
           additional_info: parsed.data.brief || '',
+          objective: parsed.data.objective || null,
+          industry: parsed.data.industry || null,
+          creative_status: parsed.data.creativeStatus || null,
+          target_audience: parsed.data.targetAudience || null,
         },
       })
       console.log("[Admobi API leads] Saved campaign lead:", { id: data.id })
@@ -84,7 +90,16 @@ export async function POST(req: Request) {
           submitterEmail: parsed.data.email,
           submitterPhone: parsed.data.phone,
           submitterCompany: parsed.data.company,
-          additionalInfo: parsed.data.brief,
+          additionalInfo: [
+            parsed.data.objective && `Objective: ${parsed.data.objective}`,
+            parsed.data.industry && `Industry: ${parsed.data.industry}`,
+            parsed.data.campaignStartDate && `Start: ${parsed.data.campaignStartDate}`,
+            parsed.data.creativeStatus && `Creative: ${parsed.data.creativeStatus}`,
+            parsed.data.targetAudience && `Audience: ${parsed.data.targetAudience}`,
+            parsed.data.brief && `Brief: ${parsed.data.brief}`,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         })
 
         await sendEmail(
