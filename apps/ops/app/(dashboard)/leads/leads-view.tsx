@@ -119,7 +119,7 @@ export function LeadsView({ initialData }: LeadsViewProps) {
           key: "created_at",
           header: "Date",
           render: (r) => formatDateTime(r.created_at),
-          csv: (r) => r.created_at,
+          csv: (r) => formatDateTime(r.created_at),
         },
         {
           key: "contact_name",
