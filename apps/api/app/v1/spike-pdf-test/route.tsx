@@ -9,7 +9,7 @@ export async function GET() {
       <span>PDF spike — if you can read this in a PDF viewer, Takumi works.</span>
     </div>,
   )
-  return new Response(bytes, {
+  return new Response(Buffer.from(bytes), {
     status: 200,
     headers: { "Content-Type": "application/pdf" },
   })

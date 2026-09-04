@@ -1,8 +1,17 @@
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { mergeConfig } from "vitest/config"
 
 import shared from "@workspace/vitest-config/node"
 
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
 export default mergeConfig(shared, {
+  resolve: {
+    alias: {
+      "@": dirname,
+    },
+  },
   // This app's tsconfig sets "jsx": "preserve" (Next's own compiler does
   // the real transform in the app itself), which leaves Vitest's esbuild
   // with no signal to use React's automatic JSX runtime — needed here
@@ -13,6 +22,9 @@ export default mergeConfig(shared, {
     jsxImportSource: "react",
   },
   test: {
-    include: ["lib/**/*.{test,spec}.{ts,tsx}"],
+    include: [
+      "lib/**/*.{test,spec}.{ts,tsx}",
+      "app/**/*.{test,spec}.{ts,tsx}",
+    ],
   },
 })
