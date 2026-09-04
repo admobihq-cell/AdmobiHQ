@@ -8,7 +8,7 @@ import {
   leadFormFromRecord,
   leadFormToPayload,
 } from "@workspace/ops-contracts"
-import { formatDateTime, formatLabel, truncate } from "@/lib/format"
+import { formatDate, formatDateTime, formatLabel, truncate } from "@/lib/format"
 
 type Lead = {
   id: number
@@ -91,7 +91,7 @@ export function LeadsView({ initialData }: LeadsViewProps) {
         {
           key: "campaign_start_date",
           label: "Start date",
-          render: (r) => (r.campaign_start_date ? formatDateTime(r.campaign_start_date) : "—"),
+          render: (r) => (r.campaign_start_date ? formatDate(r.campaign_start_date) : "—"),
         },
         {
           key: "creative_status",

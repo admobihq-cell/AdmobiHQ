@@ -123,16 +123,16 @@ export const LEAD_FORM_FIELDS: FormFieldDef[] = [
     section: "Campaign",
   },
   {
-    name: "target_audience",
-    label: "Target audience",
-    type: "multiline",
-    section: "Notes",
-  },
-  {
     name: "status",
     label: "Status",
     options: enumOptions(LEAD_STATUSES),
     section: "Campaign",
+  },
+  {
+    name: "target_audience",
+    label: "Target audience",
+    type: "multiline",
+    section: "Notes",
   },
   {
     name: "additional_info",

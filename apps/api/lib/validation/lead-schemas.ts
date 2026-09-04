@@ -22,14 +22,18 @@ export const campaignLeadSchema = z.object({
   budget: z.enum(["under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"]),
   objective: z
     .enum(["awareness", "launch", "promo", "footfall", "other"])
-    .optional(),
+    .optional()
+    .or(z.literal("")),
   industry: z.string().trim().max(120).optional(),
   campaignStartDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date")
     .optional()
     .or(z.literal("")),
-  creativeStatus: z.enum(["ready", "needs_design", "not_sure"]).optional(),
+  creativeStatus: z
+    .enum(["ready", "needs_design", "not_sure"])
+    .optional()
+    .or(z.literal("")),
   targetAudience: z.string().trim().max(2000).optional(),
   brief: z.string().trim().optional(),
   consent: z
