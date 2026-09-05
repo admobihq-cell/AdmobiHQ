@@ -36,7 +36,7 @@ export function DataTable({
           <tr key={i} tw={i % 2 === 1 ? "bg-gray-50" : ""}>
             {row.map((cell, j) => (
               <td key={j} tw="p-2 text-gray-800 border-b border-gray-100">
-                {cell}
+                {cell === "" ? "—" : cell}
               </td>
             ))}
           </tr>
