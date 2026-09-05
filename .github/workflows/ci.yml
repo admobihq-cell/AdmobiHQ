@@ -91,6 +91,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client (safe mode)
+        run: cd apps/web && npx prisma generate
+
       - name: Cache Turbo
         uses: actions/cache@v6
         with:
