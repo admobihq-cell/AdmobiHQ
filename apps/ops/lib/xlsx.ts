@@ -31,7 +31,7 @@ export async function buildStyledXlsx(
   })
 
   rows.forEach((row, i) => {
-    const excelRow = sheet.addRow(row)
+    const excelRow = sheet.addRow(row.map((cell) => (cell === "" ? "—" : cell)))
     if (i % 2 === 1) {
       excelRow.eachCell((cell) => {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: STRIPE_COLOR } }
