@@ -50,10 +50,24 @@ const LANE_HEIGHT = 18
 const LANE_GAP = 3
 const MONTH_MAX_LANES = 3
 
-function statusColor(colors: ReturnType<typeof useThemeColors>, status: string): string {
-  if (status === "active") return colors.primary
-  if (status === "scheduled") return `${colors.primary}80`
-  if (status === "completed") return colors.mutedForeground
+/** Amber for "in queue". There's no warning token in the palette and both
+ * themes read it the same way, so it's a constant rather than a theme colour —
+ * same amber as the web legend. */
+export const IN_QUEUE_COLOR = "#D9A441"
+
+/** Same five colours as the web legend: an approved campaign is coloured by
+ * where it sits in its flight, everything else by where it sits in review. */
+export function flightColor(
+  colors: ReturnType<typeof useThemeColors>,
+  flight: Pick<Flight, "status" | "flightPhase">,
+): string {
+  if (flight.status === "approved") {
+    if (flight.flightPhase === "live") return colors.primary
+    if (flight.flightPhase === "scheduled") return `${colors.primary}73`
+    return colors.mutedForeground
+  }
+  if (flight.status === "submitted") return IN_QUEUE_COLOR
+  if (flight.status === "rejected" || flight.status === "changes_requested") return colors.danger
   return `${colors.mutedForeground}66`
 }
 
@@ -71,8 +85,8 @@ export function FlightCalendar({
   onSelectDay: (iso: DayIso) => void
   selectedIso: DayIso | null
   onPlanRange: (range: FlightPlanRange) => void
-  onMoveFlight: (id: string, dayDelta: number) => void
-  onResizeFlight: (id: string, edge: "start" | "end", dayDelta: number) => void
+  onMoveFlight: (id: number, dayDelta: number) => void
+  onResizeFlight: (id: number, edge: "start" | "end", dayDelta: number) => void
 }) {
   const colors = useThemeColors()
   const [view, setView] = useState<CalendarViewId>("month")
@@ -223,8 +237,8 @@ function MonthGrid({
   selectedIso: DayIso | null
   onSelectDay: (iso: DayIso) => void
   onPlanRange: (r: FlightPlanRange) => void
-  onMoveFlight: (id: string, dayDelta: number) => void
-  onResizeFlight: (id: string, edge: "start" | "end", dayDelta: number) => void
+  onMoveFlight: (id: number, dayDelta: number) => void
+  onResizeFlight: (id: number, edge: "start" | "end", dayDelta: number) => void
 }) {
   const styles = useStyles()
   const [gridWidth, setGridWidth] = useState(0)
@@ -285,8 +299,8 @@ function WeekGrid({
   selectedIso: DayIso | null
   onSelectDay: (iso: DayIso) => void
   onPlanRange: (r: FlightPlanRange) => void
-  onMoveFlight: (id: string, dayDelta: number) => void
-  onResizeFlight: (id: string, edge: "start" | "end", dayDelta: number) => void
+  onMoveFlight: (id: number, dayDelta: number) => void
+  onResizeFlight: (id: number, edge: "start" | "end", dayDelta: number) => void
 }) {
   const styles = useStyles()
   const [gridWidth, setGridWidth] = useState(0)
@@ -356,8 +370,8 @@ function WeekRow({
   selectedIso: DayIso | null
   onSelectDay: (iso: DayIso) => void
   onPlanRange: (r: FlightPlanRange) => void
-  onMoveFlight: (id: string, dayDelta: number) => void
-  onResizeFlight: (id: string, edge: "start" | "end", dayDelta: number) => void
+  onMoveFlight: (id: number, dayDelta: number) => void
+  onResizeFlight: (id: number, edge: "start" | "end", dayDelta: number) => void
   isFirstRow: boolean
 }) {
   const colors = useThemeColors()
@@ -522,8 +536,8 @@ function FlightBar({
   segment: import("@/components/calendar/calendar-model").FlightSegment
   colWidth: number
   top: number
-  onMoveFlight: (id: string, dayDelta: number) => void
-  onResizeFlight: (id: string, edge: "start" | "end", dayDelta: number) => void
+  onMoveFlight: (id: number, dayDelta: number) => void
+  onResizeFlight: (id: number, edge: "start" | "end", dayDelta: number) => void
 }) {
   const router = useRouter()
   const colors = useThemeColors()
@@ -584,7 +598,10 @@ function FlightBar({
       rightPad.value = withTiming(0, { duration: 140 })
     })
 
-  const composed = Gesture.Race(tap, pan)
+  // A campaign under review must not silently change dates while ops is
+  // looking at it, and an approved one is a commitment — those bars open but
+  // don't move.
+  const composed = flight.editable ? Gesture.Race(tap, pan) : tap
 
   const barStyle = useAnimatedStyle(() => ({
     left: colStart * colWidth + 2 + leftPad.value,
@@ -599,7 +616,7 @@ function FlightBar({
     opacity: 1 - active.value * 0.1,
   }))
 
-  const bg = statusColor(colors, flight.status)
+  const bg = flightColor(colors, flight)
 
   return (
     <GestureDetector gesture={composed}>
@@ -617,7 +634,7 @@ function FlightBar({
         ]}
         accessibilityLabel={`${flight.name}, ${formatFlightDates(flight.startsOn, flight.endsOn)}`}
       >
-        {!continuesLeft ? (
+        {flight.editable && !continuesLeft ? (
           <GestureDetector gesture={leftHandle}>
             <View style={styles.handle} hitSlop={6} />
           </GestureDetector>
@@ -625,7 +642,7 @@ function FlightBar({
         <Text style={styles.barText} numberOfLines={1}>
           {flight.name}
         </Text>
-        {!continuesRight ? (
+        {flight.editable && !continuesRight ? (
           <GestureDetector gesture={rightHandle}>
             <View style={styles.handle} hitSlop={6} />
           </GestureDetector>
@@ -706,15 +723,13 @@ export function FlightListRow({ flight, muted }: { flight: Flight; muted?: boole
       style={[styles.listRow, muted && { opacity: 0.65 }]}
       onPress={() => router.push(`/campaigns/${flight.id}`)}
     >
-      <View
-        style={[styles.listDot, { backgroundColor: statusColor(colors, flight.status) }]}
-      />
+      <View style={[styles.listDot, { backgroundColor: flightColor(colors, flight) }]} />
       <View style={{ flex: 1 }}>
         <Text style={styles.listName} numberOfLines={1}>
           {flight.name}
         </Text>
         <Text style={styles.listMeta} numberOfLines={1}>
-          {formatFlightDates(flight.startsOn, flight.endsOn)} · {flight.market}
+          {formatFlightDates(flight.startsOn, flight.endsOn)} · {flight.market ?? "Market not set"}
         </Text>
       </View>
     </Pressable>

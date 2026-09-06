@@ -38,6 +38,41 @@ export const DRIVER_PROFILE_STATUSES = [
 ] as const
 export type DriverProfileStatus = (typeof DRIVER_PROFILE_STATUSES)[number]
 
+/** Review lifecycle of an advertiser campaign — mirrors
+ * DRIVER_PROFILE_STATUSES, plus "cancelled" for a campaign the advertiser
+ * pulls. Deliberately holds ONLY the review lifecycle: the flight phase
+ * (CAMPAIGN_FLIGHT_PHASES below) is derived from dates and never stored, and
+ * supplier dispatch state is a third axis that lives in neither. */
+export const CAMPAIGN_STATUSES = [
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "changes_requested",
+  "cancelled",
+] as const
+export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number]
+
+/** Derived at read time from starts_on / ends_on for approved campaigns —
+ * see apps/api/lib/campaign-dto.ts. Never persisted: a stored "live" goes
+ * stale the moment a date passes and would need a cron to repair. */
+export const CAMPAIGN_FLIGHT_PHASES = [
+  "unscheduled",
+  "scheduled",
+  "live",
+  "completed",
+] as const
+export type CampaignFlightPhase = (typeof CAMPAIGN_FLIGHT_PHASES)[number]
+
+/** Which physical panel a campaign runs on. Distinct from AD_FORMATS above,
+ * which belongs to the marketing lead-capture form and has no "both". */
+export const CAMPAIGN_FORMATS = ["taxi_top", "delivery_bike", "both"] as const
+export type CampaignFormat = (typeof CAMPAIGN_FORMATS)[number]
+
+// Campaign objectives are NOT redeclared here — CAMPAIGN_OBJECTIVES already
+// exists below for the marketing start-campaign lead form, and a real campaign
+// should speak the same vocabulary a lead does (a lead becomes a campaign).
+
 export const DRIVER_DOCUMENT_TYPES = [
   "national_id",
   "profile_photo",
@@ -181,6 +216,8 @@ export const AUDIT_ENTITY_TYPES = [
   "ops_role",
   "driver_profile",
   "driver_document",
+  "campaign",
+  "campaign_creative",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 
@@ -203,6 +240,7 @@ export const OPS_PERMISSIONS = [
   "flags",
   "activity",
   "driver_applications",
+  "campaigns",
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 

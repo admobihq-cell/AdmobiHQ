@@ -1,56 +1,56 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
-import { CalendarDays, List, MapPin, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { CalendarDays, FileDown, List, MapPin, Plus, Wallet } from "lucide-react"
+import { formatKes, type CampaignDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
-import { NewCampaignForm } from "@/components/campaigns/new-campaign-form"
 import {
+  EDITABLE_STATUSES,
   FlightCalendar,
-  type FlightPlanRange,
 } from "@/components/calendar/flight-calendar"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@workspace/ui/components/sheet"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  formatDayHeading,
-  formatFlightDates,
-  resolveFlight,
-  toDayIso,
-} from "@/lib/campaign-calendar"
-import {
-  getCampaigns,
-  scheduleCampaign,
-  type Campaign,
-} from "@/lib/campaigns"
+import { formatDayHeading, resolveFlight, toDayIso } from "@/lib/campaign-calendar"
+import { useCampaigns, useDownloadPdf, useUpdateCampaign } from "@/lib/use-campaigns"
 
+/** Matches the flight-event--* classes in flight-calendar.css. */
 const LEGEND = [
-  { label: "Active", className: "bg-primary" },
+  { label: "Live", className: "bg-primary" },
   { label: "Scheduled", className: "bg-primary/45" },
+  { label: "In queue", className: "bg-amber-400" },
+  { label: "Needs changes", className: "bg-destructive" },
   { label: "Draft", className: "bg-muted-foreground/35" },
 ] as const
 
 export function CampaignCalendarView() {
+  const router = useRouter()
   const [selectedIso, setSelectedIso] = useState<string | null>(() => toDayIso(new Date()))
   const [rangeStart, setRangeStart] = useState(() => toDayIso(new Date()))
   const [rangeEnd, setRangeEnd] = useState(() => toDayIso(new Date()))
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [planRange, setPlanRange] = useState<FlightPlanRange | null>(null)
 
-  useEffect(() => {
-    setCampaigns(getCampaigns())
-  }, [])
+  const campaignsQuery = useCampaigns()
+  const update = useUpdateCampaign()
+  const downloadPdf = useDownloadPdf()
+  const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
 
-  function refresh() {
-    setCampaigns(getCampaigns())
-  }
+  /** Money already committed: approved campaigns whose flight hasn't finished.
+   * Mirrors isActive() in apps/api/lib/campaign-statement.ts so the figure on
+   * screen and the figure in the downloaded statement are the same number. */
+  const active = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) => campaign.flight_phase === "live" || campaign.flight_phase === "scheduled",
+      ),
+    [campaigns],
+  )
+  const activeBudget = useMemo(
+    () => active.reduce((sum, campaign) => sum + Number(campaign.budget_kes ?? 0), 0),
+    [active],
+  )
 
   const visibleFlights = useMemo(
     () =>
@@ -74,31 +74,72 @@ export function CampaignCalendarView() {
     })
   }, [campaigns, selectedIso])
 
-  function placeDraft(id: string) {
-    if (!selectedIso) return
-    scheduleCampaign(id, selectedIso)
-    refresh()
+  /** Returns false so the calendar reverts the drag when the API refuses it —
+   * e.g. the campaign entered review between render and drop. */
+  async function reschedule(id: number, startsOn: string, endsOn: string): Promise<boolean> {
+    try {
+      await update.mutateAsync({ id, data: { starts_on: startsOn, ends_on: endsOn } })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  function planFrom(startsOn: string, endsOn: string) {
+    router.push(`/campaigns/new?start=${startsOn}&end=${endsOn}`)
   }
 
   return (
     <div className="relative flex flex-1 flex-col gap-8 pb-20">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-            Workspace
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Workspace</p>
           <h1 className="text-3xl font-semibold tracking-tight">Campaign calendar</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Month, week, and day views of your flights. Drag to move a window, drag across days to
-            plan a new one. Planning stays on this device until booking is wired up.
+            Month, week, and day views of your flights. Drag a draft to move it, or drag across
+            days to plan a new one. Campaigns in review or already approved are locked.
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/campaigns">
-            <List data-icon="inline-start" />
-            Campaign list
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/campaigns">
+              <List data-icon="inline-start" />
+              Campaign list
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            loading={downloadPdf.isPending}
+            loadingText="Preparing…"
+            onClick={() =>
+              downloadPdf.mutate({
+                path: "/v1/customer/campaigns/statement",
+                filename: "admobi-campaign-statement.pdf",
+              })
+            }
+          >
+            <FileDown data-icon="inline-start" />
+            Download statement
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10">
+        <div className="flex items-center gap-3">
+          <Wallet className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              Active campaign budget
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">
+              {campaignsQuery.isPending ? "—" : formatKes(activeBudget)}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {active.length} approved flight{active.length === 1 ? "" : "s"} live or scheduled ·
+          the statement PDF lists every campaign with its budget
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -108,20 +149,23 @@ export function CampaignCalendarView() {
             {item.label}
           </span>
         ))}
-        <span>Click a day or drag a range to plan. Drag a flight to reschedule.</span>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <FlightCalendar
-          campaigns={campaigns}
-          onDatesChange={(start, end) => {
-            setRangeStart((current) => (current === start ? current : start))
-            setRangeEnd((current) => (current === end ? current : end))
-          }}
-          onSelectDay={setSelectedIso}
-          onPlanRange={setPlanRange}
-          onEventsChanged={refresh}
-        />
+        {campaignsQuery.isPending ? (
+          <Skeleton className="h-[32rem] w-full rounded-xl" />
+        ) : (
+          <FlightCalendar
+            campaigns={campaigns}
+            onDatesChange={(start, end) => {
+              setRangeStart((current) => (current === start ? current : start))
+              setRangeEnd((current) => (current === end ? current : end))
+            }}
+            onSelectDay={setSelectedIso}
+            onPlanRange={(range) => planFrom(range.startsOn, range.endsOn)}
+            onReschedule={reschedule}
+          />
+        )}
 
         <aside className="flex flex-col gap-6">
           <section className="flex flex-col gap-3">
@@ -130,13 +174,7 @@ export function CampaignCalendarView() {
                 {selectedIso ? formatDayHeading(selectedIso) : "Select a day"}
               </h2>
               {selectedIso ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() =>
-                    setPlanRange({ startsOn: selectedIso, endsOn: selectedIso })
-                  }
-                >
+                <Button type="button" size="sm" onClick={() => planFrom(selectedIso, selectedIso)}>
                   <Plus data-icon="inline-start" />
                   Plan
                 </Button>
@@ -144,7 +182,7 @@ export function CampaignCalendarView() {
             </div>
             {selectedFlights.length === 0 ? (
               <p className="rounded-xl border border-dashed bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-                No flights on this day. Plan a new one, or place an unscheduled draft below.
+                No flights on this day. Plan a new one, or schedule an unscheduled campaign below.
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -190,18 +228,25 @@ export function CampaignCalendarView() {
                       >
                         {campaign.name}
                       </Link>
-                      <CampaignStatusBadge status={campaign.status} />
+                      <CampaignStatusBadge
+                        status={campaign.status}
+                        flightPhase={campaign.flight_phase}
+                      />
                     </div>
                     <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <MapPin className="size-3.5 shrink-0" />
-                      {campaign.market}
+                      {campaign.market ?? "Market not set"}
                     </p>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={!selectedIso}
-                      onClick={() => placeDraft(campaign.id)}
+                      disabled={!selectedIso || !EDITABLE_STATUSES.has(campaign.status)}
+                      loading={update.isPending}
+                      onClick={() => {
+                        if (!selectedIso) return
+                        void reschedule(campaign.id, selectedIso, selectedIso)
+                      }}
                     >
                       <CalendarDays data-icon="inline-start" />
                       {selectedIso ? "Start on this day" : "Select a day first"}
@@ -219,40 +264,17 @@ export function CampaignCalendarView() {
         className="fixed right-6 bottom-6 z-10 rounded-full px-5 shadow-lg md:right-8 md:bottom-8"
         onClick={() => {
           const startsOn = selectedIso ?? toDayIso(new Date())
-          setPlanRange({ startsOn, endsOn: startsOn })
+          planFrom(startsOn, startsOn)
         }}
       >
         <Plus data-icon="inline-start" />
         Plan flight
       </Button>
-
-      <Sheet open={planRange !== null} onOpenChange={(open) => !open && setPlanRange(null)}>
-        <SheetContent className="sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Plan a flight</SheetTitle>
-            <SheetDescription>
-              {planRange
-                ? `Window ${formatFlightDates(planRange.startsOn, planRange.endsOn)}. Corridors and creative still confirm with your account manager before a flight goes live.`
-                : "Pick a start day, then set market, format, and budget."}
-            </SheetDescription>
-          </SheetHeader>
-          {planRange ? (
-            <NewCampaignForm
-              initialStartsOn={planRange.startsOn}
-              initialEndsOn={planRange.endsOn}
-              onCreated={() => {
-                setPlanRange(null)
-                refresh()
-              }}
-            />
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }
 
-function FlightRow({ campaign }: { campaign: Campaign }) {
+function FlightRow({ campaign }: { campaign: CampaignDto }) {
   return (
     <li>
       <Link
@@ -261,12 +283,16 @@ function FlightRow({ campaign }: { campaign: Campaign }) {
       >
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium leading-snug">{campaign.name}</p>
-          <CampaignStatusBadge status={campaign.status} />
+          <CampaignStatusBadge status={campaign.status} flightPhase={campaign.flight_phase} />
         </div>
-        <p className="text-xs text-muted-foreground">{campaign.dates}</p>
+        <p className="text-xs text-muted-foreground">
+          {campaign.starts_on && campaign.ends_on
+            ? `${campaign.starts_on} → ${campaign.ends_on}`
+            : "Not scheduled"}
+        </p>
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" />
-          {campaign.market}
+          {campaign.market ?? "Market not set"}
         </p>
       </Link>
     </li>

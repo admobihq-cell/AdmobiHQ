@@ -38,9 +38,46 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | `GET/POST/PATCH /v1/support` | Ops Clerk JWT | Ops support console |
 | `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`) |
 | `POST /v1/notifications/broadcast-image` | Ops Clerk JWT | Upload announcement image (Vercel Blob) |
-| `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser inboxes (+ `/read`) |
+| `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
+| `/v1/customer/notifications`, `/v1/customer/notifications/read`, `/v1/customer/notifications/[id]` | Customer Clerk JWT | Campaign lifecycle inbox (merged client-side with announcements) |
+| `/v1/customer/campaigns` (+ `[id]`, `submit`, `creatives`, creative `file`) | Customer Clerk JWT | Advertiser campaign CRUD, submit-for-review, creative upload/proxy |
+| `/v1/campaigns` (+ `[id]`, `review`, creative `file`) | Ops Clerk JWT + `campaigns` permission | Ops campaign list, detail, review decisions, creative proxy |
 | `/v1/driver/profile`, `/v1/driver/documents`, `/v1/driver/notifications`, `/v1/driver/announcements`, `/v1/driver/mobile-announcements` | Driver Clerk JWT | Driver self-service |
 | `GET/POST /v1/push-receipts/check` | Ops JWT **or** `CRON_SECRET` | Expo receipt reconciliation |
+
+### Campaigns (advertiser + ops)
+
+Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/v1/campaigns/*` (requires the grantable `campaigns` permission). Creative bytes are private Cloudinary assets (`type: "authenticated"`) streamed only through the authenticated `…/file` proxy routes — never point an `<img>`/`<video>` at Cloudinary directly.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| `GET` / `POST` | `/v1/customer/campaigns` | Customer | List own campaigns / create draft |
+| `GET` / `PATCH` / `DELETE` | `/v1/customer/campaigns/[id]` | Customer | Detail / edit while editable / delete draft |
+| `POST` | `/v1/customer/campaigns/[id]/submit` | Customer | Submit for review (fires email + inbox + push + ops alert) |
+| `POST` | `/v1/customer/campaigns/[id]/creatives` | Customer | Multipart upload — **PNG/JPG/GIF/MP4 only**, ≤50 MB |
+| `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Remove creative while editable |
+| `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
+| `GET` | `/v1/customer/campaigns/statement` | Customer | Budget statement PDF — every own campaign, its budget, an active subtotal and an all-campaigns total |
+| `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated |
+
+Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
+`CampaignStatementPdf` template, and return `application/pdf` with a
+`Content-Disposition: attachment`. Unlike `/v1/ops/documents/export`, which
+takes its rows in the request body, these query the caller's own campaigns
+server-side — an advertiser must not be able to put arbitrary rows on Admobi
+letterhead. Row building lives in `lib/campaign-statement.ts`.
+
+Proof of play reports the **booked schedule**, not measured plays: no play
+telemetry reaches the platform yet, so the document claims no play volume and
+says so in its footnote. Every string written into a PDF stays inside Latin-1
+— the bundled font has no glyph for `→` and Takumi throws on an uncovered
+codepoint rather than substituting one.
+| `GET` | `/v1/campaigns` | Ops `campaigns` | Paginated review queue |
+| `GET` | `/v1/campaigns/[id]` | Ops `campaigns` | Detail + creatives |
+| `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `approve` / `request_changes` / `reject` / `unapprove` — reason required except approve; reason is **advertiser-visible** |
+| `GET` | `/v1/campaigns/[id]/creatives/[creativeId]/file` | Ops `campaigns` | Stream creative for review |
+
+**Ownership mismatch returns 404, not 403** — otherwise campaign ids are enumerable. Flight phase (`scheduled` / `live` / `completed`) is derived from `starts_on` / `ends_on` at read time; there is no stored `live` column.
 
 **Payload CMS REST** stays on the web app: `admobihq.com/api/*` (catch-all under `app/(payload)/api/`).
 
@@ -118,6 +155,7 @@ All `/v1/public/*` routes (and the support reply/list routes) call `checkRateLim
 | `REDIS_URL` | Optional | Bull **email queue** (not rate limiting) |
 | `CRON_SECRET` | For scheduled/system callers | See [Service-to-service auth](#service-to-service-auth) |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | For rate limiting | Sliding-window limiter on `/v1/public/*` — see [Rate limiting](#rate-limiting) |
+| `CLOUDINARY_URL` | For private media | Driver documents **and** campaign creatives (`apps/api/lib/private-media.ts`) |
 
 ### Pull locally
 

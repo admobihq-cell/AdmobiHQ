@@ -5,6 +5,7 @@ import {
   ANNOUNCEMENT_CATEGORIES,
   ANNOUNCEMENT_TARGET_APPS,
   BUDGET_RANGES,
+  CAMPAIGN_FORMATS,
   CAMPAIGN_OBJECTIVES,
   CITIES,
   CREATIVE_STATUS,
@@ -32,6 +33,7 @@ import {
   VEHICLES_ACTIVE,
   WAITLIST_PERSONA,
 } from "./enums"
+import { CREATIVE_SLOTS } from "./creative-specs"
 
 export const leadCreateSchema = z.object({
   contact_name: z.string().trim().min(1),
@@ -173,6 +175,62 @@ export const driverProfileReviewSchema = z.object({
   reason: z.string().trim().min(1).max(2000).optional(),
 })
 
+/** `YYYY-MM-DD`. Flight windows are whole days in a single market (Kenya,
+ * UTC+3, no DST), so a day string beats a timestamp: no timezone can shift a
+ * campaign's start across midnight. */
+const dayIsoSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
+
+const campaignFieldsSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  objective: z.enum(CAMPAIGN_OBJECTIVES).optional(),
+  market: z.string().trim().min(1).max(120).optional(),
+  corridors: z.string().trim().max(2000).optional(),
+  format: z.enum(CAMPAIGN_FORMATS).optional(),
+  notes: z.string().trim().max(2000).optional(),
+  budget_kes: z.coerce.number().positive().max(1_000_000_000).optional(),
+  starts_on: dayIsoSchema.optional(),
+  ends_on: dayIsoSchema.optional(),
+  contact_name: z.string().trim().max(120).optional(),
+  contact_email: z.string().trim().email().optional(),
+  contact_phone: z.string().trim().max(40).optional(),
+})
+
+/** Day strings sort lexicographically, so a plain string compare is a correct
+ * date compare here — no Date parsing needed. */
+function flightWindowIsOrdered(data: { starts_on?: string; ends_on?: string }): boolean {
+  if (!data.starts_on || !data.ends_on) return true
+  return data.ends_on >= data.starts_on
+}
+
+// Not `as const` — Zod's refine wants a mutable `path` array.
+const FLIGHT_WINDOW_ISSUE = {
+  message: "The flight can't end before it starts",
+  path: ["ends_on"],
+}
+
+export const campaignCreateSchema = campaignFieldsSchema.refine(
+  flightWindowIsOrdered,
+  FLIGHT_WINDOW_ISSUE,
+)
+
+/** Every field optional — the campaign wizard PATCHes one step at a time, so
+ * a partial body is the normal case, not a degenerate one. */
+export const campaignUpdateSchema = campaignFieldsSchema
+  .partial()
+  .refine(flightWindowIsOrdered, FLIGHT_WINDOW_ISSUE)
+
+/** Mirrors driverProfileReviewSchema. `reason` is optional here and required
+ * by the route for any non-approve decision — the same split the driver
+ * review route uses, so the 400 can name which decision needed it. */
+export const campaignReviewSchema = z.object({
+  decision: z.enum(["approved", "rejected", "changes_requested"]),
+  reason: z.string().trim().min(1).max(2000).optional(),
+})
+
+export const campaignCreativeSlotSchema = z.enum(CREATIVE_SLOTS)
+
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
@@ -242,6 +300,9 @@ export type MediaKitUpdateInput = z.infer<typeof mediaKitUpdateSchema>
 export type PlatformFlagUpdateInput = z.infer<typeof platformFlagUpdateSchema>
 export type DriverProfileUpdateInput = z.infer<typeof driverProfileUpdateSchema>
 export type DriverProfileReviewInput = z.infer<typeof driverProfileReviewSchema>
+export type CampaignCreateInput = z.infer<typeof campaignCreateSchema>
+export type CampaignUpdateInput = z.infer<typeof campaignUpdateSchema>
+export type CampaignReviewInput = z.infer<typeof campaignReviewSchema>
 export type PaginationParams = z.infer<typeof paginationSchema>
 export type LeadBulkInput = z.infer<typeof leadBulkSchema>
 export type DriverBulkInput = z.infer<typeof driverBulkSchema>

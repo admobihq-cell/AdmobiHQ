@@ -54,9 +54,13 @@ Download the APK from the EAS dashboard when the build completes. See [MOBILE-BU
 
 ---
 
+## Campaigns review
+
+`/(ops)/campaigns` — list + detail, gated on the `campaigns` permission (label already in `permission-labels.ts`). Uses `client.campaigns.*` from `@workspace/ops-api-client`. Same decisions as ops web (Approve / Request changes / Reject / Unapprove); reason required for non-approve and is **advertiser-visible**. Image creatives load via the authenticated proxy; video uses a play affordance. Ops push for a new submission uses alert type `campaign_submission` and deep-links to `/(ops)/campaigns/:id`.
+
 ## Push notifications (ops staff)
 
-When someone submits a **driver application**, **fleet partnership**, or **campaign brief** on the marketing site, registered ops devices receive the same alert as the admin email (`AdminAlert`).
+When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).
 
 | Piece | Location |
 |-------|----------|

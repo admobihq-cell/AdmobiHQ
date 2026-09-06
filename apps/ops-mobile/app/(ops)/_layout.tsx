@@ -165,6 +165,14 @@ export default function OpsLayout() {
             }}
           />
           <Tabs.Screen
+            name="campaigns"
+            options={{
+              title: "Campaigns",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
             name="content"
             options={{
               title: "Content",

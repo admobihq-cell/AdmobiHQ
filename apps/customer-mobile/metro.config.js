@@ -6,7 +6,14 @@ const path = require("node:path")
 const projectRoot = __dirname
 const workspaceRoot = path.resolve(projectRoot, "../..")
 const mobileModules = path.resolve(projectRoot, "node_modules")
-const geoPackage = path.resolve(workspaceRoot, "packages/geo")
+
+const workspacePackages = {
+  "@workspace/geo": path.resolve(workspaceRoot, "packages/geo"),
+  "@workspace/ops-contracts": path.resolve(
+    workspaceRoot,
+    "packages/ops-contracts",
+  ),
+}
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getSentryExpoConfig(projectRoot)
@@ -22,7 +29,7 @@ config.cacheStores = [
 
 // Only watch packages this app imports — not the whole monorepo (avoids
 // ENOENT spam from sibling Next.js apps writing under apps/*/.next).
-config.watchFolders = [geoPackage]
+config.watchFolders = Object.values(workspacePackages)
 config.resolver.nodeModulesPaths = [
   mobileModules,
   path.resolve(workspaceRoot, "node_modules"),
@@ -44,10 +51,12 @@ function resolveFromMobile(moduleName) {
   return require.resolve(moduleName, { paths: [mobileModules] })
 }
 
+// Web workspaces hoist react@19.2.x at the root; mobile pins react@19.1.x.
+// Also pin workspace packages so Metro (especially web) resolves them.
 config.resolver.extraNodeModules = {
   react: path.dirname(resolveFromMobile("react/package.json")),
   "react-dom": path.dirname(resolveFromMobile("react-dom/package.json")),
-  "@workspace/geo": geoPackage,
+  ...workspacePackages,
 }
 
 const reactAliases = new Set([
@@ -66,9 +75,11 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     }
   }
 
-  if (moduleName === "@workspace/geo") {
+  // Explicit entry for workspace packages (Expo web often fails on exports-only).
+  const workspaceRootDir = workspacePackages[moduleName]
+  if (workspaceRootDir) {
     return {
-      filePath: path.join(geoPackage, "src/index.ts"),
+      filePath: path.join(workspaceRootDir, "src/index.ts"),
       type: "sourceFile",
     }
   }
