@@ -74,13 +74,14 @@ Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by de
 
 ### 1.4 `apps/customer-web` — advertiser web console
 
-**21 pages** — same auth patterns as driver-web. Campaign UIs are fixture-backed; Reports is the remaining Coming-soon page:
+**21 pages** — same auth patterns as driver-web. Campaigns and calendar are API-backed; Reports is the remaining Coming-soon page:
 
 | Route | Status |
 |---|---|
-| `/`, `/campaigns`, `/campaigns/[id]`, `/map` | **UI real, fixture-backed** — overview and campaign list/detail/create use local demo data (`getCampaigns()`), not Prisma; Map uses `@workspace/geo` |
-| `/calendar` | **Real, fixture-backed** — FullCalendar month/week/day planner; drag to reschedule a flight, drag a range to plan one; planning persists to `localStorage` |
-| `/notifications` | **Real** — dedicated announcements/updates feed backed by `AnnouncementDelivery`; cursor-paginated, date-grouped, filterable, per-item read/unread; the header bell is a peek onto the same data |
+| `/`, `/map` | **Real** — overview UI; Map uses `@workspace/geo` |
+| `/campaigns`, `/campaigns/[id]`, `/campaigns/new` | **Real, API-backed** — list/detail + full-page create/edit wizard against `/v1/customer/campaigns`; creative upload (PNG/JPG/GIF/MP4) via Cloudinary private proxy |
+| `/calendar` | **Real, API-backed** — FullCalendar; drag only while editable |
+| `/notifications` | **Real** — merged announcements + campaign lifecycle inbox; header bell shares it |
 | `/deliveries`, `/deliveries/[id]` | **Real, feature-flag gated** — redirects to `/` unless the `deliveries` platform flag is on |
 | `/reports` | **Placeholder** — generic `ComingSoon` component, not implemented |
 | `/settings/billing` | **Real** — wallet/billing view |
@@ -107,9 +108,9 @@ Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by de
 
 ### 1.6 Mobile apps (Expo Router, file-based)
 
-**`apps/ops-mobile`** — 56 screens. Auth (sign-in/sign-up), a non-staff-session stub, onboarding replay, then the ops tab set: Map, Notifications (diagnostics), Finances, Dashboard, Content, Profile, Activity, and full CRUD (list/detail/new/edit) for **Leads, Fleet, Drivers, Waitlist, Media Kit** — all sharing one `EntityList`/`EntityDetail`/`EntityFormRoute` pattern — plus Support inbox, Team + Roles management, Driver Applications review (with a document-viewer modal), and Announcements compose (image upload via `expo-image-picker`).
+**`apps/ops-mobile`** — includes Campaigns review (`/(ops)/campaigns`) gated on `campaigns` permission, alongside Driver Applications, entity CRUD, Announcements, Support, Team/Roles, etc.
 
-**`apps/customer-mobile`** — 20 screens. Home, Map, Campaigns (list/detail/new), Settings hub (account, billing, notifications, "open web app" handoff, support list/new/detail), Notifications inbox, Clerk auth.
+**`apps/customer-mobile`** — Home, Map, Campaigns (API-backed list/detail/full-screen wizard + creative upload), Settings hub, merged Notifications inbox (announcements + campaign lifecycle) with push deep links, Clerk auth.
 
 **`apps/driver-mobile`** — 19 screens. Home, Deliveries (flag-gated, sample data), Earnings (placeholder stats), **Payouts (placeholder screen)**, Routes + map, Settings, Support (list/detail), a 4-step Profile Setup wizard (profile + ID upload → tax/payout details + document upload → review/submit), Notifications inbox, Clerk auth.
 
@@ -133,11 +134,13 @@ Per the team's own docs (§2 of AUDIT-VALUATION.md), this app is **UI-only by de
 
 Every third-party service actually wired into the code — confirmed by reading the integration point, not just a package.json mention.
 
-### Cloudinary — driver document storage
+### Cloudinary — private media (driver documents + campaign creatives)
 
-`apps/api/lib/cloudinary.ts` wraps the `cloudinary` v2 SDK. Real usage is in `apps/api/lib/driver-document-storage.ts`: driver documents (National ID, profile photo, KRA PIN certificate, payout proof) upload with `type: "authenticated"` — signed-URL-only, never public — under `driver-documents/{profileId}/{type}/{uploadId}`. `fetchDriverDocument()` mints a signed, size-capped URL server-side and streams it through the API; the signed URL itself never reaches a client directly. Callers: `apps/api/app/v1/driver/documents/*`, `apps/api/app/v1/driver-applications/*`.
+`apps/api/lib/private-media.ts` wraps the `cloudinary` v2 SDK for **authenticated** (private) assets — images and video. Driver documents remain a thin image-only wrapper (`driver-document-storage.ts`). Campaign creatives use the same helper with PNG/JPG/GIF/MP4; bytes reach clients only through authenticated `/file` proxy routes. Callers: `apps/api/app/v1/driver/documents/*`, `apps/api/app/v1/driver-applications/*`, `apps/api/app/v1/customer/campaigns/*/creatives/*`, `apps/api/app/v1/campaigns/*/creatives/*/file`.
 
-*Announcement images shipped on Vercel Blob as [ANNOUNCEMENT-IMAGES-PLAN.md](../web/ANNOUNCEMENT-IMAGES-PLAN.md) proposed. Cloudinary was added afterward, scoped to driver documents.*
+Targeted single-user push (`notifyUserPush` in `apps/api/lib/push/user-push.ts`) is the first per-account push path in the repo; campaign decisions and submit confirmations use it. Ops staff alerts remain fan-out via `notifyOpsStaffAlert`.
+
+*Announcement images shipped on Vercel Blob as [ANNOUNCEMENT-IMAGES-PLAN.md](../web/ANNOUNCEMENT-IMAGES-PLAN.md) proposed. Cloudinary was added for private documents and later extended to campaign creatives.*
 
 ### Clerk — three independent instances + one verification-only wiring
 
@@ -252,8 +255,8 @@ A third-party agency quoted a phased build of a comparable taxi-top/OOH advertis
 |---|---|
 | Client registration, dashboard | ✅✅ Far exceeded — `customer-web`/`customer-mobile` full dashboards (campaigns, map, billing, support), not a single portal page |
 | Campaign status tracking (Pending/Approved/Live/Completed) | ✅ Built — status badges/filters confirmed in `customer-mobile` campaign screens |
-| Online booking | ⚠️ Partial — `campaigns/new` on `customer-mobile`; `customer-web` has list/detail plus `new-campaign-form.tsx`, all local demo data (no API persist) |
-| Campaign calendar | ✅ Built — `customer-web` `/calendar`: FullCalendar month/week/day/agenda planner with drag-to-reschedule and drag-a-range-to-plan; still `localStorage`-backed, not API-persisted |
+| Online booking | ✅ Built — full-page wizard on customer-web + customer-mobile; persists via `/v1/customer/campaigns` |
+| Campaign calendar | ✅ Built — both surfaces API-backed; web drag-to-reschedule only while editable |
 | Invoice generation | ❌ **Missing** — no invoicing logic found; a billing/wallet *view* exists but doesn't generate invoices |
 | Payment confirmation | ❌ **Missing** — follows from no payment gateway existing yet |
 

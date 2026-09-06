@@ -55,6 +55,40 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 
 ---
 
+## Campaigns
+
+API-backed against `/v1/customer/campaigns` (same contracts as customer-web):
+
+- **List / detail / calendar** — real data; status badges include derived flight phase (`scheduled` / `live` / `completed`).
+- **Create / edit** — full-screen four-step wizard at `/campaigns/new` (resume with `id` param). Creative picker uses `expo-image-picker` for images **and** video; formats are PNG/JPG/GIF/MP4 only (from `CREATIVE_SPECS` in `@workspace/ops-contracts`). No toast library — inline banners (`ApiErrorBanner` pattern).
+- **Review banner** — shows ops `review_reason` verbatim when status is `changes_requested` or `rejected`.
+- **Budget estimator** — the wizard's budget step prices the flight with
+  `calculateCampaignEstimate()` from `@workspace/ops-contracts`, the same rate
+  card the website and customer-web use. The layout is native (no component
+  can span React DOM and React Native) but the arithmetic is not re-implemented
+  — market picks the zone, format picks the pricing model (per-play for
+  taxi-top, per-side-per-day for delivery bike, summed for `both`), flight
+  dates give the length. Steppers instead of the web's range slider: no slider
+  dependency is installed, and a stepper is a better phone target.
+- **PDF export** — parity with customer-web. The detail screen offers
+  **Proof of play** on approved, dated campaigns; the calendar shows the
+  active-budget total and downloads the **budget statement**. Both go through
+  `useDownloadPdf()` → `File.downloadFileAsync()` (`expo-file-system`), which
+  streams to the cache with the bearer token attached, so a multi-page PDF
+  never sits in JS memory and no base64 round-trip is needed. The bytes are
+  checked for the `%PDF` magic number before sharing — a download helper
+  writes whatever the server sent, and a 401 or the 409 an unapproved campaign
+  returns would otherwise be saved as a "PDF" that is really a JSON error.
+  Delivery is the OS share sheet (`expo-sharing`): there is no "save to
+  Downloads" on iOS, so sharing is how a file leaves the app on both platforms.
+
+## Notifications + push
+
+- **Merged inbox** (`useCustomerInbox`) — announcements + `/v1/customer/notifications`, newest-first; row tap marks read and follows `href` (e.g. `/campaigns/:id`).
+- **Push deep links** — `usePushRegistration` reads `data.href` from cold start, background, and foreground taps; sign-in re-registers so `clerk_user_id` is linked immediately (`userId` in effect deps).
+
+---
+
 ## Building an APK for the team
 
 From **`apps/customer-mobile`** (not repo root):

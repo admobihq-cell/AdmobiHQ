@@ -18,6 +18,12 @@ const statusStyles: Record<string, string> = {
   approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
   rejected: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
   changes_requested: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
+  cancelled: "bg-muted text-muted-foreground",
+  // Derived campaign flight phases — see campaign-dto.ts. Ops mostly sees the
+  // review status, but these appear wherever a flight phase is surfaced.
+  live: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+  scheduled: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
+  completed: "bg-secondary text-secondary-foreground",
 }
 
 export function StatusBadge({

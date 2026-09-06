@@ -1,277 +1,101 @@
-import { useMemo, useState } from "react"
-import { useLocalSearchParams, useRouter } from "expo-router"
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { Link, Stack, useLocalSearchParams } from "expo-router"
+import { Text, View } from "react-native"
 
-import { formatFlightDates } from "@/lib/campaign-calendar"
-import { createCampaign, formatLabelFor, type CampaignFormat } from "@/lib/campaigns"
-import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { SkeletonCampaignCards } from "@/components/app/skeleton"
+import { CampaignWizard } from "@/components/campaigns/campaign-wizard"
+import { useCampaign } from "@/lib/use-campaigns"
+import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
-const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
-const FORMATS: CampaignFormat[] = ["taxi_top", "delivery_bike", "both"]
-const DURATIONS = ["1 day", "1 week", "1 month", "3 months"] as const
+/** A campaign under review or already approved can't be edited — the API
+ * returns 409, so refuse here rather than letting someone fill in a form that
+ * can't save. */
+const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
 
+/**
+ * `?id=` resumes or edits an existing campaign, `?startsOn=`/`?endsOn=`
+ * pre-fill a flight window picked on the calendar. Same contract as the web
+ * route, so a deep link works on either surface.
+ */
 export default function NewCampaignScreen() {
-  const router = useRouter()
-  const colors = useThemeColors()
-  const insets = useSafeAreaInsets()
+  const params = useLocalSearchParams<{ id?: string; startsOn?: string; endsOn?: string }>()
+  const parsedId = Number.parseInt(params.id ?? "", 10)
+  const campaignId = Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null
 
-  const params = useLocalSearchParams<{ startsOn?: string; endsOn?: string }>()
-  const plannedStart = typeof params.startsOn === "string" ? params.startsOn : null
-  const plannedEnd =
-    typeof params.endsOn === "string" ? params.endsOn : plannedStart
-  const plannedLabel = useMemo(
-    () => (plannedStart && plannedEnd ? formatFlightDates(plannedStart, plannedEnd) : null),
-    [plannedStart, plannedEnd],
-  )
-
-  const [name, setName] = useState("")
-  const [market, setMarket] = useState<(typeof MARKETS)[number]>("CBD")
-  const [format, setFormat] = useState<CampaignFormat>("taxi_top")
-  const [duration, setDuration] = useState<(typeof DURATIONS)[number]>("1 week")
-  const [budget, setBudget] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const campaignQuery = useCampaign(campaignId)
+  const campaign = campaignQuery.data ?? null
 
   const styles = useThemedStyles((c) => ({
-    scroll: { flex: 1, backgroundColor: c.bg },
-    container: { padding: spacing.lg, gap: spacing.xl },
-    intro: { gap: spacing.xs },
-    introBody: { ...typography.bodySm, color: c.mutedForeground },
-    plannedCard: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "space-between" as const,
-      gap: spacing.sm,
-      padding: spacing.md,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: c.primary,
-      backgroundColor: `${c.primary}12`,
-    },
-    plannedLabelText: { ...typography.label, color: c.text, fontWeight: "700" as const },
-    plannedCaption: { ...typography.caption, color: c.mutedForeground },
-    fieldGroup: { gap: spacing.sm },
-    label: { ...typography.label, color: c.text },
-    input: {
-      ...typography.body,
-      color: c.text,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
+    root: { flex: 1, backgroundColor: c.bg },
+    padded: { padding: spacing.lg, gap: spacing.md },
+    title: { ...typography.section, color: c.text },
+    body: { ...typography.bodySm, color: c.mutedForeground },
+    link: {
+      alignSelf: "flex-start" as const,
       paddingHorizontal: spacing.md,
       paddingVertical: 10,
-      backgroundColor: c.surface,
-    },
-    chipGrid: {
-      flexDirection: "row" as const,
-      flexWrap: "wrap" as const,
-      gap: spacing.sm,
-    },
-    chip: {
-      paddingVertical: 10,
-      paddingHorizontal: spacing.md,
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
-    },
-    chipActive: {
-      backgroundColor: c.primary,
-      borderColor: c.primary,
-    },
-    chipText: {
-      ...typography.label,
-      color: c.mutedForeground,
-      fontWeight: "600" as const,
-    },
-    chipTextActive: {
-      color: c.primaryForeground,
-    },
-    errorText: {
-      ...typography.bodySm,
-      color: c.danger,
-    },
-    submit: {
-      alignItems: "center" as const,
-      backgroundColor: c.primary,
       borderRadius: radius.md,
-      paddingVertical: 14,
+      backgroundColor: c.primary,
     },
-    submitDisabled: { opacity: 0.6 },
-    submitText: {
-      ...typography.body,
-      fontWeight: "700" as const,
-      color: c.primaryForeground,
-    },
+    linkText: { ...typography.label, color: c.primaryForeground, fontWeight: "700" as const },
   }))
 
-  async function handleSubmit() {
-    if (submitting) return
-    const budgetKes = Number(budget.replace(/[^0-9]/g, ""))
-    if (!name.trim()) {
-      setError("Give this campaign a name.")
-      return
-    }
-    if (!budgetKes || budgetKes <= 0) {
-      setError("Enter a budget in KES.")
-      return
-    }
+  const screenTitle = campaignId ? "Edit campaign" : "New campaign"
 
-    setSubmitting(true)
-    setError(null)
-    try {
-      const created = await createCampaign({
-        name: name.trim(),
-        market: `${market} · new campaign`,
-        format,
-        budgetKes,
-        duration,
-        startsOn: plannedStart,
-        endsOn: plannedEnd,
-      })
-      router.replace(`/campaigns/${created.id}`)
-    } catch {
-      setError("Couldn't save this campaign. Try again.")
-      setSubmitting(false)
-    }
+  if (campaignId != null && campaignQuery.isPending) {
+    return (
+      <View style={styles.root}>
+        <Stack.Screen options={{ title: screenTitle }} />
+        <View style={styles.padded}>
+          <SkeletonCampaignCards count={2} />
+        </View>
+      </View>
+    )
+  }
+
+  if (campaignId != null && !campaign) {
+    return (
+      <View style={styles.root}>
+        <Stack.Screen options={{ title: screenTitle }} />
+        <View style={styles.padded}>
+          <Text style={styles.title}>Campaign not found</Text>
+          <Text style={styles.body}>
+            It may have been deleted, or it belongs to another account.
+          </Text>
+          <Link href="/campaigns" style={styles.link}>
+            <Text style={styles.linkText}>Back to campaigns</Text>
+          </Link>
+        </View>
+      </View>
+    )
+  }
+
+  if (campaign && !EDITABLE_STATUSES.has(campaign.status)) {
+    return (
+      <View style={styles.root}>
+        <Stack.Screen options={{ title: screenTitle }} />
+        <View style={styles.padded}>
+          <Text style={styles.title}>This campaign can&apos;t be edited</Text>
+          <Text style={styles.body}>
+            {campaign.status === "submitted"
+              ? "It's in the queue for review. We'll let you know as soon as there's a decision."
+              : "Approved campaigns are locked. Talk to your account manager if something needs to change."}
+          </Text>
+          <Link href={`/campaigns/${campaign.id}`} style={styles.link}>
+            <Text style={styles.linkText}>View campaign</Text>
+          </Link>
+        </View>
+      </View>
+    )
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.intro}>
-        <Text style={styles.introBody}>
-          Set the basics now — corridors, creative, and exact scheduling are confirmed with your
-          account manager before a flight goes live.
-        </Text>
-      </View>
-
-      {plannedLabel ? (
-        <View style={styles.plannedCard}>
-          <View>
-            <Text style={styles.plannedCaption}>Flight window</Text>
-            <Text style={styles.plannedLabelText}>{plannedLabel}</Text>
-          </View>
-          <Pressable onPress={() => router.setParams({ startsOn: "", endsOn: "" })}>
-            <Text style={styles.plannedCaption}>Clear</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Campaign name *</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="e.g. Kilimani Launch Week"
-          placeholderTextColor={colors.mutedForeground}
-        />
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Market</Text>
-        <View style={styles.chipGrid}>
-          {MARKETS.map((option) => {
-            const active = option === market
-            return (
-              <Pressable
-                key={option}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => setMarket(option)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{option}</Text>
-              </Pressable>
-            )
-          })}
-        </View>
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Format</Text>
-        <View style={styles.chipGrid}>
-          {FORMATS.map((option) => {
-            const active = option === format
-            return (
-              <Pressable
-                key={option}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => setFormat(option)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                  {formatLabelFor(option)}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </View>
-      </View>
-
-      <View style={[styles.fieldGroup, plannedLabel && { display: "none" }]}>
-        <Text style={styles.label}>Flight length</Text>
-        <View style={styles.chipGrid}>
-          {DURATIONS.map((option) => {
-            const active = option === duration
-            return (
-              <Pressable
-                key={option}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => setDuration(option)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{option}</Text>
-              </Pressable>
-            )
-          })}
-        </View>
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Budget (KES) *</Text>
-        <TextInput
-          style={styles.input}
-          value={budget}
-          onChangeText={setBudget}
-          placeholder="e.g. 120000"
-          placeholderTextColor={colors.mutedForeground}
-          keyboardType="number-pad"
-        />
-      </View>
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.submit,
-          submitting && styles.submitDisabled,
-          pressed && !submitting && styles.submitDisabled,
-        ]}
-        onPress={handleSubmit}
-        disabled={submitting}
-        accessibilityRole="button"
-      >
-        {submitting ? (
-          <ActivityIndicator color={colors.primaryForeground} />
-        ) : (
-          <Text style={styles.submitText}>Create campaign</Text>
-        )}
-      </Pressable>
-    </ScrollView>
+    <View style={styles.root}>
+      <Stack.Screen options={{ title: screenTitle }} />
+      <CampaignWizard
+        initialCampaign={campaign}
+        initialStartsOn={typeof params.startsOn === "string" ? params.startsOn : null}
+        initialEndsOn={typeof params.endsOn === "string" ? params.endsOn : null}
+      />
+    </View>
   )
 }

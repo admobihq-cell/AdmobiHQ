@@ -2,7 +2,11 @@ import type { Prisma } from "@prisma/client"
 import { unstable_cache } from "next/cache"
 
 import {
+  campaignFlightPhase,
   paginationSchema,
+  toDayIso,
+  type CampaignListItemDto,
+  type PaginatedResponse,
   type PaginationParams,
 } from "@workspace/ops-contracts"
 import { prisma } from "@/lib/prisma"
@@ -144,6 +148,85 @@ export const getPendingDriverApplicationsCount = unstable_cache(
     return prisma.driverProfile.count({ where: { status: "submitted" } })
   },
   ["ops-pending-driver-applications"],
+  { revalidate: 300 },
+)
+
+/** Drafts aren't ops's concern yet — an advertiser still filling out the
+ * wizard shouldn't show up in the review queue. Mirrors apps/api's default
+ * filter in app/v1/campaigns/route.ts. */
+const DEFAULT_CAMPAIGN_STATUSES = [
+  "submitted",
+  "approved",
+  "rejected",
+  "changes_requested",
+  "cancelled",
+]
+
+/** Unlike the other list queries here, this one maps to the DTO rather than
+ * handing serialized Prisma rows to the client component. Two columns make it
+ * necessary: `budget_kes` is a Prisma `Decimal`, which is a class instance and
+ * cannot cross the server/client boundary at all, and `starts_on` / `ends_on`
+ * are `DATE` columns whose serialized form is a full ISO timestamp rather than
+ * the `YYYY-MM-DD` the table renders. This is also the shape
+ * `/v1/campaigns` returns, so page 2 onward matches page 1. */
+export async function listCampaigns(
+  params: Partial<PaginationParams> & { status?: string } = {},
+): Promise<PaginatedResponse<CampaignListItemDto>> {
+  const parsed = parsePagination(params)
+  const where: Prisma.CampaignWhereInput = params.status
+    ? { status: params.status }
+    : { status: { in: DEFAULT_CAMPAIGN_STATUSES } }
+
+  if (parsed.search) {
+    where.OR = [
+      { name: { contains: parsed.search, mode: "insensitive" } },
+      { contact_email: { contains: parsed.search, mode: "insensitive" } },
+      { market: { contains: parsed.search, mode: "insensitive" } },
+    ]
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.campaign.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (parsed.page - 1) * parsed.pageSize,
+      take: parsed.pageSize,
+      include: { _count: { select: { creatives: true } } },
+    }),
+    prisma.campaign.count({ where }),
+  ])
+
+  return {
+    items: items.map((campaign) => ({
+      id: campaign.id,
+      name: campaign.name,
+      contact_email: campaign.contact_email,
+      market: campaign.market,
+      format: campaign.format,
+      budget_kes: campaign.budget_kes?.toString() ?? null,
+      starts_on: campaign.starts_on ? toDayIso(campaign.starts_on) : null,
+      ends_on: campaign.ends_on ? toDayIso(campaign.ends_on) : null,
+      status: campaign.status,
+      flight_phase: campaignFlightPhase(campaign.status, campaign.starts_on, campaign.ends_on),
+      creative_count: campaign._count.creatives,
+      submitted_at: campaign.submitted_at?.toISOString() ?? null,
+      created_at: campaign.created_at.toISOString(),
+    })),
+    total,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+    totalPages: Math.ceil(total / parsed.pageSize),
+  }
+}
+
+/** Powers the pending-review badge on the "Campaigns" nav item. Same
+ * unstable_cache window as the driver-applications count so dashboard nav
+ * doesn't hit Neon on every page change. */
+export const getPendingCampaignsCount = unstable_cache(
+  async (): Promise<number> => {
+    return prisma.campaign.count({ where: { status: "submitted" } })
+  },
+  ["ops-pending-campaigns"],
   { revalidate: 300 },
 )
 

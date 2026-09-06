@@ -18,6 +18,7 @@ import {
   LifeBuoy,
   Mail,
   Map,
+  MonitorPlay,
   Newspaper,
   Person,
   Radio,
@@ -60,6 +61,14 @@ const LINKS: DrawerLink[] = [
     icon: ClipboardList,
     href: "/(ops)/driver-applications",
     permission: "driver_applications",
+  },
+  {
+    key: "campaigns",
+    label: "Campaigns",
+    description: "Review advertiser campaigns and creative",
+    icon: MonitorPlay,
+    href: "/(ops)/campaigns",
+    permission: "campaigns",
   },
   {
     key: "content",

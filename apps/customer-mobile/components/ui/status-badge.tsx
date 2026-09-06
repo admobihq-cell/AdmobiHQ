@@ -1,45 +1,65 @@
 import { StyleSheet, Text, View } from "react-native"
+import type { CampaignFlightPhase } from "@workspace/ops-contracts"
 
 import { typography, useThemeColors } from "@/lib/theme"
 
-export type CampaignStatus = "active" | "scheduled" | "draft" | "completed"
+/**
+ * Advertisers see one badge combining two facts: an approved campaign shows
+ * where it sits in its flight (Scheduled / Live / Completed), and everything
+ * else shows where it sits in review. Ops sees the raw status instead — a
+ * reviewer needs "submitted", an advertiser is better served by "In queue".
+ *
+ * Mirrors apps/customer-web/components/campaign-status-badge.tsx; keep the
+ * labels identical or the two apps disagree about the same campaign.
+ */
 
-type StatusBadgeProps = {
-  status: CampaignStatus
+const REVIEW_LABELS: Record<string, string> = {
+  draft: "Draft",
+  submitted: "In queue",
+  rejected: "Rejected",
+  changes_requested: "Changes needed",
+  cancelled: "Cancelled",
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
+const PHASE_LABELS: Record<CampaignFlightPhase, string> = {
+  live: "Live",
+  scheduled: "Scheduled",
+  completed: "Completed",
+  unscheduled: "Approved",
+}
+
+export function campaignBadgeLabel(status: string, flightPhase: CampaignFlightPhase): string {
+  if (status === "approved") return PHASE_LABELS[flightPhase]
+  return REVIEW_LABELS[status] ?? status.replace(/_/g, " ")
+}
+
+export function StatusBadge({
+  status,
+  flightPhase,
+}: {
+  status: string
+  flightPhase: CampaignFlightPhase
+}) {
   const colors = useThemeColors()
-  const statusStyles: Record<
-    CampaignStatus,
-    { bg: string; text: string; label: string }
-  > = {
-    active: {
-      bg: `${colors.success}1A`,
-      text: colors.success,
-      label: "Active",
-    },
-    scheduled: {
-      bg: `${colors.primary}1A`,
-      text: colors.primary,
-      label: "Scheduled",
-    },
-    draft: {
-      bg: colors.secondary,
-      text: colors.mutedForeground,
-      label: "Draft",
-    },
-    completed: {
-      bg: colors.muted,
-      text: colors.mutedForeground,
-      label: "Completed",
-    },
-  }
-  const palette = statusStyles[status]
+
+  const palette = ((): { bg: string; text: string } => {
+    if (status === "approved") {
+      if (flightPhase === "live") return { bg: `${colors.success}1A`, text: colors.success }
+      if (flightPhase === "scheduled") return { bg: `${colors.primary}1A`, text: colors.primary }
+      return { bg: colors.muted, text: colors.mutedForeground }
+    }
+    if (status === "submitted") return { bg: `${colors.primary}1A`, text: colors.primary }
+    if (status === "rejected" || status === "changes_requested") {
+      return { bg: `${colors.danger}14`, text: colors.danger }
+    }
+    return { bg: colors.secondary, text: colors.mutedForeground }
+  })()
 
   return (
     <View style={[styles.badge, { backgroundColor: palette.bg }]}>
-      <Text style={[styles.text, { color: palette.text }]}>{palette.label}</Text>
+      <Text style={[styles.text, { color: palette.text }]}>
+        {campaignBadgeLabel(status, flightPhase)}
+      </Text>
     </View>
   )
 }

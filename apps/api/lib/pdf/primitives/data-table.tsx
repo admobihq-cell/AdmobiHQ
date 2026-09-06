@@ -12,9 +12,14 @@ import { BRAND_COLOR, BRAND_COLOR_LIGHT } from "@/lib/pdf/render-pdf"
 export function DataTable({
   headers,
   rows,
+  totalsRow,
 }: {
   headers: string[]
   rows: string[][]
+  /** Optional summary line rendered in the table's own grid, so an invoice
+   * total lands under the column it totals instead of floating beside the
+   * table. Same cell count as `headers`. */
+  totalsRow?: string[]
 }): ReactElement {
   return (
     <table tw="w-full border border-gray-200 text-[10px]" style={{ borderCollapse: "collapse" }}>
@@ -42,6 +47,21 @@ export function DataTable({
           </tr>
         ))}
       </tbody>
+      {totalsRow ? (
+        <tfoot>
+          <tr style={{ backgroundColor: BRAND_COLOR_LIGHT }}>
+            {totalsRow.map((cell, j) => (
+              <td
+                key={j}
+                tw="p-2 font-semibold border-t"
+                style={{ color: BRAND_COLOR, borderColor: BRAND_COLOR }}
+              >
+                {cell}
+              </td>
+            ))}
+          </tr>
+        </tfoot>
+      ) : null}
     </table>
   )
 }
