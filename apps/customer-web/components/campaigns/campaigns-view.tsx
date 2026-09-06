@@ -111,8 +111,13 @@ export function CampaignsView() {
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {visible.map((campaign) => (
-            <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="block">
+          {visible.map((campaign) => {
+            const href =
+              campaign.status === "draft"
+                ? `/campaigns/new?id=${campaign.id}`
+                : `/campaigns/${campaign.id}`
+            return (
+            <Link key={campaign.id} href={href} className="block">
               <Card className="shadow-none transition-colors hover:bg-muted/20">
                 <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
                   <CardTitle className="text-base leading-snug">{campaign.name}</CardTitle>
@@ -146,10 +151,14 @@ export function CampaignsView() {
                       <p className="text-sm font-semibold">{formatBudget(campaign.budget_kes)}</p>
                     </div>
                   </div>
+                  {campaign.status === "draft" ? (
+                    <p className="text-xs font-medium text-primary">Continue editing →</p>
+                  ) : null}
                 </CardContent>
               </Card>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
 

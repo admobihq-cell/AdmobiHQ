@@ -15,6 +15,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
+import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
@@ -80,22 +81,35 @@ function CreativeThumb({
   )
   useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
 
+  const preview = url ? (
+    isVideo ? (
+      <video src={url} controls className="h-32 w-full bg-black object-contain" />
+    ) : (
+      <ImageLightbox src={url} alt={creative.original_filename ?? "Creative"}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- object URL from an authenticated blob, not a remote asset next/image can optimize */}
+        <img
+          src={url}
+          alt={creative.original_filename ?? "Creative"}
+          className="h-32 w-full object-contain"
+        />
+      </ImageLightbox>
+    )
+  ) : blobQuery.isError ? (
+    <button
+      type="button"
+      onClick={() => void blobQuery.refetch()}
+      className="flex h-32 w-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground hover:bg-muted"
+    >
+      <span>Couldn&apos;t load preview</span>
+      <span className="font-medium text-foreground">Click to retry</span>
+    </button>
+  ) : (
+    <Skeleton className="h-32 w-full" />
+  )
+
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-border bg-muted/20">
-      {url ? (
-        isVideo ? (
-          <video src={url} controls className="h-32 w-full bg-black object-contain" />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element -- object URL from an authenticated blob, not a remote asset next/image can optimize
-          <img src={url} alt={creative.original_filename ?? "Creative"} className="h-32 w-full object-contain" />
-        )
-      ) : blobQuery.isError ? (
-        <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
-          Couldn&apos;t load preview
-        </div>
-      ) : (
-        <Skeleton className="h-32 w-full" />
-      )}
+    <div className="group relative overflow-hidden rounded-lg border border-border bg-muted/20 duration-200 ease-out animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none">
+      {preview}
 
       <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-1.5 text-xs">
         <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
@@ -126,11 +140,15 @@ export function CreativeUploadField({
   format,
   creatives,
   disabled = false,
+  onCreativesChange,
 }: {
   campaignId: number
   format: CampaignFormat
   creatives: CampaignCreativeDto[]
   disabled?: boolean
+  /** Keeps the wizard's local campaign snapshot in sync so Continue unlocks
+   * as soon as an upload lands (query invalidation alone is not enough). */
+  onCreativesChange?: (creatives: CampaignCreativeDto[]) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -145,6 +163,7 @@ export function CreativeUploadField({
     if (!files?.length) return
     setError(null)
 
+    let next = creatives
     for (const file of Array.from(files)) {
       if (file.size > MAX_CREATIVE_BYTES) {
         setError(`${file.name} is over ${MAX_MB}MB.`)
@@ -158,7 +177,11 @@ export function CreativeUploadField({
           continue
         }
       }
-      await upload.mutateAsync(file).catch(() => undefined)
+      const created = await upload.mutateAsync(file).catch(() => null)
+      if (created) {
+        next = [...next, created]
+        onCreativesChange?.(next)
+      }
     }
 
     if (inputRef.current) inputRef.current.value = ""
@@ -195,7 +218,11 @@ export function CreativeUploadField({
               campaignId={campaignId}
               creative={creative}
               disabled={busy || remove.isPending}
-              onDelete={() => remove.mutate(creative.id)}
+              onDelete={() => {
+                void remove.mutateAsync(creative.id).then(() => {
+                  onCreativesChange?.(creatives.filter((item) => item.id !== creative.id))
+                })
+              }}
             />
           ))}
         </div>

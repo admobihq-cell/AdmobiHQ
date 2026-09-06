@@ -13,10 +13,10 @@ const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
 
 /** Full-screen chrome for the campaign wizard: the same sticky logo bar and
  * centred column driver-web uses for profile setup, so the two flows feel like
- * one product. */
+ * one product. Enter motion matches the driver Sheet (`slide-in-from-right`). */
 function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background duration-200 ease-out animate-in fade-in-0 slide-in-from-right-10 motion-reduce:animate-none">
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-4 py-3 sm:px-8">
         <Logo markHeight={18} wordmarkClassName="text-sm font-semibold leading-none" />
         <Button variant="ghost" size="icon-sm" asChild aria-label="Close">
