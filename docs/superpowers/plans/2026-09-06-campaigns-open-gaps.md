@@ -2,7 +2,7 @@
 
 Companion to [`2026-09-06-campaigns-end-to-end.md`](./2026-09-06-campaigns-end-to-end.md). That plan is the record of what to build; **this file is the record of what is not yet settled**. Update it as gaps close — do not let a resolved gap sit here looking open.
 
-**Status as of 2026-09-06:** Tasks 1–12 and 14–15 shipped (database through customer-web, ops web, ops mobile, customer mobile campaign flow). Tasks 13, 16, 17 pending.
+**Status as of 2026-09-06:** Tasks 1–15 shipped (database through customer-web, ops web/mobile, customer-mobile campaign flow + merged inbox/push deep links). Tasks 16–17 pending.
 
 ---
 
@@ -63,20 +63,13 @@ The taxi top is double-sided and the bike box is three-sided. Two unanswered que
 - Task 6 adds `notifyUserPush(audience, clerkUserId, …)`, deliberately audience-generic.
 - **Residual gap:** after this ships, the *driver* flow still has no push until someone adopts the helper. Two-line change, listed in the plan's out-of-scope table.
 
-### 2.2 Customer push tokens and `clerk_user_id` — **investigated, mostly fine, one narrow window left**
+### 2.2 Customer push tokens and `clerk_user_id` — **closed in Task 13**
 
-`notifyUserPush` looks up tokens by `clerk_user_id`, and both that column and `anonymous_device_id` are nullable — so a token never linked to an account would be invisible to every campaign push, silently.
+`notifyUserPush` looks up tokens by `clerk_user_id`. Traced end to end; plumbing was already sound. Task 13 closed the two remaining code issues:
 
-Traced end to end. **The plumbing is sound:**
-
-- [`/v1/public/push-tokens`](../../apps/api/app/v1/public/push-tokens/route.ts) sets `clerk_user_id` whenever the request carries a valid bearer token, and on re-registration only *overwrites* it when one is present — an anonymous re-register can never null out an existing link. Well built.
-- [`usePushRegistration`](../../apps/customer-mobile/lib/use-push-registration.ts) does have a real `getToken`: its own comment claims the hook renders outside `ClerkProvider`, but `PushRegistrationBridge` is nested **inside** it in [`_layout.tsx`](../../apps/customer-mobile/app/_layout.tsx). **The comment is stale and actively misleading — correct it in Task 13.**
-- Registration re-runs on every foreground (`AppState → "active"`), so a link established late still gets made.
-
-**Residual window:** the effect's deps are `[pushSupported, getToken]`, and Clerk's `getToken` identity is stable, so signing in does not by itself re-run registration. A user on a fresh install who signs in and submits a campaign **without ever backgrounding the app** has no `clerk_user_id` yet and misses push for that first notification only. It self-heals on the next foreground.
-
-- **Fix (Task 13):** add Clerk's `userId` to the effect deps so sign-in re-registers immediately. Two lines.
-- **Severity:** low and self-healing — but silent, which is why it is written down rather than left to be rediscovered.
+- Corrected the stale `usePushRegistration` comment (it incorrectly claimed the hook always mounts outside `ClerkProvider`; the real constraint is only the auth-disabled branch).
+- Added Clerk `userId` to the registration effect deps so sign-in re-registers immediately instead of waiting for the next foreground.
+- Also shipped: merged inbox (`/v1/customer/notifications` + announcements), push tap / cold-start deep links via `data.href`, and inbox invalidation on foreground push receive.
 
 ### 2.3 New ops roles will not get the `campaigns` permission automatically
 
