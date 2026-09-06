@@ -43,7 +43,30 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | `/v1/customer/campaigns` (+ `[id]`, `submit`, `creatives`, creative `file`) | Customer Clerk JWT | Advertiser campaign CRUD, submit-for-review, creative upload/proxy |
 | `/v1/campaigns` (+ `[id]`, `review`, creative `file`) | Ops Clerk JWT + `campaigns` permission | Ops campaign list, detail, review decisions, creative proxy |
 | `/v1/driver/profile`, `/v1/driver/documents`, `/v1/driver/notifications`, `/v1/driver/announcements`, `/v1/driver/mobile-announcements` | Driver Clerk JWT | Driver self-service |
+| `/v1/driver/sos` (+ `[id]`, `messages`, `photos`, `location`) | Driver Clerk JWT | Driver SOS: file, track, reply, add photos, re-ping location |
+| `/v1/safety-incidents` (+ `[id]`, `messages`, photo `file`) | Ops Clerk JWT + `safety` permission | Ops SOS queue, review decisions, photo proxy |
 | `GET/POST /v1/push-receipts/check` | Ops JWT **or** `CRON_SECRET` | Expo receipt reconciliation |
+
+### Driver SOS (safety incidents)
+
+Drivers file under `/v1/driver/sos/*`; ops reviews under `/v1/safety-incidents/*` (requires the grantable `safety` permission). Every driver route resolves ownership through `loadOwnedIncident()`, which returns 404 for both "missing" and "not yours" so an id cannot be probed.
+
+| Route | Method | Notes |
+|---|---|---|
+| `/v1/driver/sos` | `POST` | Files an incident. Rate limited **3 / 5 min**. Snapshots driver name + phone from `DriverProfile`. Severity is derived from `type`, never sent by the client. Fires ops push + admin email, both fire-and-forget. |
+| `/v1/driver/sos` | `GET` | The caller's own incidents, newest first, capped at 50. |
+| `/v1/driver/sos/[id]` | `GET` | Detail. Internal ops notes are stripped in `toDriverIncident()`, not in the route. |
+| `/v1/driver/sos/[id]` | `PATCH` | **Cancel only** — the schema is a literal `"cancelled"`, so any other transition is a 400. 409 if already closed. |
+| `/v1/driver/sos/[id]/messages` | `POST` | Driver reply. `internal_note` is hardcoded `false` regardless of the body. |
+| `/v1/driver/sos/[id]/photos` | `POST` | Multipart, one file per call. Max 4 per incident, 8MB, JPEG/PNG/WebP. |
+| `/v1/driver/sos/[id]/location` | `POST` | Re-ping. **204 with no write** if the incident is terminal or older than 6h — checked before body parsing. Writes no audit event. |
+| `/v1/safety-incidents` | `GET` | Paginated queue; filters `status`, `type`, `severity`. Drops `driver_clerk_user_id` from the response. |
+| `/v1/safety-incidents/[id]` | `GET` | Detail **including** internal notes. |
+| `/v1/safety-incidents/[id]` | `PATCH` | Status / severity / resolution. Stamps `acknowledged_at` on the first non-`new` status only. Resolving without a note is a 400; ops cancelling is a 400. |
+| `/v1/safety-incidents/[id]/messages` | `POST` | Ops reply; the only side that may set `internal_note`. |
+| `/v1/safety-incidents/[id]/photos/[photoId]/file` | `GET` | Streams bytes. Matched on both ids so a photo from another incident is a 404. |
+
+Photo bytes are private Cloudinary assets (`type: "authenticated"`) served only through the `…/file` proxy — the `cloudinary_public_id` never leaves the API. Full design: `docs/shared/SAFETY-SOS.md`.
 
 ### Campaigns (advertiser + ops)
 
@@ -122,7 +145,7 @@ Comparison is constant-time (`timingSafeEqual` in `lib/api-utils.ts`) — do not
 
 ## Rate limiting
 
-All `/v1/public/*` routes (and the support reply/list routes) call `checkRateLimit(req, bucket, { limit, windowSeconds })` from `apps/api/lib/rate-limit.ts` as their first line — a sliding-window limiter backed by Upstash Redis, keyed by client IP.
+All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driver/sos`, which is limited to **3 per 5 minutes** because it pages every ops device) call `checkRateLimit(req, bucket, { limit, windowSeconds })` from `apps/api/lib/rate-limit.ts` as their first line — a sliding-window limiter backed by Upstash Redis, keyed by client IP.
 
 **Exception:** `GET /v1/public/config` serves an in-memory cache (5 minutes per isolate) before rate-limiting. Cache hits skip Redis and Neon, and responses set `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`. Ops `PATCH /v1/flags` calls `invalidatePublicConfigCache()` so the next miss sees the new value. Customer/driver Next.js apps poll with `revalidate: 300`.
 

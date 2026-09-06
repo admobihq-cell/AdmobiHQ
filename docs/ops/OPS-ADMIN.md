@@ -19,7 +19,29 @@ Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC
 
 ### Routes (dashboard)
 
-Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, Waitlist, Media Kit, Announcements, Support, **Finances**, **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, tour).
+Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, Waitlist, Media Kit, Announcements, **SOS**, Support, **Finances**, **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, tour).
+
+### SOS (driver safety incidents)
+
+Sidebar **SOS** (permission: `safety`), placed above Support — an emergency
+queue that sorts below the helpdesk is a queue nobody checks first.
+
+The list is ordered by acknowledgement, not recency: unacknowledged incidents
+float to the top regardless of the active sort, a live clock counts up beside
+each one and turns red past `ACK_TARGET_SECONDS` (5 min), and a red banner
+counts them. It polls every 15s while anything is live, 60s when quiet.
+
+| Action | Effect | Driver-visible? |
+|--------|--------|-----------------|
+| Acknowledge | Stamps `acknowledged_at` + reviewer email (first time only) | **Yes** — notification row |
+| Mark in progress | Status → `in_progress` | Thread entry |
+| Resolve | Status → `resolved`; **resolution note required** | **Yes** — note is shown to them |
+| Cancel | Not available to ops — only the driver can cancel | — |
+
+Detail view: driver card with `tel:` and WhatsApp links, coordinates plus a
+Google Maps link, the photo gallery (served through the authenticated proxy),
+and a thread supporting **internal notes** the driver never sees. Full design:
+`docs/shared/SAFETY-SOS.md`.
 
 ### Campaigns (advertiser review)
 

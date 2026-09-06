@@ -58,6 +58,24 @@ Download the APK from the EAS dashboard when the build completes. See [MOBILE-BU
 
 `/(ops)/campaigns` — list + detail, gated on the `campaigns` permission (label already in `permission-labels.ts`). Uses `client.campaigns.*` from `@workspace/ops-api-client`. Same decisions as ops web (Approve / Request changes / Reject / Unapprove); reason required for non-approve and is **advertiser-visible**. Image creatives load via the authenticated proxy; video uses a play affordance. Ops push for a new submission uses alert type `campaign_submission` and deep-links to `/(ops)/campaigns/:id`.
 
+## SOS review
+
+`/(ops)/sos` — list + detail, gated on the `safety` permission. Uses
+`client.safety.*` from `@workspace/ops-api-client`. Unacknowledged incidents
+float to the top of the list regardless of the active filter, with a red
+banner counting them; the list polls every 15s while anything is live and
+every 60s when quiet.
+
+Actions: Acknowledge / In progress / Resolve (resolution note **required** —
+the API returns 400 without one). Only the driver can cancel. Photos are not
+rendered on mobile — the detail screen points to the ops console for those.
+
+Ops push for a new SOS uses alert type `safety`, the **MAX-importance
+`"safety"` Android channel** registered in `lib/push-notifications.ts`, and
+deep-links to `/(ops)/sos/:id`. Without that registered channel Android
+silently downgrades the alert to the default channel and no heads-up banner
+appears. Full design: `docs/shared/SAFETY-SOS.md`.
+
 ## Push notifications (ops staff)
 
 When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).
