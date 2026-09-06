@@ -57,6 +57,21 @@ Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/
 | `POST` | `/v1/customer/campaigns/[id]/creatives` | Customer | Multipart upload — **PNG/JPG/GIF/MP4 only**, ≤50 MB |
 | `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Remove creative while editable |
 | `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
+| `GET` | `/v1/customer/campaigns/statement` | Customer | Budget statement PDF — every own campaign, its budget, an active subtotal and an all-campaigns total |
+| `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated |
+
+Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
+`CampaignStatementPdf` template, and return `application/pdf` with a
+`Content-Disposition: attachment`. Unlike `/v1/ops/documents/export`, which
+takes its rows in the request body, these query the caller's own campaigns
+server-side — an advertiser must not be able to put arbitrary rows on Admobi
+letterhead. Row building lives in `lib/campaign-statement.ts`.
+
+Proof of play reports the **booked schedule**, not measured plays: no play
+telemetry reaches the platform yet, so the document claims no play volume and
+says so in its footnote. Every string written into a PDF stays inside Latin-1
+— the bundled font has no glyph for `→` and Takumi throws on an uncovered
+codepoint rather than substituting one.
 | `GET` | `/v1/campaigns` | Ops `campaigns` | Paginated review queue |
 | `GET` | `/v1/campaigns/[id]` | Ops `campaigns` | Detail + creatives |
 | `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `approve` / `request_changes` / `reject` / `unapprove` — reason required except approve; reason is **advertiser-visible** |

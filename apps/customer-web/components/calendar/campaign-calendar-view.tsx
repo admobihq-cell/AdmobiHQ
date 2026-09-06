@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { CalendarDays, List, MapPin, Plus } from "lucide-react"
+import { CalendarDays, FileDown, List, MapPin, Plus, Wallet } from "lucide-react"
 import type { CampaignDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
@@ -15,7 +15,11 @@ import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import { formatDayHeading, resolveFlight, toDayIso } from "@/lib/campaign-calendar"
-import { useCampaigns, useUpdateCampaign } from "@/lib/use-campaigns"
+import { useCampaigns, useDownloadPdf, useUpdateCampaign } from "@/lib/use-campaigns"
+
+function formatKes(amount: number): string {
+  return `KES ${Math.round(amount).toLocaleString("en-KE")}`
+}
 
 /** Matches the flight-event--* classes in flight-calendar.css. */
 const LEGEND = [
@@ -34,7 +38,23 @@ export function CampaignCalendarView() {
 
   const campaignsQuery = useCampaigns()
   const update = useUpdateCampaign()
+  const downloadPdf = useDownloadPdf()
   const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
+
+  /** Money already committed: approved campaigns whose flight hasn't finished.
+   * Mirrors isActive() in apps/api/lib/campaign-statement.ts so the figure on
+   * screen and the figure in the downloaded statement are the same number. */
+  const active = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) => campaign.flight_phase === "live" || campaign.flight_phase === "scheduled",
+      ),
+    [campaigns],
+  )
+  const activeBudget = useMemo(
+    () => active.reduce((sum, campaign) => sum + Number(campaign.budget_kes ?? 0), 0),
+    [active],
+  )
 
   const visibleFlights = useMemo(
     () =>
@@ -84,12 +104,46 @@ export function CampaignCalendarView() {
             days to plan a new one. Campaigns in review or already approved are locked.
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/campaigns">
-            <List data-icon="inline-start" />
-            Campaign list
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/campaigns">
+              <List data-icon="inline-start" />
+              Campaign list
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            loading={downloadPdf.isPending}
+            loadingText="Preparing…"
+            onClick={() =>
+              downloadPdf.mutate({
+                path: "/v1/customer/campaigns/statement",
+                filename: "admobi-campaign-statement.pdf",
+              })
+            }
+          >
+            <FileDown data-icon="inline-start" />
+            Download statement
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10">
+        <div className="flex items-center gap-3">
+          <Wallet className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              Active campaign budget
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">
+              {campaignsQuery.isPending ? "—" : formatKes(activeBudget)}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {active.length} approved flight{active.length === 1 ? "" : "s"} live or scheduled ·
+          the statement PDF lists every campaign with its budget
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">

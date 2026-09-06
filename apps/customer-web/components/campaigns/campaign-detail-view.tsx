@@ -1,7 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, CalendarDays, Image as ImageIcon, MapPin, Pencil, Wallet } from "lucide-react"
+import {
+  ArrowLeft,
+  CalendarDays,
+  FileDown,
+  Image as ImageIcon,
+  MapPin,
+  Pencil,
+  Wallet,
+} from "lucide-react"
 import type { CampaignFormat } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
@@ -11,7 +19,7 @@ import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
 import { CreativeUploadField } from "@/components/campaigns/creative-upload-field"
 import { StatCard } from "@/components/stat-card"
-import { useCampaign } from "@/lib/use-campaigns"
+import { useCampaign, useDownloadPdf } from "@/lib/use-campaigns"
 
 const FORMAT_LABELS: Record<string, string> = {
   taxi_top: "Taxi-top LED",
@@ -28,6 +36,7 @@ function formatKes(value: string | null): string {
 
 export function CampaignDetailView({ id }: { id: number }) {
   const campaignQuery = useCampaign(id)
+  const downloadPdf = useDownloadPdf()
 
   const backLink = (
     <Link
@@ -91,6 +100,25 @@ export function CampaignDetailView({ id }: { id: number }) {
                   <Pencil data-icon="inline-start" />
                   Edit
                 </Link>
+              </Button>
+            ) : null}
+            {/* Only an approved, scheduled flight has a delivery record — the
+                API refuses anything else, so the button isn't offered. */}
+            {campaign.status === "approved" && campaign.starts_on && campaign.ends_on ? (
+              <Button
+                size="sm"
+                variant="outline"
+                loading={downloadPdf.isPending}
+                loadingText="Preparing…"
+                onClick={() =>
+                  downloadPdf.mutate({
+                    path: `/v1/customer/campaigns/${campaign.id}/proof-of-play`,
+                    filename: `admobi-proof-of-play-${campaign.id}.pdf`,
+                  })
+                }
+              >
+                <FileDown data-icon="inline-start" />
+                Proof of play
               </Button>
             ) : null}
           </div>

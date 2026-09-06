@@ -14,6 +14,8 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import { PricingSimulator } from "@workspace/ui/components/pricing-simulator"
+import { formatKes } from "@workspace/ui/lib/pricing"
 import { Stepper, type StepperStep } from "@workspace/ui/components/stepper"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
@@ -44,6 +46,16 @@ const OBJECTIVE_LABELS: Record<string, string> = {
 const STEP_LABELS = ["Brief", "Flight & budget", "Creative", "Review"]
 
 const AUTOSAVE_MS = 800
+
+/** Inclusive flight length — a one-day flight is 1 day, not 0. Returns 0 when
+ * the window isn't picked yet, which the simulator reads as "let the user set
+ * the length themselves". */
+function flightDays(startsOn: string, endsOn: string): number {
+  if (!startsOn || !endsOn || endsOn < startsOn) return 0
+  const ms = Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${startsOn}T00:00:00Z`)
+  if (Number.isNaN(ms)) return 0
+  return Math.round(ms / 86_400_000) + 1
+}
 
 /** Which steps are satisfied by the campaign as it stands, so someone
  * resuming a draft lands on the first thing actually missing rather than
@@ -443,6 +455,34 @@ export function CampaignWizard({
               inputMode="numeric"
             />
           </div>
+
+          <section className="space-y-3 border-t border-border pt-6">
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold">Not sure what to budget?</h2>
+              <p className="text-sm text-muted-foreground">
+                The same spot/play rate card the public pricing page quotes. Set your screens,
+                slot length, and zone to see what the flight costs, then drop it straight into
+                the budget field.
+              </p>
+            </div>
+            <PricingSimulator
+              fixedDays={flightDays(startsOn, endsOn)}
+              footer={(result) => (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setBudget(String(Math.round(result.total)))}
+                >
+                  Use {formatKes(result.total)} as my budget
+                </Button>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Indicative only — your account manager confirms the final rate against corridor and
+              loop capacity during review.
+            </p>
+          </section>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

@@ -20,9 +20,9 @@ Sidebar app shell. What is real vs placeholder:
 | Route | Status |
 |-------|--------|
 | `/` Overview | Working UI (local/demo numbers, not API stats) |
-| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner |
-| `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=` |
-| `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture |
+| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns |
+| `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=`; the budget step embeds the public pricing simulator |
+| `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture; active-budget total + statement PDF download |
 | `/notifications` | Merged inbox: ops announcements + campaign lifecycle rows from `/v1/customer/notifications` |
 | `/map` | mapcn/MapLibre with `@workspace/geo` Nairobi fixtures |
 | `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
@@ -33,6 +33,20 @@ Sidebar app shell. What is real vs placeholder:
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
+
+The wizard's budget step mounts the same `PricingSimulator` the marketing
+pricing page uses — the component and the rate card both live in
+`@workspace/ui` (`components/pricing-simulator`, `lib/pricing`) so the two
+surfaces cannot quote different numbers. It takes the flight length from the
+dates already picked rather than offering its own days control, and its
+footer button writes the estimate into the budget field.
+
+The calendar's "Active campaign budget" counts approved campaigns whose flight
+is `live` or `scheduled`, matching `isActive()` in
+`apps/api/lib/campaign-statement.ts` so the figure on screen equals the one in
+the downloaded statement. Both PDF downloads go through `useDownloadPdf()` —
+the API is a separate authenticated origin, so the bytes are fetched with the
+bearer token and handed to the browser as a blob, never linked to directly.
 
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
 - Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)

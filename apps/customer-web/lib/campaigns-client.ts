@@ -135,3 +135,22 @@ export async function fetchCreativeBlob(
   const res = await authedFetch(getToken, `/v1/customer/campaigns/${campaignId}/creatives/${creativeId}/file`)
   return res.blob()
 }
+
+/**
+ * Fetches a generated PDF with the bearer token and hands it to the browser as
+ * a download. The API is a different origin behind auth, so a plain
+ * `<a href download>` can't do it — the token has to ride on the request.
+ */
+export async function downloadCampaignPdf(
+  getToken: GetToken,
+  path: string,
+  filename: string,
+): Promise<void> {
+  const res = await authedFetch(getToken, path)
+  const url = URL.createObjectURL(await res.blob())
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}

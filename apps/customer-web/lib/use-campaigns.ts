@@ -9,6 +9,7 @@ import {
   createCampaign,
   deleteCampaign,
   deleteCreative,
+  downloadCampaignPdf,
   getCampaign,
   listCampaigns,
   submitCampaign,
@@ -138,6 +139,18 @@ export function useDeleteCreative(campaignId: number) {
   return useMutation({
     mutationFn: (creativeId: number) => deleteCreative(getToken, campaignId, creativeId),
     onSuccess: () => invalidate(campaignId),
+    onError: (error) => toast.error(messageOf(error)),
+  })
+}
+
+/** Generated PDFs — the calendar's budget statement and a campaign's proof of
+ * play. One hook for both: the only difference is the path and the filename,
+ * and they want identical pending/error handling. */
+export function useDownloadPdf() {
+  const { getToken } = useAuthIfEnabled()
+  return useMutation({
+    mutationFn: ({ path, filename }: { path: string; filename: string }) =>
+      downloadCampaignPdf(getToken, path, filename),
     onError: (error) => toast.error(messageOf(error)),
   })
 }
