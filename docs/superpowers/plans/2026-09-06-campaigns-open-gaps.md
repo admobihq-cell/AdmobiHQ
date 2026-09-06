@@ -45,12 +45,9 @@ The taxi top is double-sided and the bike box is three-sided. Two unanswered que
 - **Current behaviour:** `campaign_creatives.slot` exists, defaults to `"all"`, and **no UI sets it**. One creative plays on every face.
 - **On answer:** per-face artwork is a picker, not a migration. Per-side pricing is a pricing-track question, not a schema one.
 
-### 1.6 `"campaign"` ops-alert type is already taken — needs a decision before Task 9
+### 1.6 `"campaign"` ops-alert type is already taken — **closed (Task 7/9)**
 
-[`ops-alerts.ts`](../../apps/api/lib/push/ops-alerts.ts) already has an `OpsAlertType` of `"campaign"`, but its `ROUTE_SEGMENT` maps to `leads` — it is the **marketing start-campaign lead form's** alert, not this feature's.
-
-- **The trap:** repointing `campaign → campaigns` to serve real campaigns would silently misroute every existing marketing-lead alert to the wrong ops screen.
-- **Recommended:** add a distinct `"campaign_submission"` type rather than repurposing `"campaign"`. Task 9 Step 5 must not be done as a one-line edit.
+[`ops-alerts.ts`](../../apps/api/lib/push/ops-alerts.ts) already had an `OpsAlertType` of `"campaign"` mapped to marketing leads. Shipped a distinct `"campaign_submission"` type rather than repurposing `"campaign"`, so existing lead alerts keep routing to the right ops screen.
 
 ---
 
