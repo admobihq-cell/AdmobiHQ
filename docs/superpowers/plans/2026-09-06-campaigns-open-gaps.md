@@ -63,12 +63,20 @@ The taxi top is double-sided and the bike box is three-sided. Two unanswered que
 - Task 6 adds `notifyUserPush(audience, clerkUserId, …)`, deliberately audience-generic.
 - **Residual gap:** after this ships, the *driver* flow still has no push until someone adopts the helper. Two-line change, listed in the plan's out-of-scope table.
 
-### 2.2 Customer push tokens may not carry `clerk_user_id`
+### 2.2 Customer push tokens and `clerk_user_id` — **investigated, mostly fine, one narrow window left**
 
-`notifyUserPush` looks up tokens by `clerk_user_id`. `CustomerPushToken` has both `clerk_user_id` and `anonymous_device_id`, and both are nullable — a token registered before sign-in and never re-upserted afterwards would be **invisible to every campaign push**.
+`notifyUserPush` looks up tokens by `clerk_user_id`, and both that column and `anonymous_device_id` are nullable — so a token never linked to an account would be invisible to every campaign push, silently.
 
-- **Unverified.** Task 13 Step 3 must confirm the registration call re-upserts on sign-in, and fix it if not.
-- **Failure mode is silent:** no error, just no notification.
+Traced end to end. **The plumbing is sound:**
+
+- [`/v1/public/push-tokens`](../../apps/api/app/v1/public/push-tokens/route.ts) sets `clerk_user_id` whenever the request carries a valid bearer token, and on re-registration only *overwrites* it when one is present — an anonymous re-register can never null out an existing link. Well built.
+- [`usePushRegistration`](../../apps/customer-mobile/lib/use-push-registration.ts) does have a real `getToken`: its own comment claims the hook renders outside `ClerkProvider`, but `PushRegistrationBridge` is nested **inside** it in [`_layout.tsx`](../../apps/customer-mobile/app/_layout.tsx). **The comment is stale and actively misleading — correct it in Task 13.**
+- Registration re-runs on every foreground (`AppState → "active"`), so a link established late still gets made.
+
+**Residual window:** the effect's deps are `[pushSupported, getToken]`, and Clerk's `getToken` identity is stable, so signing in does not by itself re-run registration. A user on a fresh install who signs in and submits a campaign **without ever backgrounding the app** has no `clerk_user_id` yet and misses push for that first notification only. It self-heals on the next foreground.
+
+- **Fix (Task 13):** add Clerk's `userId` to the effect deps so sign-in re-registers immediately. Two lines.
+- **Severity:** low and self-healing — but silent, which is why it is written down rather than left to be rediscovered.
 
 ### 2.3 New ops roles will not get the `campaigns` permission automatically
 
