@@ -7,6 +7,10 @@ const projectRoot = __dirname
 const workspaceRoot = path.resolve(projectRoot, "../..")
 const mobileModules = path.resolve(projectRoot, "node_modules")
 const geoPackage = path.resolve(workspaceRoot, "packages/geo")
+// The SOS screens are the first VALUE imports from ops-contracts in this app —
+// every earlier one was `import type`, which is erased before Metro ever sees
+// it — so the package now needs the same watch/resolve wiring as geo.
+const opsContractsPackage = path.resolve(workspaceRoot, "packages/ops-contracts")
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getSentryExpoConfig(projectRoot)
@@ -22,7 +26,7 @@ config.cacheStores = [
 
 // Only watch packages this app imports — not the whole monorepo (avoids
 // ENOENT spam from sibling Next.js apps writing under apps/*/.next).
-config.watchFolders = [geoPackage]
+config.watchFolders = [geoPackage, opsContractsPackage]
 config.resolver.nodeModulesPaths = [
   mobileModules,
   path.resolve(workspaceRoot, "node_modules"),
@@ -48,6 +52,7 @@ config.resolver.extraNodeModules = {
   react: path.dirname(resolveFromMobile("react/package.json")),
   "react-dom": path.dirname(resolveFromMobile("react-dom/package.json")),
   "@workspace/geo": geoPackage,
+  "@workspace/ops-contracts": opsContractsPackage,
 }
 
 const reactAliases = new Set([
@@ -66,9 +71,18 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     }
   }
 
+  // Explicit entries for workspace packages (Expo web often fails on
+  // exports-only resolution of raw-TS workspace sources).
   if (moduleName === "@workspace/geo") {
     return {
       filePath: path.join(geoPackage, "src/index.ts"),
+      type: "sourceFile",
+    }
+  }
+
+  if (moduleName === "@workspace/ops-contracts") {
+    return {
+      filePath: path.join(opsContractsPackage, "src/index.ts"),
       type: "sourceFile",
     }
   }
