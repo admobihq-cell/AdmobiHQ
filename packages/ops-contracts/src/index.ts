@@ -1,4 +1,5 @@
 export * from "./allowed-email"
+export * from "./campaign-phase"
 export * from "./creative-specs"
 export * from "./enums"
 export * from "./format"
