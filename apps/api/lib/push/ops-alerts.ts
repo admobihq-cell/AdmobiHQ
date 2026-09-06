@@ -4,6 +4,7 @@ import { recordPushTickets } from "@/lib/push/receipts"
 
 export type OpsAlertType =
   | "campaign"
+  | "campaign_submission"
   | "fleet"
   | "driver"
   | "waitlist"
@@ -12,6 +13,7 @@ export type OpsAlertType =
 
 const TYPE_LABELS: Record<OpsAlertType, string> = {
   campaign: "Campaign brief",
+  campaign_submission: "Campaign submission",
   fleet: "Fleet partnership",
   driver: "Driver lead",
   waitlist: "Waitlist signup",
@@ -19,8 +21,13 @@ const TYPE_LABELS: Record<OpsAlertType, string> = {
   support: "Support case",
 }
 
+/** "campaign" is the anonymous marketing-site brief and routes to the leads
+ * queue; "campaign_submission" is a signed-in advertiser's real campaign and
+ * routes to the campaigns review queue. Do NOT collapse these — repointing
+ * "campaign" would silently misroute every existing marketing-lead alert. */
 const ROUTE_SEGMENT: Record<OpsAlertType, string> = {
   campaign: "leads",
+  campaign_submission: "campaigns",
   fleet: "fleet",
   driver: "drivers",
   waitlist: "waitlist",

@@ -4,7 +4,13 @@ import { Button, Hr, Link, Section, Text } from "react-email"
 import { EmailLayout, emailStyles } from "@/lib/email/templates/shared/EmailLayout"
 
 interface AdminAlertProps {
-  type: "campaign" | "fleet" | "driver" | "driver-application" | "support"
+  type:
+    | "campaign"
+    | "campaign-submission"
+    | "fleet"
+    | "driver"
+    | "driver-application"
+    | "support"
   submitterName: string
   submitterEmail: string
   submitterPhone?: string
@@ -19,18 +25,26 @@ interface AdminAlertProps {
 
 const typeLabels = {
   campaign: "Campaign brief",
+  "campaign-submission": "Campaign submission",
   fleet: "Fleet partnership",
   driver: "Driver lead",
   "driver-application": "Driver application",
   support: "Support case",
 } as const
 
-/** "driver" is an anonymous marketing-site lead (the `drivers` table, no
- * account). "driver-application" is an existing driver account submitting
- * their KYC profile + documents for review — it never touched the marketing
- * site, so it needs its own intro copy rather than the generic one below. */
+/** Two pairs here look alike but are not. "driver" is an anonymous
+ * marketing-site lead (the `drivers` table, no account);
+ * "driver-application" is an existing driver account submitting their KYC
+ * profile + documents for review. Likewise "campaign" is an anonymous
+ * start-campaign brief from the marketing site (the `leads` table), while
+ * "campaign-submission" is a signed-in advertiser sending a real campaign
+ * (the `campaigns` table) for approval. Neither of the latter two ever
+ * touched the marketing site, so each needs its own intro copy rather than
+ * the generic one below. */
 const typeIntros = {
   campaign: "A new submission arrived on the marketing site. Full record is in the ops database.",
+  "campaign-submission":
+    "An advertiser has submitted a campaign for review — brief, flight window, budget, and creative.",
   fleet: "A new submission arrived on the marketing site. Full record is in the ops database.",
   driver: "A new submission arrived on the marketing site. Full record is in the ops database.",
   "driver-application":
