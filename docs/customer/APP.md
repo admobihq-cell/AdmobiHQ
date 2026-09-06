@@ -20,7 +20,10 @@ Sidebar app shell. What is real vs placeholder:
 | Route | Status |
 |-------|--------|
 | `/` Overview | Working UI (local/demo numbers, not API stats) |
-| `/campaigns`, `/campaigns/[id]` | Working UI + create form; **local demo store** (`getCampaigns()`), not Prisma |
+| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner |
+| `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=` |
+| `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture |
+| `/notifications` | Merged inbox: ops announcements + campaign lifecycle rows from `/v1/customer/notifications` |
 | `/map` | mapcn/MapLibre with `@workspace/geo` Nairobi fixtures |
 | `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
 | `/reports` | **Coming soon** |
@@ -29,7 +32,7 @@ Sidebar app shell. What is real vs placeholder:
 | `/settings/account`, `/settings/notifications`, `/settings/tour` | Working UI |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
 
-Announcements inbox and support hit `/v1/customer/*` and `/v1/public/support*` when auth is on. Campaign booking APIs are still [ROADMAP.md](../shared/ROADMAP.md) milestone 2/4.
+Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
 
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
 - Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)

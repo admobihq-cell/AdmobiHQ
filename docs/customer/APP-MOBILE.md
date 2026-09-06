@@ -55,6 +55,21 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 
 ---
 
+## Campaigns
+
+API-backed against `/v1/customer/campaigns` (same contracts as customer-web):
+
+- **List / detail / calendar** — real data; status badges include derived flight phase (`scheduled` / `live` / `completed`).
+- **Create / edit** — full-screen four-step wizard at `/campaigns/new` (resume with `id` param). Creative picker uses `expo-image-picker` for images **and** video; formats are PNG/JPG/GIF/MP4 only (from `CREATIVE_SPECS` in `@workspace/ops-contracts`). No toast library — inline banners (`ApiErrorBanner` pattern).
+- **Review banner** — shows ops `review_reason` verbatim when status is `changes_requested` or `rejected`.
+
+## Notifications + push
+
+- **Merged inbox** (`useCustomerInbox`) — announcements + `/v1/customer/notifications`, newest-first; row tap marks read and follows `href` (e.g. `/campaigns/:id`).
+- **Push deep links** — `usePushRegistration` reads `data.href` from cold start, background, and foreground taps; sign-in re-registers so `clerk_user_id` is linked immediately (`userId` in effect deps).
+
+---
+
 ## Building an APK for the team
 
 From **`apps/customer-mobile`** (not repo root):

@@ -2,7 +2,7 @@
 
 Companion to [`2026-09-06-campaigns-end-to-end.md`](./2026-09-06-campaigns-end-to-end.md). That plan is the record of what to build; **this file is the record of what is not yet settled**. Update it as gaps close — do not let a resolved gap sit here looking open.
 
-**Status as of 2026-09-06:** Tasks 1–15 shipped (database through customer-web, ops web/mobile, customer-mobile campaign flow + merged inbox/push deep links). Tasks 16–17 pending.
+**Status as of 2026-09-06:** Tasks 1–15 and 17 shipped. Task 16 automated checks green; device/EAS UI round-trip still open (see §3).
 
 ---
 
@@ -107,6 +107,7 @@ Things believed correct but **not yet proven end to end**.
 | `campaigns` permission gating | Typecheck forced both `PERMISSION_LABELS` maps to be filled | An ops **member** with only `campaigns` sees the section and nothing else; without it, `/campaigns` redirects |
 | customer-mobile creative upload | Typecheck and lint only | A real pick-and-upload from the camera roll on a device — the RN `FormData` `{ uri, name, type }` shape and the `Authorization`-header thumbnails are both untested against a running API |
 | customer-mobile calendar drag | Typecheck and lint only | Drag a draft to move it and confirm the PATCH lands; confirm a submitted or approved bar refuses the gesture instead of snapping back |
+| Task 16 UI / push / EAS round-trip | API lifecycle: **14/14** live-DB tests pass; ops-contracts + push/email unit tests pass; typecheck green for api/ops/ops-mobile/customer-web/customer-mobile | Manual steps 1–9 in the plan (web create → five submit notifications → ops request-changes → mobile re-upload → ops-mobile approve → calendars → unapprove → cross-advertiser 404 → `/activity`). EAS `--environment preview` builds for customer-mobile + ops-mobile not run in this session |
 
 ---
 

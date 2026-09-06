@@ -19,7 +19,20 @@ Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC
 
 ### Routes (dashboard)
 
-Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, Waitlist, Media Kit, Announcements, Support, **Finances**, **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, tour).
+Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, Waitlist, Media Kit, Announcements, Support, **Finances**, **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, tour).
+
+### Campaigns (advertiser review)
+
+Sidebar **Campaigns** (permission: `campaigns`) — list + detail for advertiser submissions. Pending badge counts `status: "submitted"` (same generalized `pendingCounts` map as Driver Applications).
+
+| Decision | Effect | Advertiser-visible reason? |
+|----------|--------|----------------------------|
+| Approve | Status → `approved`; flight phase derived from dates | No |
+| Request changes | Status → `changes_requested`; campaign editable again | **Yes** — required |
+| Reject | Status → `rejected` | **Yes** — required |
+| Unapprove | Walks an approval back (with reason) | **Yes** |
+
+Creative tiles use the authenticated ops file proxy (image lightbox / `<video controls>`) and show `checkCreativeDimensions` compliance. Do not confuse with **Campaign Leads** (marketing `/start-campaign` form) — that is a different entity and alert type (`campaign` vs `campaign_submission`).
 
 ### Activity / audit
 
