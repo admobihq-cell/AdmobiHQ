@@ -1,5 +1,7 @@
 // Pure layout helpers for the flight calendar — no React, no gestures.
 
+import type { CampaignFlightPhase } from "@workspace/ops-contracts"
+
 import {
   addDays,
   daysBetween,
@@ -83,10 +85,15 @@ export function dayTitle(anchor: Date): string {
 }
 
 export type Flight = {
-  id: string
+  id: number
   name: string
   status: string
-  market: string
+  flightPhase: CampaignFlightPhase
+  market: string | null
+  /** Drag and resize are refused for anything ops is looking at or has already
+   * approved — the API answers 409, so the bar shouldn't move in the first
+   * place. */
+  editable: boolean
   startsOn: DayIso
   endsOn: DayIso
 }

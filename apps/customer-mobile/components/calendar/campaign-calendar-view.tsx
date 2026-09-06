@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import { Pressable, Text, View } from "react-native"
+import type { CampaignDto } from "@workspace/ops-contracts"
 
 import { StatusBadge } from "@/components/ui/status-badge"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import {
   FlightCalendar,
   FlightListRow,
+  IN_QUEUE_COLOR,
   type FlightPlanRange,
 } from "@/components/calendar/flight-calendar"
 import type { Flight } from "@/components/calendar/calendar-model"
@@ -17,56 +20,48 @@ import {
   toDayIso,
   type DayIso,
 } from "@/lib/campaign-calendar"
-import {
-  rescheduleCampaign,
-  scheduleCampaign,
-  type Campaign,
-} from "@/lib/campaigns"
+import { formatCampaignError, useUpdateCampaign } from "@/lib/use-campaigns"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-const LEGEND = [
-  { label: "Active", key: "active" },
-  { label: "Scheduled", key: "scheduled" },
-  { label: "Draft", key: "draft" },
-] as const
+/** The API answers 409 for anything else, so the calendar refuses the gesture
+ * rather than showing a bar snap back a second later. */
+const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
 
-function legendColor(colors: ReturnType<typeof useThemeColors>, key: string): string {
-  if (key === "active") return colors.primary
-  if (key === "scheduled") return `${colors.primary}80`
-  return `${colors.mutedForeground}66`
+function toFlight(campaign: CampaignDto): Flight | null {
+  const window = resolveFlight(campaign)
+  if (!window) return null
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    status: campaign.status,
+    flightPhase: campaign.flight_phase,
+    market: campaign.market,
+    editable: EDITABLE_STATUSES.has(campaign.status),
+    startsOn: window.startsOn,
+    endsOn: window.endsOn,
+  }
 }
 
-export function CampaignCalendarView({
-  campaigns,
-  onChanged,
-}: {
-  campaigns: Campaign[]
-  onChanged: () => void
-}) {
+export function CampaignCalendarView({ campaigns }: { campaigns: CampaignDto[] }) {
   const router = useRouter()
   const colors = useThemeColors()
   const styles = useStyles()
+  const update = useUpdateCampaign()
+
+  const legend = [
+    { label: "Live", color: colors.primary },
+    { label: "Scheduled", color: `${colors.primary}73` },
+    { label: "In queue", color: IN_QUEUE_COLOR },
+    { label: "Needs changes", color: colors.danger },
+    { label: "Draft", color: `${colors.mutedForeground}66` },
+  ]
 
   const [selectedIso, setSelectedIso] = useState<DayIso>(() => toDayIso(new Date()))
   const [rangeStart, setRangeStart] = useState<DayIso>(() => toDayIso(new Date()))
   const [rangeEnd, setRangeEnd] = useState<DayIso>(() => toDayIso(new Date()))
 
-  const flights: Flight[] = useMemo(
-    () =>
-      campaigns
-        .map((campaign): Flight | null => {
-          const flight = resolveFlight(campaign)
-          if (!flight) return null
-          return {
-            id: campaign.id,
-            name: campaign.name,
-            status: campaign.status,
-            market: campaign.market,
-            startsOn: flight.startsOn,
-            endsOn: flight.endsOn,
-          }
-        })
-        .filter((f): f is Flight => f !== null),
+  const flights = useMemo(
+    () => campaigns.map(toFlight).filter((flight): flight is Flight => flight !== null),
     [campaigns],
   )
 
@@ -85,20 +80,23 @@ export function CampaignCalendarView({
     [flights, rangeEnd, rangeStart],
   )
 
-  async function moveFlight(id: string, dayDelta: number) {
-    const campaign = campaigns.find((c) => c.id === id)
-    const flight = campaign && resolveFlight(campaign)
-    if (!flight) return
-    const start = toDayIso(addDays(parseDayIso(flight.startsOn), dayDelta))
-    const end = toDayIso(addDays(parseDayIso(flight.endsOn), dayDelta))
-    await rescheduleCampaign(id, start, end)
-    onChanged()
+  function reschedule(id: number, startsOn: DayIso, endsOn: DayIso) {
+    update.mutate({ id, data: { starts_on: startsOn, ends_on: endsOn } })
   }
 
-  async function resizeFlight(id: string, edge: "start" | "end", dayDelta: number) {
-    const campaign = campaigns.find((c) => c.id === id)
-    const flight = campaign && resolveFlight(campaign)
-    if (!flight) return
+  function moveFlight(id: number, dayDelta: number) {
+    const flight = flights.find((f) => f.id === id)
+    if (!flight || dayDelta === 0) return
+    reschedule(
+      id,
+      toDayIso(addDays(parseDayIso(flight.startsOn), dayDelta)),
+      toDayIso(addDays(parseDayIso(flight.endsOn), dayDelta)),
+    )
+  }
+
+  function resizeFlight(id: number, edge: "start" | "end", dayDelta: number) {
+    const flight = flights.find((f) => f.id === id)
+    if (!flight || dayDelta === 0) return
     let start = flight.startsOn
     let end = flight.endsOn
     if (edge === "start") {
@@ -108,13 +106,7 @@ export function CampaignCalendarView({
       end = toDayIso(addDays(parseDayIso(flight.endsOn), dayDelta))
       if (end < start) end = start
     }
-    await rescheduleCampaign(id, start, end)
-    onChanged()
-  }
-
-  async function placeDraft(id: string) {
-    await scheduleCampaign(id, selectedIso)
-    onChanged()
+    reschedule(id, start, end)
   }
 
   function planRange(range: FlightPlanRange) {
@@ -128,14 +120,19 @@ export function CampaignCalendarView({
   return (
     <View style={styles.wrap}>
       <View style={styles.legend}>
-        {LEGEND.map((item) => (
-          <View key={item.key} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: legendColor(colors, item.key) }]} />
+        {legend.map((item) => (
+          <View key={item.label} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: item.color }]} />
             <Text style={styles.legendText}>{item.label}</Text>
           </View>
         ))}
-        <Text style={styles.legendHint}>Long-press a flight to drag · long-press a day to plan</Text>
+        <Text style={styles.legendHint}>
+          Long-press a draft to drag it · long-press a day to plan. Campaigns in review or
+          approved are locked.
+        </Text>
       </View>
+
+      {update.error ? <ApiErrorBanner message={formatCampaignError(update.error)} /> : null}
 
       <FlightCalendar
         flights={flights}
@@ -146,8 +143,8 @@ export function CampaignCalendarView({
           setRangeEnd(end)
         }}
         onPlanRange={planRange}
-        onMoveFlight={(id, delta) => void moveFlight(id, delta)}
-        onResizeFlight={(id, edge, delta) => void resizeFlight(id, edge, delta)}
+        onMoveFlight={moveFlight}
+        onResizeFlight={resizeFlight}
       />
 
       <View style={styles.section}>
@@ -181,24 +178,31 @@ export function CampaignCalendarView({
         {unscheduled.length === 0 ? (
           <Text style={styles.empty}>Every campaign has a flight window.</Text>
         ) : (
-          unscheduled.map((campaign) => (
-            <View key={campaign.id} style={styles.unscheduledRow}>
-              <View style={styles.unscheduledHead}>
-                <Text style={styles.unscheduledName} numberOfLines={1}>
-                  {campaign.name}
+          unscheduled.map((campaign) => {
+            const editable = EDITABLE_STATUSES.has(campaign.status)
+            return (
+              <View key={campaign.id} style={styles.unscheduledRow}>
+                <View style={styles.unscheduledHead}>
+                  <Text style={styles.unscheduledName} numberOfLines={1}>
+                    {campaign.name}
+                  </Text>
+                  <StatusBadge status={campaign.status} flightPhase={campaign.flight_phase} />
+                </View>
+                <Text style={styles.unscheduledMeta} numberOfLines={1}>
+                  {campaign.market ?? "Market not set"}
                 </Text>
-                <StatusBadge status={campaign.status} />
+                <Pressable
+                  style={[styles.placeButton, !editable && styles.placeButtonDisabled]}
+                  disabled={!editable || update.isPending}
+                  onPress={() => reschedule(campaign.id, selectedIso, selectedIso)}
+                >
+                  <Text style={styles.placeButtonText}>
+                    {editable ? `Start on ${formatDayHeading(selectedIso)}` : "Locked for review"}
+                  </Text>
+                </Pressable>
               </View>
-              <Text style={styles.unscheduledMeta} numberOfLines={1}>
-                {campaign.market}
-              </Text>
-              <Pressable style={styles.placeButton} onPress={() => void placeDraft(campaign.id)}>
-                <Text style={styles.placeButtonText}>
-                  Start on {formatDayHeading(selectedIso)}
-                </Text>
-              </Pressable>
-            </View>
-          ))
+            )
+          })
         )}
       </View>
     </View>
@@ -267,6 +271,7 @@ function useStyles() {
       borderWidth: 1,
       borderColor: c.border,
     },
+    placeButtonDisabled: { opacity: 0.5 },
     placeButtonText: { ...typography.label, color: c.text, fontWeight: "600" as const },
   }))
 }

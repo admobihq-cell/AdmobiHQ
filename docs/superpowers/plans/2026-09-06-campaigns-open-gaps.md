@@ -2,7 +2,7 @@
 
 Companion to [`2026-09-06-campaigns-end-to-end.md`](./2026-09-06-campaigns-end-to-end.md). That plan is the record of what to build; **this file is the record of what is not yet settled**. Update it as gaps close — do not let a resolved gap sit here looking open.
 
-**Status as of 2026-09-06:** Tasks 1–3 shipped (database, contracts + creative specs, Cloudinary generalization). Tasks 4–17 pending.
+**Status as of 2026-09-06:** Tasks 1–12 and 14–15 shipped (database through customer-web, ops web, ops mobile, customer mobile campaign flow). Tasks 13, 16, 17 pending.
 
 ---
 
@@ -88,7 +88,14 @@ The additive SQL grants `campaigns` to the **seeded `Member` role only** (matchi
 
 Observed in the live round trip: a 2-frame GIF came back with `durationSeconds: 0.2`. Harmless — we store it — and potentially useful if a max-loop-length rule ever lands. Noted so nobody later treats a non-null duration as proof of "this is a video".
 
-### 2.5 `graphify query` is not runnable as documented
+### 2.5 Two mobile screens deviate from the plan's wording (deliberate)
+
+Both were written to match what shipped on web rather than the plan's letter:
+
+- **Edit route.** The plan says `app/(tabs)/campaigns/[id]/edit.tsx`. Customer-web resumes and edits through `/campaigns/new?id=`, and mobile now does the same (`/campaigns/new` with an `id` param). One wizard host, one set of guards, and a deep link written for either surface works on both. `[id].tsx` stays a file rather than becoming a directory.
+- **Video creative in the picker.** No video player is installed in customer-mobile and the plan forbids adding dependencies for this. A video creative renders as a play-icon tile with its filename; the advertiser can delete and re-pick it but can't watch it back in the app. Ops web is where video is actually reviewed.
+
+### 2.6 `graphify query` is not runnable as documented
 
 `CLAUDE.md` instructs running `graphify query "<question>"` first for codebase questions. `npx graphify` fails (`could not determine executable to run`); the bare `graphify` binary works. Minor, but the documented command is wrong for anyone without it on PATH.
 
@@ -105,6 +112,8 @@ Things believed correct but **not yet proven end to end**.
 | MP4 upload / delivery | Nothing — no fixture small enough to inline | Round-trip a real MP4 when Task 8 lands; confirm `duration_seconds` populates and the video preview plays in both ops surfaces |
 | 50 MB upload actually completes | The base64 ceiling that would have blocked it is removed | One genuine large-file upload over a real connection, ideally from mobile |
 | `campaigns` permission gating | Typecheck forced both `PERMISSION_LABELS` maps to be filled | An ops **member** with only `campaigns` sees the section and nothing else; without it, `/campaigns` redirects |
+| customer-mobile creative upload | Typecheck and lint only | A real pick-and-upload from the camera roll on a device — the RN `FormData` `{ uri, name, type }` shape and the `Authorization`-header thumbnails are both untested against a running API |
+| customer-mobile calendar drag | Typecheck and lint only | Drag a draft to move it and confirm the PATCH lands; confirm a submitted or approved bar refuses the gesture instead of snapping back |
 
 ---
 
