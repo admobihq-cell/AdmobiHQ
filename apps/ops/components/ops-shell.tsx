@@ -14,6 +14,7 @@ import {
   Mail,
   Map,
   Megaphone,
+  MonitorPlay,
   Radio,
   Settings,
   Truck,
@@ -78,6 +79,12 @@ const navItems: Array<{
     label: "Driver Applications",
     icon: FileCheck2,
     permission: "driver_applications",
+  },
+  {
+    href: "/campaigns",
+    label: "Campaigns",
+    icon: MonitorPlay,
+    permission: "campaigns",
   },
   {
     href: "/finances",
@@ -183,7 +190,7 @@ export function OpsShell({
   userName,
   orgName,
   userId,
-  pendingDriverApplicationsCount = 0,
+  pendingCounts = {},
 }: {
   children: React.ReactNode
   role: OpsRole
@@ -191,7 +198,11 @@ export function OpsShell({
   userName: string
   orgName: string | null
   userId: string
-  pendingDriverApplicationsCount?: number
+  /** Review-queue badge counts, keyed by nav href. Ops's review queues double
+   * as its notification inbox, so this is the only "unread count" the app has.
+   * Keyed rather than named per section: a third hardcoded branch here was the
+   * wrong shape. */
+  pendingCounts?: Partial<Record<string, number>>
 }) {
   const pathname = usePathname()
   const canSee = (item: {
@@ -208,6 +219,7 @@ export function OpsShell({
     (
       [
         "driver_applications",
+        "campaigns",
         "support",
         "leads",
         "fleet",
@@ -256,13 +268,12 @@ export function OpsShell({
                         >
                           <item.icon />
                           <span>{item.label}</span>
-                          {item.href === "/driver-applications" &&
-                          pendingDriverApplicationsCount > 0 ? (
+                          {(pendingCounts[item.href] ?? 0) > 0 ? (
                             <Badge
                               variant="secondary"
                               className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
                             >
-                              {pendingDriverApplicationsCount}
+                              {pendingCounts[item.href]}
                             </Badge>
                           ) : null}
                         </Link>

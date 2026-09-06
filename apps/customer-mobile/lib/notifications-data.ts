@@ -1,14 +1,26 @@
+import type { CustomerNotificationDto } from "@workspace/ops-contracts"
+
 import { Gift, Megaphone, Receipt, Send, Warning, type AppIcon } from "@/components/icons"
 
 export type NotificationCategory = "campaign" | "billing" | "announcement" | "promo" | "system"
 export type NotificationGroup = "today" | "earlier"
 
+/** Which feed a row came from. The inbox merges two tables with different
+ * lifetimes, and marking a row read has to go back to the right one. */
+export type NotificationSource = "announcement" | "campaign"
+
 export type NotificationItem = {
   id: string
+  source: NotificationSource
+  /** Row id within its own feed — `id` is prefixed and can't be sent to an API. */
+  sourceId: number
   category: NotificationCategory
   title: string
   body: string
   imageUrl: string | null
+  /** In-app destination for a tap, e.g. `/campaigns/12`. Set by the API so a
+   * row and the push notification for the same event land in the same place. */
+  href: string | null
   /** ISO timestamp — formatted at render so relative labels stay current. */
   createdAt: string
   read: boolean
@@ -93,10 +105,34 @@ function parseCategory(value: string | null | undefined): NotificationCategory {
 export function announcementDeliveryToNotificationItem(dto: AnnouncementDeliveryDto): NotificationItem {
   return {
     id: `announcement-${dto.id}`,
+    source: "announcement",
+    sourceId: dto.id,
     category: parseCategory(dto.category),
     title: dto.title,
     body: dto.body,
     imageUrl: dto.image_url ?? null,
+    href: null,
+    createdAt: dto.created_at,
+    read: Boolean(dto.read_at),
+    group: dayDiff(dto.created_at) <= 0 ? "today" : "earlier",
+  }
+}
+
+/** Campaign lifecycle events — submitted, approved, rejected, changes
+ * requested. `href` comes from the API rather than being rebuilt here, so the
+ * inbox row and the notification tap for the same event agree. */
+export function customerNotificationToNotificationItem(
+  dto: CustomerNotificationDto,
+): NotificationItem {
+  return {
+    id: `campaign-notification-${dto.id}`,
+    source: "campaign",
+    sourceId: dto.id,
+    category: "campaign",
+    title: dto.title,
+    body: dto.body,
+    imageUrl: null,
+    href: dto.href,
     createdAt: dto.created_at,
     read: Boolean(dto.read_at),
     group: dayDiff(dto.created_at) <= 0 ? "today" : "earlier",

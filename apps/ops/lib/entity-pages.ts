@@ -17,6 +17,22 @@ export const DRIVER_APPLICATIONS_PAGE: EntityPageMeta = {
   columns: ["Submitted", "Name", "Phone", "City", "Status"],
 }
 
+export const CAMPAIGNS_PAGE: EntityPageMeta = {
+  title: "Campaigns",
+  description:
+    "Campaigns submitted by signed-in advertisers — brief, flight window, budget, and creative — awaiting review.",
+  columns: [
+    "Submitted",
+    "Campaign",
+    "Advertiser",
+    "Market",
+    "Flight",
+    "Budget",
+    "Creative",
+    "Status",
+  ],
+}
+
 export const FLEET_PAGE: EntityPageMeta = {
   title: "Fleet Partners",
   description: "Fleet operators applying to join the Admobi network.",

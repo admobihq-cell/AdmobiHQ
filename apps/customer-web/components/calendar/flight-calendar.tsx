@@ -28,7 +28,7 @@ import {
   resolveFlight,
   toDayIso,
 } from "@/lib/campaign-calendar"
-import { rescheduleCampaign, type Campaign } from "@/lib/campaigns"
+import type { CampaignDto } from "@workspace/ops-contracts"
 
 import "./flight-calendar.css"
 
@@ -41,6 +41,8 @@ export const CALENDAR_VIEWS = [
 
 export type CalendarViewId = (typeof CALENDAR_VIEWS)[number]["id"]
 
+export const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
+
 export type FlightPlanRange = {
   startsOn: string
   endsOn: string
@@ -51,13 +53,15 @@ export function FlightCalendar({
   onDatesChange,
   onSelectDay,
   onPlanRange,
-  onEventsChanged,
+  onReschedule,
 }: {
-  campaigns: Campaign[]
+  campaigns: CampaignDto[]
   onDatesChange: (rangeStart: string, rangeEnd: string) => void
   onSelectDay: (iso: string) => void
   onPlanRange: (range: FlightPlanRange) => void
-  onEventsChanged: () => void
+  /** Persist a drag/resize. Returning false reverts the move on screen —
+   * used when the API rejects it. */
+  onReschedule: (id: number, startsOn: string, endsOn: string) => Promise<boolean>
 }) {
   const router = useRouter()
   const calendarRef = useRef<FullCalendar>(null)
@@ -119,12 +123,11 @@ export function FlightCalendar({
     }
     const startsOn = toDayIso(start)
     const endsOn = end ? inclusiveEndIso(toDayIso(end)) : startsOn
-    const updated = rescheduleCampaign(id, startsOn, endsOn < startsOn ? startsOn : endsOn)
-    if (!updated) {
-      revert()
-      return
-    }
-    onEventsChanged()
+    void onReschedule(Number(id), startsOn, endsOn < startsOn ? startsOn : endsOn).then((ok) => {
+      // The optimistic move stays on screen while the PATCH is in flight;
+      // revert only once the server actually refuses it.
+      if (!ok) revert()
+    })
   }
 
   function go(action: "prev" | "next" | "today") {
@@ -228,16 +231,37 @@ export function FlightCalendar({
   )
 }
 
-function campaignToEvent(campaign: Campaign): EventInput | null {
+/** Colour by what the advertiser cares about: an approved campaign shows its
+ * flight phase, everything else shows where it sits in review. */
+function eventVariant(campaign: CampaignDto): string {
+  if (campaign.status === "approved") return campaign.flight_phase
+  if (campaign.status === "rejected" || campaign.status === "changes_requested") {
+    return "needs-changes"
+  }
+  return campaign.status
+}
+
+/** Only an editable campaign may be dragged. A campaign under review must not
+ * silently change its dates while ops is looking at it, and an approved one is
+ * a commitment. FullCalendar simply won't start the drag, so there is no
+ * refusal to explain — the badge and review banner already say why. */
+function isDraggable(campaign: CampaignDto): boolean {
+  return EDITABLE_STATUSES.has(campaign.status)
+}
+
+function campaignToEvent(campaign: CampaignDto): EventInput | null {
   const flight = resolveFlight(campaign)
   if (!flight) return null
   return {
-    id: campaign.id,
+    id: String(campaign.id),
     title: campaign.name,
     start: flight.startsOn,
     end: exclusiveEndIso(flight.endsOn),
     allDay: true,
-    classNames: ["flight-event", `flight-event--${campaign.status}`],
+    editable: isDraggable(campaign),
+    startEditable: isDraggable(campaign),
+    durationEditable: isDraggable(campaign),
+    classNames: ["flight-event", `flight-event--${eventVariant(campaign)}`],
     extendedProps: {
       market: campaign.market,
       status: campaign.status,

@@ -17,8 +17,8 @@ import {
   formatKesPrecise,
   zoneTiers,
 } from "@/lib/seo/pricing-data"
-import { useAnimatedNumber } from "@/components/pricing/use-animated-number"
-import { NumberStepper } from "@/components/pricing/number-stepper"
+import { useAnimatedNumber } from "@workspace/ui/hooks/use-animated-number"
+import { NumberStepper } from "@workspace/ui/components/number-stepper"
 
 type ZoneChoiceId = (typeof zoneTiers)[number]["id"] | "all-zones"
 
