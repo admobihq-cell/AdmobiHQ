@@ -280,13 +280,20 @@ write, not a new table.
 
 ### driver-mobile (primary)
 
-Entry points, both gated on the `sos` platform flag:
+A red **floating action button, present on every screen**, gated on the `sos`
+platform flag. It mounts once in `app/_layout.tsx` as a sibling of the root
+`<Stack>` rather than being added per screen, so no future screen can forget
+it. Hidden only where it would be wrong or unreachable: the onboarding,
+sign-in, and sign-up screens, the profile-setup wizard, and the SOS screens
+themselves.
 
-- A red SOS button on the dashboard tab (`app/(tabs)/index.tsx`).
-- A nav-drawer entry (`components/app/nav-drawer.tsx`).
+A global FAB is safe here because **the FAB navigates; it does not file an
+incident**. Tapping it opens the SOS screen, and nothing reaches ops until the
+driver picks an incident type and taps Send SOS. A pocket-tap costs a
+dismissed screen, not a false alarm in the ops queue.
 
-Deliberately **not** a global floating button on every screen — pocket-taps
-and accidental fires would train ops to ignore the queue.
+A nav-drawer entry (`components/app/nav-drawer.tsx`) is kept as well, for
+drivers who navigate by menu.
 
 `app/sos/index.tsx` — the submit flow, one screen:
 
@@ -321,9 +328,16 @@ the screen unmounts or the status goes terminal.
 
 ### driver-web
 
-A red **SOS** button in the shell header (`components/shell`), always visible
-— not buried under `/settings` the way support is. Same flow at `app/sos`,
-tracking at `app/sos/[id]`.
+The same red **floating action button on every page**, fixed bottom-right,
+rendered once inside `components/shell/app-shell.tsx` — which already receives
+`enabledFlags` from the `(shell)` layout, so the `sos` gate costs nothing
+extra. Not buried under `/settings` the way support is, and not a header
+button: on a phone browser the thumb is at the bottom of the screen, not the
+top.
+
+Same flow at `app/(shell)/sos`, tracking at `app/(shell)/sos/[id]`. As on
+mobile, the FAB only navigates — nothing is filed until the driver picks a
+type and submits.
 
 Photos use `<input type="file" accept="image/*" capture="environment">` —
 native camera capture on mobile browsers, no dropzone dependency.
@@ -442,7 +456,7 @@ and the location/cost decisions. Sections added to `docs/driver/DRIVER-APP.md`,
 2. driver-mobile: entry points, submit flow, tracking screen, ping loop.
 3. ops: SOS inbox, detail view, nav, notification bell source.
 4. ops-mobile: list, detail, push channel, deep link.
-5. driver-web: header button, submit flow, tracking page.
+5. driver-web: global FAB, submit flow, tracking page.
 6. Docs and tests.
 
 Phases 3 and 5 are independent of each other once phase 1 lands. Phase 2

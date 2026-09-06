@@ -1565,8 +1565,8 @@ git commit -m "feat(ops-api-client): add safety incident namespace"
 - Create: `apps/driver-mobile/app/sos/_layout.tsx`
 - Create: `apps/driver-mobile/app/sos/index.tsx`
 - Create: `apps/driver-mobile/app/sos/[id].tsx`
-- Create: `apps/driver-mobile/components/sos/sos-button.tsx`
-- Modify: `apps/driver-mobile/app/(tabs)/index.tsx`
+- Create: `apps/driver-mobile/components/sos/sos-fab.tsx`
+- Modify: `apps/driver-mobile/app/_layout.tsx:76-87` (inside `RootNavigator`)
 - Modify: `apps/driver-mobile/components/app/nav-drawer.tsx`
 
 **Interfaces:**
@@ -1699,19 +1699,47 @@ export function useIncidentPing(
 }
 ```
 
-- [ ] **Step 4: Build the SOS entry button**
+- [ ] **Step 4: Build the global SOS FAB**
 
-Create `apps/driver-mobile/components/sos/sos-button.tsx` — a red pill/button using `useThemedStyles` and the theme tokens from `@/lib/theme`, matching how `components/ui/stat-card.tsx` consumes them. It routes to `/sos` and renders nothing when the `sos` flag is off.
+Create `apps/driver-mobile/components/sos/sos-fab.tsx` — a red circular floating action button using `useThemedStyles` and the theme tokens from `@/lib/theme`, matching how `components/ui/stat-card.tsx` consumes them. Reference `apps/ops-mobile/components/app/fab-menu.tsx` for the positioning and elevation conventions already used in this monorepo's Expo apps.
 
-Wire it into:
-- `apps/driver-mobile/app/(tabs)/index.tsx` — near the top of the dashboard.
-- `apps/driver-mobile/components/app/nav-drawer.tsx` — a drawer entry, following the existing item shape in that file.
+It must:
+- Sit `position: "absolute"`, bottom-right, above the tab bar — offset by `useSafeAreaInsets().bottom` plus the tab bar height so it never covers a tab.
+- Carry `accessibilityRole="button"` and `accessibilityLabel="Report an emergency"`.
+- Route to `/sos` on press. **It only navigates — it never files an incident.** That is what makes a global FAB safe: a pocket-tap costs a dismissed screen, not a false alarm in the ops queue.
+- Render `null` when `usePlatformFlags().sos` is false.
+- Render `null` on the routes where it would be wrong or unreachable. Use `usePathname()` from `expo-router`:
+
+```tsx
+const HIDDEN_PREFIXES = ["/sos", "/sign-in", "/sign-up", "/profile-setup"]
+
+const pathname = usePathname()
+if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null
+```
+
+- [ ] **Step 5: Mount the FAB once, globally**
+
+In `apps/driver-mobile/app/_layout.tsx`, inside `RootNavigator`'s returned tree (lines 76-87), add it as a sibling of `<Stack>` so it overlays every screen:
+
+```tsx
+return (
+  <AuthenticatedApp>
+    <StatusBar style={statusBarStyle} />
+    <Stack screenOptions={screenOptions}>
+      {/* ...existing Stack.Screen entries, unchanged... */}
+    </Stack>
+    <SosFab />
+  </AuthenticatedApp>
+)
+```
+
+Mounting it here rather than per-screen is the point: a screen added six months from now gets the FAB for free, and no one can forget it. It sits inside `AuthenticatedApp` so it never renders for a signed-out user.
+
+Also add a drawer entry in `apps/driver-mobile/components/app/nav-drawer.tsx`, following the existing item shape in that file — some drivers navigate by menu, and the FAB is easy to miss on first use.
 
 `apps/driver-mobile/lib/flags.ts` needs **no change** — `usePlatformFlags()` returns a `Record<string, boolean>` fetched from `/v1/public/config`, so read `usePlatformFlags().sos` directly. Adding `"sos"` to `PLATFORM_FLAG_KEYS` in Task 2 is what makes the row exist and appear in ops Settings.
 
-Deliberately **not** a global floating button on every screen: pocket-taps would train ops to ignore the queue.
-
-- [ ] **Step 5: Build the submit screen**
+- [ ] **Step 6: Build the submit screen**
 
 Create `apps/driver-mobile/app/sos/_layout.tsx` (a `Stack` with `presentation: "modal"`, matching `app/profile-setup/_layout.tsx`) and `apps/driver-mobile/app/sos/index.tsx`, in this order top to bottom:
 
@@ -1723,7 +1751,7 @@ Create `apps/driver-mobile/app/sos/_layout.tsx` (a `Stack` with `presentation: "
 
 **No severity picker.** Severity comes from the server's `severityForType`.
 
-- [ ] **Step 6: Build the tracking screen**
+- [ ] **Step 7: Build the tracking screen**
 
 Create `apps/driver-mobile/app/sos/[id].tsx`:
 - `useQuery` on `getIncident`, `refetchInterval: 20_000` while the status is non-terminal.
@@ -1734,18 +1762,25 @@ Create `apps/driver-mobile/app/sos/[id].tsx`:
 - `useIncidentPing(id, incident?.status ?? null, getToken)`.
 - On mount, upload any photos handed over from the submit screen, one call each, showing per-photo progress. **Ops is alerted the moment the driver taps Send** — waiting on four uploads before alerting anyone would be the wrong trade, and a failed upload must never lose the incident.
 
-- [ ] **Step 7: Run it on a device**
+- [ ] **Step 8: Run it on a device**
 
 ```bash
 npx expo start --clear
 ```
-Verify: SOS button appears when the flag is on and is gone when off; denying the location prompt still files the report; the incident appears in `GET /v1/driver/sos`; photos land; backgrounding the app stops the pings and foregrounding resumes them.
 
-- [ ] **Step 8: Commit**
+Verify:
+- The FAB appears on **every** screen — dashboard, deliveries, earnings, settings, routes, payouts, support, notifications — and is absent on sign-in, sign-up, profile-setup, and the SOS screens themselves.
+- It disappears entirely when the `sos` flag is toggled off in ops Settings (allow up to 5 minutes, or foreground the app to force a refresh — see the `MIN_REFRESH_MS` note in `lib/flags.ts`).
+- It never overlaps the tab bar on a device with a home indicator, and never covers a screen's own primary action.
+- Denying the location prompt still files the report.
+- The incident appears in `GET /v1/driver/sos`; photos land.
+- Backgrounding the app stops the pings and foregrounding resumes them.
+
+- [ ] **Step 9: Commit**
 
 ```bash
-git add apps/driver-mobile/lib/sos.ts apps/driver-mobile/lib/use-incident-ping.ts apps/driver-mobile/app/sos apps/driver-mobile/components/sos apps/driver-mobile/app/\(tabs\)/index.tsx apps/driver-mobile/components/app/nav-drawer.tsx apps/driver-mobile/lib/flags.ts
-git commit -m "feat(driver-mobile): add SOS submit and tracking screens"
+git add apps/driver-mobile/lib/sos.ts apps/driver-mobile/lib/use-incident-ping.ts apps/driver-mobile/app/sos apps/driver-mobile/components/sos apps/driver-mobile/app/_layout.tsx apps/driver-mobile/components/app/nav-drawer.tsx
+git commit -m "feat(driver-mobile): add global SOS FAB, submit, and tracking screens"
 ```
 
 ---
@@ -2009,7 +2044,7 @@ git commit -m "feat(ops-mobile): add SOS list, detail, and alert channel"
 - Create: `apps/driver-web/app/(shell)/sos/sos-client.tsx`
 - Create: `apps/driver-web/app/(shell)/sos/[id]/page.tsx`
 - Create: `apps/driver-web/app/(shell)/sos/[id]/sos-tracking-client.tsx`
-- Create: `apps/driver-web/components/shell/sos-button.tsx`
+- Create: `apps/driver-web/components/shell/sos-fab.tsx`
 - Modify: `apps/driver-web/components/shell/app-shell.tsx`
 
 **Interfaces:**
@@ -2051,9 +2086,55 @@ export function captureLocation(): Promise<{
 }
 ```
 
-- [ ] **Step 2: Add the header button**
+- [ ] **Step 2: Add the global SOS FAB**
 
-Create `apps/driver-web/components/shell/sos-button.tsx` — a red `Button` linking to `/sos`, rendered only when the `sos` platform flag is on. Wire it into `apps/driver-web/components/shell/app-shell.tsx`, next to the existing `notification-bell.tsx` in the header. In the header, not under `/settings`: a driver who needs it should not be navigating a settings tree.
+Create `apps/driver-web/components/shell/sos-fab.tsx` — a red circular floating action button linking to `/sos`, fixed bottom-right:
+
+```tsx
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Siren } from "lucide-react"
+
+import { cn } from "@workspace/ui/lib/utils"
+
+/** Routes where the FAB would be wrong or unreachable. */
+const HIDDEN_PREFIXES = ["/sos", "/auth"]
+
+export function SosFab({ enabled }: { enabled: boolean }) {
+  const pathname = usePathname()
+  if (!enabled) return null
+  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null
+
+  return (
+    <Link
+      href="/sos"
+      aria-label="Report an emergency"
+      className={cn(
+        "fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full",
+        "bg-destructive text-destructive-foreground shadow-lg transition",
+        "hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive",
+        "focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100",
+      )}
+    >
+      <Siren className="size-6" aria-hidden />
+    </Link>
+  )
+}
+```
+
+Render it once in `apps/driver-web/components/shell/app-shell.tsx`, as the last child of the shell's outermost element:
+
+```tsx
+<SosFab enabled={enabledFlags.includes("sos")} />
+```
+
+`AppShell` already receives `enabledFlags` from `app/(shell)/layout.tsx`, so the gate costs no extra fetch. One mount covers every page under `(shell)`.
+
+A FAB rather than a header button: on a phone browser the thumb reaches the bottom of the screen, not the top. Like the mobile FAB, **it only navigates** — nothing is filed until the driver picks a type and submits, so an accidental tap costs a dismissed page and not a false alarm in the ops queue.
+
+On pages whose own content reaches the bottom-right corner, add `pb-24` to the page container rather than moving the FAB — a FAB that shifts position between pages is harder to find in an emergency than one that occasionally needs padding around it.
 
 - [ ] **Step 3: Build the submit page**
 
@@ -2072,13 +2153,14 @@ The ping loop is a `useEffect` with `setInterval(…, 120_000)` guarded on `docu
 ```bash
 npm run dev -w driver-web
 ```
-Verify: the header button respects the flag; denying the geolocation prompt still files the report; the incident appears in ops within 15s; the reply thread round-trips; cancelling closes it.
+
+Verify: the FAB shows on every `(shell)` page and is absent under `/auth` and `/sos`; it respects the flag; it is reachable by keyboard (Tab to it, Enter opens `/sos`) and announces "Report an emergency" to a screen reader; denying the geolocation prompt still files the report; the incident appears in ops within 15s; the reply thread round-trips; cancelling closes it.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add apps/driver-web/lib/sos-client.ts "apps/driver-web/app/(shell)/sos" apps/driver-web/components/shell
-git commit -m "feat(driver-web): add SOS submit and tracking pages"
+git commit -m "feat(driver-web): add global SOS FAB, submit, and tracking pages"
 ```
 
 ---
