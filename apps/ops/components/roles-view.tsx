@@ -56,6 +56,7 @@ const PERMISSION_LABELS: Record<OpsPermission, string> = {
   flags: "Settings",
   activity: "Activity",
   driver_applications: "Driver Applications",
+  campaigns: "Campaigns",
 }
 
 type RoleEdit = { name: string; permissions: OpsPermission[] }

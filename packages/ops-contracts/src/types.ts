@@ -1,7 +1,7 @@
-import type { DateRangeKey } from "./enums"
+import type { CampaignFlightPhase, DateRangeKey } from "./enums"
 import type { PaginationParams } from "./schemas"
 
-export type { DateRangeKey, PaginationParams }
+export type { CampaignFlightPhase, DateRangeKey, PaginationParams }
 
 export type PaginatedResponse<T> = {
   items: T[]
@@ -124,6 +124,80 @@ export type DriverNotificationDto = {
   title: string
   body: string
   read_at: string | null
+  created_at: string
+}
+
+/** Advertiser-side counterpart to DriverNotificationDto. `href` is the deep
+ * link both the web inbox row and the Expo notification tap handler use. */
+export type CustomerNotificationDto = {
+  id: number
+  type: string
+  title: string
+  body: string
+  href: string | null
+  read_at: string | null
+  created_at: string
+}
+
+export type CampaignCreativeDto = {
+  id: number
+  /** "image" | "video" — mirrors Cloudinary's resource_type. */
+  resource_type: string
+  content_type: string
+  size_bytes: number
+  width: number | null
+  height: number | null
+  /** Decimal in the DB, so it crosses the wire as a string. */
+  duration_seconds: string | null
+  original_filename: string | null
+  slot: string
+  created_at: string
+}
+
+export type CampaignDto = {
+  id: number
+  name: string
+  objective: string | null
+  market: string | null
+  corridors: string | null
+  format: string
+  notes: string | null
+  /** Decimal in the DB, so it crosses the wire as a string. */
+  budget_kes: string | null
+  /** `YYYY-MM-DD`, or null when unscheduled. */
+  starts_on: string | null
+  ends_on: string | null
+  status: string
+  /** Derived from status + dates at read time, never stored. */
+  flight_phase: CampaignFlightPhase
+  submitted_at: string | null
+  reviewed_at: string | null
+  /** Advertiser-visible review note, shown verbatim. */
+  review_reason: string | null
+  contact_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  created_at: string
+  updated_at: string
+  creatives: CampaignCreativeDto[]
+}
+
+/** Flattened row shape for the ops campaigns list table — the detail view
+ * fetches the full CampaignDto separately. Mirrors
+ * DriverApplicationListItemDto. */
+export type CampaignListItemDto = {
+  id: number
+  name: string
+  contact_email: string | null
+  market: string | null
+  format: string
+  budget_kes: string | null
+  starts_on: string | null
+  ends_on: string | null
+  status: string
+  flight_phase: CampaignFlightPhase
+  creative_count: number
+  submitted_at: string | null
   created_at: string
 }
 

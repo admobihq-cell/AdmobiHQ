@@ -6,6 +6,9 @@ import {
   type AuditListQueryParams,
   type BroadcastCreateInput,
   type BulkResponse,
+  type CampaignDto,
+  type CampaignListItemDto,
+  type CampaignReviewInput,
   type DateRangeKey,
   type DocumentExportRequest,
   type DriverApplicationListItemDto,
@@ -207,6 +210,18 @@ export type OpsClient = {
      * caller fetches it directly (with the same bearer token) rather than
      * going through request<T>()'s JSON parsing. */
     documentFileUrl: (applicationId: number, documentId: number) => string
+  }
+  campaigns: {
+    list: (
+      params?: Partial<PaginationParams> & { status?: string },
+    ) => Promise<PaginatedResponse<CampaignListItemDto>>
+    get: (id: number) => Promise<CampaignDto>
+    review: (id: number, body: CampaignReviewInput) => Promise<CampaignDto>
+    /** No JSON endpoint — the file route streams raw bytes, so the caller
+     * fetches it directly (with the same bearer token) rather than going
+     * through request<T>()'s JSON parsing. Same shape as
+     * driverApplications.documentFileUrl above. */
+    creativeFileUrl: (campaignId: number, creativeId: number) => string
   }
 }
 
@@ -565,6 +580,28 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         }),
       documentFileUrl: (applicationId, documentId) =>
         `${baseUrl}${apiPrefix}/driver-applications/${applicationId}/documents/${documentId}/file`,
+    },
+    campaigns: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+          status: "status" in params ? params.status : undefined,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<CampaignListItemDto>>(
+          `${apiPrefix}/campaigns${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<CampaignDto>(`${apiPrefix}/campaigns/${id}`),
+      review: (id, body) =>
+        request<CampaignDto>(`${apiPrefix}/campaigns/${id}/review`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      creativeFileUrl: (campaignId, creativeId) =>
+        `${baseUrl}${apiPrefix}/campaigns/${campaignId}/creatives/${creativeId}/file`,
     },
   }
 }
