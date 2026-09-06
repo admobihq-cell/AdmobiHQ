@@ -370,3 +370,59 @@ export type ListQueryParams = Partial<PaginationParams> & {
   city?: string
   vehicleType?: string
 }
+
+// ---------------------------------------------------------------------------
+// Driver SOS / safety incidents
+// ---------------------------------------------------------------------------
+
+/** Deliberately carries no cloudinary_public_id — the private id and every
+ *  signed URL stay server-side; clients address a photo by this row id only. */
+export type SafetyIncidentPhotoDto = {
+  id: number
+  content_type: string
+  created_at: string
+}
+
+export type SafetyIncidentUpdateDto = {
+  id: number
+  author_type: "driver" | "ops" | "system"
+  author_email: string | null
+  body: string
+  internal_note: boolean
+  created_at: string
+}
+
+export type SafetyIncidentDto = {
+  id: number
+  driver_name: string | null
+  driver_phone: string | null
+  type: string
+  severity: string
+  status: string
+  description: string | null
+  reported_lat: number | null
+  reported_lng: number | null
+  reported_accuracy_m: number | null
+  last_lat: number | null
+  last_lng: number | null
+  last_location_at: string | null
+  acknowledged_at: string | null
+  acknowledged_by_email: string | null
+  resolved_at: string | null
+  resolved_by_email: string | null
+  resolution: string | null
+  photo_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type SafetyIncidentDetailDto = SafetyIncidentDto & {
+  updates: SafetyIncidentUpdateDto[]
+  photos: SafetyIncidentPhotoDto[]
+}
+
+export type SafetyListQueryParams = Partial<PaginationParams> & {
+  status?: string
+  type?: string
+  severity?: string
+}
