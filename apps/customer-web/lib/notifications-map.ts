@@ -3,6 +3,8 @@ import type {
   NotificationTone,
 } from "@workspace/ui/lib/notifications"
 
+import type { CustomerNotificationDto } from "@workspace/ops-contracts"
+
 import type { CustomerAnnouncementDto } from "@/lib/announcements-client"
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -36,10 +38,46 @@ export function announcementToFeedItem(
   }
 }
 
+const CAMPAIGN_TONES: Record<string, NotificationTone> = {
+  campaign_submitted: "info",
+  campaign_approved: "success",
+  campaign_rejected: "warning",
+  campaign_changes_requested: "warning",
+}
+
+/** Campaign lifecycle events. `href` comes from the API rather than being
+ * derived here, so the web row and the Expo notification tap land in the same
+ * place. */
+export function campaignNotificationToFeedItem(
+  notification: CustomerNotificationDto,
+): NotificationFeedItem {
+  return {
+    id: `campaign-notification:${notification.id}`,
+    title: notification.title,
+    body: notification.body,
+    category: "Campaign",
+    tone: CAMPAIGN_TONES[notification.type] ?? "neutral",
+    href: notification.href ?? undefined,
+    createdAt: notification.created_at,
+    readAt: notification.read_at,
+  }
+}
+
+export type FeedSource = "announcement" | "campaign-notification"
+
+/** `announcement:42` / `campaign-notification:42` → source + id. Returns null
+ * for any other shape. */
+export function parseFeedId(feedId: string): { source: FeedSource; id: number } | null {
+  const [source, raw] = feedId.split(":")
+  const id = Number(raw)
+  if ((source === "announcement" || source === "campaign-notification") && Number.isFinite(id)) {
+    return { source, id }
+  }
+  return null
+}
+
 /** `announcement:42` → `42`. Returns null for any other id shape. */
 export function announcementIdFromFeedItem(feedId: string): number | null {
-  const [kind, raw] = feedId.split(":")
-  if (kind !== "announcement") return null
-  const id = Number(raw)
-  return Number.isFinite(id) ? id : null
+  const parsed = parseFeedId(feedId)
+  return parsed?.source === "announcement" ? parsed.id : null
 }

@@ -78,9 +78,31 @@
   cursor: pointer;
 }
 
-.flight-calendar .flight-event--active {
+/* Variants come from eventVariant() in flight-calendar.tsx: an approved
+   campaign is coloured by its flight phase, everything else by where it sits
+   in review. */
+.flight-calendar .flight-event--live {
   background: var(--primary);
   color: var(--primary-foreground);
+}
+
+.flight-calendar .flight-event--submitted {
+  background: color-mix(in oklch, var(--warning, oklch(0.83 0.15 85)) 22%, var(--card));
+  color: oklch(0.45 0.12 75);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, oklch(0.83 0.15 85) 45%, transparent);
+}
+
+.flight-calendar .flight-event--needs-changes {
+  background: color-mix(in oklch, var(--destructive) 16%, var(--card));
+  color: var(--destructive);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--destructive) 35%, transparent);
+}
+
+.flight-calendar .flight-event--cancelled {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  text-decoration: line-through;
 }
 
 .flight-calendar .flight-event--scheduled {

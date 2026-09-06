@@ -1,40 +1,33 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Eye, MapPin, Radio, Wallet } from "lucide-react"
+import { ArrowLeft, CalendarDays, Image as ImageIcon, MapPin, Pencil, Wallet } from "lucide-react"
+import type { CampaignFormat } from "@workspace/ops-contracts"
 
-import { CampaignStatusBadge } from "@/components/campaign-status-badge"
-import { StatCard } from "@/components/stat-card"
+import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import { Separator } from "@workspace/ui/components/separator"
-import { cn } from "@workspace/ui/lib/utils"
-import { formatLabelFor, getCampaignById, type Campaign } from "@/lib/campaigns"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { CampaignStatusBadge } from "@/components/campaign-status-badge"
+import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
+import { CreativeUploadField } from "@/components/campaigns/creative-upload-field"
+import { StatCard } from "@/components/stat-card"
+import { useCampaign } from "@/lib/use-campaigns"
 
-/** Deterministic illustrative spend-to-date, not a real ledger — matches this app's other placeholder metrics. */
-const SPEND_FRACTION: Record<Campaign["status"], number> = {
-  active: 0.64,
-  scheduled: 0,
-  draft: 0,
-  completed: 1,
+const FORMAT_LABELS: Record<string, string> = {
+  taxi_top: "Taxi-top LED",
+  delivery_bike: "Delivery bike",
+  both: "Taxi-top LED + delivery bike",
 }
 
-function parseKes(budget: string): number {
-  return Number(budget.replace(/[^0-9]/g, "")) || 0
+const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
+
+function formatKes(value: string | null): string {
+  if (!value) return "—"
+  return `KES ${Number(value).toLocaleString("en-KE")}`
 }
 
-function formatKes(value: number): string {
-  return `KES ${Math.round(value).toLocaleString("en-KE")}`
-}
-
-export function CampaignDetailView({ id }: { id: string }) {
-  const [campaign, setCampaign] = useState<Campaign | null>(null)
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    setCampaign(getCampaignById(id))
-    setLoaded(true)
-  }, [id])
+export function CampaignDetailView({ id }: { id: number }) {
+  const campaignQuery = useCampaign(id)
 
   const backLink = (
     <Link
@@ -46,31 +39,42 @@ export function CampaignDetailView({ id }: { id: string }) {
     </Link>
   )
 
-  if (!loaded) return null
+  if (campaignQuery.isPending) {
+    return (
+      <div className="flex flex-1 flex-col gap-6">
+        {backLink}
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    )
+  }
 
+  const campaign = campaignQuery.data
   if (!campaign) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         {backLink}
         <p className="text-sm text-muted-foreground">
-          This campaign isn&apos;t available in this browser.
+          This campaign isn&apos;t available on your account.
         </p>
       </div>
     )
   }
 
-  const budgetKes = parseKes(campaign.budget)
-  const spendFraction = SPEND_FRACTION[campaign.status]
-  const spendKes = budgetKes * spendFraction
-  const spendPct = Math.round(spendFraction * 100)
-  const screensReached = Math.max(1, Math.round((budgetKes / 1000) * 0.8))
-  const dailyPlays = Math.max(0, Math.round(screensReached * spendFraction * 6))
+  const editable = EDITABLE_STATUSES.has(campaign.status)
 
   const detailRows = [
-    { label: "Market", value: campaign.market },
-    { label: "Schedule", value: campaign.dates },
-    { label: "Format", value: formatLabelFor(campaign.format) },
-    { label: "Status", value: campaign.status, capitalize: true },
+    { label: "Market", value: campaign.market ?? "—" },
+    {
+      label: "Flight",
+      value:
+        campaign.starts_on && campaign.ends_on
+          ? `${campaign.starts_on} → ${campaign.ends_on}`
+          : "Not scheduled",
+    },
+    { label: "Format", value: FORMAT_LABELS[campaign.format] ?? campaign.format },
+    { label: "Objective", value: campaign.objective ?? "—" },
+    { label: "Corridors", value: campaign.corridors ?? "—" },
   ]
 
   return (
@@ -79,87 +83,72 @@ export function CampaignDetailView({ id }: { id: string }) {
         {backLink}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-3xl font-semibold tracking-tight">{campaign.name}</h1>
-          <CampaignStatusBadge status={campaign.status} />
+          <div className="flex items-center gap-2">
+            <CampaignStatusBadge status={campaign.status} flightPhase={campaign.flight_phase} />
+            {editable ? (
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/campaigns/new?id=${campaign.id}`}>
+                  <Pencil data-icon="inline-start" />
+                  Edit
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <MapPin className="size-4 shrink-0" />
-            {campaign.market}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Calendar className="size-4 shrink-0" />
-            {campaign.dates}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Radio className="size-4 shrink-0" />
-            {formatLabelFor(campaign.format)}
-          </span>
-        </div>
-        {campaign.createdLocally ? (
-          <p className="inline-flex w-fit items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-            Created in this browser
-          </p>
-        ) : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard icon={Wallet} label="Budget" value={campaign.budget} />
+      <CampaignReviewBanner campaign={campaign} />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Budget" value={formatKes(campaign.budget_kes)} icon={Wallet} />
         <StatCard
-          icon={Wallet}
-          label="Spent to date"
-          value={formatKes(spendKes)}
-          hint={`${spendPct}% of budget`}
+          label="Creative"
+          value={`${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`}
+          icon={ImageIcon}
         />
-        <StatCard icon={Eye} label="Impressions" value={campaign.impressions} />
         <StatCard
-          icon={Radio}
-          label="Screens reached"
-          value={String(screensReached)}
-          hint={`${dailyPlays} plays/day avg`}
+          label="Market"
+          value={campaign.market ?? "—"}
+          icon={MapPin}
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Budget used
-          </p>
-          <Card className="shadow-none">
-            <CardContent className="space-y-3 p-6">
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${spendPct}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                GPS-verified proof-of-play populates here once the flight is live.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      <Card className="shadow-none">
+        <CardContent className="p-4">
+          {detailRows.map((row) => (
+            <div
+              key={row.label}
+              className="flex items-start justify-between gap-4 border-b border-border py-2.5 text-sm last:border-0"
+            >
+              <span className="text-muted-foreground">{row.label}</span>
+              <span className="max-w-[60%] text-right font-medium">{row.value}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Flight details
-          </p>
-          <Card className="shadow-none">
-            <CardContent className="p-0">
-              {detailRows.map((row, index) => (
-                <div key={row.label}>
-                  {index > 0 ? <Separator /> : null}
-                  <div className="flex items-center justify-between gap-3 p-4 text-sm">
-                    <span className="text-muted-foreground">{row.label}</span>
-                    <span className={cn("font-medium", row.capitalize && "capitalize")}>
-                      {row.value}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
+          Creative
+        </h2>
+        {editable ? (
+          <CreativeUploadField
+            campaignId={campaign.id}
+            format={campaign.format as CampaignFormat}
+            creatives={campaign.creatives}
+          />
+        ) : campaign.creatives.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No creative uploaded.</p>
+        ) : (
+          <CreativeUploadField
+            campaignId={campaign.id}
+            format={campaign.format as CampaignFormat}
+            creatives={campaign.creatives}
+            disabled
+          />
+        )}
+      </section>
     </div>
   )
 }
