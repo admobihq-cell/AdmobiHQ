@@ -15,6 +15,7 @@ import { AuthGate } from "@/components/AuthGate"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
 import { ProfileSetupGate } from "@/components/ProfileSetupGate"
+import { SosFab } from "@/components/sos/sos-fab"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
@@ -82,7 +83,12 @@ function RootNavigator({
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false, animation: "fade" }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false, animation: "fade" }} />
+        <Stack.Screen name="sos" options={{ headerShown: false, presentation: "modal" }} />
       </Stack>
+      {/* Overlays every screen. Mounted here rather than per-screen so a
+          screen added later gets it for free — and inside AuthenticatedApp so
+          it never renders for a signed-out user. */}
+      <SosFab />
     </AuthenticatedApp>
   )
 }
