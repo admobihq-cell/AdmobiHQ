@@ -81,3 +81,8 @@ export const Newspaper = ionicon("newspaper-outline")
 export const IdCard = ionicon("card-outline")
 export const MonitorPlay = ionicon("tv-outline")
 export const PlayCircle = ionicon("play-circle-outline")
+
+// SOS / safety incidents (ShieldCheck already exists above)
+export const Siren = ionicon("alert-circle")
+export const PhoneCall = ionicon("call-outline")
+export const Navigate = ionicon("navigate-circle-outline")
