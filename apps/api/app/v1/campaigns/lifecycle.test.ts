@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 /**
@@ -6,7 +6,31 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
  * all outbound notifications stubbed. Covers the state machine the four UI
  * surfaces depend on: who may edit when, what submit refuses, and how a
  * decision lands.
+ *
+ * CI deliberately does not inject DATABASE_URL (waking Neon on every PR). When
+ * no URL is available this suite skips — run it locally after `env:pull`.
  */
+
+/** Prefer an already-exported URL; otherwise read apps/web/.env.local (cwd = apps/api). */
+function resolveDatabaseUrl(): string | undefined {
+  const fromEnv = process.env.DATABASE_URL?.trim()
+  if (fromEnv) return fromEnv
+
+  const envPath = "../web/.env.local"
+  if (!existsSync(envPath)) return undefined
+
+  const line = readFileSync(envPath, "utf8")
+    .split(/\r?\n/)
+    .find((l) => /^\s*DATABASE_URL\s*=/.test(l))
+  if (!line) return undefined
+
+  return line
+    .replace(/^\s*DATABASE_URL\s*=\s*/, "")
+    .replace(/^["']|["']$/g, "")
+    .trim()
+}
+
+const databaseUrl = resolveDatabaseUrl()
 
 const CUSTOMER = `lifecycle-adv-${Date.now()}`
 const OTHER_CUSTOMER = `lifecycle-other-${Date.now()}`
@@ -59,26 +83,22 @@ function routeParams(id: number) {
   return { params: Promise.resolve({ id: String(id) }) }
 }
 
-beforeAll(async () => {
-  const env = readFileSync("../web/.env.local", "utf8")
-  const line = env.split(/\r?\n/).find((l) => /^\s*DATABASE_URL\s*=/.test(l))!
-  process.env.DATABASE_URL = line
-    .replace(/^\s*DATABASE_URL\s*=\s*/, "")
-    .replace(/^["']|["']$/g, "")
-    .trim()
-  ;({ prisma } = await import("@/lib/prisma"))
-}, 60_000)
+describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
+  beforeAll(async () => {
+    process.env.DATABASE_URL = databaseUrl!
+    ;({ prisma } = await import("@/lib/prisma"))
+  }, 60_000)
 
-afterAll(async () => {
-  await prisma.campaign.deleteMany({
-    where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
+  afterAll(async () => {
+    if (!prisma) return
+    await prisma.campaign.deleteMany({
+      where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
+    })
+    await prisma.customerNotification.deleteMany({
+      where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
+    })
   })
-  await prisma.customerNotification.deleteMany({
-    where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
-  })
-})
 
-describe("campaign lifecycle", () => {
   it("creates a draft", async () => {
     const { POST } = await import("../customer/campaigns/route")
     const res = await POST(json({ name: "Kilimani Launch", format: "taxi_top" }))
