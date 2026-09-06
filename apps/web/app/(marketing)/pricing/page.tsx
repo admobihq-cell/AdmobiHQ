@@ -1,14 +1,12 @@
 import Link from "next/link"
 
-import { ArrowRightIcon } from "lucide-react"
-
 import { Button } from "@workspace/ui/components/button"
 
 import { Container } from "@/components/landing/container"
 import { IsoCrossPattern } from "@/components/landing/pattern-shapes"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { LastUpdated } from "@/components/seo/last-updated"
-import { PricingSimulator } from "@workspace/ui/components/pricing-simulator"
+import { PricingSimulator } from "@/components/pricing/pricing-simulator"
 import { PlanCards } from "@/components/pricing/plan-cards"
 import { ZoneReferenceTable } from "@/components/pricing/zone-reference"
 import { BikeSimulator } from "@/components/pricing/bike-simulator"
@@ -96,16 +94,7 @@ export default function PricingPage() {
               </p>
             </div>
             <div className="mt-10">
-              <PricingSimulator
-                footer={
-                  <Button asChild size="lg" className="w-full">
-                    <Link href="/start-campaign">
-                      Get this confirmed
-                      <ArrowRightIcon data-icon="inline-end" />
-                    </Link>
-                  </Button>
-                }
-              />
+              <PricingSimulator />
             </div>
           </Container>
         </section>

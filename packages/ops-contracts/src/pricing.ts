@@ -226,3 +226,104 @@ export function formatKes(amount: number): string {
 export function formatKesPrecise(amount: number, maximumFractionDigits = 2): string {
   return `KES ${amount.toLocaleString("en-KE", { maximumFractionDigits })}`
 }
+
+// ---------------------------------------------------------------------------
+// Campaign-side pricing
+//
+// The two simulators above are the marketing site's shape: a visitor picks a
+// zone and a model by hand. A campaign already knows both — the advertiser
+// chose a market and a format in the wizard's first step — so this section
+// derives what it can and prices the *campaign*, not a hypothetical.
+// ---------------------------------------------------------------------------
+
+/**
+ * The markets the campaign wizard offers, mapped onto rate-card zones.
+ *
+ * Keyed off the wizard's own MARKETS list rather than the zone `examples`
+ * copy: the examples exist to illustrate a tier on the pricing page and can be
+ * reworded freely, whereas this mapping decides what someone is charged.
+ * Mombasa Rd sits at premium — a major arterial corridor, but not the CBD /
+ * Karen / Gigiri tier the elite multiplier is reserved for.
+ */
+export const marketZoneIds: Record<string, ZoneTier["id"]> = {
+  CBD: "elite",
+  Karen: "elite",
+  Westlands: "premium",
+  Kilimani: "premium",
+  "Mombasa Rd": "premium",
+  Eastlands: "community",
+}
+
+/** The zone tier a market bills at. Falls back to community — the base rate —
+ * so an unmapped or not-yet-picked market never silently over-quotes. */
+export function zoneForMarket(market: string | null | undefined): ZoneTier {
+  const id = market ? marketZoneIds[market] : undefined
+  return zoneTiers.find((zone) => zone.id === id) ?? zoneTiers[0]!
+}
+
+export type CampaignEstimateInput = {
+  /** "taxi_top" | "delivery_bike" | "both" — the campaign's format. */
+  format: string
+  zoneMultiplier: number
+  days: number
+  /** Taxi-top side, ignored for a delivery_bike-only campaign. */
+  screens: number
+  slotSeconds: number
+  playsPerDay: number
+  /** Delivery-bike side, ignored for a taxi_top-only campaign. */
+  bikes: number
+  sides: number
+}
+
+export type CampaignEstimate = {
+  /** Present only for the formats that actually run on that panel. */
+  screen: SimulatorResult | null
+  bike: BikeSimulatorResult | null
+  total: number
+}
+
+/**
+ * Prices a campaign against the panels it actually books.
+ *
+ * The two panels are priced by genuinely different models — a taxi-top LED
+ * sells rotations of a loop (per play), while a bike enclosure is static and
+ * sells a side outright for the flight (per side, per day) — so quoting a
+ * delivery-bike campaign off the per-play rate would be wrong, not merely
+ * imprecise. A "both" campaign is the sum of the two, because it books both
+ * pieces of hardware.
+ */
+export function calculateCampaignEstimate(input: CampaignEstimateInput): CampaignEstimate {
+  const wantsScreens = input.format === "taxi_top" || input.format === "both"
+  const wantsBikes = input.format === "delivery_bike" || input.format === "both"
+
+  const screen = wantsScreens
+    ? calculateSimulatorPrice({
+        screens: input.screens,
+        slotSeconds: input.slotSeconds,
+        zoneMultiplier: input.zoneMultiplier,
+        playsPerDay: input.playsPerDay,
+        days: input.days,
+      })
+    : null
+
+  const bike = wantsBikes
+    ? calculateBikeSimulatorPrice({
+        bikes: input.bikes,
+        sides: input.sides,
+        zoneMultiplier: input.zoneMultiplier,
+        days: input.days,
+      })
+    : null
+
+  return { screen, bike, total: (screen?.total ?? 0) + (bike?.total ?? 0) }
+}
+
+/** Inclusive flight length from two `YYYY-MM-DD` strings — a one-day flight is
+ * 1 day, not 0. Zero when the window isn't picked yet or is inverted, which
+ * the estimators read as "let the advertiser set the length themselves". */
+export function flightDaysBetween(startsOn: string, endsOn: string): number {
+  if (!startsOn || !endsOn || endsOn < startsOn) return 0
+  const ms = Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${startsOn}T00:00:00Z`)
+  if (Number.isNaN(ms)) return 0
+  return Math.round(ms / 86_400_000) + 1
+}

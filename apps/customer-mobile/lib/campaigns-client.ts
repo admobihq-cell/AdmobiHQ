@@ -1,3 +1,5 @@
+import { File, Paths } from "expo-file-system"
+import * as Sharing from "expo-sharing"
 import type {
   CampaignCreateInput,
   CampaignCreativeDto,
@@ -151,4 +153,44 @@ export async function deleteCreative(
  */
 export function creativeFileUrl(campaignId: number, creativeId: number): string {
   return `${API_URL}/v1/customer/campaigns/${campaignId}/creatives/${creativeId}/file`
+}
+
+/**
+ * Downloads a generated PDF and hands it to the OS share sheet.
+ *
+ * `File.downloadFileAsync` streams straight to disk with the bearer token on
+ * the request, so a multi-page statement never sits in JS memory and no
+ * base64 round-trip is needed. There is no "save to Downloads" on iOS —
+ * sharing is how a file leaves an app on both platforms, so the share sheet
+ * is the destination rather than a silent write the advertiser can't find.
+ *
+ * The magic-number check matters: a download helper writes whatever the
+ * server sent, so a 401 or the 409 an unapproved campaign returns would
+ * otherwise be saved as a "PDF" that is really a JSON error body.
+ */
+export async function downloadCampaignPdf(
+  getToken: GetToken,
+  path: string,
+  filename: string,
+): Promise<string> {
+  const token = await getToken()
+  const target = new File(Paths.cache, filename)
+  if (target.exists) target.delete()
+
+  const file = await File.downloadFileAsync(`${API_URL}${path}`, target, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    idempotent: true,
+  })
+
+  const head = (await file.bytes()).subarray(0, 4)
+  const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46
+  if (!isPdf) {
+    file.delete()
+    throw new Error("That document isn't ready yet. Try again in a moment.")
+  }
+
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", UTI: "com.adobe.pdf" })
+  }
+  return file.uri
 }

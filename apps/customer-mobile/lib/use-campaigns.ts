@@ -10,6 +10,7 @@ import {
   createCampaign,
   deleteCampaign,
   deleteCreative,
+  downloadCampaignPdf,
   getCampaign,
   listCampaigns,
   submitCampaign,
@@ -129,6 +130,18 @@ export function useDeleteCreative(campaignId: number) {
   return useMutation({
     mutationFn: (creativeId: number) => deleteCreative(getToken, campaignId, creativeId),
     onSuccess: () => invalidate(campaignId),
+  })
+}
+
+/** Generated PDFs — the calendar's budget statement and a campaign's proof of
+ * play. One hook for both: only the path and the filename differ, and they
+ * want the same pending/error handling. Errors render through
+ * ApiErrorBanner at the call site, like every other mutation here. */
+export function useDownloadPdf() {
+  const getToken = useTokenGetter()
+  return useMutation({
+    mutationFn: ({ path, filename }: { path: string; filename: string }) =>
+      downloadCampaignPdf(getToken, path, filename),
   })
 }
 

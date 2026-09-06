@@ -40,5 +40,5 @@ In GA4, watch referrals from AI products (e.g. `chatgpt.com`, `perplexity.ai`) i
 
 ## When to refresh Phase 1 assets
 
-- Update `packages/ui/src/lib/pricing.ts` when the rate card changes (`apps/web/lib/seo/pricing-data.ts` is now just a re-export of it, shared with the advertiser console's campaign wizard), then run `npm run generate:ai-seo` in `apps/web`
+- Update `packages/ops-contracts/src/pricing.ts` when the rate card changes — `apps/web/lib/seo/pricing-data.ts` is now a re-export of it, shared with the advertiser console's campaign wizard and the Expo app — then run `npm run generate:ai-seo` in `apps/web`
 - Bump `SEO_LAST_UPDATED` in `lib/seo/site-updates.ts` when materially editing marketing copy

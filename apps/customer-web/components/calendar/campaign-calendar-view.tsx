@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { CalendarDays, FileDown, List, MapPin, Plus, Wallet } from "lucide-react"
-import type { CampaignDto } from "@workspace/ops-contracts"
+import { formatKes, type CampaignDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import {
@@ -16,10 +16,6 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import { formatDayHeading, resolveFlight, toDayIso } from "@/lib/campaign-calendar"
 import { useCampaigns, useDownloadPdf, useUpdateCampaign } from "@/lib/use-campaigns"
-
-function formatKes(amount: number): string {
-  return `KES ${Math.round(amount).toLocaleString("en-KE")}`
-}
 
 /** Matches the flight-event--* classes in flight-calendar.css. */
 const LEGEND = [

@@ -16,6 +16,7 @@ import {
   type CampaignFormat,
 } from "@workspace/ops-contracts"
 
+import { CampaignBudgetEstimator } from "@/components/campaigns/campaign-budget-estimator"
 import { CreativePicker } from "@/components/campaigns/creative-picker"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { formatFlightDates } from "@/lib/campaign-calendar"
@@ -402,6 +403,24 @@ export function CampaignWizard({
               placeholderTextColor={colors.mutedForeground}
               keyboardType="number-pad"
             />
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Not sure what to budget?</Text>
+            <Text style={styles.hint}>
+              Priced on the same rate card the website quotes, against the market and format you
+              picked in step one.
+            </Text>
+            <CampaignBudgetEstimator
+              format={format}
+              market={market}
+              startsOn={startsOn}
+              endsOn={endsOn}
+              onApply={(total) => setBudget(String(Math.round(total)))}
+            />
+            <Text style={styles.hint}>
+              Indicative only — your account manager confirms the final rate during review.
+            </Text>
           </View>
         </>
       ) : null}

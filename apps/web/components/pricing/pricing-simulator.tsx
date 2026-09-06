@@ -1,7 +1,11 @@
 "use client"
 
-import { useId, useMemo, useState, type ReactNode } from "react"
+import { useId, useMemo, useState } from "react"
 
+import Link from "next/link"
+import { ArrowRightIcon } from "lucide-react"
+
+import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -13,8 +17,7 @@ import {
   formatKesPrecise,
   slotLengthOptions,
   zoneTiers,
-  type SimulatorResult,
-} from "@workspace/ui/lib/pricing"
+} from "@/lib/seo/pricing-data"
 import { useAnimatedNumber } from "@workspace/ui/hooks/use-animated-number"
 import { NumberStepper, clampInt } from "@workspace/ui/components/number-stepper"
 
@@ -59,33 +62,12 @@ function ReceiptRow({
   )
 }
 
-/**
- * The rate-card estimator. Two mounts today: the public pricing page (its
- * footer is a "get this confirmed" link) and the campaign wizard's budget
- * step (its footer copies the estimate into the budget field), so both quote
- * from one model instead of drifting apart.
- */
-export function PricingSimulator({
-  fixedDays,
-  footer,
-}: {
-  /** Flight length already chosen elsewhere (the wizard's start/end dates).
-   * Replaces the days stepper with a read-only line so the two can't disagree. */
-  fixedDays?: number
-  /** Rendered under the receipt, in place of the default CTA.
-   *
-   * A plain node as well as a render function, because the marketing pricing
-   * page is a Server Component and a function prop cannot cross the RSC
-   * boundary — only the wizard, which is already a client component, needs the
-   * live result to label its button. */
-  footer?: ReactNode | ((result: SimulatorResult) => ReactNode)
-} = {}) {
+export function PricingSimulator() {
   const [screens, setScreens] = useState(20)
   const [slotSeconds, setSlotSeconds] = useState<number>(15)
   const [zoneId, setZoneId] = useState<ZoneChoiceId>("community")
   const [playsPerDay, setPlaysPerDay] = useState(20)
-  const [ownDays, setOwnDays] = useState(14)
-  const days = fixedDays && fixedDays > 0 ? fixedDays : ownDays
+  const [days, setDays] = useState(14)
 
   const daysId = useId()
   const screensId = useId()
@@ -112,29 +94,14 @@ export function PricingSimulator({
       <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="space-y-8">
           <div className="grid gap-6 sm:grid-cols-2">
-            {fixedDays && fixedDays > 0 ? (
-              <div className="grid gap-2">
-                <Label htmlFor={daysId}>Campaign length</Label>
-                <p
-                  id={daysId}
-                  className="text-foreground flex h-10 items-center text-sm font-medium tabular-nums"
-                >
-                  {days} day{days === 1 ? "" : "s"}
-                  <span className="text-muted-foreground ml-2 text-xs font-normal">
-                    from your flight dates
-                  </span>
-                </p>
-              </div>
-            ) : (
-              <NumberStepper
-                id={daysId}
-                label="Campaign length (days)"
-                value={days}
-                min={DAYS_MIN}
-                max={DAYS_MAX}
-                onChange={setOwnDays}
-              />
-            )}
+            <NumberStepper
+              id={daysId}
+              label="Campaign length (days)"
+              value={days}
+              min={DAYS_MIN}
+              max={DAYS_MAX}
+              onChange={setDays}
+            />
 
             <NumberStepper
               id={screensId}
@@ -274,9 +241,12 @@ export function PricingSimulator({
           </div>
         </div>
 
-        {footer ? (
-          <div className="mt-4">{typeof footer === "function" ? footer(result) : footer}</div>
-        ) : null}
+        <Button asChild size="lg" className="mt-4 w-full">
+          <Link href="/start-campaign">
+            Get this confirmed
+            <ArrowRightIcon data-icon="inline-end" />
+          </Link>
+        </Button>
       </div>
     </div>
   )

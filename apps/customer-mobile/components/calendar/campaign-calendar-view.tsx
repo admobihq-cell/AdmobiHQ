@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import { Pressable, Text, View } from "react-native"
-import type { CampaignDto } from "@workspace/ops-contracts"
+import { formatKes, type CampaignDto } from "@workspace/ops-contracts"
 
+import { Download, Wallet } from "@/components/icons"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import {
@@ -20,8 +21,8 @@ import {
   toDayIso,
   type DayIso,
 } from "@/lib/campaign-calendar"
-import { formatCampaignError, useUpdateCampaign } from "@/lib/use-campaigns"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { formatCampaignError, useDownloadPdf, useUpdateCampaign } from "@/lib/use-campaigns"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 /** The API answers 409 for anything else, so the calendar refuses the gesture
  * rather than showing a bar snap back a second later. */
@@ -47,6 +48,23 @@ export function CampaignCalendarView({ campaigns }: { campaigns: CampaignDto[] }
   const colors = useThemeColors()
   const styles = useStyles()
   const update = useUpdateCampaign()
+  const downloadPdf = useDownloadPdf()
+
+  /** Money already committed: approved campaigns whose flight hasn't finished.
+   * Mirrors isActive() in apps/api/lib/campaign-statement.ts and the same tile
+   * on customer-web, so the phone, the browser and the PDF all show one
+   * number. */
+  const activeCampaigns = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) => campaign.flight_phase === "live" || campaign.flight_phase === "scheduled",
+      ),
+    [campaigns],
+  )
+  const activeBudget = useMemo(
+    () => activeCampaigns.reduce((sum, c) => sum + Number(c.budget_kes ?? 0), 0),
+    [activeCampaigns],
+  )
 
   const legend = [
     { label: "Live", color: colors.primary },
@@ -119,6 +137,40 @@ export function CampaignCalendarView({ campaigns }: { campaigns: CampaignDto[] }
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.budgetCard}>
+        <View style={styles.budgetRow}>
+          <Wallet color={colors.mutedForeground} size={18} />
+          <View style={styles.budgetText}>
+            <Text style={styles.budgetLabel}>Active campaign budget</Text>
+            <Text style={styles.budgetValue}>{formatKes(activeBudget)}</Text>
+          </View>
+          <Pressable
+            style={styles.statementButton}
+            disabled={downloadPdf.isPending}
+            onPress={() =>
+              downloadPdf.mutate({
+                path: "/v1/customer/campaigns/statement",
+                filename: "admobi-campaign-statement.pdf",
+              })
+            }
+            accessibilityRole="button"
+          >
+            <Download color={colors.text} size={14} />
+            <Text style={styles.statementText}>
+              {downloadPdf.isPending ? "Preparing…" : "Statement"}
+            </Text>
+          </Pressable>
+        </View>
+        <Text style={styles.budgetHint}>
+          {activeCampaigns.length} approved flight{activeCampaigns.length === 1 ? "" : "s"} live or
+          scheduled · the statement PDF lists every campaign with its budget.
+        </Text>
+      </View>
+
+      {downloadPdf.error ? (
+        <ApiErrorBanner message={formatCampaignError(downloadPdf.error)} />
+      ) : null}
+
       <View style={styles.legend}>
         {legend.map((item) => (
           <View key={item.label} style={styles.legendItem}>
@@ -212,6 +264,31 @@ export function CampaignCalendarView({ campaigns }: { campaigns: CampaignDto[] }
 function useStyles() {
   return useThemedStyles((c) => ({
     wrap: { gap: spacing.lg },
+    budgetCard: {
+      padding: spacing.md,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      gap: spacing.sm,
+    },
+    budgetRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: spacing.sm },
+    budgetText: { flex: 1, gap: 2 },
+    budgetLabel: { ...typography.caption, color: c.mutedForeground, fontWeight: "600" as const },
+    budgetValue: { ...typography.title, fontSize: 20, color: c.text },
+    budgetHint: { ...typography.caption, color: c.mutedForeground },
+    statementButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.xs,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.bg,
+    },
+    statementText: { ...typography.caption, color: c.text, fontWeight: "600" as const },
     legend: {
       flexDirection: "row" as const,
       flexWrap: "wrap" as const,

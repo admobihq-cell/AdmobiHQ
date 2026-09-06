@@ -21,7 +21,7 @@ Sidebar app shell. What is real vs placeholder:
 |-------|--------|
 | `/` Overview | Working UI (local/demo numbers, not API stats) |
 | `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns |
-| `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=`; the budget step embeds the public pricing simulator |
+| `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=`; the budget step prices the flight off the shared rate card |
 | `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture; active-budget total + statement PDF download |
 | `/notifications` | Merged inbox: ops announcements + campaign lifecycle rows from `/v1/customer/notifications` |
 | `/map` | mapcn/MapLibre with `@workspace/geo` Nairobi fixtures |
@@ -34,12 +34,28 @@ Sidebar app shell. What is real vs placeholder:
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
 
-The wizard's budget step mounts the same `PricingSimulator` the marketing
-pricing page uses — the component and the rate card both live in
-`@workspace/ui` (`components/pricing-simulator`, `lib/pricing`) so the two
-surfaces cannot quote different numbers. It takes the flight length from the
-dates already picked rather than offering its own days control, and its
-footer button writes the estimate into the budget field.
+The wizard's budget step is `CampaignBudgetEstimator` — not the marketing
+page's simulator re-skinned. What is shared is the **mechanism**: the rate
+card and `calculateCampaignEstimate()` live in `@workspace/ops-contracts`
+(`pricing.ts`), pure TypeScript with no React or DOM, so `apps/web`'s pricing
+page, this wizard, and the Expo app all price against one set of numbers.
+Only the layout is per-surface.
+
+The estimator is campaign-shaped because the wizard already knows the brief:
+
+- **Market decides the zone** (`zoneForMarket()`), so nobody re-picks
+  "Premium estates" after choosing Kilimani in step one.
+- **Format decides the model.** A `taxi_top` campaign is priced per play; a
+  `delivery_bike` campaign is priced per side, per bike, per day, because a
+  bike enclosure is static and a booked side is exclusive for the flight —
+  quoting bikes off the per-play rate would be wrong, not just imprecise. A
+  `both` campaign is the sum of the two, since it books both panels.
+- **Flight dates decide the length** (`flightDaysBetween()`), so there is no
+  second days control to disagree with them.
+
+What is left is what the wizard genuinely can't know: screens, slot length,
+plays per day, bikes, sides. The apply button writes the estimate into the
+budget field.
 
 The calendar's "Active campaign budget" counts approved campaigns whose flight
 is `live` or `scheduled`, matching `isActive()` in

@@ -6,10 +6,10 @@ import type { CampaignFormat } from "@workspace/ops-contracts"
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
 import { CreativePicker } from "@/components/campaigns/creative-picker"
-import { Calendar, Location, Pencil, Radio } from "@/components/icons"
+import { Calendar, Download, Location, Pencil, Radio } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { formatCampaignError, useCampaign } from "@/lib/use-campaigns"
+import { formatCampaignError, useCampaign, useDownloadPdf } from "@/lib/use-campaigns"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -35,6 +35,7 @@ export default function CampaignDetailScreen() {
   const insets = useSafeAreaInsets()
   const campaignQuery = useCampaign(id)
   const campaign = campaignQuery.data ?? null
+  const downloadPdf = useDownloadPdf()
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -62,6 +63,7 @@ export default function CampaignDetailScreen() {
       backgroundColor: c.surface,
     },
     editText: { ...typography.label, color: c.text, fontWeight: "600" as const },
+    actionRow: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: spacing.sm },
     card: {
       padding: spacing.lg,
       borderRadius: 16,
@@ -175,17 +177,43 @@ export default function CampaignDetailScreen() {
             {FORMAT_LABELS[campaign.format] ?? campaign.format}
           </Text>
         </View>
-        {editable ? (
-          <Pressable
-            style={styles.editButton}
-            onPress={() =>
-              router.push({ pathname: "/campaigns/new", params: { id: String(campaign.id) } })
-            }
-            accessibilityRole="button"
-          >
-            <Pencil color={colors.text} size={14} />
-            <Text style={styles.editText}>Edit and resubmit</Text>
-          </Pressable>
+        <View style={styles.actionRow}>
+          {editable ? (
+            <Pressable
+              style={styles.editButton}
+              onPress={() =>
+                router.push({ pathname: "/campaigns/new", params: { id: String(campaign.id) } })
+              }
+              accessibilityRole="button"
+            >
+              <Pencil color={colors.text} size={14} />
+              <Text style={styles.editText}>Edit and resubmit</Text>
+            </Pressable>
+          ) : null}
+          {/* Only an approved, scheduled flight has a delivery record — the API
+              refuses anything else, so the button isn't offered. Matches the
+              same guard in apps/customer-web's CampaignDetailView. */}
+          {campaign.status === "approved" && campaign.starts_on && campaign.ends_on ? (
+            <Pressable
+              style={styles.editButton}
+              disabled={downloadPdf.isPending}
+              onPress={() =>
+                downloadPdf.mutate({
+                  path: `/v1/customer/campaigns/${campaign.id}/proof-of-play`,
+                  filename: `admobi-proof-of-play-${campaign.id}.pdf`,
+                })
+              }
+              accessibilityRole="button"
+            >
+              <Download color={colors.text} size={14} />
+              <Text style={styles.editText}>
+                {downloadPdf.isPending ? "Preparing…" : "Proof of play"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {downloadPdf.error ? (
+          <ApiErrorBanner message={formatCampaignError(downloadPdf.error)} />
         ) : null}
       </View>
 
