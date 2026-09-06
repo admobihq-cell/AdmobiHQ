@@ -43,6 +43,13 @@ export const opsTourChapters: TourChapter[] = [
     selector: '[data-tour-id="tour-nav-finances"]',
   },
   {
+    key: "sos",
+    title: "Respond to driver SOS",
+    description:
+      "Drivers reporting an accident, damage, or a safety issue land here. Acknowledge fast — the clock is visible — then call them.",
+    selector: '[data-tour-id="tour-nav-sos"]',
+  },
+  {
     key: "support",
     title: "Support queue",
     description: "Driver and customer support cases needing a response show up here.",
