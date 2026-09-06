@@ -317,6 +317,93 @@ model SupportMessage {
   @@map("support_messages")
 }
 
+/// A driver-reported safety incident — the SOS flow on driver-web and
+/// driver-mobile. Deliberately NOT a SupportCase category: an SOS is measured
+/// by acknowledgement latency (see acknowledged_at), is only ever filed by an
+/// authenticated driver (so the anonymous access_token_hash / SupportIdentity
+/// machinery above is dead weight), and must never be buried in the helpdesk
+/// inbox behind billing questions.
+///
+/// driver_name / driver_phone are SNAPSHOTS taken from DriverProfile at
+/// create. Ops needs a number to call in the first thirty seconds; that must
+/// not depend on a DriverProfile row existing, being approved, or still
+/// holding the same number weeks later.
+model SafetyIncident {
+  id                   Int     @id @default(autoincrement())
+  driver_clerk_user_id String
+  driver_name          String?
+  driver_phone         String?
+
+  type        String // accident, harassment, theft, vehicle_damage, medical, breakdown, other
+  severity    String  @default("high") // critical, high, medium — derived from type at create
+  status      String  @default("new") // new, acknowledged, in_progress, resolved, cancelled
+  description String?
+
+  /// Snapshot at submit. Null when the device had no fix — the report is
+  /// never blocked on location.
+  reported_lat        Float?
+  reported_lng        Float?
+  reported_accuracy_m Int?
+
+  /// Overwritten by foreground re-pings while the incident is open. There is
+  /// deliberately no ping-history table — ops sees the current pin move, not a
+  /// breadcrumb trail. See pingAdmission in apps/api/lib/safety-incident.ts.
+  last_lat         Float?
+  last_lng         Float?
+  last_location_at DateTime?
+
+  acknowledged_at       DateTime?
+  acknowledged_by_email String?
+  resolved_at           DateTime?
+  resolved_by_email     String?
+  resolution            String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  photos  SafetyIncidentPhoto[]
+  updates SafetyIncidentUpdate[]
+
+  @@index([status, created_at])
+  @@index([driver_clerk_user_id, created_at])
+  @@map("safety_incidents")
+}
+
+/// A photo of the damage/scene attached to an incident. Stored with
+/// Cloudinary's "authenticated" delivery type via lib/private-media.ts —
+/// cloudinary_public_id is private and never exposed to a client.
+model SafetyIncidentPhoto {
+  id                   Int            @id @default(autoincrement())
+  incident_id          Int
+  incident             SafetyIncident @relation(fields: [incident_id], references: [id], onDelete: Cascade)
+  cloudinary_public_id String         @unique
+  content_type         String
+  size_bytes           Int
+  created_at           DateTime       @default(now())
+
+  @@index([incident_id])
+  @@map("safety_incident_photos")
+}
+
+/// One entry in the incident thread. author_type "system" records lifecycle
+/// events (acknowledged / resolved / cancelled) in the same list the humans
+/// write to, so the detail view is one chronological feed rather than a
+/// timeline plus a separate conversation.
+model SafetyIncidentUpdate {
+  id              Int            @id @default(autoincrement())
+  incident_id     Int
+  incident        SafetyIncident @relation(fields: [incident_id], references: [id], onDelete: Cascade)
+  author_type     String // "driver" | "ops" | "system"
+  author_email    String?
+  author_clerk_id String?
+  body            String
+  internal_note   Boolean        @default(false)
+  created_at      DateTime       @default(now())
+
+  @@index([incident_id, created_at])
+  @@map("safety_incident_updates")
+}
+
 /// Cross-app activity trail: who did what, when (ops, public forms, future customer apps).
 /// Ops-controlled visibility switches, e.g. showing the Deliveries placeholder
 /// screens across customer-web, driver-web, and driver-mobile before the real

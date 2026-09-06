@@ -33,6 +33,8 @@
     "db:integrations:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/integrations-additive.sql",
     "db:campaigns": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/campaigns-additive.sql",
     "db:campaigns:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/campaigns-additive.sql",
+    "db:safety-incidents": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/safety-incidents-additive.sql",
+    "db:safety-incidents:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/safety-incidents-additive.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",
