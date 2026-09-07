@@ -10,7 +10,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated"
 
-import { HelpCircle, Payouts, Routes, X, type AppIcon } from "@/components/icons"
+import { HelpCircle, Payouts, Routes, Siren, X, type AppIcon } from "@/components/icons"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.82, 340)
@@ -44,6 +44,15 @@ const LINKS: DrawerLink[] = [
     description: "Get help with a delivery or your account",
     icon: HelpCircle,
     href: "/support",
+  },
+  // Duplicates the global SOS FAB on purpose — the FAB is easy to miss on
+  // first use, and some drivers navigate only by menu.
+  {
+    key: "sos",
+    label: "SOS",
+    description: "Report an accident, damage, or a safety issue",
+    icon: Siren,
+    href: "/sos",
   },
 ]
 

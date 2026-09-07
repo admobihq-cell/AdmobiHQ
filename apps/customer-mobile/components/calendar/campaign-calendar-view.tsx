@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
 import { Pressable, Text, View } from "react-native"
-import { formatKes, type CampaignDto } from "@workspace/ops-contracts"
+import { exportFileName, formatKes, type CampaignDto } from "@workspace/ops-contracts"
 
 import { Download, Wallet } from "@/components/icons"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -150,7 +150,7 @@ export function CampaignCalendarView({ campaigns }: { campaigns: CampaignDto[] }
             onPress={() =>
               downloadPdf.mutate({
                 path: "/v1/customer/campaigns/statement",
-                filename: "admobi-campaign-statement.pdf",
+                filename: exportFileName("campaign budget statement", null, "pdf"),
               })
             }
             accessibilityRole="button"

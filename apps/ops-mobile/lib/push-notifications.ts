@@ -6,8 +6,13 @@ import { Platform } from "react-native"
 import type { OpsClient } from "@workspace/ops-api-client"
 
 const ANDROID_CHANNEL_ID = "default"
+/** Must match the channelId the API sends for SOS alerts — see
+ *  apps/api/lib/push/ops-alerts.ts. */
+const SAFETY_CHANNEL_ID = "safety"
 /** Android notification-channel LED/icon color — a fixed OS-level value, not the in-app theme's `primary` (which changes with light/dark mode). Must match the `expo-notifications` plugin `color` in app.json. */
 const BRAND_COLOR = "#0B6E4F"
+/** Red, matching the `color` the API attaches to safety pushes. */
+const SOS_COLOR = "#DC2626"
 
 let handlerConfigured = false
 
@@ -43,6 +48,23 @@ async function ensureAndroidChannel() {
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: BRAND_COLOR,
+  })
+
+  // Driver SOS gets its own MAX-importance channel. Without a registered
+  // channel Android silently routes the push to the default one and the
+  // heads-up banner never appears — the alert looks delivered in the Expo
+  // receipt and is invisible on the device.
+  //
+  // Deliberately no bypassDnd: that needs ACCESS_NOTIFICATION_POLICY in the
+  // Android manifest, which this app does not declare, so setting it would
+  // force a native rebuild for a flag that ALSO requires the user to grant Do
+  // Not Disturb access by hand. MAX importance keeps this OTA-shippable.
+  await Notifications.setNotificationChannelAsync(SAFETY_CHANNEL_ID, {
+    name: "SOS alerts",
+    description: "A driver has reported an accident or safety incident.",
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 400, 200, 400, 200, 400],
+    lightColor: SOS_COLOR,
   })
 }
 

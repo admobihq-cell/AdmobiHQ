@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useQueries } from "@tanstack/react-query"
 
 import type { NotificationFeedItem } from "@workspace/ui/lib/notifications"
-import type { OpsPermission, OpsRole } from "@workspace/ops-contracts"
+import { formatLabel, type OpsPermission, type OpsRole } from "@workspace/ops-contracts"
 
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -74,6 +74,7 @@ export function useOpsNotifications(access: Access) {
   )
 
   const [
+    safetyQuery,
     applicationsQuery,
     supportQuery,
     leadsQuery,
@@ -83,6 +84,15 @@ export function useOpsNotifications(access: Access) {
     mediaKitQuery,
   ] = useQueries({
     queries: [
+      // First in the array so SOS lands first in rawItems — an emergency
+      // outranks every other kind of attention item in this feed.
+      {
+        queryKey: ["ops-notifications", "safety"],
+        enabled: canSee("safety"),
+        queryFn: () => client.safety.list({ pageSize: SOURCE_LIMIT }),
+        retry: false,
+        refetchOnWindowFocus: false,
+      },
       {
         queryKey: ["ops-notifications", "applications"],
         enabled: canSee("driver_applications"),
@@ -146,6 +156,25 @@ export function useOpsNotifications(access: Access) {
 
   const rawItems = useMemo<RawItem[]>(() => {
     const items: RawItem[] = []
+
+    for (const i of safetyQuery.data?.items ?? []) {
+      // Resolved and cancelled incidents are history, not attention.
+      if (i.status === "resolved" || i.status === "cancelled") continue
+      items.push({
+        id: `safety-incident:${i.id}`,
+        title: `SOS — ${formatLabel(i.type)}`,
+        body:
+          joinMeta(
+            i.driver_name,
+            i.driver_phone,
+            i.acknowledged_at ? "acknowledged" : "UNACKNOWLEDGED",
+          ) || "Needs a responder",
+        category: "SOS",
+        tone: "warning",
+        href: `/sos/${i.id}`,
+        createdAt: i.created_at,
+      })
+    }
 
     for (const a of applicationsQuery.data?.items ?? []) {
       items.push({
@@ -243,6 +272,7 @@ export function useOpsNotifications(access: Access) {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
   }, [
+    safetyQuery.data,
     applicationsQuery.data,
     supportQuery.data,
     leadsQuery.data,
@@ -262,6 +292,7 @@ export function useOpsNotifications(access: Access) {
   )
 
   const queries = [
+    safetyQuery,
     applicationsQuery,
     supportQuery,
     leadsQuery,

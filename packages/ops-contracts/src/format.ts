@@ -102,3 +102,60 @@ export function buildListQueryParams(
   }
   return searchParams
 }
+
+/**
+ * Turns arbitrary user text into a filename-safe slug.
+ *
+ * Restricted to `[a-z0-9-]` on purpose. Beyond looking tidy, that is what makes
+ * the result safe to interpolate into a `Content-Disposition` header: a
+ * campaign named `foo"; drop.pdf` or one containing a newline cannot break out
+ * of the quoted filename, because none of those characters survive.
+ *
+ * Diacritics are folded (Nairóbi -> nairobi) so a name still reads correctly
+ * after stripping. Returns "" when nothing survives — e.g. a name that is
+ * entirely emoji or non-Latin script — and callers omit the segment.
+ */
+export function slugifyForFilename(value: string | null | undefined, maxLength = 60): string {
+  if (!value) return ""
+  return value
+    .normalize("NFKD")
+    // Combining marks left behind by NFKD — strip so "é" becomes "e", not "e´".
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, maxLength)
+    .replace(/-+$/g, "")
+}
+
+/**
+ * Builds a download filename that a person can recognise in their Downloads
+ * folder a week later.
+ *
+ * `exportFileName("proof of play", "Nairobi Launch", "pdf")`
+ *   -> `proof-of-play-nairobi-launch-2026-09-06.pdf`
+ *
+ * The date is always appended: without it every export of the same campaign
+ * collides and the browser silently renames to "(1)", "(2)", which is worse
+ * than useless when the files are evidence of delivery.
+ *
+ * `subject` is optional so list-level exports ("all drivers") can use the same
+ * helper and simply come out as `drivers-2026-09-06.csv`.
+ */
+export function exportFileName(
+  kind: string,
+  subject: string | null | undefined,
+  extension: string,
+  date: Date = new Date(),
+): string {
+  const parts = [slugifyForFilename(kind), slugifyForFilename(subject)].filter(Boolean)
+  // Local date, not toISOString(): a Nairobi user exporting at 01:00 EAT should
+  // see today's date, not yesterday's UTC one.
+  const stamp = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-")
+
+  return `${[...parts, stamp].join("-")}.${extension.replace(/^\.+/, "")}`
+}

@@ -25,6 +25,7 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 | **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
 | **Payouts** | `/payouts` | Coming-soon (ops still settles manually) |
 | **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
+| **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
 | **Auth** | `/auth/login`, `/auth/signup` | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
 
@@ -48,7 +49,7 @@ Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/
 | App name / slug / scheme | `Admobi Driver` / `admobihq-driver` / `admobihq-driver` |
 | EAS | `@admobimedia/admobihq-driver` (`projectId` in `app.json`) |
 
-Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support. Profile-setup is a 4-step wizard. Clerk mounts when `EXPO_PUBLIC_AUTH_ENABLED=true`. Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
+Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk mounts when `EXPO_PUBLIC_AUTH_ENABLED=true`. Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
 
 ```bash
 npm run env:pull -w driver-mobile

@@ -10,6 +10,7 @@ export type OpsAlertType =
   | "waitlist"
   | "media-kit"
   | "support"
+  | "safety"
 
 const TYPE_LABELS: Record<OpsAlertType, string> = {
   campaign: "Campaign brief",
@@ -19,6 +20,7 @@ const TYPE_LABELS: Record<OpsAlertType, string> = {
   waitlist: "Waitlist signup",
   "media-kit": "Media kit request",
   support: "Support case",
+  safety: "SOS",
 }
 
 /** "campaign" is the anonymous marketing-site brief and routes to the leads
@@ -33,6 +35,7 @@ const ROUTE_SEGMENT: Record<OpsAlertType, string> = {
   waitlist: "waitlist",
   "media-kit": "media-kit",
   support: "support",
+  safety: "sos",
 }
 
 export type OpsStaffAlertInput = {
@@ -40,6 +43,17 @@ export type OpsStaffAlertInput = {
   entityId: number
   submitterName: string
   submitterCompany?: string
+  /**
+   * SOS overrides the default "New <label>" / submitter-name copy: an
+   * emergency needs its own wording, its own red colour, and its own Android
+   * channel — without a registered high-importance channel Android silently
+   * downgrades the alert and the sound never plays. Every override defaults to
+   * today's value, so no existing alert type changes behaviour.
+   */
+  title?: string
+  body?: string
+  channelId?: string
+  color?: string
 }
 
 /** Fire-and-forget push to all registered ops staff devices. */
@@ -53,10 +67,12 @@ export async function notifyOpsStaffAlert(input: OpsStaffAlertInput) {
       return
     }
 
-    const title = `New ${TYPE_LABELS[input.type]}`
-    const body = input.submitterCompany
-      ? `${input.submitterName} · ${input.submitterCompany}`
-      : input.submitterName
+    const title = input.title ?? `New ${TYPE_LABELS[input.type]}`
+    const body =
+      input.body ??
+      (input.submitterCompany
+        ? `${input.submitterName} · ${input.submitterCompany}`
+        : input.submitterName)
     const segment = ROUTE_SEGMENT[input.type]
 
     const messages = tokens.map((row) => ({
@@ -64,8 +80,8 @@ export async function notifyOpsStaffAlert(input: OpsStaffAlertInput) {
       title,
       body,
       sound: "default" as const,
-      channelId: "default",
-      color: "#0b6e4f",
+      channelId: input.channelId ?? "default",
+      color: input.color ?? "#0b6e4f",
       priority: "high" as const,
       data: {
         type: input.type,

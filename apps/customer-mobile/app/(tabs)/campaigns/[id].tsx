@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import type { CampaignFormat } from "@workspace/ops-contracts"
+import { exportFileName, type CampaignFormat } from "@workspace/ops-contracts"
 
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
@@ -200,7 +200,7 @@ export default function CampaignDetailScreen() {
               onPress={() =>
                 downloadPdf.mutate({
                   path: `/v1/customer/campaigns/${campaign.id}/proof-of-play`,
-                  filename: `admobi-proof-of-play-${campaign.id}.pdf`,
+                  filename: exportFileName("proof of play", campaign.name, "pdf"),
                 })
               }
               accessibilityRole="button"

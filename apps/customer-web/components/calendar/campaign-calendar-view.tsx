@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { CalendarDays, FileDown, List, MapPin, Plus, Wallet } from "lucide-react"
-import { formatKes, type CampaignDto } from "@workspace/ops-contracts"
+import { exportFileName, formatKes, type CampaignDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import {
@@ -114,7 +114,7 @@ export function CampaignCalendarView() {
             onClick={() =>
               downloadPdf.mutate({
                 path: "/v1/customer/campaigns/statement",
-                filename: "admobi-campaign-statement.pdf",
+                filename: exportFileName("campaign budget statement", null, "pdf"),
               })
             }
           >

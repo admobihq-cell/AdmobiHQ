@@ -37,6 +37,7 @@ import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { driverTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
 import { NotificationBell } from "@/components/shell/notification-bell"
+import { SosFab } from "@/components/shell/sos-fab"
 import { VerificationBadge } from "@/components/shell/verification-badge"
 
 function useSignedInUser() {
@@ -156,6 +157,10 @@ export function AppShell({
             {children}
           </main>
         </SidebarInset>
+        {/* Overlays every page under (shell). Mounted once here rather than
+            per-page so a page added later gets it for free. Not flag-gated —
+            reporting an accident must not depend on a toggle. */}
+        <SosFab />
       </SidebarProvider>
     </TourProvider>
   )

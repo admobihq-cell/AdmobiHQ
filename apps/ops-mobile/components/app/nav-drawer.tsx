@@ -16,6 +16,7 @@ import {
   ClipboardList,
   FileText,
   LifeBuoy,
+  Siren,
   Mail,
   Map,
   MonitorPlay,
@@ -77,6 +78,16 @@ const LINKS: DrawerLink[] = [
     icon: Newspaper,
     href: "/(ops)/content",
     permission: "content",
+  },
+  // Above Support on purpose: an emergency queue that sorts below the helpdesk
+  // is a queue nobody checks first.
+  {
+    key: "sos",
+    label: "SOS",
+    description: "Driver safety incidents needing a response",
+    icon: Siren,
+    href: "/(ops)/sos",
+    permission: "safety",
   },
   {
     key: "support",
