@@ -16,6 +16,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { readCompanyName, withCompanyName } from "@/lib/company-name"
 
 function useSignedInUser() {
   return useUser()
@@ -30,12 +31,6 @@ function useNoUser() {
  * useUser() must never run unless ClerkProvider is mounted.
  */
 const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
-function storedCompanyName(metadata: unknown): string {
-  if (typeof metadata !== "object" || metadata === null) return ""
-  const value = (metadata as Record<string, unknown>).companyName
-  return typeof value === "string" ? value.trim() : ""
-}
 
 /**
  * Advertisers who sign up with Google never get asked for a company — Google's
@@ -52,16 +47,14 @@ export function CompanyNamePrompt() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const open = isLoaded && Boolean(user) && !storedCompanyName(user?.unsafeMetadata)
+  const open = isLoaded && Boolean(user) && !readCompanyName(user?.unsafeMetadata)
 
   async function handleSave() {
     if (!user || !company.trim()) return
     setSaving(true)
     setError(null)
     try {
-      await user.update({
-        unsafeMetadata: { ...user.unsafeMetadata, companyName: company.trim() },
-      })
+      await user.update({ unsafeMetadata: withCompanyName(user.unsafeMetadata, company) })
       // No setSaving(false) on success — `open` flips false as soon as Clerk's
       // user object refreshes, and the dialog unmounts.
     } catch {
