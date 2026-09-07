@@ -34,6 +34,7 @@ export function AdvertiserSignUp() {
   const { signUp } = useSignUpIfEnabled()
   const router = useRouter()
   const [email, setEmail] = useState("")
+  const [company, setCompany] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
   const [submitting, setSubmitting] = useState(false)
@@ -44,11 +45,16 @@ export function AdvertiserSignUp() {
   }
 
   async function handleSendCode() {
-    if (!signUp || !email.trim()) return
+    if (!signUp || !email.trim() || !company.trim()) return
     setSubmitting(true)
     setError(null)
 
-    const { error: createError } = await signUp.create({ emailAddress: email.trim() })
+    // unsafeMetadata is the only field a client may set during sign-up; Clerk
+    // copies it onto the created user, which is what the ops Users list reads.
+    const { error: createError } = await signUp.create({
+      emailAddress: email.trim(),
+      unsafeMetadata: { companyName: company.trim() },
+    })
     if (createError) {
       setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
       setSubmitting(false)
@@ -94,7 +100,7 @@ export function AdvertiserSignUp() {
   }
 
   async function handleGoogleSignUp() {
-    if (!signUp) return
+    if (!signUp || !company.trim()) return
     setSubmitting(true)
     setError(null)
 
@@ -102,6 +108,7 @@ export function AdvertiserSignUp() {
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
       redirectUrl: "/",
+      unsafeMetadata: { companyName: company.trim() },
     })
     // Success navigates away to Google, so only the failure path gets here.
     if (ssoError) {
@@ -181,6 +188,17 @@ export function AdvertiserSignUp() {
               autoFocus
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="company">Company or organization</Label>
+            <Input
+              id="company"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Acme Media"
+              autoComplete="organization"
+              disabled={submitting}
+            />
+          </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {/* Clerk mounts its bot-protection widget here. Without this element it falls
               back to an invisible CAPTCHA in a display:none div, which Turnstile then
@@ -189,7 +207,7 @@ export function AdvertiserSignUp() {
           <Button
             className="w-full"
             size="lg"
-            disabled={submitting || !signUp || !email.trim()}
+            disabled={submitting || !signUp || !email.trim() || !company.trim()}
             loading={submitting}
             loadingText="Sending…"
             onClick={() => void handleSendCode()}
@@ -205,7 +223,7 @@ export function AdvertiserSignUp() {
             variant="outline"
             size="lg"
             className="w-full gap-2"
-            disabled={submitting || !signUp}
+            disabled={submitting || !signUp || !company.trim()}
             onClick={() => void handleGoogleSignUp()}
           >
             <GoogleIcon className="size-4" />
