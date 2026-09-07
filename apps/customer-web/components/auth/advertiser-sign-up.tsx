@@ -20,6 +20,17 @@ import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
 
+/**
+ * Optional here on purpose. Google's own consent screen has no place to ask for
+ * a company, so gating "Continue with Google" on this field only produced a
+ * dead button with no explanation. <CompanyNamePrompt> collects it on first
+ * load of the dashboard instead, for whichever path skipped it.
+ */
+function companyMetadata(company: string): { unsafeMetadata?: { companyName: string } } {
+  const value = company.trim()
+  return value ? { unsafeMetadata: { companyName: value } } : {}
+}
+
 function useDisabledSignUp(): { signUp: null } {
   return { signUp: null }
 }
@@ -45,7 +56,7 @@ export function AdvertiserSignUp() {
   }
 
   async function handleSendCode() {
-    if (!signUp || !email.trim() || !company.trim()) return
+    if (!signUp || !email.trim()) return
     setSubmitting(true)
     setError(null)
 
@@ -53,7 +64,7 @@ export function AdvertiserSignUp() {
     // copies it onto the created user, which is what the ops Users list reads.
     const { error: createError } = await signUp.create({
       emailAddress: email.trim(),
-      unsafeMetadata: { companyName: company.trim() },
+      ...companyMetadata(company),
     })
     if (createError) {
       setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
@@ -95,12 +106,21 @@ export function AdvertiserSignUp() {
       return
     }
 
+    // Not "complete" here means the Clerk instance requires fields this form
+    // never sends — username and password are the usual culprits, and neither
+    // an email code nor Google can ever supply them. Log what is missing;
+    // without this the failure is undiagnosable from the browser.
+    console.error("Clerk sign-up incomplete", {
+      status: signUp.status,
+      missingFields: signUp.missingFields,
+      unverifiedFields: signUp.unverifiedFields,
+    })
     setError("Sign-up could not be completed. Try again.")
     setSubmitting(false)
   }
 
   async function handleGoogleSignUp() {
-    if (!signUp || !company.trim()) return
+    if (!signUp) return
     setSubmitting(true)
     setError(null)
 
@@ -108,7 +128,7 @@ export function AdvertiserSignUp() {
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
       redirectUrl: "/",
-      unsafeMetadata: { companyName: company.trim() },
+      ...companyMetadata(company),
     })
     // Success navigates away to Google, so only the failure path gets here.
     if (ssoError) {
@@ -198,6 +218,9 @@ export function AdvertiserSignUp() {
               autoComplete="organization"
               disabled={submitting}
             />
+            <p className="text-xs text-muted-foreground">
+              Optional — we&apos;ll ask for it after you sign in if you skip it.
+            </p>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {/* Clerk mounts its bot-protection widget here. Without this element it falls
@@ -207,7 +230,7 @@ export function AdvertiserSignUp() {
           <Button
             className="w-full"
             size="lg"
-            disabled={submitting || !signUp || !email.trim() || !company.trim()}
+            disabled={submitting || !signUp || !email.trim()}
             loading={submitting}
             loadingText="Sending…"
             onClick={() => void handleSendCode()}
@@ -223,7 +246,7 @@ export function AdvertiserSignUp() {
             variant="outline"
             size="lg"
             className="w-full gap-2"
-            disabled={submitting || !signUp || !company.trim()}
+            disabled={submitting || !signUp}
             onClick={() => void handleGoogleSignUp()}
           >
             <GoogleIcon className="size-4" />

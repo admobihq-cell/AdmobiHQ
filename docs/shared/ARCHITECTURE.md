@@ -233,6 +233,17 @@ Three motion keyframes ship with the file: `route-draw`, `fade-rise`, `signal-pu
 
 Per [DESIGN.md](../../DESIGN.md): **Committed** — one saturated terracotta primary carries actions and key headings; neutrals are tinted (no pure black or white). Dark mode is a mirror, not a competing aesthetic.
 
+### 6.2.1 Light/dark switching — the blocking script must be in `<head>`
+
+Theme state lives in [`ThemeProvider`](../../packages/ui/src/components/theme-provider.tsx) (hand-rolled, not `next-themes`), but the class on `<html>` is set *before hydration* by [`<ThemeScript />`](../../packages/ui/src/components/theme-script.tsx) — one shared component every web layout renders inside `<head>`.
+
+**It has to be a plain inline `<script>` in `<head>`.** Rendering it in `<body>` through `next/script` with `strategy="beforeInteractive"` does not hoist it: in the App Router the tag is emitted *after* the opening `<body>`, so the browser paints `bg-background` in the default theme and only then runs the script — a visible flash on every load for anyone whose theme isn't the default. Verified against the prerendered HTML: with `next/script` in `<body>` the script landed at byte 3408 with `</head>` at 2767; moved into `<head>` it lands at 3096, ahead of `<body>`.
+
+Two related rules:
+
+- The provider's `setTheme` must stay a **pure** state updater. Persisting the preference and swapping the root class from inside the updater made a single toggle repaint more than once, because React re-invokes updaters (twice under StrictMode, again on concurrent re-renders). All of that now happens in one effect keyed on the resolved theme, which also reconciles the provider with whatever the script painted on mount.
+- `getServerThemeClass` in [persist.ts](../../packages/ui/src/lib/theme/persist.ts) is currently **unused**. The theme cookie is written on every change but never read back server-side, so `<html>` ships without a theme class. Wiring it would let the server emit the class for explicit light/dark picks (it can't help `system`), at the cost of opting those layouts into dynamic rendering.
+
 ### 6.3 Typography
 
 Geist sans for headings + body. Geist Mono for short labels and codes. Modular scale, fluid `clamp()` is fair game in section headlines.
