@@ -158,8 +158,9 @@ export function AppShell({
           </main>
         </SidebarInset>
         {/* Overlays every page under (shell). Mounted once here rather than
-            per-page so a page added later gets it for free. */}
-        <SosFab enabled={enabledFlags.includes("sos")} />
+            per-page so a page added later gets it for free. Not flag-gated —
+            reporting an accident must not depend on a toggle. */}
+        <SosFab />
       </SidebarProvider>
     </TourProvider>
   )

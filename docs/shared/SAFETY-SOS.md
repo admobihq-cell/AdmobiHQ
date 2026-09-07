@@ -136,9 +136,12 @@ incident write.
 - Ops permission key: **`safety`**. Org admins have it implicitly; members need
   it granted under Team → Roles. The additive SQL grants it to the seeded
   Member role automatically.
-- Platform flag: **`sos`**, gating the two driver FABs and the drawer entry.
-  The API routes stay live regardless, so toggling the flag off cannot orphan
-  an in-flight incident.
+- **No platform flag.** SOS was briefly built behind an `sos` flag and that
+  was removed: a driver's route to reporting an accident must not depend on a
+  toggle someone can forget to turn on, or that gets switched off during an
+  unrelated incident. The FAB is live on both driver surfaces the moment the
+  build ships, which means **the API must be deployed before the driver
+  clients are** — see Deploying below.
 - Audit entity type: **`safety_incident`**, written on create and on every ops
   status change. Location pings write **no** audit event — one every two
   minutes would drown the activity trail.
@@ -160,6 +163,13 @@ second run is a no-op. **Run it before the API deploys**, or every SOS route
 Then deploy in order: **api first**, then ops, driver-web, and the two mobile
 OTA updates (`NEXT_PUBLIC_API_URL` is inlined at build time — see
 `docs/shared/FEATURE-INVENTORY.md`).
+
+**This order is now load-bearing.** With no platform flag there is nothing
+holding the driver-facing button back: the moment a driver client ships, every
+driver sees a live SOS button. If the API is not already deployed with the
+`/v1/driver/sos/*` routes and the tables created, the button opens a form whose
+Send fails — the worst possible outcome for this particular feature. Ship the
+SQL and the API, verify a real submit, and only then ship the driver clients.
 
 **Mobile is OTA-only — no native rebuild.** `expo-location` and
 `expo-image-picker` are already configured with permission strings in both

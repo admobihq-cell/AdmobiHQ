@@ -246,8 +246,11 @@ export const OPS_PERMISSIONS = [
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 
-/** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema. */
-export const PLATFORM_FLAG_KEYS = ["deliveries", "sos"] as const
+/** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema.
+ *
+ * SOS is deliberately NOT here: a driver's route to reporting an accident must
+ * not depend on a toggle someone can forget to turn on. */
+export const PLATFORM_FLAG_KEYS = ["deliveries"] as const
 export type PlatformFlagKey = (typeof PLATFORM_FLAG_KEYS)[number]
 
 export const SUPPORT_CHANNELS = [

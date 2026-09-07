@@ -3,7 +3,6 @@ import { useRouter, usePathname } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Siren } from "@/components/icons"
-import { usePlatformFlags } from "@/lib/flags"
 import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 /**
@@ -19,6 +18,10 @@ const TAB_BAR_ALLOWANCE = 64
  * Global SOS button, mounted once in app/_layout.tsx so every screen has it and
  * no future screen can forget it.
  *
+ * Deliberately NOT behind a platform flag: the route to reporting an accident
+ * must not depend on a toggle someone can forget to turn on, or that gets
+ * switched off during an unrelated incident.
+ *
  * It ONLY NAVIGATES — it never files an incident. That is what makes a global,
  * always-present control safe here: nothing reaches the ops queue until the
  * driver picks an incident type and taps Send, so a pocket-tap costs a
@@ -28,7 +31,6 @@ export function SosFab() {
   const router = useRouter()
   const pathname = usePathname()
   const insets = useSafeAreaInsets()
-  const flags = usePlatformFlags()
 
   const styles = useThemedStyles((colors) => ({
     wrap: {
@@ -58,7 +60,6 @@ export function SosFab() {
     },
   }))
 
-  if (!flags.sos) return null
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null
 
   return (

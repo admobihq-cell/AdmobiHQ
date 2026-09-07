@@ -11,7 +11,6 @@ import Animated, {
 } from "react-native-reanimated"
 
 import { HelpCircle, Payouts, Routes, Siren, X, type AppIcon } from "@/components/icons"
-import { usePlatformFlags } from "@/lib/flags"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.82, 340)
@@ -22,8 +21,6 @@ type DrawerLink = {
   description: string
   icon: AppIcon
   href: Parameters<ReturnType<typeof useRouter>["push"]>[0]
-  /** Platform flag this entry is gated on. Omitted = always shown. */
-  flag?: string
 }
 
 const LINKS: DrawerLink[] = [
@@ -49,15 +46,13 @@ const LINKS: DrawerLink[] = [
     href: "/support",
   },
   // Duplicates the global SOS FAB on purpose — the FAB is easy to miss on
-  // first use, and some drivers navigate only by menu. Gated on the same flag
-  // as the FAB, or the drawer would be an ungated back door into the flow.
+  // first use, and some drivers navigate only by menu.
   {
     key: "sos",
     label: "SOS",
     description: "Report an accident, damage, or a safety issue",
     icon: Siren,
     href: "/sos",
-    flag: "sos",
   },
 ]
 
@@ -76,7 +71,6 @@ export function NavDrawer({
   const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
-  const flags = usePlatformFlags()
   const progress = useSharedValue(0)
 
   useEffect(() => {
@@ -178,10 +172,6 @@ export function NavDrawer({
     router.push(href)
   }
 
-  // Flag-gated entries stay hidden until ops turns them on — otherwise the
-  // drawer is an ungated back door past whatever gates the main entry point.
-  const visibleLinks = LINKS.filter((link) => !link.flag || flags[link.flag])
-
   return (
     <Modal
       visible={visible}
@@ -209,7 +199,7 @@ export function NavDrawer({
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionLabel}>More</Text>
             <View style={styles.group}>
-              {visibleLinks.map((link, index) => (
+              {LINKS.map((link, index) => (
                 <View key={link.key}>
                   <Pressable
                     style={({ pressed }) => [
@@ -228,7 +218,7 @@ export function NavDrawer({
                       </Text>
                     </View>
                   </Pressable>
-                  {index < visibleLinks.length - 1 ? (
+                  {index < LINKS.length - 1 ? (
                     <View style={styles.divider} />
                   ) : null}
                 </View>

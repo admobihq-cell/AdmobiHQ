@@ -2259,3 +2259,25 @@ cd ../AdmobiHQ && git worktree remove ../AdmobiHQ-sos
 - **Background location, geofencing, breadcrumb trails.**
 - **Auto-escalation, paging rotas, SMS/WhatsApp alerting.**
 - **The embedded map in ops detail**, if Task 10 Step 3 finds it fiddly — the Google Maps link ships either way.
+
+---
+
+## Addendum — 2026-09-06: executed, with the platform flag removed
+
+All 14 tasks executed on `feat/driver-sos` (PR #106). Two deviations from the
+plan as written:
+
+1. **No `sos` platform flag.** Task 2 added `"sos"` to `PLATFORM_FLAG_KEYS` and
+   Tasks 9/12 gated the FABs on it. Removed at the user's direction before
+   merge — reporting an accident must not depend on a toggle. See the addendum
+   on the design spec.
+2. **`driver-mobile/metro.config.js` needed ops-contracts wiring** — not
+   anticipated by the plan. The SOS screens are that app's first *value*
+   imports from `@workspace/ops-contracts` (every earlier one was `import
+   type`, erased before Metro sees it), so the bundle failed to resolve it even
+   though typecheck passed and the dependency was already declared. Caught by
+   `eas update`, not by any test.
+
+Also fixed in passing: a stale `package-lock.json` on `master` (missing
+`customer-mobile`'s `expo-file-system` and `customer-web`'s
+`@workspace/ops-contracts`), which would have failed `npm ci`.

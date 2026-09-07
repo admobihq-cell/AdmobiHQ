@@ -14,6 +14,10 @@ const HIDDEN_PREFIXES = ["/sos", "/auth"]
  * Global SOS button, rendered once in app-shell.tsx so every page under
  * (shell) has it.
  *
+ * Deliberately NOT behind a platform flag: the route to reporting an accident
+ * must not depend on a toggle someone can forget to turn on, or that gets
+ * switched off during an unrelated incident.
+ *
  * It ONLY NAVIGATES — it never files an incident. That is what makes an
  * always-present control safe: nothing reaches the ops queue until the driver
  * picks an incident type and submits, so an accidental click costs a
@@ -22,10 +26,9 @@ const HIDDEN_PREFIXES = ["/sos", "/auth"]
  * A FAB rather than a header button because on a phone browser the thumb
  * reaches the bottom of the screen, not the top.
  */
-export function SosFab({ enabled }: { enabled: boolean }) {
+export function SosFab() {
   const pathname = usePathname()
 
-  if (!enabled) return null
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null
 
   return (

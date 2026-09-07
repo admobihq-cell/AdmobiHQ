@@ -25,7 +25,7 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 | **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
 | **Payouts** | `/payouts` | Coming-soon (ops still settles manually) |
 | **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
-| **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a global FAB on every page, gated by the `sos` platform flag |
+| **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
 | **Auth** | `/auth/login`, `/auth/signup` | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
 
