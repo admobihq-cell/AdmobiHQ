@@ -37,6 +37,12 @@ import {
   type PlatformFlagUpdateInput,
   type PlatformUserListDto,
   type PlatformUserType,
+  type SafetyIncidentDetailDto,
+  type SafetyIncidentDto,
+  type SafetyIncidentMessageCreateInput,
+  type SafetyIncidentOpsUpdateInput,
+  type SafetyIncidentUpdateDto,
+  type SafetyListQueryParams,
   type StatsResponseDto,
   type SuccessResponse,
   type SupportCaseDetailDto,
@@ -199,6 +205,19 @@ export type OpsClient = {
     get: (id: number) => Promise<SupportCaseDetailDto>
     update: (id: number, body: SupportCaseUpdateInput) => Promise<SupportCaseDto>
     reply: (id: number, body: SupportMessageCreateInput) => Promise<SupportMessageDto>
+  }
+  safety: {
+    list: (params?: SafetyListQueryParams) => Promise<PaginatedResponse<SafetyIncidentDto>>
+    get: (id: number) => Promise<SafetyIncidentDetailDto>
+    update: (id: number, body: SafetyIncidentOpsUpdateInput) => Promise<SafetyIncidentDto>
+    reply: (
+      id: number,
+      body: SafetyIncidentMessageCreateInput,
+    ) => Promise<SafetyIncidentUpdateDto>
+    /** No JSON endpoint for this — the file route streams raw bytes, so the
+     * caller fetches it directly (with the same bearer token) rather than
+     * going through request<T>()'s JSON parsing. */
+    photoFileUrl: (incidentId: number, photoId: number) => string
   }
   driverApplications: {
     list: (
@@ -559,6 +578,37 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           method: "POST",
           body: JSON.stringify(body),
         }),
+    },
+    safety: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+          sortBy: params.sortBy,
+          sortDir: params.sortDir,
+          status: params.status,
+          type: params.type,
+          severity: params.severity,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<SafetyIncidentDto>>(
+          `${apiPrefix}/safety-incidents${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<SafetyIncidentDetailDto>(`${apiPrefix}/safety-incidents/${id}`),
+      update: (id, body) =>
+        request<SafetyIncidentDto>(`${apiPrefix}/safety-incidents/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      reply: (id, body) =>
+        request<SafetyIncidentUpdateDto>(`${apiPrefix}/safety-incidents/${id}/messages`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      photoFileUrl: (incidentId, photoId) =>
+        `${apiPrefix}/safety-incidents/${incidentId}/photos/${photoId}/file`,
     },
     driverApplications: {
       list: (params = {}) => {

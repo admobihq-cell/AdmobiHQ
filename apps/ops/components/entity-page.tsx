@@ -46,6 +46,8 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { exportFileName } from "@workspace/ops-contracts"
+
 import { downloadBlob, downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
 import { buildStyledXlsx } from "@/lib/xlsx"
 import { apiPathToPermission, resolveOpsResource, useOpsClient } from "@/lib/ops-client"
@@ -305,7 +307,7 @@ export function EntityPage<T extends { id: number }>({
       )
     })
     downloadCsv(
-      `${apiPath.replace(/^\/v1\//, "")}-selected.csv`,
+      exportFileName(title, "selected", "csv"),
       toCsv(rows, csvColumns),
     )
     toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
@@ -325,7 +327,7 @@ export function EntityPage<T extends { id: number }>({
         headers,
         rows,
       })
-      downloadPdf(`${apiPath.replace(/^\/v1\//, "")}-selected.pdf`, blob)
+      downloadPdf(exportFileName(title, "selected", "pdf"), blob)
       toast.success(
         `Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`,
       )
@@ -342,7 +344,7 @@ export function EntityPage<T extends { id: number }>({
       excelColumns.map((c) => String(c.csv!(row) ?? "")),
     )
     const blob = await buildStyledXlsx(title, headers, rows)
-    downloadBlob(`${apiPath.replace(/^\/v1\//, "")}-selected.xlsx`, blob)
+    downloadBlob(exportFileName(title, "selected", "xlsx"), blob)
     toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
   }
 
@@ -395,7 +397,7 @@ export function EntityPage<T extends { id: number }>({
           .map((c) => [c.key, c.csv!(row)]),
       )
     })
-    downloadCsv(`${apiPath.replace(/^\/v1\//, "")}.csv`, toCsv(rows, csvColumns))
+    downloadCsv(exportFileName(title, null, "csv"), toCsv(rows, csvColumns))
   }
 
   const handleExportPdf = async () => {
@@ -412,7 +414,7 @@ export function EntityPage<T extends { id: number }>({
         headers,
         rows,
       })
-      downloadPdf(`${apiPath.replace(/^\/v1\//, "")}.pdf`, blob)
+      downloadPdf(exportFileName(title, null, "pdf"), blob)
     } catch (e) {
       toast.error(formatApiError(e))
     }
@@ -426,7 +428,7 @@ export function EntityPage<T extends { id: number }>({
       excelColumns.map((c) => String(c.csv!(row) ?? "")),
     )
     const blob = await buildStyledXlsx(title, headers, rows)
-    downloadBlob(`${apiPath.replace(/^\/v1\//, "")}.xlsx`, blob)
+    downloadBlob(exportFileName(title, null, "xlsx"), blob)
   }
 
   const quickStatusMutation = useMutation({

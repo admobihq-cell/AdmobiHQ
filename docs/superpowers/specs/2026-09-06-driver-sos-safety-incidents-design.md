@@ -461,3 +461,29 @@ and the location/cost decisions. Sections added to `docs/driver/DRIVER-APP.md`,
 
 Phases 3 and 5 are independent of each other once phase 1 lands. Phase 2
 should precede phase 3 only so that ops has real rows to look at.
+
+---
+
+## Addendum — 2026-09-06: the `sos` platform flag is removed
+
+Shipped without the `sos` platform flag. The spec above describes gating both
+driver FABs on it and dark-launching the feature; that was dropped at the
+user's direction before merge.
+
+**Reasoning:** a driver's route to reporting an accident must not depend on a
+toggle someone can forget to turn on, or that gets switched off during an
+unrelated incident. The dark-launch convenience is not worth that failure mode
+on this particular feature.
+
+**Consequences:**
+
+- `PLATFORM_FLAG_KEYS` keeps only `deliveries`; there is no `sos` key and no
+  toggle in ops Settings.
+- Both driver FABs and the driver-mobile drawer entry render unconditionally
+  (still hidden on auth, onboarding, profile-setup, and the SOS screens).
+- The deploy order becomes load-bearing rather than advisory: the SQL and the
+  API must be live **before** either driver client ships, because nothing else
+  holds the button back. See the Deploying section of
+  `docs/shared/SAFETY-SOS.md`.
+
+Everything else in this spec shipped as written.
