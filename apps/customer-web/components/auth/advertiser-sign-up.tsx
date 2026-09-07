@@ -95,6 +95,7 @@ export function AdvertiserSignUp() {
 
   async function handleGoogleSignUp() {
     if (!signUp) return
+    setSubmitting(true)
     setError(null)
 
     const { error: ssoError } = await signUp.sso({
@@ -102,8 +103,10 @@ export function AdvertiserSignUp() {
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
       redirectUrl: "/",
     })
+    // Success navigates away to Google, so only the failure path gets here.
     if (ssoError) {
       setError(ssoError.longMessage ?? ssoError.message ?? "Google sign-up failed.")
+      setSubmitting(false)
     }
   }
 
@@ -179,6 +182,10 @@ export function AdvertiserSignUp() {
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {/* Clerk mounts its bot-protection widget here. Without this element it falls
+              back to an invisible CAPTCHA in a display:none div, which Turnstile then
+              fails (600010) — blocking both the email code and Google sign-up. */}
+          <div id="clerk-captcha" />
           <Button
             className="w-full"
             size="lg"
@@ -198,6 +205,7 @@ export function AdvertiserSignUp() {
             variant="outline"
             size="lg"
             className="w-full gap-2"
+            disabled={submitting || !signUp}
             onClick={() => void handleGoogleSignUp()}
           >
             <GoogleIcon className="size-4" />
