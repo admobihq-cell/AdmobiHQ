@@ -14,10 +14,10 @@ import { exportFileName, type CampaignFormat } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
 import { CreativeUploadField } from "@/components/campaigns/creative-upload-field"
+import { CampaignDetailSkeleton } from "@/components/skeletons/campaign-detail-skeleton"
 import { StatCard } from "@/components/stat-card"
 import { useCampaign, useDownloadPdf } from "@/lib/use-campaigns"
 
@@ -48,15 +48,10 @@ export function CampaignDetailView({ id }: { id: number }) {
     </Link>
   )
 
-  if (campaignQuery.isPending) {
-    return (
-      <div className="flex flex-1 flex-col gap-6">
-        {backLink}
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-      </div>
-    )
-  }
+  // Same skeleton the route's loading.tsx renders — the server render is
+  // instant, so this is the wait people actually see; a different shape here
+  // would make the page shift twice.
+  if (campaignQuery.isPending) return <CampaignDetailSkeleton />
 
   const campaign = campaignQuery.data
   if (!campaign) {

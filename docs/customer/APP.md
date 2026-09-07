@@ -19,7 +19,7 @@ Sidebar app shell. What is real vs placeholder:
 
 | Route | Status |
 |-------|--------|
-| `/` Overview | Working UI (local/demo numbers, not API stats) |
+| `/` Overview | **API-backed** — live / in-review / needs-you counts and committed budget derived from `/v1/customer/campaigns`; recent activity is the merged notification inbox. No impressions, delivery-rate or spend tiles: nothing serves those yet |
 | `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns |
 | `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=`; the budget step prices the flight off the shared rate card |
 | `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture; active-budget total + statement PDF download |
@@ -66,6 +66,21 @@ bearer token and handed to the browser as a blob, never linked to directly.
 
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
 - Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
+
+### Loading skeletons
+
+Every page here is a thin server component wrapping a client component that
+fetches through react-query, so the server render finishes instantly and
+`loading.tsx` is on screen for barely a frame — the wait people actually see is
+the client one. A route's `loading.tsx` and its view's `isPending` branch must
+therefore render the **same** skeleton component (`components/skeletons/*`), or
+the page shows two differently-shaped skeletons back to back and shifts twice.
+
+`/campaigns/new` additionally needs its own `loading.tsx`: the wizard is a
+`fixed inset-0` overlay, so inheriting `campaigns/loading.tsx` would flash the
+campaign *list* skeleton inside the app shell before the overlay takes over.
+`NewCampaignChrome` / `NewCampaignSkeleton` are shared by the route loader and
+the screen's own pending branch.
 
 ## Secrets (Infisical)
 

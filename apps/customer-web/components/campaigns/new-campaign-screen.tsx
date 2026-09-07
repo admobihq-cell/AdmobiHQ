@@ -1,34 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import { X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { Logo } from "@workspace/ui/brand/logo"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { CampaignWizard } from "@/components/campaigns/campaign-wizard"
+import {
+  NewCampaignChrome as Screen,
+  NewCampaignSkeleton,
+} from "@/components/campaigns/new-campaign-chrome"
 import { useCampaign } from "@/lib/use-campaigns"
 
 const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
-
-/** Full-screen chrome for the campaign wizard: the same sticky logo bar and
- * centred column driver-web uses for profile setup, so the two flows feel like
- * one product. Enter motion matches the driver Sheet (`slide-in-from-right`). */
-function Screen({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background duration-200 ease-out animate-in fade-in-0 slide-in-from-right-10 motion-reduce:animate-none">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-4 py-3 sm:px-8">
-        <Logo markHeight={18} wordmarkClassName="text-sm font-semibold leading-none" />
-        <Button variant="ghost" size="icon-sm" asChild aria-label="Close">
-          <Link href="/campaigns">
-            <X aria-hidden />
-          </Link>
-        </Button>
-      </div>
-      <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14">{children}</div>
-    </div>
-  )
-}
 
 export function NewCampaignScreen({
   campaignId,
@@ -42,14 +24,7 @@ export function NewCampaignScreen({
   const campaignQuery = useCampaign(campaignId)
 
   if (campaignId != null && campaignQuery.isPending) {
-    return (
-      <Screen>
-        <div className="space-y-6">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </Screen>
-    )
+    return <NewCampaignSkeleton />
   }
 
   const campaign = campaignQuery.data ?? null

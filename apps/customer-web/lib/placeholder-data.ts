@@ -49,27 +49,6 @@ export const PLACEHOLDER_CAMPAIGNS: PlaceholderCampaign[] = [
   },
 ]
 
-export const RECENT_ACTIVITY = [
-  {
-    id: "1",
-    title: "Westlands Retail Push",
-    detail: "Delivery reached 92% of weekly target",
-    time: "2h ago",
-  },
-  {
-    id: "2",
-    title: "CBD Summer Flight",
-    detail: "18 new proof-of-play events recorded",
-    time: "5h ago",
-  },
-  {
-    id: "3",
-    title: "Karen Estate Awareness",
-    detail: "Scheduled to start Monday · 6 corridors",
-    time: "Yesterday",
-  },
-] as const
-
 export type WalletTransaction = {
   id: string
   label: string
@@ -148,26 +127,3 @@ export const SPEND_BY_CAMPAIGN = [
   { id: "2", name: "Westlands Retail Push", spend: 41200 },
   { id: "3", name: "Karen Estate Awareness", spend: 12300 },
 ]
-
-export const OVERVIEW_STATS = [
-  {
-    label: "Active campaigns",
-    value: "3",
-    hint: "+1 this week",
-  },
-  {
-    label: "Impressions",
-    value: "1.2M",
-    hint: "Last 30 days",
-  },
-  {
-    label: "Delivery rate",
-    value: "84%",
-    hint: "On target",
-  },
-  {
-    label: "Spend",
-    value: "KES 420k",
-    hint: "Month to date",
-  },
-] as const
