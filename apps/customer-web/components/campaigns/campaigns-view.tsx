@@ -9,8 +9,8 @@ import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
+import { CardGridSkeleton } from "@/components/skeletons/card-grid-skeleton"
 import { useCampaigns } from "@/lib/use-campaigns"
 
 /** Filters follow what an advertiser actually asks ("what's running?", "what's
@@ -85,11 +85,9 @@ export function CampaignsView() {
       </div>
 
       {campaignsQuery.isPending ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-52 w-full rounded-xl" />
-          ))}
-        </div>
+        // Same skeleton as campaigns/loading.tsx — the server render is
+        // instant, so this is the wait people actually see.
+        <CardGridSkeleton count={4} />
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-muted/20 px-6 py-16 text-center">
           <p className="text-sm font-medium">

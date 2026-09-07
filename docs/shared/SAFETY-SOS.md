@@ -60,6 +60,15 @@ should not be classifying their own emergency. Ops can change it.
 | ops | `SOS` nav item, above Support | `app/(dashboard)/sos`, `app/(dashboard)/sos/[id]` |
 | ops-mobile | `SOS` drawer entry, above Support | `app/(ops)/sos/index.tsx`, `[id].tsx` |
 
+driver-web's report screen is laid out for a desktop, not as a port of the
+phone screen: a page header, then a two-column grid with the form on the left
+and the **Call 999** card in a 340px right rail. The card stays *first in the
+DOM* so it is still the first thing on a phone and the first thing a screen
+reader reaches — the grid coordinates (`lg:col-start-2 lg:row-start-1`) only
+move it visually. The file input deliberately omits `capture`: forcing the rear
+camera hides the gallery, and a driver filing after the fact usually already
+has the photo.
+
 Both driver FABs are mounted **once per app**, not per screen, so a screen
 added later gets it for free. They are hidden on auth, onboarding,
 profile-setup, and the SOS screens themselves.

@@ -1,10 +1,18 @@
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { cn } from "@workspace/ui/lib/utils"
 
-/** Matches `StatCard` — icon tile, value, label. */
-export function StatCardGridSkeleton({ count = 4 }: { count?: number }) {
+/** Matches `StatCard` — icon tile, value, label. `className` overrides the
+ * grid for pages that run a different column count (campaign detail: 3). */
+export function StatCardGridSkeleton({
+  count = 4,
+  className,
+}: {
+  count?: number
+  className?: string
+}) {
   return (
-    <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+    <div className={cn("grid grid-cols-2 gap-4 xl:grid-cols-4", className)}>
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i} className="shadow-none">
           <CardHeader className="pb-0">
