@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
 import { NotFoundPage } from "@workspace/ui/components/not-found-page"
-import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
+import { ThemeScript } from "@workspace/ui/components/theme-script"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Container } from "@/components/landing/container"
@@ -48,10 +48,7 @@ export default function GlobalNotFound() {
       )}
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: getThemeBlockingScript() }}
-          suppressHydrationWarning
-        />
+        <ThemeScript />
       </head>
       <body className="bg-background text-foreground">
         <ThemeProvider>
