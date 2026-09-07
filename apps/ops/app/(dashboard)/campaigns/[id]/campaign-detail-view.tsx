@@ -259,6 +259,7 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
       ) : null}
 
       <div className="max-w-2xl rounded-xl border bg-card p-4 shadow-none">
+        <DetailRow label="Company" value={data.company_name ?? "—"} />
         <DetailRow label="Advertiser" value={data.contact_email ?? "—"} />
         <DetailRow label="Contact name" value={data.contact_name ?? "—"} />
         <DetailRow label="Phone" value={data.contact_phone ?? "—"} />
