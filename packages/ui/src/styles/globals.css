@@ -234,6 +234,17 @@
   }
 }
 
+/* Landing globe: each pinned badge alternates between its LIVE and satellite face.
+   data-mode is flipped on the overlay by components/landing/globe.tsx. */
+.globe-badges [data-face="sat"],
+.globe-badges[data-mode="sat"] [data-face="live"] {
+  display: none;
+}
+
+.globe-badges[data-mode="sat"] [data-face="sat"] {
+  display: flex;
+}
+
 /* Smooth light↔dark illustration colors via --hero-palette-mix (0 = light, 1 = dark). */
 .hero-scene-mix {
   --_hero-mix: var(--hero-palette-mix, 0);
