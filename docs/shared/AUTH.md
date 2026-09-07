@@ -52,6 +52,33 @@ signIn.create({ identifier: email })
 
 Google is a separate path on the same hook: `signIn.sso({ strategy: "oauth_google", redirectCallbackUrl, redirectUrl })` — see [apps/customer-web/components/auth/advertiser-sign-in.tsx](../../apps/customer-web/components/auth/advertiser-sign-in.tsx) and [apps/driver-web/components/auth/driver-sign-in.tsx](../../apps/driver-web/components/auth/driver-sign-in.tsx).
 
+### Sign-up: the Clerk instance must not require username or password
+
+Our sign-up forms are passwordless — an email one-time code, or Google. Neither can ever
+supply a **username** or a **password**. If the Clerk instance marks either as *required*
+under **User & authentication → Email, phone, username** / **Authentication strategies**,
+every sign-up ends at `status: "missing_requirements"` instead of `"complete"`, and:
+
+- the email-code path falls through to "Sign-up could not be completed. Try again." — a
+  permanent dead end, no matter how many times the user retries;
+- the Google path has nowhere to continue, so `<AuthenticateWithRedirectCallback>` falls back
+  to `display_config.sign_up_url` and dumps the user on Clerk's **Account Portal** at
+  `https://accounts.<domain>/sign-up/continue` — a Clerk-branded page outside our app. A slow
+  or ad-blocked Account Portal shows as a blank `/auth/sso-callback/...` page instead.
+
+Check an instance's real requirements without the dashboard — this endpoint is public:
+
+```sh
+curl -s "https://clerk.<app-domain>/v1/environment?_clerk_js_version=5.99.0" -H "Origin: https://<app-domain>" | jq '.user_settings.attributes | map_values(select(.enabled) | .required)'
+```
+
+Every attribute that reports `required: true` must be either supplied by the form or turned
+off in the dashboard. `first_name`/`last_name` are safe to require *only* for Google (it
+supplies them); requiring them breaks the email-code path unless the form collects them.
+
+The three hand-rolled forms log `status`, `missingFields` and `unverifiedFields` to the
+console on the not-complete branch, so this is diagnosable from the browser next time.
+
 ### Sign-up: bot protection needs a `#clerk-captcha` element
 
 Clerk runs Cloudflare Turnstile on **sign-up** (never sign-in), and in a hand-rolled flow it
@@ -77,8 +104,16 @@ its submit and Google buttons — see
 `unsafeMetadata` onto the created user once the sign-up completes, so the value survives the
 Google OAuth round-trip with no extra storage of our own — which matters because the ops
 Users list reads Clerk, not Postgres (`listPlatformUsers` in
-[apps/api/lib/platform-users.ts](../../apps/api/lib/platform-users.ts)). The field is
-required: both "Send code" and "Continue with Google" stay disabled until it is filled.
+[apps/api/lib/platform-users.ts](../../apps/api/lib/platform-users.ts)).
+
+The field is **optional at sign-up**, and deliberately so. Google's consent screen has no
+place to ask for a company, and Clerk owns the OAuth step, so gating "Continue with Google"
+on the field only produced a permanently dead button with nothing explaining why. Instead
+[`<CompanyNamePrompt>`](../../apps/customer-web/components/shell/company-name-prompt.tsx),
+mounted in the app shell, opens a non-dismissible dialog on first load for any signed-in user
+whose `unsafeMetadata.companyName` is empty, and writes it with `user.update()` —
+`unsafeMetadata` is client-writable, so this needs no API route. Whichever path skipped the
+field, the value still gets collected exactly once.
 
 Ops reads it back in two places, both resolving it from Clerk at read time rather than
 copying it into Postgres: the **Users** page (`toPlatformUserDto` adds a `company` column,
