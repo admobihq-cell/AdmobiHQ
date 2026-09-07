@@ -9,7 +9,7 @@ import { QueryProvider } from "@workspace/query-client"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
-import { ThemeScript } from "@/components/theme-script"
+import { ThemeScript } from "@workspace/ui/components/theme-script"
 
 import "@clerk/ui/themes/shadcn.css"
 import "@workspace/ui/globals.css"
@@ -37,8 +37,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={cn(geist.variable, geistMono.variable)}
     >
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <head>
         <ThemeScript />
+      </head>
+      <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider>
           <ClerkProvider
             appearance={{ theme: shadcn }}

@@ -9,7 +9,7 @@ import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { QueryProvider } from "@workspace/query-client"
 import { cn } from "@workspace/ui/lib/utils"
-import { ThemeScript } from "@/components/theme-script"
+import { ThemeScript } from "@workspace/ui/components/theme-script"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { webPublicUrl } from "@/lib/site-urls"
 
@@ -57,8 +57,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={cn(geist.variable, geistMono.variable)}
     >
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <head>
         <ThemeScript />
+      </head>
+      <body className="min-h-screen bg-background font-sans antialiased">
         <Providers>
           <ThemeProvider>
             <TooltipProvider>

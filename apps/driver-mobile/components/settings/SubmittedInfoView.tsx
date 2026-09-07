@@ -37,10 +37,20 @@ async function loadDocumentPreview(
   docId: number,
 ): Promise<string> {
   const token = await getToken()
-  const res = await fetch(driverDocumentFileUrl(docId), {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    signal: AbortSignal.timeout(15000),
-  })
+  // AbortSignal.timeout() does not exist in React Native — RN polyfills
+  // AbortController with the `abort-controller` package, which has no static
+  // timeout(). Calling it threw "AbortSignal.timeout is not a function".
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15000)
+  let res: Response
+  try {
+    res = await fetch(driverDocumentFileUrl(docId), {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
   if (!res.ok) {
     throw new Error(`Failed to load document preview (${res.status})`)
   }
