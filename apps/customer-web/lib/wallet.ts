@@ -9,7 +9,6 @@ export function formatCurrency(value: number) {
 }
 
 export const PLACEHOLDER_WALLET_BALANCE = 18400
-export const PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT = 3
 
 const BALANCE_KEY = "admobi.customer.walletBalance"
 const AUTO_RELOAD_KEY = "admobi.customer.autoReload"
