@@ -5,7 +5,7 @@ import { campaignReviewSchema } from "@workspace/ops-contracts"
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { toCampaignDto } from "@/lib/campaign-dto"
-import { getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
+import { getCustomerCompanyName, getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendEmail } from "@/lib/email/send-email"
 import {
@@ -122,5 +122,7 @@ export async function PATCH(req: Request, { params }: Params) {
     console.error("[campaigns/review] Failed to send notifications:", error)
   }
 
-  return NextResponse.json(toCampaignDto(updated))
+  return NextResponse.json(
+    toCampaignDto(updated, undefined, await getCustomerCompanyName(updated.clerk_user_id)),
+  )
 }

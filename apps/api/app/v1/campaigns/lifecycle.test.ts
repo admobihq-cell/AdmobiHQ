@@ -66,6 +66,8 @@ vi.mock("@/lib/customer-clerk", () => ({
   customerClerkClient: {},
   getCustomerEmail: async () => "advertiser@example.com",
   getCustomerName: async () => "Amina",
+  getCustomerCompanyName: async () => "Acme Media",
+  readCompanyName: () => "Acme Media",
 }))
 
 let campaignId: number
@@ -253,6 +255,9 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     const body = await res.json()
     expect(body.status).toBe("approved")
     expect(body.review_reason).toBeNull()
+    // Ops reviews on behalf of a company, so the decision response has to carry
+    // it — the detail view re-renders from exactly this payload.
+    expect(body.company_name).toBe("Acme Media")
     // Window is Nov 2026, which is ahead of this suite's run date.
     expect(body.flight_phase).toBe("scheduled")
   }, 60_000)

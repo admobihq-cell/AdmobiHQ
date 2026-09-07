@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { Search } from "lucide-react"
 import type { PlatformUserDto, PlatformUserType } from "@workspace/ops-contracts"
@@ -91,7 +91,7 @@ function sortHeader(label: string) {
   }
 }
 
-const columns: ColumnDef<PlatformUserDto, any>[] = [
+const baseColumns: ColumnDef<PlatformUserDto, any>[] = [
   {
     accessorKey: "name",
     header: "Name",
@@ -125,8 +125,24 @@ const columns: ColumnDef<PlatformUserDto, any>[] = [
   },
 ]
 
+/** Advertisers give this at sign-up; drivers never do, so the column would be a
+ * full row of em-dashes on the drivers page. Clerk has no orderBy for a metadata
+ * field, so it stays unsortable like Name and Status. */
+const companyColumn: ColumnDef<PlatformUserDto, any> = {
+  accessorKey: "company",
+  header: "Company",
+  cell: ({ row }) => <span className="text-muted-foreground">{row.original.company ?? "—"}</span>,
+}
+
+function columnsFor(type: PlatformUserType): ColumnDef<PlatformUserDto, any>[] {
+  if (type !== "customers") return baseColumns
+  const [nameColumn, ...rest] = baseColumns
+  return [nameColumn!, companyColumn, ...rest]
+}
+
 export function PlatformUsersView({ type }: { type: PlatformUserType }) {
   const client = useOpsClient()
+  const columns = useMemo(() => columnsFor(type), [type])
 
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)

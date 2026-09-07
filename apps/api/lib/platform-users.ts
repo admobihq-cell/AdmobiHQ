@@ -1,7 +1,7 @@
 import type { User } from "@clerk/backend"
 import type { PlatformUserDto, PlatformUserListDto, PlatformUserType } from "@workspace/ops-contracts"
 
-import { customerClerkClient } from "@/lib/customer-clerk"
+import { customerClerkClient, readCompanyName } from "@/lib/customer-clerk"
 import { driverClerkClient } from "@/lib/driver-clerk"
 
 const DEFAULT_LIMIT = 25
@@ -12,6 +12,8 @@ export function toPlatformUserDto(user: User): PlatformUserDto {
   return {
     id: user.id,
     name,
+    // Only advertisers ever set this at sign-up, so drivers come back null.
+    company: readCompanyName(user),
     email: user.primaryEmailAddress?.emailAddress ?? null,
     phone: user.primaryPhoneNumber?.phoneNumber ?? null,
     createdAt: new Date(user.createdAt).toISOString(),
