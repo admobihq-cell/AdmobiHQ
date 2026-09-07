@@ -10,7 +10,7 @@ import {
   Pencil,
   Wallet,
 } from "lucide-react"
-import type { CampaignFormat } from "@workspace/ops-contracts"
+import { exportFileName, type CampaignFormat } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
@@ -113,7 +113,7 @@ export function CampaignDetailView({ id }: { id: number }) {
                 onClick={() =>
                   downloadPdf.mutate({
                     path: `/v1/customer/campaigns/${campaign.id}/proof-of-play`,
-                    filename: `admobi-proof-of-play-${campaign.id}.pdf`,
+                    filename: exportFileName("proof of play", campaign.name, "pdf"),
                   })
                 }
               >

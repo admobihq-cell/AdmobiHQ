@@ -90,6 +90,31 @@ takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaign-statement.ts`.
 
+### Download filenames
+
+Every generated download — these two PDFs plus the ops CSV/PDF/XLSX exports —
+is named with `exportFileName()` from `@workspace/ops-contracts`:
+
+```
+exportFileName("proof of play", campaign.name, "pdf")
+  -> proof-of-play-nairobi-launch-2026-09-06.pdf
+exportFileName("Drivers", null, "csv")
+  -> drivers-2026-09-06.csv
+```
+
+Two things it buys. The **date is always appended**, so re-exporting the same
+campaign stops collapsing into "(1)", "(2)" in the Downloads folder — which
+matters most for proof-of-play, where the files are evidence of delivery. And
+the slug is restricted to `[a-z0-9-]`, which is what makes it safe to
+interpolate a **user-supplied campaign name** into a `Content-Disposition`
+header: quotes, semicolons, newlines and path separators cannot survive, so a
+name cannot break out of the quoted filename.
+
+The filename is set in two places per download and they must agree: the route's
+`Content-Disposition`, and the client's `a.download` / `File` name (which wins
+where present). See `apps/customer-web/lib/use-campaigns.ts` and
+`apps/ops/components/entity-page.tsx`.
+
 Proof of play reports the **booked schedule**, not measured plays: no play
 telemetry reaches the platform yet, so the document claims no play volume and
 says so in its footnote. Every string written into a PDF stays inside Latin-1
