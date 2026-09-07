@@ -80,6 +80,7 @@
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
     "antd": "^6.5.2",
+    "cobe": "^2.0.1",
     "dotenv": "^16.6.1",
     "graphql": "^16.14.0",
     "lucide-react": "^1.12.0",
