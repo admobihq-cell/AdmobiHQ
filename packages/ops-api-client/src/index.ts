@@ -608,7 +608,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
       photoFileUrl: (incidentId, photoId) =>
-        `${apiPrefix}/safety-incidents/${incidentId}/photos/${photoId}/file`,
+        `${baseUrl}${apiPrefix}/safety-incidents/${incidentId}/photos/${photoId}/file`,
     },
     driverApplications: {
       list: (params = {}) => {

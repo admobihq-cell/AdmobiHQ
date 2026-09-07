@@ -34,9 +34,12 @@ function readStoredTheme(): ThemeOption {
   return themeConfig.defaultTheme
 }
 
-function resolveTheme(theme: ThemeOption): "light" | "dark" {
+function resolveTheme(
+  theme: ThemeOption,
+  systemTheme: "light" | "dark" | undefined,
+): "light" | "dark" {
   if (theme === "system" && themeConfig.enableSystem) {
-    return getSystemTheme()
+    return systemTheme ?? themeConfig.defaultTheme
   }
   return theme === "dark" ? "dark" : "light"
 }
@@ -77,10 +80,14 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return undefined
     return readStoredTheme()
   })
-  const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark" | undefined>(() => {
+  // Tracked separately from `theme` so "system" resolves as derived state
+  // rather than something each call site has to recompute and re-store.
+  const [systemTheme, setSystemTheme] = React.useState<"light" | "dark" | undefined>(() => {
     if (typeof window === "undefined") return undefined
-    return resolveTheme(readStoredTheme())
+    return getSystemTheme()
   })
+
+  const resolvedTheme = theme === undefined ? undefined : resolveTheme(theme, systemTheme)
 
   const themes = React.useMemo<ThemeOption[]>(
     () =>
@@ -90,48 +97,53 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
     [],
   )
 
+  // Pure: React re-invokes state updaters (twice under StrictMode, and again on
+  // concurrent re-renders), so persisting and repainting from inside one made a
+  // single toggle write storage and swap the root class more than once — two
+  // overlapping transition-suspend styles, each removed a frame apart.
   const setTheme = React.useCallback<React.Dispatch<React.SetStateAction<ThemeOption>>>(
     (value) => {
-      setThemeState((current) => {
-        const next = typeof value === "function" ? value(current ?? themeConfig.defaultTheme) : value
-        persistThemePreference(next)
-        const resolved = resolveTheme(next)
-        setResolvedTheme(resolved)
-        applyThemeToDocument(resolved)
-        return next
-      })
+      setThemeState((current) =>
+        typeof value === "function" ? value(current ?? themeConfig.defaultTheme) : value,
+      )
     },
     [],
   )
 
+  // The single owner of the document and of storage. Running on mount as well
+  // as on change means the provider can never disagree with whatever the
+  // blocking script painted before hydration.
   React.useEffect(() => {
-    if (!themeConfig.enableSystem || theme !== "system") {
+    if (theme === undefined || resolvedTheme === undefined) {
+      return
+    }
+    persistThemePreference(theme)
+    applyThemeToDocument(resolvedTheme)
+  }, [theme, resolvedTheme])
+
+  // Subscribed unconditionally: keeping systemTheme fresh even while an
+  // explicit theme is active means switching back to "system" is already
+  // correct instead of resolving off a stale value.
+  React.useEffect(() => {
+    if (!themeConfig.enableSystem) {
       return
     }
 
     const media = window.matchMedia("(prefers-color-scheme: dark)")
-
-    function onChange() {
-      const resolved = getSystemTheme()
-      setResolvedTheme(resolved)
-      applyThemeToDocument(resolved)
-    }
+    const onChange = () => setSystemTheme(media.matches ? "dark" : "light")
 
     media.addEventListener("change", onChange)
     return () => media.removeEventListener("change", onChange)
-  }, [theme])
+  }, [])
 
+  // Another tab changed the preference. Setting state is enough — the effect
+  // above repaints and re-persists.
   React.useEffect(() => {
     function onStorage(event: StorageEvent) {
       if (event.key !== THEME_STORAGE_KEY) {
         return
       }
-      const stored = readStoredTheme()
-      persistThemePreference(stored)
-      const resolved = resolveTheme(stored)
-      setThemeState(stored)
-      setResolvedTheme(resolved)
-      applyThemeToDocument(resolved)
+      setThemeState(readStoredTheme())
     }
 
     window.addEventListener("storage", onStorage)
