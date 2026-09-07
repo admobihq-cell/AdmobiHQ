@@ -35,6 +35,7 @@ import { TourProvider } from "@workspace/ui/components/tour-provider"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
+import { CompanyNamePrompt } from "@/components/shell/company-name-prompt"
 import { NavUser } from "@/components/shell/nav-user"
 import { NotificationBell } from "@/components/shell/notification-bell"
 
@@ -151,6 +152,7 @@ export function AppShell({
           <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
             {children}
           </main>
+          {isAuthEnabled() ? <CompanyNamePrompt /> : null}
         </SidebarInset>
       </SidebarProvider>
     </TourProvider>
