@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+import { exportFileName } from "@workspace/ops-contracts"
+
 import { jsonError, parseId, requireCustomerAccess } from "@/lib/api-utils"
 import { buildProofOfPlay } from "@/lib/campaign-statement"
 import { getOwnedCampaign } from "@/lib/campaign-store"
@@ -52,7 +54,10 @@ export async function GET(_req: Request, { params }: Params) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="admobi-proof-of-play-${campaign.id}.pdf"`,
+        // Named for the campaign, not its id: this is evidence of delivery that
+        // an advertiser files and comes back to. exportFileName slugifies, so a
+        // campaign name cannot break out of the quoted filename here.
+        "Content-Disposition": `attachment; filename="${exportFileName("proof of play", campaign.name, "pdf")}"`,
       },
     })
   } catch (error: unknown) {

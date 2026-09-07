@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+import { exportFileName } from "@workspace/ops-contracts"
+
 import { jsonError, requireCustomerAccess } from "@/lib/api-utils"
 import { buildBudgetStatement } from "@/lib/campaign-statement"
 import { listOwnedCampaigns } from "@/lib/campaign-store"
@@ -45,7 +47,9 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="admobi-campaign-statement.pdf"',
+        // Account-level, so there is no single campaign to name it after — but
+        // it still gets a date, or every download collides in Downloads.
+        "Content-Disposition": `attachment; filename="${exportFileName("campaign budget statement", null, "pdf")}"`,
       },
     })
   } catch (error: unknown) {

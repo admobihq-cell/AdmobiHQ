@@ -17,6 +17,7 @@ import {
   MonitorPlay,
   Radio,
   Settings,
+  Siren,
   Truck,
   UserCog,
   Users,
@@ -105,6 +106,9 @@ const navItems: Array<{
     icon: Radio,
     permission: "announcements",
   },
+  // Above Support on purpose: an emergency queue that sorts below the helpdesk
+  // is a queue nobody checks first.
+  { href: "/sos", label: "SOS", icon: Siren, permission: "safety" },
   { href: "/support", label: "Support", icon: LifeBuoy, permission: "support" },
   {
     href: "/activity",

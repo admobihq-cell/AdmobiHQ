@@ -24,6 +24,9 @@ import {
   OPS_PERMISSIONS,
   PLATFORM_FLAG_KEYS,
   RIDEHAIL_PLATFORMS,
+  SAFETY_INCIDENT_STATUSES,
+  SAFETY_INCIDENT_TYPES,
+  SAFETY_SEVERITIES,
   SUPPORT_CATEGORIES,
   SUPPORT_CHANNELS,
   SUPPORT_PRIORITIES,
@@ -314,3 +317,56 @@ export type SupportCaseCreateInput = z.infer<typeof supportCaseCreateSchema>
 export type SupportMessageCreateInput = z.infer<typeof supportMessageCreateSchema>
 export type SupportCaseUpdateInput = z.infer<typeof supportCaseUpdateSchema>
 export type DocumentExportRequest = z.infer<typeof documentExportRequestSchema>
+
+// ---------------------------------------------------------------------------
+// Driver SOS / safety incidents
+// ---------------------------------------------------------------------------
+
+const latitude = z.number().min(-90).max(90)
+const longitude = z.number().min(-180).max(180)
+/** Metres. Capped rather than unbounded so a garbage reading can't be stored. */
+const accuracyMetres = z.number().int().min(0).max(100_000)
+
+/**
+ * Every location field is optional: a driver with location denied, disabled,
+ * or simply no fix must still be able to file the report. The API stores nulls
+ * and ops sees "location unavailable".
+ */
+export const safetyIncidentCreateSchema = z.object({
+  type: z.enum(SAFETY_INCIDENT_TYPES),
+  channel: z.enum(["driver-web", "driver-mobile"]),
+  description: z.string().trim().max(2000).optional(),
+  reported_lat: latitude.optional(),
+  reported_lng: longitude.optional(),
+  reported_accuracy_m: accuracyMetres.optional(),
+})
+
+/** Drivers may only cancel. Every other transition is ops-only. */
+export const safetyIncidentDriverUpdateSchema = z.object({
+  status: z.literal("cancelled"),
+})
+
+export const safetyIncidentOpsUpdateSchema = z.object({
+  status: z.enum(SAFETY_INCIDENT_STATUSES).optional(),
+  severity: z.enum(SAFETY_SEVERITIES).optional(),
+  resolution: z.string().trim().max(2000).optional(),
+})
+
+/** Both coordinates required — a half-fix is not a position. */
+export const safetyIncidentLocationSchema = z.object({
+  lat: latitude,
+  lng: longitude,
+  accuracy_m: accuracyMetres.optional(),
+})
+
+export const safetyIncidentMessageCreateSchema = z.object({
+  body: z.string().trim().min(1).max(4000),
+  /** Ops-only; the driver routes hardcode false regardless of what is sent. */
+  internal_note: z.boolean().optional(),
+})
+
+export type SafetyIncidentCreateInput = z.infer<typeof safetyIncidentCreateSchema>
+export type SafetyIncidentDriverUpdateInput = z.infer<typeof safetyIncidentDriverUpdateSchema>
+export type SafetyIncidentOpsUpdateInput = z.infer<typeof safetyIncidentOpsUpdateSchema>
+export type SafetyIncidentLocationInput = z.infer<typeof safetyIncidentLocationSchema>
+export type SafetyIncidentMessageCreateInput = z.infer<typeof safetyIncidentMessageCreateSchema>

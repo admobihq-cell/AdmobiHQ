@@ -266,6 +266,54 @@ export async function listSupportCases(
   return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
 }
 
+/**
+ * The ops SOS queue. Mirrors listSupportCases, with the photo count included
+ * so the list can show "3 photos" without an N+1 per row.
+ */
+export async function listSafetyIncidents(
+  params: Partial<PaginationParams> & {
+    status?: string
+    type?: string
+    severity?: string
+  } = {},
+) {
+  const parsed = parsePagination({
+    ...params,
+    sortBy: params.sortBy ?? "created_at",
+  })
+  const where: Prisma.SafetyIncidentWhereInput = {}
+
+  if (parsed.search) {
+    where.OR = [
+      { driver_name: { contains: parsed.search, mode: "insensitive" } },
+      { driver_phone: { contains: parsed.search, mode: "insensitive" } },
+      { description: { contains: parsed.search, mode: "insensitive" } },
+    ]
+  }
+  if (params.status) where.status = params.status
+  if (params.type) where.type = params.type
+  if (params.severity) where.severity = params.severity
+
+  const sortField = ["created_at", "updated_at", "status", "severity"].includes(
+    parsed.sortBy ?? "",
+  )
+    ? parsed.sortBy!
+    : "created_at"
+
+  const [items, total] = await Promise.all([
+    prisma.safetyIncident.findMany({
+      where,
+      orderBy: { [sortField]: parsed.sortDir },
+      skip: (parsed.page - 1) * parsed.pageSize,
+      take: parsed.pageSize,
+      include: { _count: { select: { photos: true } } },
+    }),
+    prisma.safetyIncident.count({ where }),
+  ])
+
+  return toPaginatedResult(items, total, parsed.page, parsed.pageSize)
+}
+
 export async function listAnnouncementBroadcasts(
   params: Partial<PaginationParams> = {},
 ): Promise<
