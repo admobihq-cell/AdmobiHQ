@@ -79,7 +79,13 @@ Google OAuth round-trip with no extra storage of our own — which matters becau
 Users list reads Clerk, not Postgres (`listPlatformUsers` in
 [apps/api/lib/platform-users.ts](../../apps/api/lib/platform-users.ts)). The field is
 required: both "Send code" and "Continue with Google" stay disabled until it is filled.
-Nothing reads it back yet — `toPlatformUserDto` is where it would surface in ops.
+
+Ops reads it back in two places, both resolving it from Clerk at read time rather than
+copying it into Postgres: the **Users** page (`toPlatformUserDto` adds a `company` column,
+rendered for customers only — drivers never set one) and the **campaign review** screen
+(`getCustomerCompanyName` fills `CampaignDto.company_name` in both `GET /v1/campaigns/[id]`
+and the `PATCH .../review` response, so the company survives a decision without the row
+blanking out). Both lookups are best-effort: a Clerk outage shows "—", never a 500.
 
 Driver sign-up deliberately does not ask for this; drivers sign up as individuals.
 
