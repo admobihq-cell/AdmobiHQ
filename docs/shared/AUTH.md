@@ -52,6 +52,37 @@ signIn.create({ identifier: email })
 
 Google is a separate path on the same hook: `signIn.sso({ strategy: "oauth_google", redirectCallbackUrl, redirectUrl })` — see [apps/customer-web/components/auth/advertiser-sign-in.tsx](../../apps/customer-web/components/auth/advertiser-sign-in.tsx) and [apps/driver-web/components/auth/driver-sign-in.tsx](../../apps/driver-web/components/auth/driver-sign-in.tsx).
 
+### Sign-up: bot protection needs a `#clerk-captcha` element
+
+Clerk runs Cloudflare Turnstile on **sign-up** (never sign-in), and in a hand-rolled flow it
+mounts that widget into a `<div id="clerk-captcha" />` you provide. If the element is absent,
+`clerk-js` warns and falls back to an invisible widget appended to `document.body` with
+`display: none` — so any visitor Turnstile decides to challenge interactively can never solve
+it, and the challenge dies with Turnstile error `600010`.
+
+This breaks the Google button too, not just the email code: both `signUp.create()` and
+`signUp.sso()` await `getCaptchaToken()` as their first step, so the click registers, the
+promise hangs through Turnstile's retries, and nothing visible happens.
+
+Every hand-rolled sign-up form must render `<div id="clerk-captcha" />` in the same step as
+its submit and Google buttons — see
+[advertiser-sign-up.tsx](../../apps/customer-web/components/auth/advertiser-sign-up.tsx),
+[driver-sign-up.tsx](../../apps/driver-web/components/auth/driver-sign-up.tsx), and
+[admobi-otp-sign-up-form.tsx](../../apps/ops/components/admobi-otp-sign-up-form.tsx).
+
+### Advertiser sign-up collects a company name
+
+`<AdvertiserSignUp>` asks for a company or organization name and passes it as
+`unsafeMetadata: { companyName }` to both `signUp.create()` and `signUp.sso()`. Clerk copies
+`unsafeMetadata` onto the created user once the sign-up completes, so the value survives the
+Google OAuth round-trip with no extra storage of our own — which matters because the ops
+Users list reads Clerk, not Postgres (`listPlatformUsers` in
+[apps/api/lib/platform-users.ts](../../apps/api/lib/platform-users.ts)). The field is
+required: both "Send code" and "Continue with Google" stay disabled until it is filled.
+Nothing reads it back yet — `toPlatformUserDto` is where it would surface in ops.
+
+Driver sign-up deliberately does not ask for this; drivers sign up as individuals.
+
 ### Ops (`apps/ops`)
 
 - [app/sign-in/[[...sign-in]]/page.tsx](../../apps/ops/app/sign-in/%5B%5B...sign-in%5D%5D/page.tsx) and the sign-up equivalent call `getOpsAccess()` server-side first — already-authorized users are redirected straight to `/home`; non-`@admobihq.com` emails get `<OpsAccessDenied>` instead of a form.
