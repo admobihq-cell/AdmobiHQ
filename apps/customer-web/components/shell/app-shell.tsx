@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
 
 import { Logo } from "@workspace/ui/brand/logo"
@@ -33,6 +34,7 @@ import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 import { TourProvider } from "@workspace/ui/components/tour-provider"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { readCompanyName } from "@/lib/company-name"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
 import { CompanyNamePrompt } from "@/components/shell/company-name-prompt"
@@ -50,6 +52,14 @@ function useNoUser() {
 /** Same "pick the hook once at module load" pattern as nav-user.tsx —
  * useUser() must never run unless ClerkProvider is mounted. */
 const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
+
+/** <CompanyNamePrompt>'s dialog fades out over `duration-100` (see the
+ * data-closed:animate-out classes in packages/ui/src/components/dialog.tsx).
+ * Handing the tour its go-ahead in the same commit the dialog closes opens it
+ * underneath a scrim that is still on screen, so wait out the exit first.
+ * ponytail: fixed settle matched to that declared duration — if the dialog's
+ * transition gets longer, this has to grow with it. */
+const PROMPT_EXIT_SETTLE_MS = 180
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -86,11 +96,26 @@ export function AppShell({
   const navItems = visibleNavItems(new Set(enabledFlags))
   const { user } = useUserIfEnabled()
 
+  // Gates the product tour's first-run auto-open. <CompanyNamePrompt> below
+  // opens for anyone who arrived without a company (Google sign-up, or an
+  // account made before we asked); letting the tour auto-open behind that modal
+  // put both on screen at once, with the dialog holding focus and its overlay
+  // covering the sidebar items the tour points at.
+  const companyKnown = Boolean(readCompanyName(user?.unsafeMetadata))
+  const [tourReady, setTourReady] = useState(false)
+
+  useEffect(() => {
+    if (!companyKnown || tourReady) return
+    const timer = setTimeout(() => setTourReady(true), PROMPT_EXIT_SETTLE_MS)
+    return () => clearTimeout(timer)
+  }, [companyKnown, tourReady])
+
   return (
     <TourProvider
       app="customer"
       userId={user?.id ?? null}
       chapters={customerTourChapters}
+      autoStartReady={tourReady}
     >
       <SidebarProvider>
         <Sidebar variant="inset" collapsible="icon">
