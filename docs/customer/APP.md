@@ -27,7 +27,7 @@ Sidebar app shell. What is real vs placeholder:
 | `/map` | mapcn/MapLibre with `@workspace/geo` Nairobi fixtures |
 | `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
 | `/reports` | **Coming soon** |
-| `/settings/billing` | Wallet/billing view (no payment gateway) |
+| `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
 | `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
 | `/settings/account`, `/settings/notifications`, `/settings/tour` | Working UI |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |

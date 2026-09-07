@@ -55,6 +55,29 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 
 ---
 
+## Overview tab
+
+`app/(tabs)/index.tsx` mirrors customer-web's `OverviewView` deliberately, so
+the two surfaces can't disagree about what "live" or "committed" means:
+
+- **Live now / In review / Needs you / Committed budget** are derived from
+  `/v1/customer/campaigns` via `useCampaigns()`. Committed counts approved
+  campaigns only — a draft's budget is a guess until ops agrees to run it.
+- **Recent activity** is the merged inbox (`useCustomerInbox()`), tappable
+  through to whatever the notification names, marking the row read on the way.
+- No impressions, delivery-rate or spend tiles. Nothing serves those yet, and
+  an invented number on a dashboard is worse than a missing one.
+- Pull-to-refresh refetches both feeds.
+
+The **wallet hero** is the one thing on this screen that is not API data: there
+is no balance endpoint until a payment provider is wired up, so it reads the
+on-device AsyncStorage balance through `useWallet()` (`lib/wallet.ts`), the same
+query the billing screen uses — a top-up on billing now shows here instead of
+the card sitting frozen at the seed value. Its "N campaigns live" line *is*
+real, counted off the campaign feed.
+
+---
+
 ## Campaigns
 
 API-backed against `/v1/customer/campaigns` (same contracts as customer-web):

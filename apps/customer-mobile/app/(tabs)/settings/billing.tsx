@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Stack, useFocusEffect } from "expo-router"
 import {
   ActivityIndicator,
@@ -27,14 +27,14 @@ import {
   Warning,
 } from "@/components/icons"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { useCampaigns } from "@/lib/use-campaigns"
 import {
   formatCurrency,
-  getAutoReloadSettings,
-  getWalletBalance,
-  PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT,
   PLACEHOLDER_WALLET_BALANCE,
   setAutoReloadSettings,
   topUpWallet,
+  useWallet,
+  WALLET_QUERY_KEY,
   WALLET_CARD_BG,
   WALLET_CARD_FG,
   type AutoReloadSettings,
@@ -86,13 +86,11 @@ export default function BillingSettingsScreen() {
 
   const queryClient = useQueryClient()
 
-  const walletQuery = useQuery({
-    queryKey: ["wallet"],
-    queryFn: async () => {
-      const [bal, reload] = await Promise.all([getWalletBalance(), getAutoReloadSettings()])
-      return { balance: bal, autoReload: reload }
-    },
-  })
+  const walletQuery = useWallet()
+  const campaignsQuery = useCampaigns()
+  const liveCampaignCount = (campaignsQuery.data ?? []).filter(
+    (c) => c.flight_phase === "live",
+  ).length
   const balance = walletQuery.data?.balance ?? PLACEHOLDER_WALLET_BALANCE
   const autoReload = walletQuery.data?.autoReload ?? null
   const loading = walletQuery.isLoading
@@ -323,7 +321,7 @@ export default function BillingSettingsScreen() {
     onSuccess: () => {
       setPanel(null)
       setTopUpAmount("")
-      void queryClient.invalidateQueries({ queryKey: ["wallet"] })
+      void queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY })
     },
   })
   function handleTopUp(amount: number) {
@@ -334,7 +332,7 @@ export default function BillingSettingsScreen() {
   const saveAutoReloadMutation = useMutation({
     mutationFn: (next: AutoReloadSettings) => setAutoReloadSettings(next),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["wallet"] })
+      void queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY })
     },
   })
   function handleSaveAutoReload(enabled: boolean) {
@@ -399,8 +397,8 @@ export default function BillingSettingsScreen() {
             <Text style={styles.balance}>{hidden ? "••••••••" : formatCurrency(balance)}</Text>
           )}
           <Text style={styles.walletHint}>
-            Auto-reload is {autoReload?.enabled ? "on" : "off"} · {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT}{" "}
-            active campaigns
+            Auto-reload is {autoReload?.enabled ? "on" : "off"} · {liveCampaignCount} campaign
+            {liveCampaignCount === 1 ? "" : "s"} live
           </Text>
 
           <View style={styles.actionsRow}>
