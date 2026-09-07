@@ -21,6 +21,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
+import { useCampaigns } from "@/lib/use-campaigns"
 import {
   OLDER_WALLET_TRANSACTIONS,
   SPEND_BY_CAMPAIGN,
@@ -31,7 +32,6 @@ import {
   formatCurrency,
   getAutoReloadSettings,
   getWalletBalance,
-  PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT,
   PLACEHOLDER_WALLET_BALANCE,
   setAutoReloadSettings,
   topUpWallet,
@@ -50,6 +50,13 @@ export function WalletView() {
   const [topUpAmount, setTopUpAmount] = useState("")
   const [thresholdInput, setThresholdInput] = useState("")
   const [showOlderTransactions, setShowOlderTransactions] = useState(false)
+
+  // The balance is still on-device (no payment provider yet), but the campaign
+  // count beside it is real — it used to be a frozen 3.
+  const campaignsQuery = useCampaigns()
+  const liveCampaignCount = (campaignsQuery.data ?? []).filter(
+    (c) => c.flight_phase === "live",
+  ).length
 
   useEffect(() => {
     const reload = getAutoReloadSettings()
@@ -112,8 +119,8 @@ export function WalletView() {
               {hidden ? "••••••••" : formatCurrency(balance)}
             </p>
             <p className="text-sm text-primary-foreground/75">
-              Auto-reload is {autoReload?.enabled ? "on" : "off"} ·{" "}
-              {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT} active campaigns
+              Auto-reload is {autoReload?.enabled ? "on" : "off"} · {liveCampaignCount}{" "}
+              campaign{liveCampaignCount === 1 ? "" : "s"} live
             </p>
           </div>
 

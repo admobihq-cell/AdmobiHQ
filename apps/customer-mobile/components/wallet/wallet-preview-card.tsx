@@ -3,16 +3,25 @@ import { Pressable, Text, View } from "react-native"
 
 import { ChevronRight, Wallet } from "@/components/icons"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
+import { useCampaigns } from "@/lib/use-campaigns"
 import {
   formatCurrency,
-  PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT,
   PLACEHOLDER_WALLET_BALANCE,
+  useWallet,
   WALLET_CARD_BG,
   WALLET_CARD_FG,
 } from "@/lib/wallet"
 
 export function WalletPreviewCard() {
   const router = useRouter()
+  const wallet = useWallet()
+  // Same query key the overview screen already uses, so this costs no extra
+  // request — react-query serves both from one cache entry.
+  const campaignsQuery = useCampaigns()
+
+  const balance = wallet.data?.balance ?? PLACEHOLDER_WALLET_BALANCE
+  const autoReloadOn = wallet.data?.autoReload.enabled ?? false
+  const liveCount = (campaignsQuery.data ?? []).filter((c) => c.flight_phase === "live").length
 
   const styles = useThemedStyles(() => ({
     card: {
@@ -66,9 +75,10 @@ export function WalletPreviewCard() {
         </View>
         <ChevronRight color={WALLET_CARD_FG} size={18} />
       </View>
-      <Text style={styles.balance}>{formatCurrency(PLACEHOLDER_WALLET_BALANCE)}</Text>
+      <Text style={styles.balance}>{formatCurrency(balance)}</Text>
       <Text style={styles.hint}>
-        {PLACEHOLDER_ACTIVE_CAMPAIGN_COUNT} active campaigns · auto-reload off
+        {liveCount} campaign{liveCount === 1 ? "" : "s"} live · auto-reload{" "}
+        {autoReloadOn ? "on" : "off"}
       </Text>
     </Pressable>
   )

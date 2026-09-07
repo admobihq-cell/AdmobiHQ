@@ -161,6 +161,37 @@ export function SkeletonCampaignCards({ count = 4 }: { count?: number }) {
   )
 }
 
+/**
+ * Icon tile, value, label — matches `StatCard` and its two-per-row wrap on the
+ * overview screen.
+ */
+export function SkeletonStatCards({ count = 4 }: { count?: number }) {
+  const styles = useThemedStyles((c) => ({
+    card: {
+      flex: 1,
+      minWidth: "46%" as const,
+      padding: spacing.md,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      gap: 4,
+    },
+  }))
+
+  return (
+    <View style={staticStyles.statGrid}>
+      {Array.from({ length: count }).map((_, index) => (
+        <View key={index} style={styles.card}>
+          <SkeletonBlock width={32} height={32} borderRadius={8} />
+          <SkeletonBlock width={56} height={20} style={staticStyles.rowGap} />
+          <SkeletonBlock width={80} height={12} />
+        </View>
+      ))}
+    </View>
+  )
+}
+
 const staticStyles = StyleSheet.create({
   list: {
     gap: 0,
@@ -183,6 +214,11 @@ const staticStyles = StyleSheet.create({
   },
   cardList: {
     gap: spacing.md,
+  },
+  statGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
   cardHeader: {
     flexDirection: "row",

@@ -1,14 +1,20 @@
 import { useUser } from "@clerk/clerk-expo"
 import { useMemo } from "react"
 import { useRouter } from "expo-router"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type { CampaignDto } from "@workspace/ops-contracts"
 
-import { Campaigns, Eye, Map, Radio, TrendingUp } from "@/components/icons"
+import { SkeletonListRows, SkeletonStatCards } from "@/components/app/skeleton"
+import { Campaigns, Map, Radio, Time, TrendingUp, Warning } from "@/components/icons"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { StatCard } from "@/components/ui/stat-card"
 import { WalletPreviewCard } from "@/components/wallet/wallet-preview-card"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { formatRelativeTime } from "@/lib/notifications-data"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
+import { formatCampaignError, useCampaigns } from "@/lib/use-campaigns"
+import { useCustomerInbox } from "@/lib/use-customer-inbox"
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -31,32 +37,45 @@ function useNoUser() {
  */
 const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
-const RECENT_ACTIVITY = [
-  {
-    id: "1",
-    title: "Westlands Retail Push",
-    detail: "Delivery reached 92% of weekly target",
-    time: "2h ago",
-  },
-  {
-    id: "2",
-    title: "CBD Summer Flight",
-    detail: "18 new proof-of-play events recorded",
-    time: "5h ago",
-  },
-  {
-    id: "3",
-    title: "Karen Estate Awareness",
-    detail: "Scheduled to start Monday · 6 corridors",
-    time: "Yesterday",
-  },
-] as const
+/**
+ * Every number here is derived from the two feeds this app already has —
+ * `/v1/customer/campaigns` and the merged inbox. Mirrors customer-web's
+ * `OverviewView` deliberately, so the two surfaces can't disagree about what
+ * "live" or "committed" means. Impressions, delivery rate and spend are absent
+ * on purpose: nothing serves them yet, and an invented number on a dashboard
+ * is worse than a missing one.
+ */
+const NEEDS_YOU = new Set(["draft", "rejected", "changes_requested"])
+
+function summarize(campaigns: CampaignDto[]) {
+  const live = campaigns.filter((c) => c.flight_phase === "live").length
+  const scheduled = campaigns.filter((c) => c.flight_phase === "scheduled").length
+  const inReview = campaigns.filter((c) => c.status === "submitted").length
+  const needsYou = campaigns.filter((c) => NEEDS_YOU.has(c.status)).length
+  // Only approved flights count as committed — a draft's budget is a guess
+  // until our team agrees to run it.
+  const approved = campaigns.filter((c) => c.status === "approved")
+  const committed = approved.reduce((total, c) => total + Number(c.budget_kes ?? 0), 0)
+
+  return { live, scheduled, inReview, needsYou, committed, approved: approved.length }
+}
+
+function plural(count: number, one: string, many = `${one}s`): string {
+  return `${count} ${count === 1 ? one : many}`
+}
 
 export default function OverviewScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { user } = useUserIfEnabled()
+
+  const campaignsQuery = useCampaigns()
+  const inbox = useCustomerInbox()
+
+  const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
+  const stats = useMemo(() => summarize(campaigns), [campaigns])
+  const recent = useMemo(() => inbox.items.slice(0, 5), [inbox.items])
 
   const styles = useMemo(
     () =>
@@ -136,6 +155,9 @@ export default function OverviewScreen() {
           backgroundColor: colors.primary,
           marginTop: 5,
         },
+        activityDotRead: {
+          backgroundColor: colors.border,
+        },
         activityCopy: {
           flex: 1,
           gap: 2,
@@ -159,6 +181,22 @@ export default function OverviewScreen() {
           backgroundColor: colors.border,
           marginLeft: spacing.md + 10 + spacing.md,
         },
+        empty: {
+          alignItems: "center",
+          gap: spacing.xs,
+          paddingHorizontal: spacing.lg,
+          paddingVertical: spacing.xl,
+        },
+        emptyTitle: {
+          ...typography.section,
+          color: colors.text,
+        },
+        emptyBody: {
+          ...typography.caption,
+          color: colors.mutedForeground,
+          textAlign: "center",
+          lineHeight: 18,
+        },
       }),
     [colors],
   )
@@ -171,6 +209,17 @@ export default function OverviewScreen() {
         { paddingTop: spacing.lg, paddingBottom: insets.bottom + spacing.lg },
       ]}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={campaignsQuery.isRefetching}
+          onRefresh={() => {
+            void campaignsQuery.refetch()
+            void inbox.refetch()
+          }}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+        />
+      }
     >
       <View style={styles.hero}>
         <Text style={styles.heroEyebrow}>
@@ -178,19 +227,52 @@ export default function OverviewScreen() {
         </Text>
         <Text style={styles.heroTitle}>Your campaigns at a glance</Text>
         <Text style={styles.heroBody}>
-          Placeholder dashboard — live metrics and reporting will connect to
-          your Admobi account here.
+          What&apos;s in market right now, what&apos;s with our review team, and what&apos;s
+          waiting on you.
         </Text>
       </View>
 
       <WalletPreviewCard />
 
-      <View style={styles.statsGrid}>
-        <StatCard icon={Radio} label="Active campaigns" value="3" hint="+1 this week" />
-        <StatCard icon={Eye} label="Impressions" value="1.2M" hint="Last 30 days" />
-        <StatCard icon={TrendingUp} label="Delivery rate" value="84%" hint="On target" />
-        <StatCard icon={Campaigns} label="Spend" value="KES 420k" hint="Month to date" />
-      </View>
+      {campaignsQuery.error ? (
+        <ApiErrorBanner
+          message={formatCampaignError(campaignsQuery.error)}
+          onRetry={() => void campaignsQuery.refetch()}
+        />
+      ) : null}
+
+      {campaignsQuery.isPending ? (
+        <SkeletonStatCards count={4} />
+      ) : (
+        <View style={styles.statsGrid}>
+          <StatCard
+            icon={Radio}
+            label="Live now"
+            value={String(stats.live)}
+            hint={stats.scheduled > 0 ? `${plural(stats.scheduled, "flight")} scheduled` : undefined}
+          />
+          <StatCard
+            icon={Time}
+            label="In review"
+            value={String(stats.inReview)}
+            hint={stats.inReview > 0 ? "With our team" : undefined}
+          />
+          <StatCard
+            icon={Warning}
+            label="Needs you"
+            value={String(stats.needsYou)}
+            hint={stats.needsYou > 0 ? "Drafts and change requests" : undefined}
+          />
+          <StatCard
+            icon={TrendingUp}
+            label="Committed budget"
+            value={`KES ${stats.committed.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`}
+            hint={
+              stats.approved > 0 ? `Across ${plural(stats.approved, "approved flight")}` : undefined
+            }
+          />
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Quick actions</Text>
@@ -215,19 +297,40 @@ export default function OverviewScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Recent activity</Text>
         <View style={styles.group}>
-          {RECENT_ACTIVITY.map((item, index) => (
-            <View key={item.id}>
-              {index > 0 ? <View style={styles.divider} /> : null}
-              <View style={styles.activityRow}>
-                <View style={styles.activityDot} />
-                <View style={styles.activityCopy}>
-                  <Text style={styles.activityTitle}>{item.title}</Text>
-                  <Text style={styles.activityDetail}>{item.detail}</Text>
-                </View>
-                <Text style={styles.activityTime}>{item.time}</Text>
-              </View>
+          {inbox.loading ? (
+            <SkeletonListRows count={3} />
+          ) : recent.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>Nothing has happened yet</Text>
+              <Text style={styles.emptyBody}>
+                Submit a campaign and every review decision, schedule change, and announcement
+                lands here.
+              </Text>
             </View>
-          ))}
+          ) : (
+            recent.map((item, index) => (
+              <View key={item.id}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <Pressable
+                  style={({ pressed }) => [styles.activityRow, pressed && styles.actionPressed]}
+                  disabled={!item.href}
+                  onPress={() => {
+                    void inbox.markRead(item)
+                    if (item.href) router.push(item.href as never)
+                  }}
+                >
+                  <View style={[styles.activityDot, item.read && styles.activityDotRead]} />
+                  <View style={styles.activityCopy}>
+                    <Text style={styles.activityTitle}>{item.title}</Text>
+                    <Text style={styles.activityDetail} numberOfLines={2}>
+                      {item.body}
+                    </Text>
+                  </View>
+                  <Text style={styles.activityTime}>{formatRelativeTime(item.createdAt)}</Text>
+                </Pressable>
+              </View>
+            ))
+          )}
         </View>
       </View>
     </ScrollView>
