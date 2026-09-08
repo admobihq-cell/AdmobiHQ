@@ -125,6 +125,21 @@ function RootLayout() {
               persister: queryPersister,
               maxAge: 24 * 60 * 60 * 1000,
               buster: QUERY_CACHE_BUSTER,
+              dehydrateOptions: {
+                // The persister round-trips query data through JSON. Any
+                // query holding a Date or a method (a Clerk resource's
+                // revoke(), say) comes back as a string / undefined and
+                // throws "undefined is not a function" the moment the
+                // screen renders it. Such queries opt out with
+                // `meta: { persist: false }`.
+                // (inlines TanStack's default success-only check rather than
+                // importing defaultShouldDehydrateQuery — the persist-client
+                // package resolves its own query-core copy, so the imported
+                // predicate's Query type doesn't match this one.)
+                shouldDehydrateQuery: (query) =>
+                  query.meta?.persist !== false &&
+                  query.state.status === "success",
+              },
             }}
           >
             <RootNavigator

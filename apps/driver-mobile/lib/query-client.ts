@@ -7,7 +7,7 @@ import { createMMKV } from "react-native-mmkv"
  * break old cached entries (e.g. a field is renamed or removed). Changing it
  * invalidates all persisted cache on next launch.
  */
-export const QUERY_CACHE_BUSTER = "v1"
+export const QUERY_CACHE_BUSTER = "v2"
 
 export const queryClient = new QueryClient({
   defaultOptions: {
