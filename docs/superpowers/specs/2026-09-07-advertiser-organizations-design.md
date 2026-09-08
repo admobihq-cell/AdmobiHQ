@@ -270,7 +270,7 @@ Closed set, exported from `packages/ops-contracts/src/enums.ts` alongside
 campaigns:read · campaigns:write · campaigns:submit ·
 creatives:write · reports:read ·
 billing:read · billing:write ·
-team:manage · org:manage
+team:manage · org:manage · activity:read · support:read_all
 ```
 
 **Deliberate deviation from the ops convention.** `OpsPermission` is flat and
@@ -286,7 +286,7 @@ who has access is owner-only by default.
 
 | Role | Permissions | Intended for |
 |---|---|---|
-| **Manager** | `campaigns:read`, `campaigns:write`, `campaigns:submit`, `creatives:write`, `reports:read`, `billing:read` | Runs campaigns end to end. Cannot change payment details or the team. |
+| **Manager** | `campaigns:read`, `campaigns:write`, `campaigns:submit`, `creatives:write`, `reports:read`, `billing:read`, `activity:read`, `support:read_all` | Runs campaigns end to end. Cannot change payment details or the team. |
 | **Member** | `campaigns:read`, `campaigns:write`, `creatives:write`, `reports:read` | Drafts and edits. Cannot submit — no spend authority. |
 | **Viewer** | `campaigns:read`, `reports:read` | Read-only stakeholder or client contact. |
 
@@ -341,6 +341,7 @@ New routes:
 | `PATCH/DELETE /v1/customer/org/members/[id]` | `team:manage` | Change role, remove |
 | `POST /v1/customer/org/invitations/[token]/accept` | authenticated | Accept an invite |
 | `GET /v1/customer/org/roles` | `team:manage` | List assignable roles |
+| `GET /v1/customer/org/activity` | `activity:read` | Org-scoped activity feed (§13) |
 
 Modelled on the existing `/v1/team` and `/v1/roles` handlers.
 
@@ -428,17 +429,28 @@ Each is additive on top of this model, with the migration path noted:
 
 ## 11. Suggested sequencing
 
-1. Schema SQL + Prisma models + seeded starter roles.
+1. Schema SQL + Prisma models + seeded starter roles, including
+   `AuditEvent.org_id` (§13.2).
 2. `customer-auth.ts` — org resolution, lazy bootstrap, permission set, cache.
-3. Backfill script; run and verify zero orphaned campaigns.
-4. `campaign-store.ts` scoping flip + permission checks on existing routes.
-5. Org and member routes + Resend invitation email.
-6. Client: Team settings, org name, `<CompanyNamePrompt>` repoint.
-7. Ops joins replace Clerk metadata reads; `company-name.ts` deleted.
-8. `AUTH.md` updated.
+3. `auditFromCustomerUser()` stamps `org_id`; ops campaign-review stamps it too.
+4. Backfill script; run and verify zero orphaned campaigns.
+5. `campaign-store.ts` scoping flip + permission checks on existing routes.
+6. Org and member routes + Resend invitation email.
+7. Client: Team settings, org name, `<CompanyNamePrompt>` repoint.
+8. Ops joins replace Clerk metadata reads; `company-name.ts` deleted.
+9. Activity route + allowlist + advertiser DTO; activity UI in settings.
+10. Notification fan-out, sole-owner deletion guard + ownership transfer,
+    soft-deleted membership, support `org_id` (§14.1–14.4).
+11. Ops advertiser org view (§14.5).
+12. `AUTH.md` updated.
 
-Steps 1–4 are shippable on their own: they make advertisers org-scoped with
-no user-visible change. Steps 5–6 turn on teams.
+Steps 1–5 are shippable on their own: they make advertisers org-scoped with
+no user-visible change. Steps 6–7 turn on teams; step 9 turns on the activity
+feed.
+
+**Step 3 must not slip past step 5.** Audit rows written before `org_id` is
+stamped can only be recovered by the lossy backfill in §13.2. The activity
+*read* side (step 9) can ship whenever; the *write* side cannot.
 
 ---
 
@@ -484,3 +496,212 @@ problem §2 eliminated, reintroduced one level up.
 the existing driver Clerk instance and distinguish the actor with a Postgres
 row, rather than provisioning a fourth billable Clerk instance. Same reasoning
 as §3.1.
+
+---
+
+## 13. Org-scoped activity log
+
+An advertiser workspace shows its own activity: who invited whom, who edited or
+submitted a campaign, and what Admobi decided. Extends §4, §6 and §7.
+
+### 13.1 The table cannot be exposed directly
+
+`AuditEvent` is a **single global table** with no tenant column, carrying
+`ops_user`, `driver_user`, `customer` and `public` actors in the same rows. Two
+properties make direct exposure unsafe at any filter level:
+
+- It is the designated home for **internal ops commentary** — `Campaign.review_reason`
+  is documented as the advertiser-visible field precisely *because* "internal ops
+  commentary belongs in audit_events, not here". `summary` is prose written for
+  ops readers.
+- `toAuditEventDto` returns `actor_email` and `actor_user_id`. For an ops action
+  that is a staff `@admobihq.com` address, which must never reach an advertiser.
+
+So the advertiser feed is a **separate projection over the same table**, never
+`toAuditEventDto` with a `where` clause bolted on.
+
+### 13.2 Write side — must ship in v1
+
+Add to `AuditEvent`:
+
+```prisma
+  org_id Int?
+
+  @@index([org_id, created_at])
+```
+
+Stamped in two places:
+
+1. `auditFromCustomerUser()` resolves `org_id` from the actor's
+   `AdvertiserMember` row and sets it on every event.
+2. Ops routes acting on an advertiser-owned resource — principally
+   `PATCH /v1/campaigns/[id]/review` — stamp the campaign's `org_id`.
+
+This half is not deferrable. Campaign approval is the single most valuable entry
+in an advertiser's feed, and it is written by an *ops* actor, so without (2) the
+feed would show the advertiser's own edits and never Admobi's decisions.
+
+Backfill is possible but lossy: customer-actor rows resolve via
+`actor_user_id → AdvertiserMember → org_id`, and ops rows resolve via
+`entity_type = "campaign"` + `entity_id → Campaign.org_id`. Anything else stays
+null. Stamping from day one avoids relying on it.
+
+### 13.3 Read side — allowlist, and derived text
+
+`GET /v1/customer/org/activity`, cursor-paginated on `(org_id, created_at)`,
+gated on `activity:read`.
+
+**Allowlist, not denylist.** Only an explicit set of `(actor_type, action,
+entity_type)` triples is advertiser-visible. A newly added audit action is
+invisible to advertisers until someone deliberately adds it — fail-closed. A
+denylist would leak every future action by default.
+
+Initial allowlist: campaign created / updated / submitted / reviewed, creative
+uploaded / deleted, member invited / removed / role changed, org renamed.
+
+**Display text is derived, never echoed.** The DTO builds its label from
+`(action, entity_type, metadata)` — it does **not** pass `summary` through.
+That is the structural guarantee that ops prose cannot reach an advertiser, and
+it holds even if someone writes a careless summary later. Campaign decisions
+render `Campaign.review_reason`, which is already specified as advertiser-visible
+verbatim.
+
+**Actor identity is masked by type.** `customer` actors show the member's name or
+email. `ops_user` actors show a fixed `"Admobi review team"` — never
+`actor_email`, never `actor_user_id`. The advertiser DTO omits both fields
+entirely rather than nulling them.
+
+### 13.4 Permission and role placement
+
+`activity:read` joins the §6 permission set. Granted to **Owner** (implicitly)
+and **Manager**. Not granted to Member or Viewer: the feed surfaces team changes
+and billing-adjacent actions, so it is a supervisory view rather than a
+collaboration one. Custom roles can grant it once §9's custom roles land.
+
+### 13.5 Cost note
+
+`audit_events` is unbounded and lives on the Neon instance already shared with
+n8n. The `(org_id, created_at)` index and cursor pagination keep reads bounded;
+no retention policy is proposed here, but the table is a candidate for one if
+row count becomes a compute driver.
+
+### 13.6 Testing
+
+- A member of org A never sees an event belonging to org B.
+- An event whose triple is absent from the allowlist is not returned, even with
+  a matching `org_id`.
+- No advertiser activity response contains `actor_email`, `actor_user_id`, or
+  the raw `summary` string, asserted over a fixture including an ops-actor row
+  whose summary contains internal commentary.
+- An ops campaign review appears in the advertiser's feed as "Admobi review
+  team" with `review_reason` as the text.
+- `Member` and `Viewer` roles receive `403` from the activity route.
+
+---
+
+## 14. Additional scope
+
+Items 14.1–14.3 are defects this refactor introduces, not enhancements — they
+are only bugs *because* an account stops being one person. They ship with v1.
+
+### 14.1 Campaign decisions must notify the org, not the author
+
+`PATCH /v1/campaigns/[id]/review` writes its `CustomerNotification` and push to
+`updated.clerk_user_id` — the individual who created the campaign. That is
+correct today, because the author is the account. Once a campaign belongs to an
+org, the author may have left, been removed, or simply be away, and the decision
+reaches nobody.
+
+Fan out to every active org member holding `campaigns:read`, resolved at send
+time. The same applies to the submission confirmation in
+`POST /v1/customer/campaigns/[id]/submit`, which currently notifies only
+`auth.access.userId`.
+
+`CustomerNotification` stays keyed by `clerk_user_id` — a notification is
+addressed to a person. Only the *fan-out* changes: one row per recipient rather
+than one row for the author.
+
+### 14.2 Sole-owner account deletion must be blocked
+
+`<AccountSettingsView>` offers account deletion gated on Clerk's
+`deleteSelfEnabled`. Today "delete my account" is approximately "delete my
+data". After this change the org, its campaigns and its creatives survive the
+deletion of their only owner, with no member able to reach them.
+
+Deletion is refused when the user is the org's last owner, with two offered
+paths: **transfer ownership** to another member, or **delete the organization**
+(cascading to members, invitations, custom roles; campaigns are retained for the
+ops record and detached). This is the same invariant as §7's last-owner
+protection, enforced at a second entry point.
+
+`POST /v1/customer/org/transfer-ownership` (owner only) is added for the first
+path.
+
+### 14.3 Membership is soft-deleted
+
+`AdvertiserMember` gains `removed_at DateTime?`. Removing a member sets it
+rather than deleting the row.
+
+Hard deletion would leave the §13 activity feed and campaign authorship unable
+to resolve a name for anyone who has left — history would degrade to an unknown
+actor. Soft deletion is cheap now and awkward to retrofit once real history
+exists.
+
+Consequences: every membership lookup filters `removed_at: null`; the unique
+constraint on `clerk_user_id` means a removed member must have their row
+reactivated rather than re-inserted when re-invited (`removed_at = null`,
+`role_id` reset).
+
+### 14.4 Support cases become org-scoped
+
+`SupportCase` gains `org_id Int?`, stamped at creation from the reporter's
+membership. Visibility:
+
+- A member always sees cases they raised.
+- A member holding **`support:read_all`** sees every case belonging to the org.
+
+`support:read_all` is added to the §6 permission set and granted to **Owner**
+and **Manager** — the supervisory tier that already holds `activity:read`.
+Deliberately not gated on `team:manage`, which is owner-only in v1 and concerns
+team administration rather than support.
+
+Not org-visible to Members and Viewers by default: a case may concern billing, a
+payment dispute, or a complaint about a colleague.
+
+`Customer` is unchanged — it remains the per-person support/announcement record
+described in §9, and `org_id` lives on the case rather than on it.
+
+### 14.5 Ops advertiser org view
+
+A new ops page listing advertiser orgs, and a detail view showing members and
+their roles, the org's campaigns, and its activity. Built on the existing
+`entity-page.tsx` pattern, gated on an existing ops permission (`support` or a
+new `advertisers` entry in `OpsPermission` — decide during planning).
+
+Sequenced **after** the core lands (§11 step 8), not inside it. It gives the
+company-name join from §8 a real destination instead of a lone table column, and
+it is the surface ops will need to answer "who else is on this account?".
+
+### 14.6 Explicitly rejected
+
+- **Email-domain auto-join** — "anyone with an `@acme.com` address joins Acme".
+  Consumer domains (`gmail.com`, `yahoo.com`) would silently merge unrelated
+  advertisers into a single org, exposing campaigns and billing across
+  strangers. Only ever viable behind a verified-domain flow, and there is no
+  demand for it.
+- **Seat limits and per-seat billing** — waits on Pesapal.
+- **SAML/SSO and SCIM provisioning** — no demand signal.
+- **Per-org rate limits** — `rate-limit.ts` is per-user; teams barely change
+  aggregate load.
+
+### 14.7 Testing
+
+- A campaign decision produces one notification per active org member with
+  `campaigns:read`, and none for removed members.
+- A sole owner's deletion request returns `409`; after transferring ownership it
+  succeeds.
+- A removed member's name still resolves in the activity feed and on campaigns
+  they authored.
+- Re-inviting a removed member reactivates the existing row rather than
+  violating the unique constraint on `clerk_user_id`.
+- A Viewer sees only their own support cases; a Manager sees all the org's.
