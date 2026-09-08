@@ -120,6 +120,12 @@ export default function TabsLayout() {
             // Reached from the menu drawer instead of the bottom bar, to
             // keep the bar to the four most-used destinations.
             href: null,
+            // The native MapLibre view must not linger frozen in the
+            // background — its imperative native commands (clustering,
+            // camera) firing against a backgrounded/frozen native ref is
+            // what was throwing "undefined is not a function" on other
+            // tabs (Sentry #145387279). Unmount it on blur instead.
+            unmountOnBlur: true,
           }}
         />
         <Tabs.Screen
