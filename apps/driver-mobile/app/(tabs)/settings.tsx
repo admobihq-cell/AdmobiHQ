@@ -135,6 +135,10 @@ export default function SettingsScreen() {
       }))
     },
     enabled: Boolean(user),
+    // Rows carry a Date and a live Clerk revoke() — neither survives the
+    // persister's JSON round-trip. Live session state shouldn't be served
+    // off a 24h disk cache anyway.
+    meta: { persist: false },
   })
   const sessions = sessionsQuery.isError ? [] : (sessionsQuery.data ?? null)
 

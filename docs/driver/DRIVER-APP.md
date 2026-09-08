@@ -56,6 +56,30 @@ npm run env:pull -w driver-mobile
 npm run dev:mobile:driver          # Metro :8083, cleared cache
 ```
 
+### Persisted query cache
+
+`app/_layout.tsx` wraps the app in `PersistQueryClientProvider`, writing the
+TanStack Query cache to MMKV (24h `maxAge`, busted by `QUERY_CACHE_BUSTER` in
+`lib/query-client.ts`). The persister serialises with JSON, so **anything a
+`queryFn` returns must be JSON-safe**. A `Date` comes back as a string and a
+method comes back as `undefined`, and the screen throws
+`TypeError: undefined is not a function` on the render that reads it — after a
+relaunch only, which makes it look unrelated to the query.
+
+A query that must hold non-serialisable values opts out:
+
+```ts
+useQuery({
+  queryKey: ["driver-sessions", user?.id],
+  queryFn: /* rows holding a Date + a live Clerk revoke() */,
+  meta: { persist: false },
+})
+```
+
+`shouldDehydrateQuery` in the provider's `dehydrateOptions` honours that flag.
+Bump `QUERY_CACHE_BUSTER` whenever a cached shape changes, so devices already
+holding a bad entry drop it on next launch.
+
 ## Deliveries placeholders + the platform flag
 
 Deliveries ships as **placeholder screens behind one ops-controlled platform flag** — visible for demos, hidden otherwise, no redeploy. Distinct from a future per-driver `delivers` opt-in.
