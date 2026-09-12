@@ -1,4 +1,4 @@
-import { Bell, Compass, UserCircle, type LucideIcon } from "lucide-react"
+import { Activity, Bell, Compass, Users, UserCircle, type LucideIcon } from "lucide-react"
 
 export type SettingsNavItem = {
   href: string
@@ -13,6 +13,18 @@ export const settingsNavItems: SettingsNavItem[] = [
     label: "Profile & sign-in",
     icon: UserCircle,
     description: "Identity, sign-in, and sessions",
+  },
+  {
+    href: "/settings/team",
+    label: "Team",
+    icon: Users,
+    description: "Members, invites, and role permissions",
+  },
+  {
+    href: "/settings/activity",
+    label: "Activity",
+    icon: Activity,
+    description: "Campaign decisions and team changes",
   },
   {
     href: "/settings/notifications",
