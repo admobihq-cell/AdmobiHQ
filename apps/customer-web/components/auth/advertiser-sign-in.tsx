@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useSignIn } from "@clerk/nextjs"
 
@@ -33,6 +33,8 @@ const useSignInIfEnabled = isAuthEnabled() ? useSignIn : useDisabledSignIn
 export function AdvertiserSignIn() {
   const { signIn } = useSignInIfEnabled()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get("redirect_url") || "/"
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
@@ -92,7 +94,7 @@ export function AdvertiserSignIn() {
     if (signIn.status === "complete") {
       await signIn.finalize({
         navigate: () => {
-          router.push("/")
+          router.push(redirectUrl.startsWith("/") ? redirectUrl : "/")
         },
       })
       return
@@ -109,7 +111,7 @@ export function AdvertiserSignIn() {
     const { error: ssoError } = await signIn.sso({
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
-      redirectUrl: "/",
+      redirectUrl: redirectUrl.startsWith("/") ? redirectUrl : "/",
     })
     if (ssoError) {
       setError(ssoError.longMessage ?? ssoError.message ?? "Google sign-in failed.")

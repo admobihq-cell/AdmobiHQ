@@ -23,7 +23,10 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { readCompanyName, withCompanyName } from "@/lib/company-name"
+import {
+  deleteOrganization,
+  getOrgDeletionStatus,
+} from "@/lib/org-client"
 import { AccountSettingsSkeleton } from "@/components/skeletons/account-settings-skeleton"
 
 function useSignedInUser() {
@@ -45,7 +48,11 @@ function useSignedInAuth() {
 }
 
 function useNoAuth() {
-  return { sessionId: null as string | null, signOut: async () => {} }
+  return {
+    sessionId: null as string | null,
+    signOut: async () => {},
+    getToken: async () => null as string | null,
+  }
 }
 
 const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
@@ -121,19 +128,36 @@ type SessionRow = {
 
 export function AccountSettingsView() {
   const { user, isLoaded } = useUserIfEnabled()
-  const { sessionId, signOut } = useAuthIfEnabled()
+  const { sessionId, signOut, getToken } = useAuthIfEnabled()
   const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName ?? "")
   const [lastName, setLastName] = useState(user?.lastName ?? "")
   const [username, setUsername] = useState(user?.username ?? "")
-  const [company, setCompany] = useState(readCompanyName(user?.unsafeMetadata))
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteOrgOpen, setDeleteOrgOpen] = useState(false)
+
+  const deletionStatusQuery = useQuery({
+    queryKey: ["customer-org-deletion-status", user?.id],
+    queryFn: () => getOrgDeletionStatus(getToken),
+    enabled: Boolean(user?.deleteSelfEnabled),
+    retry: false,
+  })
+  const isSoleOwner = deletionStatusQuery.data?.isSoleOwner === true
+  const canDeleteAccount = deletionStatusQuery.data?.canDeleteAccount !== false
+
+  const deleteOrgMutation = useMutation({
+    mutationFn: () => deleteOrganization(getToken),
+    onSuccess: async () => {
+      setDeleteOrgOpen(false)
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+    },
+  })
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
-  const companyName = readCompanyName(user?.unsafeMetadata)
   const email = user?.primaryEmailAddress?.emailAddress
   const emailVerified = user?.primaryEmailAddress?.verification?.status === "verified"
   const googleAccount = user?.externalAccounts?.find((account) => account.provider === "google")
@@ -165,7 +189,6 @@ export function AccountSettingsView() {
       firstName: string
       lastName: string
       username: string
-      company: string
     }) =>
       user!.update({
         firstName: input.firstName,
@@ -174,7 +197,6 @@ export function AccountSettingsView() {
         // has the attribute enabled and the user actually typed one, otherwise
         // an untouched field would wipe an existing handle.
         ...(input.username ? { username: input.username } : {}),
-        unsafeMetadata: withCompanyName(user!.unsafeMetadata, input.company),
       }),
     onSuccess: () => setEditing(false),
   })
@@ -205,7 +227,6 @@ export function AccountSettingsView() {
     setFirstName(user?.firstName ?? "")
     setLastName(user?.lastName ?? "")
     setUsername(user?.username ?? "")
-    setCompany(readCompanyName(user?.unsafeMetadata))
     updateProfileMutation.reset()
     setEditing(true)
   }
@@ -216,7 +237,6 @@ export function AccountSettingsView() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       username: username.trim(),
-      company: company.trim(),
     })
   }
   function handleRevoke(row: SessionRow) {
@@ -253,8 +273,7 @@ export function AccountSettingsView() {
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {companyName || "No company set"}
-                    {user.username ? ` · @${user.username}` : ""}
+                    {user.username ? `@${user.username}` : "No username set"}
                   </p>
                   {memberSince ? (
                     <p className="text-xs text-muted-foreground">Member since {memberSince}</p>
@@ -301,21 +320,6 @@ export function AccountSettingsView() {
                       disabled={saving}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Company or organization</Label>
-                    <Input
-                      id="company"
-                      value={company}
-                      onChange={(event) => setCompany(event.target.value)}
-                      placeholder="Acme Media"
-                      autoComplete="organization"
-                      disabled={saving}
-                      aria-describedby="company-hint"
-                    />
-                    <p id="company-hint" className="text-xs text-muted-foreground">
-                      Required — ops sees this on every campaign you book.
-                    </p>
-                  </div>
                 </div>
                 {saveError ? (
                   <p className="text-sm text-destructive">
@@ -326,7 +330,7 @@ export function AccountSettingsView() {
                   <Button
                     type="button"
                     onClick={handleSave}
-                    disabled={!company.trim()}
+                    disabled={saving}
                     loading={saving}
                     loadingText="Saving…"
                   >
@@ -486,27 +490,78 @@ export function AccountSettingsView() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Delete this account</p>
                   <p className="max-w-prose text-xs text-muted-foreground">
-                    Removes your sign-in and profile permanently. Campaigns already booked stay on
-                    our records for billing and reporting — contact support to have those removed.
+                    {isSoleOwner
+                      ? "You're the only admin of this organization. Transfer admin in Team settings, or delete the organization, before deleting your account."
+                      : "Removes your sign-in and profile permanently. Campaigns already booked stay on our records for billing and reporting — contact support to have those removed."}
                   </p>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="shrink-0"
-                onClick={() => {
-                  deleteAccountMutation.reset()
-                  setDeleteOpen(true)
-                }}
-              >
-                Delete account
-              </Button>
+              {isSoleOwner ? (
+                <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <a href="/settings/team">Transfer in Team settings</a>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      deleteOrgMutation.reset()
+                      setDeleteOrgOpen(true)
+                    }}
+                  >
+                    Delete organization
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={!canDeleteAccount || deletionStatusQuery.isLoading}
+                  onClick={() => {
+                    deleteAccountMutation.reset()
+                    setDeleteOpen(true)
+                  }}
+                >
+                  Delete account
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
       ) : null}
+
+      <AlertDialog open={deleteOrgOpen} onOpenChange={setDeleteOrgOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this organization?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Removes the team and memberships. Campaigns stay on our ops record (detached from the
+              org). Afterward you can delete your personal account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteOrgMutation.error ? (
+            <p className="text-sm text-destructive">
+              {(deleteOrgMutation.error as Error).message || "Could not delete the organization."}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteOrgMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteOrgMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault()
+                deleteOrgMutation.mutate()
+              }}
+            >
+              {deleteOrgMutation.isPending ? "Deleting…" : "Delete organization"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
