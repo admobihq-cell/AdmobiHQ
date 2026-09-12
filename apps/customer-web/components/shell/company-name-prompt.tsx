@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useUser } from "@clerk/nextjs"
+import { useEffect, useState } from "react"
+import { useAuth } from "@clerk/nextjs"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -16,47 +16,66 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { readCompanyName, withCompanyName } from "@/lib/company-name"
+import { getOrg, renameOrg } from "@/lib/org-client"
 
-function useSignedInUser() {
-  return useUser()
+function useSignedInAuth() {
+  return useAuth()
 }
 
-function useNoUser() {
-  return { user: null, isLoaded: true }
+function useNoAuth() {
+  return {
+    isLoaded: true,
+    isSignedIn: false,
+    getToken: async () => null as string | null,
+  }
 }
 
-/**
- * Same "pick the hook once at module load" pattern as app-shell.tsx —
- * useUser() must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
+const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 /**
- * Advertisers who sign up with Google never get asked for a company — Google's
- * consent screen has no field for it and Clerk owns that step. Ops needs the
- * value (readCompanyName in apps/api/lib/customer-clerk.ts reads exactly this
- * key), so collect it on first load for anyone who arrived without one.
- *
- * unsafeMetadata is client-writable, which is what makes this possible without
- * an API route — the same field <AdvertiserSignUp> writes at sign-up.
+ * Collects an organization name when the org was bootstrapped with an empty
+ * name (typical for Google SSO that skipped the optional company field).
+ * Writes through PATCH /v1/customer/org — Postgres owns the name, not Clerk
+ * unsafeMetadata.
  */
 export function CompanyNamePrompt() {
-  const { user, isLoaded } = useUserIfEnabled()
+  const { isLoaded, isSignedIn, getToken } = useAuthIfEnabled()
   const [company, setCompany] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [needsName, setNeedsName] = useState(false)
+  const [checked, setChecked] = useState(false)
 
-  const open = isLoaded && Boolean(user) && !readCompanyName(user?.unsafeMetadata)
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || checked) return
+    let cancelled = false
+    void getOrg(getToken)
+      .then((org) => {
+        if (cancelled) return
+        setNeedsName(!org.name.trim())
+        setChecked(true)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setChecked(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [checked, getToken, isLoaded, isSignedIn])
+
+  const open = checked && needsName
 
   async function handleSave() {
-    if (!user || !company.trim()) return
+    if (!company.trim()) return
     setSaving(true)
     setError(null)
     try {
-      await user.update({ unsafeMetadata: withCompanyName(user.unsafeMetadata, company) })
-      // No setSaving(false) on success — `open` flips false as soon as Clerk's
-      // user object refreshes, and the dialog unmounts.
+      await renameOrg(getToken, { name: company.trim() })
+      setNeedsName(false)
+      window.dispatchEvent(
+        new CustomEvent("customer-org-named", { detail: { name: company.trim() } }),
+      )
     } catch {
       setError("Could not save that. Try again.")
       setSaving(false)

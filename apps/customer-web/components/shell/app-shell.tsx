@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
+import { Building2 } from "lucide-react"
 
 import { Logo } from "@workspace/ui/brand/logo"
 import {
@@ -34,7 +35,8 @@ import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 import { TourProvider } from "@workspace/ui/components/tour-provider"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { readCompanyName } from "@/lib/company-name"
+import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
+import { getOrg } from "@/lib/org-client"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
 import { CompanyNamePrompt } from "@/components/shell/company-name-prompt"
@@ -95,14 +97,51 @@ export function AppShell({
   const currentNavHref = navItemForPath(pathname).href
   const navItems = visibleNavItems(new Set(enabledFlags))
   const { user } = useUserIfEnabled()
+  const { getToken } = useAuthIfEnabled()
 
-  // Gates the product tour's first-run auto-open. <CompanyNamePrompt> below
-  // opens for anyone who arrived without a company (Google sign-up, or an
-  // account made before we asked); letting the tour auto-open behind that modal
-  // put both on screen at once, with the dialog holding focus and its overlay
-  // covering the sidebar items the tour points at.
-  const companyKnown = Boolean(readCompanyName(user?.unsafeMetadata))
+  // Gates the product tour's first-run auto-open until the org has a name
+  // (CompanyNamePrompt writes via PATCH /v1/customer/org).
+  const [companyKnown, setCompanyKnown] = useState(!isAuthEnabled())
+  const [orgName, setOrgName] = useState<string | null>(null)
   const [tourReady, setTourReady] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthEnabled() || !user) {
+      setCompanyKnown(true)
+      setOrgName(null)
+      return
+    }
+    let cancelled = false
+    void getOrg(getToken)
+      .then((org) => {
+        if (cancelled) return
+        const name = org.name.trim()
+        setOrgName(name || null)
+        setCompanyKnown(Boolean(name))
+      })
+      .catch(() => {
+        if (!cancelled) setCompanyKnown(true)
+      })
+
+    function onNamed(event: Event) {
+      const detail = (event as CustomEvent<{ name?: string }>).detail
+      if (typeof detail?.name === "string" && detail.name.trim()) {
+        setOrgName(detail.name.trim())
+        setCompanyKnown(true)
+        return
+      }
+      void getOrg(getToken).then((org) => {
+        const name = org.name.trim()
+        setOrgName(name || null)
+        setCompanyKnown(Boolean(name))
+      })
+    }
+    window.addEventListener("customer-org-named", onNamed)
+    return () => {
+      cancelled = true
+      window.removeEventListener("customer-org-named", onNamed)
+    }
+  }, [getToken, user])
 
   useEffect(() => {
     if (!companyKnown || tourReady) return
@@ -169,7 +208,22 @@ export function AppShell({
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <AppBreadcrumbs pathname={pathname} />
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex min-w-0 items-center gap-2">
+              {orgName ? (
+                <Link
+                  href="/settings/team"
+                  title={orgName}
+                  className="group hidden max-w-[12rem] items-center gap-1.5 rounded-md border border-border/70 bg-muted/40 px-2.5 py-1 text-left transition-colors hover:border-border hover:bg-muted sm:flex md:max-w-[16rem]"
+                >
+                  <Building2
+                    className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+                    aria-hidden
+                  />
+                  <span className="truncate text-xs font-medium tracking-tight text-foreground/90">
+                    {orgName}
+                  </span>
+                </Link>
+              ) : null}
               {isAuthEnabled() ? <NotificationBell /> : null}
               <ThemeToggle />
             </div>
