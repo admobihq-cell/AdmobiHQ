@@ -469,7 +469,7 @@ git commit -m "feat: seed advertiser starter roles"
   - `export async function requireCustomerPermission(permission: AdvertiserPermission): Promise<Extract<CustomerAccess, { status: "authorized" }>>` — new, mirrors `requireOpsPermission` in `apps/api/lib/auth.ts`.
   - `export async function getAdvertiserOrgId(clerkUserId: string): Promise<number | null>` — new, used by Task 5's `audit.ts`. Never triggers bootstrap; returns `null` if no membership row exists yet.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```typescript
 // apps/api/lib/customer-auth.test.ts
@@ -569,12 +569,12 @@ describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/lib/customer-auth.test.ts`
 Expected: FAIL — `getAdvertiserOrgId` is not exported, and `access.orgId`/`access.isOwner`/`access.permissions` are `undefined` under the current `CustomerAccess` shape.
 
-- [ ] **Step 3: Rewrite `customer-auth.ts`**
+- [x] **Step 3: Rewrite `customer-auth.ts`**
 
 ```typescript
 // apps/api/lib/customer-auth.ts
@@ -758,7 +758,7 @@ export async function requireCustomerPermission(
 }
 ```
 
-- [ ] **Step 4: Add `requireCustomerPermissionAccess` to `api-utils.ts`**
+- [x] **Step 4: Add `requireCustomerPermissionAccess` to `api-utils.ts`**
 
 In `apps/api/lib/api-utils.ts`, update the import on line 15 and add a new wrapper next to `requireCustomerAccess` (lines 84-97):
 
@@ -788,17 +788,17 @@ export async function requireCustomerPermissionAccess(
 
 Add `AdvertiserPermission` to the existing `@workspace/ops-contracts` import at the top of the file (currently importing `OpsPermission` among others).
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/lib/customer-auth.test.ts`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Type-check the whole `apps/api` app**
+- [x] **Step 6: Type-check the whole `apps/api` app**
 
 Run: `npx tsc --noEmit -p apps/api`
 Expected: errors ONLY in the 8 customer-campaign route files and `apps/api/lib/campaign-store.ts` (they still call `getOwnedCampaign(auth.access.userId, ...)`, which now mismatches `CustomerAccess`'s new shape) and in `apps/api/app/v1/campaigns/lifecycle.test.ts`'s mock. These are expected — Task 7 fixes them. Confirm no *other* files have new errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/lib/customer-auth.ts apps/api/lib/customer-auth.test.ts apps/api/lib/api-utils.ts
@@ -818,7 +818,7 @@ git commit -m "feat: org resolution, lazy bootstrap, and permission cache in cus
 - Consumes: `getAdvertiserOrgId` from `apps/api/lib/customer-auth.ts` (Task 4).
 - Produces: `RecordAuditEventInput.org_id?: number | null`, `auditFromCustomerUser` auto-stamps it (not caller-supplied), `auditFromOpsUser`/`auditFromDriverUser`/`auditPublic` accept it optionally (unchanged call sites keep working). This is spec §11 step 3 and §13.2.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // apps/api/lib/audit.test.ts
@@ -892,12 +892,12 @@ describe.skipIf(!databaseUrl)("audit org_id stamping", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/lib/audit.test.ts`
 Expected: FAIL — `event!.org_id` is `undefined` (column doesn't exist on the write path yet / TS error that `org_id` isn't a valid `AuditEvent` filter... it does exist on the model since Task 1, but `recordAuditEvent` never writes it).
 
-- [ ] **Step 3: Update `audit.ts`**
+- [x] **Step 3: Update `audit.ts`**
 
 Add `org_id` to `RecordAuditEventInput`:
 
@@ -984,7 +984,7 @@ export function toAuditEventDto(row: {
 }
 ```
 
-- [ ] **Step 4: Stamp the ops campaign-review route**
+- [x] **Step 4: Stamp the ops campaign-review route**
 
 In `apps/api/app/v1/campaigns/[id]/review/route.ts`, update the `auditFromOpsUser` call (currently lines 79-86) to pass the campaign's org:
 
@@ -1002,12 +1002,12 @@ In `apps/api/app/v1/campaigns/[id]/review/route.ts`, update the `auditFromOpsUse
 
 (`existing` is the pre-update `prisma.campaign.findUnique({ where: { id } })` result already in scope on line 53 — it now carries `org_id` once Task 1's migration is applied.)
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/lib/audit.test.ts`
 Expected: PASS (2 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/lib/audit.ts apps/api/lib/audit.test.ts apps/api/app/v1/campaigns/[id]/review/route.ts
@@ -1027,7 +1027,7 @@ git commit -m "feat: stamp org_id on customer and ops-reviewed campaign audit ev
 - Consumes: `customerClerkClient`, `readCompanyName` from `apps/api/lib/customer-clerk.ts` (existing), `prisma` (Task 1's new tables + existing `Campaign`).
 - Produces: `backfillAdvertiserOrgs(): Promise<{ orgsCreated: number; orphanedCampaignIds: number[] }>`. Nothing later in this plan calls it programmatically — it is a one-off, run once manually before Task 7 ships.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // apps/api/scripts/backfill-advertiser-orgs.test.ts
@@ -1102,12 +1102,12 @@ describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/scripts/backfill-advertiser-orgs.test.ts`
 Expected: FAIL — cannot find module `./backfill-advertiser-orgs`.
 
-- [ ] **Step 3: Write the backfill script**
+- [x] **Step 3: Write the backfill script**
 
 ```typescript
 // apps/api/scripts/backfill-advertiser-orgs.ts
@@ -1178,12 +1178,12 @@ if (isMain) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/scripts/backfill-advertiser-orgs.test.ts`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Add the npm script**
+- [x] **Step 5: Add the npm script**
 
 In `apps/api/package.json`, next to `"env:check"`:
 
@@ -1191,7 +1191,7 @@ In `apps/api/package.json`, next to `"env:check"`:
     "backfill:advertiser-orgs": "dotenv -e .env.local -- tsx scripts/backfill-advertiser-orgs.ts",
 ```
 
-- [ ] **Step 6: Run it against the real dev database and verify zero orphans**
+- [x] **Step 6: Run it against the real dev database and verify zero orphans**
 
 ```bash
 npm run backfill:advertiser-orgs -w api
@@ -1199,7 +1199,7 @@ npm run backfill:advertiser-orgs -w api
 
 Expected: `Created N advertiser orgs.` with no `WARNING` line. If a warning appears, investigate those campaign ids before proceeding to Task 7 — Task 7's scoping flip will make any orphaned campaign (`org_id IS NULL`) permanently unreachable by its owner.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/scripts/backfill-advertiser-orgs.ts apps/api/scripts/backfill-advertiser-orgs.test.ts apps/api/package.json
@@ -1242,7 +1242,7 @@ Permission assigned per route (spec §7's table covers the first four rows; the 
 | `/v1/customer/campaigns/[id]/proof-of-play` | GET | `reports:read` |
 | `/v1/customer/campaigns/statement` | GET | `reports:read` |
 
-- [ ] **Step 1: Update `lifecycle.test.ts`'s mock and fixtures first (this is the failing test for this task)**
+- [x] **Step 1: Update `lifecycle.test.ts`'s mock and fixtures first (this is the failing test for this task)**
 
 This existing test asserts cross-account isolation — the exact behavior this task must preserve under the new scoping key. Replace its mock block (currently lines 39-47) and add real `AdvertiserOrg` fixtures:
 
@@ -1299,12 +1299,12 @@ In this suite's `afterAll` cleanup, add org cleanup after the existing campaign/
   await prisma.advertiserOrg.deleteMany({ where: { id: { in: [customerOrg.id, otherOrg.id] } } })
 ```
 
-- [ ] **Step 2: Run the suite to verify it fails**
+- [x] **Step 2: Run the suite to verify it fails**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/app/v1/campaigns/lifecycle.test.ts`
 Expected: FAIL — `prisma.campaign.create` calls inside the route handlers still write `clerk_user_id` only with no `org_id`, and `getOwnedCampaign`/`listOwnedCampaigns` still scope by `clerk_user_id`, so the campaign created under `actingOrgId` is still visible to `otherOrgId` in this test's isolation check (or, depending on exact fixture wiring, other assertions fail with a TypeScript error first since `access.orgId` doesn't exist on the old `getOwnedCampaign(clerkUserId, id)` signature — either way, red).
 
-- [ ] **Step 3: Flip `campaign-store.ts`**
+- [x] **Step 3: Flip `campaign-store.ts`**
 
 ```typescript
 /**
@@ -1336,7 +1336,7 @@ export function listOwnedCampaigns(orgId: number): Promise<CampaignWithCreatives
 }
 ```
 
-- [ ] **Step 4: Update the 8 route files**
+- [x] **Step 4: Update the 8 route files**
 
 `apps/api/app/v1/customer/campaigns/route.ts` — GET and POST:
 
@@ -1397,12 +1397,12 @@ export async function POST(req: Request) {
 
 For each of these 8 files, update the `@/lib/api-utils` import line to bring in `requireCustomerPermissionAccess` instead of (or alongside, where `jsonError`/`parseId` etc. are also imported from the same line) `requireCustomerAccess`.
 
-- [ ] **Step 5: Run the full customer-campaigns test suite**
+- [x] **Step 5: Run the full customer-campaigns test suite**
 
 Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/api/app/v1/campaigns/lifecycle.test.ts apps/api/lib/campaign-dto.test.ts`
 Expected: PASS on all tests, including the cross-org 404 assertion from Step 1.
 
-- [ ] **Step 6: Type-check and lint the whole `apps/api` app**
+- [x] **Step 6: Type-check and lint the whole `apps/api` app**
 
 ```bash
 npx tsc --noEmit -p apps/api
@@ -1411,7 +1411,7 @@ npx eslint apps/api/app/v1/customer/campaigns apps/api/lib/campaign-store.ts
 
 Expected: zero errors.
 
-- [ ] **Step 7: Run the complete `apps/api` test suite**
+- [x] **Step 7: Run the complete `apps/api` test suite**
 
 ```bash
 npm run test -w api
@@ -1419,7 +1419,7 @@ npm run test -w api
 
 Expected: PASS. This catches any other test file that constructs a `CustomerAccess` literal or calls `getOwnedCampaign`/`listOwnedCampaigns` that wasn't surfaced by the targeted runs above.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/api/lib/campaign-store.ts apps/api/app/v1/customer/campaigns apps/api/app/v1/campaigns/lifecycle.test.ts
