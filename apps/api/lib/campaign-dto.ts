@@ -30,7 +30,7 @@ export function toCampaignCreativeDto(creative: CampaignCreative): CampaignCreat
 export function toCampaignDto(
   campaign: Campaign & { creatives: CampaignCreative[] },
   today?: Date,
-  /** Resolved from Clerk by the ops routes that render the review screen.
+  /** Resolved from AdvertiserOrg via campaign.org_id by ops routes.
    * Customer-facing routes pass nothing — an advertiser knows their own company. */
   companyName?: string | null,
 ): CampaignDto {
@@ -38,6 +38,7 @@ export function toCampaignDto(
     id: campaign.id,
     name: campaign.name,
     company_name: companyName ?? null,
+    org_id: campaign.org_id ?? null,
     objective: campaign.objective,
     market: campaign.market,
     corridors: campaign.corridors,

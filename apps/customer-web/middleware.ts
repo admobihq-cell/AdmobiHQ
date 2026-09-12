@@ -6,7 +6,12 @@ import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 let cachedMiddleware: NextMiddleware | null = null
 
 function isPublicRoute(pathname: string): boolean {
-  return pathname.startsWith("/auth/") || pathname === "/api/health" || pathname.startsWith("/api/health/")
+  return (
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/invitations/") ||
+    pathname === "/api/health" ||
+    pathname.startsWith("/api/health/")
+  )
 }
 
 async function getAuthMiddleware(): Promise<NextMiddleware> {
