@@ -246,6 +246,45 @@ export const OPS_PERMISSIONS = [
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 
+/** Advertiser-org permission set. `resource:action` shape — deliberately not
+ * retrofitted onto the flat, section-shaped OpsPermission above, because the
+ * whole point here is separating "drafts a campaign" from "submits it and
+ * commits spend." campaigns:submit is the money boundary. */
+export const ADVERTISER_PERMISSIONS = [
+  "campaigns:read",
+  "campaigns:write",
+  "campaigns:submit",
+  "creatives:write",
+  "reports:read",
+  "billing:read",
+  "billing:write",
+  "team:manage",
+  "org:manage",
+  "activity:read",
+  "support:read_all",
+] as const
+export type AdvertiserPermission = (typeof ADVERTISER_PERMISSIONS)[number]
+
+/** Seeded once (org_id = null) by apps/web/prisma/seed-advertiser-roles.ts.
+ * "Owner" is not a role row — is_owner members bypass permission checks
+ * entirely, exactly as org:admin is exempt in ops. billing:write, team:manage
+ * and org:manage are held only by owners in v1; they exist in the enum so a
+ * later custom-role phase can grant them without a migration. */
+export const ADVERTISER_STARTER_ROLES: Record<"Manager" | "Member" | "Viewer", readonly AdvertiserPermission[]> = {
+  Manager: [
+    "campaigns:read",
+    "campaigns:write",
+    "campaigns:submit",
+    "creatives:write",
+    "reports:read",
+    "billing:read",
+    "activity:read",
+    "support:read_all",
+  ],
+  Member: ["campaigns:read", "campaigns:write", "creatives:write", "reports:read"],
+  Viewer: ["campaigns:read", "reports:read"],
+}
+
 /** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema.
  *
  * SOS is deliberately NOT here: a driver's route to reporting an accident must
