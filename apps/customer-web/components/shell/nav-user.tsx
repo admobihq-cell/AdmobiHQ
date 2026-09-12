@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useClerk, useUser } from "@clerk/nextjs"
+import { useQuery } from "@tanstack/react-query"
 import { ChevronsUpDown, LogOut, UserCircle } from "lucide-react"
 
 import {
@@ -32,6 +33,8 @@ import {
 } from "@workspace/ui/components/sidebar"
 
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
+import { getOrg } from "@/lib/org-client"
 import { appHostLabel } from "@/lib/site-urls"
 
 function useSignedInUser() {
@@ -71,13 +74,23 @@ function getInitials(name: string): string {
 export function NavUser() {
   const { isMobile } = useSidebar()
   const { user } = useUserIfEnabled()
+  const { getToken } = useAuthIfEnabled()
   const signOut = useSignOutIfEnabled()
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const orgQuery = useQuery({
+    queryKey: ["customer-org", user?.id],
+    queryFn: () => getOrg(getToken),
+    enabled: Boolean(isAuthEnabled() && user),
+    staleTime: 60_000,
+    retry: false,
+  })
+  const roleName = orgQuery.data?.myRoleName?.trim() || null
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
   const email = user?.primaryEmailAddress?.emailAddress
   const displayName = fullName || (user ? "Add your name" : "Browsing anonymously")
-  const displaySubtitle = email ?? appHostLabel()
+  const displaySubtitle = roleName ?? email ?? appHostLabel()
   const initials = getInitials(fullName)
 
   return (
@@ -129,6 +142,11 @@ export function NavUser() {
                     <span className="truncate text-xs text-muted-foreground">
                       {displaySubtitle}
                     </span>
+                    {roleName && email ? (
+                      <span className="truncate text-[11px] text-muted-foreground/80">
+                        {email}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </DropdownMenuLabel>
