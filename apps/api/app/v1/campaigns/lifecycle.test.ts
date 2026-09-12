@@ -282,7 +282,7 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     expect(body.review_reason).toBeNull()
     // Ops reviews on behalf of a company, so the decision response has to carry
     // it — the detail view re-renders from exactly this payload.
-    expect(body.company_name).toBe("Acme Media")
+    expect(body.company_name).toBe("Lifecycle Test Org")
     // Window is Nov 2026, which is ahead of this suite's run date.
     expect(body.flight_phase).toBe("scheduled")
   }, 60_000)

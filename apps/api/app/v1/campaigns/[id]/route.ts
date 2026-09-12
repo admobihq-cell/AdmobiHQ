@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
+import { getOrgNameForOrgId } from "@/lib/advertiser-org-name"
 import { toCampaignDto } from "@/lib/campaign-dto"
-import { getCustomerCompanyName } from "@/lib/customer-clerk"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
@@ -21,6 +21,6 @@ export async function GET(_req: Request, { params }: Params) {
   if (!campaign) return jsonError("Not found", 404)
 
   return NextResponse.json(
-    toCampaignDto(campaign, undefined, await getCustomerCompanyName(campaign.clerk_user_id)),
+    toCampaignDto(campaign, undefined, await getOrgNameForOrgId(campaign.org_id)),
   )
 }
