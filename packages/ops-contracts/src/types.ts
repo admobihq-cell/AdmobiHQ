@@ -157,10 +157,13 @@ export type CampaignCreativeDto = {
 export type CampaignDto = {
   id: number
   name: string
-  /** Advertiser's company, resolved from Clerk at read time so ops knows who
-   * they're reviewing for. Only the ops routes populate it; customer-facing
-   * routes leave it null. */
+  /** Advertiser's company, resolved from AdvertiserOrg (via org_id) at read
+   * time so ops knows who they're reviewing for. Only the ops routes populate
+   * it; customer-facing routes leave it null. */
   company_name: string | null
+  /** Advertiser org FK — ops routes populate so reviewers can open the org
+   * page; customer-facing routes leave it null. */
+  org_id: number | null
   objective: string | null
   market: string | null
   corridors: string | null
