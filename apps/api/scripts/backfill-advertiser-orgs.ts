@@ -1,3 +1,5 @@
+import "@/lib/load-env"
+
 import { customerClerkClient, readCompanyName } from "@/lib/customer-clerk"
 import { prisma } from "@/lib/prisma"
 import { fileURLToPath } from "node:url"
@@ -49,7 +51,6 @@ export async function backfillAdvertiserOrgs(): Promise<{
 const isMain = process.argv[1] != null && fileURLToPath(import.meta.url) === process.argv[1]
 if (isMain) {
   ;(async () => {
-    await import("@/lib/load-env")
     try {
       const { orgsCreated, orphanedCampaignIds } = await backfillAdvertiserOrgs()
       console.log(`Created ${orgsCreated} advertiser orgs.`)
