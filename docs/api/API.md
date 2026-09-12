@@ -36,7 +36,7 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | `/v1/users` | Ops Clerk JWT | Platform user search (ops Users page) |
 | `/v1/team`, `/v1/roles` | Ops Clerk JWT (admin) | Staff invites + custom RBAC |
 | `GET/POST/PATCH /v1/support` | Ops Clerk JWT | Ops support console |
-| `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`) |
+| `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`); personalizes `{{first_name}}` and `{{org_name}}` per recipient |
 | `POST /v1/notifications/broadcast-image` | Ops Clerk JWT | Upload announcement image (Vercel Blob) |
 | `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
 | `/v1/customer/notifications`, `/v1/customer/notifications/read`, `/v1/customer/notifications/[id]` | Customer Clerk JWT | Campaign lifecycle inbox (merged client-side with announcements) |
