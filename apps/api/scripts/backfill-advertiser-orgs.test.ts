@@ -59,6 +59,7 @@ describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
       const result = await backfillAdvertiserOrgs()
 
       expect(result.orgsCreated).toBe(2)
+      expect(result.orphanedCampaignIds).toEqual([])
 
       const memberA = await prisma.advertiserMember.findUnique({ where: { clerk_user_id: "backfill-test-user-a" } })
       expect(memberA?.is_owner).toBe(true)

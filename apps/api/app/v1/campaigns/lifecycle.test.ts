@@ -222,9 +222,17 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
   it("hides another advertiser's campaign behind a 404, not a 403", async () => {
     actingUserId = OTHER_CUSTOMER
     actingOrgId = otherOrgId
-    const { GET } = await import("../customer/campaigns/[id]/route")
+    const { GET, PATCH } = await import("../customer/campaigns/[id]/route")
     const res = await GET(bare("GET"), routeParams(campaignId))
     expect(res.status).toBe(404)
+
+    const patchRes = await PATCH(json({ name: "Hijacked" }, "PATCH"), routeParams(campaignId))
+    expect(patchRes.status).toBe(404)
+
+    const { POST: submit } = await import("../customer/campaigns/[id]/submit/route")
+    const submitRes = await submit(bare(), routeParams(campaignId))
+    expect(submitRes.status).toBe(404)
+
     actingUserId = CUSTOMER
     actingOrgId = customerOrg.id
   }, 30_000)

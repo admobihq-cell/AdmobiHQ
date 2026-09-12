@@ -32,6 +32,9 @@ export type CustomerAccess =
 type AdvertiserAccessValue = { orgId: number; isOwner: boolean; permissions: Set<AdvertiserPermission> }
 
 const ADVERTISER_ACCESS_CACHE_TTL_MS = 60_000
+// ponytail: a role change takes up to 60s to land (cache TTL) — fine while every
+// member is an owner (no role-assignment routes exist yet); revisit when Phase 2
+// ships team:manage and role changes need to apply immediately.
 const advertiserAccessCache = new Map<string, { value: AdvertiserAccessValue; expiresAt: number }>()
 
 function getCachedAdvertiserAccess(userId: string): AdvertiserAccessValue | null {
