@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { auditFromCustomerUser } from "@/lib/audit"
-import { jsonError, parseId, requireCustomerAccess } from "@/lib/api-utils"
+import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { destroyCampaignCreative } from "@/lib/campaign-creative-storage"
 import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaign-store"
 import type { PrivateResourceType } from "@/lib/private-media"
@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma"
 type Params = { params: Promise<{ id: string; creativeId: string }> }
 
 export async function DELETE(_req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("creatives:write")
   if (auth.error) return auth.error
 
   const { id: rawId, creativeId: rawCreativeId } = await params
@@ -18,7 +18,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   const creativeId = parseId(rawCreativeId)
   if (!id || !creativeId) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
   if (!EDITABLE_STATUSES.has(campaign.status)) {
     return jsonError(`Creative can't be changed while status is "${campaign.status}"`, 409)

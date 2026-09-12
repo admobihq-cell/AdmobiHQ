@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { auditFromCustomerUser } from "@/lib/audit"
-import { jsonError, parseId, requireCustomerAccess } from "@/lib/api-utils"
+import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { toCampaignDto } from "@/lib/campaign-dto"
 import {
   EDITABLE_STATUSES,
@@ -21,13 +21,13 @@ import { notifyUserPush } from "@/lib/push/user-push"
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(_req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:submit")
   if (auth.error) return auth.error
 
   const id = parseId((await params).id)
   if (!id) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
   if (!EDITABLE_STATUSES.has(campaign.status)) {
     return jsonError(`Campaign can't be submitted while status is "${campaign.status}"`, 409)

@@ -34,13 +34,20 @@ const databaseUrl = resolveDatabaseUrl()
 
 const CUSTOMER = `lifecycle-adv-${Date.now()}`
 const OTHER_CUSTOMER = `lifecycle-other-${Date.now()}`
-let actingAs = CUSTOMER
+let actingUserId = CUSTOMER
+let actingOrgId = 0
+let otherOrgId = 0
 
 vi.mock("@/lib/api-utils", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-utils")>("@/lib/api-utils")
   return {
     ...actual,
-    requireCustomerAccess: vi.fn(async () => ({ access: { userId: actingAs } })),
+    requireCustomerAccess: vi.fn(async () => ({
+      access: { userId: actingUserId, orgId: actingOrgId, isOwner: true, permissions: new Set() },
+    })),
+    requireCustomerPermissionAccess: vi.fn(async () => ({
+      access: { userId: actingUserId, orgId: actingOrgId, isOwner: true, permissions: new Set() },
+    })),
     requireOpsPermissionAccess: vi.fn(async () => ({
       access: { userId: "ops_1", email: "ops@admobihq.com" },
     })),
@@ -72,6 +79,8 @@ vi.mock("@/lib/customer-clerk", () => ({
 
 let campaignId: number
 let prisma: typeof import("@/lib/prisma").prisma
+let customerOrg: { id: number }
+let otherOrg: { id: number }
 
 function json(body: unknown, method = "POST") {
   return new Request("http://localhost/x", { method, body: JSON.stringify(body) })
@@ -89,6 +98,11 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
   beforeAll(async () => {
     process.env.DATABASE_URL = databaseUrl!
     ;({ prisma } = await import("@/lib/prisma"))
+
+    customerOrg = await prisma.advertiserOrg.create({ data: { name: "Lifecycle Test Org" } })
+    otherOrg = await prisma.advertiserOrg.create({ data: { name: "Lifecycle Other Org" } })
+    actingOrgId = customerOrg.id
+    otherOrgId = otherOrg.id
   }, 60_000)
 
   afterAll(async () => {
@@ -99,6 +113,7 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     await prisma.customerNotification.deleteMany({
       where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
     })
+    await prisma.advertiserOrg.deleteMany({ where: { id: { in: [customerOrg.id, otherOrg.id] } } })
   })
 
   it("creates a draft", async () => {
@@ -205,11 +220,13 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
   }, 30_000)
 
   it("hides another advertiser's campaign behind a 404, not a 403", async () => {
-    actingAs = OTHER_CUSTOMER
+    actingUserId = OTHER_CUSTOMER
+    actingOrgId = otherOrgId
     const { GET } = await import("../customer/campaigns/[id]/route")
     const res = await GET(bare("GET"), routeParams(campaignId))
     expect(res.status).toBe(404)
-    actingAs = CUSTOMER
+    actingUserId = CUSTOMER
+    actingOrgId = customerOrg.id
   }, 30_000)
 
   it("requires a reason to request changes", async () => {
