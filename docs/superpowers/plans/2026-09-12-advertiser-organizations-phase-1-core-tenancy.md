@@ -1459,4 +1459,52 @@ Two execution options for Phase 1:
 1. **Subagent-Driven (recommended)** — I dispatch a fresh subagent per task, review between tasks, fast iteration.
 2. **Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints.
 
-Which approach?
+Which approach? **Answered: subagent-driven, on branch `feat/advertiser-orgs-phase-1-core-tenancy`. See the status addendum below for where execution actually landed.**
+
+---
+
+## Status addendum (2026-09-12)
+
+Historical note per this repo's docs convention — this section is appended, not a rewrite of the plan above, which stays as originally written and approved.
+
+### Implemented (all 7 tasks, all checkboxes above checked)
+
+| Task | What shipped | Commits |
+|---|---|---|
+| 1 | `AdvertiserOrg`/`AdvertiserRole`/`AdvertiserMember`/`AdvertiserInvitation` models, `org_id` on `Campaign`/`AuditEvent`. **Unplanned mid-task fix:** n8n's ~108 tables were sharing the `public` Postgres schema with this app's own tables, blocking both `prisma migrate dev` and `prisma db push` (both wanted to reset or drop live n8n data). Moved n8n's tables to their own `n8n` schema first (verified nothing was actually deployed/running against them), then applied the new schema via `db push`. | `52deda0`, `bee769f`, `4ede72d` |
+| 2 | `AdvertiserPermission` enum + Manager/Member/Viewer starter-role permission sets in `packages/ops-contracts`. | `4246283` |
+| 3 | Idempotent seed script for the three starter roles, run for real against the dev database. | `d5efd88` |
+| 4 | `apps/api/lib/customer-auth.ts` rewritten: org resolution, lazy bootstrap-on-first-request (transactional, race-safe), 60s permission cache mirroring the ops pattern, `requireCustomerPermission()`. Fix round: test cleanup was leaking orphan `AdvertiserOrg` rows into the dev DB (deletion-order bug, traced to my own plan text). | `617e568`, `a345569` |
+| 5 | `apps/api/lib/audit.ts` stamps `org_id` on customer-actor and ops-reviewed-campaign audit events. Fix round: `org_id` was silently dropped in 3 of 4 audit-recording functions (another plan-text bug on my part — the type allowed it through but the function bodies never forwarded it). | `3ffd332`, `ad18b3e` |
+| 6 | One-off idempotent backfill script for pre-existing advertisers; run for real against the dev DB (0 orgs needed creating — Task 4's bootstrap had already covered every existing user, 0 orphaned campaigns). Fix round: an env-loading order bug (implementer deviation, not plan-mandated) meant the script only worked via its one documented npm-script invocation. | `82f06d4`, `db01b25` |
+| 7 | `apps/api/lib/campaign-store.ts` + 8 route files flipped from `clerk_user_id` to `org_id` scoping, with permission checks added per route; `lifecycle.test.ts` rewritten with real cross-org isolation fixtures. **Approved on first review pass, no fix round needed.** | `138f45f` |
+
+Every task passed subagent-driven review (task-scoped: spec compliance + code quality), with fix loops where findings surfaced — details and full findings text are in the SDD ledger at `.superpowers/sdd/2026-09-12-advertiser-organizations-phase-1-core-tenancy/progress.md`, which also records every ruling made along the way.
+
+### Final whole-branch review (2026-09-12, most capable model, base `d862b76` → head `138f45f`)
+
+**Security: clean.** Traced the full request path for campaign list/detail/submit; no cross-tenant read/write/leak path found. Owner-permission-bypass is structurally incapable of crossing orgs. Nullable `org_id` fails closed (an un-backfilled campaign becomes invisible to its own owner, never visible to a stranger).
+
+**One Critical, production-readiness finding:** the branch is undeployable as committed. Schema changes were applied to the dev database via `prisma db push`, with no committed migration file — because early on, n8n's tables (before the Task 1 fix above) blocked `prisma migrate dev`. That blocker was fixed mid-task, but the migration-strategy decision was never revisited afterward, so the workaround outlived its own justification. A real deploy of this branch would apply nothing via `prisma migrate deploy`, and the app code would immediately start querying tables/columns that don't exist on that environment.
+
+**Three Important findings**, all now being fixed:
+- `docs/shared/AUTH.md` has a sentence Task 7 made false (still says campaigns are `clerk_user_id`-owned) without updating it, per CLAUDE.md's docs rule.
+- The `campaigns:submit` permission boundary — spec's own "case that matters most" — has zero test coverage; every existing test happens to use an owner account, which bypasses the check entirely.
+- The bootstrap-idempotency test doesn't actually test concurrency (two sequential calls, second one cache-served) — the unique-constraint race-handling logic is untested.
+
+Plus four cheap Minor fixes (cache-invalidation ceiling undocumented, cross-org isolation test only covers GET not PATCH/submit, backfill test doesn't assert its own safety output, a Prisma README sentence that's "true again for the wrong reason"). Two Minors were parked as real-but-not-load-bearing (a TOCTOU hardening opportunity with no current exploit window; a plan-checkbox bookkeeping gap, fixed directly by the controller in commit `ec1544e` since it was pure bookkeeping, not code).
+
+### What's left right now
+
+One consolidated fix wave is in flight (dispatched, not yet returned as of this addendum) covering: generating a real migration (via `prisma migrate diff` + `migrate resolve` — a safe, non-destructive way to retroactively record what `db push` already applied, without re-running SQL against tables that already exist), the two doc fixes, the two test additions, and the four minor fixes. After it returns: one scoped re-review of the fix diff, then `finishing-a-development-branch` to decide how this merges.
+
+### What's left beyond Phase 1
+
+This plan only ever covered spec §11 steps 1-5. Once Phase 1 fully lands, four more phases remain before the Advertiser Organizations feature is complete, each getting its own plan:
+
+- **Phase 2** (§11 steps 6-7): org/member management routes, Resend invitations, Team settings UI on customer-web/mobile.
+- **Phase 3** (§11 steps 8-9): ops joins replace Clerk metadata reads, org-scoped activity feed read side + UI.
+- **Phase 4** (§14.1-14.4): campaign-decision notification fan-out to every org member, sole-owner deletion guard + ownership transfer, soft-deleted membership, org-scoped support cases.
+- **Phase 5** (§14.5): ops advertiser-org list/detail view.
+
+Nothing user-facing changes until Phase 2 ships — Phase 1 is entirely internal scoping infrastructure.
