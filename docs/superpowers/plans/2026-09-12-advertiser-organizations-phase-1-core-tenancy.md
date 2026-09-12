@@ -51,7 +51,7 @@
 **Interfaces:**
 - Produces: Prisma Client models `prisma.advertiserOrg`, `prisma.advertiserRole`, `prisma.advertiserMember`, `prisma.advertiserInvitation`, and `org_id` columns on `Campaign` / `AuditEvent`. Every later task in this plan depends on these existing after `prisma generate` runs.
 
-- [ ] **Step 1: Add the four new models to `schema.prisma`, right after the `OpsRoleAssignment` model**
+- [x] **Step 1: Add the four new models to `schema.prisma`, right after the `OpsRoleAssignment` model**
 
 ```prisma
 /// An advertiser tenant. Created automatically for every advertiser — a solo
@@ -135,7 +135,7 @@ model AdvertiserInvitation {
 }
 ```
 
-- [ ] **Step 2: Add `org_id` to `Campaign` and `AuditEvent`**
+- [x] **Step 2: Add `org_id` to `Campaign` and `AuditEvent`**
 
 In `Campaign` (after the `creatives CampaignCreative[]` line, before the `@@index` lines):
 
@@ -162,7 +162,7 @@ Add one more index line among `AuditEvent`'s existing `@@index` block:
   @@index([org_id, created_at])
 ```
 
-- [ ] **Step 3: Push the schema additively, then add the partial unique index by hand**
+- [x] **Step 3: Push the schema additively, then add the partial unique index by hand**
 
 `prisma migrate dev` cannot be used against this database — see the Global Constraints note above (it detects the whole `public` schema as drifted because of n8n's tables and offers only a destructive reset). Use `db push` instead, which diffs and applies only the models this schema manages:
 
@@ -184,7 +184,7 @@ EOF
 npx dotenv -e apps/web/.env.local -- npx prisma db execute --schema apps/web/prisma/schema.prisma --file /tmp/advertiser-roles-partial-index.sql
 ```
 
-- [ ] **Step 4: Verify the client picked up the new models**
+- [x] **Step 4: Verify the client picked up the new models**
 
 ```bash
 npx tsc --noEmit -p apps/web
@@ -192,7 +192,7 @@ npx tsc --noEmit -p apps/web
 
 Expected: no new type errors (the generated client types now include the new models; nothing references them yet so nothing should fail).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Two commits, since the schema-isolation fix is a separate, load-bearing change discovered mid-task (see the Global Constraints correction above) — n8n's ~108 tables were moved from `public` to a new `n8n` Postgres schema (via hand-run `ALTER TABLE ... SET SCHEMA`, not part of this repo's history since it was a one-time live-DB operation with no file to check in) before `prisma db push` could safely run:
 
