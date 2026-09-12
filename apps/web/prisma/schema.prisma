@@ -260,24 +260,26 @@ model Customer {
 }
 
 model SupportCase {
-  id                   Int       @id @default(autoincrement())
+  id                   Int            @id @default(autoincrement())
   customer_id          Int?
-  customer             Customer? @relation(fields: [customer_id], references: [id])
+  customer             Customer?      @relation(fields: [customer_id], references: [id])
   driver_clerk_user_id String?
+  org_id               Int?
+  org                  AdvertiserOrg? @relation(fields: [org_id], references: [id])
   contact_name         String
   contact_email        String
   contact_phone        String?
   anonymous_device_id  String?
-  access_token_hash    String    @unique
+  access_token_hash    String         @unique
   channel              String // "web" | "customer-web" | "customer-mobile"
-  category             String    @default("general") // billing, campaign, technical, driver, general
+  category             String         @default("general") // billing, campaign, technical, driver, general
   subject              String
-  status               String    @default("open") // open, pending, resolved, closed
-  priority             String    @default("normal") // low, normal, high, urgent
+  status               String         @default("open") // open, pending, resolved, closed
+  priority             String         @default("normal") // low, normal, high, urgent
   assigned_to_clerk_id String?
   assigned_to_email    String?
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
 
   messages SupportMessage[]
 
@@ -285,6 +287,7 @@ model SupportCase {
   @@index([contact_email])
   @@index([assigned_to_clerk_id])
   @@index([driver_clerk_user_id])
+  @@index([org_id, created_at])
   @@map("support_cases")
 }
 
@@ -452,10 +455,11 @@ model AdvertiserOrg {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  members     AdvertiserMember[]
-  invitations AdvertiserInvitation[]
-  roles       AdvertiserRole[]
-  campaigns   Campaign[]
+  members      AdvertiserMember[]
+  invitations  AdvertiserInvitation[]
+  roles        AdvertiserRole[]
+  campaigns    Campaign[]
+  supportCases SupportCase[]
 
   @@map("advertiser_orgs")
 }
@@ -484,7 +488,7 @@ model AdvertiserRole {
 
 /// One row per advertiser user. clerk_user_id is globally unique, which is how
 /// "one org per user in v1" is enforced — a DB constraint, not app code.
-/// is_owner members are exempt from permission checks entirely, exactly as
+/// `is_owner` (Admin) members are exempt from permission checks entirely, exactly as
 /// org:admin is exempt in ops.
 model AdvertiserMember {
   id            Int             @id @default(autoincrement())
@@ -494,10 +498,13 @@ model AdvertiserMember {
   role_id       Int?
   role          AdvertiserRole? @relation(fields: [role_id], references: [id])
   is_owner      Boolean         @default(false)
+  /// Soft-delete: set on remove so activity history can still resolve a name.
+  removed_at    DateTime?
   created_at    DateTime        @default(now())
   updated_at    DateTime        @updatedAt
 
   @@index([org_id])
+  @@index([org_id, removed_at])
   @@map("advertiser_members")
 }
 

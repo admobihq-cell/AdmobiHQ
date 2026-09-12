@@ -29,7 +29,7 @@ Sidebar app shell. What is real vs placeholder:
 | `/reports` | **Coming soon** |
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
 | `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
-| `/settings/account`, `/settings/notifications`, `/settings/tour` | Working UI |
+| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix) |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
