@@ -66,4 +66,37 @@ describe.skipIf(!databaseUrl)("audit org_id stamping", () => {
     createdEventIds.push(event!.id)
     expect(event!.org_id).toBeNull()
   }, 30_000)
+
+  it("auditFromOpsUser stamps org_id when provided", async () => {
+    const org = await prisma.advertiserOrg.create({ data: { name: "Audit Test Ops Org" } })
+
+    const { auditFromOpsUser } = await import("./audit")
+    const opsAccess = {
+      status: "authorized" as const,
+      userId: "ops-test-user",
+      email: "ops@example.com",
+      role: "admin" as const,
+      permissions: [],
+      user: {} as never,
+    }
+
+    await auditFromOpsUser(opsAccess, {
+      action: "update",
+      entity_type: "campaign",
+      entity_id: 997,
+      org_id: org.id,
+      summary: "ops reviewed campaign",
+    })
+
+    const event = await prisma.auditEvent.findFirst({
+      where: { actor_email: "ops@example.com" },
+      orderBy: { id: "desc" },
+    })
+    expect(event).not.toBeNull()
+    createdEventIds.push(event!.id)
+    expect(event!.org_id).toBe(org.id)
+
+    // Clean up: delete org (which cascades to delete any members)
+    await prisma.advertiserOrg.deleteMany({ where: { id: org.id } })
+  }, 30_000)
 })
