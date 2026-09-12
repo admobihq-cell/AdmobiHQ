@@ -300,9 +300,9 @@ Customer-side tenancy, added by the advertiser-organizations plan ([spec](../sup
 
 There's no sign-up-time org creation — [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts) bootstraps lazily: the first authenticated request from a `clerk_user_id` with no `AdvertiserMember` row creates the org (named from the Clerk `companyName` metadata, see "Advertiser sign-up collects a company name" above) and an owner membership, in one transaction. Concurrent first requests race safely onto the same org via the unique constraint on `clerk_user_id`.
 
-Same two-layer shape as ops: `is_owner` bypasses every permission check (like `org:admin`); everyone else gets whatever their assigned `AdvertiserRole.permissions` grants, from the closed `AdvertiserPermission` set ([packages/ops-contracts/src/enums.ts](../../packages/ops-contracts/src/enums.ts)). Three starter roles (`Manager` / `Member` / `Viewer`) are seeded per org. `getCustomerAccess()` returns `{ status: "authorized", userId, orgId, isOwner, permissions }` and caches it 60s per user, same pattern as `resolveOpsPermissions()`; `requireCustomerPermission()` mirrors `requireOpsPermission()`.
+Same two-layer shape as ops: `is_owner` bypasses every permission check (like `org:admin`); everyone else gets whatever their assigned `AdvertiserRole.permissions` grants, from the closed `AdvertiserPermission` set ([packages/ops-contracts/src/enums.ts](../../packages/ops-contracts/src/enums.ts)). Three starter roles (`Manager` / `Member` / `Viewer`) are seeded once, shared by every org (`org_id = null`), by [apps/web/scripts/seed-advertiser-roles.ts](../../apps/web/scripts/seed-advertiser-roles.ts). `getCustomerAccess()` returns `{ status: "authorized", userId, orgId, isOwner, permissions }` and caches it 60s per user, same pattern as `resolveOpsPermissions()`; `requireCustomerPermission()` mirrors `requireOpsPermission()`.
 
-As of this writing, campaigns are still `clerk_user_id`-owned rather than `org_id`-scoped, and there's no invitation/team-management UI yet — both tracked in the same plan.
+Campaigns are now `org_id`-scoped (see [apps/api/lib/campaign-store.ts](../../apps/api/lib/campaign-store.ts)) rather than `clerk_user_id`-owned. There's still no invitation/team-management UI — tracked in the same plan.
 
 ### Managing organizations and roles day to day
 
