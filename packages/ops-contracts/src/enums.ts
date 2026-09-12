@@ -219,6 +219,10 @@ export const AUDIT_ENTITY_TYPES = [
   "campaign",
   "campaign_creative",
   "safety_incident",
+  "advertiser_org",
+  "advertiser_member",
+  "advertiser_invitation",
+  "advertiser_role",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 
@@ -266,9 +270,9 @@ export const ADVERTISER_PERMISSIONS = [
 export type AdvertiserPermission = (typeof ADVERTISER_PERMISSIONS)[number]
 
 /** Seeded once (org_id = null) by apps/web/prisma/seed-advertiser-roles.ts.
- * "Owner" is not a role row — is_owner members bypass permission checks
+ * "Admin" is not a role row — `is_owner` members bypass permission checks
  * entirely, exactly as org:admin is exempt in ops. billing:write, team:manage
- * and org:manage are held only by owners in v1; they exist in the enum so a
+ * and org:manage are held only by admins in v1; they exist in the enum so a
  * later custom-role phase can grant them without a migration. */
 export const ADVERTISER_STARTER_ROLES: Record<"Manager" | "Member" | "Viewer", readonly AdvertiserPermission[]> = {
   Manager: [
