@@ -10,6 +10,8 @@ import {
   Globe,
   HelpCircle,
   Person,
+  People,
+  Radio,
   RefreshCcw,
   Wallet,
 } from "@/components/icons"
@@ -187,6 +189,20 @@ export default function SettingsScreen() {
             label="Profile & sign-in"
             description="Identity, sign-in methods, and sessions"
             onPress={() => router.push("/settings/account")}
+          />
+          <View style={styles.divider} />
+          <SettingsRow
+            icon={People}
+            label="Team"
+            description="Organization name, members, and invites"
+            onPress={() => router.push("/settings/team")}
+          />
+          <View style={styles.divider} />
+          <SettingsRow
+            icon={Radio}
+            label="Activity"
+            description="Campaign decisions and team changes"
+            onPress={() => router.push("/settings/activity")}
           />
         </View>
       </View>
