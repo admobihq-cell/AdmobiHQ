@@ -80,6 +80,7 @@ export async function PATCH(req: Request, { params }: Params) {
     action: "update",
     entity_type: "campaign",
     entity_id: id,
+    org_id: existing.org_id,
     summary: isUnapprove
       ? `Campaign #${id} "${updated.name}" unapproved (now ${decision.replace(/_/g, " ")})`
       : `Campaign #${id} "${updated.name}" ${decision.replace(/_/g, " ")}`,
