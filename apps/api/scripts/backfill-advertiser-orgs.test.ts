@@ -30,6 +30,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: testPrisma,
 }))
 
+vi.mock("@/lib/load-env", () => ({}))
+
 describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
   const prisma = testPrisma
 
