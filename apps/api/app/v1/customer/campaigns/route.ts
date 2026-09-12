@@ -3,16 +3,16 @@ import { NextResponse } from "next/server"
 import { campaignCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
-import { parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
+import { parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { toCampaignDto } from "@/lib/campaign-dto"
 import { listOwnedCampaigns } from "@/lib/campaign-store"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:read")
   if (auth.error) return auth.error
 
-  const campaigns = await listOwnedCampaigns(auth.access.userId)
+  const campaigns = await listOwnedCampaigns(auth.access.orgId)
   return NextResponse.json(campaigns.map((campaign) => toCampaignDto(campaign)))
 }
 
@@ -20,7 +20,7 @@ export async function GET() {
  * PATCHes each subsequent step — so a half-finished campaign survives a
  * refresh rather than living in component state. */
 export async function POST(req: Request) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:write")
   if (auth.error) return auth.error
 
   const parsed = await parseJsonBody(req, campaignCreateSchema)
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     data: {
       ...rest,
       clerk_user_id: auth.access.userId,
+      org_id: auth.access.orgId,
       // @db.Date columns take a Date; the schema guarantees YYYY-MM-DD, and
       // appending Z keeps the stored day from shifting under a server whose
       // local zone is behind UTC.

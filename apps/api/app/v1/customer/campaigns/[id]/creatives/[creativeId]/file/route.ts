@@ -1,4 +1,4 @@
-import { jsonError, parseId, requireCustomerAccess } from "@/lib/api-utils"
+import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { fetchCampaignCreative } from "@/lib/campaign-creative-storage"
 import { getOwnedCampaign } from "@/lib/campaign-store"
 import type { PrivateResourceType } from "@/lib/private-media"
@@ -11,7 +11,7 @@ type Params = { params: Promise<{ id: string; creativeId: string }> }
  * the browser. 404 (not 403) on mismatch so an advertiser enumerating ids
  * can't tell someone else's creative exists. */
 export async function GET(_req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:read")
   if (auth.error) return auth.error
 
   const { id: rawId, creativeId: rawCreativeId } = await params
@@ -19,7 +19,7 @@ export async function GET(_req: Request, { params }: Params) {
   const creativeId = parseId(rawCreativeId)
   if (!id || !creativeId) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   const creative = campaign?.creatives.find((c) => c.id === creativeId)
   if (!creative) return jsonError("Not found", 404)
 

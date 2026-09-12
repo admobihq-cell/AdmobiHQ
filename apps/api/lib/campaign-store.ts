@@ -16,28 +16,28 @@ export type CampaignWithCreatives = Campaign & { creatives: CampaignCreative[] }
 const CREATIVE_ORDER = { creatives: { orderBy: { created_at: "asc" } } } as const
 
 /**
- * Returns the campaign only if this advertiser owns it, and null otherwise —
- * for both "no such campaign" and "someone else's campaign".
+ * Returns the campaign only if this org owns it, and null otherwise — for
+ * both "no such campaign" and "someone else's org's campaign".
  *
  * Callers turn null into a 404, never a 403: a 403 would confirm that a given
  * id exists, letting anyone enumerate the campaign table. Same rule the driver
  * document routes follow.
  */
 export async function getOwnedCampaign(
-  clerkUserId: string,
+  orgId: number,
   id: number,
 ): Promise<CampaignWithCreatives | null> {
   const campaign = await prisma.campaign.findUnique({
     where: { id },
     include: CREATIVE_ORDER,
   })
-  if (!campaign || campaign.clerk_user_id !== clerkUserId) return null
+  if (!campaign || campaign.org_id !== orgId) return null
   return campaign
 }
 
-export function listOwnedCampaigns(clerkUserId: string): Promise<CampaignWithCreatives[]> {
+export function listOwnedCampaigns(orgId: number): Promise<CampaignWithCreatives[]> {
   return prisma.campaign.findMany({
-    where: { clerk_user_id: clerkUserId },
+    where: { org_id: orgId },
     orderBy: { created_at: "desc" },
     include: CREATIVE_ORDER,
   })
