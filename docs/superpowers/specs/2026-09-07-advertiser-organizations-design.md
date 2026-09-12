@@ -399,6 +399,15 @@ Each is additive on top of this model, with the migration path noted:
   exists; this is CRUD plus UI. Starter roles are not deletable in v1, so the
   "reassign members before deleting a role" guard that `/v1/roles/[roleId]`
   enforces for ops is deferred with it.
+
+### Addendum (2026-09-12) — Custom roles shipped
+
+Custom per-org roles and permission editing are live: Settings → Team → Roles,
+`/v1/customer/org/roles` (+ `[roleId]`). Saving a shared starter clones it for
+that org (starters stay global). Org-scoped roles can be created/renamed/deleted
+with the ops-style reassign-before-delete guard. The bullet above is retained as
+the historical out-of-scope note.
+
 - **Moving media, reports and wallet to org scope.** Same one-column pattern as
   `Campaign`, once those APIs are backend-backed.
 - **A Better Auth migration.** §3.3.
