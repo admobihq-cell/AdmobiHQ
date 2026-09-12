@@ -28,7 +28,11 @@ describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
   })
 
   afterAll(async () => {
-    await prisma.advertiserMember.deleteMany({ where: { clerk_user_id: { in: createdUserIds } } })
+    // Delete orgs FIRST, while their members still exist to match this
+    // relational filter — AdvertiserMember.org has onDelete: Cascade, so
+    // this also removes the member rows. Deleting members first would make
+    // this filter match zero orgs (their only member is already gone) and
+    // silently leak an AdvertiserOrg row on every run.
     await prisma.advertiserOrg.deleteMany({ where: { members: { some: { clerk_user_id: { in: createdUserIds } } } } })
     await prisma.$disconnect()
   })
