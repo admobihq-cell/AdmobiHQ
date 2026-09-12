@@ -30,7 +30,7 @@
 |---|---|
 | `apps/web/prisma/schema.prisma` | New models: `AdvertiserOrg`, `AdvertiserRole`, `AdvertiserMember`, `AdvertiserInvitation`. `Campaign.org_id`, `AuditEvent.org_id`. Applied via `prisma db push` (no migration history file — see Global Constraints). |
 | `packages/ops-contracts/src/enums.ts` | `AdvertiserPermission` enum + `ADVERTISER_STARTER_ROLES` permission sets, next to `OpsPermission`. |
-| `apps/web/prisma/seed-advertiser-roles.ts` (new) | Idempotent seed of the three starter roles (`org_id = null`). |
+| `apps/web/scripts/seed-advertiser-roles.ts` (new) | Idempotent seed of the three starter roles (`org_id = null`). |
 | `apps/api/lib/customer-auth.ts` | Grows: `AdvertiserPermission`-typed `CustomerAccess`, lazy bootstrap transaction, 60s permission cache, `requireCustomerPermission()`, `getAdvertiserOrgId()`. |
 | `apps/api/lib/api-utils.ts` | New `requireCustomerPermissionAccess()` wrapper, mirroring `requireOpsPermissionAccess()`. |
 | `apps/api/lib/audit.ts` | `RecordAuditEventInput.org_id`, `auditFromCustomerUser()` auto-resolves and stamps it. |
@@ -278,7 +278,7 @@ export const ADVERTISER_PERMISSIONS = [
 ] as const
 export type AdvertiserPermission = (typeof ADVERTISER_PERMISSIONS)[number]
 
-/** Seeded once (org_id = null) by apps/web/prisma/seed-advertiser-roles.ts.
+/** Seeded once (org_id = null) by apps/web/scripts/seed-advertiser-roles.ts.
  * "Owner" is not a role row — is_owner members bypass permission checks
  * entirely, exactly as org:admin is exempt in ops. billing:write, team:manage
  * and org:manage are held only by owners in v1; they exist in the enum so a
@@ -316,32 +316,38 @@ git commit -m "feat: add AdvertiserPermission enum and starter role definitions"
 ## Task 3: Seed the starter roles
 
 **Files:**
-- Create: `apps/web/prisma/seed-advertiser-roles.ts`
+- Create: `apps/web/scripts/seed-advertiser-roles.ts`
 - Modify: `apps/web/package.json` (add a `seed:advertiser-roles` script next to `seed:blog`/`seed:help`)
-- Test: `apps/web/prisma/seed-advertiser-roles.test.ts`
+- Test: `apps/web/scripts/seed-advertiser-roles.test.ts`
 
 **Interfaces:**
 - Consumes: `ADVERTISER_STARTER_ROLES` from `@workspace/ops-contracts` (Task 2), `prisma.advertiserRole` (Task 1).
 - Produces: `seedAdvertiserStarterRoles(): Promise<void>` — Task 4's bootstrap logic and Task 6's backfill script both rely on these three rows existing, but only via reading them at runtime, not by importing this function.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
-// apps/web/prisma/seed-advertiser-roles.test.ts
+// apps/web/scripts/seed-advertiser-roles.test.ts
+import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, describe, expect, it } from "vitest"
 
 import { seedAdvertiserStarterRoles } from "./seed-advertiser-roles"
 
 const databaseUrl = process.env.DATABASE_URL
 
 describe.skipIf(!databaseUrl)("seedAdvertiserStarterRoles", () => {
-  const prisma = new PrismaClient()
+  // This Prisma version requires an explicit driver adapter — plain
+  // `new PrismaClient()` throws "Pass a driver adapter to the PrismaClient
+  // constructor". Mirrors apps/api/lib/prisma.ts.
+  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
 
   afterAll(async () => {
     await prisma.$disconnect()
   })
 
+  // 30s, not vitest's 5s default: Neon's compute suspends when idle and the
+  // first query of a run pays a real cold-start cost.
   it("creates exactly one row per starter role, and is idempotent", async () => {
     await seedAdvertiserStarterRoles()
     await seedAdvertiserStarterRoles() // run twice on purpose
@@ -353,24 +359,31 @@ describe.skipIf(!databaseUrl)("seedAdvertiserStarterRoles", () => {
     expect(byName.get("Manager")?.permissions).toContain("campaigns:submit")
     expect(byName.get("Member")?.permissions).not.toContain("campaigns:submit")
     expect(byName.get("Viewer")?.permissions).toEqual(["campaigns:read", "reports:read"])
-  })
+  }, 30_000)
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/web/prisma/seed-advertiser-roles.test.ts`
+Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/web/scripts/seed-advertiser-roles.test.ts`
 Expected: FAIL — cannot find module `./seed-advertiser-roles`.
 
-- [ ] **Step 3: Write the seed script**
+- [x] **Step 3: Write the seed script**
 
 ```typescript
-// apps/web/prisma/seed-advertiser-roles.ts
+// apps/web/scripts/seed-advertiser-roles.ts
+import { fileURLToPath } from "node:url"
+
+import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 
 import { ADVERTISER_STARTER_ROLES } from "@workspace/ops-contracts"
 
-const prisma = new PrismaClient()
+// This Prisma version requires an explicit driver adapter — plain
+// `new PrismaClient()` throws. Mirrors apps/api/lib/prisma.ts, minus the
+// shared-pool singleton machinery this one-off script doesn't need.
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+const prisma = new PrismaClient({ adapter })
 
 /** Idempotent: guards on org_id IS NULL AND name = $1 (a manual upsert)
  * rather than relying on Prisma's upsert-by-unique-key, because
@@ -394,7 +407,10 @@ export async function seedAdvertiserStarterRoles(): Promise<void> {
   }
 }
 
-const isMain = import.meta.url === `file://${process.argv[1]}`
+// file://-URL vs. process.argv[1]'s native path never match on Windows
+// (backslashes vs. the URL's forward slashes) — normalize through
+// fileURLToPath instead of a raw string comparison.
+const isMain = process.argv[1] != null && fileURLToPath(import.meta.url) === process.argv[1]
 if (isMain) {
   seedAdvertiserStarterRoles()
     .then(() => console.log("Seeded advertiser starter roles."))
@@ -406,20 +422,22 @@ if (isMain) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+**Two things discovered running this for real, applicable to every later task's throwaway `PrismaClient` usage (Tasks 4-7's tests, Task 6's backfill script):** (1) this Prisma version requires a driver adapter — `new PrismaClient()` alone throws; (2) `import.meta.url === \`file://${process.argv[1]}\`` never matches on Windows. Use the patterns above.
 
-Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/web/prisma/seed-advertiser-roles.test.ts`
+- [x] **Step 4: Run test to verify it passes**
+
+Run: `npx dotenv -e apps/web/.env.local -- vitest run apps/web/scripts/seed-advertiser-roles.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Add the npm script**
+- [x] **Step 5: Add the npm script**
 
 In `apps/web/package.json`, next to `"seed:blog"`:
 
 ```json
-    "seed:advertiser-roles": "dotenv -e .env.local -- tsx prisma/seed-advertiser-roles.ts",
+    "seed:advertiser-roles": "dotenv -e .env.local -- tsx scripts/seed-advertiser-roles.ts",
 ```
 
-- [ ] **Step 6: Run the seed against the real dev database**
+- [x] **Step 6: Run the seed against the real dev database**
 
 ```bash
 npm run seed:advertiser-roles -w web
@@ -427,10 +445,10 @@ npm run seed:advertiser-roles -w web
 
 Expected: `Seeded advertiser starter roles.` and no errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
-git add apps/web/prisma/seed-advertiser-roles.ts apps/web/prisma/seed-advertiser-roles.test.ts apps/web/package.json
+git add apps/web/scripts/seed-advertiser-roles.ts apps/web/scripts/seed-advertiser-roles.test.ts apps/web/package.json
 git commit -m "feat: seed advertiser starter roles"
 ```
 
