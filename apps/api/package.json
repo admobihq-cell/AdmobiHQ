@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
+    "backfill:advertiser-orgs": "dotenv -e .env.local -- tsx scripts/backfill-advertiser-orgs.ts",
     "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
     "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local"
   },
