@@ -29,7 +29,7 @@ const FORMAT_LABELS: Record<string, string> = {
   both: "Taxi-top LED + delivery bike",
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border py-2 text-sm last:border-0">
       <span className="shrink-0 text-muted-foreground">{label}</span>
@@ -259,7 +259,18 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
       ) : null}
 
       <div className="max-w-2xl rounded-xl border bg-card p-4 shadow-none">
-        <DetailRow label="Company" value={data.company_name ?? "—"} />
+        <DetailRow
+          label="Company"
+          value={
+            data.org_id != null && data.company_name ? (
+              <Link href={`/advertiser-orgs/${data.org_id}`} className="font-medium text-primary underline-offset-4 hover:underline">
+                {data.company_name}
+              </Link>
+            ) : (
+              (data.company_name ?? "—")
+            )
+          }
+        />
         <DetailRow label="Advertiser" value={data.contact_email ?? "—"} />
         <DetailRow label="Contact name" value={data.contact_name ?? "—"} />
         <DetailRow label="Phone" value={data.contact_phone ?? "—"} />

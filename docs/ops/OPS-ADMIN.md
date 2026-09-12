@@ -56,6 +56,10 @@ Sidebar **Campaigns** (permission: `campaigns`) — list + detail for advertiser
 
 Creative tiles use the authenticated ops file proxy (image lightbox / `<video controls>`) and show `checkCreativeDimensions` compliance. Do not confuse with **Campaign Leads** (marketing `/start-campaign` form) — that is a different entity and alert type (`campaign` vs `campaign_submission`).
 
+### Advertiser orgs
+
+Sidebar **Advertiser orgs** (permission: `campaigns`) — directory of `AdvertiserOrg` rows plus detail: active members and roles, pending invitations, org campaigns (links into Campaigns detail), and the same allowlisted activity projection advertisers see. Campaign detail **Company** links here when `org_id` is set.
+
 ### Activity / audit
 
 Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET /v1/audit`.
