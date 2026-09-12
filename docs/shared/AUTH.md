@@ -258,9 +258,9 @@ Clerk Organizations exist as a **binary access gate for ops**, not multi-tenant 
 1. Email isn't `@admobihq.com` → `forbidden`.
 2. Email passes, but no membership in the `CLERK_ORG_ID` org → `forbidden`.
 
-Customer and driver instances have **no** organization concept — every signed-in user there is just an individual account. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) does not exist in the schema yet. `Customer.clerk_user_id` is nullable and is not populated by any route today.
+Driver instances have **no** organization concept — every signed-in driver user there is just an individual account. Customer (advertiser) now does — see "Advertiser orgs and roles" below; it's Postgres-backed, not a Clerk Organization. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) never shipped and is superseded by `AdvertiserOrg`/`AdvertiserMember` below. `Customer.clerk_user_id` is nullable and is not populated by any route today.
 
-### Roles — two layers, ops only
+### Roles — two layers, ops
 
 **Layer 1 — Clerk org role** (`org:admin` / `org:member`, mapped to `"admin" | "member"`): the coarse tier. `admin` bypasses all permission checks and gets every `OpsPermission`.
 
@@ -293,6 +293,16 @@ support · finances · content · flags · activity · driver_applications
 ```
 
 `resolveOpsPermissions()` in `apps/api/lib/auth.ts` computes the effective set per request (all of them for `admin`, the assigned `OpsRole.permissions` for `member`) and caches it 60s per user. `getOpsAccess()` returns a discriminated union — `unauthenticated | forbidden | authorized` — that every route handler narrows before doing anything else.
+
+### Advertiser orgs and roles
+
+Customer-side tenancy, added by the advertiser-organizations plan ([spec](../superpowers/specs/2026-09-07-advertiser-organizations-design.md)). Deliberately **Postgres-only** — Clerk never learns organizations exist, and there's no Clerk Organization equivalent on the customer side. Tables: `AdvertiserOrg`, `AdvertiserMember`, `AdvertiserRole`, `AdvertiserInvitation` ([schema.prisma](../../apps/web/prisma/schema.prisma)).
+
+There's no sign-up-time org creation — [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts) bootstraps lazily: the first authenticated request from a `clerk_user_id` with no `AdvertiserMember` row creates the org (named from the Clerk `companyName` metadata, see "Advertiser sign-up collects a company name" above) and an owner membership, in one transaction. Concurrent first requests race safely onto the same org via the unique constraint on `clerk_user_id`.
+
+Same two-layer shape as ops: `is_owner` bypasses every permission check (like `org:admin`); everyone else gets whatever their assigned `AdvertiserRole.permissions` grants, from the closed `AdvertiserPermission` set ([packages/ops-contracts/src/enums.ts](../../packages/ops-contracts/src/enums.ts)). Three starter roles (`Manager` / `Member` / `Viewer`) are seeded per org. `getCustomerAccess()` returns `{ status: "authorized", userId, orgId, isOwner, permissions }` and caches it 60s per user, same pattern as `resolveOpsPermissions()`; `requireCustomerPermission()` mirrors `requireOpsPermission()`.
+
+As of this writing, campaigns are still `clerk_user_id`-owned rather than `org_id`-scoped, and there's no invitation/team-management UI yet — both tracked in the same plan.
 
 ### Managing organizations and roles day to day
 
