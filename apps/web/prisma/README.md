@@ -78,3 +78,17 @@ accidentally point your local app at production.
 `prisma/migrations/` — it never generates SQL from a diff, so there's no
 risk of it deciding to drop anything on its own. Always create and review the
 migration locally with `db:migrate` first, commit it, then deploy it.
+
+## Deploy order: advertiser organizations
+
+The advertiser-organizations tables (`AdvertiserOrg`/`AdvertiserRole`/
+`AdvertiserMember`/`AdvertiserInvitation`, plus `org_id` on `Campaign` and
+`AuditEvent`) need three steps in this exact order, all before deploying app
+code that scopes campaigns by `org_id` — that code 500s on any of these
+being missing:
+
+1. Run the migration (`db:migrate:deploy` / `db:migrate:deploy:prod`).
+2. `npm run seed:advertiser-roles -w web` — seeds the three starter roles
+   (Manager/Member/Viewer), shared by every org.
+3. `npm run backfill:advertiser-orgs -w api` — backfills existing advertisers
+   into orgs so their campaigns have an `org_id` to be scoped by.

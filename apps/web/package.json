@@ -53,6 +53,7 @@
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
     "seed:help": "dotenv -e .env.local -- tsx scripts/seed-help.ts",
     "seed:blog": "dotenv -e .env.local -- tsx scripts/seed-blog.ts",
+    "seed:advertiser-roles": "dotenv -e .env.local -- tsx scripts/seed-advertiser-roles.ts",
     "env:pull": "infisical export --env=dev --format=dotenv --output-file=.env.local",
     "env:pull:staging": "infisical export --env=staging --format=dotenv --output-file=.env.local",
     "env:pull:prod": "infisical export --env=prod --format=dotenv --output-file=.env.production.local",

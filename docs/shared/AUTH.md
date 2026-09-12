@@ -258,9 +258,9 @@ Clerk Organizations exist as a **binary access gate for ops**, not multi-tenant 
 1. Email isn't `@admobihq.com` → `forbidden`.
 2. Email passes, but no membership in the `CLERK_ORG_ID` org → `forbidden`.
 
-Customer and driver instances have **no** organization concept — every signed-in user there is just an individual account. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) does not exist in the schema yet. `Customer.clerk_user_id` is nullable and is not populated by any route today.
+Driver instances have **no** organization concept — every signed-in driver user there is just an individual account. Customer (advertiser) now does — see "Advertiser orgs and roles" below; it's Postgres-backed, not a Clerk Organization. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) never shipped and is superseded by `AdvertiserOrg`/`AdvertiserMember` below. `Customer.clerk_user_id` is nullable and is not populated by any route today.
 
-### Roles — two layers, ops only
+### Roles — two layers, ops
 
 **Layer 1 — Clerk org role** (`org:admin` / `org:member`, mapped to `"admin" | "member"`): the coarse tier. `admin` bypasses all permission checks and gets every `OpsPermission`.
 
@@ -294,9 +294,19 @@ support · finances · content · flags · activity · driver_applications
 
 `resolveOpsPermissions()` in `apps/api/lib/auth.ts` computes the effective set per request (all of them for `admin`, the assigned `OpsRole.permissions` for `member`) and caches it 60s per user. `getOpsAccess()` returns a discriminated union — `unauthenticated | forbidden | authorized` — that every route handler narrows before doing anything else.
 
+### Advertiser orgs and roles
+
+Customer-side tenancy, added by the advertiser-organizations plan ([spec](../superpowers/specs/2026-09-07-advertiser-organizations-design.md)). Deliberately **Postgres-only** — Clerk never learns organizations exist, and there's no Clerk Organization equivalent on the customer side. Tables: `AdvertiserOrg`, `AdvertiserMember`, `AdvertiserRole`, `AdvertiserInvitation` ([schema.prisma](../../apps/web/prisma/schema.prisma)).
+
+There's no sign-up-time org creation — [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts) bootstraps lazily: the first authenticated request from a `clerk_user_id` with no `AdvertiserMember` row creates the org (named from the Clerk `companyName` metadata, see "Advertiser sign-up collects a company name" above) and an admin membership, in one transaction. Concurrent first requests race safely onto the same org via the unique constraint on `clerk_user_id`.
+
+Same two-layer shape as ops: `is_owner` bypasses every permission check (like `org:admin`); everyone else gets whatever their assigned `AdvertiserRole.permissions` grants, from the closed `AdvertiserPermission` set ([packages/ops-contracts/src/enums.ts](../../packages/ops-contracts/src/enums.ts)). Three starter roles (`Manager` / `Member` / `Viewer`) are seeded once, shared by every org (`org_id = null`), by [apps/web/scripts/seed-advertiser-roles.ts](../../apps/web/scripts/seed-advertiser-roles.ts). `getCustomerAccess()` returns `{ status: "authorized", userId, orgId, isOwner, permissions }` and caches it 60s per user, same pattern as `resolveOpsPermissions()`; `requireCustomerPermission()` mirrors `requireOpsPermission()`.
+
+Campaigns are `org_id`-scoped (see [apps/api/lib/campaign-store.ts](../../apps/api/lib/campaign-store.ts)). Team management is live under `/v1/customer/org/**`: rename (`org:manage`), list/invite/remove members (`team:manage`), accept invites via identity-only auth (no lazy bootstrap, so the invitee joins the inviting org instead of getting a solo org), and role listing/editing. Admins can customize starter roles (clone-on-save per org) or create org-scoped roles via `GET/POST /v1/customer/org/roles` and `PATCH/DELETE /v1/customer/org/roles/[roleId]` — Settings → Team → Roles. Invite emails go through Resend; accept landing is `/invitations/[token]` on customer-web. Settings → Team on customer-web and customer-mobile. Organization name is edited there (and via `<CompanyNamePrompt>` when empty) — not via Clerk `unsafeMetadata`. Ops campaign review and the Users list read `AdvertiserOrg.name` via membership join, not Clerk. Org activity feed: `GET /v1/customer/org/activity` (`activity:read`) — allowlisted projection over `audit_events` (never raw `summary` / ops emails). Member removal is soft-delete (`removed_at`); re-invite reactivates the row. Campaign submit/review notifications fan out to every active member with `campaigns:read`. Sole admins cannot delete their Clerk account until they transfer admin or delete the organization. Support cases stamp `org_id`; members with `support:read_all` see all org cases. Ops directory: `GET /v1/advertiser-orgs` (+ `[id]`) gated on the `campaigns` permission — sidebar **Advertiser orgs** in ops web.
+
 ### Managing organizations and roles day to day
 
-All of this is exposed in the ops console itself, under **Team** ([apps/ops/app/(dashboard)/team](<../../apps/ops/app/(dashboard)/team>)) — no direct Clerk dashboard work needed for routine changes:
+**Ops Team** ([apps/ops/app/(dashboard)/team](<../../apps/ops/app/(dashboard)/team>)) — unchanged, Clerk Organizations on the ops instance:
 
 - **Inviting someone** (`POST /v1/team`, [apps/api/app/v1/team/route.ts](../../apps/api/app/v1/team/route.ts)) — admin-only. Creates a Clerk `organizationInvitation` for `org:admin` or `org:member`. If the invitee already has a Clerk account, their `OpsRole` assignment is pre-created immediately so it's ready the moment they accept; brand-new signups land on the default `"Member"` role until reassigned post-acceptance (there's no Clerk user id to attach an assignment to before then).
 - **Changing someone's tier/role** (`PATCH /v1/team/[userId]`, [apps/api/app/v1/team/[userId]/route.ts](<../../apps/api/app/v1/team/%5BuserId%5D/route.ts>)) — updates the Clerk org membership role and upserts (or clears) the `OpsRoleAssignment` to match. Refuses to demote or remove the **last remaining admin**, to avoid locking the team out.

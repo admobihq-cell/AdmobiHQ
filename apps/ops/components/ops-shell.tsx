@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
+  Building2,
   Car,
   FileCheck2,
   FileText,
@@ -85,6 +86,12 @@ const navItems: Array<{
     href: "/campaigns",
     label: "Campaigns",
     icon: MonitorPlay,
+    permission: "campaigns",
+  },
+  {
+    href: "/advertiser-orgs",
+    label: "Advertiser orgs",
+    icon: Building2,
     permission: "campaigns",
   },
   {

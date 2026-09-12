@@ -25,6 +25,7 @@ export default mergeConfig(shared, {
     include: [
       "lib/**/*.{test,spec}.{ts,tsx}",
       "app/**/*.{test,spec}.{ts,tsx}",
+      "scripts/**/*.{test,spec}.{ts,tsx}",
     ],
   },
 })

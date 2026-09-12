@@ -260,24 +260,26 @@ model Customer {
 }
 
 model SupportCase {
-  id                   Int       @id @default(autoincrement())
+  id                   Int            @id @default(autoincrement())
   customer_id          Int?
-  customer             Customer? @relation(fields: [customer_id], references: [id])
+  customer             Customer?      @relation(fields: [customer_id], references: [id])
   driver_clerk_user_id String?
+  org_id               Int?
+  org                  AdvertiserOrg? @relation(fields: [org_id], references: [id])
   contact_name         String
   contact_email        String
   contact_phone        String?
   anonymous_device_id  String?
-  access_token_hash    String    @unique
+  access_token_hash    String         @unique
   channel              String // "web" | "customer-web" | "customer-mobile"
-  category             String    @default("general") // billing, campaign, technical, driver, general
+  category             String         @default("general") // billing, campaign, technical, driver, general
   subject              String
-  status               String    @default("open") // open, pending, resolved, closed
-  priority             String    @default("normal") // low, normal, high, urgent
+  status               String         @default("open") // open, pending, resolved, closed
+  priority             String         @default("normal") // low, normal, high, urgent
   assigned_to_clerk_id String?
   assigned_to_email    String?
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
 
   messages SupportMessage[]
 
@@ -285,6 +287,7 @@ model SupportCase {
   @@index([contact_email])
   @@index([assigned_to_clerk_id])
   @@index([driver_clerk_user_id])
+  @@index([org_id, created_at])
   @@map("support_cases")
 }
 
@@ -442,6 +445,90 @@ model OpsRoleAssignment {
   @@map("ops_role_assignments")
 }
 
+/// An advertiser tenant. Created automatically for every advertiser — a solo
+/// advertiser is an org of one and never sees org UI. Name is seeded from the
+/// company name collected at sign-up (Clerk unsafeMetadata.companyName) and
+/// is editable in settings later.
+model AdvertiserOrg {
+  id         Int      @id @default(autoincrement())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  members      AdvertiserMember[]
+  invitations  AdvertiserInvitation[]
+  roles        AdvertiserRole[]
+  campaigns    Campaign[]
+  supportCases SupportCase[]
+
+  @@map("advertiser_orgs")
+}
+
+/// Fine-grained permission set, mirroring OpsRole. Rows with org_id = null are
+/// the seeded starter roles shared by every org; a non-null org_id is a custom
+/// role belonging to one org (not built until a later phase).
+///
+/// The @@unique below does NOT stop two starter roles both named "Manager"
+/// with org_id = NULL — Postgres treats NULLs as distinct in unique indexes.
+/// A partial unique index (added by hand to the generated migration) is what
+/// actually protects the starter-role names.
+model AdvertiserRole {
+  id          Int            @id @default(autoincrement())
+  org_id      Int?
+  org         AdvertiserOrg? @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  name        String
+  permissions String[]       @default([])
+  created_at  DateTime       @default(now())
+
+  members AdvertiserMember[]
+
+  @@unique([org_id, name])
+  @@map("advertiser_roles")
+}
+
+/// One row per advertiser user. clerk_user_id is globally unique, which is how
+/// "one org per user in v1" is enforced — a DB constraint, not app code.
+/// `is_owner` (Admin) members are exempt from permission checks entirely, exactly as
+/// org:admin is exempt in ops.
+model AdvertiserMember {
+  id            Int             @id @default(autoincrement())
+  org_id        Int
+  org           AdvertiserOrg   @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  clerk_user_id String          @unique
+  role_id       Int?
+  role          AdvertiserRole? @relation(fields: [role_id], references: [id])
+  is_owner      Boolean         @default(false)
+  /// Soft-delete: set on remove so activity history can still resolve a name.
+  removed_at    DateTime?
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+
+  @@index([org_id])
+  @@index([org_id, removed_at])
+  @@map("advertiser_members")
+}
+
+/// A pending invitation. Not consumed until the Team-management phase — the
+/// table is created now so this migration adds the whole tenancy shape in one
+/// additive pass.
+model AdvertiserInvitation {
+  id                       Int             @id @default(autoincrement())
+  org_id                   Int
+  org                      AdvertiserOrg   @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  email                    String
+  role_id                  Int?
+  token_hash               String          @unique
+  expires_at               DateTime
+  accepted_at              DateTime?
+  revoked_at               DateTime?
+  invited_by_clerk_user_id String
+  created_at               DateTime        @default(now())
+
+  @@unique([org_id, email])
+  @@index([email])
+  @@map("advertiser_invitations")
+}
+
 /// One row per driver's profile-completion application, linked to the
 /// DRIVER Clerk instance's user id — NOT the Driver model above, which is an
 /// unrelated marketing lead-capture table with no clerk_user_id. Created by
@@ -559,9 +646,13 @@ model Campaign {
 
   creatives CampaignCreative[]
 
+  org_id Int?
+  org    AdvertiserOrg? @relation(fields: [org_id], references: [id])
+
   @@index([clerk_user_id, created_at])
   @@index([status, created_at])
   @@index([starts_on, ends_on])
+  @@index([org_id, created_at])
   @@map("campaigns")
 }
 
@@ -636,6 +727,7 @@ model AuditEvent {
   action        String
   entity_type   String
   entity_id     String?
+  org_id        Int?
   summary       String
   metadata      Json?
   created_at    DateTime @default(now())
@@ -644,6 +736,7 @@ model AuditEvent {
   @@index([entity_type, created_at])
   @@index([actor_email, created_at])
   @@index([app, created_at])
+  @@index([org_id, created_at])
   @@map("audit_events")
 }
 

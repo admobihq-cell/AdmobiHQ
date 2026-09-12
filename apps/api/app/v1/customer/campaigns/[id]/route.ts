@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { campaignUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
-import { jsonError, parseId, parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
+import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { toCampaignDto, toDayIso } from "@/lib/campaign-dto"
 import { destroyCampaignCreative } from "@/lib/campaign-creative-storage"
 import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaign-store"
@@ -13,26 +13,26 @@ import { prisma } from "@/lib/prisma"
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:read")
   if (auth.error) return auth.error
 
   const id = parseId((await params).id)
   if (!id) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
 
   return NextResponse.json(toCampaignDto(campaign))
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:write")
   if (auth.error) return auth.error
 
   const id = parseId((await params).id)
   if (!id) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
   if (!EDITABLE_STATUSES.has(campaign.status)) {
     return jsonError(`Campaign can't be edited while status is "${campaign.status}"`, 409)
@@ -79,13 +79,13 @@ export async function PATCH(req: Request, { params }: Params) {
 /** Drafts only. Anything that has been submitted is part of the review record,
  * so it is cancelled (a status change) rather than erased. */
 export async function DELETE(_req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("campaigns:write")
   if (auth.error) return auth.error
 
   const id = parseId((await params).id)
   if (!id) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
   if (campaign.status !== "draft") {
     return jsonError(`Only a draft can be deleted — this one is "${campaign.status}"`, 409)

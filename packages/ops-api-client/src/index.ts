@@ -32,6 +32,8 @@ import {
   type MediaKitCreateInput,
   type MediaKitRequestDto,
   type MediaKitUpdateInput,
+  type OpsAdvertiserOrgDetailDto,
+  type OpsAdvertiserOrgListItemDto,
   type PaginatedResponse,
   type PlatformFlagDto,
   type PlatformFlagUpdateInput,
@@ -241,6 +243,12 @@ export type OpsClient = {
      * through request<T>()'s JSON parsing. Same shape as
      * driverApplications.documentFileUrl above. */
     creativeFileUrl: (campaignId: number, creativeId: number) => string
+  }
+  advertiserOrgs: {
+    list: (
+      params?: Partial<PaginationParams>,
+    ) => Promise<PaginatedResponse<OpsAdvertiserOrgListItemDto>>
+    get: (id: number) => Promise<OpsAdvertiserOrgDetailDto>
   }
 }
 
@@ -652,6 +660,20 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         }),
       creativeFileUrl: (campaignId, creativeId) =>
         `${baseUrl}${apiPrefix}/campaigns/${campaignId}/creatives/${creativeId}/file`,
+    },
+    advertiserOrgs: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<OpsAdvertiserOrgListItemDto>>(
+          `${apiPrefix}/advertiser-orgs${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<OpsAdvertiserOrgDetailDto>(`${apiPrefix}/advertiser-orgs/${id}`),
     },
   }
 }

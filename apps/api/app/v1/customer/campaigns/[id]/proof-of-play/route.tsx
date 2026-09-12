@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { exportFileName } from "@workspace/ops-contracts"
 
-import { jsonError, parseId, requireCustomerAccess } from "@/lib/api-utils"
+import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { buildProofOfPlay } from "@/lib/campaign-statement"
 import { getOwnedCampaign } from "@/lib/campaign-store"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
@@ -18,13 +18,13 @@ type Params = { params: Promise<{ id: string }> }
  * issuing a document that says a day was delivered when nothing was booked.
  */
 export async function GET(_req: Request, { params }: Params) {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("reports:read")
   if (auth.error) return auth.error
 
   const id = parseId((await params).id)
   if (!id) return jsonError("Invalid id", 400)
 
-  const campaign = await getOwnedCampaign(auth.access.userId, id)
+  const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
   if (campaign.status !== "approved" || !campaign.starts_on || !campaign.ends_on) {
     return jsonError("Proof of play is available once a campaign is approved and scheduled", 409)
