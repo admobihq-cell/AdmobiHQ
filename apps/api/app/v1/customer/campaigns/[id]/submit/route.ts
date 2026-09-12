@@ -9,6 +9,7 @@ import {
   missingCampaignCreatives,
   missingCampaignFields,
 } from "@/lib/campaign-store"
+import { fanOutCustomerCampaignNotice } from "@/lib/advertiser-notify"
 import { getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
@@ -16,7 +17,6 @@ import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { CampaignSubmitted } from "@/lib/email/templates/CampaignSubmitted"
 import { prisma } from "@/lib/prisma"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
-import { notifyUserPush } from "@/lib/push/user-push"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -66,19 +66,12 @@ export async function POST(_req: Request, { params }: Params) {
     const contactEmail = updated.contact_email ?? (await getCustomerEmail(auth.access.userId))
     const name = updated.contact_name ?? (await getCustomerName(auth.access.userId)) ?? "there"
 
-    await prisma.customerNotification.create({
-      data: {
-        clerk_user_id: auth.access.userId,
-        type: "campaign_submitted",
-        title: "Campaign submitted",
-        body: `We're reviewing "${updated.name}" — this usually takes a day or two.`,
-        href: `/campaigns/${id}`,
-      },
-    })
-
-    await notifyUserPush("customer", auth.access.userId, {
+    await fanOutCustomerCampaignNotice({
+      orgId: updated.org_id,
+      fallbackUserId: auth.access.userId,
+      type: "campaign_submitted",
       title: "Campaign submitted",
-      body: `We're reviewing "${updated.name}".`,
+      body: `We're reviewing "${updated.name}" — this usually takes a day or two.`,
       href: `/campaigns/${id}`,
     })
 
