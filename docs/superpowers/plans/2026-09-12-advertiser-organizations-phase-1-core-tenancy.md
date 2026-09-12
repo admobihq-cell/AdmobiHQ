@@ -215,7 +215,7 @@ git commit -m "feat: add advertiser org, role, member, invitation tables"
 **Interfaces:**
 - Produces: `ADVERTISER_PERMISSIONS: readonly string[]`, `type AdvertiserPermission`, `ADVERTISER_STARTER_ROLES: Record<"Manager" | "Member" | "Viewer", readonly AdvertiserPermission[]>`. Task 3 (seed script), Task 4 (`customer-auth.ts`), and Task 7 (route permission checks) all import from here.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // packages/ops-contracts/src/enums.test.ts
@@ -249,12 +249,12 @@ describe("ADVERTISER_STARTER_ROLES", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run packages/ops-contracts/src/enums.test.ts`
 Expected: FAIL — `ADVERTISER_PERMISSIONS`/`ADVERTISER_STARTER_ROLES` are not exported from `./enums`.
 
-- [ ] **Step 3: Add the enum and starter-role map**
+- [x] **Step 3: Add the enum and starter-role map**
 
 Append to `packages/ops-contracts/src/enums.ts`, after `export type OpsPermission = (typeof OPS_PERMISSIONS)[number]`:
 
@@ -299,12 +299,12 @@ export const ADVERTISER_STARTER_ROLES: Record<"Manager" | "Member" | "Viewer", r
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run packages/ops-contracts/src/enums.test.ts`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ops-contracts/src/enums.ts packages/ops-contracts/src/enums.test.ts
