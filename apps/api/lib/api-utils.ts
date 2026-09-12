@@ -13,7 +13,11 @@ import {
 
 import { requireOpsAdmin, requireOpsPermission, requireOpsUser } from "@/lib/auth"
 import { requireDriverUser } from "@/lib/driver-auth"
-import { requireCustomerPermission, requireCustomerUser } from "@/lib/customer-auth"
+import {
+  requireCustomerIdentity,
+  requireCustomerPermission,
+  requireCustomerUser,
+} from "@/lib/customer-auth"
 
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }
@@ -108,6 +112,20 @@ export async function requireCustomerPermissionAccess(
 > {
   try {
     const access = await requireCustomerPermission(permission)
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Bearer identity only — no org bootstrap. For invite accept. */
+export async function requireCustomerIdentityAccess(): Promise<
+  | { access: Awaited<ReturnType<typeof requireCustomerIdentity>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireCustomerIdentity()
     return { access }
   } catch (e) {
     if (e instanceof Response) return { error: e as NextResponse }
