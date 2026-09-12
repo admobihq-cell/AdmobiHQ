@@ -58,14 +58,13 @@ describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
   )
 
   it(
-    "is idempotent: a second call for the same user returns the same org",
+    "is idempotent: two concurrent calls for the same user race onto the same org",
     async () => {
-      currentTestUserId = `auth-test-idempotent-${Date.now()}`
+      currentTestUserId = `auth-test-concurrent-${Date.now()}`
       createdUserIds.push(currentTestUserId)
 
       const { getCustomerAccess } = await import("./customer-auth")
-      const first = await getCustomerAccess()
-      const second = await getCustomerAccess()
+      const [first, second] = await Promise.all([getCustomerAccess(), getCustomerAccess()])
 
       if (first.status !== "authorized" || second.status !== "authorized") throw new Error("unreachable")
       expect(second.orgId).toBe(first.orgId)
@@ -90,6 +89,39 @@ describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
 
       expect(access.permissions.has("campaigns:submit")).toBe(true)
       expect(access.permissions.has("org:manage")).toBe(true)
+    },
+    30_000,
+  )
+
+  it(
+    "a Member-role non-owner can write campaigns but not submit them",
+    async () => {
+      currentTestUserId = `auth-test-member-role-${Date.now()}`
+      createdUserIds.push(currentTestUserId)
+
+      const memberRole = await prisma.advertiserRole.findFirst({
+        where: { org_id: null, name: "Member" },
+      })
+      if (!memberRole) throw new Error("seeded 'Member' role not found — run seed:advertiser-roles first")
+
+      const org = await prisma.advertiserOrg.create({ data: { name: "Member Role Test Org" } })
+      await prisma.advertiserMember.create({
+        data: { org_id: org.id, clerk_user_id: currentTestUserId, is_owner: false, role_id: memberRole.id },
+      })
+
+      const { requireCustomerPermission } = await import("./customer-auth")
+
+      const access = await requireCustomerPermission("campaigns:write")
+      expect(access.orgId).toBe(org.id)
+
+      let thrown: unknown
+      try {
+        await requireCustomerPermission("campaigns:submit")
+      } catch (error) {
+        thrown = error
+      }
+      expect(thrown).toBeInstanceOf(Response)
+      expect((thrown as Response).status).toBe(403)
     },
     30_000,
   )
