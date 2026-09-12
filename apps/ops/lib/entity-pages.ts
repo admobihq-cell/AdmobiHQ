@@ -33,6 +33,13 @@ export const CAMPAIGNS_PAGE: EntityPageMeta = {
   ],
 }
 
+export const ADVERTISER_ORGS_PAGE: EntityPageMeta = {
+  title: "Advertiser orgs",
+  description:
+    "Advertiser organizations — team members, campaigns, and activity for shared accounts.",
+  columns: ["Name", "Members", "Campaigns", "Created"],
+}
+
 export const FLEET_PAGE: EntityPageMeta = {
   title: "Fleet Partners",
   description: "Fleet operators applying to join the Admobi network.",

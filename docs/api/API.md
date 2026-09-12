@@ -41,7 +41,9 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
 | `/v1/customer/notifications`, `/v1/customer/notifications/read`, `/v1/customer/notifications/[id]` | Customer Clerk JWT | Campaign lifecycle inbox (merged client-side with announcements) |
 | `/v1/customer/campaigns` (+ `[id]`, `submit`, `creatives`, creative `file`) | Customer Clerk JWT | Advertiser campaign CRUD, submit-for-review, creative upload/proxy |
+| `/v1/customer/org` (+ `members`, `roles`, `invitations`, `activity`, …) | Customer Clerk JWT | Advertiser org, team, roles, invites, activity |
 | `/v1/campaigns` (+ `[id]`, `review`, creative `file`) | Ops Clerk JWT + `campaigns` permission | Ops campaign list, detail, review decisions, creative proxy |
+| `/v1/advertiser-orgs` (+ `[id]`) | Ops Clerk JWT + `campaigns` permission | Ops advertiser org directory + detail (members, campaigns, activity) |
 | `/v1/driver/profile`, `/v1/driver/documents`, `/v1/driver/notifications`, `/v1/driver/announcements`, `/v1/driver/mobile-announcements` | Driver Clerk JWT | Driver self-service |
 | `/v1/driver/sos` (+ `[id]`, `messages`, `photos`, `location`) | Driver Clerk JWT | Driver SOS: file, track, reply, add photos, re-ping location |
 | `/v1/safety-incidents` (+ `[id]`, `messages`, photo `file`) | Ops Clerk JWT + `safety` permission | Ops SOS queue, review decisions, photo proxy |
@@ -124,6 +126,8 @@ codepoint rather than substituting one.
 | `GET` | `/v1/campaigns/[id]` | Ops `campaigns` | Detail + creatives |
 | `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `approve` / `request_changes` / `reject` / `unapprove` — reason required except approve; reason is **advertiser-visible** |
 | `GET` | `/v1/campaigns/[id]/creatives/[creativeId]/file` | Ops `campaigns` | Stream creative for review |
+| `GET` | `/v1/advertiser-orgs` | Ops `campaigns` | Paginated org directory (search by name) |
+| `GET` | `/v1/advertiser-orgs/[id]` | Ops `campaigns` | Members, pending invites, campaigns, projected activity |
 
 **Ownership mismatch returns 404, not 403** — otherwise campaign ids are enumerable. Flight phase (`scheduled` / `live` / `completed`) is derived from `starts_on` / `ends_on` at read time; there is no stored `live` column.
 
