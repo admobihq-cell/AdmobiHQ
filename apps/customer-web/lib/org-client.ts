@@ -13,6 +13,26 @@ import { apiPublicUrl } from "@/lib/site-urls"
 
 export type GetToken = () => Promise<string | null>
 
+/** Some routes (e.g. accept-invitation's solo-org conflict) attach extra
+ * machine-readable fields alongside `error` — surfaced here instead of
+ * discarded, so a caller can branch on `reason` rather than parse `message`. */
+export class OrgApiError extends Error {
+  status: number
+  reason?: string
+  currentOrgName?: string
+
+  constructor(
+    message: string,
+    status: number,
+    extra?: { reason?: string; currentOrgName?: string },
+  ) {
+    super(message)
+    this.status = status
+    this.reason = extra?.reason
+    this.currentOrgName = extra?.currentOrgName
+  }
+}
+
 async function authedFetch(getToken: GetToken, path: string, init?: RequestInit) {
   const token = await getToken()
   const headers = new Headers(init?.headers)
@@ -20,12 +40,12 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
 
   const res = await fetch(`${apiPublicUrl()}${path}`, { ...init, headers })
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null
-    const error = new Error(body?.error ?? `Request failed (${res.status})`) as Error & {
-      status?: number
-    }
-    error.status = res.status
-    throw error
+    const body = (await res.json().catch(() => null)) as {
+      error?: string
+      reason?: string
+      currentOrgName?: string
+    } | null
+    throw new OrgApiError(body?.error ?? `Request failed (${res.status})`, res.status, body ?? undefined)
   }
   return res
 }
@@ -120,11 +140,12 @@ export async function deleteOrgRole(getToken: GetToken, roleId: number): Promise
 export async function acceptOrgInvitation(
   getToken: GetToken,
   token: string,
+  options?: { leaveSoleOrg?: boolean },
 ): Promise<{ org: AdvertiserOrgDto }> {
   const res = await authedFetch(
     getToken,
     `/v1/customer/org/invitations/accept/${encodeURIComponent(token)}`,
-    { method: "POST" },
+    jsonInit("POST", options ?? {}),
   )
   return res.json()
 }
@@ -159,4 +180,8 @@ export async function transferOrgOwnership(
 
 export async function deleteOrganization(getToken: GetToken): Promise<void> {
   await authedFetch(getToken, "/v1/customer/org/delete-organization", { method: "POST" })
+}
+
+export async function leaveOrganization(getToken: GetToken): Promise<void> {
+  await authedFetch(getToken, "/v1/customer/org/leave", { method: "POST" })
 }

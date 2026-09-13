@@ -10,6 +10,7 @@ import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
 import { Button } from "@workspace/ui/components/button"
 import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@workspace/ui/components/input-otp"
 import { Label } from "@workspace/ui/components/label"
 
 import { webPublicUrl } from "@/lib/site-urls"
@@ -22,6 +23,12 @@ export function AdvertiserSignIn() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectUrl = searchParams.get("redirect_url") || "/"
+  // Only the raw param, not the "/" default — avoid an unnecessary
+  // ?redirect_url=%2F when the visitor just landed here directly.
+  const rawRedirectUrl = searchParams.get("redirect_url")
+  const signUpHref = rawRedirectUrl
+    ? `/auth/signup/advertiser?redirect_url=${encodeURIComponent(rawRedirectUrl)}`
+    : "/auth/signup/advertiser"
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
@@ -116,18 +123,24 @@ export function AdvertiserSignIn() {
               Enter the {CODE_LENGTH}-digit code sent to {email.trim()}
             </p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="code">Verification code</Label>
-            <Input
+          <div className="flex flex-col items-center gap-1.5">
+            <Label htmlFor="code" className="self-start">
+              Verification code
+            </Label>
+            <InputOTP
               id="code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              inputMode="numeric"
+              onChange={setCode}
               maxLength={CODE_LENGTH}
               disabled={submitting}
               autoFocus
-            />
+            >
+              <InputOTPGroup>
+                {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button
@@ -204,7 +217,7 @@ export function AdvertiserSignIn() {
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
-              href="/auth/signup/advertiser"
+              href={signUpHref}
               className="font-medium text-foreground underline underline-offset-4"
             >
               Sign up

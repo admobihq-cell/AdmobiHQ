@@ -8,6 +8,6 @@ export async function redirectIfAuthenticated(destination = "/") {
   const { auth } = await import("@clerk/nextjs/server")
   const { userId } = await auth()
   if (userId) {
-    redirect(destination)
+    redirect(destination.startsWith("/") ? destination : "/")
   }
 }

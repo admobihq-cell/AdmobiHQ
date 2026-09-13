@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 
-import { acceptOrgInvitation } from "@/lib/org-client"
+import { acceptOrgInvitation, OrgApiError } from "@/lib/org-client"
 
 export function AcceptInvitationClient() {
   const params = useParams<{ token: string }>()
@@ -19,9 +19,11 @@ export function AcceptInvitationClient() {
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "accepting" | "done">("idle")
+  const [conflict, setConflict] = useState<{ currentOrgName: string } | null>(null)
+  const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !token || status !== "idle") return
+    if (!isLoaded || !isSignedIn || !token || status !== "idle" || conflict) return
 
     let cancelled = false
     setStatus("accepting")
@@ -34,16 +36,36 @@ export function AcceptInvitationClient() {
         })
         router.replace("/settings/team")
       })
-      .catch((err: Error) => {
+      .catch((err: OrgApiError) => {
         if (cancelled) return
-        setError(err.message)
+        if (err.reason === "solo_org_conflict" && err.currentOrgName) {
+          setConflict({ currentOrgName: err.currentOrgName })
+        } else {
+          setError(err.message)
+        }
         setStatus("idle")
       })
 
     return () => {
       cancelled = true
     }
-  }, [getToken, isLoaded, isSignedIn, router, status, token])
+  }, [conflict, getToken, isLoaded, isSignedIn, router, status, token])
+
+  function handleLeaveAndJoin() {
+    setResolving(true)
+    void acceptOrgInvitation(getToken, token, { leaveSoleOrg: true })
+      .then(({ org }) => {
+        toast.success(`You're now part of ${org.name}`, {
+          description: `Joined as ${org.myRoleName}`,
+        })
+        router.replace("/settings/team")
+      })
+      .catch((err: Error) => {
+        setResolving(false)
+        setConflict(null)
+        setError(err.message)
+      })
+  }
 
   if (!isLoaded) {
     return <p className="text-sm text-muted-foreground">Loading…</p>
@@ -62,6 +84,34 @@ export function AcceptInvitationClient() {
           <Button asChild className="w-full">
             <Link href={loginHref}>Sign in to accept</Link>
           </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (conflict) {
+    return (
+      <Card className="mx-auto max-w-md shadow-none">
+        <CardContent className="space-y-4 p-6">
+          <h1 className="text-xl font-semibold">You already have a workspace</h1>
+          <p className="text-sm text-muted-foreground">
+            You&apos;re the only member of <strong>{conflict.currentOrgName}</strong> — it was
+            created automatically when you signed up. Leave it to join this invitation instead?
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              className="flex-1"
+              disabled={resolving}
+              loading={resolving}
+              loadingText="Joining…"
+              onClick={handleLeaveAndJoin}
+            >
+              Leave {conflict.currentOrgName} and join
+            </Button>
+            <Button asChild variant="outline" disabled={resolving}>
+              <Link href="/">Cancel</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )
