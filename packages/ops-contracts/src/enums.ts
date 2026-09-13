@@ -271,22 +271,14 @@ export type AdvertiserPermission = (typeof ADVERTISER_PERMISSIONS)[number]
 
 /** Seeded once (org_id = null) by apps/web/prisma/seed-advertiser-roles.ts.
  * "Admin" is not a role row — `is_owner` members bypass permission checks
- * entirely, exactly as org:admin is exempt in ops. billing:write, team:manage
- * and org:manage are held only by admins in v1; they exist in the enum so a
- * later custom-role phase can grant them without a migration. */
-export const ADVERTISER_STARTER_ROLES: Record<"Manager" | "Member" | "Viewer", readonly AdvertiserPermission[]> = {
-  Manager: [
-    "campaigns:read",
-    "campaigns:write",
-    "campaigns:submit",
-    "creatives:write",
-    "reports:read",
-    "billing:read",
-    "activity:read",
-    "support:read_all",
-  ],
+ * entirely, exactly as org:admin is exempt in ops. billing:write, team:manage,
+ * org:manage, and campaigns:submit are held only by admins in v1; they exist
+ * in the enum so an org's own custom roles (Settings → Team → Roles) can
+ * grant them without a migration — Member is deliberately the only starter,
+ * to keep the default invite flow to one choice; orgs that want a tiered
+ * submitter/viewer role create it themselves. */
+export const ADVERTISER_STARTER_ROLES: Record<"Member", readonly AdvertiserPermission[]> = {
   Member: ["campaigns:read", "campaigns:write", "creatives:write", "reports:read"],
-  Viewer: ["campaigns:read", "reports:read"],
 }
 
 /** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema.

@@ -81,26 +81,14 @@ const SEEDED_ROLE_GUIDE: Array<{
   {
     name: "Admin",
     summary:
-      "Full control of the organization. Admins can rename the company, invite or remove people, edit roles, and do everything a Manager can — including submitting campaigns and managing billing when it ships.",
+      "Full control of the organization. Admins can rename the company, invite or remove people, edit roles, submit campaigns, and manage billing when it ships — everything a Member can plus the money and team boundaries.",
     permissions: "all",
-  },
-  {
-    name: "Manager",
-    summary:
-      "Runs day-to-day advertising work: create and edit campaigns, upload creative, and submit campaigns for review. Can see billing (read-only), org activity, and all support cases. Cannot rename the org or change who is on the team.",
-    permissions: ADVERTISER_STARTER_ROLES.Manager,
   },
   {
     name: "Member",
     summary:
-      "Prepares campaigns and creative but cannot submit for review — that spend boundary stays with Managers and Admins. Good for designers or junior marketers who draft work others approve.",
+      "Prepares campaigns and creative but cannot submit for review — that spend boundary stays with Admins (or a custom role you create for it). Good for anyone drafting work an admin approves.",
     permissions: ADVERTISER_STARTER_ROLES.Member,
-  },
-  {
-    name: "Viewer",
-    summary:
-      "Read-only access to campaigns and reports. Useful for stakeholders, finance, or agencies that need visibility without editing anything.",
-    permissions: ADVERTISER_STARTER_ROLES.Viewer,
   },
 ]
 
