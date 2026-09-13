@@ -69,7 +69,7 @@ export async function listAssignableRoles(orgId: number) {
     ...starters.filter((r) => !overridden.has(r.name.toLowerCase())),
   ]
 
-  const starterOrder = ["Manager", "Member", "Viewer"]
+  const starterOrder = ["Member"]
   effective.sort((a, b) => {
     const ai = starterOrder.indexOf(a.name)
     const bi = starterOrder.indexOf(b.name)
