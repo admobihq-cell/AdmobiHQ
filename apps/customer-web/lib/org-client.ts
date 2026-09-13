@@ -117,10 +117,16 @@ export async function deleteOrgRole(getToken: GetToken, roleId: number): Promise
   await authedFetch(getToken, `/v1/customer/org/roles/${roleId}`, { method: "DELETE" })
 }
 
-export async function acceptOrgInvitation(getToken: GetToken, token: string): Promise<void> {
-  await authedFetch(getToken, `/v1/customer/org/invitations/accept/${encodeURIComponent(token)}`, {
-    method: "POST",
-  })
+export async function acceptOrgInvitation(
+  getToken: GetToken,
+  token: string,
+): Promise<{ org: AdvertiserOrgDto }> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/org/invitations/accept/${encodeURIComponent(token)}`,
+    { method: "POST" },
+  )
+  return res.json()
 }
 
 export async function listOrgActivity(

@@ -196,7 +196,7 @@ export function AdvertiserSignUp() {
               disabled={submitting}
             />
             <p className="text-xs text-muted-foreground">
-              Optional — we&apos;ll ask for it after you sign in if you skip it.
+              Optional — we&apos;ll use your name until you set one.
             </p>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

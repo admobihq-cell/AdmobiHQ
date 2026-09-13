@@ -6,7 +6,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserPlus } from "lucide-react"
 import { toast } from "sonner"
 
-import type { AdvertiserInviteInput } from "@workspace/ops-contracts"
+import type { AdvertiserInviteInput, AdvertiserMemberDto } from "@workspace/ops-contracts"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog"
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import {
@@ -52,13 +64,24 @@ const ORG_KEY = ["customer-org"] as const
 const MEMBERS_KEY = ["customer-org-members"] as const
 const ROLES_KEY = ["customer-org-roles"] as const
 
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
 export function TeamSettingsView() {
-  const { getToken, isLoaded } = useAuth()
+  const { getToken, isLoaded, userId } = useAuth()
   const queryClient = useQueryClient()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [email, setEmail] = useState("")
   const [roleId, setRoleId] = useState<string>("")
   const [orgName, setOrgName] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<AdvertiserMemberDto | null>(null)
+  const [transferTarget, setTransferTarget] = useState<AdvertiserMemberDto | null>(null)
 
   const orgQuery = useQuery({
     queryKey: ORG_KEY,
@@ -112,6 +135,7 @@ export function TeamSettingsView() {
     mutationFn: (memberId: number) => removeOrgMember(getToken, memberId),
     onSuccess: async () => {
       toast.success("Member removed")
+      setRemoveTarget(null)
       await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
       await queryClient.invalidateQueries({ queryKey: ORG_KEY })
     },
@@ -122,6 +146,18 @@ export function TeamSettingsView() {
     mutationFn: (invitationId: number) => revokeOrgInvitation(getToken, invitationId),
     onSuccess: async () => {
       toast.success("Invitation revoked")
+      await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
+    },
+    onError: (error: Error) => toast.error(error.message),
+  })
+
+  // Re-inviting the same email refreshes the token/expiry and re-sends the
+  // email — POST /v1/customer/org/members already does this in place rather
+  // than erroring on the org_id+email unique constraint.
+  const resendMutation = useMutation({
+    mutationFn: (input: AdvertiserInviteInput) => inviteOrgMember(getToken, input),
+    onSuccess: async () => {
+      toast.success("Invitation resent")
       await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
     },
     onError: (error: Error) => toast.error(error.message),
@@ -141,6 +177,7 @@ export function TeamSettingsView() {
     mutationFn: (memberId: number) => transferOrgOwnership(getToken, memberId),
     onSuccess: async () => {
       toast.success("Admin transferred")
+      setTransferTarget(null)
       await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
       await queryClient.invalidateQueries({ queryKey: ORG_KEY })
       await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
@@ -154,7 +191,7 @@ export function TeamSettingsView() {
     return member ? String(member.id) : roles[0] ? String(roles[0].id) : ""
   }, [roles])
 
-  if (!isLoaded || orgQuery.isLoading) {
+  if (!isLoaded || orgQuery.isLoading || membersQuery.isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -300,61 +337,81 @@ export function TeamSettingsView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="font-medium">{member.name ?? member.email ?? member.clerkUserId}</div>
-                    {member.email ? (
-                      <div className="text-xs text-muted-foreground">{member.email}</div>
-                    ) : null}
-                  </TableCell>
-                  <TableCell>
-                    {member.isOwner ? (
-                      "Admin"
-                    ) : (
-                      <Select
-                        value={member.roleId != null ? String(member.roleId) : undefined}
-                        onValueChange={(value) =>
-                          roleChangeMutation.mutate({ memberId: member.id, roleId: Number(value) })
-                        }
-                      >
-                        <SelectTrigger className="w-36">
-                          <SelectValue placeholder="Role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {roles.map((role) => (
-                            <SelectItem key={role.id} value={String(role.id)}>
-                              {role.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!member.isOwner ? (
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={transferMutation.isPending}
-                          onClick={() => transferMutation.mutate(member.id)}
-                        >
-                          Make admin
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={removeMutation.isPending}
-                          onClick={() => removeMutation.mutate(member.id)}
-                        >
-                          Remove
-                        </Button>
+              {members.map((member) => {
+                const displayName = member.name ?? member.email ?? member.clerkUserId
+                const isSelf = Boolean(userId) && member.clerkUserId === userId
+                return (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar size="sm" className="rounded-lg">
+                          <AvatarFallback className="rounded-lg bg-secondary text-xs font-semibold text-secondary-foreground">
+                            {getInitials(displayName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {displayName}
+                            {isSelf ? (
+                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                You
+                              </span>
+                            ) : null}
+                          </div>
+                          {member.email ? (
+                            <div className="text-xs text-muted-foreground">{member.email}</div>
+                          ) : null}
+                        </div>
                       </div>
-                    ) : null}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      {member.isOwner ? (
+                        <Badge variant="default">Admin</Badge>
+                      ) : (
+                        <Select
+                          value={member.roleId != null ? String(member.roleId) : undefined}
+                          onValueChange={(value) =>
+                            roleChangeMutation.mutate({ memberId: member.id, roleId: Number(value) })
+                          }
+                        >
+                          <SelectTrigger className="w-36">
+                            <SelectValue placeholder="Role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roles.map((role) => (
+                              <SelectItem key={role.id} value={String(role.id)}>
+                                {role.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {!member.isOwner ? (
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={transferMutation.isPending}
+                            onClick={() => setTransferTarget(member)}
+                          >
+                            Make admin
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={removeMutation.isPending}
+                            onClick={() => setRemoveTarget(member)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
 
@@ -362,6 +419,12 @@ export function TeamSettingsView() {
             <div className="space-y-2 pt-2">
               <h3 className="text-sm font-medium">Pending invitations</h3>
               <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invite</TableHead>
+                    <TableHead className="w-28" />
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {invitations.map((invite) => (
                     <TableRow key={invite.id}>
@@ -373,14 +436,27 @@ export function TeamSettingsView() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={revokeMutation.isPending}
-                          onClick={() => revokeMutation.mutate(invite.id)}
-                        >
-                          Revoke
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={invite.roleId == null || resendMutation.isPending}
+                            onClick={() =>
+                              invite.roleId != null &&
+                              resendMutation.mutate({ email: invite.email, roleId: invite.roleId })
+                            }
+                          >
+                            Resend
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={revokeMutation.isPending}
+                            onClick={() => revokeMutation.mutate(invite.id)}
+                          >
+                            Revoke
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -390,6 +466,52 @@ export function TeamSettingsView() {
           ) : null}
         </CardContent>
       </Card>
+
+      <AlertDialog open={removeTarget !== null} onOpenChange={() => setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remove {removeTarget?.name ?? removeTarget?.email ?? "this member"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              They&apos;ll lose access to this organization immediately. You can re-invite them
+              later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => removeTarget && removeMutation.mutate(removeTarget.id)}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={transferTarget !== null} onOpenChange={() => setTransferTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Make {transferTarget?.name ?? transferTarget?.email ?? "this member"} the admin?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You&apos;ll become a regular member and lose admin access. They&apos;ll become the
+              organization&apos;s sole admin. This can only be undone by having them transfer it
+              back to you.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => transferTarget && transferMutation.mutate(transferTarget.id)}
+            >
+              Make admin
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

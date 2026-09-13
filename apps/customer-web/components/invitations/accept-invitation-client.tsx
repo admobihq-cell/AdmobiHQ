@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
+import { Loader2Icon } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
@@ -24,9 +26,12 @@ export function AcceptInvitationClient() {
     let cancelled = false
     setStatus("accepting")
     void acceptOrgInvitation(getToken, token)
-      .then(() => {
+      .then(({ org }) => {
         if (cancelled) return
         setStatus("done")
+        toast.success(`You're now part of ${org.name}`, {
+          description: `Joined as ${org.myRoleName}`,
+        })
         router.replace("/settings/team")
       })
       .catch((err: Error) => {
@@ -78,9 +83,12 @@ export function AcceptInvitationClient() {
 
   return (
     <Card className="mx-auto max-w-md shadow-none">
-      <CardContent className="space-y-2 p-6">
-        <h1 className="text-xl font-semibold">Joining team…</h1>
-        <p className="text-sm text-muted-foreground">Accepting your invitation.</p>
+      <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+        <Loader2Icon className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold">Joining team…</h1>
+          <p className="text-sm text-muted-foreground">Accepting your invitation.</p>
+        </div>
       </CardContent>
     </Card>
   )
