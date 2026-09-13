@@ -6,21 +6,20 @@ How sign-in, sessions, organizations, and role/permission checks work across eve
 
 ## 1. The short version
 
-Every app-facing surface has wired Clerk sign-in. Customer and driver sessions are **flag-gated**; ops is always on. The API verifies all three Clerk instances on the routes that belong to each actor.
+Every app-facing surface has wired Clerk sign-in. Customer, driver, and ops auth are **always on** (publishable/secret keys required). The API verifies all three Clerk instances on the routes that belong to each actor.
 
 | App | Sign-in UI | Session gating | Backend API auth |
 |---|---|---|---|
 | `apps/ops` | ✅ live | ✅ live | ✅ live (ops JWT) |
 | `apps/ops-mobile` | ✅ live | ✅ live (native) | ✅ live (ops JWT) |
-| `apps/customer-web` | ✅ built | ✅ built, **flag-gated** | ✅ `/v1/customer/*` (announcements); support can use a customer JWT |
-| `apps/customer-mobile` | ✅ built | ✅ built, **flag-gated** | ✅ same customer routes + push tokens |
-| `apps/driver-web` | ✅ built | ✅ built, **flag-gated** | ✅ `/v1/driver/*` (profile, documents, notifications, announcements) |
-| `apps/driver-mobile` | ✅ built | ✅ built, **flag-gated** | ✅ same driver routes + push tokens |
+| `apps/customer-web` | ✅ live | ✅ live | ✅ `/v1/customer/*` (announcements); support can use a customer JWT |
+| `apps/customer-mobile` | ✅ live | ✅ live (native) | ✅ same customer routes + push tokens |
+| `apps/driver-web` | ✅ live | ✅ live | ✅ `/v1/driver/*` (profile, documents, notifications, announcements) |
+| `apps/driver-mobile` | ✅ live | ✅ live (native) | ✅ same driver routes + push tokens |
 | `apps/web` | — none — | — | — |
 
-Two caveats worth internalizing before assuming "auth is done" for a given environment:
+One caveat worth internalizing before assuming "auth is done" for a given environment:
 
-- **Customer and driver auth is feature-flagged** (`NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED`, §4). The flag is deliberately kept out of the shared Infisical sync, so whether it's live in any given deployment depends on that environment's own Vercel/EAS settings, not on anything in this repo. Ops and ops-mobile have no such flag — they are always on.
 - **Protected customer/driver APIs exist, but the product role model is still incomplete.** [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) still verifies only the **ops** instance. Customer tokens are verified in [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts); driver tokens in [apps/api/lib/driver-auth.ts](../../apps/api/lib/driver-auth.ts). There is still no `CustomerUser` team table, and the CRM `Driver` model has no `clerk_user_id` (driver-app identity lives on `DriverProfile` instead). Campaign booking APIs are not backend-backed yet. That's [ROADMAP.md](./ROADMAP.md) §7 milestone 2, still partly open.
 
 ---
@@ -190,13 +189,13 @@ Driver sign-up deliberately does not ask for this; drivers sign up as individual
 
   This protects **every route except** `/auth/*` and `/api/health*` — unlike ops (whose `/` is a stub and the real dashboard lives at `/home`), `/` in customer-web and driver-web **is** the protected dashboard.
 
-### Ops-mobile — one exception to the flag-gated pattern
+### Ops-mobile — always-on ClerkProvider
 
-[apps/ops-mobile/app/_layout.tsx](../../apps/ops-mobile/app/_layout.tsx) mounts `<ClerkProvider>` **unconditionally** (ops is fully live, no flag). Its `AuthGate` branches by email via `isOpsStaffEmail()` into a staff `(ops)` route group or a non-staff `(customer)` group — a dormant surface, separate from the dedicated `apps/customer-mobile` app.
+[apps/ops-mobile/app/_layout.tsx](../../apps/ops-mobile/app/_layout.tsx) mounts `<ClerkProvider>` **unconditionally** (same as customer/driver mobile now). Its `AuthGate` branches by email via `isOpsStaffEmail()` into a staff `(ops)` route group or a non-staff `(customer)` group — a dormant surface, separate from the dedicated `apps/customer-mobile` app.
 
 ---
 
-## 4. Secrets, env vars, and the feature flag
+## 4. Secrets and env vars
 
 All three apps' Clerk secrets live in the **same flat Infisical project/environment** — no per-app folder isolation. Customer/driver env var names are deliberately prefixed so they never collide with ops's bare names:
 
@@ -205,28 +204,14 @@ All three apps' Clerk secrets live in the **same flat Infisical project/environm
 | `apps/api` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID`, `CUSTOMER_CLERK_SECRET_KEY`, `DRIVER_CLERK_SECRET_KEY` |
 | `apps/ops` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID` |
 | `apps/ops-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
-| `apps/customer-web` | `NEXT_PUBLIC_AUTH_ENABLED`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
-| `apps/customer-mobile` | `EXPO_PUBLIC_AUTH_ENABLED`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
-| `apps/driver-web` | `NEXT_PUBLIC_AUTH_ENABLED`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
-| `apps/driver-mobile` | `EXPO_PUBLIC_AUTH_ENABLED`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
+| `apps/customer-web` | `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
+| `apps/customer-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
+| `apps/driver-web` | `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
+| `apps/driver-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
 
 **Never reuse the unprefixed `CLERK_SECRET_KEY` / `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` names for a non-ops app** — doing so overwrites ops's working keys for every project pulling that Infisical environment afterward. `CLERK_ENCRYPTION_KEY` is required specifically because customer-web/driver-web pass explicit `publishableKey`/`secretKey` overrides into `clerkMiddleware()` (Clerk's "dynamic keys" mode) instead of relying on its default env var names.
 
-### The `AUTH_ENABLED` flag
-
-```ts
-// apps/customer-web/lib/auth/is-auth-enabled.ts
-export function isAuthEnabled(): boolean {
-  return (
-    process.env.NEXT_PUBLIC_AUTH_ENABLED === "true" &&
-    Boolean(process.env.NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY)
-  )
-}
-```
-
-Mirrored in `apps/driver-web`, `apps/customer-mobile`, `apps/driver-mobile`. When the flag is off (the default — unset), `ClerkProvider` never mounts and the app renders `<AuthDisabledMessage>` instead of a broken half-authed shell. **This flag is intentionally kept out of Infisical** — it's local-only per environment, so a missing key can never crash the app. Practical effect: whether customer/driver auth is actually reachable in staging or production depends on that Vercel/EAS project's own env settings, not on anything synced from this repo.
-
-Ops and ops-mobile have no such flag — they're always on.
+Customer and driver apps always mount `ClerkProvider`. A missing publishable key fails clearly at the layout boundary (thrown error on web; configuration screen on mobile) — there is no `AUTH_ENABLED` feature flag.
 
 ---
 
@@ -325,4 +310,3 @@ Tracked in [ROADMAP.md](./ROADMAP.md) §7, milestone 2. Sign-in, session gating,
 - A join from a signed-in driver-app account (`DriverProfile.clerk_user_id`) to the CRM `Driver` row (or a `clerk_user_id` on `Driver`).
 - Campaign / zone / wallet APIs under `/v1/customer/*` (announcements and support are live; booking is still local demo data).
 - Earnings / routes / payout APIs under `/v1/driver/*` (profile, documents, notifications, and announcements are live; earnings wait on telemetry).
-- A decision on whether `NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED` should move into Infisical once customer/driver auth is meant to be live by default, rather than toggled per-environment by hand.

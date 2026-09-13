@@ -10,7 +10,6 @@ import { Campaigns, Map, Radio, Time, TrendingUp, Warning } from "@/components/i
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { StatCard } from "@/components/ui/stat-card"
 import { WalletPreviewCard } from "@/components/wallet/wallet-preview-card"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { formatRelativeTime } from "@/lib/notifications-data"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 import { formatCampaignError, useCampaigns } from "@/lib/use-campaigns"
@@ -22,20 +21,6 @@ function getGreeting(): string {
   if (hour < 18) return "Good afternoon"
   return "Good evening"
 }
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern used elsewhere — useUser()
- * must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 /**
  * Every number here is derived from the two feeds this app already has —
@@ -68,7 +53,7 @@ export default function OverviewScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { user } = useUserIfEnabled()
+  const { user } = useUser()
 
   const campaignsQuery = useCampaigns()
   const inbox = useCustomerInbox()

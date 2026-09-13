@@ -12,36 +12,19 @@ import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { appPublicUrl, webPublicUrl } from "@/lib/site-urls"
-
-import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-driver.jpg"
 
-function useDisabledSignUp(): { signUp: null } {
-  return { signUp: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as driver-session.ts —
- * useSignUp() must never run unless ClerkProvider is mounted.
- */
-const useSignUpIfEnabled = isAuthEnabled() ? useSignUp : useDisabledSignUp
-
 export function DriverSignUp() {
-  const { signUp } = useSignUpIfEnabled()
+  const { signUp } = useSignUp()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  if (!isAuthEnabled()) {
-    return <AuthDisabledMessage />
-  }
 
   async function handleSendCode() {
     if (!signUp || !email.trim()) return

@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/nextjs"
 "use client"
 
 import { useEffect, useState } from "react"
@@ -50,8 +51,6 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   createOrgRole,
   deleteOrgRole,
@@ -153,7 +152,7 @@ function EditableRoleName({
 }
 
 export function RolesSettingsView() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const queryClient = useQueryClient()
   const [edits, setEdits] = useState<Record<number, RoleEdit>>({})
   const [deleteTarget, setDeleteTarget] = useState<AdvertiserRoleDto | null>(null)
@@ -165,7 +164,7 @@ export function RolesSettingsView() {
   const rolesQuery = useQuery({
     queryKey: ROLES_KEY,
     queryFn: () => listOrgRoles(getToken),
-    enabled: isAuthEnabled(),
+    enabled: true,
     retry: false,
   })
   const roles = rolesQuery.data ?? null

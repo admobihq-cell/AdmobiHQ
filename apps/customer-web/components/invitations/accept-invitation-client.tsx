@@ -8,28 +8,13 @@ import { useAuth } from "@clerk/nextjs"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { acceptOrgInvitation } from "@/lib/org-client"
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return {
-    isLoaded: true,
-    isSignedIn: false,
-    getToken: async () => null as string | null,
-  }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 export function AcceptInvitationClient() {
   const params = useParams<{ token: string }>()
   const token = typeof params.token === "string" ? params.token : ""
   const router = useRouter()
-  const { isLoaded, isSignedIn, getToken } = useAuthIfEnabled()
+  const { isLoaded, isSignedIn, getToken } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "accepting" | "done">("idle")
 

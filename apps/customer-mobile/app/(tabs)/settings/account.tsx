@@ -20,32 +20,7 @@ import {
 import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern used elsewhere — useUser()
- * must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { sessionId: null as string | null, signOut: async () => {} }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 function formatMemberSince(date: Date | null | undefined): string | null {
   if (!date) return null
@@ -96,8 +71,8 @@ type SessionRow = {
 
 export default function AccountSettingsScreen() {
   const insets = useSafeAreaInsets()
-  const { user } = useUserIfEnabled()
-  const { sessionId, signOut } = useAuthIfEnabled()
+  const { user } = useUser()
+  const { sessionId, signOut } = useAuth()
 
   const [editing, setEditing] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName ?? "")

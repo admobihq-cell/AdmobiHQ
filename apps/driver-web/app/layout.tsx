@@ -10,7 +10,6 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { QueryProvider } from "@workspace/query-client"
 import { cn } from "@workspace/ui/lib/utils"
 import { ThemeScript } from "@workspace/ui/components/theme-script"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { webPublicUrl } from "@/lib/site-urls"
 
 import "@workspace/ui/globals.css"
@@ -32,13 +31,16 @@ export const metadata: Metadata = {
 }
 
 function Providers({ children }: { children: React.ReactNode }) {
-  if (!isAuthEnabled()) {
-    return <>{children}</>
+  const publishableKey = process.env.NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY
+  if (!publishableKey) {
+    throw new Error(
+      "NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY is required — driver auth is always on.",
+    )
   }
 
   return (
     <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY}
+      publishableKey={publishableKey}
       signInUrl="/auth/login"
       signUpUrl="/auth/signup"
       signInFallbackRedirectUrl="/"

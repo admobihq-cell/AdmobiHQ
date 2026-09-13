@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/nextjs"
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -12,7 +13,6 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   cancelIncident,
   getIncident,
@@ -36,7 +36,7 @@ function relativeTime(iso: string): string {
 }
 
 export function SosTrackingClient({ incidentId }: { incidentId: number }) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
   const [reply, setReply] = useState("")

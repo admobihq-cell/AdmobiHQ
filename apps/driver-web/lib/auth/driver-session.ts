@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-
 const DEVICE_ID_KEY = "admobi.driver.deviceId"
 
 export type DriverSession =
@@ -33,30 +31,11 @@ function useDeviceId(): string | null {
   return deviceId
 }
 
-function useAuthenticatedSession(deviceId: string | null): DriverSession {
+export function useDriverSession(): DriverSession {
+  const deviceId = useDeviceId()
   const { isSignedIn, userId } = useAuth()
 
   if (!deviceId) return { status: "loading" }
   if (isSignedIn && userId) return { status: "authenticated", userId, deviceId }
   return { status: "anonymous", deviceId }
-}
-
-function useAnonymousSession(deviceId: string | null): DriverSession {
-  if (!deviceId) return { status: "loading" }
-  return { status: "anonymous", deviceId }
-}
-
-/**
- * isAuthEnabled() is fixed for the lifetime of a deployed build (inlined from
- * NEXT_PUBLIC_* env vars at build time, never toggles at runtime), so picking
- * the hook implementation once here — rather than branching inside
- * useDriverSession — keeps the actual hook call unconditional per render.
- * useAuth() must never run unless ClerkProvider is mounted (app/layout.tsx
- * only mounts it when this same flag is on).
- */
-const useSessionImpl = isAuthEnabled() ? useAuthenticatedSession : useAnonymousSession
-
-export function useDriverSession(): DriverSession {
-  const deviceId = useDeviceId()
-  return useSessionImpl(deviceId)
 }

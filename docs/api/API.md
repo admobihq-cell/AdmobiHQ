@@ -140,10 +140,10 @@ codepoint rather than substituting one.
 | Web marketing forms | `NEXT_PUBLIC_API_URL` | None (public routes) |
 | Ops console UI | `NEXT_PUBLIC_API_URL` | Ops Clerk session JWT (Bearer) |
 | Ops mobile | `EXPO_PUBLIC_API_URL` | Ops Clerk session JWT |
-| Customer web | `NEXT_PUBLIC_API_URL` | Customer Clerk JWT when `AUTH_ENABLED` |
-| Customer mobile | `EXPO_PUBLIC_API_URL` | Customer Clerk JWT when `AUTH_ENABLED` |
-| Driver web | `NEXT_PUBLIC_API_URL` | Driver Clerk JWT when `AUTH_ENABLED` |
-| Driver mobile | `EXPO_PUBLIC_API_URL` | Driver Clerk JWT when `AUTH_ENABLED` |
+| Customer web | `NEXT_PUBLIC_API_URL` | Customer Clerk JWT |
+| Customer mobile | `EXPO_PUBLIC_API_URL` | Customer Clerk JWT |
+| Driver web | `NEXT_PUBLIC_API_URL` | Driver Clerk JWT |
+| Driver mobile | `EXPO_PUBLIC_API_URL` | Driver Clerk JWT |
 
 Shared typed client: [`packages/ops-api-client`](../../packages/ops-api-client/src/index.ts) (`createOpsClient`, `publicApiUrl`).
 
