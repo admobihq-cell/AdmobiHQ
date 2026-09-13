@@ -1,6 +1,6 @@
 # Admobi — Authentication, Organizations & Roles
 
-How sign-in, sessions, organizations, and role/permission checks work across every app. Deploy-time Clerk instance config (allowed origins, keys per environment): [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk). Repo layout: [ARCHITECTURE.md](./ARCHITECTURE.md). Actor-by-actor product plan: [ROADMAP.md](./ROADMAP.md).
+How sign-in, sessions, organizations, and role/permission checks work across every app. Deploy-time Clerk instance config (allowed origins, keys per environment): [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk). **Staging hostnames, Preview env, and which Clerk Development keys to use:** [DEPLOYMENT.md § Staging environment](./DEPLOYMENT.md#staging-environment). Repo layout: [ARCHITECTURE.md](./ARCHITECTURE.md). Actor-by-actor product plan: [ROADMAP.md](./ROADMAP.md).
 
 ---
 
