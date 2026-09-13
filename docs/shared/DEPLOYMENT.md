@@ -125,6 +125,14 @@ git push origin staging
 
 4. Smoke-test ([below](#staging-smoke-test)). Merge feature work to `master` only after staging looks good; production uses **Production** env + live Clerk keys + prod Neon.
 
+**Custom domain vs latest build:** a git push to `staging` creates a new Preview deployment per project, but a **manually set alias** (e.g. from `vercel redeploy` + `vercel alias set`) can leave `api.staging.admobihq.com` pinned to an **older** deployment while app/ops already serve the new code. Symptom: customer app loads but `/v1/customer/org` returns **404** (route missing in old API build) — not a DB error; unauthenticated calls should return **401** once the API is current. Fix: alias the hostname to the latest `admobi-*-git-staging-admobihq.vercel.app` deployment:
+
+```bash
+npx vercel ls admobi-api --scope admobihq   # pick newest Ready Preview
+npx vercel alias set <that-url> api.staging.admobihq.com --scope admobihq
+curl -sS -o /dev/null -w '%{http_code}\n' https://api.staging.admobihq.com/v1/customer/org   # expect 401, not 404
+```
+
 **Vercel Authentication (SSO):** leave **disabled** on staging Preview for ops/app/driver/api, or the public staging hostnames will be blocked by Vercel’s login wall before Clerk.
 
 ### Authentication (Clerk)
