@@ -114,6 +114,29 @@ git push origin staging
    git push origin staging
    ```
 
+   **Testing a feature branch on staging before it's merged to `master`:** skip
+   the steps above and push the branch directly — no checkout needed, run this
+   from the feature branch:
+
+   ```bash
+   git fetch origin
+   git push origin HEAD:staging
+   ```
+
+   This only works as a plain fast-forward if `staging`'s current tip is an
+   ancestor of your branch (your branch already contains everything staging
+   has). Check first if unsure:
+
+   ```bash
+   git rev-list --left-right --count origin/staging...HEAD
+   # "0 N" = clean fast-forward, N commits of yours will land on staging
+   # anything else = staging has commits your branch doesn't; merge instead
+   ```
+
+   This leaves `staging` **ahead of `master`** until the branch is merged —
+   expected, but the next person doing the normal `merge --ff-only
+   origin/master` above will fail until that merge happens.
+
 2. Each of the five projects builds independently. Docs-only commits may be skipped by `scripts/vercel-ignore-build.mjs`.
 3. After env var changes (especially any `NEXT_PUBLIC_*`), **redeploy** — those values are inlined at build time:
 

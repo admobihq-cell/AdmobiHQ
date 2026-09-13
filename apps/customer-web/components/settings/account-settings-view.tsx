@@ -24,7 +24,9 @@ import { Label } from "@workspace/ui/components/label"
 
 import {
   deleteOrganization,
+  getOrg,
   getOrgDeletionStatus,
+  leaveOrganization,
 } from "@/lib/org-client"
 import { AccountSettingsSkeleton } from "@/components/skeletons/account-settings-skeleton"
 
@@ -109,6 +111,16 @@ export function AccountSettingsView() {
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteOrgOpen, setDeleteOrgOpen] = useState(false)
+  const [leaveOrgOpen, setLeaveOrgOpen] = useState(false)
+
+  const orgQuery = useQuery({
+    queryKey: ["customer-org", user?.id],
+    queryFn: () => getOrg(getToken),
+    enabled: Boolean(user),
+    staleTime: 60_000,
+    retry: false,
+  })
+  const isOrgOwner = orgQuery.data?.myRoleName === "Admin"
 
   const deletionStatusQuery = useQuery({
     queryKey: ["customer-org-deletion-status", user?.id],
@@ -125,6 +137,16 @@ export function AccountSettingsView() {
       setDeleteOrgOpen(false)
       await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
       await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+    },
+  })
+
+  const leaveOrgMutation = useMutation({
+    mutationFn: () => leaveOrganization(getToken),
+    onSuccess: async () => {
+      setLeaveOrgOpen(false)
+      await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
     },
   })
 
@@ -449,6 +471,46 @@ export function AccountSettingsView() {
         </div>
       ) : null}
 
+      {user && orgQuery.data ? (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Organization
+          </p>
+          <Card className="shadow-none">
+            <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Leave {orgQuery.data.name || "this organization"}
+                </p>
+                <p className="max-w-prose text-xs text-muted-foreground">
+                  {isOrgOwner
+                    ? "You're the admin — transfer admin to someone else in Team settings before you can leave."
+                    : "You'll lose access to its campaigns, reports, and activity immediately. An admin can re-invite you later."}
+                </p>
+              </div>
+              {isOrgOwner ? (
+                <Button type="button" variant="outline" size="sm" asChild className="shrink-0">
+                  <a href="/settings/team">Transfer in Team settings</a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => {
+                    leaveOrgMutation.reset()
+                    setLeaveOrgOpen(true)
+                  }}
+                >
+                  Leave organization
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
       {user?.deleteSelfEnabled ? (
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -529,6 +591,36 @@ export function AccountSettingsView() {
               }}
             >
               {deleteOrgMutation.isPending ? "Deleting…" : "Delete organization"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={leaveOrgOpen} onOpenChange={setLeaveOrgOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {orgQuery.data?.name || "this organization"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You&apos;ll lose access to its campaigns, reports, and activity immediately. An admin
+              can re-invite you later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {leaveOrgMutation.error ? (
+            <p className="text-sm text-destructive">
+              {(leaveOrgMutation.error as Error).message || "Could not leave the organization."}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaveOrgMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={leaveOrgMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault()
+                leaveOrgMutation.mutate()
+              }}
+            >
+              {leaveOrgMutation.isPending ? "Leaving…" : "Leave organization"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
