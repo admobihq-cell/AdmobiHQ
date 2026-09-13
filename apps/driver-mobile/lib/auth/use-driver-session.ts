@@ -3,8 +3,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import * as Crypto from "expo-crypto"
 import { useAuth } from "@clerk/clerk-expo"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-
 const DEVICE_ID_KEY = "admobi.driver.deviceId"
 
 export type DriverSession =
@@ -41,24 +39,11 @@ function useDeviceId(): string | null {
   return deviceId
 }
 
-function useAuthenticatedSession(deviceId: string | null): DriverSession {
+export function useDriverSession(): DriverSession {
+  const deviceId = useDeviceId()
   const { isSignedIn, userId } = useAuth()
 
   if (!deviceId) return { status: "loading" }
   if (isSignedIn && userId) return { status: "authenticated", userId, deviceId }
   return { status: "anonymous", deviceId }
-}
-
-function useAnonymousSession(deviceId: string | null): DriverSession {
-  if (!deviceId) return { status: "loading" }
-  return { status: "anonymous", deviceId }
-}
-
-/** Same "pick the hook once at module load" pattern as customer-mobile's
- * useCustomerSession — see that file's comment for why. */
-const useSessionImpl = isAuthEnabled() ? useAuthenticatedSession : useAnonymousSession
-
-export function useDriverSession(): DriverSession {
-  const deviceId = useDeviceId()
-  return useSessionImpl(deviceId)
 }

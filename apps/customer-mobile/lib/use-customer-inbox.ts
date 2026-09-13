@@ -3,7 +3,6 @@ import { Platform } from "react-native"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { markCustomerAnnouncementsRead } from "@/lib/announcements-client"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useTokenGetter } from "@/lib/auth/use-token-getter"
 import {
   fetchCustomerNotifications,
@@ -20,7 +19,7 @@ export const CAMPAIGN_NOTIFICATIONS_KEY = ["customer-notifications"] as const
 
 /** The web bundle only ever serves the marketing site's app demo, which has no
  * signed-in advertiser to fetch notifications for. */
-const CAMPAIGN_FEED_ENABLED = isAuthEnabled() && Platform.OS !== "web"
+const CAMPAIGN_FEED_ENABLED = Platform.OS !== "web"
 
 /**
  * The bell and the notifications screen read from here.

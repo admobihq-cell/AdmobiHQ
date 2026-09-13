@@ -36,7 +36,6 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import {
   getOrg,
   inviteOrgMember,
@@ -49,22 +48,12 @@ import {
   updateOrgMember,
 } from "@/lib/org-client"
 
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { getToken: async () => null as string | null, isLoaded: true }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
-
 const ORG_KEY = ["customer-org"] as const
 const MEMBERS_KEY = ["customer-org-members"] as const
 const ROLES_KEY = ["customer-org-roles"] as const
 
 export function TeamSettingsView() {
-  const { getToken, isLoaded } = useAuthIfEnabled()
+  const { getToken, isLoaded } = useAuth()
   const queryClient = useQueryClient()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [email, setEmail] = useState("")

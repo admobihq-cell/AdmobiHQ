@@ -15,22 +15,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { getOrg, renameOrg } from "@/lib/org-client"
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return {
-    isLoaded: true,
-    isSignedIn: false,
-    getToken: async () => null as string | null,
-  }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 /**
  * Collects an organization name when the org was bootstrapped with an empty
@@ -39,7 +24,7 @@ const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
  * unsafeMetadata.
  */
 export function CompanyNamePrompt() {
-  const { isLoaded, isSignedIn, getToken } = useAuthIfEnabled()
+  const { isLoaded, isSignedIn, getToken } = useAuth()
   const [company, setCompany] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

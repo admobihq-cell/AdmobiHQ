@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useUser } from "@clerk/nextjs"
+import { useUser, useAuth } from "@clerk/nextjs"
 import { Building2 } from "lucide-react"
 
 import { Logo } from "@workspace/ui/brand/logo"
@@ -34,26 +34,12 @@ import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 import { TourProvider } from "@workspace/ui/components/tour-provider"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import { getOrg } from "@/lib/org-client"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
 import { CompanyNamePrompt } from "@/components/shell/company-name-prompt"
 import { NavUser } from "@/components/shell/nav-user"
 import { NotificationBell } from "@/components/shell/notification-bell"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/** Same "pick the hook once at module load" pattern as nav-user.tsx —
- * useUser() must never run unless ClerkProvider is mounted. */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 /** <CompanyNamePrompt>'s dialog fades out over `duration-100` (see the
  * data-closed:animate-out classes in packages/ui/src/components/dialog.tsx).
@@ -96,17 +82,17 @@ export function AppShell({
   const pathname = usePathname()
   const currentNavHref = navItemForPath(pathname).href
   const navItems = visibleNavItems(new Set(enabledFlags))
-  const { user } = useUserIfEnabled()
-  const { getToken } = useAuthIfEnabled()
+  const { user } = useUser()
+  const { getToken } = useAuth()
 
   // Gates the product tour's first-run auto-open until the org has a name
   // (CompanyNamePrompt writes via PATCH /v1/customer/org).
-  const [companyKnown, setCompanyKnown] = useState(!isAuthEnabled())
+  const [companyKnown, setCompanyKnown] = useState(false)
   const [orgName, setOrgName] = useState<string | null>(null)
   const [tourReady, setTourReady] = useState(false)
 
   useEffect(() => {
-    if (!isAuthEnabled() || !user) {
+    if (!user) {
       setCompanyKnown(true)
       setOrgName(null)
       return
@@ -224,14 +210,14 @@ export function AppShell({
                   </span>
                 </Link>
               ) : null}
-              {isAuthEnabled() ? <NotificationBell /> : null}
+              <NotificationBell />
               <ThemeToggle />
             </div>
           </header>
           <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
             {children}
           </main>
-          {isAuthEnabled() ? <CompanyNamePrompt /> : null}
+          <CompanyNamePrompt />
         </SidebarInset>
       </SidebarProvider>
     </TourProvider>

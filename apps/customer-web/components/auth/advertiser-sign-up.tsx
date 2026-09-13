@@ -12,37 +12,18 @@ import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { webPublicUrl } from "@/lib/site-urls"
-
-import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
 
-/**
- * Optional here on purpose. Google's own consent screen has no place to ask for
- * a company, so gating "Continue with Google" on this field only produced a
- * dead button with no explanation. <CompanyNamePrompt> collects it on first
- * load of the dashboard instead, for whichever path skipped it.
- */
 function companyMetadata(company: string): { unsafeMetadata?: { companyName: string } } {
   const value = company.trim()
   return value ? { unsafeMetadata: { companyName: value } } : {}
 }
 
-function useDisabledSignUp(): { signUp: null } {
-  return { signUp: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useSignUp() must never run unless ClerkProvider is mounted.
- */
-const useSignUpIfEnabled = isAuthEnabled() ? useSignUp : useDisabledSignUp
-
 export function AdvertiserSignUp() {
-  const { signUp } = useSignUpIfEnabled()
+  const { signUp } = useSignUp()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [company, setCompany] = useState("")
@@ -50,10 +31,6 @@ export function AdvertiserSignUp() {
   const [step, setStep] = useState<"email" | "code">("email")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  if (!isAuthEnabled()) {
-    return <AuthDisabledMessage />
-  }
 
   async function handleSendCode() {
     if (!signUp || !email.trim()) return

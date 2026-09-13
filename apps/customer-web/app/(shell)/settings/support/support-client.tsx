@@ -22,7 +22,6 @@ import {
 import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
 import { NewSupportRequestForm } from "@/components/support/new-support-request-form"
 import { SupportStatusBadge } from "@/components/support-status-badge"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useCustomerSession } from "@/lib/auth/customer-session"
 import {
   getStoredIdentity,
@@ -31,27 +30,10 @@ import {
 } from "@/lib/support-client"
 import { CategoryIcon } from "@/lib/support-categories"
 
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { getToken: async () => null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useAuth() must never run unless ClerkProvider is mounted. session.status
- * can only be "authenticated" when isAuthEnabled() is true, but that gates
- * the branch that *uses* getToken, not the hook call itself — so the call
- * site still needs its own guard.
- */
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
-
 export function SupportClient() {
   const router = useRouter()
   const session = useCustomerSession()
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const [newRequestOpen, setNewRequestOpen] = useState(false)
 
   // getStoredIdentity() guards its own localStorage access, so it's safe to

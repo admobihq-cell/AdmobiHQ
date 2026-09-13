@@ -22,32 +22,7 @@ import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { AccountSettingsSkeleton } from "@/components/skeletons/account-settings-skeleton"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null, isLoaded: true }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as driver-session.ts —
- * useUser() / useAuth() must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { sessionId: null as string | null, signOut: async () => {} }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 function getInitials(name: string): string {
   return name
@@ -105,8 +80,8 @@ type SessionRow = {
 }
 
 export function AccountSettingsView() {
-  const { user, isLoaded } = useUserIfEnabled()
-  const { sessionId, signOut } = useAuthIfEnabled()
+  const { user, isLoaded } = useUser()
+  const { sessionId, signOut } = useAuth()
   const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState(false)
