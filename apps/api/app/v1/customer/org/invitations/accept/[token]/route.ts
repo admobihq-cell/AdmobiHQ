@@ -10,12 +10,17 @@ import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ token: string }> }
 
-export async function POST(_req: Request, { params }: Params) {
+export async function POST(req: Request, { params }: Params) {
   const auth = await requireCustomerIdentityAccess()
   if (auth.error) return auth.error
 
   const rawToken = (await params).token
   if (!rawToken?.trim()) return jsonError("Missing invitation token", 400)
+
+  // Optional — only the "leave my solo org and join this one instead" retry
+  // sends a body. A plain accept (no body / non-JSON) falls back to {}.
+  const body = (await req.json().catch(() => ({}))) as { leaveSoleOrg?: boolean }
+  const leaveSoleOrg = body.leaveSoleOrg === true
 
   const tokenHash = hashAdvertiserInviteToken(rawToken)
   const invitation = await prisma.advertiserInvitation.findUnique({
@@ -27,13 +32,51 @@ export async function POST(_req: Request, { params }: Params) {
     return jsonError("Invitation has expired", 410)
   }
 
-  const existing = await prisma.advertiserMember.findUnique({
+  let existing = await prisma.advertiserMember.findUnique({
     where: { clerk_user_id: auth.access.userId },
     include: { role: true },
   })
 
   if (existing && !existing.removed_at) {
-    return jsonError("already belongs to an organization", 409)
+    const [memberCount, currentOrg] = await Promise.all([
+      prisma.advertiserMember.count({ where: { org_id: existing.org_id, removed_at: null } }),
+      prisma.advertiserOrg.findUnique({ where: { id: existing.org_id } }),
+    ])
+    const currentOrgName = currentOrg?.name ?? "your organization"
+    // "Solo" means literally the only member — everyone gets one of these
+    // just by visiting the app once (lazy bootstrap), so it's safe to offer
+    // leaving it automatically. A real org with teammates is not.
+    const isSoloOrg = existing.is_owner && memberCount === 1
+
+    if (isSoloOrg && leaveSoleOrg) {
+      // Re-verified above in this same request — delete their untouched solo
+      // org (same shape as POST .../delete-organization) so the code below
+      // falls through to creating a fresh membership in the invited org.
+      await prisma.$transaction(async (tx) => {
+        await tx.campaign.updateMany({ where: { org_id: existing!.org_id }, data: { org_id: null } })
+        await tx.supportCase.updateMany({
+          where: { org_id: existing!.org_id },
+          data: { org_id: null },
+        })
+        await tx.advertiserOrg.delete({ where: { id: existing!.org_id } })
+      })
+      invalidateAdvertiserAccessCache(auth.access.userId)
+      existing = null
+    } else if (isSoloOrg) {
+      return NextResponse.json(
+        {
+          error: `You're the only member of "${currentOrgName}"`,
+          reason: "solo_org_conflict",
+          currentOrgName,
+        },
+        { status: 409 },
+      )
+    } else {
+      const guidance = existing.is_owner
+        ? `You're the admin of "${currentOrgName}" (${memberCount} members) — transfer admin to someone else in Team settings before joining a different organization.`
+        : `You're already part of "${currentOrgName}" (${memberCount} members) — leave it from Settings before joining a different organization.`
+      return jsonError(guidance, 409)
+    }
   }
   if (existing?.removed_at && existing.org_id !== invitation.org_id) {
     return jsonError("already belongs to an organization", 409)
