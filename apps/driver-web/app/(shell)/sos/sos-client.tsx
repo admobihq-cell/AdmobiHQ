@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/nextjs"
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -27,7 +28,6 @@ import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import { captureLocation, createIncident } from "@/lib/sos-client"
 import { setPendingSosPhotos } from "@/lib/sos-pending-photos"
 
@@ -45,7 +45,7 @@ const TYPES: Array<{ value: SafetyIncidentType; label: string; icon: typeof Sire
 
 export function SosClient() {
   const router = useRouter()
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
 
   const [type, setType] = useState<SafetyIncidentType | null>(null)
   const [description, setDescription] = useState("")

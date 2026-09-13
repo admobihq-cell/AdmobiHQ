@@ -16,49 +16,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { ChevronRight, HelpCircle } from "@/components/icons"
 import { CategoryIcon, SUPPORT_CATEGORIES, SupportStatusPill } from "@/components/support/support-ui"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useDriverSession } from "@/lib/auth/use-driver-session"
 import { createSupportCase, getStoredIdentity, listMySupportCases } from "@/lib/support"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-
-type ClerkSupportProfile = {
-  getToken: () => Promise<string | null>
-  fullName: string | null
-  email: string | null
-}
-
-// useAuth()/useUser() require a ClerkProvider ancestor, and app/_layout.tsx
-// only mounts ClerkProvider when isAuthEnabled() is true (see
-// AuthenticatedApp) — this screen renders under that same conditional tree,
-// so calling either hook unconditionally would crash whenever auth is
-// disabled. isAuthEnabled() is fixed for the app's lifetime, so pick the hook
-// implementation once at module load instead of branching inside a single
-// hook body — same pattern as lib/auth/use-driver-session.ts and
-// lib/use-push-registration.ts.
-function useClerkSupportProfileEnabled(): ClerkSupportProfile {
-  const { getToken } = useAuth()
-  const { user } = useUser()
-  return {
-    getToken,
-    fullName: user?.fullName ?? null,
-    email: user?.primaryEmailAddress?.emailAddress ?? null,
-  }
-}
-
-function useClerkSupportProfileDisabled(): ClerkSupportProfile {
-  return { getToken: async () => null, fullName: null, email: null }
-}
-
-const useClerkSupportProfile = isAuthEnabled()
-  ? useClerkSupportProfileEnabled
-  : useClerkSupportProfileDisabled
 
 export default function SupportScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const session = useDriverSession()
-  const { getToken, fullName, email: clerkEmail } = useClerkSupportProfile()
+  const { getToken } = useAuth()
+  const { user } = useUser()
+  const fullName = user?.fullName ?? null
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress ?? null
 
   const queryClient = useQueryClient()
 

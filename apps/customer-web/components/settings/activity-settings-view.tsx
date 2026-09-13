@@ -7,18 +7,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { listOrgActivity } from "@/lib/org-client"
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { getToken: async () => null as string | null, isLoaded: true }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 const ACTIVITY_KEY = ["customer-org-activity"] as const
 
@@ -30,7 +19,7 @@ function formatWhen(iso: string): string {
 }
 
 export function ActivitySettingsView() {
-  const { getToken, isLoaded } = useAuthIfEnabled()
+  const { getToken, isLoaded } = useAuth()
 
   const query = useInfiniteQuery({
     queryKey: ACTIVITY_KEY,

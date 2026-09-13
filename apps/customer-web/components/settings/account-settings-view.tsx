@@ -22,40 +22,11 @@ import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import {
   deleteOrganization,
   getOrgDeletionStatus,
 } from "@/lib/org-client"
 import { AccountSettingsSkeleton } from "@/components/skeletons/account-settings-skeleton"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null, isLoaded: true }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useUser() / useAuth() must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return {
-    sessionId: null as string | null,
-    signOut: async () => {},
-    getToken: async () => null as string | null,
-  }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 /** Clerk rejects a taken username or a malformed value with a structured
  * ClerkAPIError list rather than a plain Error. Surfacing that text matters —
@@ -127,8 +98,8 @@ type SessionRow = {
 }
 
 export function AccountSettingsView() {
-  const { user, isLoaded } = useUserIfEnabled()
-  const { sessionId, signOut, getToken } = useAuthIfEnabled()
+  const { user, isLoaded } = useUser()
+  const { sessionId, signOut, getToken } = useAuth()
   const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState(false)

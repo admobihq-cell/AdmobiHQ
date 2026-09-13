@@ -8,36 +8,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { SkeletonCaseRows } from "@/components/app/skeleton"
 import { Add, ChevronRight, HelpCircle } from "@/components/icons"
 import { CategoryIcon, SupportStatusPill } from "@/components/support/support-ui"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useCustomerSession } from "@/lib/auth/use-customer-session"
 import { listMySupportCases } from "@/lib/support"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-
-// useAuth() requires a ClerkProvider ancestor, only mounted when
-// isAuthEnabled() is true (see app/_layout.tsx's AuthenticatedApp); this
-// screen renders under that same conditional tree. isAuthEnabled() is fixed
-// for the app's lifetime, so pick the hook implementation once at module
-// load — same pattern as lib/auth/use-customer-session.ts,
-// lib/use-push-registration.ts, and settings/support/new.tsx.
-function useSupportTokenGetterEnabled(): () => Promise<string | null> {
-  const { getToken } = useAuth()
-  return getToken
-}
-
-function useSupportTokenGetterDisabled(): () => Promise<string | null> {
-  return async () => null
-}
-
-const useSupportTokenGetter = isAuthEnabled()
-  ? useSupportTokenGetterEnabled
-  : useSupportTokenGetterDisabled
 
 export default function SupportSettingsScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const session = useCustomerSession()
-  const getToken = useSupportTokenGetter()
+  const { getToken } = useAuth()
 
   const casesQuery = useQuery({
     queryKey: ["customer-support-cases", session.status],

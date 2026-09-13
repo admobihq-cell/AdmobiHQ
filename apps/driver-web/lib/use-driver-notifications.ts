@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/nextjs"
 "use client"
 
 import { useMemo } from "react"
@@ -10,7 +11,6 @@ import {
 
 import type { NotificationFeedItem } from "@workspace/ui/lib/notifications"
 
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   fetchDriverAnnouncements,
   fetchDriverNotifications,
@@ -43,7 +43,7 @@ type AnyInboxPage = {
  * newest-first feed, with optimistic read toggles that keep both caches — and
  * the server-provided unread totals — honest. */
 export function useDriverNotifications({ limit = 25 }: Options = {}) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
   const announcementsQuery = useInfiniteQuery({

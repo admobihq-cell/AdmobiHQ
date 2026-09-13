@@ -1,10 +1,10 @@
+import { useAuth } from "@clerk/nextjs"
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import type { CampaignCreateInput, CampaignDto, CampaignUpdateInput } from "@workspace/ops-contracts"
 
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   createCampaign,
   deleteCampaign,
@@ -35,7 +35,7 @@ function messageOf(error: unknown): string {
 }
 
 export function useCampaigns() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   return useQuery({
     queryKey: LIST_KEY,
     queryFn: () => listCampaigns(getToken),
@@ -43,7 +43,7 @@ export function useCampaigns() {
 }
 
 export function useCampaign(id: number | null) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   return useQuery({
     queryKey: detailKey(id ?? 0),
     queryFn: () => getCampaign(getToken, id!),
@@ -62,7 +62,7 @@ function useInvalidate() {
 }
 
 export function useCreateCampaign() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: (data: CampaignCreateInput) => createCampaign(getToken, data),
@@ -72,7 +72,7 @@ export function useCreateCampaign() {
 }
 
 export function useUpdateCampaign() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: CampaignUpdateInput }) =>
@@ -83,7 +83,7 @@ export function useUpdateCampaign() {
 }
 
 export function useDeleteCampaign() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: (id: number) => deleteCampaign(getToken, id),
@@ -96,7 +96,7 @@ export function useDeleteCampaign() {
 }
 
 export function useSubmitCampaign() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: (id: number) => submitCampaign(getToken, id),
@@ -119,7 +119,7 @@ export function useSubmitCampaign() {
 }
 
 export function useUploadCreative(campaignId: number) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: (file: File) => uploadCreative(getToken, campaignId, file),
@@ -134,7 +134,7 @@ export function useUploadCreative(campaignId: number) {
 }
 
 export function useDeleteCreative(campaignId: number) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const invalidate = useInvalidate()
   return useMutation({
     mutationFn: (creativeId: number) => deleteCreative(getToken, campaignId, creativeId),
@@ -147,7 +147,7 @@ export function useDeleteCreative(campaignId: number) {
  * play. One hook for both: the only difference is the path and the filename,
  * and they want identical pending/error handling. */
 export function useDownloadPdf() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   return useMutation({
     mutationFn: ({ path, filename }: { path: string; filename: string }) =>
       downloadCampaignPdf(getToken, path, filename),

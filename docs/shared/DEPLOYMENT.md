@@ -19,7 +19,7 @@ Five **separate Vercel projects** from one GitHub repo. Each project has its own
 | **Production** | [admobihq.com](https://admobihq.com) | [api.admobihq.com](https://api.admobihq.com) | [ops.admobihq.com](https://ops.admobihq.com) | [app.admobihq.com](https://app.admobihq.com) | [driver.admobihq.com](https://driver.admobihq.com) |
 | **Staging** (`staging` branch) | staging.admobihq.com | api.staging.admobihq.com | ops.staging.admobihq.com | app.staging.admobihq.com | driver.staging.admobihq.com |
 | **Local port** | `:3000` | `:3003` | `:3001` | `:3002` | `:3004` |
-| **Auth** | Payload at `/admin` | Ops JWT on `/v1/*`; customer/driver JWTs on `/v1/customer/*` and `/v1/driver/*`; public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, flag-gated) | Clerk (own instance, flag-gated) |
+| **Auth** | Payload at `/admin` | Ops JWT on `/v1/*`; customer/driver JWTs on `/v1/customer/*` and `/v1/driver/*`; public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, always on) | Clerk (own instance, always on) |
 | **Database** | Prisma + Payload (owner) | Prisma (shared) | Prisma read (server stats); CRUD via API | None (calls API) | None (calls API) |
 | **Build** | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` |
 
@@ -149,7 +149,6 @@ Three **independent** Clerk applications — no shared session. Staging always u
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
-| `NEXT_PUBLIC_AUTH_ENABLED=true` | App + Driver Preview | Mounts `ClerkProvider` (defaults off) |
 | `CLERK_ENCRYPTION_KEY` | App + Driver (+ API if used) | Required because customer/driver use dynamic Clerk key names |
 | `CLERK_ORG_ID` | Ops + API | Ops org membership gate (dev org id with test keys) |
 | `API_CORS_ORIGINS` | API | Must include `https://ops.staging.admobihq.com`, `https://app.staging.admobihq.com`, `https://driver.staging.admobihq.com`, `https://staging.admobihq.com` (plus localhost for local→staging API if needed) |
@@ -201,7 +200,6 @@ Set these on **Preview**, preferably scoped to git branch **`staging`**. Product
 | `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` | — | — | — | ✓ | — |
 | `DRIVER_CLERK_SECRET_KEY` | — | ✓ | — | — | ✓ |
 | `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` | — | — | — | — | ✓ |
-| `NEXT_PUBLIC_AUTH_ENABLED` | — | — | — | `true` | `true` |
 | `CLERK_ENCRYPTION_KEY` | — | if needed | — | ✓ | ✓ |
 | `CLERK_ORG_ID` | — | ✓ | ✓ | — | — |
 | `API_CORS_ORIGINS` | — | ✓ staging hosts | — | — | — |
@@ -409,7 +407,7 @@ Ops is UI-only; CRUD calls go to `NEXT_PUBLIC_API_URL/v1/*`.
 - Production: `app.admobihq.com`
 - Staging: `app.staging.admobihq.com` → **`staging` branch**
 
-**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_API_URL`. When auth is on: `NEXT_PUBLIC_AUTH_ENABLED=true`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
+**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
 
 Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-app" }`.
 
@@ -427,7 +425,7 @@ Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admob
 - Production: `driver.admobihq.com`
 - Staging: `driver.staging.admobihq.com` → **`staging` branch**
 
-**Driver env vars:** `NEXT_PUBLIC_DRIVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`. When auth is on: `NEXT_PUBLIC_AUTH_ENABLED=true`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
+**Driver env vars:** `NEXT_PUBLIC_DRIVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
 
 Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-driver" }`.
 
@@ -454,7 +452,7 @@ Use the exact records shown in Vercel → Domains for your project.
 
 ## Clerk
 
-Deploy-time config only (allowed origins, key types per environment). For sign-in flows, the `AUTH_ENABLED` feature flag, organizations, and roles/permissions, see [AUTH.md](./AUTH.md).
+Deploy-time config only (allowed origins, key types per environment). For sign-in flows, organizations, and roles/permissions, see [AUTH.md](./AUTH.md).
 
 **Three independent Clerk applications** — no shared session, no satellite domains between them. This is a deliberate departure from the "two Clerk instances" plan in [ROADMAP.md](./ROADMAP.md) (customer + driver were originally meant to share one instance; splitting them removed a domain-primary/satellite conflict and all role-mismatch handling). Phone/SMS is also dropped — customer and driver both use email + optional Google.
 
@@ -489,7 +487,7 @@ Env vars: `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` / `DRIVER_CLERK_SECRET_KEY`
 
 All three apps' secrets live in the **same flat Infisical project/environment** (one root `.infisical.json`, no per-app path scoping) — there is no folder isolation between apps. The customer/driver key names above are deliberately prefixed to avoid colliding with ops's plain `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`. **Never reuse the unprefixed names for a non-ops Clerk app** — doing so overwrites ops's working keys for every project pulling `dev`/`staging`/`prod` afterward.
 
-**Feature flag:** `NEXT_PUBLIC_AUTH_ENABLED` (web) / `EXPO_PUBLIC_AUTH_ENABLED` (mobile) gates whether each app mounts its `ClerkProvider` at all — defaults to `false`/unset, kept local-only (not in Infisical), so a missing key never crashes the app.
+Customer and driver apps always mount `ClerkProvider` (same as ops). Publishable and secret keys are required; a missing key fails clearly at startup rather than silently disabling auth.
 
 Ensure `CLERK_SECRET_KEY` (and the customer/driver equivalents) are the **full** key (truncated keys cause `secret-key-invalid`).
 

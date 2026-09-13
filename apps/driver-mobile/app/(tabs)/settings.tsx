@@ -26,34 +26,9 @@ import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { EXPO_PUBLIC_API_URL } from "@/lib/env"
 import { radius, spacing, typography, useThemeColors } from "@/lib/theme"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern used elsewhere — useUser()
- * must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { sessionId: null as string | null, signOut: async () => {} }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 function formatRelativeTime(date: Date): string {
   const diffMin = Math.round((Date.now() - date.getTime()) / 60000)
@@ -103,8 +78,8 @@ export default function SettingsScreen() {
   const router = useRouter()
   const version = Constants.expoConfig?.version ?? "0.0.1"
   const [checkingUpdate, setCheckingUpdate] = useState(false)
-  const { user } = useUserIfEnabled()
-  const { sessionId, signOut } = useAuthIfEnabled()
+  const { user } = useUser()
+  const { sessionId, signOut } = useAuth()
 
   const [editing, setEditing] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName ?? "")
@@ -364,7 +339,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {isAuthEnabled() ? <DriverVerificationSection /> : null}
+        <DriverVerificationSection />
 
         {user ? (
           <View style={styles.section}>

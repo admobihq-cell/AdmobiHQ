@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/nextjs"
 "use client"
 
 import { useState } from "react"
@@ -19,7 +20,6 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ProfileSetupStepper } from "@/components/profile-setup/stepper"
 import { DriverVerificationSectionSkeleton } from "@/components/skeletons/driver-verification-section-skeleton"
 import { SubmittedInfoView } from "@/components/settings/submitted-info-view"
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import { fetchDriverProfileClient } from "@/lib/driver-profile-client"
 
 const STATUS_COPY: Record<
@@ -61,7 +61,7 @@ const STATUS_COPY: Record<
 const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
 
 export function DriverVerificationSection() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const queryClient = useQueryClient()
   const [stepperOpen, setStepperOpen] = useState(false)
   const [showInfo, setShowInfo] = useState(false)

@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Clock, Deliveries, HelpCircle, Routes, TrendingUp, Wallet } from "@/components/icons"
 import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { StatCard } from "@/components/ui/stat-card"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { usePlatformFlags } from "@/lib/flags"
 import { EARNINGS_STATS, RECENT_ACTIVITY } from "@/lib/placeholder-data"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
@@ -19,25 +18,11 @@ function getGreeting(hour: number): string {
   return "Good evening"
 }
 
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern used elsewhere — useUser()
- * must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
 function DashboardScreen() {
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const flags = usePlatformFlags()
-  const { user } = useUserIfEnabled()
+  const { user } = useUser()
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },

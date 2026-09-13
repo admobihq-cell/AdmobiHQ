@@ -2,7 +2,7 @@
 
 Expo customer product twin of the web app at **`app.admobihq.com`**.
 
-**Clerk sign-in is live** (email code + Google, same customer instance as `apps/customer-web`), gated by `EXPO_PUBLIC_AUTH_ENABLED`. Full reference: [AUTH.md](../shared/AUTH.md). Ops staff mobile is at [`apps/ops-mobile`](../../apps/ops-mobile) (separate, ops Clerk instance, always on).
+**Clerk sign-in is live** (email code + Google, same customer instance as `apps/customer-web`), always on. Full reference: [AUTH.md](../shared/AUTH.md). Ops staff mobile is at [`apps/ops-mobile`](../../apps/ops-mobile) (separate, ops Clerk instance, also always on).
 
 **Builds, APKs, OTA:** [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
@@ -37,8 +37,7 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 |----------|----------|--------|
 | `EXPO_PUBLIC_APP_URL` | Optional | Web customer origin (`http://localhost:3002`) |
 | `EXPO_PUBLIC_API_URL` | Yes (for support, announcements, flags, push) | Business API |
-| `EXPO_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts — see [AUTH.md](../shared/AUTH.md) §4 |
-| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Required when auth is enabled | Customer Clerk publishable key (mapped on `env:pull`) |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Required | Customer Clerk publishable key (mapped on `env:pull`) |
 
 ---
 
@@ -51,7 +50,7 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 | Scheme | `admobihq-app` |
 | EAS slug | `admobihq-app` |
 
-`lib/auth/use-customer-session.ts` still persists an `anonymousDeviceId` (via `getOrCreateDeviceId()`) for support-case identity tokens and push registration when Clerk is off or the user has not signed in. When `EXPO_PUBLIC_AUTH_ENABLED` is on, `<AuthGate>` uses the Clerk session for route protection; the anonymous device id remains the fallback identity for public support and push-token rows.
+`lib/auth/use-customer-session.ts` persists an `anonymousDeviceId` (via `getOrCreateDeviceId()`) for support-case identity tokens and push registration when the user has not signed in. `<AuthGate>` uses the Clerk session for route protection; the anonymous device id remains the fallback identity for public support and push-token rows.
 
 ---
 

@@ -12,26 +12,13 @@ import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { webPublicUrl } from "@/lib/site-urls"
-
-import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
 
-function useDisabledSignIn(): { signIn: null } {
-  return { signIn: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useSignIn() must never run unless ClerkProvider is mounted.
- */
-const useSignInIfEnabled = isAuthEnabled() ? useSignIn : useDisabledSignIn
-
 export function AdvertiserSignIn() {
-  const { signIn } = useSignInIfEnabled()
+  const { signIn } = useSignIn()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectUrl = searchParams.get("redirect_url") || "/"
@@ -40,10 +27,6 @@ export function AdvertiserSignIn() {
   const [step, setStep] = useState<"email" | "code">("email")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  if (!isAuthEnabled()) {
-    return <AuthDisabledMessage />
-  }
 
   async function handleSendCode() {
     if (!signIn || !email.trim()) return
