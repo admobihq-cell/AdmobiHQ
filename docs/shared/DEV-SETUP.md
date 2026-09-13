@@ -2,7 +2,7 @@
 
 Command reference for running **Admobi** locally: marketing site (`apps/web`), business API (`apps/api`), ops console (`apps/ops`), customer app (`apps/customer-web`), driver app (`apps/driver-web`), and **Payload** CMS. Run commands from the **repository root** unless noted.
 
-**Related:** [API.md](../api/API.md), [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](../web/HELP-CMS.md), [BLOG-CMS.md](../web/BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
+**Related:** [API.md](../api/API.md), [DATA-LAYER.md](./DATA-LAYER.md), [HELP-CMS.md](../web/HELP-CMS.md), [BLOG-CMS.md](../web/BLOG-CMS.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DEPLOYMENT.md](./DEPLOYMENT.md) (including **[Staging environment](./DEPLOYMENT.md#staging-environment)**), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
 
 ---
 
@@ -64,9 +64,11 @@ npm run dev -w customer-mobile
 
 **Installable APKs and OTA** (team phones, no Metro): see [MOBILE-BUILDS.md](./MOBILE-BUILDS.md).
 
-Pull staging secrets locally:
+Pull staging-shaped secrets locally (URLs/keys for the staging stack — see [DEPLOYMENT.md § Staging](./DEPLOYMENT.md#staging-environment)):
 
 ```bash
+npm run env:pull:staging
+# or
 npm run dev:staging
 ```
 
