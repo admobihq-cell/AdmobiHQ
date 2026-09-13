@@ -213,6 +213,8 @@ All three apps' Clerk secrets live in the **same flat Infisical project/environm
 
 Customer and driver apps always mount `ClerkProvider`. A missing publishable key fails clearly at the layout boundary (thrown error on web; configuration screen on mobile) — there is no `AUTH_ENABLED` feature flag.
 
+**Vercel:** `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` / `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` (and matching secrets + `CLERK_ENCRYPTION_KEY`) must be set on **Preview** for *all* branches as well as Production — not only `Preview (staging)`. PR Preview builds prerender layouts and will fail with `…CLERK_PUBLISHABLE_KEY is required` if the key is missing.
+
 ---
 
 ## 5. Server-side verification, organizations, and roles
