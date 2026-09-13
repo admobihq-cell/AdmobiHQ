@@ -135,6 +135,13 @@ describe.skipIf(!databaseUrl)("customer org team routes", () => {
         params: Promise.resolve({ token }),
       })
       expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.org).toEqual({
+        id: orgId,
+        name: "Org Test Co",
+        memberCount: 2,
+        myRoleName: "Member",
+      })
 
       const member = await prisma.advertiserMember.findUnique({
         where: { clerk_user_id: inviteeId },

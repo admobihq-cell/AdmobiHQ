@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { hashAdvertiserInviteToken } from "@/lib/advertiser-invite-token"
+import { toOrgDto } from "@/lib/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, requireCustomerIdentityAccess } from "@/lib/api-utils"
 import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
@@ -82,10 +83,13 @@ export async function POST(_req: Request, { params }: Params) {
     summary: `Accepted invitation to org #${invitation.org_id}`,
   })
 
+  const org = await toOrgDto(member.org_id, auth.access.userId)
+
   return NextResponse.json({
     orgId: member.org_id,
     memberId: member.id,
     roleId: member.role_id,
     roleName: member.role?.name ?? null,
+    org,
   })
 }
