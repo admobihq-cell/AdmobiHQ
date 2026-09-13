@@ -1,5 +1,6 @@
-import { useAuth } from "@clerk/nextjs"
 "use client"
+
+import { useAuth } from "@clerk/nextjs"
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
