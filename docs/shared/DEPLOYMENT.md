@@ -183,10 +183,12 @@ Set these on **Preview**, preferably scoped to git branch **`staging`**. Product
 |----------|:---:|:---:|:---:|:---:|:------:|---------------|
 | `NEXT_PUBLIC_WEB_URL` | ✓ | | ✓ | opt | opt | `https://staging.admobihq.com` |
 | `NEXT_PUBLIC_API_URL` | ✓ | ✓ | ✓ | ✓ | ✓ | `https://api.staging.admobihq.com` |
-| `NEXT_PUBLIC_OPS_URL` | | | ✓ | opt | | `https://ops.staging.admobihq.com` |
-| `NEXT_PUBLIC_APP_URL` | | | | ✓ | opt | `https://app.staging.admobihq.com` |
-| `NEXT_PUBLIC_DRIVER_URL` | | | | | ✓ | `https://driver.staging.admobihq.com` |
+| `NEXT_PUBLIC_OPS_URL` | | ✓ | ✓ | opt | | `https://ops.staging.admobihq.com` |
+| `NEXT_PUBLIC_APP_URL` | | ✓ | | ✓ | opt | `https://app.staging.admobihq.com` |
+| `NEXT_PUBLIC_DRIVER_URL` | | ✓ | | | ✓ | `https://driver.staging.admobihq.com` |
 | `NEXT_PUBLIC_ALLOW_INDEXING` | ✓ | | | | | `false` |
+
+API needs `NEXT_PUBLIC_OPS_URL` / `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_DRIVER_URL` too — its email templates ([AdminAlert.tsx](../../apps/api/lib/email/templates/AdminAlert.tsx), [AdvertiserOrgInvite.tsx](../../apps/api/lib/email/templates/AdvertiserOrgInvite.tsx), [CampaignSubmitted.tsx](../../apps/api/lib/email/templates/CampaignSubmitted.tsx)) link back into those apps and fall back to the **production** origin when unset — so a staging deployment missing these silently emails production links instead of erroring.
 
 **Secrets / auth**
 

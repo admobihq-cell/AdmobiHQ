@@ -112,6 +112,17 @@ export default function TeamSettingsScreen() {
     onError: (err: Error) => Alert.alert("Couldn't revoke", err.message),
   })
 
+  // Re-inviting the same email refreshes the token/expiry and re-sends the
+  // email — POST /v1/customer/org/members already does this in place.
+  const resendMutation = useMutation({
+    mutationFn: (input: { email: string; roleId: number }) => inviteOrgMember(getToken, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
+      Alert.alert("Invitation resent")
+    },
+    onError: (err: Error) => Alert.alert("Couldn't resend", err.message),
+  })
+
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
     content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl },
@@ -311,9 +322,20 @@ export default function TeamSettingsScreen() {
                     <Text style={styles.rowTitle}>{invite.email}</Text>
                     <Text style={styles.rowMeta}>{invite.roleName ?? "Member"}</Text>
                   </View>
-                  <Pressable onPress={() => revokeMutation.mutate(invite.id)}>
-                    <Text style={styles.danger}>Revoke</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <Pressable
+                      disabled={invite.roleId == null}
+                      onPress={() =>
+                        invite.roleId != null &&
+                        resendMutation.mutate({ email: invite.email, roleId: invite.roleId })
+                      }
+                    >
+                      <Text style={{ color: colors.primary, fontWeight: "600" }}>Resend</Text>
+                    </Pressable>
+                    <Pressable onPress={() => revokeMutation.mutate(invite.id)}>
+                      <Text style={styles.danger}>Revoke</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
             </View>
