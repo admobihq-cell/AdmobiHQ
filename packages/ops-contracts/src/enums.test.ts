@@ -11,18 +11,7 @@ describe("ADVERTISER_STARTER_ROLES", () => {
     }
   })
 
-  it("gives Member every permission Viewer has, plus more", () => {
-    const viewer = new Set(ADVERTISER_STARTER_ROLES.Viewer)
-    const member = new Set(ADVERTISER_STARTER_ROLES.Member)
-    for (const permission of viewer) {
-      expect(member.has(permission)).toBe(true)
-    }
-    expect(member.size).toBeGreaterThan(viewer.size)
-  })
-
-  it("only Manager can submit campaigns", () => {
-    expect(ADVERTISER_STARTER_ROLES.Manager).toContain("campaigns:submit")
+  it("Member cannot submit campaigns — that stays an admin/custom-role permission", () => {
     expect(ADVERTISER_STARTER_ROLES.Member).not.toContain("campaigns:submit")
-    expect(ADVERTISER_STARTER_ROLES.Viewer).not.toContain("campaigns:submit")
   })
 })

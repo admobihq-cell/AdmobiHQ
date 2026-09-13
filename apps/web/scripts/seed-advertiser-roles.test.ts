@@ -20,9 +20,7 @@ describe.skipIf(!databaseUrl)("seedAdvertiserStarterRoles", () => {
     const roles = await prisma.advertiserRole.findMany({ where: { org_id: null } })
     const byName = new Map(roles.map((r) => [r.name, r]))
 
-    expect(byName.size).toBe(3)
-    expect(byName.get("Manager")?.permissions).toContain("campaigns:submit")
+    expect(byName.size).toBe(1)
     expect(byName.get("Member")?.permissions).not.toContain("campaigns:submit")
-    expect(byName.get("Viewer")?.permissions).toEqual(["campaigns:read", "reports:read"])
   }, 30_000)
 })
