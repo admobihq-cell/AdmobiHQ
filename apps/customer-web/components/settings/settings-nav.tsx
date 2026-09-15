@@ -6,13 +6,21 @@ import { usePathname } from "next/navigation"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { settingsNavItems } from "@/lib/settings-navigation"
+import { useOrgPermissions } from "@/lib/use-org"
 
 export function SettingsNav() {
   const pathname = usePathname()
+  const { can, isLoading } = useOrgPermissions()
+
+  // Until permissions land, show only the unrestricted entries rather than
+  // flashing a link the user turns out not to have.
+  const items = settingsNavItems.filter(
+    (item) => !item.permission || (!isLoading && can(item.permission)),
+  )
 
   return (
     <nav className="flex gap-1 overflow-x-auto pb-2 lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-visible lg:pb-0">
-      {settingsNavItems.map((item) => {
+      {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
         return (
           <Link

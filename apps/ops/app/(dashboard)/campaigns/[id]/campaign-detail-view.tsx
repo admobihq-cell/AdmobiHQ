@@ -272,6 +272,7 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
           }
         />
         <DetailRow label="Advertiser" value={data.contact_email ?? "—"} />
+        <DetailRow label="Created by" value={data.created_by_name ?? "—"} />
         <DetailRow label="Contact name" value={data.contact_name ?? "—"} />
         <DetailRow label="Phone" value={data.contact_phone ?? "—"} />
         <DetailRow label="Market" value={data.market ?? "—"} />

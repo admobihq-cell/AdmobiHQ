@@ -202,6 +202,8 @@ export function RolesSettingsView() {
       )
       await queryClient.invalidateQueries({ queryKey: ROLES_KEY })
       await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
+      // Editing a role can change the caller's own permissions.
+      await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
     },
     onError: (error: Error) => toast.error(error.message),
   })
