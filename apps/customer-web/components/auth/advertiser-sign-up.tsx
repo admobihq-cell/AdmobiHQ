@@ -32,6 +32,9 @@ export function AdvertiserSignUp() {
   const signInHref = rawRedirectUrl
     ? `/auth/login/advertiser?redirect_url=${encodeURIComponent(rawRedirectUrl)}`
     : "/auth/login/advertiser"
+  // An invitee joins an existing org, so asking them to name a company would
+  // seed a throwaway one and then immediately abandon it on accept.
+  const joiningTeam = redirectUrl.startsWith("/invitations/")
   const [email, setEmail] = useState("")
   const [company, setCompany] = useState("")
   const [code, setCode] = useState("")
@@ -182,8 +185,14 @@ export function AdvertiserSignUp() {
       ) : (
         <div className="flex flex-col gap-5">
           <div>
-            <h1 className="font-heading text-xl font-medium">Create your Admobi account</h1>
-            <p className="text-sm text-muted-foreground">We&apos;ll email you a one-time code.</p>
+            <h1 className="font-heading text-xl font-medium">
+              {joiningTeam ? "Join your team on Admobi" : "Create your Admobi account"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {joiningTeam
+                ? "Use the email your invitation was sent to — we'll email you a one-time code."
+                : "We'll email you a one-time code."}
+            </p>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
@@ -198,20 +207,22 @@ export function AdvertiserSignUp() {
               autoFocus
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="company">Company or organization</Label>
-            <Input
-              id="company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="Acme Media"
-              autoComplete="organization"
-              disabled={submitting}
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional — we&apos;ll use your name until you set one.
-            </p>
-          </div>
+          {joiningTeam ? null : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="company">Company or organization</Label>
+              <Input
+                id="company"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Acme Media"
+                autoComplete="organization"
+                disabled={submitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional — we&apos;ll use your name until you set one.
+              </p>
+            </div>
+          )}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {/* Clerk mounts its bot-protection widget here. Without this element it falls
               back to an invisible CAPTCHA in a display:none div, which Turnstile then

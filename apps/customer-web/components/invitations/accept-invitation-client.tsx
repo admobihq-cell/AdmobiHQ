@@ -19,7 +19,11 @@ export function AcceptInvitationClient() {
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "accepting" | "done">("idle")
-  const [conflict, setConflict] = useState<{ currentOrgName: string } | null>(null)
+  const [conflict, setConflict] = useState<{
+    currentOrgName: string
+    campaignCount: number
+    supportCaseCount: number
+  } | null>(null)
   const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
@@ -39,7 +43,11 @@ export function AcceptInvitationClient() {
       .catch((err: OrgApiError) => {
         if (cancelled) return
         if (err.reason === "solo_org_conflict" && err.currentOrgName) {
-          setConflict({ currentOrgName: err.currentOrgName })
+          setConflict({
+            currentOrgName: err.currentOrgName,
+            campaignCount: err.campaignCount ?? 0,
+            supportCaseCount: err.supportCaseCount ?? 0,
+          })
         } else {
           setError(err.message)
         }
@@ -72,35 +80,61 @@ export function AcceptInvitationClient() {
   }
 
   if (!isSignedIn) {
-    const loginHref = `/auth/login/advertiser?redirect_url=${encodeURIComponent(`/invitations/${token}`)}`
+    const returnTo = `/invitations/${token}`
+    const loginHref = `/auth/login/advertiser?redirect_url=${encodeURIComponent(returnTo)}`
+    const signUpHref = `/auth/signup/advertiser?redirect_url=${encodeURIComponent(returnTo)}`
     return (
       <Card className="mx-auto max-w-md shadow-none">
         <CardContent className="space-y-4 p-6">
           <h1 className="text-xl font-semibold">Accept invitation</h1>
           <p className="text-sm text-muted-foreground">
-            Sign in with the email address this invitation was sent to, then we&apos;ll add you to
+            Use the email address this invitation was sent to — we match on it before adding you to
             the team.
           </p>
-          <Button asChild className="w-full">
-            <Link href={loginHref}>Sign in to accept</Link>
-          </Button>
+          <div className="flex flex-col gap-2">
+            {/* Most invitees have never used Admobi, so creating an account is
+                the primary action, not an afterthought. */}
+            <Button asChild className="w-full">
+              <Link href={signUpHref}>Create an account</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href={loginHref}>I already have an account</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )
   }
 
   if (conflict) {
+    const detached = [
+      conflict.campaignCount > 0
+        ? `${conflict.campaignCount} campaign${conflict.campaignCount === 1 ? "" : "s"}`
+        : null,
+      conflict.supportCaseCount > 0
+        ? `${conflict.supportCaseCount} support case${conflict.supportCaseCount === 1 ? "" : "s"}`
+        : null,
+    ].filter(Boolean)
+
     return (
       <Card className="mx-auto max-w-md shadow-none">
         <CardContent className="space-y-4 p-6">
           <h1 className="text-xl font-semibold">You already have a workspace</h1>
           <p className="text-sm text-muted-foreground">
-            You&apos;re the only member of <strong>{conflict.currentOrgName}</strong> — it was
-            created automatically when you signed up. Leave it to join this invitation instead?
+            You&apos;re the only member of <strong>{conflict.currentOrgName}</strong>. Leave it to
+            join this invitation instead?
           </p>
+          {detached.length ? (
+            <p className="text-sm text-destructive">
+              This permanently detaches {detached.join(" and ")} from your account. Ask an admin of{" "}
+              {conflict.currentOrgName} to invite you back, or contact support first if you need
+              them.
+            </p>
+          ) : null}
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               className="flex-1"
+              variant={detached.length ? "destructive" : "default"}
               disabled={resolving}
               loading={resolving}
               loadingText="Joining…"

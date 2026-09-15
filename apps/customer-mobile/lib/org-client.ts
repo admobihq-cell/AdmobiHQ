@@ -15,6 +15,34 @@ const API_URL = EXPO_PUBLIC_API_URL ?? "http://localhost:3003"
 
 export type GetToken = () => Promise<string | null>
 
+/** Mirrors customer-web's OrgApiError — accept-invitation attaches structured
+ * conflict details the screen branches on instead of parsing the message. */
+export class OrgApiError extends Error {
+  status: number
+  reason?: string
+  currentOrgName?: string
+  campaignCount?: number
+  supportCaseCount?: number
+
+  constructor(
+    message: string,
+    status: number,
+    extra?: {
+      reason?: string
+      currentOrgName?: string
+      campaignCount?: number
+      supportCaseCount?: number
+    },
+  ) {
+    super(message)
+    this.status = status
+    this.reason = extra?.reason
+    this.currentOrgName = extra?.currentOrgName
+    this.campaignCount = extra?.campaignCount
+    this.supportCaseCount = extra?.supportCaseCount
+  }
+}
+
 async function authedFetch(getToken: GetToken, path: string, init?: RequestInit) {
   const token = await getToken()
   const headers = new Headers(init?.headers)
@@ -22,12 +50,18 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers })
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null
-    const error = new Error(body?.error ?? `Request failed (${res.status})`) as Error & {
-      status?: number
-    }
-    error.status = res.status
-    throw error
+    const body = (await res.json().catch(() => null)) as {
+      error?: string
+      reason?: string
+      currentOrgName?: string
+      campaignCount?: number
+      supportCaseCount?: number
+    } | null
+    throw new OrgApiError(
+      body?.error ?? `Request failed (${res.status})`,
+      res.status,
+      body ?? undefined,
+    )
   }
   return res
 }
@@ -119,10 +153,17 @@ export async function deleteOrgRole(getToken: GetToken, roleId: number): Promise
   await authedFetch(getToken, `/v1/customer/org/roles/${roleId}`, { method: "DELETE" })
 }
 
-export async function acceptOrgInvitation(getToken: GetToken, token: string): Promise<void> {
-  await authedFetch(getToken, `/v1/customer/org/invitations/accept/${encodeURIComponent(token)}`, {
-    method: "POST",
-  })
+export async function acceptOrgInvitation(
+  getToken: GetToken,
+  token: string,
+  options?: { leaveSoleOrg?: boolean },
+): Promise<{ org: AdvertiserOrgDto }> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/org/invitations/accept/${encodeURIComponent(token)}`,
+    jsonInit("POST", options ?? {}),
+  )
+  return res.json()
 }
 
 export async function listOrgActivity(
@@ -141,6 +182,8 @@ export async function getOrgDeletionStatus(getToken: GetToken): Promise<{
   canDeleteAccount: boolean
   isSoleOwner: boolean
   orgId?: number
+  campaignCount: number
+  supportCaseCount: number
 }> {
   const res = await authedFetch(getToken, "/v1/customer/org/deletion-status")
   return res.json()
@@ -155,4 +198,16 @@ export async function transferOrgOwnership(
 
 export async function deleteOrganization(getToken: GetToken): Promise<void> {
   await authedFetch(getToken, "/v1/customer/org/delete-organization", { method: "POST" })
+}
+
+export async function leaveOrganization(getToken: GetToken): Promise<void> {
+  await authedFetch(getToken, "/v1/customer/org/leave", { method: "POST" })
+}
+
+export async function updateOrg(
+  getToken: GetToken,
+  data: import("@workspace/ops-contracts").AdvertiserOrgUpdateInput,
+): Promise<AdvertiserOrgDto> {
+  const res = await authedFetch(getToken, "/v1/customer/org", jsonInit("PATCH", data))
+  return res.json()
 }
