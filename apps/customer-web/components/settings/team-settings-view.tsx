@@ -60,6 +60,7 @@ import {
   updateOrgMember,
 } from "@/lib/org-client"
 import { orgCan } from "@workspace/ops-contracts"
+import { AdminRequestsCard } from "@/components/settings/admin-requests-card"
 import { OrgBillingCard } from "@/components/settings/org-billing-card"
 
 const ORG_KEY = ["customer-org"] as const
@@ -215,21 +216,23 @@ export function TeamSettingsView() {
   if (!canManageTeam) {
     const org = orgQuery.data
     return (
-      <Card>
-        <CardContent className="space-y-3 p-6">
-          <div>
-            <h2 className="text-lg font-medium">{org?.name || "Your organization"}</h2>
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="space-y-3 p-6">
+            <div>
+              <h2 className="text-lg font-medium">{org?.name || "Your organization"}</h2>
+              <p className="text-sm text-muted-foreground">
+                {org?.memberCount ?? 1} member{org?.memberCount === 1 ? "" : "s"} · you&apos;re a{" "}
+                {org?.myRoleName ?? "Member"}
+              </p>
+            </div>
             <p className="text-sm text-muted-foreground">
-              {org?.memberCount ?? 1} member{org?.memberCount === 1 ? "" : "s"} · you&apos;re a{" "}
-              {org?.myRoleName ?? "Member"}
+              Only organization admins can invite people or change roles.
             </p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Only organization admins can invite people or change roles. Ask an admin if you need
-            access to something.
-          </p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        <AdminRequestsCard isOwner={false} />
+      </div>
     )
   }
 
@@ -275,6 +278,8 @@ export function TeamSettingsView() {
       </Card>
 
       <OrgBillingCard org={orgQuery.data} />
+
+      <AdminRequestsCard isOwner={orgQuery.data?.isOwner ?? false} />
 
       <Card>
         <CardContent className="space-y-4 p-6">
@@ -431,7 +436,7 @@ export function TeamSettingsView() {
 
           {invitations.length > 0 ? (
             <div className="space-y-2 pt-2">
-              <h3 className="text-sm font-medium">Pending invitations</h3>
+              <h3 className="text-sm font-medium">Invitations</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -440,40 +445,50 @@ export function TeamSettingsView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invitations.map((invite) => (
-                    <TableRow key={invite.id}>
-                      <TableCell>
-                        {invite.email}
-                        <div className="text-xs text-muted-foreground">
-                          {invite.roleName ?? "Member"} · expires{" "}
-                          {new Date(invite.expiresAt).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={invite.roleId == null || resendMutation.isPending}
-                            onClick={() =>
-                              invite.roleId != null &&
-                              resendMutation.mutate({ email: invite.email, roleId: invite.roleId })
-                            }
-                          >
-                            Resend
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={revokeMutation.isPending}
-                            onClick={() => revokeMutation.mutate(invite.id)}
-                          >
-                            Revoke
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {invitations.map((invite) => {
+                    const declined = invite.status === "declined"
+                    return (
+                      <TableRow key={invite.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {invite.email}
+                            {declined ? <Badge variant="outline">Declined</Badge> : null}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {invite.roleName ?? "Member"}
+                            {declined
+                              ? " · they turned this down"
+                              : ` · expires ${new Date(invite.expiresAt).toLocaleDateString()}`}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={invite.roleId == null || resendMutation.isPending}
+                              onClick={() =>
+                                invite.roleId != null &&
+                                resendMutation.mutate({ email: invite.email, roleId: invite.roleId })
+                              }
+                            >
+                              {declined ? "Ask again" : "Resend"}
+                            </Button>
+                            {declined ? null : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={revokeMutation.isPending}
+                                onClick={() => revokeMutation.mutate(invite.id)}
+                              >
+                                Revoke
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

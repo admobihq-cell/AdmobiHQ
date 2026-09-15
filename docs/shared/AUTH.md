@@ -312,6 +312,36 @@ Campaigns are `org_id`-scoped (see [apps/api/lib/campaign-store.ts](../../apps/a
 
 The email on the invitation must match the caller's Clerk address on both accept and decline, and the check **fails closed** — an address Clerk can't resolve is refused, so a leaked token can't be redeemed (or killed) by whoever holds it. Invites expire after 7 days (`410`). `POST /v1/customer/org/members` (which sends mail), accept and decline are all rate-limited **per Clerk user id**, not per IP: `checkRateLimit`'s `identifier` option exists for that, because Kenyan mobile carriers NAT many subscribers behind one address.
 
+**Making an admin is owner-only, and there is no self-service escalation.**
+`PATCH /v1/customer/org/members/[id]` accepts `isOwner`, but changing it
+requires the **caller** to be an owner, and refuses to act on the caller's own
+membership. Without that guard any custom role granting `team:manage` was a
+path to the full permission set — a `team:manage` holder could PATCH their own
+member id to `isOwner: true` and inherit `billing:write`, `org:manage` and
+org deletion. Role (`roleId`) changes remain a plain `team:manage` operation.
+
+The sanctioned alternative is `AdvertiserAdminRequest`: a member posts to
+`POST /v1/customer/org/admin-requests` with a written reason (10–1000 chars),
+every active owner gets an inbox notification + push, and an owner resolves it
+at `POST /v1/customer/org/admin-requests/[id]` with
+`{ decision: "approve" | "deny", note? }`. Approving promotes them in the same
+transaction that closes the request; denying **requires** a note, which is
+shown to the requester verbatim — a refusal they can't understand just gets
+asked again. `GET` returns the whole queue to owners and only their own rows to
+everyone else. One open request per member per org, enforced by a partial
+unique index (`WHERE status = 'pending'`), plus a 5/hour per-user rate limit.
+
+**Inviting an existing member is refused up front** (`409`). Beyond the
+confusing dead-end it used to create, a sole owner inviting their own address
+could accept, confirm "leave and join", and have `detachAndDeleteOrg` strip
+every campaign off the org the invitation pointed *into*.
+
+**Declined invitations stay visible.** `GET /v1/customer/org/members` returns
+declined rows alongside pending ones (declined regardless of expiry), so Team
+renders them with a **Declined** badge and an **Ask again** action instead of
+the row silently vanishing. The inviter also gets an inbox notification + push
+the moment someone declines.
+
 **Client-side permission gating.** `GET /v1/customer/org` returns `isOwner` and the caller's effective `permissions[]` alongside the org name, plus `billingEmail` / `taxPin` for callers holding `billing:read`. Both apps read it through `lib/use-org.ts` (`useOrg`, `useOrgPermissions`) and the shared `orgCan()` helper in [packages/ops-contracts/src/advertiser-org.ts](../../packages/ops-contracts/src/advertiser-org.ts), so a role without `campaigns:submit` never sees a Submit button and a non-admin never sees the Roles tab. **The server check stays authoritative** — hiding is a UX affordance, not the boundary.
 
 ### Managing organizations and roles day to day

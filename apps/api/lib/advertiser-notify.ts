@@ -77,3 +77,44 @@ export async function fanOutCustomerCampaignNotice(input: {
 export function isKnownAdvertiserPermission(value: string): value is AdvertiserPermission {
   return (ADVERTISER_PERMISSIONS as readonly string[]).includes(value)
 }
+
+/** Inbox row + push for named recipients. Used by org events (invite declined,
+ * admin access requested/reviewed) that target specific people rather than
+ * everyone holding a permission. */
+export async function notifyCustomerUsers(
+  clerkUserIds: string[],
+  input: { orgId: number | null; type: string; title: string; body: string; href: string },
+): Promise<void> {
+  const unique = [...new Set(clerkUserIds)].filter(Boolean)
+  if (!unique.length) return
+
+  await prisma.customerNotification.createMany({
+    data: unique.map((clerk_user_id) => ({
+      clerk_user_id,
+      org_id: input.orgId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      href: input.href,
+    })),
+  })
+
+  await Promise.all(
+    unique.map((userId) =>
+      notifyUserPush("customer", userId, {
+        title: input.title,
+        body: input.body,
+        href: input.href,
+      }),
+    ),
+  )
+}
+
+/** Active owners of an org — the reviewers for admin access requests. */
+export async function listOrgOwnerIds(orgId: number): Promise<string[]> {
+  const owners = await prisma.advertiserMember.findMany({
+    where: { org_id: orgId, is_owner: true, removed_at: null },
+    select: { clerk_user_id: true },
+  })
+  return owners.map((o) => o.clerk_user_id)
+}

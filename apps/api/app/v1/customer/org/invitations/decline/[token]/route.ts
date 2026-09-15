@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { hashAdvertiserInviteToken } from "@/lib/advertiser-invite-token"
+import { notifyCustomerUsers } from "@/lib/advertiser-notify"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, requireCustomerIdentityAccess } from "@/lib/api-utils"
 import { getCustomerEmail } from "@/lib/customer-clerk"
@@ -47,6 +48,15 @@ export async function POST(req: Request, { params }: Params) {
   await prisma.advertiserInvitation.update({
     where: { id: invitation.id },
     data: { declined_at: new Date() },
+  })
+
+  // The inviter is otherwise left watching a "pending" row that never moves.
+  await notifyCustomerUsers([invitation.invited_by_clerk_user_id], {
+    orgId: invitation.org_id,
+    type: "org_invitation_declined",
+    title: "Invitation declined",
+    body: `${invitation.email} turned down your invitation to join the team.`,
+    href: "/settings/team",
   })
 
   await auditFromCustomerUser(auth.access.userId, {

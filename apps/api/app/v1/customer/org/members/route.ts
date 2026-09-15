@@ -4,6 +4,7 @@ import { advertiserInviteSchema } from "@workspace/ops-contracts"
 
 import {
   INVITE_TTL_MS,
+  findClerkUserIdByEmail,
   getAssignableRole,
   resolveInviterLabel,
   toInvitationDto,
@@ -44,8 +45,9 @@ export async function GET() {
         org_id: auth.access.orgId,
         accepted_at: null,
         revoked_at: null,
-        declined_at: null,
-        expires_at: { gt: new Date() },
+        // Declined rows are returned regardless of expiry: an admin needs to
+        // see that someone said no, not watch the invite silently vanish.
+        OR: [{ declined_at: { not: null } }, { expires_at: { gt: new Date() } }],
       },
       orderBy: { created_at: "desc" },
       take: MAX_ROSTER_ROWS,
@@ -94,6 +96,29 @@ export async function POST(req: Request) {
   const role = await getAssignableRole(auth.access.orgId, parsed.data.roleId)
   if (!role) return jsonError("Unknown role", 400)
 
+  // Without this, re-inviting a current member creates an invitation that can
+  // never be accepted — and a sole owner inviting their own address could
+  // confirm "leave and join", detaching every campaign to join the org the
+  // invite points at, which was just deleted.
+  const existingClerkUserId = await findClerkUserIdByEmail(email)
+  if (existingClerkUserId) {
+    const activeMember = await prisma.advertiserMember.findFirst({
+      where: {
+        org_id: auth.access.orgId,
+        clerk_user_id: existingClerkUserId,
+        removed_at: null,
+      },
+    })
+    if (activeMember) {
+      return jsonError(
+        activeMember.clerk_user_id === auth.access.userId
+          ? "You're already a member of this organization"
+          : "That person is already a member of this organization",
+        409,
+      )
+    }
+  }
+
   const token = generateAdvertiserInviteToken()
   const tokenHash = hashAdvertiserInviteToken(token)
   const expiresAt = new Date(Date.now() + INVITE_TTL_MS)
@@ -112,6 +137,9 @@ export async function POST(req: Request) {
         expires_at: expiresAt,
         revoked_at: null,
         accepted_at: null,
+        // Clearing this matters: a re-invite after a decline is a fresh offer,
+        // and accept refuses any row with declined_at set.
+        declined_at: null,
         invited_by_clerk_user_id: auth.access.userId,
       },
     })
