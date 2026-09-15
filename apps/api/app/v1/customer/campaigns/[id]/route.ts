@@ -4,6 +4,7 @@ import { campaignUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
+import { resolveCampaignAuthorName } from "@/lib/advertiser-org"
 import { toCampaignDto, toDayIso } from "@/lib/campaign-dto"
 import { destroyCampaignCreative } from "@/lib/campaign-creative-storage"
 import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaign-store"
@@ -22,7 +23,9 @@ export async function GET(_req: Request, { params }: Params) {
   const campaign = await getOwnedCampaign(auth.access.orgId, id)
   if (!campaign) return jsonError("Not found", 404)
 
-  return NextResponse.json(toCampaignDto(campaign))
+  return NextResponse.json(
+    toCampaignDto(campaign, undefined, null, await resolveCampaignAuthorName(campaign.clerk_user_id)),
+  )
 }
 
 export async function PATCH(req: Request, { params }: Params) {
