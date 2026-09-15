@@ -36,9 +36,18 @@ jobs:
       TEST_RECIPIENT_EMAIL: ${{ secrets.TEST_RECIPIENT_EMAIL }}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      # customer-web / driver-web use their own Clerk instances and hard-fail the
+      # build when the key is absent (see their app/layout.tsx). CI never deploys
+      # these artifacts, so fall back to a syntactically valid throwaway key.
+      NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY != '' && secrets.NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY || 'pk_test_Y2xlcmsuZXhhbXBsZS5jb20k' }}
+      CUSTOMER_CLERK_SECRET_KEY: ${{ secrets.CUSTOMER_CLERK_SECRET_KEY != '' && secrets.CUSTOMER_CLERK_SECRET_KEY || 'sk_test_ci-placeholder' }}
+      NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY != '' && secrets.NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY || 'pk_test_Y2xlcmsuZXhhbXBsZS5jb20k' }}
+      DRIVER_CLERK_SECRET_KEY: ${{ secrets.DRIVER_CLERK_SECRET_KEY != '' && secrets.DRIVER_CLERK_SECRET_KEY || 'sk_test_ci-placeholder' }}
+      CLERK_ENCRYPTION_KEY: ${{ secrets.CLERK_ENCRYPTION_KEY }}
       NEXT_PUBLIC_OPS_URL: ${{ secrets.NEXT_PUBLIC_OPS_URL != '' && secrets.NEXT_PUBLIC_OPS_URL || 'https://ops.admobihq.com' }}
       NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL != '' && secrets.NEXT_PUBLIC_APP_URL || 'https://app.admobihq.com' }}
       NEXT_PUBLIC_WEB_URL: ${{ secrets.NEXT_PUBLIC_WEB_URL != '' && secrets.NEXT_PUBLIC_WEB_URL || 'https://admobihq.com' }}
+      NEXT_PUBLIC_DRIVER_URL: ${{ secrets.NEXT_PUBLIC_DRIVER_URL != '' && secrets.NEXT_PUBLIC_DRIVER_URL || 'https://driver.admobihq.com' }}
 
     steps:
       - name: Checkout code
