@@ -2,7 +2,9 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-const databaseUrl = process.env.DATABASE_URL
+import { testDatabaseUrl } from "@/lib/test-database-url"
+
+const databaseUrl = testDatabaseUrl()
 
 vi.mock("@/lib/api-utils", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-utils")>("@/lib/api-utils")

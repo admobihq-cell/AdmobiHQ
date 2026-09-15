@@ -4,6 +4,7 @@ import { campaignCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
+import { resolveCustomerIdentities } from "@/lib/advertiser-org"
 import { toCampaignDto } from "@/lib/campaign-dto"
 import { listOwnedCampaigns } from "@/lib/campaign-store"
 import { prisma } from "@/lib/prisma"
@@ -13,7 +14,16 @@ export async function GET() {
   if (auth.error) return auth.error
 
   const campaigns = await listOwnedCampaigns(auth.access.orgId)
-  return NextResponse.json(campaigns.map((campaign) => toCampaignDto(campaign)))
+  // Teams need to see who drafted what; one batched Clerk lookup for the page.
+  const authors = await resolveCustomerIdentities(
+    campaigns.map((c) => c.clerk_user_id).filter((v): v is string => !!v),
+  )
+  return NextResponse.json(
+    campaigns.map((campaign) => {
+      const author = campaign.clerk_user_id ? authors.get(campaign.clerk_user_id) : undefined
+      return toCampaignDto(campaign, undefined, null, author?.name ?? author?.email ?? null)
+    }),
+  )
 }
 
 /** Creates a draft. The wizard calls this once, after its first step, then
