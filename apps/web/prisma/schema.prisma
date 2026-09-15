@@ -452,6 +452,12 @@ model OpsRoleAssignment {
 model AdvertiserOrg {
   id         Int      @id @default(autoincrement())
   name       String
+  /// Where invoices go. Falls back to the owner's Clerk address when unset —
+  /// finance mail should outlive whoever happens to be admin today.
+  billing_email String?
+  /// KRA PIN. Kenyan tax invoices are issued to a company PIN, not a person,
+  /// so it belongs on the tenant even though Pesapal invoicing isn't built yet.
+  tax_pin       String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -460,6 +466,7 @@ model AdvertiserOrg {
   roles        AdvertiserRole[]
   campaigns    Campaign[]
   supportCases SupportCase[]
+  notifications CustomerNotification[]
 
   @@map("advertiser_orgs")
 }
@@ -703,6 +710,11 @@ model CampaignCreative {
 model CustomerNotification {
   id            Int    @id @default(autoincrement())
   clerk_user_id String
+  /// Which tenant the notice was about. Still addressed to a person (the row
+  /// stays keyed by clerk_user_id), but the inbox filters on this so leaving an
+  /// org stops surfacing its campaign notices. Null for pre-org rows.
+  org_id        Int?
+  org           AdvertiserOrg? @relation(fields: [org_id], references: [id], onDelete: SetNull)
 
   type  String // campaign_submitted, campaign_approved, campaign_rejected, campaign_changes_requested
   title String
@@ -715,6 +727,7 @@ model CustomerNotification {
   created_at DateTime  @default(now())
 
   @@index([clerk_user_id, created_at])
+  @@index([org_id, created_at])
   @@map("customer_notifications")
 }
 

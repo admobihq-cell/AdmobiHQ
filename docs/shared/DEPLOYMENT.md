@@ -213,6 +213,17 @@ Set these on **Preview**, preferably scoped to git branch **`staging`**. Product
 
 API needs `NEXT_PUBLIC_OPS_URL` / `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_DRIVER_URL` too — its email templates ([AdminAlert.tsx](../../apps/api/lib/email/templates/AdminAlert.tsx), [AdvertiserOrgInvite.tsx](../../apps/api/lib/email/templates/AdvertiserOrgInvite.tsx), [CampaignSubmitted.tsx](../../apps/api/lib/email/templates/CampaignSubmitted.tsx)) link back into those apps and fall back to the **production** origin when unset — so a staging deployment missing these silently emails production links instead of erroring.
 
+**Deep-link verification (customer-web, optional)**
+
+Team invite links are `https://app.admobihq.com/invitations/<token>`. The Expo app claims that path (`intentFilters` / `associatedDomains` in [apps/customer-mobile/app.json](../../apps/customer-mobile/app.json)), but the OS only hands it over once customer-web serves the matching verification file. Both routes **404 when their variable is unset**, which is the same behaviour as before they existed — the link just opens in the browser.
+
+| Variable | Serves | Value |
+|----------|--------|-------|
+| `ANDROID_APP_CERT_FINGERPRINTS` | `/.well-known/assetlinks.json` | Comma-separated SHA-256 signing-certificate fingerprints from `eas credentials`. Public, not secret. |
+| `ANDROID_APP_PACKAGE` | same | Defaults to `com.admobihq.app`. |
+| `APPLE_APP_TEAM_ID` | `/.well-known/apple-app-site-association` | 10-character Apple Developer Team ID. |
+| `APPLE_APP_BUNDLE_ID` | same | Defaults to `com.admobihq.app`. |
+
 **Secrets / auth**
 
 | Variable | Web | API | Ops | App | Driver |

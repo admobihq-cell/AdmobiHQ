@@ -29,8 +29,19 @@ Sidebar app shell. What is real vs placeholder:
 | `/reports` | **Coming soon** |
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
 | `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
-| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix) |
+| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix) plus **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`) |
+| `/invitations/[token]` | Public accept-invitation landing — offers **Create an account** first, since most invitees have never used Admobi |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), always on |
+
+### Org permissions in the UI
+
+`GET /v1/customer/org` returns the caller's `isOwner` and `permissions[]`. Read it through [lib/use-org.ts](../../apps/customer-web/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) with the shared `orgCan()` helper rather than inferring capability from a failed request — a network blip must not read as "demoted". What this gates today:
+
+- **Campaign wizard** hides *Submit for review* without `campaigns:submit` and explains why, instead of letting a Member fill in the whole flow and eat a 403 on the last click.
+- **Settings nav** hides Activity without `activity:read`; the Team tab strip hides Roles without `team:manage` (and disappears entirely when only one tab is left).
+- **Team settings** shows non-admins a read-only org card (name, member count, their role) rather than an error page.
+
+Hiding is a UX affordance — the server check stays authoritative. Any mutation that can change the caller's own role must invalidate the `["customer-org"]` query key.
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
 

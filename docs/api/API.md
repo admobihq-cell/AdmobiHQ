@@ -176,6 +176,8 @@ Comparison is constant-time (`timingSafeEqual` in `lib/api-utils.ts`) — do not
 
 All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driver/sos`, which is limited to **3 per 5 minutes** because it pages every ops device) call `checkRateLimit(req, bucket, { limit, windowSeconds })` from `apps/api/lib/rate-limit.ts` as their first line — a sliding-window limiter backed by Upstash Redis, keyed by client IP.
 
+**Authenticated routes key by user, not IP.** Pass `identifier: access.userId`: Kenyan mobile carriers NAT many subscribers behind one address, so IP keying would throttle unrelated advertisers together. Two routes use this today — `POST /v1/customer/org/members` (**10 per 10 minutes**, because it sends mail from the Admobi domain on every call and an unbounded loop there is an outbound-spam vector, not just compute) and `POST /v1/customer/org/invitations/accept/[token]` (**20 per 10 minutes**).
+
 **Exception:** `GET /v1/public/config` serves an in-memory cache (5 minutes per isolate) before rate-limiting. Cache hits skip Redis and Neon, and responses set `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`. Ops `PATCH /v1/flags` calls `invalidatePublicConfigCache()` so the next miss sees the new value. Customer/driver Next.js apps poll with `revalidate: 300`.
 
 **Fails open** when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are unset — requests pass through unthrottled rather than erroring, so local dev and any environment missing those vars keeps working. Confirm they're set before relying on this in production.
