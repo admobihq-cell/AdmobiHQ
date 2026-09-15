@@ -106,9 +106,11 @@ export function toRoleDto(role: {
 export function invitationStatus(row: {
   accepted_at: Date | null
   revoked_at: Date | null
+  declined_at: Date | null
   expires_at: Date
 }): AdvertiserInvitationDto["status"] {
   if (row.accepted_at) return "accepted"
+  if (row.declined_at) return "declined"
   if (row.revoked_at) return "revoked"
   if (row.expires_at.getTime() <= Date.now()) return "expired"
   return "pending"
@@ -261,6 +263,7 @@ export function toInvitationDto(row: {
   expires_at: Date
   accepted_at: Date | null
   revoked_at: Date | null
+  declined_at: Date | null
   role: { name: string } | null
 }): AdvertiserInvitationDto {
   return {
@@ -337,7 +340,7 @@ export async function isUntouchedSoloOrg(
     prisma.advertiserMember.count({ where: { org_id: orgId, removed_at: null } }),
     getOrgDetachmentImpact(orgId),
     prisma.advertiserInvitation.count({
-      where: { org_id: orgId, accepted_at: null, revoked_at: null },
+      where: { org_id: orgId, accepted_at: null, revoked_at: null, declined_at: null },
     }),
   ])
 

@@ -30,7 +30,7 @@ Sidebar app shell. What is real vs placeholder:
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
 | `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
 | `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix) plus **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`) |
-| `/invitations/[token]` | Public accept-invitation landing — offers **Create an account** first, since most invitees have never used Admobi |
+| `/invitations/[token]` | Public accept-invitation landing — shows who invited you and what accepting would replace, then **Accept** or **Decline**. Never auto-accepts. Offers **Create an account** first for signed-out visitors, since most invitees have never used Admobi |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), always on |
 
 ### Org permissions in the UI

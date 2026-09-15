@@ -528,6 +528,10 @@ model AdvertiserInvitation {
   expires_at               DateTime
   accepted_at              DateTime?
   revoked_at               DateTime?
+  /// Set when the *invitee* turns the invitation down. Distinct from
+  /// revoked_at (an admin withdrawing it) so the Team screen can say which
+  /// happened instead of the row silently vanishing.
+  declined_at              DateTime?
   invited_by_clerk_user_id String
   created_at               DateTime        @default(now())
 

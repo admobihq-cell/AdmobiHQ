@@ -96,7 +96,36 @@ export type AdvertiserInvitationDto = {
   roleName: string | null
   createdAt: string
   expiresAt: string
-  status: "pending" | "accepted" | "revoked" | "expired"
+  status: "pending" | "accepted" | "revoked" | "declined" | "expired"
+}
+
+/** How accepting would collide with the caller's existing membership. Drives
+ * the confirmation copy — replacing an empty auto-created workspace and
+ * abandoning a real one are very different decisions. */
+export type AdvertiserInviteConflict =
+  | "none"
+  | "empty_solo_org"
+  | "solo_org_with_content"
+  | "existing_team"
+
+/** Read-only view of an invitation, so the invitee can see what they're being
+ * asked to join *before* committing to it. */
+export type AdvertiserInvitationPreviewDto = {
+  orgName: string
+  roleName: string | null
+  inviterName: string
+  /** The address the invitation was sent to. */
+  email: string
+  expiresAt: string
+  /** Null until the caller is signed in — conflict can't be computed without an identity. */
+  conflict: AdvertiserInviteConflict | null
+  /** The org the caller would be leaving, when `conflict` is a solo-org case. */
+  currentOrgName: string | null
+  /** What leaving `currentOrgName` would detach, for the confirmation copy. */
+  campaignCount: number
+  supportCaseCount: number
+  /** True when the signed-in address differs from `email`. */
+  emailMismatch: boolean
 }
 
 export type AdvertiserRoleDto = {

@@ -1,5 +1,6 @@
 import type {
   AdvertiserInvitationDto,
+  AdvertiserInvitationPreviewDto,
   AdvertiserInviteInput,
   AdvertiserMemberDto,
   AdvertiserMemberUpdateInput,
@@ -23,6 +24,7 @@ export class OrgApiError extends Error {
   currentOrgName?: string
   campaignCount?: number
   supportCaseCount?: number
+  soloOrgIsEmpty?: boolean
 
   constructor(
     message: string,
@@ -32,6 +34,7 @@ export class OrgApiError extends Error {
       currentOrgName?: string
       campaignCount?: number
       supportCaseCount?: number
+      soloOrgIsEmpty?: boolean
     },
   ) {
     super(message)
@@ -40,6 +43,7 @@ export class OrgApiError extends Error {
     this.currentOrgName = extra?.currentOrgName
     this.campaignCount = extra?.campaignCount
     this.supportCaseCount = extra?.supportCaseCount
+    this.soloOrgIsEmpty = extra?.soloOrgIsEmpty
   }
 }
 
@@ -56,6 +60,7 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
       currentOrgName?: string
       campaignCount?: number
       supportCaseCount?: number
+      soloOrgIsEmpty?: boolean
     } | null
     throw new OrgApiError(
       body?.error ?? `Request failed (${res.status})`,
@@ -164,6 +169,26 @@ export async function acceptOrgInvitation(
     jsonInit("POST", options ?? {}),
   )
   return res.json()
+}
+
+/** Readable signed-out, so the invitee sees who invited them before choosing. */
+export async function getOrgInvitationPreview(
+  getToken: GetToken,
+  token: string,
+): Promise<AdvertiserInvitationPreviewDto> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/org/invitations/accept/${encodeURIComponent(token)}`,
+  )
+  return res.json()
+}
+
+export async function declineOrgInvitation(getToken: GetToken, token: string): Promise<void> {
+  await authedFetch(
+    getToken,
+    `/v1/customer/org/invitations/decline/${encodeURIComponent(token)}`,
+    { method: "POST" },
+  )
 }
 
 export async function listOrgActivity(
