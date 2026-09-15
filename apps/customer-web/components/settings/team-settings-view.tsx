@@ -59,6 +59,8 @@ import {
   transferOrgOwnership,
   updateOrgMember,
 } from "@/lib/org-client"
+import { orgCan } from "@workspace/ops-contracts"
+import { OrgBillingCard } from "@/components/settings/org-billing-card"
 
 const ORG_KEY = ["customer-org"] as const
 const MEMBERS_KEY = ["customer-org-members"] as const
@@ -89,21 +91,25 @@ export function TeamSettingsView() {
     enabled: isLoaded,
   })
 
+  // Gate on the permission the server enforces, not on whether the members
+  // request happened to succeed — a network blip must not read as "demoted".
+  const canManageTeam = orgCan(orgQuery.data, "team:manage")
+  const canRenameOrg = orgCan(orgQuery.data, "org:manage")
+
   const membersQuery = useQuery({
     queryKey: MEMBERS_KEY,
     queryFn: () => listOrgMembers(getToken),
-    enabled: isLoaded,
+    enabled: isLoaded && canManageTeam,
     retry: false,
   })
 
   const rolesQuery = useQuery({
     queryKey: ROLES_KEY,
     queryFn: () => listOrgRoles(getToken),
-    enabled: isLoaded && membersQuery.isSuccess,
+    enabled: isLoaded && canManageTeam,
     retry: false,
   })
 
-  const canManageTeam = membersQuery.isSuccess
   const displayName = orgName ?? orgQuery.data?.name ?? ""
 
   const inviteMutation = useMutation({
@@ -169,6 +175,8 @@ export function TeamSettingsView() {
     onSuccess: async () => {
       toast.success("Role updated")
       await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
+      // Changing your own role changes what the UI may show you.
+      await queryClient.invalidateQueries({ queryKey: ORG_KEY })
     },
     onError: (error: Error) => toast.error(error.message),
   })
@@ -191,7 +199,7 @@ export function TeamSettingsView() {
     return member ? String(member.id) : roles[0] ? String(roles[0].id) : ""
   }, [roles])
 
-  if (!isLoaded || orgQuery.isLoading || membersQuery.isLoading) {
+  if (!isLoaded || orgQuery.isLoading || (canManageTeam && membersQuery.isLoading)) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -205,20 +213,21 @@ export function TeamSettingsView() {
   }
 
   if (!canManageTeam) {
+    const org = orgQuery.data
     return (
       <Card>
-        <CardContent className="space-y-2 p-6">
-          <p className="text-sm text-muted-foreground">
-            Only organization admins can manage the team. Ask an admin if you need to invite
-            someone.
-          </p>
-          {orgQuery.data ? (
-            <p className="text-sm">
-              You&apos;re in <strong>{orgQuery.data.name || "your organization"}</strong> (
-              {orgQuery.data.memberCount} member
-              {orgQuery.data.memberCount === 1 ? "" : "s"}).
+        <CardContent className="space-y-3 p-6">
+          <div>
+            <h2 className="text-lg font-medium">{org?.name || "Your organization"}</h2>
+            <p className="text-sm text-muted-foreground">
+              {org?.memberCount ?? 1} member{org?.memberCount === 1 ? "" : "s"} · you&apos;re a{" "}
+              {org?.myRoleName ?? "Member"}
             </p>
-          ) : null}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Only organization admins can invite people or change roles. Ask an admin if you need
+            access to something.
+          </p>
         </CardContent>
       </Card>
     )
@@ -245,22 +254,27 @@ export function TeamSettingsView() {
                 value={displayName}
                 onChange={(e) => setOrgName(e.target.value)}
                 placeholder="Acme Media"
+                disabled={!canRenameOrg}
               />
             </div>
-            <Button
-              disabled={
-                renameMutation.isPending ||
-                !displayName.trim() ||
-                displayName.trim() === (orgQuery.data?.name ?? "")
-              }
-              loading={renameMutation.isPending}
-              onClick={() => renameMutation.mutate(displayName.trim())}
-            >
-              Save name
-            </Button>
+            {canRenameOrg ? (
+              <Button
+                disabled={
+                  renameMutation.isPending ||
+                  !displayName.trim() ||
+                  displayName.trim() === (orgQuery.data?.name ?? "")
+                }
+                loading={renameMutation.isPending}
+                onClick={() => renameMutation.mutate(displayName.trim())}
+              >
+                Save name
+              </Button>
+            ) : null}
           </div>
         </CardContent>
       </Card>
+
+      <OrgBillingCard org={orgQuery.data} />
 
       <Card>
         <CardContent className="space-y-4 p-6">

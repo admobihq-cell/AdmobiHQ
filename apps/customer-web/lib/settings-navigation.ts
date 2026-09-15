@@ -1,10 +1,14 @@
 import { Activity, Bell, Compass, Users, UserCircle, type LucideIcon } from "lucide-react"
 
+import type { AdvertiserPermission } from "@workspace/ops-contracts"
+
 export type SettingsNavItem = {
   href: string
   label: string
   icon: LucideIcon
   description: string
+  /** Hidden unless the caller holds it. Omitted = visible to every member. */
+  permission?: AdvertiserPermission
 }
 
 export const settingsNavItems: SettingsNavItem[] = [
@@ -25,6 +29,7 @@ export const settingsNavItems: SettingsNavItem[] = [
     label: "Activity",
     icon: Activity,
     description: "Campaign decisions and team changes",
+    permission: "activity:read",
   },
   {
     href: "/settings/notifications",

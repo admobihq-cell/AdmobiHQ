@@ -6,6 +6,7 @@ import type {
   AdvertiserOrgDto,
   AdvertiserOrgMembersDto,
   AdvertiserOrgRenameInput,
+  AdvertiserOrgUpdateInput,
   AdvertiserRoleDto,
 } from "@workspace/ops-contracts"
 
@@ -20,16 +21,26 @@ export class OrgApiError extends Error {
   status: number
   reason?: string
   currentOrgName?: string
+  /** Rows that would be detached if the caller confirms leaving/deleting. */
+  campaignCount?: number
+  supportCaseCount?: number
 
   constructor(
     message: string,
     status: number,
-    extra?: { reason?: string; currentOrgName?: string },
+    extra?: {
+      reason?: string
+      currentOrgName?: string
+      campaignCount?: number
+      supportCaseCount?: number
+    },
   ) {
     super(message)
     this.status = status
     this.reason = extra?.reason
     this.currentOrgName = extra?.currentOrgName
+    this.campaignCount = extra?.campaignCount
+    this.supportCaseCount = extra?.supportCaseCount
   }
 }
 
@@ -44,6 +55,8 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
       error?: string
       reason?: string
       currentOrgName?: string
+      campaignCount?: number
+      supportCaseCount?: number
     } | null
     throw new OrgApiError(body?.error ?? `Request failed (${res.status})`, res.status, body ?? undefined)
   }
@@ -66,6 +79,14 @@ export async function getOrg(getToken: GetToken): Promise<AdvertiserOrgDto> {
 export async function renameOrg(
   getToken: GetToken,
   data: AdvertiserOrgRenameInput,
+): Promise<AdvertiserOrgDto> {
+  const res = await authedFetch(getToken, "/v1/customer/org", jsonInit("PATCH", data))
+  return res.json()
+}
+
+export async function updateOrg(
+  getToken: GetToken,
+  data: AdvertiserOrgUpdateInput,
 ): Promise<AdvertiserOrgDto> {
   const res = await authedFetch(getToken, "/v1/customer/org", jsonInit("PATCH", data))
   return res.json()
@@ -166,6 +187,8 @@ export async function getOrgDeletionStatus(getToken: GetToken): Promise<{
   canDeleteAccount: boolean
   isSoleOwner: boolean
   orgId?: number
+  campaignCount: number
+  supportCaseCount: number
 }> {
   const res = await authedFetch(getToken, "/v1/customer/org/deletion-status")
   return res.json()
