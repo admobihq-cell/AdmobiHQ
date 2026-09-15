@@ -16,6 +16,7 @@ import * as WebBrowser from "expo-web-browser"
 import { orgCan } from "@workspace/ops-contracts"
 
 import { Person } from "@/components/icons"
+import { AdminRequestsSection } from "@/components/settings/admin-requests-section"
 import { useTokenGetter } from "@/lib/auth/use-token-getter"
 import { EXPO_PUBLIC_APP_URL } from "@/lib/env"
 import {
@@ -323,31 +324,43 @@ export default function TeamSettingsScreen() {
 
           {(membersQuery.data?.invitations.length ?? 0) > 0 ? (
             <View style={styles.card}>
-              <Text style={styles.title}>Pending invitations</Text>
-              {(membersQuery.data?.invitations ?? []).map((invite) => (
-                <View key={invite.id} style={styles.row}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{invite.email}</Text>
-                    <Text style={styles.rowMeta}>{invite.roleName ?? "Member"}</Text>
+              <Text style={styles.title}>Invitations</Text>
+              {(membersQuery.data?.invitations ?? []).map((invite) => {
+                const declined = invite.status === "declined"
+                return (
+                  <View key={invite.id} style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rowTitle}>{invite.email}</Text>
+                      <Text style={styles.rowMeta}>
+                        {invite.roleName ?? "Member"}
+                        {declined ? " · declined" : ""}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <Pressable
+                        disabled={invite.roleId == null}
+                        onPress={() =>
+                          invite.roleId != null &&
+                          resendMutation.mutate({ email: invite.email, roleId: invite.roleId })
+                        }
+                      >
+                        <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                          {declined ? "Ask again" : "Resend"}
+                        </Text>
+                      </Pressable>
+                      {declined ? null : (
+                        <Pressable onPress={() => revokeMutation.mutate(invite.id)}>
+                          <Text style={styles.danger}>Revoke</Text>
+                        </Pressable>
+                      )}
+                    </View>
                   </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    <Pressable
-                      disabled={invite.roleId == null}
-                      onPress={() =>
-                        invite.roleId != null &&
-                        resendMutation.mutate({ email: invite.email, roleId: invite.roleId })
-                      }
-                    >
-                      <Text style={{ color: colors.primary, fontWeight: "600" }}>Resend</Text>
-                    </Pressable>
-                    <Pressable onPress={() => revokeMutation.mutate(invite.id)}>
-                      <Text style={styles.danger}>Revoke</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
+                )
+              })}
             </View>
           ) : null}
+
+          <AdminRequestsSection isOwner />
 
           <View style={styles.card}>
             <Text style={styles.title}>Roles</Text>
@@ -360,26 +373,30 @@ export default function TeamSettingsScreen() {
           </View>
         </>
       ) : (
-        <View style={styles.card}>
-          <Person size={24} color={colors.mutedForeground} />
-          <Text style={styles.title}>
-            {orgQuery.data?.name || "Your organization"}
-          </Text>
-          <Text style={styles.hint}>
-            {orgQuery.data?.memberCount ?? 1} member
-            {(orgQuery.data?.memberCount ?? 1) === 1 ? "" : "s"}. Ask an admin to invite people or
-            change roles.
-          </Text>
-          <Pressable
-            style={styles.button}
-            onPress={() => {
-              const base = (EXPO_PUBLIC_APP_URL ?? "https://app.admobihq.com").replace(/\/$/, "")
-              void WebBrowser.openBrowserAsync(`${base}/settings/team`)
-            }}
-          >
-            <Text style={styles.buttonText}>Open Team on web</Text>
-          </Pressable>
-        </View>
+        <>
+          <View style={styles.card}>
+            <Person size={24} color={colors.mutedForeground} />
+            <Text style={styles.title}>
+              {orgQuery.data?.name || "Your organization"}
+            </Text>
+            <Text style={styles.hint}>
+              {orgQuery.data?.memberCount ?? 1} member
+              {(orgQuery.data?.memberCount ?? 1) === 1 ? "" : "s"}. Only admins can invite people or
+              change roles.
+            </Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                const base = (EXPO_PUBLIC_APP_URL ?? "https://app.admobihq.com").replace(/\/$/, "")
+                void WebBrowser.openBrowserAsync(`${base}/settings/team`)
+              }}
+            >
+              <Text style={styles.buttonText}>Open Team on web</Text>
+            </Pressable>
+          </View>
+
+          <AdminRequestsSection isOwner={false} />
+        </>
       )}
     </ScrollView>
   )

@@ -467,6 +467,7 @@ model AdvertiserOrg {
   campaigns    Campaign[]
   supportCases SupportCase[]
   notifications CustomerNotification[]
+  adminRequests AdvertiserAdminRequest[]
 
   @@map("advertiser_orgs")
 }
@@ -538,6 +539,35 @@ model AdvertiserInvitation {
   @@unique([org_id, email])
   @@index([email])
   @@map("advertiser_invitations")
+}
+
+/// A member asking to be made an admin, with their reasoning, for an owner to
+/// review. Promotion is owner-only (see PATCH /v1/customer/org/members/[id]),
+/// so this is the sanctioned route for someone who needs more access — the
+/// alternative was letting `team:manage` self-promote, which is an escalation.
+///
+/// Only one pending request per member per org, enforced by a partial unique
+/// index (`WHERE status = 'pending'`) added by hand to the migration, since
+/// Prisma's schema DSL cannot express one.
+model AdvertiserAdminRequest {
+  id            Int           @id @default(autoincrement())
+  org_id        Int
+  org           AdvertiserOrg @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  clerk_user_id String
+  /// Why they need admin. Shown verbatim to reviewing owners.
+  reason        String
+  /// pending | approved | denied | withdrawn
+  status        String        @default("pending")
+  reviewed_by_clerk_user_id String?
+  reviewed_at   DateTime?
+  /// Optional note from the reviewing owner, shown to the requester.
+  review_note   String?
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+  @@index([org_id, status, created_at])
+  @@index([clerk_user_id])
+  @@map("advertiser_admin_requests")
 }
 
 /// One row per driver's profile-completion application, linked to the

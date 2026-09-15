@@ -58,7 +58,7 @@ Parity with customer-web, minus the billing-details form:
 
 | Screen | Notes |
 |--------|-------|
-| `app/(tabs)/settings/team.tsx` | Org rename, invite, member roles, transfer admin, remove, pending invites (resend / revoke) |
+| `app/(tabs)/settings/team.tsx` | Org rename, invite, member roles, transfer admin, remove, invitations (resend / revoke, declined shown with **Ask again**), and admin access requests |
 | `app/(tabs)/settings/roles.tsx` | Create, edit and delete org roles; editing a shared starter clones it for the org. Admin-only |
 | `app/(tabs)/settings/activity.tsx` | Org activity feed. Hidden from Settings without `activity:read` |
 | `app/(tabs)/settings/account.tsx` | Leave organization, or delete it when you're the sole admin (with the detached-campaign count in the confirm copy) |

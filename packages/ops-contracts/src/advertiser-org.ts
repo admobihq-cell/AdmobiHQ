@@ -51,6 +51,41 @@ export const advertiserRoleUpdateSchema = z.object({
 })
 export type AdvertiserRoleUpdateInput = z.infer<typeof advertiserRoleUpdateSchema>
 
+/** A member asking an owner to promote them. Promotion is owner-only, so this
+ * is the sanctioned alternative to self-escalation. */
+export const advertiserAdminRequestCreateSchema = z.object({
+  reason: z.string().trim().min(10).max(1000),
+})
+export type AdvertiserAdminRequestCreateInput = z.infer<
+  typeof advertiserAdminRequestCreateSchema
+>
+
+export const advertiserAdminRequestReviewSchema = z.object({
+  decision: z.enum(["approve", "deny"]),
+  /** Shown to the requester verbatim — required when denying, so "no" always
+   * comes with a reason. */
+  note: z.string().trim().max(1000).optional(),
+})
+export type AdvertiserAdminRequestReviewInput = z.infer<
+  typeof advertiserAdminRequestReviewSchema
+>
+
+export type AdvertiserAdminRequestStatus = "pending" | "approved" | "denied" | "withdrawn"
+
+export type AdvertiserAdminRequestDto = {
+  id: number
+  status: AdvertiserAdminRequestStatus
+  reason: string
+  /** Requester identity, resolved from Clerk. */
+  clerkUserId: string
+  name: string | null
+  email: string | null
+  reviewedByName: string | null
+  reviewedAt: string | null
+  reviewNote: string | null
+  createdAt: string
+}
+
 export type AdvertiserOrgDto = {
   id: number
   name: string

@@ -27,6 +27,23 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!member) return jsonError("Member not found", 404)
 
   const nextIsOwner = parsed.data.isOwner ?? member.is_owner
+
+  // Minting an admin is owner-only, matching transfer-ownership and
+  // delete-organization. team:manage alone must not be able to promote —
+  // least of all the caller themselves, which would turn any role granting
+  // team:manage into a path to the full permission set.
+  if (parsed.data.isOwner !== undefined && nextIsOwner !== member.is_owner) {
+    if (!auth.access.isOwner) {
+      return jsonError(
+        "Only an admin can change who is an admin. Request admin access instead.",
+        403,
+      )
+    }
+    if (member.clerk_user_id === auth.access.userId) {
+      return jsonError("You can't change your own admin status", 400)
+    }
+  }
+
   let nextRoleId = parsed.data.roleId !== undefined ? parsed.data.roleId : member.role_id
 
   if (nextIsOwner) {

@@ -60,7 +60,16 @@ vi.mock("@/lib/customer-clerk", () => ({
   getCustomerEmail: vi.fn(async (id: string) => `${id}@example.com`),
   getCustomerName: vi.fn(async () => "Test User"),
   getCustomerCompanyName: vi.fn(async () => "Test Co"),
-  customerClerkClient: { users: { getUserList: vi.fn(async () => ({ data: [] })) } },
+  customerClerkClient: {
+    users: {
+      // Mirrors the email convention above so findClerkUserIdByEmail resolves.
+      getUserList: vi.fn(async (params: { emailAddress?: string[]; userId?: string[] }) => {
+        const email = params.emailAddress?.[0]
+        if (!email) return { data: [] }
+        return { data: [{ id: email.replace(/@example\.com$/, "") }] }
+      }),
+    },
+  },
 }))
 vi.mock("@/lib/audit", () => ({
   auditFromCustomerUser: vi.fn(async () => undefined),
@@ -183,6 +192,75 @@ describe.skipIf(!databaseUrl)("customer org team routes", () => {
       actingUserId = ownerId
       actingIsOwner = true
       actingPermissions = new Set(["team:manage", "org:manage"])
+    },
+    30_000,
+  )
+
+  it(
+    "refuses to promote to admin unless the caller is an admin, and never self-promotes",
+    async () => {
+      const invitee = await prisma.advertiserMember.findUnique({
+        where: { clerk_user_id: inviteeId },
+      })
+      expect(invitee).toBeTruthy()
+
+      // A custom role can grant team:manage — without an is_owner guard this
+      // is a path from "manage the team" to the full permission set.
+      actingUserId = inviteeId
+      actingIsOwner = false
+      actingPermissions = new Set(["team:manage"])
+
+      const { PATCH } = await import("./members/[id]/route")
+      const selfPromote = await PATCH(
+        new Request("http://localhost", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isOwner: true }),
+        }),
+        { params: Promise.resolve({ id: String(invitee!.id) }) },
+      )
+      expect(selfPromote.status).toBe(403)
+
+      const unchanged = await prisma.advertiserMember.findUnique({
+        where: { clerk_user_id: inviteeId },
+      })
+      expect(unchanged?.is_owner).toBe(false)
+
+      // Role changes remain a team:manage concern.
+      const roleChange = await PATCH(
+        new Request("http://localhost", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roleId: memberRoleId }),
+        }),
+        { params: Promise.resolve({ id: String(invitee!.id) }) },
+      )
+      expect(roleChange.status).toBe(200)
+
+      actingUserId = ownerId
+      actingIsOwner = true
+      actingPermissions = new Set(["team:manage", "org:manage"])
+    },
+    30_000,
+  )
+
+  it(
+    "refuses to invite an address that is already an active member",
+    async () => {
+      actingUserId = ownerId
+      actingOrgId = orgId
+      actingIsOwner = true
+      actingPermissions = new Set(["team:manage", "org:manage"])
+
+      const { POST } = await import("./members/route")
+      const res = await POST(
+        new Request("http://localhost", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: `${inviteeId}@example.com`, roleId: memberRoleId }),
+        }),
+      )
+      expect(res.status).toBe(409)
     },
     30_000,
   )
