@@ -25,6 +25,7 @@ import {
   useSubmitCampaign,
   useUpdateCampaign,
 } from "@/lib/use-campaigns"
+import { useOrgPermissions } from "@/lib/use-org"
 
 const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
 
@@ -115,7 +116,7 @@ function DraftActions({
   onSaveDraft: () => void
   saving: boolean
   draftSaving: boolean
-  primary: ReactNode
+  primary?: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
@@ -148,6 +149,10 @@ export function CampaignWizard({
   const create = useCreateCampaign()
   const update = useUpdateCampaign()
   const submit = useSubmitCampaign()
+  // The server enforces campaigns:submit; hiding it here stops a Member from
+  // filling in the whole wizard only to be refused at the last click.
+  const { can } = useOrgPermissions()
+  const canSubmit = can("campaigns:submit")
 
   const [campaign, setCampaign] = useState<CampaignDto | null>(initialCampaign)
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStep(initialCampaign))
@@ -574,19 +579,26 @@ export function CampaignWizard({
             saving={saving || submit.isPending}
             draftSaving={draftSaving}
             primary={
-              <Button
-                type="button"
-                className="sm:flex-1"
-                loading={submit.isPending}
-                loadingText="Submitting…"
-                disabled={campaign.creatives.length === 0}
-                onClick={() => void handleSubmit()}
-              >
-                Submit for review
-              </Button>
+              canSubmit ? (
+                <Button
+                  type="button"
+                  className="sm:flex-1"
+                  loading={submit.isPending}
+                  loadingText="Submitting…"
+                  disabled={campaign.creatives.length === 0}
+                  onClick={() => void handleSubmit()}
+                >
+                  Submit for review
+                </Button>
+              ) : undefined
             }
           />
-          {campaign.creatives.length === 0 ? (
+          {!canSubmit ? (
+            <p className="text-xs text-muted-foreground">
+              Your role can draft campaigns but not submit them — submitting commits spend. Save the
+              draft and ask an organization admin to send it for review.
+            </p>
+          ) : campaign.creatives.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               Add at least one creative before submitting for review.
             </p>

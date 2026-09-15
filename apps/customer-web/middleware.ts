@@ -7,6 +7,9 @@ function isPublicRoute(pathname: string): boolean {
   return (
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/invitations/") ||
+    // App Links / Universal Links verification files — fetched by Google and
+    // Apple with no session, and a redirect here silently breaks deep linking.
+    pathname.startsWith("/.well-known/") ||
     pathname === "/api/health" ||
     pathname.startsWith("/api/health/")
   )
