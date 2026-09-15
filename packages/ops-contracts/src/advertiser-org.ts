@@ -7,6 +7,21 @@ export const advertiserOrgRenameSchema = z.object({
 })
 export type AdvertiserOrgRenameInput = z.infer<typeof advertiserOrgRenameSchema>
 
+/** Org profile edit. Every field optional so the name form and the billing form
+ * can PATCH independently; null clears a billing field. */
+export const advertiserOrgUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    billingEmail: z.string().trim().email().nullable().optional(),
+    /** KRA PIN, e.g. P051234567M. Validated loosely — ops corrects bad ones. */
+    taxPin: z.string().trim().min(4).max(20).nullable().optional(),
+  })
+  .refine(
+    (v) => v.name !== undefined || v.billingEmail !== undefined || v.taxPin !== undefined,
+    { message: "Provide at least one field to update" },
+  )
+export type AdvertiserOrgUpdateInput = z.infer<typeof advertiserOrgUpdateSchema>
+
 export const advertiserInviteSchema = z.object({
   email: z.string().trim().email(),
   roleId: z.number().int().positive(),
@@ -42,6 +57,25 @@ export type AdvertiserOrgDto = {
   memberCount: number
   /** Display label for the caller's membership — "Admin" or their role name. */
   myRoleName: string
+  /** Owners bypass every permission check, so clients must branch on this as
+   * well as `permissions` when deciding what to render. */
+  isOwner: boolean
+  /** The caller's effective permissions — owners get the full set. Clients hide
+   * actions they lack; the server check stays authoritative. */
+  permissions: AdvertiserPermission[]
+  /** Invoice recipient and KRA PIN. Only populated for callers holding
+   * `billing:read`; everyone else gets null. */
+  billingEmail: string | null
+  taxPin: string | null
+}
+
+/** True when the caller may perform `permission`. Mirrors requireCustomerPermission. */
+export function orgCan(
+  org: Pick<AdvertiserOrgDto, "isOwner" | "permissions"> | null | undefined,
+  permission: AdvertiserPermission,
+): boolean {
+  if (!org) return false
+  return org.isOwner || org.permissions.includes(permission)
 }
 
 export type AdvertiserMemberDto = {
@@ -96,6 +130,8 @@ export type OpsAdvertiserOrgCampaignSummaryDto = {
   status: string
   submittedAt: string | null
   contactEmail: string | null
+  /** Member who authored it, from Campaign.clerk_user_id. */
+  createdByName: string | null
 }
 
 /** Ops detail — members (active), pending invites, recent campaigns, projected activity. */

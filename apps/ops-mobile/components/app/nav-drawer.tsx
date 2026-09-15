@@ -72,6 +72,14 @@ const LINKS: DrawerLink[] = [
     permission: "campaigns",
   },
   {
+    key: "advertiser-orgs",
+    label: "Advertiser orgs",
+    description: "Who's on each advertiser account",
+    icon: Users,
+    href: "/(ops)/advertiser-orgs",
+    permission: "campaigns",
+  },
+  {
     key: "content",
     label: "Content",
     description: "Blog, help & media snapshot",
