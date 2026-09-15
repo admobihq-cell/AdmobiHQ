@@ -124,7 +124,9 @@ export function AdvertiserOrgDetailView({ orgId }: { orgId: number }) {
                     <div className="min-w-0">
                       <p className="font-medium">{campaign.name}</p>
                       <p className="truncate text-muted-foreground">
-                        {campaign.contactEmail ?? "—"}
+                        {campaign.createdByName
+                          ? `By ${campaign.createdByName}`
+                          : (campaign.contactEmail ?? "—")}
                         {campaign.submittedAt
                           ? ` · Submitted ${formatDateTime(campaign.submittedAt)}`
                           : ""}
