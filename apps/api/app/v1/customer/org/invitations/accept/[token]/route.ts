@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server"
 
 import { hashAdvertiserInviteToken } from "@/lib/advertiser-invite-token"
-import { toOrgDto } from "@/lib/advertiser-org"
+import {
+  detachAndDeleteOrg,
+  getOrgDetachmentImpact,
+  isUntouchedSoloOrg,
+  toOrgDto,
+} from "@/lib/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, requireCustomerIdentityAccess } from "@/lib/api-utils"
 import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
 import { getCustomerEmail } from "@/lib/customer-clerk"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ token: string }> }
@@ -13,6 +19,13 @@ type Params = { params: Promise<{ token: string }> }
 export async function POST(req: Request, { params }: Params) {
   const auth = await requireCustomerIdentityAccess()
   if (auth.error) return auth.error
+
+  const limited = await checkRateLimit(req, "advertiser-invite-accept", {
+    limit: 20,
+    windowSeconds: 600,
+    identifier: auth.access.userId,
+  })
+  if (limited) return limited
 
   const rawToken = (await params).token
   if (!rawToken?.trim()) return jsonError("Missing invitation token", 400)
@@ -32,6 +45,13 @@ export async function POST(req: Request, { params }: Params) {
     return jsonError("Invitation has expired", 410)
   }
 
+  // Checked before any membership mutation, and fails closed: an unresolvable
+  // address must not let a leaked token be redeemed by whoever holds it.
+  const actorEmail = await getCustomerEmail(auth.access.userId)
+  if (!actorEmail || actorEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+    return jsonError("Sign in with the email address this invitation was sent to", 403)
+  }
+
   let existing = await prisma.advertiserMember.findUnique({
     where: { clerk_user_id: auth.access.userId },
     include: { role: true },
@@ -47,27 +67,28 @@ export async function POST(req: Request, { params }: Params) {
     // just by visiting the app once (lazy bootstrap), so it's safe to offer
     // leaving it automatically. A real org with teammates is not.
     const isSoloOrg = existing.is_owner && memberCount === 1
+    // The common case: a workspace the invitee never knowingly created and has
+    // nothing in. Absorb it without a confirmation step.
+    const untouched = isSoloOrg && (await isUntouchedSoloOrg(existing.org_id, existing.is_owner))
 
-    if (isSoloOrg && leaveSoleOrg) {
-      // Re-verified above in this same request — delete their untouched solo
-      // org (same shape as POST .../delete-organization) so the code below
-      // falls through to creating a fresh membership in the invited org.
-      await prisma.$transaction(async (tx) => {
-        await tx.campaign.updateMany({ where: { org_id: existing!.org_id }, data: { org_id: null } })
-        await tx.supportCase.updateMany({
-          where: { org_id: existing!.org_id },
-          data: { org_id: null },
-        })
-        await tx.advertiserOrg.delete({ where: { id: existing!.org_id } })
-      })
+    if (isSoloOrg && (untouched || leaveSoleOrg)) {
+      // Re-verified above in this same request — delete their solo org (same
+      // shape as POST .../delete-organization) so the code below falls through
+      // to creating a fresh membership in the invited org.
+      await detachAndDeleteOrg(existing.org_id)
       invalidateAdvertiserAccessCache(auth.access.userId)
       existing = null
     } else if (isSoloOrg) {
+      const impact = await getOrgDetachmentImpact(existing.org_id)
       return NextResponse.json(
         {
           error: `You're the only member of "${currentOrgName}"`,
           reason: "solo_org_conflict",
           currentOrgName,
+          // Detached rows become unreachable by every advertiser, so the
+          // confirmation copy has to name what is lost.
+          campaignCount: impact.campaignCount,
+          supportCaseCount: impact.supportCaseCount,
         },
         { status: 409 },
       )
@@ -80,11 +101,6 @@ export async function POST(req: Request, { params }: Params) {
   }
   if (existing?.removed_at && existing.org_id !== invitation.org_id) {
     return jsonError("already belongs to an organization", 409)
-  }
-
-  const actorEmail = await getCustomerEmail(auth.access.userId)
-  if (actorEmail && actorEmail.toLowerCase() !== invitation.email.toLowerCase()) {
-    return jsonError("Sign in with the email address this invitation was sent to", 403)
   }
 
   const member = await prisma.$transaction(async (tx) => {

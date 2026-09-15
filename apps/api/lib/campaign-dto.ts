@@ -33,6 +33,9 @@ export function toCampaignDto(
   /** Resolved from AdvertiserOrg via campaign.org_id by ops routes.
    * Customer-facing routes pass nothing — an advertiser knows their own company. */
   companyName?: string | null,
+  /** Display name of the member who authored it, resolved from
+   * campaign.clerk_user_id. Null for pre-org campaigns. */
+  createdByName?: string | null,
 ): CampaignDto {
   return {
     id: campaign.id,
@@ -55,6 +58,7 @@ export function toCampaignDto(
     contact_name: campaign.contact_name,
     contact_email: campaign.contact_email,
     contact_phone: campaign.contact_phone,
+    created_by_name: createdByName ?? null,
     created_at: campaign.created_at.toISOString(),
     updated_at: campaign.updated_at.toISOString(),
     creatives: campaign.creatives.map(toCampaignCreativeDto),

@@ -55,6 +55,7 @@ export async function fanOutCustomerCampaignNotice(input: {
   await prisma.customerNotification.createMany({
     data: unique.map((clerk_user_id) => ({
       clerk_user_id,
+      org_id: input.orgId ?? null,
       type: input.type,
       title: input.title,
       body: input.body,
