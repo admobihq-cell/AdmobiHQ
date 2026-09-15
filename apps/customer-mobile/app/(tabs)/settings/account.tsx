@@ -1,5 +1,5 @@
 import { useAuth, useUser } from "@clerk/clerk-expo"
-import { Stack } from "expo-router"
+import { Stack, useRouter } from "expo-router"
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native"
@@ -13,6 +13,7 @@ import {
   LogoGoogle,
   Mail,
   Pencil,
+  People,
   Person,
   Phone,
   Shield,
@@ -20,7 +21,10 @@ import {
 import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { useTokenGetter } from "@/lib/auth/use-token-getter"
+import { deleteOrganization, getOrgDeletionStatus, leaveOrganization } from "@/lib/org-client"
 import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
+import { useOrg } from "@/lib/use-org"
 
 function formatMemberSince(date: Date | null | undefined): string | null {
   if (!date) return null
@@ -79,8 +83,56 @@ export default function AccountSettingsScreen() {
   const [lastName, setLastName] = useState(user?.lastName ?? "")
   const [saving, setSaving] = useState(false)
   const [signOutVisible, setSignOutVisible] = useState(false)
+  const [leaveOrgVisible, setLeaveOrgVisible] = useState(false)
+  const [deleteOrgVisible, setDeleteOrgVisible] = useState(false)
 
   const queryClient = useQueryClient()
+  const router = useRouter()
+  const getToken = useTokenGetter()
+  const orgQuery = useOrg()
+
+  const deletionStatusQuery = useQuery({
+    queryKey: ["customer-org-deletion-status"],
+    queryFn: () => getOrgDeletionStatus(getToken),
+    retry: false,
+  })
+  const isSoleOwner = deletionStatusQuery.data?.isSoleOwner === true
+  const detachedByOrgDelete = [
+    deletionStatusQuery.data?.campaignCount
+      ? `${deletionStatusQuery.data.campaignCount} campaign${deletionStatusQuery.data.campaignCount === 1 ? "" : "s"}`
+      : null,
+    deletionStatusQuery.data?.supportCaseCount
+      ? `${deletionStatusQuery.data.supportCaseCount} support case${deletionStatusQuery.data.supportCaseCount === 1 ? "" : "s"}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" and ")
+
+  async function refreshOrgQueries() {
+    await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+    await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
+    await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
+  }
+
+  const leaveOrgMutation = useMutation({
+    mutationFn: () => leaveOrganization(getToken),
+    onSuccess: async () => {
+      setLeaveOrgVisible(false)
+      await refreshOrgQueries()
+      router.replace("/(tabs)")
+    },
+    onError: (err: Error) => Alert.alert("Couldn't leave", err.message),
+  })
+
+  const deleteOrgMutation = useMutation({
+    mutationFn: () => deleteOrganization(getToken),
+    onSuccess: async () => {
+      setDeleteOrgVisible(false)
+      await refreshOrgQueries()
+      router.replace("/(tabs)")
+    },
+    onError: (err: Error) => Alert.alert("Couldn't delete", err.message),
+  })
 
   const email = user?.primaryEmailAddress?.emailAddress
   const emailVerified = user?.primaryEmailAddress?.verification?.status === "verified"
@@ -510,6 +562,37 @@ export default function AccountSettingsScreen() {
           </View>
         </View>
 
+        {orgQuery.data ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Organization</Text>
+            <View style={styles.group}>
+              {isSoleOwner ? (
+                <SettingsRow
+                  icon={People}
+                  label="Delete organization"
+                  description={
+                    detachedByOrgDelete
+                      ? `You're the only admin. This detaches ${detachedByOrgDelete} permanently.`
+                      : "You're the only admin — transfer admin in Team settings, or delete the organization."
+                  }
+                  onPress={() => setDeleteOrgVisible(true)}
+                  destructive
+                  showChevron={false}
+                />
+              ) : (
+                <SettingsRow
+                  icon={People}
+                  label={`Leave ${orgQuery.data.name || "organization"}`}
+                  description="You'll lose access to its campaigns and activity immediately"
+                  onPress={() => setLeaveOrgVisible(true)}
+                  destructive
+                  showChevron={false}
+                />
+              )}
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.group}>
@@ -524,6 +607,32 @@ export default function AccountSettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={leaveOrgVisible}
+        title={`Leave ${orgQuery.data?.name || "this organization"}?`}
+        message="You'll lose access to its campaigns, reports, and activity immediately. An admin can re-invite you later."
+        confirmLabel={leaveOrgMutation.isPending ? "Leaving…" : "Leave"}
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={() => leaveOrgMutation.mutate()}
+        onCancel={() => setLeaveOrgVisible(false)}
+      />
+
+      <ConfirmDialog
+        visible={deleteOrgVisible}
+        title="Delete this organization?"
+        message={
+          detachedByOrgDelete
+            ? `Removes the team and memberships. ${detachedByOrgDelete} stay on our ops record but become permanently unreachable from any Admobi account.`
+            : "Removes the team and memberships. This can't be undone."
+        }
+        confirmLabel={deleteOrgMutation.isPending ? "Deleting…" : "Delete"}
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={() => deleteOrgMutation.mutate()}
+        onCancel={() => setDeleteOrgVisible(false)}
+      />
 
       <ConfirmDialog
         visible={signOutVisible}
