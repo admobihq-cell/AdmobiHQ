@@ -27,5 +27,10 @@ export default mergeConfig(shared, {
       "app/**/*.{test,spec}.{ts,tsx}",
       "scripts/**/*.{test,spec}.{ts,tsx}",
     ],
+    // Several suites talk to the shared Neon instance, each with its own
+    // Prisma pool. Run files one at a time — in parallel they exhaust the
+    // connection limit and fail with pg-pool timeouts that look like test
+    // failures but aren't.
+    fileParallelism: false,
   },
 })
