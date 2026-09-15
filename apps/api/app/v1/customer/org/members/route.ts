@@ -7,7 +7,7 @@ import {
   getAssignableRole,
   resolveInviterLabel,
   toInvitationDto,
-  toMemberDto,
+  toMemberDtos,
 } from "@/lib/advertiser-org"
 import {
   generateAdvertiserInviteToken,
@@ -15,6 +15,7 @@ import {
 } from "@/lib/advertiser-invite-token"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { sendEmail } from "@/lib/email/send-email"
 import { renderTemplate } from "@/lib/email/render-template"
 import {
@@ -22,6 +23,10 @@ import {
   advertiserInviteAcceptUrl,
 } from "@/lib/email/templates/AdvertiserOrgInvite"
 import { prisma } from "@/lib/prisma"
+
+/** Bounds the roster payload. v1 allows one org per user, so real orgs are far
+ * smaller than this — the cap only stops a pathological row count. */
+const MAX_ROSTER_ROWS = 200
 
 export async function GET() {
   const auth = await requireCustomerPermissionAccess("team:manage")
@@ -32,6 +37,7 @@ export async function GET() {
       where: { org_id: auth.access.orgId, removed_at: null },
       include: { role: true },
       orderBy: [{ is_owner: "desc" }, { created_at: "asc" }],
+      take: MAX_ROSTER_ROWS,
     }),
     prisma.advertiserInvitation.findMany({
       where: {
@@ -41,6 +47,7 @@ export async function GET() {
         expires_at: { gt: new Date() },
       },
       orderBy: { created_at: "desc" },
+      take: MAX_ROSTER_ROWS,
     }),
   ])
 
@@ -52,7 +59,7 @@ export async function GET() {
     : []
   const roleNameById = new Map(roles.map((r) => [r.id, r.name]))
 
-  const membersDto = await Promise.all(members.map((m) => toMemberDto(m)))
+  const membersDto = await toMemberDtos(members)
 
   return NextResponse.json({
     members: membersDto,
@@ -68,6 +75,16 @@ export async function GET() {
 export async function POST(req: Request) {
   const auth = await requireCustomerPermissionAccess("team:manage")
   if (auth.error) return auth.error
+
+  // This route sends mail from the Admobi domain on every call, so it is
+  // throttled per inviter — an unbounded loop here is an outbound-spam vector
+  // that costs deliverability, not just compute.
+  const limited = await checkRateLimit(req, "advertiser-invite", {
+    limit: 10,
+    windowSeconds: 600,
+    identifier: auth.access.userId,
+  })
+  if (limited) return limited
 
   const parsed = await parseJsonBody(req, advertiserInviteSchema)
   if ("error" in parsed) return parsed.error

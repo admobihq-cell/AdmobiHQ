@@ -3,8 +3,9 @@ import { PrismaClient } from "@prisma/client"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { isAdvertiserVisibleActivity, toAdvertiserActivityItem } from "@/lib/advertiser-activity"
+import { testDatabaseUrl } from "@/lib/test-database-url"
 
-const databaseUrl = process.env.DATABASE_URL
+const databaseUrl = testDatabaseUrl()
 
 let actingUserId = ""
 let actingOrgId = 0
