@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { exportFileName } from "@workspace/ops-contracts"
 
-import { jsonError, requireCustomerAccess } from "@/lib/api-utils"
+import { jsonError, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { buildBudgetStatement } from "@/lib/campaign-statement"
 import { listOwnedCampaigns } from "@/lib/campaign-store"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
@@ -17,10 +17,10 @@ import { renderPdf } from "@/lib/pdf/render-pdf"
  * Admobi letterhead. listOwnedCampaigns scopes to the caller.
  */
 export async function GET() {
-  const auth = await requireCustomerAccess()
+  const auth = await requireCustomerPermissionAccess("reports:read")
   if (auth.error) return auth.error
 
-  const campaigns = await listOwnedCampaigns(auth.access.userId)
+  const campaigns = await listOwnedCampaigns(auth.access.orgId)
   const generatedAt = new Date().toLocaleDateString("en-KE", {
     year: "numeric",
     month: "short",

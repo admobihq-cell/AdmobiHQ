@@ -1,5 +1,7 @@
 "use client"
 
+import { useAuth } from "@clerk/nextjs"
+
 import { useMemo } from "react"
 import {
   useInfiniteQuery,
@@ -10,7 +12,6 @@ import {
 
 import type { NotificationFeedItem } from "@workspace/ui/lib/notifications"
 
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import {
   fetchCustomerAnnouncements,
   markCustomerAnnouncementsRead,
@@ -50,7 +51,7 @@ type AnyInboxPage = {
  * this is that pattern applied to advertisers.
  */
 export function useCustomerNotifications() {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
   const announcementsQuery = useInfiniteQuery({

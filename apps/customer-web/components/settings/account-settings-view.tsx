@@ -22,33 +22,13 @@ import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-import { readCompanyName, withCompanyName } from "@/lib/company-name"
+import {
+  deleteOrganization,
+  getOrg,
+  getOrgDeletionStatus,
+  leaveOrganization,
+} from "@/lib/org-client"
 import { AccountSettingsSkeleton } from "@/components/skeletons/account-settings-skeleton"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null, isLoaded: true }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useUser() / useAuth() must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
-
-function useSignedInAuth() {
-  return useAuth()
-}
-
-function useNoAuth() {
-  return { sessionId: null as string | null, signOut: async () => {} }
-}
-
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 /** Clerk rejects a taken username or a malformed value with a structured
  * ClerkAPIError list rather than a plain Error. Surfacing that text matters —
@@ -120,20 +100,65 @@ type SessionRow = {
 }
 
 export function AccountSettingsView() {
-  const { user, isLoaded } = useUserIfEnabled()
-  const { sessionId, signOut } = useAuthIfEnabled()
+  const { user, isLoaded } = useUser()
+  const { sessionId, signOut, getToken } = useAuth()
   const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState(false)
   const [firstName, setFirstName] = useState(user?.firstName ?? "")
   const [lastName, setLastName] = useState(user?.lastName ?? "")
   const [username, setUsername] = useState(user?.username ?? "")
-  const [company, setCompany] = useState(readCompanyName(user?.unsafeMetadata))
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteOrgOpen, setDeleteOrgOpen] = useState(false)
+  const [leaveOrgOpen, setLeaveOrgOpen] = useState(false)
+
+  const orgQuery = useQuery({
+    queryKey: ["customer-org", user?.id],
+    queryFn: () => getOrg(getToken),
+    enabled: Boolean(user),
+    staleTime: 60_000,
+    retry: false,
+  })
+  const isOrgOwner = orgQuery.data?.myRoleName === "Admin"
+
+  const deletionStatusQuery = useQuery({
+    queryKey: ["customer-org-deletion-status", user?.id],
+    queryFn: () => getOrgDeletionStatus(getToken),
+    enabled: Boolean(user?.deleteSelfEnabled),
+    retry: false,
+  })
+  const isSoleOwner = deletionStatusQuery.data?.isSoleOwner === true
+  const canDeleteAccount = deletionStatusQuery.data?.canDeleteAccount !== false
+  const detachedByOrgDelete = [
+    deletionStatusQuery.data?.campaignCount
+      ? `${deletionStatusQuery.data.campaignCount} campaign${deletionStatusQuery.data.campaignCount === 1 ? "" : "s"}`
+      : null,
+    deletionStatusQuery.data?.supportCaseCount
+      ? `${deletionStatusQuery.data.supportCaseCount} support case${deletionStatusQuery.data.supportCaseCount === 1 ? "" : "s"}`
+      : null,
+  ].filter(Boolean)
+
+  const deleteOrgMutation = useMutation({
+    mutationFn: () => deleteOrganization(getToken),
+    onSuccess: async () => {
+      setDeleteOrgOpen(false)
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+    },
+  })
+
+  const leaveOrgMutation = useMutation({
+    mutationFn: () => leaveOrganization(getToken),
+    onSuccess: async () => {
+      setLeaveOrgOpen(false)
+      await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-deletion-status"] })
+    },
+  })
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
-  const companyName = readCompanyName(user?.unsafeMetadata)
   const email = user?.primaryEmailAddress?.emailAddress
   const emailVerified = user?.primaryEmailAddress?.verification?.status === "verified"
   const googleAccount = user?.externalAccounts?.find((account) => account.provider === "google")
@@ -165,7 +190,6 @@ export function AccountSettingsView() {
       firstName: string
       lastName: string
       username: string
-      company: string
     }) =>
       user!.update({
         firstName: input.firstName,
@@ -174,7 +198,6 @@ export function AccountSettingsView() {
         // has the attribute enabled and the user actually typed one, otherwise
         // an untouched field would wipe an existing handle.
         ...(input.username ? { username: input.username } : {}),
-        unsafeMetadata: withCompanyName(user!.unsafeMetadata, input.company),
       }),
     onSuccess: () => setEditing(false),
   })
@@ -205,7 +228,6 @@ export function AccountSettingsView() {
     setFirstName(user?.firstName ?? "")
     setLastName(user?.lastName ?? "")
     setUsername(user?.username ?? "")
-    setCompany(readCompanyName(user?.unsafeMetadata))
     updateProfileMutation.reset()
     setEditing(true)
   }
@@ -216,7 +238,6 @@ export function AccountSettingsView() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       username: username.trim(),
-      company: company.trim(),
     })
   }
   function handleRevoke(row: SessionRow) {
@@ -253,8 +274,7 @@ export function AccountSettingsView() {
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {companyName || "No company set"}
-                    {user.username ? ` · @${user.username}` : ""}
+                    {user.username ? `@${user.username}` : "No username set"}
                   </p>
                   {memberSince ? (
                     <p className="text-xs text-muted-foreground">Member since {memberSince}</p>
@@ -301,21 +321,6 @@ export function AccountSettingsView() {
                       disabled={saving}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Company or organization</Label>
-                    <Input
-                      id="company"
-                      value={company}
-                      onChange={(event) => setCompany(event.target.value)}
-                      placeholder="Acme Media"
-                      autoComplete="organization"
-                      disabled={saving}
-                      aria-describedby="company-hint"
-                    />
-                    <p id="company-hint" className="text-xs text-muted-foreground">
-                      Required — ops sees this on every campaign you book.
-                    </p>
-                  </div>
                 </div>
                 {saveError ? (
                   <p className="text-sm text-destructive">
@@ -326,7 +331,7 @@ export function AccountSettingsView() {
                   <Button
                     type="button"
                     onClick={handleSave}
-                    disabled={!company.trim()}
+                    disabled={saving}
                     loading={saving}
                     loadingText="Saving…"
                   >
@@ -474,6 +479,46 @@ export function AccountSettingsView() {
         </div>
       ) : null}
 
+      {user && orgQuery.data ? (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Organization
+          </p>
+          <Card className="shadow-none">
+            <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Leave {orgQuery.data.name || "this organization"}
+                </p>
+                <p className="max-w-prose text-xs text-muted-foreground">
+                  {isOrgOwner
+                    ? "You're the admin — transfer admin to someone else in Team settings before you can leave."
+                    : "You'll lose access to its campaigns, reports, and activity immediately. An admin can re-invite you later."}
+                </p>
+              </div>
+              {isOrgOwner ? (
+                <Button type="button" variant="outline" size="sm" asChild className="shrink-0">
+                  <a href="/settings/team">Transfer in Team settings</a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => {
+                    leaveOrgMutation.reset()
+                    setLeaveOrgOpen(true)
+                  }}
+                >
+                  Leave organization
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
       {user?.deleteSelfEnabled ? (
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -486,27 +531,112 @@ export function AccountSettingsView() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Delete this account</p>
                   <p className="max-w-prose text-xs text-muted-foreground">
-                    Removes your sign-in and profile permanently. Campaigns already booked stay on
-                    our records for billing and reporting — contact support to have those removed.
+                    {isSoleOwner
+                      ? "You're the only admin of this organization. Transfer admin in Team settings, or delete the organization, before deleting your account."
+                      : "Removes your sign-in and profile permanently. Campaigns already booked stay on our records for billing and reporting — contact support to have those removed."}
                   </p>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="shrink-0"
-                onClick={() => {
-                  deleteAccountMutation.reset()
-                  setDeleteOpen(true)
-                }}
-              >
-                Delete account
-              </Button>
+              {isSoleOwner ? (
+                <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <a href="/settings/team">Transfer in Team settings</a>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      deleteOrgMutation.reset()
+                      setDeleteOrgOpen(true)
+                    }}
+                  >
+                    Delete organization
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={!canDeleteAccount || deletionStatusQuery.isLoading}
+                  onClick={() => {
+                    deleteAccountMutation.reset()
+                    setDeleteOpen(true)
+                  }}
+                >
+                  Delete account
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
       ) : null}
+
+      <AlertDialog open={deleteOrgOpen} onOpenChange={setDeleteOrgOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this organization?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Removes the team and memberships. Afterward you can delete your personal account.
+              {detachedByOrgDelete.length
+                ? ` ${detachedByOrgDelete.join(" and ")} stay on our ops record but become
+                   permanently unreachable from any Admobi account — export or contact support
+                   first if you still need them.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteOrgMutation.error ? (
+            <p className="text-sm text-destructive">
+              {(deleteOrgMutation.error as Error).message || "Could not delete the organization."}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteOrgMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteOrgMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault()
+                deleteOrgMutation.mutate()
+              }}
+            >
+              {deleteOrgMutation.isPending ? "Deleting…" : "Delete organization"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={leaveOrgOpen} onOpenChange={setLeaveOrgOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {orgQuery.data?.name || "this organization"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You&apos;ll lose access to its campaigns, reports, and activity immediately. An admin
+              can re-invite you later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {leaveOrgMutation.error ? (
+            <p className="text-sm text-destructive">
+              {(leaveOrgMutation.error as Error).message || "Could not leave the organization."}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaveOrgMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={leaveOrgMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault()
+                leaveOrgMutation.mutate()
+              }}
+            >
+              {leaveOrgMutation.isPending ? "Leaving…" : "Leave organization"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

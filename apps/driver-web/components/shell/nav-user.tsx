@@ -31,33 +31,12 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { driverHostLabel } from "@/lib/site-urls"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as driver-session.ts —
- * useUser() must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 function useSignOut() {
   const { signOut } = useClerk()
   return signOut
 }
-
-function useNoSignOut() {
-  return async () => {}
-}
-
-const useSignOutIfEnabled = isAuthEnabled() ? useSignOut : useNoSignOut
 
 function getInitials(name: string): string {
   return name
@@ -70,8 +49,8 @@ function getInitials(name: string): string {
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { user } = useUserIfEnabled()
-  const signOut = useSignOutIfEnabled()
+  const { user } = useUser()
+  const signOut = useSignOut()
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")

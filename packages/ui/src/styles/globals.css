@@ -47,7 +47,8 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-    --font-sans: var(--font-sans);        
+    --font-sans: var(--font-sans);
+    --animate-caret-blink: caret-blink 1.25s ease-out infinite;
 }
 
 /* Admobi brand tokens — warm neutrals + terra accent (Committed strategy, OKLCH) */
@@ -177,6 +178,19 @@
   }
   100% {
     transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* <InputOTPSlot>'s fake caret in the active empty box. */
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
     opacity: 0;
   }
 }

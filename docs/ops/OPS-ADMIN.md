@@ -56,6 +56,16 @@ Sidebar **Campaigns** (permission: `campaigns`) — list + detail for advertiser
 
 Creative tiles use the authenticated ops file proxy (image lightbox / `<video controls>`) and show `checkCreativeDimensions` compliance. Do not confuse with **Campaign Leads** (marketing `/start-campaign` form) — that is a different entity and alert type (`campaign` vs `campaign_submission`).
 
+### Advertiser orgs
+
+Sidebar **Advertiser orgs** (permission: `campaigns`) — directory of `AdvertiserOrg` rows plus detail: active members and roles, pending invitations, org campaigns (links into Campaigns detail), and the same allowlisted activity projection advertisers see. Campaign detail **Company** links here when `org_id` is set, and **Created by** names the org member who authored the campaign (resolved from the retained `Campaign.clerk_user_id`). ops-mobile has the same list + detail under the drawer's **Advertiser orgs** entry.
+
+A campaign whose `org_id` is null was detached when its org was deleted (or abandoned during invite acceptance) — it stays on the ops record for billing and reporting, but no advertiser can reach it. It will not appear under any org.
+
+### Announcements
+
+Compose supports merge tags `{{first_name}}` (Clerk) and `{{org_name}}` (active `AdvertiserOrg` membership). Org name is filled for customer recipients only; drivers and anonymous tokens get the tag stripped. Preview in the composer uses sample values “Jordan” / “Acme Ads”.
+
 ### Activity / audit
 
 Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET /v1/audit`.

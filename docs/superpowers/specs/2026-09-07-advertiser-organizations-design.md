@@ -399,6 +399,15 @@ Each is additive on top of this model, with the migration path noted:
   exists; this is CRUD plus UI. Starter roles are not deletable in v1, so the
   "reassign members before deleting a role" guard that `/v1/roles/[roleId]`
   enforces for ops is deferred with it.
+
+### Addendum (2026-09-12) — Custom roles shipped
+
+Custom per-org roles and permission editing are live: Settings → Team → Roles,
+`/v1/customer/org/roles` (+ `[roleId]`). Saving a shared starter clones it for
+that org (starters stay global). Org-scoped roles can be created/renamed/deleted
+with the ops-style reassign-before-delete guard. The bullet above is retained as
+the historical out-of-scope note.
+
 - **Moving media, reports and wallet to org scope.** Same one-column pattern as
   `Campaign`, once those APIs are backend-backed.
 - **A Better Auth migration.** §3.3.
@@ -705,3 +714,15 @@ it is the surface ops will need to answer "who else is on this account?".
 - Re-inviting a removed member reactivates the existing row rather than
   violating the unique constraint on `clerk_user_id`.
 - A Viewer sees only their own support cases; a Manager sees all the org's.
+
+## Addendum (2026-09-13): starter roles reduced to one
+
+Shipped with three starter roles (Manager / Member / Viewer, §5 above); reduced
+to a single starter, **Member**, keeping its original permission set (no
+`campaigns:submit` — that stays admin-only). Manager and Viewer were unused in
+production at the time of the change (zero members, zero pending invites on
+either), so the rows were deleted outright rather than migrated. Orgs that want
+a tiered submitter or read-only role create one themselves via the existing
+custom-role UI (Settings → Team → Roles) — nothing about that path changed,
+only the out-of-the-box default. See [[docs/shared/AUTH.md]] for the current
+state.

@@ -79,6 +79,9 @@ export function CampaignDetailView({ id }: { id: number }) {
     { label: "Format", value: FORMAT_LABELS[campaign.format] ?? campaign.format },
     { label: "Objective", value: campaign.objective ?? "—" },
     { label: "Corridors", value: campaign.corridors ?? "—" },
+    ...(campaign.created_by_name
+      ? [{ label: "Created by", value: campaign.created_by_name }]
+      : []),
   ]
 
   return (

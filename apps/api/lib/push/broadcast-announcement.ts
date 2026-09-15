@@ -1,6 +1,8 @@
 import type { AnnouncementTargetApp, BroadcastCreateInput } from "@workspace/ops-contracts"
 
+import { getOrgNamesForClerkUsers } from "@/lib/advertiser-org-name"
 import { prisma } from "@/lib/prisma"
+import { renderAnnouncementTemplate } from "@/lib/push/announcement-template"
 import { resolveFirstNames } from "@/lib/push/recipient-names"
 import { sendExpoPushMessages } from "@/lib/push/expo-push"
 import { recordPushTickets, type PushAudience } from "@/lib/push/receipts"
@@ -91,23 +93,6 @@ async function collectWebRecipients(app: "customer-web" | "driver-web"): Promise
   return rows.map((row) => ({ clerkUserId: row.clerk_user_id }))
 }
 
-function renderTemplate(template: string, firstName: string | undefined): string {
-  if (!firstName) {
-    // Strip the merge field, then clean up what authoring commonly leaves behind:
-    // "Hi {{first_name}}, ..." -> "Hi , ..." -> collapse the stray space before the
-    // comma -> "Hi, ...". If the tag opened the string ("{{first_name}}, welcome
-    // back"), there's nothing to attach the comma to, so drop the orphaned
-    // leading comma too.
-    return template
-      .replace(/\{\{\s*first_name\s*\}\}/g, "")
-      .replace(/ {2,}/g, " ")
-      .replace(/ +([,.!?;:])/g, "$1")
-      .replace(/^[,;:]\s*/, "")
-      .trim()
-  }
-  return template.replace(/\{\{\s*first_name\s*\}\}/g, firstName)
-}
-
 export async function broadcastAnnouncement(
   input: BroadcastCreateInput,
   sender: BroadcastSender,
@@ -167,9 +152,10 @@ export async function broadcastAnnouncement(
     ...(mobileRecipientsByApp.get("driver-mobile") ?? []).map((r) => r.clerkUserId),
     ...(webRecipientsByApp.get("driver-web") ?? []).map((r) => r.clerkUserId),
   ]
-  const [customerNames, driverNames] = await Promise.all([
+  const [customerNames, driverNames, customerOrgNames] = await Promise.all([
     resolveFirstNames("customer", customerIds),
     resolveFirstNames("driver", driverIds),
+    getOrgNamesForClerkUsers(customerIds),
   ])
   const namesByAudience: Record<"customer" | "driver", Map<string, string>> = {
     customer: customerNames,
@@ -199,9 +185,15 @@ export async function broadcastAnnouncement(
     const payloads: { to: string; title: string; body: string; clerkUserId: string }[] = []
 
     for (const recipient of recipients) {
-      const name = names.get(recipient.clerkUserId)
-      const title = renderTemplate(input.title, name)
-      const body = renderTemplate(input.body, name)
+      const vars = {
+        firstName: names.get(recipient.clerkUserId),
+        orgName:
+          audience === "customer"
+            ? (customerOrgNames.get(recipient.clerkUserId) ?? undefined)
+            : undefined,
+      }
+      const title = renderAnnouncementTemplate(input.title, vars)
+      const body = renderAnnouncementTemplate(input.body, vars)
 
       deliveryRows.push({
         broadcast_id: broadcast.id,
@@ -218,8 +210,8 @@ export async function broadcastAnnouncement(
       }
     }
 
-    const unpersonalizedTitle = renderTemplate(input.title, undefined)
-    const unpersonalizedBody = renderTemplate(input.body, undefined)
+    const unpersonalizedTitle = renderAnnouncementTemplate(input.title)
+    const unpersonalizedBody = renderAnnouncementTemplate(input.body)
     for (const token of anonymousTokensByApp.get(app) ?? []) {
       payloads.push({
         to: token,
@@ -268,13 +260,19 @@ export async function broadcastAnnouncement(
     const recipients = webRecipientsByApp.get(app) ?? []
 
     for (const recipient of recipients) {
-      const name = names.get(recipient.clerkUserId)
+      const vars = {
+        firstName: names.get(recipient.clerkUserId),
+        orgName:
+          audience === "customer"
+            ? (customerOrgNames.get(recipient.clerkUserId) ?? undefined)
+            : undefined,
+      }
       deliveryRows.push({
         broadcast_id: broadcast.id,
         clerk_user_id: recipient.clerkUserId,
         app,
-        title: renderTemplate(input.title, name),
-        body: renderTemplate(input.body, name),
+        title: renderAnnouncementTemplate(input.title, vars),
+        body: renderAnnouncementTemplate(input.body, vars),
         image_url: input.image_url ?? null,
         category: input.category,
       })

@@ -36,8 +36,13 @@ function getClientIp(req: Request): string {
 }
 
 /**
- * Rate-limits a public route by client IP. Returns a 429 response to
- * short-circuit the handler, or null to let the request proceed.
+ * Rate-limits a route by client IP, or by `identifier` when given. Returns a
+ * 429 response to short-circuit the handler, or null to let the request
+ * proceed.
+ *
+ * Authenticated routes should pass the Clerk user id as `identifier`: Kenyan
+ * mobile carriers NAT many subscribers behind one address, so IP keying would
+ * throttle unrelated advertisers together.
  *
  * Fails open when Upstash isn't configured (UPSTASH_REDIS_REST_URL /
  * UPSTASH_REDIS_REST_TOKEN unset) rather than blocking every request — local
@@ -46,12 +51,16 @@ function getClientIp(req: Request): string {
 export async function checkRateLimit(
   req: Request,
   bucket: string,
-  { limit = 10, windowSeconds = 60 }: { limit?: number; windowSeconds?: number } = {},
+  {
+    limit = 10,
+    windowSeconds = 60,
+    identifier,
+  }: { limit?: number; windowSeconds?: number; identifier?: string } = {},
 ) {
   const limiter = getLimiter(bucket, limit, windowSeconds)
   if (!limiter) return null
 
-  const { success } = await limiter.limit(getClientIp(req))
+  const { success } = await limiter.limit(identifier ?? getClientIp(req))
   if (success) return null
 
   return jsonError("Too many requests — please try again shortly.", 429)

@@ -4,7 +4,6 @@ import { useAuth } from "@clerk/clerk-expo"
 import { useRouter } from "expo-router"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import {
   addPushReceivedListener,
   addPushResponseListener,
@@ -14,25 +13,6 @@ import {
 import { registerCustomerPushToken } from "@/lib/push-registration"
 import { CAMPAIGN_NOTIFICATIONS_KEY } from "@/lib/use-customer-inbox"
 
-// useAuth() throws when called without a ClerkProvider ancestor, and
-// app/_layout.tsx only mounts ClerkProvider when isAuthEnabled() is true — its
-// disabled branch renders PushRegistrationBridge with no provider at all. So
-// this must never call useAuth() when auth is off. isAuthEnabled() is fixed for
-// the app's lifetime, so pick the hook implementation once at module load
-// instead of branching inside a single hook body.
-type Session = { getToken: (() => Promise<string | null>) | undefined; userId: string | null }
-
-function useSessionEnabled(): Session {
-  const { getToken, userId } = useAuth()
-  return { getToken, userId: userId ?? null }
-}
-
-function useSessionDisabled(): Session {
-  return { getToken: undefined, userId: null }
-}
-
-const useSession = isAuthEnabled() ? useSessionEnabled : useSessionDisabled
-
 /**
  * Registers this device's Expo push token with the API so ops staff can
  * broadcast announcements to it and campaign decisions can reach this one
@@ -40,7 +20,7 @@ const useSession = isAuthEnabled() ? useSessionEnabled : useSessionDisabled
  */
 export function usePushRegistration() {
   const pushSupported = isNotificationsSupported()
-  const { getToken, userId } = useSession()
+  const { getToken, userId } = useAuth()
   const router = useRouter()
   const queryClient = useQueryClient()
 

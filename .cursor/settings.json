@@ -2,6 +2,9 @@
   "plugins": {
     "prisma": {
       "enabled": true
+    },
+    "vercel": {
+      "enabled": true
     }
   }
 }

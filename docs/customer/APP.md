@@ -29,8 +29,19 @@ Sidebar app shell. What is real vs placeholder:
 | `/reports` | **Coming soon** |
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
 | `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
-| `/settings/account`, `/settings/notifications`, `/settings/tour` | Working UI |
-| `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
+| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix), **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`), and **admin access requests** (members ask with a reason; owners approve or decline with a note) |
+| `/invitations/[token]` | Public accept-invitation landing — shows who invited you and what accepting would replace, then **Accept** or **Decline**. Never auto-accepts. Offers **Create an account** first for signed-out visitors, since most invitees have never used Admobi |
+| `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), always on |
+
+### Org permissions in the UI
+
+`GET /v1/customer/org` returns the caller's `isOwner` and `permissions[]`. Read it through [lib/use-org.ts](../../apps/customer-web/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) with the shared `orgCan()` helper rather than inferring capability from a failed request — a network blip must not read as "demoted". What this gates today:
+
+- **Campaign wizard** hides *Submit for review* without `campaigns:submit` and explains why, instead of letting a Member fill in the whole flow and eat a 403 on the last click.
+- **Settings nav** hides Activity without `activity:read`; the Team tab strip hides Roles without `team:manage` (and disappears entirely when only one tab is left).
+- **Team settings** shows non-admins a read-only org card (name, member count, their role) rather than an error page.
+
+Hiding is a UX affordance — the server check stays authoritative. Any mutation that can change the caller's own role must invalidate the `["customer-org"]` query key.
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
 
@@ -90,8 +101,7 @@ the screen's own pending branch.
 | `NEXT_PUBLIC_WEB_URL` | Optional | Link back to marketing site |
 | `NEXT_PUBLIC_OPS_URL` | Optional | Cross-link to ops console |
 | `NEXT_PUBLIC_API_URL` | Yes (for support, announcements, flags) | Business API origin |
-| `NEXT_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts at all — see [AUTH.md](../shared/AUTH.md) §4 |
-| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` | Required when auth is enabled | Customer Clerk instance — see [AUTH.md](../shared/AUTH.md) §4 |
+| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` | Required | Customer Clerk instance — see [AUTH.md](../shared/AUTH.md) §4 |
 
 No database vars on this app — Prisma lives in `apps/api` / `apps/web`. Auth is the one exception, see [AUTH.md](../shared/AUTH.md).
 
@@ -116,6 +126,6 @@ Separate Vercel project (third customer-facing app; fourth in the monorepo):
 | Production Branch | `master` |
 | Build | `cd ../.. && npm run build -w customer-web` if default fails |
 
-Sync **only app env vars** from Infisical — not the full web secret set. Include customer Clerk keys when `NEXT_PUBLIC_AUTH_ENABLED=true`.
+Sync **only app env vars** from Infisical — not the full web secret set. Include customer Clerk keys (`NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`).
 
 Domains: `app.admobihq.com` (prod), `app.staging.admobihq.com` (`staging` branch).

@@ -35,8 +35,13 @@ export function AuthSplitShell({
   formClassName = "max-w-sm",
 }: AuthSplitShellProps) {
   return (
-    <div className={cn("min-h-screen bg-background lg:bg-muted lg:p-5 xl:p-6", className)}>
-      <div className="mx-auto grid min-h-screen w-full lg:min-h-[calc(100vh-2.5rem)] lg:max-w-[1480px] lg:grid-cols-2 lg:gap-4 xl:min-h-[calc(100vh-3rem)]">
+    <div
+      className={cn(
+        "min-h-screen bg-background lg:flex lg:items-center lg:justify-center lg:bg-muted lg:p-5 xl:p-6",
+        className
+      )}
+    >
+      <div className="mx-auto grid min-h-screen w-full lg:h-[calc(100vh-2.5rem)] lg:max-h-[880px] lg:min-h-0 lg:max-w-[1480px] lg:grid-cols-2 lg:gap-4 xl:h-[calc(100vh-3rem)] xl:max-h-[920px] 2xl:max-w-[1680px]">
         <div className="relative hidden overflow-hidden lg:block lg:rounded-4xl">
           <img
             src={photoSrc}

@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server"
 import type { NextMiddleware, NextRequest, NextFetchEvent } from "next/server"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
-
 let cachedMiddleware: NextMiddleware | null = null
 
 function isPublicRoute(pathname: string): boolean {
-  return pathname.startsWith("/auth/") || pathname === "/api/health" || pathname.startsWith("/api/health/")
+  return (
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/invitations/") ||
+    // App Links / Universal Links verification files — fetched by Google and
+    // Apple with no session, and a redirect here silently breaks deep linking.
+    pathname.startsWith("/.well-known/") ||
+    pathname === "/api/health" ||
+    pathname.startsWith("/api/health/")
+  )
 }
 
 async function getAuthMiddleware(): Promise<NextMiddleware> {
@@ -44,10 +50,6 @@ async function getAuthMiddleware(): Promise<NextMiddleware> {
 }
 
 export default async function middleware(request: NextRequest, event: NextFetchEvent) {
-  if (!isAuthEnabled()) {
-    return NextResponse.next()
-  }
-
   const authMiddleware = await getAuthMiddleware()
   return authMiddleware(request, event)
 }

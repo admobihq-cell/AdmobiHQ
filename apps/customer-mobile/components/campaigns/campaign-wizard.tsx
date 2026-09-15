@@ -27,6 +27,7 @@ import {
   useUpdateCampaign,
 } from "@/lib/use-campaigns"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { useOrgPermissions } from "@/lib/use-org"
 
 const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
 
@@ -81,6 +82,10 @@ export function CampaignWizard({
   const create = useCreateCampaign()
   const update = useUpdateCampaign()
   const submit = useSubmitCampaign()
+  // The server enforces campaigns:submit; hiding it here stops a Member from
+  // filling in the whole wizard only to be refused at the last step.
+  const { can } = useOrgPermissions()
+  const canSubmit = can("campaigns:submit")
 
   const [campaign, setCampaign] = useState<CampaignDto | null>(initialCampaign)
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStep(initialCampaign))
@@ -172,6 +177,7 @@ export function CampaignWizard({
       paddingVertical: 14,
     },
     primaryText: { ...typography.body, fontWeight: "700" as const, color: c.primaryForeground },
+    submitBlockedHint: { ...typography.caption, color: c.mutedForeground },
     secondary: {
       alignItems: "center" as const,
       justifyContent: "center" as const,
@@ -538,7 +544,7 @@ export function CampaignWizard({
           </Pressable>
         ) : null}
 
-        {stepIndex === 3 ? (
+        {stepIndex === 3 && canSubmit ? (
           <Pressable
             style={({ pressed }) => [
               styles.primary,
@@ -554,6 +560,13 @@ export function CampaignWizard({
               <Text style={styles.primaryText}>Submit for review</Text>
             )}
           </Pressable>
+        ) : null}
+
+        {stepIndex === 3 && !canSubmit ? (
+          <Text style={styles.submitBlockedHint}>
+            Your role can draft campaigns but not submit them. Save the draft and ask an
+            organization admin to send it for review.
+          </Text>
         ) : null}
       </View>
     </ScrollView>

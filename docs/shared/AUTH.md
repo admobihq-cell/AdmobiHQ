@@ -1,26 +1,25 @@
 # Admobi — Authentication, Organizations & Roles
 
-How sign-in, sessions, organizations, and role/permission checks work across every app. Deploy-time Clerk instance config (allowed origins, keys per environment): [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk). Repo layout: [ARCHITECTURE.md](./ARCHITECTURE.md). Actor-by-actor product plan: [ROADMAP.md](./ROADMAP.md).
+How sign-in, sessions, organizations, and role/permission checks work across every app. Deploy-time Clerk instance config (allowed origins, keys per environment): [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk). **Staging hostnames, Preview env, and which Clerk Development keys to use:** [DEPLOYMENT.md § Staging environment](./DEPLOYMENT.md#staging-environment). Repo layout: [ARCHITECTURE.md](./ARCHITECTURE.md). Actor-by-actor product plan: [ROADMAP.md](./ROADMAP.md).
 
 ---
 
 ## 1. The short version
 
-Every app-facing surface has wired Clerk sign-in. Customer and driver sessions are **flag-gated**; ops is always on. The API verifies all three Clerk instances on the routes that belong to each actor.
+Every app-facing surface has wired Clerk sign-in. Customer, driver, and ops auth are **always on** (publishable/secret keys required). The API verifies all three Clerk instances on the routes that belong to each actor.
 
 | App | Sign-in UI | Session gating | Backend API auth |
 |---|---|---|---|
 | `apps/ops` | ✅ live | ✅ live | ✅ live (ops JWT) |
 | `apps/ops-mobile` | ✅ live | ✅ live (native) | ✅ live (ops JWT) |
-| `apps/customer-web` | ✅ built | ✅ built, **flag-gated** | ✅ `/v1/customer/*` (announcements); support can use a customer JWT |
-| `apps/customer-mobile` | ✅ built | ✅ built, **flag-gated** | ✅ same customer routes + push tokens |
-| `apps/driver-web` | ✅ built | ✅ built, **flag-gated** | ✅ `/v1/driver/*` (profile, documents, notifications, announcements) |
-| `apps/driver-mobile` | ✅ built | ✅ built, **flag-gated** | ✅ same driver routes + push tokens |
+| `apps/customer-web` | ✅ live | ✅ live | ✅ `/v1/customer/*` (announcements); support can use a customer JWT |
+| `apps/customer-mobile` | ✅ live | ✅ live (native) | ✅ same customer routes + push tokens |
+| `apps/driver-web` | ✅ live | ✅ live | ✅ `/v1/driver/*` (profile, documents, notifications, announcements) |
+| `apps/driver-mobile` | ✅ live | ✅ live (native) | ✅ same driver routes + push tokens |
 | `apps/web` | — none — | — | — |
 
-Two caveats worth internalizing before assuming "auth is done" for a given environment:
+One caveat worth internalizing before assuming "auth is done" for a given environment:
 
-- **Customer and driver auth is feature-flagged** (`NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED`, §4). The flag is deliberately kept out of the shared Infisical sync, so whether it's live in any given deployment depends on that environment's own Vercel/EAS settings, not on anything in this repo. Ops and ops-mobile have no such flag — they are always on.
 - **Protected customer/driver APIs exist, but the product role model is still incomplete.** [apps/api/lib/auth.ts](../../apps/api/lib/auth.ts) still verifies only the **ops** instance. Customer tokens are verified in [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts); driver tokens in [apps/api/lib/driver-auth.ts](../../apps/api/lib/driver-auth.ts). There is still no `CustomerUser` team table, and the CRM `Driver` model has no `clerk_user_id` (driver-app identity lives on `DriverProfile` instead). Campaign booking APIs are not backend-backed yet. That's [ROADMAP.md](./ROADMAP.md) §7 milestone 2, still partly open.
 
 ---
@@ -190,13 +189,13 @@ Driver sign-up deliberately does not ask for this; drivers sign up as individual
 
   This protects **every route except** `/auth/*` and `/api/health*` — unlike ops (whose `/` is a stub and the real dashboard lives at `/home`), `/` in customer-web and driver-web **is** the protected dashboard.
 
-### Ops-mobile — one exception to the flag-gated pattern
+### Ops-mobile — always-on ClerkProvider
 
-[apps/ops-mobile/app/_layout.tsx](../../apps/ops-mobile/app/_layout.tsx) mounts `<ClerkProvider>` **unconditionally** (ops is fully live, no flag). Its `AuthGate` branches by email via `isOpsStaffEmail()` into a staff `(ops)` route group or a non-staff `(customer)` group — a dormant surface, separate from the dedicated `apps/customer-mobile` app.
+[apps/ops-mobile/app/_layout.tsx](../../apps/ops-mobile/app/_layout.tsx) mounts `<ClerkProvider>` **unconditionally** (same as customer/driver mobile now). Its `AuthGate` branches by email via `isOpsStaffEmail()` into a staff `(ops)` route group or a non-staff `(customer)` group — a dormant surface, separate from the dedicated `apps/customer-mobile` app.
 
 ---
 
-## 4. Secrets, env vars, and the feature flag
+## 4. Secrets and env vars
 
 All three apps' Clerk secrets live in the **same flat Infisical project/environment** — no per-app folder isolation. Customer/driver env var names are deliberately prefixed so they never collide with ops's bare names:
 
@@ -205,28 +204,18 @@ All three apps' Clerk secrets live in the **same flat Infisical project/environm
 | `apps/api` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID`, `CUSTOMER_CLERK_SECRET_KEY`, `DRIVER_CLERK_SECRET_KEY` |
 | `apps/ops` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID` |
 | `apps/ops-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
-| `apps/customer-web` | `NEXT_PUBLIC_AUTH_ENABLED`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
-| `apps/customer-mobile` | `EXPO_PUBLIC_AUTH_ENABLED`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
-| `apps/driver-web` | `NEXT_PUBLIC_AUTH_ENABLED`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
-| `apps/driver-mobile` | `EXPO_PUBLIC_AUTH_ENABLED`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
+| `apps/customer-web` | `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
+| `apps/customer-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
+| `apps/driver-web` | `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` |
+| `apps/driver-mobile` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` |
 
 **Never reuse the unprefixed `CLERK_SECRET_KEY` / `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` names for a non-ops app** — doing so overwrites ops's working keys for every project pulling that Infisical environment afterward. `CLERK_ENCRYPTION_KEY` is required specifically because customer-web/driver-web pass explicit `publishableKey`/`secretKey` overrides into `clerkMiddleware()` (Clerk's "dynamic keys" mode) instead of relying on its default env var names.
 
-### The `AUTH_ENABLED` flag
+Customer and driver apps always mount `ClerkProvider`. A missing publishable key fails clearly at the layout boundary (thrown error on web; configuration screen on mobile) — there is no `AUTH_ENABLED` feature flag.
 
-```ts
-// apps/customer-web/lib/auth/is-auth-enabled.ts
-export function isAuthEnabled(): boolean {
-  return (
-    process.env.NEXT_PUBLIC_AUTH_ENABLED === "true" &&
-    Boolean(process.env.NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY)
-  )
-}
-```
+**Vercel:** `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` / `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` (and matching secrets + `CLERK_ENCRYPTION_KEY`) must be set on **Preview** for *all* branches as well as Production — not only `Preview (staging)`. PR Preview builds prerender layouts and will fail with `…CLERK_PUBLISHABLE_KEY is required` if the key is missing.
 
-Mirrored in `apps/driver-web`, `apps/customer-mobile`, `apps/driver-mobile`. When the flag is off (the default — unset), `ClerkProvider` never mounts and the app renders `<AuthDisabledMessage>` instead of a broken half-authed shell. **This flag is intentionally kept out of Infisical** — it's local-only per environment, so a missing key can never crash the app. Practical effect: whether customer/driver auth is actually reachable in staging or production depends on that Vercel/EAS project's own env settings, not on anything synced from this repo.
-
-Ops and ops-mobile have no such flag — they're always on.
+**GitHub Actions CI:** the same build runs without Infisical, so `.github/workflows/ci.yml` supplies these vars from repo secrets and falls back to a throwaway `pk_test_…` / `sk_test_…` value when a secret is unset — CI never deploys its artifacts. Any new build-time env var must *also* be listed in `turbo.json` under `tasks.build.env`: Turbo 2 runs in strict env mode and silently drops anything not listed, so the var never reaches `next build` even when the workflow exports it.
 
 ---
 
@@ -258,9 +247,9 @@ Clerk Organizations exist as a **binary access gate for ops**, not multi-tenant 
 1. Email isn't `@admobihq.com` → `forbidden`.
 2. Email passes, but no membership in the `CLERK_ORG_ID` org → `forbidden`.
 
-Customer and driver instances have **no** organization concept — every signed-in user there is just an individual account. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) does not exist in the schema yet. `Customer.clerk_user_id` is nullable and is not populated by any route today.
+Driver instances have **no** organization concept — every signed-in driver user there is just an individual account. Customer (advertiser) now does — see "Advertiser orgs and roles" below; it's Postgres-backed, not a Clerk Organization. `ROADMAP.md`'s planned `CustomerUser` model (linking a customer Clerk user to a `Customer` billing entity with `role: owner | member`) never shipped and is superseded by `AdvertiserOrg`/`AdvertiserMember` below. `Customer.clerk_user_id` is nullable in the schema but **is** populated for signed-in advertisers by `ensureCustomerRecord()` in [apps/api/lib/support.ts](../../apps/api/lib/support.ts) (with a `@placeholder.invalid` email — broadcasts address recipients by `clerk_user_id`, never by that column).
 
-### Roles — two layers, ops only
+### Roles — two layers, ops
 
 **Layer 1 — Clerk org role** (`org:admin` / `org:member`, mapped to `"admin" | "member"`): the coarse tier. `admin` bypasses all permission checks and gets every `OpsPermission`.
 
@@ -294,9 +283,72 @@ support · finances · content · flags · activity · driver_applications
 
 `resolveOpsPermissions()` in `apps/api/lib/auth.ts` computes the effective set per request (all of them for `admin`, the assigned `OpsRole.permissions` for `member`) and caches it 60s per user. `getOpsAccess()` returns a discriminated union — `unauthenticated | forbidden | authorized` — that every route handler narrows before doing anything else.
 
+### Advertiser orgs and roles
+
+Customer-side tenancy, added by the advertiser-organizations plan ([spec](../superpowers/specs/2026-09-07-advertiser-organizations-design.md)). Deliberately **Postgres-only** — Clerk never learns organizations exist, and there's no Clerk Organization equivalent on the customer side. Tables: `AdvertiserOrg`, `AdvertiserMember`, `AdvertiserRole`, `AdvertiserInvitation` ([schema.prisma](../../apps/web/prisma/schema.prisma)).
+
+There's no sign-up-time org creation — [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts) bootstraps lazily: the first authenticated request from a `clerk_user_id` with no `AdvertiserMember` row creates the org (named from the Clerk `companyName` metadata, see "Advertiser sign-up collects a company name" above) and an admin membership, in one transaction. Concurrent first requests race safely onto the same org via the unique constraint on `clerk_user_id`.
+
+Same two-layer shape as ops: `is_owner` bypasses every permission check (like `org:admin`); everyone else gets whatever their assigned `AdvertiserRole.permissions` grants, from the closed `AdvertiserPermission` set ([packages/ops-contracts/src/enums.ts](../../packages/ops-contracts/src/enums.ts)). One starter role (`Member`, deliberately not `campaigns:submit` — that stays admin-only) is seeded once, shared by every org (`org_id = null`), by [apps/web/scripts/seed-advertiser-roles.ts](../../apps/web/scripts/seed-advertiser-roles.ts) — orgs that want a tiered submitter or read-only role create it themselves under Settings → Team → Roles. `getCustomerAccess()` returns `{ status: "authorized", userId, orgId, isOwner, permissions }` and caches it 60s per user, same pattern as `resolveOpsPermissions()`; `requireCustomerPermission()` mirrors `requireOpsPermission()`.
+
+Campaigns are `org_id`-scoped (see [apps/api/lib/campaign-store.ts](../../apps/api/lib/campaign-store.ts)), and carry `created_by_name` on read — resolved from the retained `Campaign.clerk_user_id` — so a team can see who drafted what. Team management is live under `/v1/customer/org/**`: rename and billing details (`org:manage`, with `billing:write` additionally required to change `AdvertiserOrg.billing_email` / `tax_pin` — the KRA PIN a Kenyan tax invoice is issued against, present ahead of the Pesapal work that will consume it), list/invite/remove members (`team:manage`), accept invites via identity-only auth (no lazy bootstrap, so the invitee joins the inviting org instead of getting a solo org), and role listing/editing. Admins can customize starter roles (clone-on-save per org) or create org-scoped roles via `GET/POST /v1/customer/org/roles` and `PATCH/DELETE /v1/customer/org/roles/[roleId]` — Settings → Team → Roles on customer-web, Settings → Team → Manage roles on customer-mobile. Invite emails go through Resend; the accept landing is `/invitations/[token]` on customer-web, which offers **Create an account** as the primary action (most invitees have never used Admobi) and suppresses the company-name field on that sign-up path. customer-mobile has the twin route `app/invitations/[token].tsx`, reachable from the `admobihq-app://` scheme and — once the `.well-known` files below are configured — as a universal link on `app.admobihq.com/invitations/*`. Organization name defaults to `"{FirstName}'s Organization"` at bootstrap when Clerk's `companyName` metadata is empty (Google SSO, say) — customer-web's `<OrgNameNudge>` offers a one-time, dismissible rename prompt for that exact case, replacing the old blocking `<CompanyNamePrompt>` modal. Ops campaign review and the Users list read `AdvertiserOrg.name` via membership join, not Clerk. Org activity feed: `GET /v1/customer/org/activity` (`activity:read`) — allowlisted projection over `audit_events` (never raw `summary` / ops emails). Member removal is soft-delete (`removed_at`); re-invite reactivates the row. Campaign submit/review notifications fan out to every active member with `campaigns:read`, and each `CustomerNotification` is stamped with `org_id` so the inbox filters to the caller's current org — leaving an org stops surfacing its campaign notices. Sole admins cannot delete their Clerk account until they transfer admin or delete the organization. Support cases stamp `org_id`; members with `support:read_all` see all org cases. Ops directory: `GET /v1/advertiser-orgs` (+ `[id]`) gated on the `campaigns` permission — sidebar **Advertiser orgs** in ops web and ops-mobile.
+
+**Accepting an invitation is an explicit, reversible choice.** Nothing about an invite link may move the invitee's account on its own — opening one out of curiosity must be safe, and the page never auto-accepts.
+
+`GET /v1/customer/org/invitations/accept/[token]` is the read-only preview behind that. It is deliberately **readable without a session** (whoever holds the token can already redeem it, so naming the org leaks nothing) and returns `orgName`, `roleName`, `inviterName`, the invited `email`, plus — once signed in — `emailMismatch` and a `conflict` discriminant describing how accepting would collide with what the caller already has:
+
+| `conflict` | Meaning | What the client offers |
+|---|---|---|
+| `none` | No membership yet | Accept / Decline |
+| `empty_solo_org` | Sole member of the auto-created workspace, nothing in it | Accept (says it replaces an empty workspace) / Decline |
+| `solo_org_with_content` | Sole member, but it holds real work — `campaignCount` / `supportCaseCount` say how much | Destructive confirm naming what is lost / Decline |
+| `existing_team` | Belongs to an org with other members | No accept path — transfer admin or leave first / Decline |
+
+`POST .../accept/[token]` then acts **only on that choice**. If the caller already has an org, it refuses with `409 { reason: "solo_org_conflict", currentOrgName, soloOrgIsEmpty, campaignCount, supportCaseCount }` unless the body carries `{ leaveSoleOrg: true }` — consent is never inferred from an empty body, and `soloOrgIsEmpty` exists so the client can word "replace this empty workspace" differently from "delete this workspace and its N campaigns". Campaigns and support cases are **detached** (`org_id = null`), not deleted; campaign reads scope purely by `org_id`, so a detached campaign is unreachable by every advertiser afterwards. Same detach semantics for `POST /v1/customer/org/delete-organization`, whose counts come from `GET /v1/customer/org/deletion-status`.
+
+> An earlier revision silently absorbed an untouched solo org on accept. That was wrong: "we judged your workspace worthless" is not a call the server gets to make, and it deleted a tenant off the back of a link visit. Consent is now required in every case; `isUntouchedSoloOrg()` only decides the *wording*.
+
+`POST /v1/customer/org/invitations/decline/[token]` is the way out. It stamps `declined_at` — distinct from `revoked_at`, so the inviting admin can tell "they said no" from "I withdrew it" rather than watching the row vanish — and touches nothing else about the caller's account. Declined invitations are excluded from every pending-invite list and can no longer be accepted (`409`).
+
+**Leaving an org:** `POST /v1/customer/org/leave` is self-service — any member (not just an admin) can leave their own org; the sole owner is refused (`409`) until they transfer admin first, mirroring the account-deletion guard. This is the unblock for the `existing_team` case above.
+
+The email on the invitation must match the caller's Clerk address on both accept and decline, and the check **fails closed** — an address Clerk can't resolve is refused, so a leaked token can't be redeemed (or killed) by whoever holds it. Invites expire after 7 days (`410`). `POST /v1/customer/org/members` (which sends mail), accept and decline are all rate-limited **per Clerk user id**, not per IP: `checkRateLimit`'s `identifier` option exists for that, because Kenyan mobile carriers NAT many subscribers behind one address.
+
+**Making an admin is owner-only, and there is no self-service escalation.**
+`PATCH /v1/customer/org/members/[id]` accepts `isOwner`, but changing it
+requires the **caller** to be an owner, and refuses to act on the caller's own
+membership. Without that guard any custom role granting `team:manage` was a
+path to the full permission set — a `team:manage` holder could PATCH their own
+member id to `isOwner: true` and inherit `billing:write`, `org:manage` and
+org deletion. Role (`roleId`) changes remain a plain `team:manage` operation.
+
+The sanctioned alternative is `AdvertiserAdminRequest`: a member posts to
+`POST /v1/customer/org/admin-requests` with a written reason (10–1000 chars),
+every active owner gets an inbox notification + push, and an owner resolves it
+at `POST /v1/customer/org/admin-requests/[id]` with
+`{ decision: "approve" | "deny", note? }`. Approving promotes them in the same
+transaction that closes the request; denying **requires** a note, which is
+shown to the requester verbatim — a refusal they can't understand just gets
+asked again. `GET` returns the whole queue to owners and only their own rows to
+everyone else. One open request per member per org, enforced by a partial
+unique index (`WHERE status = 'pending'`), plus a 5/hour per-user rate limit.
+
+**Inviting an existing member is refused up front** (`409`). Beyond the
+confusing dead-end it used to create, a sole owner inviting their own address
+could accept, confirm "leave and join", and have `detachAndDeleteOrg` strip
+every campaign off the org the invitation pointed *into*.
+
+**Declined invitations stay visible.** `GET /v1/customer/org/members` returns
+declined rows alongside pending ones (declined regardless of expiry), so Team
+renders them with a **Declined** badge and an **Ask again** action instead of
+the row silently vanishing. The inviter also gets an inbox notification + push
+the moment someone declines.
+
+**Client-side permission gating.** `GET /v1/customer/org` returns `isOwner` and the caller's effective `permissions[]` alongside the org name, plus `billingEmail` / `taxPin` for callers holding `billing:read`. Both apps read it through `lib/use-org.ts` (`useOrg`, `useOrgPermissions`) and the shared `orgCan()` helper in [packages/ops-contracts/src/advertiser-org.ts](../../packages/ops-contracts/src/advertiser-org.ts), so a role without `campaigns:submit` never sees a Submit button and a non-admin never sees the Roles tab. **The server check stays authoritative** — hiding is a UX affordance, not the boundary.
+
 ### Managing organizations and roles day to day
 
-All of this is exposed in the ops console itself, under **Team** ([apps/ops/app/(dashboard)/team](<../../apps/ops/app/(dashboard)/team>)) — no direct Clerk dashboard work needed for routine changes:
+**Ops Team** ([apps/ops/app/(dashboard)/team](<../../apps/ops/app/(dashboard)/team>)) — unchanged, Clerk Organizations on the ops instance:
 
 - **Inviting someone** (`POST /v1/team`, [apps/api/app/v1/team/route.ts](../../apps/api/app/v1/team/route.ts)) — admin-only. Creates a Clerk `organizationInvitation` for `org:admin` or `org:member`. If the invitee already has a Clerk account, their `OpsRole` assignment is pre-created immediately so it's ready the moment they accept; brand-new signups land on the default `"Member"` role until reassigned post-acceptance (there's no Clerk user id to attach an assignment to before then).
 - **Changing someone's tier/role** (`PATCH /v1/team/[userId]`, [apps/api/app/v1/team/[userId]/route.ts](<../../apps/api/app/v1/team/%5BuserId%5D/route.ts>)) — updates the Clerk org membership role and upserts (or clears) the `OpsRoleAssignment` to match. Refuses to demote or remove the **last remaining admin**, to avoid locking the team out.
@@ -315,4 +367,3 @@ Tracked in [ROADMAP.md](./ROADMAP.md) §7, milestone 2. Sign-in, session gating,
 - A join from a signed-in driver-app account (`DriverProfile.clerk_user_id`) to the CRM `Driver` row (or a `clerk_user_id` on `Driver`).
 - Campaign / zone / wallet APIs under `/v1/customer/*` (announcements and support are live; booking is still local demo data).
 - Earnings / routes / payout APIs under `/v1/driver/*` (profile, documents, notifications, and announcements are live; earnings wait on telemetry).
-- A decision on whether `NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED` should move into Infisical once customer/driver auth is meant to be live by default, rather than toggled per-environment by hand.

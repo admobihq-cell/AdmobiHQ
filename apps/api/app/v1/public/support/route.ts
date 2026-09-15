@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
   const data = parsed.data
   const accessToken = generateAccessToken()
-  const { customerId, driverClerkUserId } = await resolveSupportAuthor(data.channel)
+  const { customerId, driverClerkUserId, orgId } = await resolveSupportAuthor(data.channel)
 
   try {
     const supportCase = await prisma.supportCase.create({
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
         anonymous_device_id: data.anonymous_device_id ?? null,
         customer_id: customerId,
         driver_clerk_user_id: driverClerkUserId,
+        org_id: orgId,
         access_token_hash: hashAccessToken(accessToken),
         channel: data.channel,
         category: data.category,
@@ -126,12 +127,17 @@ export async function GET(req: Request) {
 
   if (!email) {
     // No email param: this is the new account-based path.
-    const { authenticated, customerId, driverClerkUserId } = await resolveSupportAuthorFromBearer(token)
+    const { authenticated, customerId, driverClerkUserId, orgId, canReadAllOrgSupport } =
+      await resolveSupportAuthorFromBearer(token)
     if (!authenticated) return jsonError("Unauthorized", 401)
     if (!customerId && !driverClerkUserId) return NextResponse.json({ items: [] })
 
     const cases = await prisma.supportCase.findMany({
-      where: customerId ? { customer_id: customerId } : { driver_clerk_user_id: driverClerkUserId! },
+      where: driverClerkUserId
+        ? { driver_clerk_user_id: driverClerkUserId }
+        : canReadAllOrgSupport && orgId != null
+          ? { OR: [{ customer_id: customerId! }, { org_id: orgId }] }
+          : { customer_id: customerId! },
       orderBy: { created_at: "desc" },
       take: 50,
     })

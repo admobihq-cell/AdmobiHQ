@@ -17,6 +17,13 @@ services:
       - DB_POSTGRESDB_DATABASE=${DB_DATABASE}
       - DB_POSTGRESDB_USER=${DB_USER}
       - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+      # Isolates n8n's ~100 internal tables into their own Postgres schema,
+      # since this Neon database is shared with the Admobi app (Prisma owns
+      # `public`). Without this, `prisma migrate`/`db push` see every n8n
+      # table as unmanaged drift. Existing n8n tables were moved from
+      # `public` to `n8n` by hand (ALTER TABLE ... SET SCHEMA) before this
+      # was added — a fresh n8n instance would otherwise create them here.
+      - DB_POSTGRESDB_SCHEMA=n8n
     volumes:
       - n8n_data:/home/node/.n8n
 

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { CalendarDays, MapPin, Plus } from "lucide-react"
+import { CalendarDays, MapPin, Plus, UserRound } from "lucide-react"
 import type { CampaignDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
@@ -12,6 +12,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
 import { CardGridSkeleton } from "@/components/skeletons/card-grid-skeleton"
 import { useCampaigns } from "@/lib/use-campaigns"
+import { useOrg } from "@/lib/use-org"
 
 /** Filters follow what an advertiser actually asks ("what's running?", "what's
  * waiting on me?"), not the raw status column. */
@@ -40,7 +41,9 @@ function formatFlight(campaign: CampaignDto): string {
 export function CampaignsView() {
   const [filter, setFilter] = useState<string>("All")
   const campaignsQuery = useCampaigns()
+  const orgQuery = useOrg()
   const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
+  const multiMember = (orgQuery.data?.memberCount ?? 1) > 1
 
   const visible = useMemo(() => {
     const active = FILTERS.find((f) => f.label === filter) ?? FILTERS[0]
@@ -134,6 +137,13 @@ export function CampaignsView() {
                       <CalendarDays className="size-3.5 shrink-0" />
                       {formatFlight(campaign)}
                     </p>
+                    {/* Only meaningful once an org has more than one person. */}
+                    {campaign.created_by_name && multiMember ? (
+                      <p className="flex items-center gap-2">
+                        <UserRound className="size-3.5 shrink-0" />
+                        {campaign.created_by_name}
+                      </p>
+                    ) : null}
                   </div>
                   <Separator />
                   <div className="grid grid-cols-2 gap-4">

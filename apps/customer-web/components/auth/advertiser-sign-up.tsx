@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useSignUp } from "@clerk/nextjs"
 
@@ -10,50 +10,37 @@ import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
 import { Button } from "@workspace/ui/components/button"
 import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@workspace/ui/components/input-otp"
 import { Label } from "@workspace/ui/components/label"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { webPublicUrl } from "@/lib/site-urls"
-
-import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
 
-/**
- * Optional here on purpose. Google's own consent screen has no place to ask for
- * a company, so gating "Continue with Google" on this field only produced a
- * dead button with no explanation. <CompanyNamePrompt> collects it on first
- * load of the dashboard instead, for whichever path skipped it.
- */
 function companyMetadata(company: string): { unsafeMetadata?: { companyName: string } } {
   const value = company.trim()
   return value ? { unsafeMetadata: { companyName: value } } : {}
 }
 
-function useDisabledSignUp(): { signUp: null } {
-  return { signUp: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useSignUp() must never run unless ClerkProvider is mounted.
- */
-const useSignUpIfEnabled = isAuthEnabled() ? useSignUp : useDisabledSignUp
-
 export function AdvertiserSignUp() {
-  const { signUp } = useSignUpIfEnabled()
+  const { signUp } = useSignUp()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get("redirect_url") || "/"
+  const rawRedirectUrl = searchParams.get("redirect_url")
+  const signInHref = rawRedirectUrl
+    ? `/auth/login/advertiser?redirect_url=${encodeURIComponent(rawRedirectUrl)}`
+    : "/auth/login/advertiser"
+  // An invitee joins an existing org, so asking them to name a company would
+  // seed a throwaway one and then immediately abandon it on accept.
+  const joiningTeam = redirectUrl.startsWith("/invitations/")
   const [email, setEmail] = useState("")
   const [company, setCompany] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  if (!isAuthEnabled()) {
-    return <AuthDisabledMessage />
-  }
 
   async function handleSendCode() {
     if (!signUp || !email.trim()) return
@@ -100,7 +87,7 @@ export function AdvertiserSignUp() {
     if (signUp.status === "complete") {
       await signUp.finalize({
         navigate: () => {
-          router.push("/")
+          router.push(redirectUrl.startsWith("/") ? redirectUrl : "/")
         },
       })
       return
@@ -127,7 +114,7 @@ export function AdvertiserSignUp() {
     const { error: ssoError } = await signUp.sso({
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
-      redirectUrl: "/",
+      redirectUrl: redirectUrl.startsWith("/") ? redirectUrl : "/",
       ...companyMetadata(company),
     })
     // Success navigates away to Google, so only the failure path gets here.
@@ -152,18 +139,24 @@ export function AdvertiserSignUp() {
               Enter the {CODE_LENGTH}-digit code sent to {email.trim()}
             </p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="code">Verification code</Label>
-            <Input
+          <div className="flex flex-col items-center gap-1.5">
+            <Label htmlFor="code" className="self-start">
+              Verification code
+            </Label>
+            <InputOTP
               id="code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              inputMode="numeric"
+              onChange={setCode}
               maxLength={CODE_LENGTH}
               disabled={submitting}
               autoFocus
-            />
+            >
+              <InputOTPGroup>
+                {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button
@@ -192,8 +185,14 @@ export function AdvertiserSignUp() {
       ) : (
         <div className="flex flex-col gap-5">
           <div>
-            <h1 className="font-heading text-xl font-medium">Create your Admobi account</h1>
-            <p className="text-sm text-muted-foreground">We&apos;ll email you a one-time code.</p>
+            <h1 className="font-heading text-xl font-medium">
+              {joiningTeam ? "Join your team on Admobi" : "Create your Admobi account"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {joiningTeam
+                ? "Use the email your invitation was sent to — we'll email you a one-time code."
+                : "We'll email you a one-time code."}
+            </p>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
@@ -208,20 +207,22 @@ export function AdvertiserSignUp() {
               autoFocus
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="company">Company or organization</Label>
-            <Input
-              id="company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="Acme Media"
-              autoComplete="organization"
-              disabled={submitting}
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional — we&apos;ll ask for it after you sign in if you skip it.
-            </p>
-          </div>
+          {joiningTeam ? null : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="company">Company or organization</Label>
+              <Input
+                id="company"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Acme Media"
+                autoComplete="organization"
+                disabled={submitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional — we&apos;ll use your name until you set one.
+              </p>
+            </div>
+          )}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {/* Clerk mounts its bot-protection widget here. Without this element it falls
               back to an invisible CAPTCHA in a display:none div, which Turnstile then
@@ -259,7 +260,7 @@ export function AdvertiserSignUp() {
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              href="/auth/login/advertiser"
+              href={signInHref}
               className="font-medium text-foreground underline underline-offset-4"
             >
               Sign in

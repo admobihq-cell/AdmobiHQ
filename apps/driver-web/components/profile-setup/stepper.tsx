@@ -1,5 +1,7 @@
 "use client"
 
+import { useAuth } from "@clerk/nextjs"
+
 import { useState } from "react"
 import type { DriverProfileDto } from "@workspace/ops-contracts"
 
@@ -7,8 +9,6 @@ import { Stepper as StepIndicator, type StepperStep } from "@workspace/ui/compon
 import { ProfileStep } from "@/components/profile-setup/steps/profile-step"
 import { ReviewStep } from "@/components/profile-setup/steps/review-step"
 import { TaxPayoutStep } from "@/components/profile-setup/steps/tax-payout-step"
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
-
 const STEP_LABELS = ["Profile", "Tax & payout", "Review"]
 
 /** Whether each required step's fields are already on file — a driver who
@@ -48,7 +48,7 @@ export function ProfileSetupStepper({
   initialProfile: DriverProfileDto
   onSubmitted: (profile: DriverProfileDto) => void
 }) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const [profile, setProfile] = useState(initialProfile)
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStepIndex(initialProfile))
 

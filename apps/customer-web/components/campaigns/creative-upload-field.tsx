@@ -1,5 +1,7 @@
 "use client"
 
+import { useAuth } from "@clerk/nextjs"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Film, Trash2, Upload } from "lucide-react"
@@ -18,7 +20,6 @@ import { Button } from "@workspace/ui/components/button"
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
-import { useAuthIfEnabled } from "@/lib/auth/use-auth-if-enabled"
 import { fetchCreativeBlob } from "@/lib/campaigns-client"
 import { useDeleteCreative, useUploadCreative } from "@/lib/use-campaigns"
 
@@ -64,7 +65,7 @@ function CreativeThumb({
   onDelete: () => void
   disabled: boolean
 }) {
-  const { getToken } = useAuthIfEnabled()
+  const { getToken } = useAuth()
   const isVideo = creative.resource_type === "video"
 
   const blobQuery = useQuery({
