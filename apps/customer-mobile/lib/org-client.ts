@@ -229,6 +229,38 @@ export async function leaveOrganization(getToken: GetToken): Promise<void> {
   await authedFetch(getToken, "/v1/customer/org/leave", { method: "POST" })
 }
 
+export async function listAdminRequests(
+  getToken: GetToken,
+): Promise<import("@workspace/ops-contracts").AdvertiserAdminRequestDto[]> {
+  const res = await authedFetch(getToken, "/v1/customer/org/admin-requests")
+  return res.json()
+}
+
+export async function requestAdminAccess(
+  getToken: GetToken,
+  data: import("@workspace/ops-contracts").AdvertiserAdminRequestCreateInput,
+): Promise<import("@workspace/ops-contracts").AdvertiserAdminRequestDto> {
+  const res = await authedFetch(
+    getToken,
+    "/v1/customer/org/admin-requests",
+    jsonInit("POST", data),
+  )
+  return res.json()
+}
+
+export async function reviewAdminRequest(
+  getToken: GetToken,
+  id: number,
+  data: import("@workspace/ops-contracts").AdvertiserAdminRequestReviewInput,
+): Promise<import("@workspace/ops-contracts").AdvertiserAdminRequestDto> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/org/admin-requests/${id}`,
+    jsonInit("POST", data),
+  )
+  return res.json()
+}
+
 export async function updateOrg(
   getToken: GetToken,
   data: import("@workspace/ops-contracts").AdvertiserOrgUpdateInput,

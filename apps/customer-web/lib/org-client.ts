@@ -1,4 +1,7 @@
 import type {
+  AdvertiserAdminRequestCreateInput,
+  AdvertiserAdminRequestDto,
+  AdvertiserAdminRequestReviewInput,
   AdvertiserInvitationDto,
   AdvertiserInvitationPreviewDto,
   AdvertiserInviteInput,
@@ -233,4 +236,36 @@ export async function deleteOrganization(getToken: GetToken): Promise<void> {
 
 export async function leaveOrganization(getToken: GetToken): Promise<void> {
   await authedFetch(getToken, "/v1/customer/org/leave", { method: "POST" })
+}
+
+export async function listAdminRequests(
+  getToken: GetToken,
+): Promise<AdvertiserAdminRequestDto[]> {
+  const res = await authedFetch(getToken, "/v1/customer/org/admin-requests")
+  return res.json()
+}
+
+export async function requestAdminAccess(
+  getToken: GetToken,
+  data: AdvertiserAdminRequestCreateInput,
+): Promise<AdvertiserAdminRequestDto> {
+  const res = await authedFetch(
+    getToken,
+    "/v1/customer/org/admin-requests",
+    jsonInit("POST", data),
+  )
+  return res.json()
+}
+
+export async function reviewAdminRequest(
+  getToken: GetToken,
+  id: number,
+  data: AdvertiserAdminRequestReviewInput,
+): Promise<AdvertiserAdminRequestDto> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/org/admin-requests/${id}`,
+    jsonInit("POST", data),
+  )
+  return res.json()
 }

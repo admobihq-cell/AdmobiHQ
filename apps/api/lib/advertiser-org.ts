@@ -1,5 +1,6 @@
 import {
   ADVERTISER_PERMISSIONS,
+  type AdvertiserAdminRequestDto,
   type AdvertiserInvitationDto,
   type AdvertiserMemberDto,
   type AdvertiserOrgDto,
@@ -186,6 +187,43 @@ export async function toMemberDto(member: {
 /** Clerk caps getUserList at 100 ids per call. */
 const CLERK_USER_BATCH = 100
 
+/** Requester and reviewer identities resolved in one Clerk round trip. */
+export async function toAdminRequestDtos(
+  rows: {
+    id: number
+    status: string
+    reason: string
+    clerk_user_id: string
+    reviewed_by_clerk_user_id: string | null
+    reviewed_at: Date | null
+    review_note: string | null
+    created_at: Date
+  }[],
+): Promise<AdvertiserAdminRequestDto[]> {
+  const identities = await resolveCustomerIdentities(
+    rows.flatMap((r) => [r.clerk_user_id, r.reviewed_by_clerk_user_id].filter((v): v is string => !!v)),
+  )
+
+  return rows.map((row) => {
+    const requester = identities.get(row.clerk_user_id)
+    const reviewer = row.reviewed_by_clerk_user_id
+      ? identities.get(row.reviewed_by_clerk_user_id)
+      : undefined
+    return {
+      id: row.id,
+      status: row.status as AdvertiserAdminRequestDto["status"],
+      reason: row.reason,
+      clerkUserId: row.clerk_user_id,
+      name: requester?.name ?? null,
+      email: requester?.email ?? null,
+      reviewedByName: reviewer?.name ?? reviewer?.email ?? null,
+      reviewedAt: row.reviewed_at?.toISOString() ?? null,
+      reviewNote: row.review_note,
+      createdAt: row.created_at.toISOString(),
+    }
+  })
+}
+
 /**
  * Display names/emails for many Clerk user ids in one round trip. Returns an
  * empty map on failure rather than throwing — a Clerk hiccup should render a
@@ -219,8 +257,7 @@ export async function resolveCustomerIdentities(
   return byId
 }
 
-/** Display label for a campaign's author. Null for pre-org campaigns whose
- * clerk_user_id was never set, and when Clerk can't resolve the user. */
+/** Display label for a campaign's author. Null for pre-org campaigns whose * clerk_user_id was never set, and when Clerk can't resolve the user. */
 export async function resolveCampaignAuthorName(
   clerkUserId: string | null,
 ): Promise<string | null> {
