@@ -12,6 +12,10 @@ export async function GET(req: Request) {
   const limit = Number(url.searchParams.get("limit")) || undefined
 
   return NextResponse.json(
-    await listCustomerNotificationsPage(auth.access.userId, { cursor, limit }),
+    await listCustomerNotificationsPage(auth.access.userId, {
+      cursor,
+      limit,
+      orgId: auth.access.orgId,
+    }),
   )
 }

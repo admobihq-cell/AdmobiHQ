@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import type { OpsAdvertiserOrgDetailDto } from "@workspace/ops-contracts"
 
 import {
+  resolveCustomerIdentities,
   toInvitationDto,
-  toMemberDto,
+  toMemberDtos,
 } from "@/lib/advertiser-org"
 import {
   advertiserActivityWhere,
@@ -64,6 +65,7 @@ export async function GET(_req: Request, { params }: Params) {
         status: true,
         submitted_at: true,
         contact_email: true,
+        clerk_user_id: true,
       },
     }),
     prisma.auditEvent.findMany({
@@ -90,6 +92,10 @@ export async function GET(_req: Request, { params }: Params) {
     : []
   const roleNameById = new Map(roles.map((r) => [r.id, r.name]))
 
+  const authorIdentities = await resolveCustomerIdentities(
+    campaigns.map((c) => c.clerk_user_id).filter((v): v is string => !!v),
+  )
+
   const body: OpsAdvertiserOrgDetailDto = {
     id: org.id,
     name: org.name,
@@ -97,20 +103,24 @@ export async function GET(_req: Request, { params }: Params) {
     updatedAt: org.updated_at.toISOString(),
     memberCount: org._count.members,
     campaignCount: org._count.campaigns,
-    members: await Promise.all(members.map((m) => toMemberDto(m))),
+    members: await toMemberDtos(members),
     invitations: inviteRows.map((row) =>
       toInvitationDto({
         ...row,
         role: row.role_id != null ? { name: roleNameById.get(row.role_id) ?? "Unknown" } : null,
       }),
     ),
-    campaigns: campaigns.map((c) => ({
-      id: c.id,
-      name: c.name,
-      status: c.status,
-      submittedAt: c.submitted_at?.toISOString() ?? null,
-      contactEmail: c.contact_email,
-    })),
+    campaigns: campaigns.map((c) => {
+      const author = c.clerk_user_id ? authorIdentities.get(c.clerk_user_id) : undefined
+      return {
+        id: c.id,
+        name: c.name,
+        status: c.status,
+        submittedAt: c.submitted_at?.toISOString() ?? null,
+        contactEmail: c.contact_email,
+        createdByName: author?.name ?? author?.email ?? null,
+      }
+    }),
     activity: await Promise.all(activityRows.map((row) => toAdvertiserActivityItem(row))),
   }
 

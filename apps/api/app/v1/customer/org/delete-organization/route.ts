@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { auditFromCustomerUser } from "@/lib/audit"
-import { countOrgOwners } from "@/lib/advertiser-org"
+import { countOrgOwners, detachAndDeleteOrg } from "@/lib/advertiser-org"
 import { jsonError, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
 import { prisma } from "@/lib/prisma"
@@ -26,17 +26,7 @@ export async function POST() {
     select: { clerk_user_id: true },
   })
 
-  await prisma.$transaction(async (tx) => {
-    await tx.campaign.updateMany({
-      where: { org_id: auth.access.orgId },
-      data: { org_id: null },
-    })
-    await tx.supportCase.updateMany({
-      where: { org_id: auth.access.orgId },
-      data: { org_id: null },
-    })
-    await tx.advertiserOrg.delete({ where: { id: auth.access.orgId } })
-  })
+  await detachAndDeleteOrg(auth.access.orgId)
 
   for (const m of memberIds) {
     invalidateAdvertiserAccessCache(m.clerk_user_id)

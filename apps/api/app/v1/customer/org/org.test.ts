@@ -6,8 +6,9 @@ import {
   generateAdvertiserInviteToken,
   hashAdvertiserInviteToken,
 } from "@/lib/advertiser-invite-token"
+import { testDatabaseUrl } from "@/lib/test-database-url"
 
-const databaseUrl = process.env.DATABASE_URL
+const databaseUrl = testDatabaseUrl()
 
 let actingUserId = ""
 let actingOrgId = 0
@@ -136,12 +137,18 @@ describe.skipIf(!databaseUrl)("customer org team routes", () => {
       })
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.org).toEqual({
+      expect(body.org).toMatchObject({
         id: orgId,
         name: "Org Test Co",
         memberCount: 2,
         myRoleName: "Member",
+        isOwner: false,
       })
+      // Clients gate UI on this, so it must reflect the invited role exactly.
+      expect(body.org.permissions).toEqual(
+        expect.arrayContaining(["campaigns:read", "campaigns:write"]),
+      )
+      expect(body.org.permissions).not.toContain("campaigns:submit")
 
       const member = await prisma.advertiserMember.findUnique({
         where: { clerk_user_id: inviteeId },
@@ -149,8 +156,10 @@ describe.skipIf(!databaseUrl)("customer org team routes", () => {
       expect(member?.org_id).toBe(orgId)
       expect(member?.is_owner).toBe(false)
 
+      // `every` would also match member-less orgs left behind by parallel
+      // suites (vacuous truth), so ask for orgs this user is actually in.
       const soloOrgs = await prisma.advertiserOrg.count({
-        where: { members: { every: { clerk_user_id: inviteeId } }, id: { not: orgId } },
+        where: { members: { some: { clerk_user_id: inviteeId } }, id: { not: orgId } },
       })
       expect(soloOrgs).toBe(0)
 
@@ -331,7 +340,7 @@ describe.skipIf(!databaseUrl)("leave organization and accept-invitation conflict
   )
 
   it(
-    "accept: an untouched solo org can be left automatically via leaveSoleOrg",
+    "accept: an untouched solo org is absorbed silently, with no confirmation step",
     async () => {
       const aliceId = `accept-solo-alice-${stamp}`
       const inviterId = `accept-solo-inviter-${stamp}`
@@ -362,14 +371,77 @@ describe.skipIf(!databaseUrl)("leave organization and accept-invitation conflict
       actingUserId = aliceId
       const { POST } = await import("./invitations/accept/[token]/route")
 
-      const conflictRes = await POST(
-        new Request("http://localhost", { method: "POST" }),
-        { params: Promise.resolve({ token }) },
-      )
+      // Default name, sole member, nothing in it — the workspace lazy
+      // bootstrap hands everyone. No 409 round trip.
+      const res = await POST(new Request("http://localhost", { method: "POST" }), {
+        params: Promise.resolve({ token }),
+      })
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.orgId).toBe(invitingOrg.id)
+
+      const deletedSoloOrg = await prisma.advertiserOrg.findUnique({ where: { id: soloOrg.id } })
+      expect(deletedSoloOrg).toBeNull()
+      orgIds.splice(orgIds.indexOf(soloOrg.id), 1)
+
+      const aliceMembership = await prisma.advertiserMember.findUnique({
+        where: { clerk_user_id: aliceId },
+      })
+      expect(aliceMembership?.org_id).toBe(invitingOrg.id)
+    },
+    30_000,
+  )
+
+  it(
+    "accept: a solo org with campaigns asks first, and names what would be detached",
+    async () => {
+      const carolId = `accept-solo-carol-${stamp}`
+      const inviterId = `accept-carol-inviter-${stamp}`
+      userIds.push(carolId, inviterId)
+
+      const soloOrg = await prisma.advertiserOrg.create({ data: { name: "Carol's Organization" } })
+      const invitingOrg = await prisma.advertiserOrg.create({ data: { name: "Carol Invited Co" } })
+      orgIds.push(soloOrg.id, invitingOrg.id)
+      await prisma.advertiserMember.create({
+        data: { org_id: soloOrg.id, clerk_user_id: carolId, is_owner: true },
+      })
+      await prisma.advertiserMember.create({
+        data: { org_id: invitingOrg.id, clerk_user_id: inviterId, is_owner: true },
+      })
+      const campaign = await prisma.campaign.create({
+        data: {
+          org_id: soloOrg.id,
+          clerk_user_id: carolId,
+          name: "Carol draft",
+          format: "taxi_top",
+          status: "draft",
+        },
+      })
+
+      const token = generateAdvertiserInviteToken()
+      await prisma.advertiserInvitation.create({
+        data: {
+          org_id: invitingOrg.id,
+          email: `${carolId}@example.com`,
+          role_id: null,
+          token_hash: hashAdvertiserInviteToken(token),
+          expires_at: new Date(Date.now() + 86_400_000),
+          invited_by_clerk_user_id: inviterId,
+        },
+      })
+
+      actingUserId = carolId
+      const { POST } = await import("./invitations/accept/[token]/route")
+
+      const conflictRes = await POST(new Request("http://localhost", { method: "POST" }), {
+        params: Promise.resolve({ token }),
+      })
       expect(conflictRes.status).toBe(409)
       const conflictBody = await conflictRes.json()
       expect(conflictBody.reason).toBe("solo_org_conflict")
-      expect(conflictBody.currentOrgName).toBe("Alice's Organization")
+      expect(conflictBody.currentOrgName).toBe("Carol's Organization")
+      // The confirm copy depends on this — a silent detach is data loss.
+      expect(conflictBody.campaignCount).toBe(1)
 
       const resolvedRes = await POST(
         new Request("http://localhost", {
@@ -380,17 +452,86 @@ describe.skipIf(!databaseUrl)("leave organization and accept-invitation conflict
         { params: Promise.resolve({ token }) },
       )
       expect(resolvedRes.status).toBe(200)
-      const resolvedBody = await resolvedRes.json()
-      expect(resolvedBody.orgId).toBe(invitingOrg.id)
 
-      const deletedSoloOrg = await prisma.advertiserOrg.findUnique({ where: { id: soloOrg.id } })
-      expect(deletedSoloOrg).toBeNull()
+      const detached = await prisma.campaign.findUnique({ where: { id: campaign.id } })
+      expect(detached?.org_id).toBeNull()
+      await prisma.campaign.delete({ where: { id: campaign.id } })
       orgIds.splice(orgIds.indexOf(soloOrg.id), 1)
+    },
+    30_000,
+  )
 
-      const aliceMembership = await prisma.advertiserMember.findUnique({
-        where: { clerk_user_id: aliceId },
+  it(
+    "accept: refuses when the signed-in email does not match the invitation",
+    async () => {
+      const daveId = `accept-mismatch-dave-${stamp}`
+      const inviterId = `accept-mismatch-inviter-${stamp}`
+      userIds.push(daveId, inviterId)
+
+      const invitingOrg = await prisma.advertiserOrg.create({ data: { name: "Mismatch Co" } })
+      orgIds.push(invitingOrg.id)
+      await prisma.advertiserMember.create({
+        data: { org_id: invitingOrg.id, clerk_user_id: inviterId, is_owner: true },
       })
-      expect(aliceMembership?.org_id).toBe(invitingOrg.id)
+
+      const token = generateAdvertiserInviteToken()
+      await prisma.advertiserInvitation.create({
+        data: {
+          org_id: invitingOrg.id,
+          email: "someone-else@example.com",
+          role_id: null,
+          token_hash: hashAdvertiserInviteToken(token),
+          expires_at: new Date(Date.now() + 86_400_000),
+          invited_by_clerk_user_id: inviterId,
+        },
+      })
+
+      actingUserId = daveId
+      const { POST } = await import("./invitations/accept/[token]/route")
+      const res = await POST(new Request("http://localhost", { method: "POST" }), {
+        params: Promise.resolve({ token }),
+      })
+      expect(res.status).toBe(403)
+
+      const membership = await prisma.advertiserMember.findUnique({
+        where: { clerk_user_id: daveId },
+      })
+      expect(membership).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    "accept: refuses an expired invitation",
+    async () => {
+      const eveId = `accept-expired-eve-${stamp}`
+      const inviterId = `accept-expired-inviter-${stamp}`
+      userIds.push(eveId, inviterId)
+
+      const invitingOrg = await prisma.advertiserOrg.create({ data: { name: "Expired Co" } })
+      orgIds.push(invitingOrg.id)
+      await prisma.advertiserMember.create({
+        data: { org_id: invitingOrg.id, clerk_user_id: inviterId, is_owner: true },
+      })
+
+      const token = generateAdvertiserInviteToken()
+      await prisma.advertiserInvitation.create({
+        data: {
+          org_id: invitingOrg.id,
+          email: `${eveId}@example.com`,
+          role_id: null,
+          token_hash: hashAdvertiserInviteToken(token),
+          expires_at: new Date(Date.now() - 1_000),
+          invited_by_clerk_user_id: inviterId,
+        },
+      })
+
+      actingUserId = eveId
+      const { POST } = await import("./invitations/accept/[token]/route")
+      const res = await POST(new Request("http://localhost", { method: "POST" }), {
+        params: Promise.resolve({ token }),
+      })
+      expect(res.status).toBe(410)
     },
     30_000,
   )
