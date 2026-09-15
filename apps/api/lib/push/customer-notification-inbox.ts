@@ -53,23 +53,31 @@ function toDto(row: {
   }
 }
 
-/** Cursor-paginated lifecycle-notification history for the advertiser apps. */
+/** Cursor-paginated lifecycle-notification history for the advertiser apps.
+ *
+ * Rows stay addressed to a person, but are filtered to the caller's current
+ * org (plus pre-org rows, which have no org_id) so someone who left org A
+ * stops seeing its campaign notices. */
 export async function listCustomerNotificationsPage(
   clerkUserId: string,
-  options: { cursor?: number | null; limit?: number } = {},
+  options: { cursor?: number | null; limit?: number; orgId?: number | null } = {},
 ): Promise<CustomerNotificationInboxPage> {
   const limit = Math.min(PAGE_LIMIT_MAX, Math.max(1, options.limit ?? PAGE_LIMIT_DEFAULT))
+  const scope =
+    options.orgId != null
+      ? { clerk_user_id: clerkUserId, OR: [{ org_id: options.orgId }, { org_id: null }] }
+      : { clerk_user_id: clerkUserId }
 
   const [rows, unread_count] = await Promise.all([
     prisma.customerNotification.findMany({
-      where: { clerk_user_id: clerkUserId },
+      where: scope,
       orderBy: [{ created_at: "desc" }, { id: "desc" }],
       take: limit + 1,
       ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       select: NOTIFICATION_SELECT,
     }),
     prisma.customerNotification.count({
-      where: { clerk_user_id: clerkUserId, read_at: null },
+      where: { ...scope, read_at: null },
     }),
   ])
 

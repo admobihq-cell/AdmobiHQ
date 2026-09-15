@@ -118,6 +118,7 @@ function RootNavigator({
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false, animation: "fade" }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false, animation: "fade" }} />
+        <Stack.Screen name="invitations/[token]" options={{ title: "Invitation" }} />
       </Stack>
     </AuthenticatedApp>
   )
