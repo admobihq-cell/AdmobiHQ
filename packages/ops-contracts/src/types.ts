@@ -184,6 +184,9 @@ export type CampaignDto = {
   contact_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  /** Org member who authored the campaign, resolved from Campaign.clerk_user_id.
+   * Null for pre-org campaigns and when the identity can't be resolved. */
+  created_by_name: string | null
   created_at: string
   updated_at: string
   creatives: CampaignCreativeDto[]

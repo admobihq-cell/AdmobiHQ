@@ -52,6 +52,22 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 
 `lib/auth/use-customer-session.ts` persists an `anonymousDeviceId` (via `getOrCreateDeviceId()`) for support-case identity tokens and push registration when the user has not signed in. `<AuthGate>` uses the Clerk session for route protection; the anonymous device id remains the fallback identity for public support and push-token rows.
 
+### Team, roles, and invitations
+
+Parity with customer-web, minus the billing-details form:
+
+| Screen | Notes |
+|--------|-------|
+| `app/(tabs)/settings/team.tsx` | Org rename, invite, member roles, transfer admin, remove, pending invites (resend / revoke) |
+| `app/(tabs)/settings/roles.tsx` | Create, edit and delete org roles; editing a shared starter clones it for the org. Admin-only |
+| `app/(tabs)/settings/activity.tsx` | Org activity feed. Hidden from Settings without `activity:read` |
+| `app/(tabs)/settings/account.tsx` | Leave organization, or delete it when you're the sole admin (with the detached-campaign count in the confirm copy) |
+| `app/invitations/[token].tsx` | Accept an invitation |
+
+Capability comes from [lib/use-org.ts](../../apps/customer-mobile/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) and the shared `orgCan()` helper — the same contract customer-web uses. The campaign wizard hides *Submit for review* without `campaigns:submit`.
+
+**Invitation deep links.** Invite emails point at `https://app.admobihq.com/invitations/<token>`. `app.json` claims that path via Android `intentFilters` (`autoVerify`) and iOS `associatedDomains`, so the app opens it directly once customer-web serves the matching `/.well-known` files — see [DEPLOYMENT.md](../shared/DEPLOYMENT.md). Until those env vars are set the link opens in the browser, which still works. `admobihq-app://invitations/<token>` always works.
+
 ---
 
 ## Overview tab

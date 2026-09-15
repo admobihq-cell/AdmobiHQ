@@ -130,6 +130,14 @@ export function AccountSettingsView() {
   })
   const isSoleOwner = deletionStatusQuery.data?.isSoleOwner === true
   const canDeleteAccount = deletionStatusQuery.data?.canDeleteAccount !== false
+  const detachedByOrgDelete = [
+    deletionStatusQuery.data?.campaignCount
+      ? `${deletionStatusQuery.data.campaignCount} campaign${deletionStatusQuery.data.campaignCount === 1 ? "" : "s"}`
+      : null,
+    deletionStatusQuery.data?.supportCaseCount
+      ? `${deletionStatusQuery.data.supportCaseCount} support case${deletionStatusQuery.data.supportCaseCount === 1 ? "" : "s"}`
+      : null,
+  ].filter(Boolean)
 
   const deleteOrgMutation = useMutation({
     mutationFn: () => deleteOrganization(getToken),
@@ -571,8 +579,12 @@ export function AccountSettingsView() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this organization?</AlertDialogTitle>
             <AlertDialogDescription>
-              Removes the team and memberships. Campaigns stay on our ops record (detached from the
-              org). Afterward you can delete your personal account.
+              Removes the team and memberships. Afterward you can delete your personal account.
+              {detachedByOrgDelete.length
+                ? ` ${detachedByOrgDelete.join(" and ")} stay on our ops record but become
+                   permanently unreachable from any Admobi account — export or contact support
+                   first if you still need them.`
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteOrgMutation.error ? (
