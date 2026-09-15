@@ -1,179 +1,241 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-import { Loader2Icon } from "lucide-react"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import type { AdvertiserInvitationPreviewDto } from "@workspace/ops-contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 
-import { acceptOrgInvitation, OrgApiError } from "@/lib/org-client"
+import {
+  acceptOrgInvitation,
+  declineOrgInvitation,
+  getOrgInvitationPreview,
+  OrgApiError,
+} from "@/lib/org-client"
 
+function detachedSummary(preview: AdvertiserInvitationPreviewDto): string | null {
+  const parts = [
+    preview.campaignCount
+      ? `${preview.campaignCount} campaign${preview.campaignCount === 1 ? "" : "s"}`
+      : null,
+    preview.supportCaseCount
+      ? `${preview.supportCaseCount} support case${preview.supportCaseCount === 1 ? "" : "s"}`
+      : null,
+  ].filter(Boolean)
+  return parts.length ? parts.join(" and ") : null
+}
+
+function Shell({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Card className="mx-auto max-w-md shadow-none">
+      <CardContent className="space-y-4 p-6">
+        <h1 className="text-xl font-semibold">{title}</h1>
+        {children}
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * Joining an organization is never automatic. The invitee sees who invited
+ * them, to what, and what accepting would cost them, then chooses Accept or
+ * Decline — an invite link opened out of curiosity must not move anyone's
+ * account, least of all delete a workspace.
+ */
 export function AcceptInvitationClient() {
   const params = useParams<{ token: string }>()
   const token = typeof params.token === "string" ? params.token : ""
   const router = useRouter()
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<"idle" | "accepting" | "done">("idle")
-  const [conflict, setConflict] = useState<{
-    currentOrgName: string
-    campaignCount: number
-    supportCaseCount: number
-  } | null>(null)
-  const [resolving, setResolving] = useState(false)
+  const [declined, setDeclined] = useState(false)
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !token || status !== "idle" || conflict) return
+  const previewQuery = useQuery({
+    queryKey: ["org-invitation-preview", token, isSignedIn],
+    queryFn: () => getOrgInvitationPreview(getToken, token),
+    enabled: isLoaded && Boolean(token),
+    retry: false,
+  })
 
-    let cancelled = false
-    setStatus("accepting")
-    void acceptOrgInvitation(getToken, token)
-      .then(({ org }) => {
-        if (cancelled) return
-        setStatus("done")
-        toast.success(`You're now part of ${org.name}`, {
-          description: `Joined as ${org.myRoleName}`,
-        })
-        router.replace("/settings/team")
-      })
-      .catch((err: OrgApiError) => {
-        if (cancelled) return
-        if (err.reason === "solo_org_conflict" && err.currentOrgName) {
-          setConflict({
-            currentOrgName: err.currentOrgName,
-            campaignCount: err.campaignCount ?? 0,
-            supportCaseCount: err.supportCaseCount ?? 0,
-          })
-        } else {
-          setError(err.message)
-        }
-        setStatus("idle")
-      })
+  const accept = useMutation({
+    mutationFn: (options?: { leaveSoleOrg?: boolean }) =>
+      acceptOrgInvitation(getToken, token, options),
+    onSuccess: ({ org }) => {
+      toast.success(`You're now part of ${org.name}`, { description: `Joined as ${org.myRoleName}` })
+      router.replace("/settings/team")
+    },
+    onError: (err: OrgApiError) => setError(err.message),
+  })
 
-    return () => {
-      cancelled = true
-    }
-  }, [conflict, getToken, isLoaded, isSignedIn, router, status, token])
+  const decline = useMutation({
+    mutationFn: () => declineOrgInvitation(getToken, token),
+    onSuccess: () => setDeclined(true),
+    onError: (err: OrgApiError) => setError(err.message),
+  })
 
-  function handleLeaveAndJoin() {
-    setResolving(true)
-    void acceptOrgInvitation(getToken, token, { leaveSoleOrg: true })
-      .then(({ org }) => {
-        toast.success(`You're now part of ${org.name}`, {
-          description: `Joined as ${org.myRoleName}`,
-        })
-        router.replace("/settings/team")
-      })
-      .catch((err: Error) => {
-        setResolving(false)
-        setConflict(null)
-        setError(err.message)
-      })
-  }
-
-  if (!isLoaded) {
+  if (!isLoaded || previewQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>
   }
 
+  if (previewQuery.isError || !previewQuery.data) {
+    return (
+      <Shell title="This invitation isn't available">
+        <p className="text-sm text-destructive">
+          {(previewQuery.error as OrgApiError | null)?.message ?? "It may have expired or been withdrawn."}
+        </p>
+        <Button asChild variant="outline">
+          <Link href="/">Go to dashboard</Link>
+        </Button>
+      </Shell>
+    )
+  }
+
+  const preview = previewQuery.data
+  const returnTo = `/invitations/${token}`
+
+  if (declined) {
+    return (
+      <Shell title="Invitation declined">
+        <p className="text-sm text-muted-foreground">
+          Nothing about your account changed. Ask {preview.inviterName} for a new invitation if you
+          change your mind.
+        </p>
+        <Button asChild variant="outline">
+          <Link href="/">Go to dashboard</Link>
+        </Button>
+      </Shell>
+    )
+  }
+
+  const invitedTo = (
+    <p className="text-sm text-muted-foreground">
+      <strong className="text-foreground">{preview.inviterName}</strong> invited you to join{" "}
+      <strong className="text-foreground">{preview.orgName}</strong>
+      {preview.roleName ? ` as ${preview.roleName}` : ""}, at {preview.email}.
+    </p>
+  )
+
   if (!isSignedIn) {
-    const returnTo = `/invitations/${token}`
-    const loginHref = `/auth/login/advertiser?redirect_url=${encodeURIComponent(returnTo)}`
-    const signUpHref = `/auth/signup/advertiser?redirect_url=${encodeURIComponent(returnTo)}`
     return (
-      <Card className="mx-auto max-w-md shadow-none">
-        <CardContent className="space-y-4 p-6">
-          <h1 className="text-xl font-semibold">Accept invitation</h1>
-          <p className="text-sm text-muted-foreground">
-            Use the email address this invitation was sent to — we match on it before adding you to
-            the team.
-          </p>
-          <div className="flex flex-col gap-2">
-            {/* Most invitees have never used Admobi, so creating an account is
-                the primary action, not an afterthought. */}
-            <Button asChild className="w-full">
-              <Link href={signUpHref}>Create an account</Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full">
-              <Link href={loginHref}>I already have an account</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (conflict) {
-    const detached = [
-      conflict.campaignCount > 0
-        ? `${conflict.campaignCount} campaign${conflict.campaignCount === 1 ? "" : "s"}`
-        : null,
-      conflict.supportCaseCount > 0
-        ? `${conflict.supportCaseCount} support case${conflict.supportCaseCount === 1 ? "" : "s"}`
-        : null,
-    ].filter(Boolean)
-
-    return (
-      <Card className="mx-auto max-w-md shadow-none">
-        <CardContent className="space-y-4 p-6">
-          <h1 className="text-xl font-semibold">You already have a workspace</h1>
-          <p className="text-sm text-muted-foreground">
-            You&apos;re the only member of <strong>{conflict.currentOrgName}</strong>. Leave it to
-            join this invitation instead?
-          </p>
-          {detached.length ? (
-            <p className="text-sm text-destructive">
-              This permanently detaches {detached.join(" and ")} from your account. Ask an admin of{" "}
-              {conflict.currentOrgName} to invite you back, or contact support first if you need
-              them.
-            </p>
-          ) : null}
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              className="flex-1"
-              variant={detached.length ? "destructive" : "default"}
-              disabled={resolving}
-              loading={resolving}
-              loadingText="Joining…"
-              onClick={handleLeaveAndJoin}
-            >
-              Leave {conflict.currentOrgName} and join
-            </Button>
-            <Button asChild variant="outline" disabled={resolving}>
-              <Link href="/">Cancel</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card className="mx-auto max-w-md shadow-none">
-        <CardContent className="space-y-4 p-6">
-          <h1 className="text-xl font-semibold">Couldn&apos;t accept</h1>
-          <p className="text-sm text-destructive">{error}</p>
-          <Button asChild variant="outline">
-            <Link href="/">Go to dashboard</Link>
+      <Shell title={`Join ${preview.orgName}`}>
+        {invitedTo}
+        <p className="text-sm text-muted-foreground">
+          Use that address to continue — we match on it before adding you to the team.
+        </p>
+        <div className="flex flex-col gap-2">
+          {/* Most invitees have never used Admobi, so creating an account is
+              the primary action, not an afterthought. */}
+          <Button asChild className="w-full">
+            <Link href={`/auth/signup/advertiser?redirect_url=${encodeURIComponent(returnTo)}`}>
+              Create an account
+            </Link>
           </Button>
-        </CardContent>
-      </Card>
+          <Button asChild variant="outline" className="w-full">
+            <Link href={`/auth/login/advertiser?redirect_url=${encodeURIComponent(returnTo)}`}>
+              I already have an account
+            </Link>
+          </Button>
+        </div>
+      </Shell>
     )
   }
+
+  if (preview.emailMismatch) {
+    return (
+      <Shell title="Wrong account">
+        {invitedTo}
+        <p className="text-sm text-destructive">
+          You&apos;re signed in with a different email address. Sign in as {preview.email} to accept.
+        </p>
+        <Button asChild variant="outline">
+          <Link href={`/auth/login/advertiser?redirect_url=${encodeURIComponent(returnTo)}`}>
+            Switch account
+          </Link>
+        </Button>
+      </Shell>
+    )
+  }
+
+  if (preview.conflict === "existing_team") {
+    return (
+      <Shell title="You're already in an organization">
+        {invitedTo}
+        <p className="text-sm text-muted-foreground">
+          You belong to <strong>{preview.currentOrgName ?? "another organization"}</strong>, which
+          has other members. Leave it from Settings — or transfer admin first, if you&apos;re the
+          admin — before joining a different one.
+        </p>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button asChild variant="outline" className="flex-1">
+            <Link href="/settings/account">Go to Settings</Link>
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={decline.isPending}
+            loading={decline.isPending}
+            loadingText="Declining…"
+            onClick={() => decline.mutate()}
+          >
+            Decline invitation
+          </Button>
+        </div>
+      </Shell>
+    )
+  }
+
+  const replacesWorkspace =
+    preview.conflict === "empty_solo_org" || preview.conflict === "solo_org_with_content"
+  const losesWork = preview.conflict === "solo_org_with_content"
+  const detached = detachedSummary(preview)
 
   return (
-    <Card className="mx-auto max-w-md shadow-none">
-      <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
-        <Loader2Icon className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Joining team…</h1>
-          <p className="text-sm text-muted-foreground">Accepting your invitation.</p>
-        </div>
-      </CardContent>
-    </Card>
+    <Shell title={`Join ${preview.orgName}?`}>
+      {invitedTo}
+
+      {preview.conflict === "empty_solo_org" ? (
+        <p className="text-sm text-muted-foreground">
+          Accepting replaces <strong>{preview.currentOrgName}</strong> — the empty workspace created
+          for you at sign-up. There&apos;s nothing in it.
+        </p>
+      ) : null}
+
+      {losesWork ? (
+        <p className="text-sm text-destructive">
+          Accepting deletes <strong>{preview.currentOrgName}</strong>
+          {detached ? `, permanently detaching ${detached}` : ""}. That can&apos;t be undone —
+          contact support first if you still need them.
+        </p>
+      ) : null}
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          className="flex-1"
+          variant={losesWork ? "destructive" : "default"}
+          disabled={accept.isPending || decline.isPending}
+          loading={accept.isPending}
+          loadingText="Joining…"
+          onClick={() => accept.mutate(replacesWorkspace ? { leaveSoleOrg: true } : undefined)}
+        >
+          {losesWork ? "Delete workspace and join" : "Accept invitation"}
+        </Button>
+        <Button
+          variant="outline"
+          disabled={accept.isPending || decline.isPending}
+          loading={decline.isPending}
+          loadingText="Declining…"
+          onClick={() => decline.mutate()}
+        >
+          Decline
+        </Button>
+      </div>
+    </Shell>
   )
 }

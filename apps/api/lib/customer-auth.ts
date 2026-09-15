@@ -218,6 +218,12 @@ export async function requireCustomerIdentity(): Promise<{ userId: string }> {
   return { userId }
 }
 
+/** Non-throwing twin of requireCustomerIdentity, for routes that serve both
+ * signed-in and anonymous callers (the invitation preview). Never bootstraps. */
+export async function getCustomerIdentity(): Promise<string | null> {
+  return resolveCustomerUserId()
+}
+
 /** Mirrors requireOpsPermission in lib/auth.ts. is_owner bypasses this
  * entirely, same as org:admin does for ops. */
 export async function requireCustomerPermission(

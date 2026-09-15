@@ -1,35 +1,37 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useAuth } from "@clerk/clerk-expo"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { ActivityIndicator, Pressable, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native"
+
+import type { AdvertiserInvitationPreviewDto } from "@workspace/ops-contracts"
 
 import { useTokenGetter } from "@/lib/auth/use-token-getter"
-import { acceptOrgInvitation, OrgApiError } from "@/lib/org-client"
+import {
+  acceptOrgInvitation,
+  declineOrgInvitation,
+  getOrgInvitationPreview,
+  OrgApiError,
+} from "@/lib/org-client"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-type Conflict = {
-  currentOrgName: string
-  campaignCount: number
-  supportCaseCount: number
-}
-
-function detachedSummary(conflict: Conflict): string | null {
+function detachedSummary(preview: AdvertiserInvitationPreviewDto): string | null {
   const parts = [
-    conflict.campaignCount
-      ? `${conflict.campaignCount} campaign${conflict.campaignCount === 1 ? "" : "s"}`
+    preview.campaignCount
+      ? `${preview.campaignCount} campaign${preview.campaignCount === 1 ? "" : "s"}`
       : null,
-    conflict.supportCaseCount
-      ? `${conflict.supportCaseCount} support case${conflict.supportCaseCount === 1 ? "" : "s"}`
+    preview.supportCaseCount
+      ? `${preview.supportCaseCount} support case${preview.supportCaseCount === 1 ? "" : "s"}`
       : null,
   ].filter(Boolean)
   return parts.length ? parts.join(" and ") : null
 }
 
 /**
- * Expo twin of customer-web's /invitations/[token]. Reachable through the
- * universal link on app.admobihq.com (see app.json intentFilters) and through
- * admobihq-app://invitations/<token>.
+ * Expo twin of customer-web's /invitations/[token]. Joining is never
+ * automatic — the invitee sees who invited them and what accepting would cost
+ * them, then picks Accept or Decline. Reachable through the universal link on
+ * app.admobihq.com and through admobihq-app://invitations/<token>.
  */
 export default function AcceptInvitationScreen() {
   const { token: rawToken } = useLocalSearchParams<{ token: string }>()
@@ -41,8 +43,14 @@ export default function AcceptInvitationScreen() {
   const colors = useThemeColors()
 
   const [error, setError] = useState<string | null>(null)
-  const [conflict, setConflict] = useState<Conflict | null>(null)
-  const [attempted, setAttempted] = useState(false)
+  const [declined, setDeclined] = useState(false)
+
+  const previewQuery = useQuery({
+    queryKey: ["org-invitation-preview", token, isSignedIn],
+    queryFn: () => getOrgInvitationPreview(getToken, token),
+    enabled: isLoaded && Boolean(token),
+    retry: false,
+  })
 
   const accept = useMutation({
     mutationFn: (options?: { leaveSoleOrg?: boolean }) =>
@@ -52,43 +60,30 @@ export default function AcceptInvitationScreen() {
       await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
       router.replace("/(tabs)/settings/team")
     },
-    onError: (err: OrgApiError) => {
-      if (err.reason === "solo_org_conflict" && err.currentOrgName) {
-        setConflict({
-          currentOrgName: err.currentOrgName,
-          campaignCount: err.campaignCount ?? 0,
-          supportCaseCount: err.supportCaseCount ?? 0,
-        })
-      } else {
-        setError(err.message)
-      }
-    },
+    onError: (err: OrgApiError) => setError(err.message),
   })
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !token || attempted) return
-    setAttempted(true)
-    accept.mutate(undefined)
-  }, [accept, attempted, isLoaded, isSignedIn, token])
+  const decline = useMutation({
+    mutationFn: () => declineOrgInvitation(getToken, token),
+    onSuccess: () => setDeclined(true),
+    onError: (err: OrgApiError) => setError(err.message),
+  })
 
   const styles = useThemedStyles((c) => ({
-    root: {
-      flex: 1,
-      backgroundColor: c.bg,
-      padding: spacing.lg,
-      gap: spacing.md,
-      justifyContent: "center" as const,
-    },
+    root: { flex: 1, backgroundColor: c.bg },
+    content: { padding: spacing.lg, gap: spacing.md, flexGrow: 1, justifyContent: "center" as const },
     title: { ...typography.title, color: c.text },
     body: { ...typography.body, color: c.mutedForeground },
+    strong: { color: c.text, fontWeight: "700" as const },
     warning: { ...typography.body, color: c.destructive },
     button: {
-      marginTop: spacing.sm,
+      marginTop: spacing.xs,
       paddingVertical: spacing.md,
       borderRadius: 12,
       alignItems: "center" as const,
       backgroundColor: c.primary,
     },
+    buttonDanger: { backgroundColor: c.destructive },
     buttonText: { fontWeight: "700" as const, color: c.primaryForeground },
     secondary: {
       paddingVertical: spacing.md,
@@ -98,23 +93,64 @@ export default function AcceptInvitationScreen() {
       borderColor: c.border,
     },
     secondaryText: { fontWeight: "700" as const, color: c.text },
+    disabled: { opacity: 0.6 },
   }))
 
-  if (!isLoaded) {
+  if (!isLoaded || previewQuery.isLoading) {
     return (
-      <View style={styles.root}>
+      <View style={[styles.root, { alignItems: "center", justifyContent: "center" }]}>
         <ActivityIndicator color={colors.primary} />
       </View>
     )
   }
 
+  if (previewQuery.isError || !previewQuery.data) {
+    return (
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>This invitation isn&apos;t available</Text>
+        <Text style={styles.warning}>
+          {(previewQuery.error as OrgApiError | null)?.message ??
+            "It may have expired or been withdrawn."}
+        </Text>
+        <Pressable style={styles.secondary} onPress={() => router.replace("/(tabs)")}>
+          <Text style={styles.secondaryText}>Go to dashboard</Text>
+        </Pressable>
+      </ScrollView>
+    )
+  }
+
+  const preview = previewQuery.data
+
+  if (declined) {
+    return (
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Invitation declined</Text>
+        <Text style={styles.body}>
+          Nothing about your account changed. Ask {preview.inviterName} for a new invitation if you
+          change your mind.
+        </Text>
+        <Pressable style={styles.secondary} onPress={() => router.replace("/(tabs)")}>
+          <Text style={styles.secondaryText}>Go to dashboard</Text>
+        </Pressable>
+      </ScrollView>
+    )
+  }
+
+  const invitedTo = (
+    <Text style={styles.body}>
+      <Text style={styles.strong}>{preview.inviterName}</Text> invited you to join{" "}
+      <Text style={styles.strong}>{preview.orgName}</Text>
+      {preview.roleName ? ` as ${preview.roleName}` : ""}, at {preview.email}.
+    </Text>
+  )
+
   if (!isSignedIn) {
     return (
-      <View style={styles.root}>
-        <Text style={styles.title}>Accept invitation</Text>
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Join {preview.orgName}</Text>
+        {invitedTo}
         <Text style={styles.body}>
-          Sign in — or create an account — with the email address this invitation was sent to. We
-          match on it before adding you to the team.
+          Use that address to continue — we match on it before adding you to the team.
         </Text>
         <Pressable style={styles.button} onPress={() => router.push("/sign-up")}>
           <Text style={styles.buttonText}>Create an account</Text>
@@ -122,61 +158,105 @@ export default function AcceptInvitationScreen() {
         <Pressable style={styles.secondary} onPress={() => router.push("/sign-in")}>
           <Text style={styles.secondaryText}>I already have an account</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     )
   }
 
-  if (conflict) {
-    const detached = detachedSummary(conflict)
+  if (preview.emailMismatch) {
     return (
-      <View style={styles.root}>
-        <Text style={styles.title}>You already have a workspace</Text>
-        <Text style={styles.body}>
-          You&apos;re the only member of {conflict.currentOrgName}. Leave it to join this invitation
-          instead?
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Wrong account</Text>
+        {invitedTo}
+        <Text style={styles.warning}>
+          You&apos;re signed in with a different email address. Sign in as {preview.email} to accept.
         </Text>
-        {detached ? (
-          <Text style={styles.warning}>
-            This permanently detaches {detached} from your account. Contact support first if you
-            still need them.
-          </Text>
-        ) : null}
-        <Pressable
-          style={styles.button}
-          disabled={accept.isPending}
-          onPress={() => {
-            setConflict(null)
-            accept.mutate({ leaveSoleOrg: true })
-          }}
-        >
-          <Text style={styles.buttonText}>
-            {accept.isPending ? "Joining…" : `Leave ${conflict.currentOrgName} and join`}
-          </Text>
+        <Pressable style={styles.secondary} onPress={() => router.push("/sign-in")}>
+          <Text style={styles.secondaryText}>Switch account</Text>
         </Pressable>
-        <Pressable style={styles.secondary} onPress={() => router.replace("/(tabs)")}>
-          <Text style={styles.secondaryText}>Cancel</Text>
-        </Pressable>
-      </View>
+      </ScrollView>
     )
   }
 
-  if (error) {
+  const busy = accept.isPending || decline.isPending
+
+  if (preview.conflict === "existing_team") {
     return (
-      <View style={styles.root}>
-        <Text style={styles.title}>Couldn&apos;t accept</Text>
-        <Text style={styles.warning}>{error}</Text>
-        <Pressable style={styles.secondary} onPress={() => router.replace("/(tabs)")}>
-          <Text style={styles.secondaryText}>Go to dashboard</Text>
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>You&apos;re already in an organization</Text>
+        {invitedTo}
+        <Text style={styles.body}>
+          You belong to{" "}
+          <Text style={styles.strong}>{preview.currentOrgName ?? "another organization"}</Text>,
+          which has other members. Leave it from Settings — or transfer admin first, if you&apos;re
+          the admin — before joining a different one.
+        </Text>
+        {error ? <Text style={styles.warning}>{error}</Text> : null}
+        <Pressable
+          style={styles.secondary}
+          onPress={() => router.replace("/(tabs)/settings/account")}
+        >
+          <Text style={styles.secondaryText}>Go to Settings</Text>
         </Pressable>
-      </View>
+        <Pressable
+          style={[styles.secondary, busy && styles.disabled]}
+          disabled={busy}
+          onPress={() => decline.mutate()}
+        >
+          <Text style={styles.secondaryText}>
+            {decline.isPending ? "Declining…" : "Decline invitation"}
+          </Text>
+        </Pressable>
+      </ScrollView>
     )
   }
+
+  const replacesWorkspace =
+    preview.conflict === "empty_solo_org" || preview.conflict === "solo_org_with_content"
+  const losesWork = preview.conflict === "solo_org_with_content"
+  const detached = detachedSummary(preview)
 
   return (
-    <View style={styles.root}>
-      <ActivityIndicator color={colors.primary} />
-      <Text style={styles.title}>Joining team…</Text>
-      <Text style={styles.body}>Accepting your invitation.</Text>
-    </View>
+    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <Text style={styles.title}>Join {preview.orgName}?</Text>
+      {invitedTo}
+
+      {preview.conflict === "empty_solo_org" ? (
+        <Text style={styles.body}>
+          Accepting replaces <Text style={styles.strong}>{preview.currentOrgName}</Text> — the empty
+          workspace created for you at sign-up. There&apos;s nothing in it.
+        </Text>
+      ) : null}
+
+      {losesWork ? (
+        <Text style={styles.warning}>
+          Accepting deletes {preview.currentOrgName}
+          {detached ? `, permanently detaching ${detached}` : ""}. That can&apos;t be undone —
+          contact support first if you still need them.
+        </Text>
+      ) : null}
+
+      {error ? <Text style={styles.warning}>{error}</Text> : null}
+
+      <Pressable
+        style={[styles.button, losesWork && styles.buttonDanger, busy && styles.disabled]}
+        disabled={busy}
+        onPress={() => accept.mutate(replacesWorkspace ? { leaveSoleOrg: true } : undefined)}
+      >
+        <Text style={styles.buttonText}>
+          {accept.isPending
+            ? "Joining…"
+            : losesWork
+              ? "Delete workspace and join"
+              : "Accept invitation"}
+        </Text>
+      </Pressable>
+      <Pressable
+        style={[styles.secondary, busy && styles.disabled]}
+        disabled={busy}
+        onPress={() => decline.mutate()}
+      >
+        <Text style={styles.secondaryText}>{decline.isPending ? "Declining…" : "Decline"}</Text>
+      </Pressable>
+    </ScrollView>
   )
 }

@@ -44,6 +44,7 @@ export async function GET() {
         org_id: auth.access.orgId,
         accepted_at: null,
         revoked_at: null,
+        declined_at: null,
         expires_at: { gt: new Date() },
       },
       orderBy: { created_at: "desc" },

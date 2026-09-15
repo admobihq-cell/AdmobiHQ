@@ -51,6 +51,7 @@ export async function GET(_req: Request, { params }: Params) {
         org_id: id,
         accepted_at: null,
         revoked_at: null,
+        declined_at: null,
         expires_at: { gt: new Date() },
       },
       orderBy: { created_at: "desc" },
