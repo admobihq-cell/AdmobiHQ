@@ -21,12 +21,14 @@ import { ThemeSettingsSection } from "@/components/theme-settings-section"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_APP_URL } from "@/lib/env"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
+import { useOrgPermissions } from "@/lib/use-org"
 
 export default function SettingsScreen() {
   const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { user } = useUser()
+  const { can } = useOrgPermissions()
   const [checkingUpdate, setCheckingUpdate] = useState(false)
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
@@ -182,13 +184,17 @@ export default function SettingsScreen() {
             description="Organization name, members, and invites"
             onPress={() => router.push("/settings/team")}
           />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon={Radio}
-            label="Activity"
-            description="Campaign decisions and team changes"
-            onPress={() => router.push("/settings/activity")}
-          />
+          {can("activity:read") ? (
+            <>
+              <View style={styles.divider} />
+              <SettingsRow
+                icon={Radio}
+                label="Activity"
+                description="Campaign decisions and team changes"
+                onPress={() => router.push("/settings/activity")}
+              />
+            </>
+          ) : null}
         </View>
       </View>
 

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "expo-router"
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +12,8 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as WebBrowser from "expo-web-browser"
+
+import { orgCan } from "@workspace/ops-contracts"
 
 import { Person } from "@/components/icons"
 import { useTokenGetter } from "@/lib/auth/use-token-getter"
@@ -35,6 +38,7 @@ export default function TeamSettingsScreen() {
   const insets = useSafeAreaInsets()
   const colors = useThemeColors()
   const getToken = useTokenGetter()
+  const router = useRouter()
   const queryClient = useQueryClient()
   const [orgName, setOrgName] = useState<string | null>(null)
   const [email, setEmail] = useState("")
@@ -44,19 +48,24 @@ export default function TeamSettingsScreen() {
     queryKey: ORG_KEY,
     queryFn: () => getOrg(getToken),
   })
+
+  // Gate on the permission the API enforces, not on whether the members
+  // request happened to succeed.
+  const canManage = orgCan(orgQuery.data, "team:manage")
+
   const membersQuery = useQuery({
     queryKey: MEMBERS_KEY,
     queryFn: () => listOrgMembers(getToken),
+    enabled: canManage,
     retry: false,
   })
   const rolesQuery = useQuery({
     queryKey: ROLES_KEY,
     queryFn: () => listOrgRoles(getToken),
-    enabled: membersQuery.isSuccess,
+    enabled: canManage,
     retry: false,
   })
 
-  const canManage = membersQuery.isSuccess
   const displayName = orgName ?? orgQuery.data?.name ?? ""
   const roles = rolesQuery.data ?? []
   const activeRoleId =
@@ -103,7 +112,6 @@ export default function TeamSettingsScreen() {
     },
     onError: (err: Error) => Alert.alert("Couldn't transfer", err.message),
   })
-
   const revokeMutation = useMutation({
     mutationFn: (invitationId: number) => revokeOrgInvitation(getToken, invitationId),
     onSuccess: async () => {
@@ -340,6 +348,16 @@ export default function TeamSettingsScreen() {
               ))}
             </View>
           ) : null}
+
+          <View style={styles.card}>
+            <Text style={styles.title}>Roles</Text>
+            <Text style={styles.hint}>
+              Create roles and choose exactly what each one can do.
+            </Text>
+            <Pressable style={styles.button} onPress={() => router.push("/settings/roles")}>
+              <Text style={styles.buttonText}>Manage roles</Text>
+            </Pressable>
+          </View>
         </>
       ) : (
         <View style={styles.card}>
