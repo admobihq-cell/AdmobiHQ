@@ -12,8 +12,10 @@ vi.mock("@clerk/backend", () => ({
   verifyToken: vi.fn(async () => ({ sub: currentTestUserId })),
 }))
 
+import { testDatabaseUrl } from "@/lib/test-database-url"
+
 let currentTestUserId = ""
-const databaseUrl = process.env.DATABASE_URL
+const databaseUrl = testDatabaseUrl()
 
 describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
@@ -137,6 +139,49 @@ describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
 
       const member = await prisma.advertiserMember.findUnique({ where: { clerk_user_id: strangerId } })
       expect(member).toBeNull()
+    },
+    30_000,
+  )
+
+  it(
+    "the org DTO exposes the caller's permissions, and hides billing from roles without billing:read",
+    async () => {
+      const userId = `auth-test-dto-${Date.now()}`
+      createdUserIds.push(userId)
+
+      const memberRole = await prisma.advertiserRole.findFirst({
+        where: { org_id: null, name: "Member" },
+      })
+      if (!memberRole) throw new Error("seeded 'Member' role not found")
+
+      const org = await prisma.advertiserOrg.create({
+        data: {
+          name: "DTO Test Org",
+          billing_email: "finance@example.co.ke",
+          tax_pin: "P051234567M",
+        },
+      })
+      await prisma.advertiserMember.create({
+        data: { org_id: org.id, clerk_user_id: userId, is_owner: false, role_id: memberRole.id },
+      })
+
+      const { toOrgDto } = await import("./advertiser-org")
+      const dto = await toOrgDto(org.id, userId)
+
+      expect(dto?.isOwner).toBe(false)
+      expect(dto?.permissions).toEqual(expect.arrayContaining(memberRole.permissions))
+      expect(dto?.permissions).not.toContain("campaigns:submit")
+      // Clients render these; a Member must not see the company's finance data.
+      expect(dto?.billingEmail).toBeNull()
+      expect(dto?.taxPin).toBeNull()
+
+      await prisma.advertiserMember.updateMany({
+        where: { clerk_user_id: userId },
+        data: { is_owner: true },
+      })
+      const ownerDto = await toOrgDto(org.id, userId)
+      expect(ownerDto?.billingEmail).toBe("finance@example.co.ke")
+      expect(ownerDto?.taxPin).toBe("P051234567M")
     },
     30_000,
   )
