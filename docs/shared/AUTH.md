@@ -215,6 +215,8 @@ Customer and driver apps always mount `ClerkProvider`. A missing publishable key
 
 **Vercel:** `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` / `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` (and matching secrets + `CLERK_ENCRYPTION_KEY`) must be set on **Preview** for *all* branches as well as Production — not only `Preview (staging)`. PR Preview builds prerender layouts and will fail with `…CLERK_PUBLISHABLE_KEY is required` if the key is missing.
 
+**GitHub Actions CI:** the same build runs without Infisical, so `.github/workflows/ci.yml` supplies these vars from repo secrets and falls back to a throwaway `pk_test_…` / `sk_test_…` value when a secret is unset — CI never deploys its artifacts. Any new build-time env var must *also* be listed in `turbo.json` under `tasks.build.env`: Turbo 2 runs in strict env mode and silently drops anything not listed, so the var never reaches `next build` even when the workflow exports it.
+
 ---
 
 ## 5. Server-side verification, organizations, and roles
