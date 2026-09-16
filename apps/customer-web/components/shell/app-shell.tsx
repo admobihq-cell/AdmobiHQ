@@ -42,6 +42,7 @@ import { customerTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { OrgNameNudge } from "@/components/shell/org-name-nudge"
+import { ProfileNameNudge } from "@/components/shell/profile-name-nudge"
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -160,7 +161,9 @@ export function AppShell({
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter className="border-t border-sidebar-border p-2">
-            <NavUser />
+            <ProfileNameNudge>
+              <NavUser />
+            </ProfileNameNudge>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>

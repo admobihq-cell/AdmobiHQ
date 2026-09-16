@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import type { AdvertiserInvitationPreviewDto } from "@workspace/ops-contracts"
@@ -51,6 +51,7 @@ export function AcceptInvitationClient() {
   const params = useParams<{ token: string }>()
   const token = typeof params.token === "string" ? params.token : ""
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [declined, setDeclined] = useState(false)
@@ -65,9 +66,12 @@ export function AcceptInvitationClient() {
   const accept = useMutation({
     mutationFn: (options?: { leaveSoleOrg?: boolean }) =>
       acceptOrgInvitation(getToken, token, options),
-    onSuccess: ({ org }) => {
+    onSuccess: async ({ org }) => {
       toast.success(`You're now part of ${org.name}`, { description: `Joined as ${org.myRoleName}` })
-      router.replace("/settings/team")
+      // The shell and dashboard read these; joining changed both org and roster.
+      await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
+      await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
+      router.replace("/")
     },
     onError: (err: OrgApiError) => setError(err.message),
   })

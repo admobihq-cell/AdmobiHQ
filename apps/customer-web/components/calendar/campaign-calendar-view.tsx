@@ -7,12 +7,12 @@ import { CalendarDays, FileDown, List, MapPin, Plus, Wallet } from "lucide-react
 import { exportFileName, formatKes, type CampaignDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
+import { FlightCalendarSkeleton } from "@/components/calendar/campaign-calendar-skeleton"
 import {
   EDITABLE_STATUSES,
   FlightCalendar,
 } from "@/components/calendar/flight-calendar"
 import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import { formatDayHeading, resolveFlight, toDayIso } from "@/lib/campaign-calendar"
 import { useCampaigns, useDownloadPdf, useUpdateCampaign } from "@/lib/use-campaigns"
@@ -153,7 +153,7 @@ export function CampaignCalendarView() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
         {campaignsQuery.isPending ? (
-          <Skeleton className="h-[32rem] w-full rounded-xl" />
+          <FlightCalendarSkeleton />
         ) : (
           <FlightCalendar
             campaigns={campaigns}
