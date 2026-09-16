@@ -38,7 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -62,6 +61,7 @@ import {
 import { orgCan } from "@workspace/ops-contracts"
 import { AdminRequestsCard } from "@/components/settings/admin-requests-card"
 import { OrgBillingCard } from "@/components/settings/org-billing-card"
+import { TeamSettingsSkeleton } from "@/components/skeletons/team-settings-skeleton"
 
 const ORG_KEY = ["customer-org"] as const
 const MEMBERS_KEY = ["customer-org-members"] as const
@@ -201,12 +201,7 @@ export function TeamSettingsView() {
   }, [roles])
 
   if (!isLoaded || orgQuery.isLoading || (canManageTeam && membersQuery.isLoading)) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-40 w-full" />
-      </div>
-    )
+    return <TeamSettingsSkeleton />
   }
 
   if (orgQuery.isError) {

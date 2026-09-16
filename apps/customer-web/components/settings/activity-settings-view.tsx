@@ -2,11 +2,21 @@
 
 import { useAuth } from "@clerk/nextjs"
 import { useInfiniteQuery } from "@tanstack/react-query"
+import { History, RefreshCw } from "lucide-react"
 
+import { formatLabel } from "@workspace/ops-contracts"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent } from "@workspace/ui/components/card"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@workspace/ui/components/table"
 
+import { ActivityTableSkeleton } from "@/components/skeletons/activity-table-skeleton"
 import { listOrgActivity } from "@/lib/org-client"
 
 const ACTIVITY_KEY = ["customer-org-activity"] as const
@@ -16,6 +26,20 @@ function formatWhen(iso: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(iso))
+}
+
+function Header({ action }: { action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="space-y-2">
+        <h2 className="text-lg font-medium">Activity</h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Campaign decisions, team changes, and edits in your organization.
+        </p>
+      </div>
+      {action}
+    </div>
+  )
 }
 
 export function ActivitySettingsView() {
@@ -32,69 +56,108 @@ export function ActivitySettingsView() {
   })
 
   if (!isLoaded || query.isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    )
+    return <ActivityTableSkeleton />
   }
 
   if (query.isError) {
     const status = (query.error as Error & { status?: number }).status
-    if (status === 403) {
-      return (
-        <Card>
-          <CardContent className="space-y-2 p-6">
-            <h2 className="text-lg font-medium">Activity</h2>
-            <p className="text-sm text-muted-foreground">
-              Activity is available to admins and managers. Ask an admin if you need access.
+    return (
+      <div className="flex flex-col gap-6">
+        <Header />
+        <div className="overflow-hidden rounded-xl border bg-card shadow-none">
+          <div className="flex h-32 flex-col items-center justify-center px-6 text-center">
+            <History className="mb-2 size-5 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">
+              {status === 403
+                ? "Activity is limited to admins and managers."
+                : "Couldn't load activity."}
             </p>
-          </CardContent>
-        </Card>
-      )
-    }
-    return <p className="text-sm text-destructive">{(query.error as Error).message}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {status === 403
+                ? "Ask an admin if you need access."
+                : (query.error as Error).message}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? []
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-medium">Activity</h2>
-        <p className="text-sm text-muted-foreground">
-          Campaign decisions, team changes, and edits in your organization.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <Header
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={query.isRefetching}
+            loading={query.isRefetching}
+            loadingText="Refresh"
+            onClick={() => void query.refetch()}
+          >
+            <RefreshCw className="size-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-      {items.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            No activity yet. It&apos;ll show up as your team creates campaigns and Admobi reviews
-            them.
-          </CardContent>
-        </Card>
-      ) : (
-        <ul className="divide-y rounded-lg border">
-          {items.map((item) => (
-            <li key={item.id} className="space-y-1 px-4 py-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium">{item.label}</p>
-                <time className="text-xs text-muted-foreground">{formatWhen(item.createdAt)}</time>
-              </div>
-              <p className="text-xs text-muted-foreground">{item.actorLabel}</p>
-              {item.detail ? <p className="text-sm text-muted-foreground">{item.detail}</p> : null}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="overflow-hidden rounded-xl border bg-card shadow-none">
+        {items.length === 0 ? (
+          <div className="flex h-32 flex-col items-center justify-center px-6 text-center">
+            <History className="mb-2 size-5 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">No activity yet.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              It&apos;ll show up as your team creates campaigns and Admobi reviews them.
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-44">When</TableHead>
+                <TableHead>Activity</TableHead>
+                <TableHead className="w-48">Actor</TableHead>
+                <TableHead className="w-40">Type</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="whitespace-nowrap align-top text-muted-foreground">
+                    {formatWhen(item.createdAt)}
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium">{item.label}</span>
+                      {item.detail ? (
+                        <span className="max-w-md whitespace-normal break-words text-xs text-muted-foreground">
+                          {item.detail}
+                        </span>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell className="align-top text-muted-foreground">
+                    {item.actorLabel}
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Badge variant="secondary">{formatLabel(item.entityType)}</Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
 
       {query.hasNextPage ? (
         <Button
           variant="outline"
+          className="self-start"
           disabled={query.isFetchingNextPage}
           loading={query.isFetchingNextPage}
+          loadingText="Loading…"
           onClick={() => void query.fetchNextPage()}
         >
           Load more

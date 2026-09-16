@@ -58,7 +58,7 @@ export default function AcceptInvitationScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["customer-org"] })
       await queryClient.invalidateQueries({ queryKey: ["customer-org-members"] })
-      router.replace("/(tabs)/settings/team")
+      router.replace("/(tabs)")
     },
     onError: (err: OrgApiError) => setError(err.message),
   })
