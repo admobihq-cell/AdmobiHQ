@@ -151,6 +151,20 @@ offers **account deletion** behind a confirm dialog. Details worth keeping:
   `Error`; `clerkErrorMessage()` unwraps it so a failed save says why instead of silently
   doing nothing.
 
+Nothing collects a name at sign-up — the email-code path asks for an email and nothing else —
+so most new accounts arrive blank.
+[`<ProfileNameNudge>`](../../apps/customer-web/components/shell/profile-name-nudge.tsx) wraps
+the sidebar footer's user pill and opens a small, dismissible popover pointing here for anyone
+missing a first name, last name, or username. It is deliberately **not** a modal: nothing in
+the product is gated on a name, so blocking on it would be theatre. Dismissal is one-time and
+per-user, in localStorage ([lib/profile-nudge-storage.ts](../../apps/customer-web/lib/profile-nudge-storage.ts)),
+mirroring `<OrgNameNudge>`.
+
+It also never opens over the product tour, which anchors on that same sidebar.
+[`<TourProvider>`](../../packages/ui/src/components/tour-provider.tsx) publishes `isOpen` on
+its context; the nudge won't start its open timer while that is true, and hides (rather than
+counts as dismissed) if a replayed tour starts while it's up.
+
 Ops reads it back in two places, both resolving it from Clerk at read time rather than
 copying it into Postgres: the **Users** page (`toPlatformUserDto` adds a `company` column,
 rendered for customers only — drivers never set one) and the **campaign review** screen
