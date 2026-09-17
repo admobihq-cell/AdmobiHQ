@@ -4,7 +4,15 @@ import { useCallback, useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useAuth } from "@clerk/nextjs"
-import { AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react"
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Images,
+  MonitorPlay,
+  Wallet,
+} from "lucide-react"
 import { toast } from "sonner"
 import {
   checkCreativeForFormat,
@@ -20,22 +28,21 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { StatusBadge } from "@/components/status-badge"
 import { CampaignDetailSkeleton } from "@/components/campaign-detail-skeleton"
-import { formatBytes, formatDateTime, formatLabel } from "@/lib/format"
+import { ReviewNote } from "@/components/review-note"
+import { Fact, FactStrip } from "@/components/ui/fact-strip"
+import {
+  SectionCard,
+  SectionEmpty,
+  SectionRow,
+  SectionRows,
+} from "@/components/ui/section-card"
+import { formatBytes, formatDate, formatDateTime, formatLabel } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
 const FORMAT_LABELS: Record<string, string> = {
   taxi_top: "Taxi-top LED",
   delivery_bike: "Delivery bike",
   both: "Taxi-top LED + delivery bike",
-}
-
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-border py-2 text-sm last:border-0">
-      <span className="shrink-0 text-muted-foreground">{label}</span>
-      <span className="text-right font-medium text-foreground">{value}</span>
-    </div>
-  )
 }
 
 /**
@@ -233,167 +240,284 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
   const format = data.format as CampaignFormat
   const canReview = data.status === "submitted"
   const canUnapprove = data.status === "approved"
+  const flightLabel =
+    data.starts_on && data.ends_on ? `${data.starts_on} → ${data.ends_on}` : "Not scheduled"
+  const flightNights =
+    data.starts_on && data.ends_on
+      ? Math.round(
+          (new Date(data.ends_on).getTime() - new Date(data.starts_on).getTime()) / 86_400_000,
+        ) + 1
+      : null
+  const videoCount = data.creatives.filter((c) => c.resource_type === "video").length
+
+  const reviewPanel = (
+    <SectionCard title="Review">
+      {deciding ? (
+        <div className="space-y-3">
+          <Textarea
+            placeholder={
+              deciding === "rejected"
+                ? "Why is this campaign being rejected?"
+                : deciding === "unapprove"
+                  ? "Why is this campaign being unapproved?"
+                  : "What needs to change before this can be approved?"
+            }
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={4}
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            The advertiser sees this text exactly as written, in the app and by email.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="destructive"
+              loading={submitting}
+              loadingText="Submitting…"
+              onClick={() =>
+                void review(
+                  deciding === "unapprove" ? "changes_requested" : deciding,
+                  deciding === "rejected"
+                    ? "Campaign rejected"
+                    : deciding === "unapprove"
+                      ? "Campaign unapproved"
+                      : "Changes requested",
+                )
+              }
+            >
+              Confirm{" "}
+              {deciding === "rejected"
+                ? "rejection"
+                : deciding === "unapprove"
+                  ? "unapprove"
+                  : "request"}
+            </Button>
+            <Button variant="ghost" onClick={() => setDeciding(null)} disabled={submitting}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : canReview ? (
+        <div className="flex flex-col gap-2">
+          <Button
+            loading={submitting}
+            loadingText="Approving…"
+            onClick={() => void review("approved", "Campaign approved")}
+          >
+            Approve
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setDeciding("changes_requested")}
+            disabled={submitting}
+          >
+            Request changes
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setDeciding("rejected")}
+            disabled={submitting}
+          >
+            Reject
+          </Button>
+        </div>
+      ) : canUnapprove ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Approved{data.reviewed_at ? ` ${formatDateTime(data.reviewed_at)}` : ""}. Unapproving
+            sends it back to the advertiser as changes requested.
+          </p>
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => setDeciding("unapprove")}
+            disabled={submitting}
+          >
+            Unapprove
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Nothing to review — a campaign is only actionable once the advertiser submits it.
+        </p>
+      )}
+    </SectionCard>
+  )
 
   return (
     <div className="flex w-full flex-1 flex-col gap-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="icon-sm" asChild>
           <Link href="/campaigns">
             <ArrowLeft aria-hidden />
+            <span className="sr-only">Back to campaigns</span>
           </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">{data.name}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight">{data.name}</h1>
           <p className="text-sm text-muted-foreground">
-            Submitted {formatDateTime(data.submitted_at)}
+            Campaign #{data.id} ·{" "}
+            {data.submitted_at
+              ? `Submitted ${formatDateTime(data.submitted_at)}`
+              : `Created ${formatDateTime(data.created_at)}`}
+            {data.reviewed_at ? ` · Reviewed ${formatDateTime(data.reviewed_at)}` : ""}
           </p>
         </div>
-        <StatusBadge status={data.status} />
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusBadge status={data.status} />
+          {canUnapprove ? <StatusBadge status={data.flight_phase} /> : null}
+        </div>
       </div>
 
       {data.review_reason ? (
-        <div className="max-w-2xl rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          <p className="font-medium">Last review note (visible to the advertiser)</p>
-          <p className="mt-1 whitespace-pre-line">{data.review_reason}</p>
-        </div>
+        <ReviewNote
+          status={data.status}
+          reason={data.review_reason}
+          audience="the advertiser"
+        />
       ) : null}
 
-      <div className="max-w-2xl rounded-xl border bg-card p-4 shadow-none">
-        <DetailRow
-          label="Company"
-          value={
-            data.org_id != null && data.company_name ? (
-              <Link href={`/advertiser-orgs/${data.org_id}`} className="font-medium text-primary underline-offset-4 hover:underline">
-                {data.company_name}
-              </Link>
-            ) : (
-              (data.company_name ?? "—")
-            )
-          }
-        />
-        <DetailRow label="Advertiser" value={data.contact_email ?? "—"} />
-        <DetailRow label="Created by" value={data.created_by_name ?? "—"} />
-        <DetailRow label="Contact name" value={data.contact_name ?? "—"} />
-        <DetailRow label="Phone" value={data.contact_phone ?? "—"} />
-        <DetailRow label="Market" value={data.market ?? "—"} />
-        <DetailRow label="Corridors" value={data.corridors ?? "—"} />
-        <DetailRow label="Format" value={FORMAT_LABELS[data.format] ?? data.format} />
-        <DetailRow label="Objective" value={formatLabel(data.objective)} />
-        <DetailRow
-          label="Flight"
-          value={
-            data.starts_on && data.ends_on ? `${data.starts_on} → ${data.ends_on}` : "Not scheduled"
-          }
-        />
-        <DetailRow
+      <FactStrip>
+        <Fact
+          icon={Wallet}
           label="Budget"
           value={data.budget_kes ? `KES ${Number(data.budget_kes).toLocaleString("en-KE")}` : "—"}
+          sub={formatLabel(data.objective)}
         />
-        <DetailRow label="Notes" value={data.notes ?? "—"} />
-      </div>
+        <Fact
+          icon={CalendarDays}
+          label="Flight"
+          value={flightLabel}
+          sub={flightNights ? `${flightNights} day${flightNights === 1 ? "" : "s"}` : undefined}
+        />
+        <Fact
+          icon={MonitorPlay}
+          label="Format"
+          value={FORMAT_LABELS[data.format] ?? data.format}
+          sub={data.market ?? "Market not set"}
+        />
+        <Fact
+          icon={Images}
+          label="Creative"
+          value={`${data.creatives.length} file${data.creatives.length === 1 ? "" : "s"}`}
+          sub={videoCount > 0 ? `${videoCount} video` : undefined}
+        />
+      </FactStrip>
 
-      <div className="space-y-3">
-        <p className="text-sm font-medium">Creative</p>
-        {data.creatives.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No creative uploaded yet.</p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.creatives.map((creative) => (
-              <CreativePreview
-                key={creative.id}
-                campaignId={campaignId}
-                creative={creative}
-                format={format}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {canReview || canUnapprove ? (
-        <div className="max-w-2xl space-y-3 rounded-xl border bg-card p-4 shadow-none">
-          {deciding ? (
-            <div className="space-y-3">
-              <Textarea
-                placeholder={
-                  deciding === "rejected"
-                    ? "Why is this campaign being rejected?"
-                    : deciding === "unapprove"
-                      ? "Why is this campaign being unapproved?"
-                      : "What needs to change before this can be approved?"
-                }
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground">
-                The advertiser sees this text exactly as written, in the app and by email.
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setDeciding(null)} disabled={submitting}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  loading={submitting}
-                  loadingText="Submitting…"
-                  onClick={() =>
-                    void review(
-                      deciding === "unapprove" ? "changes_requested" : deciding,
-                      deciding === "rejected"
-                        ? "Campaign rejected"
-                        : deciding === "unapprove"
-                          ? "Campaign unapproved"
-                          : "Changes requested",
-                    )
-                  }
-                >
-                  Confirm{" "}
-                  {deciding === "rejected"
-                    ? "rejection"
-                    : deciding === "unapprove"
-                      ? "unapprove"
-                      : "request"}
-                </Button>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex flex-col gap-6">
+          <SectionCard title="Creative" count={data.creatives.length}>
+            {data.creatives.length === 0 ? (
+              <SectionEmpty>No creative uploaded yet.</SectionEmpty>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+                {data.creatives.map((creative) => (
+                  <CreativePreview
+                    key={creative.id}
+                    campaignId={campaignId}
+                    creative={creative}
+                    format={format}
+                  />
+                ))}
               </div>
-            </div>
-          ) : canReview ? (
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeciding("changes_requested")}
-                disabled={submitting}
-              >
-                Request changes
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setDeciding("rejected")}
-                disabled={submitting}
-              >
-                Reject
-              </Button>
-              <Button
-                loading={submitting}
-                loadingText="Approving…"
-                onClick={() => void review("approved", "Campaign approved")}
-              >
-                Approve
-              </Button>
-            </div>
-          ) : (
-            <div className="flex justify-end">
-              <Button
-                variant="destructive"
-                onClick={() => setDeciding("unapprove")}
-                disabled={submitting}
-              >
-                Unapprove
-              </Button>
-            </div>
-          )}
+            )}
+          </SectionCard>
+
+          <SectionCard title="Brief" flush>
+            <SectionRows>
+              <SectionRow label="Objective" value={formatLabel(data.objective)} />
+              <SectionRow label="Market" value={data.market ?? "—"} />
+              <SectionRow label="Corridors" value={data.corridors ?? "—"} />
+              <SectionRow label="Format" value={FORMAT_LABELS[data.format] ?? data.format} />
+              <SectionRow label="Flight" value={flightLabel} />
+              <SectionRow
+                label="Budget"
+                value={
+                  data.budget_kes ? `KES ${Number(data.budget_kes).toLocaleString("en-KE")}` : "—"
+                }
+              />
+            </SectionRows>
+            {data.notes ? (
+              <div className="border-t px-4 py-3">
+                <p className="text-sm text-muted-foreground">Notes</p>
+                <p className="mt-1 whitespace-pre-line text-sm">{data.notes}</p>
+              </div>
+            ) : null}
+          </SectionCard>
         </div>
-      ) : null}
+
+        <div className="flex flex-col gap-6">
+          {reviewPanel}
+
+          <SectionCard title="Advertiser" flush>
+            <SectionRows>
+              <SectionRow
+                label="Company"
+                value={
+                  data.org_id != null && data.company_name ? (
+                    <Link
+                      href={`/advertiser-orgs/${data.org_id}`}
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      {data.company_name}
+                    </Link>
+                  ) : (
+                    (data.company_name ?? "—")
+                  )
+                }
+              />
+              <SectionRow label="Created by" value={data.created_by_name ?? "—"} />
+              <SectionRow label="Contact" value={data.contact_name ?? "—"} />
+              <SectionRow
+                label="Email"
+                value={
+                  data.contact_email ? (
+                    <a
+                      href={`mailto:${data.contact_email}`}
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      {data.contact_email}
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <SectionRow
+                label="Phone"
+                value={
+                  data.contact_phone ? (
+                    <a
+                      href={`tel:${data.contact_phone}`}
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      {data.contact_phone}
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+            </SectionRows>
+          </SectionCard>
+
+          <SectionCard title="Timeline" flush>
+            <SectionRows>
+              <SectionRow label="Created" value={formatDate(data.created_at)} />
+              <SectionRow
+                label="Submitted"
+                value={data.submitted_at ? formatDateTime(data.submitted_at) : "—"}
+              />
+              <SectionRow
+                label="Reviewed"
+                value={data.reviewed_at ? formatDateTime(data.reviewed_at) : "—"}
+              />
+              <SectionRow label="Last updated" value={formatDateTime(data.updated_at)} />
+            </SectionRows>
+          </SectionCard>
+        </div>
+      </div>
     </div>
   )
 }
