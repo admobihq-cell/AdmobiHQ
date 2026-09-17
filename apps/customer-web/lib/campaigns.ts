@@ -6,7 +6,6 @@ import {
   endsOnFromDuration,
   formatFlightDates,
   isFlightDuration,
-  parseDisplayDates,
   type FlightDuration,
 } from "@/lib/campaign-calendar"
 import type { CampaignStatus } from "@/lib/placeholder-data"
@@ -101,10 +100,7 @@ const SEED_CAMPAIGNS: Campaign[] = [
 let cache: Campaign[] | null = null
 
 function hydrateCampaign(campaign: Campaign): Campaign {
-  if (campaign.startsOn && campaign.endsOn) return campaign
-  const parsed = parseDisplayDates(campaign.dates)
-  if (!parsed) return campaign
-  return { ...campaign, startsOn: parsed.startsOn, endsOn: parsed.endsOn }
+  return campaign
 }
 
 function readAll(): Campaign[] {

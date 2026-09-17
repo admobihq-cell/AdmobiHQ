@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
-import type { CampaignStatus } from "@/components/ui/status-badge"
 import { formatCurrency } from "@/lib/wallet"
 
+export type CampaignStatus = "active" | "scheduled" | "draft"
 export type CampaignFormat = "taxi_top" | "delivery_bike" | "both"
 
 export type Campaign = {
