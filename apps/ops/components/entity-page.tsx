@@ -46,8 +46,11 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { downloadCsv, formatDateTime, toCsv } from "@/lib/format"
-import { resolveOpsResource, useOpsClient } from "@/lib/ops-client"
+import { exportFileName } from "@workspace/ops-contracts"
+
+import { downloadBlob, downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
+import { buildStyledXlsx } from "@/lib/xlsx"
+import { apiPathToPermission, resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
 import { DataTable, type ColumnDef as TanStackColumnDef } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
@@ -238,6 +241,24 @@ export function EntityPage<T extends { id: number }>({
     return resource.bulk(body as never)
   }
 
+  // Drop rows from every cached page of this entity's list immediately, so a
+  // deleted record can't linger on screen for the ~1s an invalidate+refetch
+  // takes to come back. The invalidate still runs afterwards to reconcile
+  // pagination (a page that's now one row short pulls the next row in).
+  const dropFromListCache = (removed: Set<number>) => {
+    queryClient.setQueriesData<Paginated<T>>(
+      { queryKey: ["ops-entity", apiPath] },
+      (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.filter((row) => !removed.has(row.id)),
+              total: Math.max(0, old.total - removed.size),
+            }
+          : old,
+    )
+  }
+
   const bulkMutation = useMutation({
     mutationFn: (action: () => Promise<void>) => action(),
     onSuccess: () => {
@@ -258,6 +279,7 @@ export function EntityPage<T extends { id: number }>({
       destructive: true,
       onConfirm: async () => {
         const result = await postBulk({ action: "delete", ids })
+        dropFromListCache(new Set(ids))
         toast.success(`Deleted ${result.count} record${result.count === 1 ? "" : "s"}`)
       },
     })
@@ -285,9 +307,44 @@ export function EntityPage<T extends { id: number }>({
       )
     })
     downloadCsv(
-      `${apiPath.replace(/^\/v1\//, "")}-selected.csv`,
+      exportFileName(title, "selected", "csv"),
       toCsv(rows, csvColumns),
     )
+    toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
+  }
+
+  const handleBulkExportPdf = async () => {
+    if (!selectedRows.length) return
+    const pdfColumns = columns.filter((c) => c.csv)
+    const headers = pdfColumns.map((c) => c.header)
+    const rows = selectedRows.map((row) =>
+      pdfColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    try {
+      const blob = await opsClient.documents.exportPdf({
+        entity: apiPathToPermission(apiPath),
+        title,
+        headers,
+        rows,
+      })
+      downloadPdf(exportFileName(title, "selected", "pdf"), blob)
+      toast.success(
+        `Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`,
+      )
+    } catch (e) {
+      toast.error(formatApiError(e))
+    }
+  }
+
+  const handleBulkExportExcel = async () => {
+    if (!selectedRows.length) return
+    const excelColumns = columns.filter((c) => c.csv)
+    const headers = excelColumns.map((c) => c.header)
+    const rows = selectedRows.map((row) =>
+      excelColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    const blob = await buildStyledXlsx(title, headers, rows)
+    downloadBlob(exportFileName(title, "selected", "xlsx"), blob)
     toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
   }
 
@@ -315,10 +372,11 @@ export function EntityPage<T extends { id: number }>({
 
   const deleteMutation = useMutation({
     mutationFn: (target: T) => resource.delete(target.id),
-    onSuccess: () => {
+    onSuccess: (_result, target) => {
       toast.success("Deleted")
       setDeleteTarget(null)
       setViewing(null)
+      dropFromListCache(new Set([target.id]))
       void queryClient.invalidateQueries({ queryKey: ["ops-entity", apiPath] })
     },
     onError: (e) => toast.error(formatApiError(e)),
@@ -339,7 +397,38 @@ export function EntityPage<T extends { id: number }>({
           .map((c) => [c.key, c.csv!(row)]),
       )
     })
-    downloadCsv(`${apiPath.replace(/^\/v1\//, "")}.csv`, toCsv(rows, csvColumns))
+    downloadCsv(exportFileName(title, null, "csv"), toCsv(rows, csvColumns))
+  }
+
+  const handleExportPdf = async () => {
+    if (!data?.items.length) return
+    const pdfColumns = columns.filter((c) => c.csv)
+    const headers = pdfColumns.map((c) => c.header)
+    const rows = data.items.map((row) =>
+      pdfColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    try {
+      const blob = await opsClient.documents.exportPdf({
+        entity: apiPathToPermission(apiPath),
+        title,
+        headers,
+        rows,
+      })
+      downloadPdf(exportFileName(title, null, "pdf"), blob)
+    } catch (e) {
+      toast.error(formatApiError(e))
+    }
+  }
+
+  const handleExportExcel = async () => {
+    if (!data?.items.length) return
+    const excelColumns = columns.filter((c) => c.csv)
+    const headers = excelColumns.map((c) => c.header)
+    const rows = data.items.map((row) =>
+      excelColumns.map((c) => String(c.csv!(row) ?? "")),
+    )
+    const blob = await buildStyledXlsx(title, headers, rows)
+    downloadBlob(exportFileName(title, null, "xlsx"), blob)
   }
 
   const quickStatusMutation = useMutation({
@@ -434,10 +523,24 @@ export function EntityPage<T extends { id: number }>({
             }}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} disabled={!data?.items.length}>
-          <Download data-icon="inline-start" />
-          Export CSV
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!data?.items.length}>
+              <Download data-icon="inline-start" />
+              Export
+              <ChevronDown data-icon="inline-end" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => void handleExportExcel()}>
+              Export as Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleExportPdf()}>
+              Export as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExport}>Export as CSV</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {statusFilterOptions?.length ? (
           <Select
             value={statusFilter || ALL_STATUSES}
@@ -527,15 +630,24 @@ export function EntityPage<T extends { id: number }>({
                 {action.label}
               </Button>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkExport}
-              disabled={bulkMutation.isPending}
-            >
-              <Download data-icon="inline-start" />
-              Export selected
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={bulkMutation.isPending}>
+                  <Download data-icon="inline-start" />
+                  Export selected
+                  <ChevronDown data-icon="inline-end" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => void handleBulkExportExcel()}>
+                  Export as Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleBulkExportPdf()}>
+                  Export as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBulkExport}>Export as CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="destructive"
               size="sm"

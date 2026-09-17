@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { SectionList, StyleSheet, Text, View } from "react-native"
+import { RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
 
 import { ActivityRow } from "@/components/activity/activity-row"
 import { FilterChips } from "@/components/app/filter-chips"
@@ -17,7 +17,7 @@ import {
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
-import { spacing, typography, useThemedStyles } from "@/lib/theme"
+import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const CATEGORY_OPTIONS = ACTIVITY_CATEGORY_ORDER.map((key) => ({
   key,
@@ -27,6 +27,7 @@ const CATEGORY_OPTIONS = ACTIVITY_CATEGORY_ORDER.map((key) => ({
 export default function ActivityScreen() {
   usePageHeader("Activity", { showBack: true, backHref: "/(ops)/dashboard" })
   const client = useOpsClient()
+  const colors = useThemeColors()
   const [category, setCategory] = useState<ActivityCategory | null>(null)
   const [errorDismissed, setErrorDismissed] = useState(false)
 
@@ -139,6 +140,14 @@ export default function ActivityScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={activityQuery.isRefetching}
+            onRefresh={onRetryActivity}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
         ListEmptyComponent={
           loading ? null : (
             <EmptyState

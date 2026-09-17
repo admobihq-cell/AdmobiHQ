@@ -6,12 +6,14 @@ import {
   waitlistFormFromRecord,
   waitlistFormToPayload,
 } from "@workspace/ops-contracts"
-import { formatDateTime } from "@/lib/format"
+import { formatDateTime, formatLabel } from "@/lib/format"
 
 type WaitlistEntry = {
   id: number
   email: string
   source: string | null
+  name: string | null
+  persona: string | null
   created_at: string
 }
 
@@ -40,7 +42,7 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
           key: "created_at",
           header: "Joined",
           render: (r) => formatDateTime(r.created_at),
-          csv: (r) => r.created_at,
+          csv: (r) => formatDateTime(r.created_at),
         },
         { key: "email", header: "Email", render: (r) => r.email, csv: (r) => r.email },
         {
@@ -49,6 +51,14 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
           render: (r) => r.source ?? "homepage",
           csv: (r) => r.source,
         },
+        { key: "persona", header: "Persona", render: (r) => formatLabel(r.persona), csv: (r) => r.persona },
+      ]}
+      detailFields={[
+        { key: "email", label: "Email", render: (r) => r.email },
+        { key: "name", label: "Name", render: (r) => r.name ?? "—" },
+        { key: "persona", label: "Persona", render: (r) => formatLabel(r.persona) },
+        { key: "source", label: "Source", render: (r) => r.source ?? "homepage" },
+        { key: "created_at", label: "Joined", render: (r) => formatDateTime(r.created_at) },
       ]}
       renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
         <SimpleFormDialog

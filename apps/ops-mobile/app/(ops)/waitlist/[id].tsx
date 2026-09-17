@@ -29,6 +29,8 @@ export default function WaitlistDetailScreen() {
           title: "Details",
           fields: [
             { label: "Email", value: item.email, copyable: true },
+            { label: "Name", value: item.name },
+            { label: "Persona", value: detailValue(item.persona) },
             { label: "Source", value: item.source },
           ],
         },

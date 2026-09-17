@@ -1,4 +1,5 @@
 import { Container } from "./container"
+import { ScatterDotsPattern } from "./pattern-shapes"
 
 const steps = [
   "Brief us on geography, timings, audiences, and brand rules.",
@@ -9,13 +10,17 @@ const steps = [
 
 export function ProcessSection() {
   return (
-    <section id="process" className="scroll-mt-20 border-b border-border py-14 sm:py-20">
+    <section
+      id="process"
+      className="relative scroll-mt-20 border-b border-border py-14 sm:py-20"
+    >
+      <ScatterDotsPattern className="right-0 left-auto w-1/2" />
       <Container>
         <div className="max-w-xl space-y-4">
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
             Process
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
+          <p className="leading-relaxed text-muted-foreground">
             Transparent steps keep legal, brand, and network teams aligned.
           </p>
         </div>
@@ -25,7 +30,9 @@ export function ProcessSection() {
               <span className="font-mono text-sm text-muted-foreground tabular-nums">
                 {idx + 1}
               </span>
-              <p className="text-foreground mt-0.5 max-w-[62ch] text-base leading-relaxed">{text}</p>
+              <p className="mt-0.5 max-w-[62ch] text-base leading-relaxed text-foreground">
+                {text}
+              </p>
             </li>
           ))}
         </ol>

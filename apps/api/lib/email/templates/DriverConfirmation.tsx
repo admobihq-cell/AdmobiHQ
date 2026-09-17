@@ -16,7 +16,7 @@ export const DriverConfirmation = ({ name, city }: DriverConfirmationProps) => (
 
     <Text style={emailStyles.paragraph}>
       Your application for the Admobi driver programme in <strong>{city}</strong>{" "}
-      is in review. We will contact you within one business day with your status
+      is in review. We will reach out in 3 to 7 working days with your status
       and the next onboarding steps.
     </Text>
 

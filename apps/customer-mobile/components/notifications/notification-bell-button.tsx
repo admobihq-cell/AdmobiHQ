@@ -2,24 +2,24 @@ import { Pressable, StyleSheet, View } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Bell } from "@/components/icons"
-import { useLiveAnnouncements } from "@/lib/use-live-announcements"
+import { useCustomerInbox } from "@/lib/use-customer-inbox"
 import { radius, useThemeColors } from "@/lib/theme"
 
 export function NotificationBellButton() {
   const router = useRouter()
   const colors = useThemeColors()
-  const { items } = useLiveAnnouncements()
+  const { unreadCount } = useCustomerInbox()
 
-  // read now comes straight from the server (AnnouncementDelivery.read_at) —
-  // the shared react-query cache for useLiveAnnouncements() means this badge
-  // updates automatically once notifications.tsx marks the inbox read.
-  const hasUnread = items.some((item) => !item.read)
+  // read comes straight from the server on both feeds — the shared react-query
+  // caches behind useCustomerInbox() mean this badge updates automatically once
+  // notifications.tsx marks something read.
+  const hasUnread = unreadCount > 0
 
   return (
     <Pressable
       onPress={() => router.push("/notifications")}
       accessibilityRole="button"
-      accessibilityLabel={hasUnread ? "Notifications, new announcements" : "Notifications"}
+      accessibilityLabel={hasUnread ? "Notifications, new items" : "Notifications"}
       hitSlop={10}
       style={({ pressed }) => [
         styles.button,

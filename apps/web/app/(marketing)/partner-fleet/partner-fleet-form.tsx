@@ -36,6 +36,10 @@ export default function PartnerFleetForm() {
       fleetTypes: [],
       vehicleCount: 1,
       vehiclesActive: "yes",
+      taxiCount: undefined,
+      bikeCount: undefined,
+      operatingCities: [],
+      evStatus: "none",
       notes: "",
       consent: false,
     },
@@ -44,7 +48,14 @@ export default function PartnerFleetForm() {
   const { register, handleSubmit, setValue, watch, formState } = form
   // eslint-disable-next-line react-hooks/incompatible-library
   const fleetTypesWatch = watch("fleetTypes").slice()
+  const operatingCitiesWatch = watch("operatingCities")?.slice() ?? []
   const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
+
+  function toggleOperatingCity(key: "Nairobi" | "Mombasa" | "Kisumu") {
+    const curr = operatingCitiesWatch.slice()
+    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    setValue("operatingCities", next, { shouldValidate: true })
+  }
 
   function toggleFleetType(key: "taxi" | "delivery_bike") {
     const curr = fleetTypesWatch.slice()
@@ -200,6 +211,44 @@ export default function PartnerFleetForm() {
             {formState.errors.vehicleCount.message}
           </p>
         ) : null}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2">
+          <Label htmlFor="pf-taxis">Number of taxis</Label>
+          <Input id="pf-taxis" type="number" min={0} step={1} {...register("taxiCount", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="pf-bikes">Number of bikes</Label>
+          <Input id="pf-bikes" type="number" min={0} step={1} {...register("bikeCount", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })} />
+        </div>
+      </div>
+
+      <fieldset className="space-y-2">
+        <legend className="mb-3 text-sm font-medium text-foreground">Cities you operate in</legend>
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
+          {(["Nairobi", "Mombasa", "Kisumu"] as const).map((city) => (
+            <label key={city} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={operatingCitiesWatch.includes(city)}
+                onChange={() => toggleOperatingCity(city)}
+                className="border-input accent-primary size-4 rounded border"
+              />
+              <span>{city}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="grid gap-2">
+        <Label htmlFor="pf-ev">Does your fleet include electric vehicles?</Label>
+        <select id="pf-ev" className={selectClass} {...register("evStatus")}>
+          <option value="none">No, none</option>
+          <option value="some">Yes, some</option>
+          <option value="mostly">Mostly electric</option>
+          <option value="all">Fully electric</option>
+        </select>
       </div>
 
       <fieldset className="space-y-3">

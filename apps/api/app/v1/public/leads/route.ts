@@ -46,8 +46,14 @@ export async function POST(req: Request) {
           ad_formats: parsed.data.adFormats,
           duration: parsed.data.duration,
           budget_range: parsed.data.budget,
-          campaign_start_date: null,
+          campaign_start_date: parsed.data.campaignStartDate
+            ? new Date(parsed.data.campaignStartDate)
+            : null,
           additional_info: parsed.data.brief || '',
+          objective: parsed.data.objective || null,
+          industry: parsed.data.industry || null,
+          creative_status: parsed.data.creativeStatus || null,
+          target_audience: parsed.data.targetAudience || null,
         },
       })
       console.log("[Admobi API leads] Saved campaign lead:", { id: data.id })
@@ -84,7 +90,16 @@ export async function POST(req: Request) {
           submitterEmail: parsed.data.email,
           submitterPhone: parsed.data.phone,
           submitterCompany: parsed.data.company,
-          additionalInfo: parsed.data.brief,
+          additionalInfo: [
+            parsed.data.objective && `Objective: ${parsed.data.objective}`,
+            parsed.data.industry && `Industry: ${parsed.data.industry}`,
+            parsed.data.campaignStartDate && `Start: ${parsed.data.campaignStartDate}`,
+            parsed.data.creativeStatus && `Creative: ${parsed.data.creativeStatus}`,
+            parsed.data.targetAudience && `Audience: ${parsed.data.targetAudience}`,
+            parsed.data.brief && `Brief: ${parsed.data.brief}`,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         })
 
         await sendEmail(
@@ -116,6 +131,12 @@ export async function POST(req: Request) {
           fleet_types: parsed.data.fleetTypes,
           fleet_size: String(parsed.data.vehicleCount),
           vehicles_active: parsed.data.vehiclesActive,
+          taxi_count:
+            parsed.data.taxiCount != null ? String(parsed.data.taxiCount) : null,
+          bike_count:
+            parsed.data.bikeCount != null ? String(parsed.data.bikeCount) : null,
+          operating_cities: parsed.data.operatingCities ?? [],
+          ev_status: parsed.data.evStatus || null,
           notes: parsed.data.notes || '',
         },
       })
@@ -153,7 +174,18 @@ export async function POST(req: Request) {
           submitterPhone: parsed.data.phone,
           submitterCompany: parsed.data.fleetOrCompanyName,
           submitterCity: parsed.data.city,
-          additionalInfo: parsed.data.notes,
+          additionalInfo: [
+            `Fleet types: ${parsed.data.fleetTypes.join(", ")}`,
+            `Vehicles: ${parsed.data.vehicleCount}`,
+            parsed.data.taxiCount != null && `Taxis: ${parsed.data.taxiCount}`,
+            parsed.data.bikeCount != null && `Bikes: ${parsed.data.bikeCount}`,
+            parsed.data.operatingCities?.length &&
+              `Operating cities: ${parsed.data.operatingCities.join(", ")}`,
+            parsed.data.evStatus && `EVs: ${parsed.data.evStatus}`,
+            parsed.data.notes && `Notes: ${parsed.data.notes}`,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         })
 
         await sendEmail(

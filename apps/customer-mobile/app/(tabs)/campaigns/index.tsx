@@ -1,49 +1,64 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "expo-router"
-import { useQuery } from "@tanstack/react-query"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type { CampaignDto } from "@workspace/ops-contracts"
 
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
-import { Add, Calendar, Location } from "@/components/icons"
+import { CampaignCalendarView } from "@/components/calendar/campaign-calendar-view"
+import { Add, Calendar, List, Location } from "@/components/icons"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { getCampaigns } from "@/lib/campaigns"
+import { formatCampaignError, useCampaigns } from "@/lib/use-campaigns"
 import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
-const FILTERS = ["All", "Active", "Scheduled", "Draft", "Completed"] as const
-type Filter = (typeof FILTERS)[number]
+/** Filters follow what an advertiser actually asks ("what's running?", "what's
+ * waiting on me?"), not the raw status column. Mirrors customer-web. */
+const FILTERS = [
+  { label: "All", match: () => true },
+  { label: "Live", match: (c: CampaignDto) => c.flight_phase === "live" },
+  { label: "In queue", match: (c: CampaignDto) => c.status === "submitted" },
+  { label: "Scheduled", match: (c: CampaignDto) => c.flight_phase === "scheduled" },
+  {
+    label: "Needs changes",
+    match: (c: CampaignDto) => c.status === "rejected" || c.status === "changes_requested",
+  },
+  { label: "Draft", match: (c: CampaignDto) => c.status === "draft" },
+] as const
+
+type ViewMode = "list" | "calendar"
+
+function formatBudget(value: string | null): string {
+  if (!value) return "—"
+  return `KES ${Number(value).toLocaleString("en-KE")}`
+}
+
+function formatFlight(campaign: CampaignDto): string {
+  if (!campaign.starts_on || !campaign.ends_on) return "Not scheduled"
+  return `${campaign.starts_on} → ${campaign.ends_on}`
+}
 
 export default function CampaignsScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
-  const [filter, setFilter] = useState<Filter>("All")
+  const [filter, setFilter] = useState<string>("All")
+  const [mode, setMode] = useState<ViewMode>("list")
 
-  const campaignsQuery = useQuery({
-    queryKey: ["campaigns", "list"],
-    queryFn: getCampaigns,
-  })
-  const campaigns = campaignsQuery.data ?? []
-  const loading = campaignsQuery.isLoading
-  const refreshing = campaignsQuery.isRefetching
+  const campaignsQuery = useCampaigns()
+  const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
+  const loading = campaignsQuery.isPending
 
-  const onRefresh = () => void campaignsQuery.refetch()
+  const visible = useMemo(() => {
+    const active = FILTERS.find((f) => f.label === filter) ?? FILTERS[0]
+    return campaigns.filter(active.match)
+  }, [campaigns, filter])
 
   const styles = useThemedStyles((c) => ({
-    root: {
-      flex: 1,
-      backgroundColor: c.bg,
-    },
-    scroll: {
-      flex: 1,
-    },
-    content: {
-      paddingHorizontal: spacing.lg,
-      gap: spacing.lg,
-    },
-    hero: {
-      gap: spacing.xs,
-    },
+    root: { flex: 1, backgroundColor: c.bg },
+    scroll: { flex: 1 },
+    content: { paddingHorizontal: spacing.lg, gap: spacing.lg },
+    hero: { gap: spacing.xs },
     eyebrow: {
       ...typography.caption,
       color: c.primary,
@@ -51,20 +66,30 @@ export default function CampaignsScreen() {
       letterSpacing: 0.8,
       fontWeight: "700" as const,
     },
-    title: {
-      ...typography.title,
-      color: c.text,
-      fontSize: 26,
+    title: { ...typography.title, color: c.text, fontSize: 26 },
+    subtitle: { ...typography.body, color: c.mutedForeground, marginTop: spacing.xs },
+    segment: {
+      flexDirection: "row" as const,
+      alignSelf: "flex-start" as const,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      padding: 3,
+      gap: 3,
     },
-    subtitle: {
-      ...typography.body,
-      color: c.mutedForeground,
-      marginTop: spacing.xs,
+    segmentButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 999,
     },
-    filters: {
-      gap: spacing.sm,
-      paddingRight: spacing.lg,
-    },
+    segmentButtonActive: { backgroundColor: c.primary },
+    segmentText: { ...typography.label, color: c.mutedForeground, fontWeight: "600" as const },
+    segmentTextActive: { color: c.primaryForeground },
+    filters: { gap: spacing.sm, paddingRight: spacing.lg },
     filterChip: {
       paddingHorizontal: 14,
       paddingVertical: 8,
@@ -73,21 +98,10 @@ export default function CampaignsScreen() {
       borderColor: c.border,
       backgroundColor: c.surface,
     },
-    filterChipActive: {
-      backgroundColor: c.primary,
-      borderColor: c.primary,
-    },
-    filterText: {
-      ...typography.label,
-      color: c.mutedForeground,
-      fontWeight: "600" as const,
-    },
-    filterTextActive: {
-      color: c.primaryForeground,
-    },
-    list: {
-      gap: spacing.md,
-    },
+    filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    filterText: { ...typography.label, color: c.mutedForeground, fontWeight: "600" as const },
+    filterTextActive: { color: c.primaryForeground },
+    list: { gap: spacing.md },
     card: {
       padding: spacing.md,
       borderRadius: 16,
@@ -96,31 +110,20 @@ export default function CampaignsScreen() {
       backgroundColor: c.surface,
       gap: spacing.sm,
     },
-    cardPressed: {
-      opacity: 0.85,
-    },
+    cardPressed: { opacity: 0.85 },
     cardHeader: {
       flexDirection: "row" as const,
       alignItems: "flex-start" as const,
       justifyContent: "space-between" as const,
       gap: spacing.sm,
     },
-    cardTitle: {
-      flex: 1,
-      ...typography.section,
-      fontSize: 17,
-      color: c.text,
-    },
+    cardTitle: { flex: 1, ...typography.section, fontSize: 17, color: c.text },
     metaRow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       gap: spacing.sm,
     },
-    metaText: {
-      ...typography.caption,
-      color: c.mutedForeground,
-      flex: 1,
-    },
+    metaText: { ...typography.caption, color: c.mutedForeground, flex: 1 },
     metrics: {
       flexDirection: "row" as const,
       marginTop: spacing.xs,
@@ -128,19 +131,13 @@ export default function CampaignsScreen() {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: c.border,
     },
-    metric: {
-      flex: 1,
-      gap: 2,
-    },
+    metric: { flex: 1, gap: 2 },
     metricLabel: {
       ...typography.caption,
       color: c.mutedForeground,
       fontWeight: "600" as const,
     },
-    metricValue: {
-      ...typography.section,
-      color: c.text,
-    },
+    metricValue: { ...typography.section, color: c.text },
     metricDivider: {
       width: StyleSheet.hairlineWidth,
       backgroundColor: c.border,
@@ -155,10 +152,8 @@ export default function CampaignsScreen() {
       borderStyle: "dashed" as const,
       borderColor: c.border,
     },
-    emptyText: {
-      ...typography.bodySm,
-      color: c.mutedForeground,
-    },
+    emptyTitle: { ...typography.label, color: c.text, fontWeight: "700" as const },
+    emptyText: { ...typography.bodySm, color: c.mutedForeground },
     fab: {
       position: "absolute" as const,
       right: spacing.lg,
@@ -175,19 +170,9 @@ export default function CampaignsScreen() {
       shadowRadius: 8,
       elevation: 4,
     },
-    fabPressed: {
-      opacity: 0.9,
-    },
-    fabLabel: {
-      ...typography.section,
-      color: c.primaryForeground,
-    },
+    fabPressed: { opacity: 0.9 },
+    fabLabel: { ...typography.section, color: c.primaryForeground },
   }))
-
-  const visible = campaigns.filter((campaign) => {
-    if (filter === "All") return true
-    return campaign.status === filter.toLowerCase()
-  })
 
   return (
     <View style={styles.root}>
@@ -200,8 +185,8 @@ export default function CampaignsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
+            refreshing={campaignsQuery.isRefetching}
+            onRefresh={() => void campaignsQuery.refetch()}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
@@ -211,76 +196,139 @@ export default function CampaignsScreen() {
           <Text style={styles.eyebrow}>Workspace</Text>
           <Text style={styles.title}>Campaigns</Text>
           <Text style={styles.subtitle}>
-            Create, schedule, and monitor out-of-home flights. Campaigns you create here are
-            saved on this device.
+            Create, schedule, and monitor out-of-home flights. Every campaign is reviewed by our
+            team before it goes live.
           </Text>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          {FILTERS.map((item) => {
-            const active = filter === item
-            return (
-              <Pressable
-                key={item}
-                onPress={() => setFilter(item)}
-                style={[styles.filterChip, active && styles.filterChipActive]}
-              >
-                <Text style={[styles.filterText, active && styles.filterTextActive]}>
-                  {item}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
+        <View style={styles.segment}>
+          <Pressable
+            onPress={() => setMode("list")}
+            style={[styles.segmentButton, mode === "list" && styles.segmentButtonActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: mode === "list" }}
+          >
+            <List
+              color={mode === "list" ? colors.primaryForeground : colors.mutedForeground}
+              size={15}
+            />
+            <Text style={[styles.segmentText, mode === "list" && styles.segmentTextActive]}>
+              List
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setMode("calendar")}
+            style={[styles.segmentButton, mode === "calendar" && styles.segmentButtonActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: mode === "calendar" }}
+          >
+            <Calendar
+              color={mode === "calendar" ? colors.primaryForeground : colors.mutedForeground}
+              size={15}
+            />
+            <Text style={[styles.segmentText, mode === "calendar" && styles.segmentTextActive]}>
+              Calendar
+            </Text>
+          </Pressable>
+        </View>
 
-        {loading ? (
-          <SkeletonCampaignCards count={4} />
-        ) : visible.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No campaigns match this filter yet.</Text>
-          </View>
+        {campaignsQuery.error ? (
+          <ApiErrorBanner
+            message={formatCampaignError(campaignsQuery.error)}
+            onRetry={() => void campaignsQuery.refetch()}
+          />
+        ) : null}
+
+        {mode === "calendar" ? (
+          loading ? (
+            <SkeletonCampaignCards count={3} />
+          ) : (
+            <CampaignCalendarView campaigns={campaigns} />
+          )
         ) : (
-          <View style={styles.list}>
-            {visible.map((campaign) => (
-              <Pressable
-                key={campaign.id}
-                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-                onPress={() => router.push(`/campaigns/${campaign.id}`)}
-                accessibilityRole="button"
-                accessibilityLabel={`${campaign.name}, ${campaign.status}`}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>{campaign.name}</Text>
-                  <StatusBadge status={campaign.status} />
-                </View>
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filters}
+            >
+              {FILTERS.map((item) => {
+                const active = filter === item.label
+                return (
+                  <Pressable
+                    key={item.label}
+                    onPress={() => setFilter(item.label)}
+                    style={[styles.filterChip, active && styles.filterChipActive]}
+                  >
+                    <Text style={[styles.filterText, active && styles.filterTextActive]}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
 
-                <View style={styles.metaRow}>
-                  <Location color={colors.mutedForeground} size={14} />
-                  <Text style={styles.metaText}>{campaign.market}</Text>
-                </View>
-                <View style={styles.metaRow}>
-                  <Calendar color={colors.mutedForeground} size={14} />
-                  <Text style={styles.metaText}>{campaign.dates}</Text>
-                </View>
+            {loading ? (
+              <SkeletonCampaignCards count={4} />
+            ) : visible.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>
+                  {campaigns.length === 0 ? "No campaigns yet" : `Nothing matches "${filter}"`}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {campaigns.length === 0
+                    ? "Build your first flight — brief, dates, budget, and creative — and send it for review."
+                    : "Try another filter."}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.list}>
+                {visible.map((campaign) => (
+                  <Pressable
+                    key={campaign.id}
+                    style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                    onPress={() => router.push(`/campaigns/${campaign.id}`)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${campaign.name}, ${campaign.status}`}
+                  >
+                    <View style={styles.cardHeader}>
+                      <Text style={styles.cardTitle}>{campaign.name}</Text>
+                      <StatusBadge
+                        status={campaign.status}
+                        flightPhase={campaign.flight_phase}
+                      />
+                    </View>
 
-                <View style={styles.metrics}>
-                  <View style={styles.metric}>
-                    <Text style={styles.metricLabel}>Impressions</Text>
-                    <Text style={styles.metricValue}>{campaign.impressions}</Text>
-                  </View>
-                  <View style={styles.metricDivider} />
-                  <View style={styles.metric}>
-                    <Text style={styles.metricLabel}>Budget</Text>
-                    <Text style={styles.metricValue}>{campaign.budget}</Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
-          </View>
+                    <View style={styles.metaRow}>
+                      <Location color={colors.mutedForeground} size={14} />
+                      <Text style={styles.metaText}>{campaign.market ?? "Market not set"}</Text>
+                    </View>
+                    <View style={styles.metaRow}>
+                      <Calendar color={colors.mutedForeground} size={14} />
+                      <Text style={styles.metaText}>{formatFlight(campaign)}</Text>
+                    </View>
+
+                    <View style={styles.metrics}>
+                      <View style={styles.metric}>
+                        <Text style={styles.metricLabel}>Creative</Text>
+                        <Text style={styles.metricValue}>
+                          {campaign.creatives.length} file
+                          {campaign.creatives.length === 1 ? "" : "s"}
+                        </Text>
+                      </View>
+                      <View style={styles.metricDivider} />
+                      <View style={styles.metric}>
+                        <Text style={styles.metricLabel}>Budget</Text>
+                        <Text style={styles.metricValue}>
+                          {formatBudget(campaign.budget_kes)}
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 

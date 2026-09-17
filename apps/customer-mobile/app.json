@@ -2,9 +2,9 @@
   "expo": {
     "name": "Admobi",
     "slug": "admobihq-app",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "orientation": "portrait",
-    "runtimeVersion": "0.0.5",
+    "runtimeVersion": "0.0.6",
     "icon": "./assets/images/icon.png",
     "scheme": "admobihq-app",
     "userInterfaceStyle": "automatic",

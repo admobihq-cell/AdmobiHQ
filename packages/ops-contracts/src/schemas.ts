@@ -5,25 +5,38 @@ import {
   ANNOUNCEMENT_CATEGORIES,
   ANNOUNCEMENT_TARGET_APPS,
   BUDGET_RANGES,
+  CAMPAIGN_FORMATS,
+  CAMPAIGN_OBJECTIVES,
   CITIES,
+  CREATIVE_STATUS,
   DATE_RANGE_KEYS,
   DAYS_PER_WEEK,
   DRIVER_DOCUMENT_TYPES,
   DRIVER_PAYOUT_METHODS,
   DRIVER_STATUSES,
+  FLEET_EV_STATUS,
   FLEET_STATUSES,
   FLEET_TYPES,
   HEARD_ABOUT,
+  HOURS_PER_DAY,
   LEAD_CITIES,
   LEAD_STATUSES,
+  OPS_PERMISSIONS,
   PLATFORM_FLAG_KEYS,
+  RIDEHAIL_PLATFORMS,
+  SAFETY_INCIDENT_STATUSES,
+  SAFETY_INCIDENT_TYPES,
+  SAFETY_SEVERITIES,
   SUPPORT_CATEGORIES,
   SUPPORT_CHANNELS,
   SUPPORT_PRIORITIES,
   SUPPORT_STATUSES,
+  VEHICLE_OWNERSHIP,
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
+  WAITLIST_PERSONA,
 } from "./enums"
+import { CREATIVE_SLOTS } from "./creative-specs"
 
 export const leadCreateSchema = z.object({
   contact_name: z.string().trim().min(1),
@@ -36,6 +49,10 @@ export const leadCreateSchema = z.object({
   budget_range: z.enum(BUDGET_RANGES).optional(),
   additional_info: z.string().optional(),
   status: z.enum(LEAD_STATUSES).optional(),
+  objective: z.enum(CAMPAIGN_OBJECTIVES).optional(),
+  industry: z.string().optional(),
+  creative_status: z.enum(CREATIVE_STATUS).optional(),
+  target_audience: z.string().optional(),
 })
 
 export const leadUpdateSchema = leadCreateSchema.partial()
@@ -51,6 +68,10 @@ export const fleetCreateSchema = z.object({
   vehicles_active: z.enum(VEHICLES_ACTIVE).optional(),
   notes: z.string().optional(),
   status: z.enum(FLEET_STATUSES).optional(),
+  taxi_count: z.string().optional(),
+  bike_count: z.string().optional(),
+  operating_cities: z.array(z.enum(CITIES)).optional(),
+  ev_status: z.enum(FLEET_EV_STATUS).optional(),
 })
 
 export const fleetUpdateSchema = fleetCreateSchema.partial()
@@ -65,6 +86,13 @@ export const driverCreateSchema = z.object({
   heard_about: z.enum(HEARD_ABOUT).optional(),
   status: z.enum(DRIVER_STATUSES).optional(),
   notes: z.string().optional(),
+  vehicle_make_model: z.string().optional(),
+  vehicle_year: z.string().optional(),
+  vehicle_ownership: z.enum(VEHICLE_OWNERSHIP).optional(),
+  routes_areas: z.string().optional(),
+  hours_per_day: z.enum(HOURS_PER_DAY).optional(),
+  platforms: z.array(z.enum(RIDEHAIL_PLATFORMS)).optional(),
+  applicant_message: z.string().optional(),
 })
 
 export const driverUpdateSchema = driverCreateSchema.partial()
@@ -72,6 +100,8 @@ export const driverUpdateSchema = driverCreateSchema.partial()
 export const waitlistCreateSchema = z.object({
   email: z.string().trim().email(),
   source: z.string().optional(),
+  name: z.string().optional(),
+  persona: z.enum(WAITLIST_PERSONA).optional(),
 })
 
 export const waitlistUpdateSchema = waitlistCreateSchema.partial()
@@ -79,6 +109,9 @@ export const waitlistUpdateSchema = waitlistCreateSchema.partial()
 export const mediaKitCreateSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
+  company: z.string().optional(),
+  role: z.string().optional(),
+  use_case: z.string().optional(),
 })
 
 export const mediaKitUpdateSchema = mediaKitCreateSchema.partial()
@@ -145,6 +178,62 @@ export const driverProfileReviewSchema = z.object({
   reason: z.string().trim().min(1).max(2000).optional(),
 })
 
+/** `YYYY-MM-DD`. Flight windows are whole days in a single market (Kenya,
+ * UTC+3, no DST), so a day string beats a timestamp: no timezone can shift a
+ * campaign's start across midnight. */
+const dayIsoSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
+
+const campaignFieldsSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  objective: z.enum(CAMPAIGN_OBJECTIVES).optional(),
+  market: z.string().trim().min(1).max(120).optional(),
+  corridors: z.string().trim().max(2000).optional(),
+  format: z.enum(CAMPAIGN_FORMATS).optional(),
+  notes: z.string().trim().max(2000).optional(),
+  budget_kes: z.coerce.number().positive().max(1_000_000_000).optional(),
+  starts_on: dayIsoSchema.optional(),
+  ends_on: dayIsoSchema.optional(),
+  contact_name: z.string().trim().max(120).optional(),
+  contact_email: z.string().trim().email().optional(),
+  contact_phone: z.string().trim().max(40).optional(),
+})
+
+/** Day strings sort lexicographically, so a plain string compare is a correct
+ * date compare here — no Date parsing needed. */
+function flightWindowIsOrdered(data: { starts_on?: string; ends_on?: string }): boolean {
+  if (!data.starts_on || !data.ends_on) return true
+  return data.ends_on >= data.starts_on
+}
+
+// Not `as const` — Zod's refine wants a mutable `path` array.
+const FLIGHT_WINDOW_ISSUE = {
+  message: "The flight can't end before it starts",
+  path: ["ends_on"],
+}
+
+export const campaignCreateSchema = campaignFieldsSchema.refine(
+  flightWindowIsOrdered,
+  FLIGHT_WINDOW_ISSUE,
+)
+
+/** Every field optional — the campaign wizard PATCHes one step at a time, so
+ * a partial body is the normal case, not a degenerate one. */
+export const campaignUpdateSchema = campaignFieldsSchema
+  .partial()
+  .refine(flightWindowIsOrdered, FLIGHT_WINDOW_ISSUE)
+
+/** Mirrors driverProfileReviewSchema. `reason` is optional here and required
+ * by the route for any non-approve decision — the same split the driver
+ * review route uses, so the 400 can name which decision needed it. */
+export const campaignReviewSchema = z.object({
+  decision: z.enum(["approved", "rejected", "changes_requested"]),
+  reason: z.string().trim().min(1).max(2000).optional(),
+})
+
+export const campaignCreativeSlotSchema = z.enum(CREATIVE_SLOTS)
+
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
@@ -192,6 +281,15 @@ export const broadcastCreateSchema = z.object({
     .default(["customer-mobile"]),
 })
 
+export const documentExportRequestSchema = z.object({
+  entity: z.enum(OPS_PERMISSIONS),
+  title: z.string().min(1).max(200),
+  headers: z.array(z.string()).min(1).max(20),
+  // Matches the current-page/selected-rows scope CSV export already
+  // uses — this is not a full-dataset export.
+  rows: z.array(z.array(z.string())).max(500),
+})
+
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>
 export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>
 export type FleetCreateInput = z.infer<typeof fleetCreateSchema>
@@ -205,6 +303,9 @@ export type MediaKitUpdateInput = z.infer<typeof mediaKitUpdateSchema>
 export type PlatformFlagUpdateInput = z.infer<typeof platformFlagUpdateSchema>
 export type DriverProfileUpdateInput = z.infer<typeof driverProfileUpdateSchema>
 export type DriverProfileReviewInput = z.infer<typeof driverProfileReviewSchema>
+export type CampaignCreateInput = z.infer<typeof campaignCreateSchema>
+export type CampaignUpdateInput = z.infer<typeof campaignUpdateSchema>
+export type CampaignReviewInput = z.infer<typeof campaignReviewSchema>
 export type PaginationParams = z.infer<typeof paginationSchema>
 export type LeadBulkInput = z.infer<typeof leadBulkSchema>
 export type DriverBulkInput = z.infer<typeof driverBulkSchema>
@@ -215,3 +316,57 @@ export type BroadcastCreateInput = z.infer<typeof broadcastCreateSchema>
 export type SupportCaseCreateInput = z.infer<typeof supportCaseCreateSchema>
 export type SupportMessageCreateInput = z.infer<typeof supportMessageCreateSchema>
 export type SupportCaseUpdateInput = z.infer<typeof supportCaseUpdateSchema>
+export type DocumentExportRequest = z.infer<typeof documentExportRequestSchema>
+
+// ---------------------------------------------------------------------------
+// Driver SOS / safety incidents
+// ---------------------------------------------------------------------------
+
+const latitude = z.number().min(-90).max(90)
+const longitude = z.number().min(-180).max(180)
+/** Metres. Capped rather than unbounded so a garbage reading can't be stored. */
+const accuracyMetres = z.number().int().min(0).max(100_000)
+
+/**
+ * Every location field is optional: a driver with location denied, disabled,
+ * or simply no fix must still be able to file the report. The API stores nulls
+ * and ops sees "location unavailable".
+ */
+export const safetyIncidentCreateSchema = z.object({
+  type: z.enum(SAFETY_INCIDENT_TYPES),
+  channel: z.enum(["driver-web", "driver-mobile"]),
+  description: z.string().trim().max(2000).optional(),
+  reported_lat: latitude.optional(),
+  reported_lng: longitude.optional(),
+  reported_accuracy_m: accuracyMetres.optional(),
+})
+
+/** Drivers may only cancel. Every other transition is ops-only. */
+export const safetyIncidentDriverUpdateSchema = z.object({
+  status: z.literal("cancelled"),
+})
+
+export const safetyIncidentOpsUpdateSchema = z.object({
+  status: z.enum(SAFETY_INCIDENT_STATUSES).optional(),
+  severity: z.enum(SAFETY_SEVERITIES).optional(),
+  resolution: z.string().trim().max(2000).optional(),
+})
+
+/** Both coordinates required — a half-fix is not a position. */
+export const safetyIncidentLocationSchema = z.object({
+  lat: latitude,
+  lng: longitude,
+  accuracy_m: accuracyMetres.optional(),
+})
+
+export const safetyIncidentMessageCreateSchema = z.object({
+  body: z.string().trim().min(1).max(4000),
+  /** Ops-only; the driver routes hardcode false regardless of what is sent. */
+  internal_note: z.boolean().optional(),
+})
+
+export type SafetyIncidentCreateInput = z.infer<typeof safetyIncidentCreateSchema>
+export type SafetyIncidentDriverUpdateInput = z.infer<typeof safetyIncidentDriverUpdateSchema>
+export type SafetyIncidentOpsUpdateInput = z.infer<typeof safetyIncidentOpsUpdateSchema>
+export type SafetyIncidentLocationInput = z.infer<typeof safetyIncidentLocationSchema>
+export type SafetyIncidentMessageCreateInput = z.infer<typeof safetyIncidentMessageCreateSchema>

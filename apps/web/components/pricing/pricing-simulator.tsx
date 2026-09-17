@@ -18,8 +18,8 @@ import {
   slotLengthOptions,
   zoneTiers,
 } from "@/lib/seo/pricing-data"
-import { useAnimatedNumber } from "@/components/pricing/use-animated-number"
-import { NumberStepper, clampInt } from "@/components/pricing/number-stepper"
+import { useAnimatedNumber } from "@workspace/ui/hooks/use-animated-number"
+import { NumberStepper, clampInt } from "@workspace/ui/components/number-stepper"
 
 type ZoneChoiceId = (typeof zoneTiers)[number]["id"] | "all-screens"
 

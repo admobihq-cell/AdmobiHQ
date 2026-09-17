@@ -20,6 +20,17 @@ import { AuthDisabledMessage } from "@/components/auth/auth-disabled-message"
 const CODE_LENGTH = 6
 const HERO_PHOTO_SRC = "/auth/hero-advertiser.jpg"
 
+/**
+ * Optional here on purpose. Google's own consent screen has no place to ask for
+ * a company, so gating "Continue with Google" on this field only produced a
+ * dead button with no explanation. <CompanyNamePrompt> collects it on first
+ * load of the dashboard instead, for whichever path skipped it.
+ */
+function companyMetadata(company: string): { unsafeMetadata?: { companyName: string } } {
+  const value = company.trim()
+  return value ? { unsafeMetadata: { companyName: value } } : {}
+}
+
 function useDisabledSignUp(): { signUp: null } {
   return { signUp: null }
 }
@@ -34,6 +45,7 @@ export function AdvertiserSignUp() {
   const { signUp } = useSignUpIfEnabled()
   const router = useRouter()
   const [email, setEmail] = useState("")
+  const [company, setCompany] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
   const [submitting, setSubmitting] = useState(false)
@@ -48,7 +60,12 @@ export function AdvertiserSignUp() {
     setSubmitting(true)
     setError(null)
 
-    const { error: createError } = await signUp.create({ emailAddress: email.trim() })
+    // unsafeMetadata is the only field a client may set during sign-up; Clerk
+    // copies it onto the created user, which is what the ops Users list reads.
+    const { error: createError } = await signUp.create({
+      emailAddress: email.trim(),
+      ...companyMetadata(company),
+    })
     if (createError) {
       setError(createError.longMessage ?? createError.message ?? "Could not send verification code.")
       setSubmitting(false)
@@ -89,21 +106,34 @@ export function AdvertiserSignUp() {
       return
     }
 
+    // Not "complete" here means the Clerk instance requires fields this form
+    // never sends — username and password are the usual culprits, and neither
+    // an email code nor Google can ever supply them. Log what is missing;
+    // without this the failure is undiagnosable from the browser.
+    console.error("Clerk sign-up incomplete", {
+      status: signUp.status,
+      missingFields: signUp.missingFields,
+      unverifiedFields: signUp.unverifiedFields,
+    })
     setError("Sign-up could not be completed. Try again.")
     setSubmitting(false)
   }
 
   async function handleGoogleSignUp() {
     if (!signUp) return
+    setSubmitting(true)
     setError(null)
 
     const { error: ssoError } = await signUp.sso({
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
       redirectUrl: "/",
+      ...companyMetadata(company),
     })
+    // Success navigates away to Google, so only the failure path gets here.
     if (ssoError) {
       setError(ssoError.longMessage ?? ssoError.message ?? "Google sign-up failed.")
+      setSubmitting(false)
     }
   }
 
@@ -178,7 +208,25 @@ export function AdvertiserSignUp() {
               autoFocus
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="company">Company or organization</Label>
+            <Input
+              id="company"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Acme Media"
+              autoComplete="organization"
+              disabled={submitting}
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional — we&apos;ll ask for it after you sign in if you skip it.
+            </p>
+          </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {/* Clerk mounts its bot-protection widget here. Without this element it falls
+              back to an invisible CAPTCHA in a display:none div, which Turnstile then
+              fails (600010) — blocking both the email code and Google sign-up. */}
+          <div id="clerk-captcha" />
           <Button
             className="w-full"
             size="lg"
@@ -198,6 +246,7 @@ export function AdvertiserSignUp() {
             variant="outline"
             size="lg"
             className="w-full gap-2"
+            disabled={submitting || !signUp}
             onClick={() => void handleGoogleSignUp()}
           >
             <GoogleIcon className="size-4" />

@@ -2,6 +2,8 @@ import { z } from "zod"
 
 export const waitlistSchema = z.object({
   email: z.string().trim().min(1, "Enter your email").email("Use a valid email address."),
+  name: z.string().trim().max(120).optional(),
+  persona: z.enum(["advertiser", "driver", "fleet", "other"]).optional(),
 })
 
 export const campaignLeadSchema = z.object({
@@ -18,6 +20,21 @@ export const campaignLeadSchema = z.object({
     .min(1, "Pick at least one format"),
   duration: z.enum(["1_day", "1_week", "2_weeks", "1_month", "ongoing"]),
   budget: z.enum(["under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"]),
+  objective: z
+    .enum(["awareness", "launch", "promo", "footfall", "other"])
+    .optional()
+    .or(z.literal("")),
+  industry: z.string().trim().max(120).optional(),
+  campaignStartDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date")
+    .optional()
+    .or(z.literal("")),
+  creativeStatus: z
+    .enum(["ready", "needs_design", "not_sure"])
+    .optional()
+    .or(z.literal("")),
+  targetAudience: z.string().trim().max(2000).optional(),
   brief: z.string().trim().optional(),
   consent: z
     .boolean()
@@ -36,6 +53,10 @@ export const fleetLeadSchema = z.object({
     .min(1, "Pick at least one fleet type"),
   vehicleCount: z.coerce.number().int().min(1),
   vehiclesActive: z.enum(["yes", "no", "some"]),
+  taxiCount: z.coerce.number().int().min(0).optional(),
+  bikeCount: z.coerce.number().int().min(0).optional(),
+  operatingCities: z.array(z.enum(["Nairobi", "Mombasa", "Kisumu"])).optional(),
+  evStatus: z.enum(["none", "some", "mostly", "all"]).optional(),
   notes: z.string().trim().optional(),
   consent: z
     .boolean()
@@ -58,6 +79,15 @@ export const driverJoinSchema = z.object({
   vehicleType: z.enum(["taxi", "delivery_bike", "three_wheeler", "other"]),
   daysPerWeek: z.enum(["1_2", "3_4", "5_6", "daily"]),
   heardAbout: z.enum(["whatsapp", "facebook", "friend", "roadside", "other"]),
+  vehicleMakeModel: z.string().trim().max(120).optional(),
+  vehicleYear: z.string().trim().max(20).optional(),
+  vehicleOwnership: z.enum(["owned", "rented", "financed"]).optional(),
+  routesAreas: z.string().trim().max(500).optional(),
+  hoursPerDay: z.enum(["under_4", "4_8", "8_12", "over_12"]).optional(),
+  platforms: z
+    .array(z.enum(["uber", "bolt", "little", "faras", "independent"]))
+    .optional(),
+  applicantMessage: z.string().trim().max(2000).optional(),
   consent: z
     .boolean()
     .refine(
@@ -69,6 +99,9 @@ export const driverJoinSchema = z.object({
 export const mediaKitSchema = z.object({
   name: z.string().trim().min(1, "Enter your name"),
   email: z.string().trim().email("Use a valid email address."),
+  company: z.string().trim().max(120).optional(),
+  role: z.string().trim().max(120).optional(),
+  useCase: z.string().trim().max(2000).optional(),
 })
 
 export const supportContactSchema = z.object({

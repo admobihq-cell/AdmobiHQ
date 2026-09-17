@@ -78,6 +78,15 @@ export function AdmobiOtpSignUpForm() {
       return
     }
 
+    // Not "complete" here means the Clerk instance requires fields this form
+    // never sends — username and password are the usual culprits, and neither
+    // an email code nor Google can ever supply them. Log what is missing;
+    // without this the failure is undiagnosable from the browser.
+    console.error("Clerk sign-up incomplete", {
+      status: signUp.status,
+      missingFields: signUp.missingFields,
+      unverifiedFields: signUp.unverifiedFields,
+    })
     setError("Sign-up could not be completed. Try again.")
     setSubmitting(false)
   }

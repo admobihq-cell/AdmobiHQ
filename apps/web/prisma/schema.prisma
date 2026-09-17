@@ -22,6 +22,10 @@ model Lead {
   budget_range        String? // "under_50k", "50k_150k", "150k_500k", "500k_plus", "not_sure"
   campaign_start_date DateTime?
   additional_info     String?
+  objective           String? // "awareness", "launch", "promo", "footfall", "other"
+  industry            String?
+  creative_status     String? // "ready", "needs_design", "not_sure"
+  target_audience     String?
   status              String?   @default("new") // new, contacted, qualified, closed
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
@@ -36,7 +40,7 @@ model Lead {
 }
 
 model FleetPartner {
-  id                   Int      @id @default(autoincrement())
+  id                   Int       @id @default(autoincrement())
   email                String
   company_name         String
   primary_contact_name String
@@ -45,10 +49,14 @@ model FleetPartner {
   fleet_types          String[]
   fleet_size           String?
   vehicles_active      String? // "yes", "no", "some"
+  taxi_count           String?
+  bike_count           String?
+  operating_cities     String[]  @default([]) // "Nairobi", "Mombasa", "Kisumu"
+  ev_status            String? // "none", "some", "mostly", "all"
   notes                String?
-  status               String?  @default("pending") // "pending", "verified", "active"
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  status               String?   @default("pending") // "pending", "verified", "active"
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
   deleted_at           DateTime?
   deleted_by_email     String?
 
@@ -61,20 +69,27 @@ model FleetPartner {
 }
 
 model Driver {
-  id            Int      @id @default(autoincrement())
-  name          String
-  phone         String
-  email         String?
-  city          String // "Nairobi", "Mombasa", "Kisumu"
-  vehicle_type  String? // "taxi", "delivery_bike", "three_wheeler", "other"
-  days_per_week String? // "1_2", "3_4", "5_6", "daily"
-  heard_about   String? // "whatsapp", "facebook", "friend", "roadside", "other"
-  status        String?  @default("pending") // "pending", "verified", "active"
-  notes         String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  deleted_at    DateTime?
-  deleted_by_email String?
+  id                 Int       @id @default(autoincrement())
+  name               String
+  phone              String
+  email              String?
+  city               String // "Nairobi", "Mombasa", "Kisumu"
+  vehicle_type       String? // "taxi", "delivery_bike", "three_wheeler", "other"
+  days_per_week      String? // "1_2", "3_4", "5_6", "daily"
+  heard_about        String? // "whatsapp", "facebook", "friend", "roadside", "other"
+  vehicle_make_model String?
+  vehicle_year       String?
+  vehicle_ownership  String? // "owned", "rented", "financed"
+  routes_areas       String?
+  hours_per_day      String? // "under_4", "4_8", "8_12", "over_12"
+  platforms          String[]  @default([]) // "uber", "bolt", "little", "faras", "independent"
+  applicant_message  String?
+  status             String?   @default("pending") // "pending", "verified", "active"
+  notes              String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  deleted_at         DateTime?
+  deleted_by_email   String?
 
   @@index([created_at])
   @@index([city])
@@ -86,11 +101,13 @@ model Driver {
 }
 
 model WaitlistEntry {
-  id               Int      @id @default(autoincrement())
-  email            String   @unique
-  source           String?  @default("homepage")
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  source           String?   @default("homepage")
+  name             String?
+  persona          String? // "advertiser", "driver", "fleet", "other"
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
   deleted_at       DateTime?
   deleted_by_email String?
 
@@ -100,11 +117,14 @@ model WaitlistEntry {
 }
 
 model MediaKitRequest {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   name             String
   email            String
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  company          String?
+  role             String?
+  use_case         String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
   deleted_at       DateTime?
   deleted_by_email String?
 
@@ -240,24 +260,24 @@ model Customer {
 }
 
 model SupportCase {
-  id                    Int       @id @default(autoincrement())
-  customer_id           Int?
-  customer              Customer? @relation(fields: [customer_id], references: [id])
-  driver_clerk_user_id  String?
-  contact_name          String
-  contact_email         String
-  contact_phone         String?
-  anonymous_device_id   String?
-  access_token_hash     String    @unique
-  channel               String // "web" | "customer-web" | "customer-mobile"
-  category              String    @default("general") // billing, campaign, technical, driver, general
-  subject               String
-  status                String    @default("open") // open, pending, resolved, closed
-  priority              String    @default("normal") // low, normal, high, urgent
-  assigned_to_clerk_id  String?
-  assigned_to_email     String?
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
+  id                   Int       @id @default(autoincrement())
+  customer_id          Int?
+  customer             Customer? @relation(fields: [customer_id], references: [id])
+  driver_clerk_user_id String?
+  contact_name         String
+  contact_email        String
+  contact_phone        String?
+  anonymous_device_id  String?
+  access_token_hash    String    @unique
+  channel              String // "web" | "customer-web" | "customer-mobile"
+  category             String    @default("general") // billing, campaign, technical, driver, general
+  subject              String
+  status               String    @default("open") // open, pending, resolved, closed
+  priority             String    @default("normal") // low, normal, high, urgent
+  assigned_to_clerk_id String?
+  assigned_to_email    String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
 
   messages SupportMessage[]
 
@@ -283,18 +303,105 @@ model SupportIdentity {
 }
 
 model SupportMessage {
-  id               Int         @id @default(autoincrement())
-  case_id          Int
-  case             SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
-  author_type      String // "customer" | "ops"
-  author_email     String?
-  author_clerk_id  String?
-  body             String
-  internal_note    Boolean     @default(false)
-  created_at       DateTime    @default(now())
+  id              Int         @id @default(autoincrement())
+  case_id         Int
+  case            SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  author_type     String // "customer" | "ops"
+  author_email    String?
+  author_clerk_id String?
+  body            String
+  internal_note   Boolean     @default(false)
+  created_at      DateTime    @default(now())
 
   @@index([case_id, created_at])
   @@map("support_messages")
+}
+
+/// A driver-reported safety incident — the SOS flow on driver-web and
+/// driver-mobile. Deliberately NOT a SupportCase category: an SOS is measured
+/// by acknowledgement latency (see acknowledged_at), is only ever filed by an
+/// authenticated driver (so the anonymous access_token_hash / SupportIdentity
+/// machinery above is dead weight), and must never be buried in the helpdesk
+/// inbox behind billing questions.
+///
+/// driver_name / driver_phone are SNAPSHOTS taken from DriverProfile at
+/// create. Ops needs a number to call in the first thirty seconds; that must
+/// not depend on a DriverProfile row existing, being approved, or still
+/// holding the same number weeks later.
+model SafetyIncident {
+  id                   Int     @id @default(autoincrement())
+  driver_clerk_user_id String
+  driver_name          String?
+  driver_phone         String?
+
+  type        String // accident, harassment, theft, vehicle_damage, medical, breakdown, other
+  severity    String  @default("high") // critical, high, medium — derived from type at create
+  status      String  @default("new") // new, acknowledged, in_progress, resolved, cancelled
+  description String?
+
+  /// Snapshot at submit. Null when the device had no fix — the report is
+  /// never blocked on location.
+  reported_lat        Float?
+  reported_lng        Float?
+  reported_accuracy_m Int?
+
+  /// Overwritten by foreground re-pings while the incident is open. There is
+  /// deliberately no ping-history table — ops sees the current pin move, not a
+  /// breadcrumb trail. See pingAdmission in apps/api/lib/safety-incident.ts.
+  last_lat         Float?
+  last_lng         Float?
+  last_location_at DateTime?
+
+  acknowledged_at       DateTime?
+  acknowledged_by_email String?
+  resolved_at           DateTime?
+  resolved_by_email     String?
+  resolution            String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  photos  SafetyIncidentPhoto[]
+  updates SafetyIncidentUpdate[]
+
+  @@index([status, created_at])
+  @@index([driver_clerk_user_id, created_at])
+  @@map("safety_incidents")
+}
+
+/// A photo of the damage/scene attached to an incident. Stored with
+/// Cloudinary's "authenticated" delivery type via lib/private-media.ts —
+/// cloudinary_public_id is private and never exposed to a client.
+model SafetyIncidentPhoto {
+  id                   Int            @id @default(autoincrement())
+  incident_id          Int
+  incident             SafetyIncident @relation(fields: [incident_id], references: [id], onDelete: Cascade)
+  cloudinary_public_id String         @unique
+  content_type         String
+  size_bytes           Int
+  created_at           DateTime       @default(now())
+
+  @@index([incident_id])
+  @@map("safety_incident_photos")
+}
+
+/// One entry in the incident thread. author_type "system" records lifecycle
+/// events (acknowledged / resolved / cancelled) in the same list the humans
+/// write to, so the detail view is one chronological feed rather than a
+/// timeline plus a separate conversation.
+model SafetyIncidentUpdate {
+  id              Int            @id @default(autoincrement())
+  incident_id     Int
+  incident        SafetyIncident @relation(fields: [incident_id], references: [id], onDelete: Cascade)
+  author_type     String // "driver" | "ops" | "system"
+  author_email    String?
+  author_clerk_id String?
+  body            String
+  internal_note   Boolean        @default(false)
+  created_at      DateTime       @default(now())
+
+  @@index([incident_id, created_at])
+  @@map("safety_incident_updates")
 }
 
 /// Cross-app activity trail: who did what, when (ops, public forms, future customer apps).
@@ -350,10 +457,10 @@ model DriverProfile {
 
   kra_pin String?
 
-  payout_method        String? // "mpesa" | "bank"
-  payout_mpesa_msisdn  String?
-  payout_bank_name     String?
-  payout_bank_account  String?
+  payout_method       String? // "mpesa" | "bank"
+  payout_mpesa_msisdn String?
+  payout_bank_name    String?
+  payout_bank_account String?
 
   status            String    @default("draft") // draft, submitted, approved, rejected, changes_requested
   submitted_at      DateTime?
@@ -375,12 +482,12 @@ model DriverProfile {
 /// private (Cloudinary "authenticated" delivery type) and never exposed to
 /// the client directly — always served via an authenticated proxy route.
 model DriverDocument {
-  id                  Int           @id @default(autoincrement())
-  profile_id          Int
-  profile             DriverProfile @relation(fields: [profile_id], references: [id], onDelete: Cascade)
-  type                String // national_id, profile_photo, kra_pin_certificate, payout_proof
+  id                   Int           @id @default(autoincrement())
+  profile_id           Int
+  profile              DriverProfile @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  type                 String // national_id, profile_photo, kra_pin_certificate, payout_proof
   cloudinary_public_id String        @unique
-  content_type        String
+  content_type         String
   size_bytes           Int
   original_filename    String?
   created_at           DateTime      @default(now())
@@ -408,6 +515,118 @@ model DriverNotification {
   @@map("driver_notifications")
 }
 
+/// One advertiser campaign, owned by a CUSTOMER Clerk instance user id — not
+/// the Customer model above, which is a dormant email-keyed scaffold. Mirrors
+/// DriverProfile's draft → submitted → reviewed lifecycle.
+///
+/// `status` holds ONLY the review lifecycle. The flight phase (scheduled /
+/// live / completed) is DERIVED from starts_on / ends_on at read time — see
+/// apps/api/lib/campaign-dto.ts. Never store it, or it goes stale the moment
+/// a date passes and needs a cron to repair.
+///
+/// Supplier dispatch state is deliberately absent — see the "Supplier /
+/// screen-API seam" note in docs/shared/DATA-LAYER.md before adding it here.
+model Campaign {
+  id            Int    @id @default(autoincrement())
+  clerk_user_id String
+
+  name      String
+  objective String? // awareness, traffic, launch, promotion, other
+  market    String? // CBD, Westlands, Karen, Kilimani, Mombasa Rd, Eastlands
+  corridors String? // free-text corridor/route notes for the account manager
+  format    String  @default("taxi_top") // taxi_top, delivery_bike, both
+  notes     String?
+
+  budget_kes Decimal?  @db.Decimal(12, 2)
+  starts_on  DateTime? @db.Date
+  ends_on    DateTime? @db.Date
+
+  status            String    @default("draft") // draft, submitted, approved, rejected, changes_requested, cancelled
+  submitted_at      DateTime?
+  reviewed_at       DateTime?
+  reviewed_by_email String?
+  /// Advertiser-visible, verbatim, on every surface and in the decision
+  /// email. Required whenever a decision is not "approved". Internal ops
+  /// commentary belongs in audit_events, not here.
+  review_reason     String?
+
+  contact_name  String?
+  contact_email String?
+  contact_phone String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  creatives CampaignCreative[]
+
+  @@index([clerk_user_id, created_at])
+  @@index([status, created_at])
+  @@index([starts_on, ends_on])
+  @@map("campaigns")
+}
+
+/// A single uploaded creative asset for a campaign. cloudinary_public_id uses
+/// Cloudinary's "authenticated" delivery type and is never exposed to a
+/// browser — always served via an authenticated proxy, exactly like
+/// DriverDocument.
+///
+/// Only PNG, JPG, GIF and MP4 are accepted: the supplier's player decodes
+/// nothing else, so accepting WebP/WebM/BMP would let creative pass review
+/// and then fail silently on the vehicle.
+///
+/// width / height / duration_seconds are read off the Cloudinary upload
+/// response and stored eagerly — they are the exact spec fields the supplier
+/// screen API asks for, and recovering them later means re-downloading every
+/// asset. Do not make them lazy.
+model CampaignCreative {
+  id                   Int      @id @default(autoincrement())
+  campaign_id          Int
+  campaign             Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  /// "image" | "video" — mirrors Cloudinary's resource_type; needed to sign
+  /// the fetch URL correctly.
+  resource_type        String   @default("image")
+  cloudinary_public_id String   @unique
+  content_type         String
+  size_bytes           Int
+  width                Int?
+  height               Int?
+  duration_seconds     Decimal? @db.Decimal(8, 2)
+  original_filename    String?
+  /// Which face of the vehicle unit this plays on. The taxi top is
+  /// double-sided (960x320mm) and the bike box is three-sided (320x320mm,
+  /// P2.5), so the hardware needs this even though the app only offers "all"
+  /// today: "all" | "side_a" | "side_b" | "left" | "right" | "rear".
+  slot                 String   @default("all")
+  created_at           DateTime @default(now())
+
+  @@index([campaign_id])
+  @@map("campaign_creatives")
+}
+
+/// A per-advertiser in-app notification (campaign submitted / reviewed).
+/// Field-for-field copy of DriverNotification plus `href`, so the inbox
+/// plumbing is copied too. Written by the same routes that trigger the
+/// matching email + push — see apps/api/app/v1/customer/campaigns/[id]/submit
+/// and apps/api/app/v1/campaigns/[id]/review. Merged with AnnouncementDelivery
+/// rows into one feed client-side, exactly like the driver apps do.
+model CustomerNotification {
+  id            Int    @id @default(autoincrement())
+  clerk_user_id String
+
+  type  String // campaign_submitted, campaign_approved, campaign_rejected, campaign_changes_requested
+  title String
+  body  String
+  /// Deep link target, e.g. "/campaigns/42" — used by both the web inbox row
+  /// and the Expo notification tap handler.
+  href  String?
+
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+
+  @@index([clerk_user_id, created_at])
+  @@map("customer_notifications")
+}
+
 model AuditEvent {
   id            Int      @id @default(autoincrement())
   app           String
@@ -426,4 +645,29 @@ model AuditEvent {
   @@index([actor_email, created_at])
   @@index([app, created_at])
   @@map("audit_events")
+}
+
+/// A third-party tool or service the business pays for or depends on.
+/// Managed from ops → Settings → Integrations (admin only). `cost` is the
+/// per-cycle price in `currency`; convert to a monthly USD figure in the app.
+model Integration {
+  id               Int      @id @default(autoincrement())
+  name             String
+  category         String   @default("infrastructure") // infrastructure, email, search-analytics, monitoring, automation, payments, developer, ai
+  purpose          String   @default("")
+  url              String   @default("")
+  plan             String   @default("")
+  cost             Decimal  @default(0) @db.Decimal(12, 2)
+  currency         String   @default("USD") // USD, EUR, KES
+  billing_cycle    String   @default("monthly") // monthly, annual, usage, free
+  status           String   @default("active") // active, trial, review, canceled
+  owner            String   @default("")
+  notes            String   @default("")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  updated_by_email String?
+
+  @@index([category])
+  @@index([status])
+  @@map("integrations")
 }

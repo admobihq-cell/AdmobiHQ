@@ -25,6 +25,7 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 | **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
 | **Payouts** | `/payouts` | Coming-soon (ops still settles manually) |
 | **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
+| **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
 | **Auth** | `/auth/login`, `/auth/signup` | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
 
@@ -48,12 +49,36 @@ Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/
 | App name / slug / scheme | `Admobi Driver` / `admobihq-driver` / `admobihq-driver` |
 | EAS | `@admobimedia/admobihq-driver` (`projectId` in `app.json`) |
 
-Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support. Profile-setup is a 4-step wizard. Clerk mounts when `EXPO_PUBLIC_AUTH_ENABLED=true`. Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
+Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk mounts when `EXPO_PUBLIC_AUTH_ENABLED=true`. Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
 
 ```bash
 npm run env:pull -w driver-mobile
 npm run dev:mobile:driver          # Metro :8083, cleared cache
 ```
+
+### Persisted query cache
+
+`app/_layout.tsx` wraps the app in `PersistQueryClientProvider`, writing the
+TanStack Query cache to MMKV (24h `maxAge`, busted by `QUERY_CACHE_BUSTER` in
+`lib/query-client.ts`). The persister serialises with JSON, so **anything a
+`queryFn` returns must be JSON-safe**. A `Date` comes back as a string and a
+method comes back as `undefined`, and the screen throws
+`TypeError: undefined is not a function` on the render that reads it — after a
+relaunch only, which makes it look unrelated to the query.
+
+A query that must hold non-serialisable values opts out:
+
+```ts
+useQuery({
+  queryKey: ["driver-sessions", user?.id],
+  queryFn: /* rows holding a Date + a live Clerk revoke() */,
+  meta: { persist: false },
+})
+```
+
+`shouldDehydrateQuery` in the provider's `dehydrateOptions` honours that flag.
+Bump `QUERY_CACHE_BUSTER` whenever a cached shape changes, so devices already
+holding a bad entry drop it on next launch.
 
 ## Deliveries placeholders + the platform flag
 

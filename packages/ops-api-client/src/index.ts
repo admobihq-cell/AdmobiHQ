@@ -6,7 +6,11 @@ import {
   type AuditListQueryParams,
   type BroadcastCreateInput,
   type BulkResponse,
+  type CampaignDto,
+  type CampaignListItemDto,
+  type CampaignReviewInput,
   type DateRangeKey,
+  type DocumentExportRequest,
   type DriverApplicationListItemDto,
   type DriverBulkInput,
   type DriverCreateInput,
@@ -33,6 +37,12 @@ import {
   type PlatformFlagUpdateInput,
   type PlatformUserListDto,
   type PlatformUserType,
+  type SafetyIncidentDetailDto,
+  type SafetyIncidentDto,
+  type SafetyIncidentMessageCreateInput,
+  type SafetyIncidentOpsUpdateInput,
+  type SafetyIncidentUpdateDto,
+  type SafetyListQueryParams,
   type StatsResponseDto,
   type SuccessResponse,
   type SupportCaseDetailDto,
@@ -62,7 +72,7 @@ import { formatApiError, formatApiErrorResponse } from "./format-error"
 import { publicApiFetch, type PublicApiResult } from "./public-fetch"
 
 export { OpsApiError, getApiBaseUrl, publicApiUrl, formatApiError, formatApiErrorResponse, publicApiFetch }
-export type { PublicApiResult }
+export type { PublicApiResult, DocumentExportRequest }
 
 export type OpsClientOptions = {
   /** Base URL for the API, e.g. `https://api.admobihq.com` or `http://localhost:3003`. */
@@ -95,6 +105,9 @@ type EntityResource<
 export type OpsClient = {
   me: {
     get: () => Promise<MeDto>
+  }
+  documents: {
+    exportPdf: (body: DocumentExportRequest) => Promise<Blob>
   }
   leads: EntityResource<
     LeadDto,
@@ -193,6 +206,19 @@ export type OpsClient = {
     update: (id: number, body: SupportCaseUpdateInput) => Promise<SupportCaseDto>
     reply: (id: number, body: SupportMessageCreateInput) => Promise<SupportMessageDto>
   }
+  safety: {
+    list: (params?: SafetyListQueryParams) => Promise<PaginatedResponse<SafetyIncidentDto>>
+    get: (id: number) => Promise<SafetyIncidentDetailDto>
+    update: (id: number, body: SafetyIncidentOpsUpdateInput) => Promise<SafetyIncidentDto>
+    reply: (
+      id: number,
+      body: SafetyIncidentMessageCreateInput,
+    ) => Promise<SafetyIncidentUpdateDto>
+    /** No JSON endpoint for this — the file route streams raw bytes, so the
+     * caller fetches it directly (with the same bearer token) rather than
+     * going through request<T>()'s JSON parsing. */
+    photoFileUrl: (incidentId: number, photoId: number) => string
+  }
   driverApplications: {
     list: (
       params?: Partial<PaginationParams> & { status?: string },
@@ -203,6 +229,18 @@ export type OpsClient = {
      * caller fetches it directly (with the same bearer token) rather than
      * going through request<T>()'s JSON parsing. */
     documentFileUrl: (applicationId: number, documentId: number) => string
+  }
+  campaigns: {
+    list: (
+      params?: Partial<PaginationParams> & { status?: string },
+    ) => Promise<PaginatedResponse<CampaignListItemDto>>
+    get: (id: number) => Promise<CampaignDto>
+    review: (id: number, body: CampaignReviewInput) => Promise<CampaignDto>
+    /** No JSON endpoint — the file route streams raw bytes, so the caller
+     * fetches it directly (with the same bearer token) rather than going
+     * through request<T>()'s JSON parsing. Same shape as
+     * driverApplications.documentFileUrl above. */
+    creativeFileUrl: (campaignId: number, creativeId: number) => string
   }
 }
 
@@ -284,6 +322,47 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
     return (await res.json()) as T
   }
 
+  async function requestBlob(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<Blob> {
+    const token = await options.getToken()
+    const headers = new Headers(init.headers)
+    if (!headers.has("Content-Type") && init.body) {
+      headers.set("Content-Type", "application/json")
+    }
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`)
+    }
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), requestTimeoutMs)
+    let res: Response
+    try {
+      res = await fetchImpl(`${baseUrl}${path}`, {
+        ...init,
+        headers,
+        signal: controller.signal,
+      })
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new OpsApiError(
+          "Request timed out. Check your connection and try again.",
+          408,
+        )
+      }
+      throw err
+    } finally {
+      clearTimeout(timer)
+    }
+
+    if (!res.ok) {
+      throw await parseError(res)
+    }
+
+    return res.blob()
+  }
+
   function createEntityResource<
     TDto,
     TCreate,
@@ -333,6 +412,13 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   return {
     me: {
       get: () => request<MeDto>(`${apiPrefix}/me`),
+    },
+    documents: {
+      exportPdf: (body: DocumentExportRequest) =>
+        requestBlob(`${apiPrefix}/ops/documents/export`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
     },
     leads: createEntityResource(`${apiPrefix}/leads`),
     fleet: createEntityResource(`${apiPrefix}/fleet`),
@@ -493,6 +579,37 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
     },
+    safety: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+          sortBy: params.sortBy,
+          sortDir: params.sortDir,
+          status: params.status,
+          type: params.type,
+          severity: params.severity,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<SafetyIncidentDto>>(
+          `${apiPrefix}/safety-incidents${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<SafetyIncidentDetailDto>(`${apiPrefix}/safety-incidents/${id}`),
+      update: (id, body) =>
+        request<SafetyIncidentDto>(`${apiPrefix}/safety-incidents/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      reply: (id, body) =>
+        request<SafetyIncidentUpdateDto>(`${apiPrefix}/safety-incidents/${id}/messages`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      photoFileUrl: (incidentId, photoId) =>
+        `${baseUrl}${apiPrefix}/safety-incidents/${incidentId}/photos/${photoId}/file`,
+    },
     driverApplications: {
       list: (params = {}) => {
         const query = buildListQueryParams({
@@ -513,6 +630,28 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         }),
       documentFileUrl: (applicationId, documentId) =>
         `${baseUrl}${apiPrefix}/driver-applications/${applicationId}/documents/${documentId}/file`,
+    },
+    campaigns: {
+      list: (params = {}) => {
+        const query = buildListQueryParams({
+          page: params.page,
+          pageSize: params.pageSize,
+          search: params.search,
+          status: "status" in params ? params.status : undefined,
+        })
+        const qs = query.toString()
+        return request<PaginatedResponse<CampaignListItemDto>>(
+          `${apiPrefix}/campaigns${qs ? `?${qs}` : ""}`,
+        )
+      },
+      get: (id) => request<CampaignDto>(`${apiPrefix}/campaigns/${id}`),
+      review: (id, body) =>
+        request<CampaignDto>(`${apiPrefix}/campaigns/${id}/review`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      creativeFileUrl: (campaignId, creativeId) =>
+        `${baseUrl}${apiPrefix}/campaigns/${campaignId}/creatives/${creativeId}/file`,
     },
   }
 }

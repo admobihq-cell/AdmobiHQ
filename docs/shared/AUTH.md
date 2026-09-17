@@ -52,6 +52,115 @@ signIn.create({ identifier: email })
 
 Google is a separate path on the same hook: `signIn.sso({ strategy: "oauth_google", redirectCallbackUrl, redirectUrl })` — see [apps/customer-web/components/auth/advertiser-sign-in.tsx](../../apps/customer-web/components/auth/advertiser-sign-in.tsx) and [apps/driver-web/components/auth/driver-sign-in.tsx](../../apps/driver-web/components/auth/driver-sign-in.tsx).
 
+### Sign-up: the Clerk instance must not require username or password
+
+Our sign-up forms are passwordless — an email one-time code, or Google. Neither can ever
+supply a **username** or a **password**. If the Clerk instance marks either as *required*
+under **User & authentication → Email, phone, username** / **Authentication strategies**,
+every sign-up ends at `status: "missing_requirements"` instead of `"complete"`, and:
+
+- the email-code path falls through to "Sign-up could not be completed. Try again." — a
+  permanent dead end, no matter how many times the user retries;
+- the Google path has nowhere to continue, so `<AuthenticateWithRedirectCallback>` falls back
+  to `display_config.sign_up_url` and dumps the user on Clerk's **Account Portal** at
+  `https://accounts.<domain>/sign-up/continue` — a Clerk-branded page outside our app. A slow
+  or ad-blocked Account Portal shows as a blank `/auth/sso-callback/...` page instead.
+
+Check an instance's real requirements without the dashboard — this endpoint is public:
+
+```sh
+curl -s "https://clerk.<app-domain>/v1/environment?_clerk_js_version=5.99.0" -H "Origin: https://<app-domain>" | jq '.user_settings.attributes | map_values(select(.enabled) | .required)'
+```
+
+Every attribute that reports `required: true` must be either supplied by the form or turned
+off in the dashboard. `first_name`/`last_name` are safe to require *only* for Google (it
+supplies them); requiring them breaks the email-code path unless the form collects them.
+
+The three hand-rolled forms log `status`, `missingFields` and `unverifiedFields` to the
+console on the not-complete branch, so this is diagnosable from the browser next time.
+
+### Sign-up: bot protection needs a `#clerk-captcha` element
+
+Clerk runs Cloudflare Turnstile on **sign-up** (never sign-in), and in a hand-rolled flow it
+mounts that widget into a `<div id="clerk-captcha" />` you provide. If the element is absent,
+`clerk-js` warns and falls back to an invisible widget appended to `document.body` with
+`display: none` — so any visitor Turnstile decides to challenge interactively can never solve
+it, and the challenge dies with Turnstile error `600010`.
+
+This breaks the Google button too, not just the email code: both `signUp.create()` and
+`signUp.sso()` await `getCaptchaToken()` as their first step, so the click registers, the
+promise hangs through Turnstile's retries, and nothing visible happens.
+
+Every hand-rolled sign-up form must render `<div id="clerk-captcha" />` in the same step as
+its submit and Google buttons — see
+[advertiser-sign-up.tsx](../../apps/customer-web/components/auth/advertiser-sign-up.tsx),
+[driver-sign-up.tsx](../../apps/driver-web/components/auth/driver-sign-up.tsx), and
+[admobi-otp-sign-up-form.tsx](../../apps/ops/components/admobi-otp-sign-up-form.tsx).
+
+### Advertiser sign-up collects a company name
+
+`<AdvertiserSignUp>` asks for a company or organization name and passes it as
+`unsafeMetadata: { companyName }` to both `signUp.create()` and `signUp.sso()`. Clerk copies
+`unsafeMetadata` onto the created user once the sign-up completes, so the value survives the
+Google OAuth round-trip with no extra storage of our own — which matters because the ops
+Users list reads Clerk, not Postgres (`listPlatformUsers` in
+[apps/api/lib/platform-users.ts](../../apps/api/lib/platform-users.ts)).
+
+The field is **optional at sign-up**, and deliberately so. Google's consent screen has no
+place to ask for a company, and Clerk owns the OAuth step, so gating "Continue with Google"
+on the field only produced a permanently dead button with nothing explaining why. Instead
+[`<CompanyNamePrompt>`](../../apps/customer-web/components/shell/company-name-prompt.tsx),
+mounted in the app shell, opens a non-dismissible dialog on first load for any signed-in user
+whose `unsafeMetadata.companyName` is empty, and writes it with `user.update()` —
+`unsafeMetadata` is client-writable, so this needs no API route. Whichever path skipped the
+field, the value still gets collected exactly once.
+
+That dialog is modal, so it has to win the first-load race against the product tour, which
+auto-opens for anyone with no completion record. Left alone the two fired on the same render:
+the dialog took focus while its overlay covered the very sidebar items the tour was pointing
+at. `<AppShell>` now owns the ordering: it passes an `autoStartReady` flag to
+[`<TourProvider>`](../../packages/ui/src/components/tour-provider.tsx), and only raises it
+once `readCompanyName(user?.unsafeMetadata)` is non-empty **and** a short settle has elapsed.
+The settle is not decoration — the dialog fades out over `duration-100`, so handing the tour
+its go-ahead in the same commit opens it underneath a scrim that is still on screen.
+
+`autoStartReady` defaults to `true`, so driver-web and ops — neither of which prompts for
+anything — are unchanged. The gate lives in the shell rather than in `<TourProvider>` because
+the provider is shared: it knows about "something is holding me back", not about companies or
+dialog timings.
+
+Three client call sites write that key, so it lives in one place —
+[lib/company-name.ts](../../apps/customer-web/lib/company-name.ts) exports `readCompanyName`
+and `withCompanyName` (which **merges**, since `user.update()` replaces the whole metadata
+bag). The server-side reader is `readCompanyName` in
+[apps/api/lib/customer-clerk.ts](../../apps/api/lib/customer-clerk.ts).
+
+### Settings → Account is the place to finish an account
+
+[`<AccountSettingsView>`](../../apps/customer-web/components/settings/account-settings-view.tsx)
+edits first name, last name, **username**, and **company** in one `user.update()` call, and
+offers **account deletion** behind a confirm dialog. Details worth keeping:
+
+- The username is only sent when non-empty — Clerk reads `""` as "clear it", so an untouched
+  field would otherwise wipe an existing handle.
+- Company is required to save. It is the one field `<CompanyNamePrompt>` re-demands on next
+  load, so letting settings blank it would trap the user in that dialog.
+- Delete is gated on `user.deleteSelfEnabled` (a Clerk instance setting), and on success does
+  a **hard** `window.location.assign("/auth/login")` — the Clerk client still holds a session
+  for a user that no longer exists, and only a full reload clears it.
+- Clerk rejects a taken username with a structured `ClerkAPIError` list rather than an
+  `Error`; `clerkErrorMessage()` unwraps it so a failed save says why instead of silently
+  doing nothing.
+
+Ops reads it back in two places, both resolving it from Clerk at read time rather than
+copying it into Postgres: the **Users** page (`toPlatformUserDto` adds a `company` column,
+rendered for customers only — drivers never set one) and the **campaign review** screen
+(`getCustomerCompanyName` fills `CampaignDto.company_name` in both `GET /v1/campaigns/[id]`
+and the `PATCH .../review` response, so the company survives a decision without the row
+blanking out). Both lookups are best-effort: a Clerk outage shows "—", never a 500.
+
+Driver sign-up deliberately does not ask for this; drivers sign up as individuals.
+
 ### Ops (`apps/ops`)
 
 - [app/sign-in/[[...sign-in]]/page.tsx](../../apps/ops/app/sign-in/%5B%5B...sign-in%5D%5D/page.tsx) and the sign-up equivalent call `getOpsAccess()` server-side first — already-authorized users are redirected straight to `/home`; non-`@admobihq.com` emails get `<OpsAccessDenied>` instead of a form.

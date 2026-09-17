@@ -21,7 +21,7 @@ import {
 } from "@/lib/seo/site"
 import "@workspace/ui/globals.css"
 import { CookieConsentBanner } from "@workspace/ui/components/cookie-consent-banner"
-import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
+import { ThemeScript } from "@workspace/ui/components/theme-script"
 import { cn } from "@workspace/ui/lib/utils"
 
 const geist = Geist({
@@ -114,10 +114,7 @@ export default async function MarketingLayout({
       )}
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: getThemeBlockingScript() }}
-          suppressHydrationWarning
-        />
+        <ThemeScript />
       </head>
       <body className="bg-background">
         <JsonLd data={websiteJsonLd} />

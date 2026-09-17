@@ -1,4 +1,4 @@
-import { Compass, ToggleLeft, type LucideIcon } from "lucide-react"
+import { Boxes, Compass, ToggleLeft, type LucideIcon } from "lucide-react"
 
 export type SettingsNavItem = {
   href: string
@@ -13,6 +13,12 @@ export const settingsNavItems: SettingsNavItem[] = [
     label: "Platform flags",
     icon: ToggleLeft,
     description: "Feature rollout controls",
+  },
+  {
+    href: "/settings/integrations",
+    label: "Integrations",
+    icon: Boxes,
+    description: "Tools, subscriptions & monthly cost",
   },
   {
     href: "/settings/tour",

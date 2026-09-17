@@ -25,6 +25,7 @@
     "@vercel/analytics": "^2.0.1",
     "@workspace/geo": "*",
     "@workspace/ops-api-client": "*",
+    "@workspace/ops-contracts": "*",
     "@workspace/query-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",

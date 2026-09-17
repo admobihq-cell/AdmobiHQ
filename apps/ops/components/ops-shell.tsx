@@ -14,8 +14,10 @@ import {
   Mail,
   Map,
   Megaphone,
+  MonitorPlay,
   Radio,
   Settings,
+  Siren,
   Truck,
   UserCog,
   Users,
@@ -80,6 +82,12 @@ const navItems: Array<{
     permission: "driver_applications",
   },
   {
+    href: "/campaigns",
+    label: "Campaigns",
+    icon: MonitorPlay,
+    permission: "campaigns",
+  },
+  {
     href: "/finances",
     label: "Finances",
     icon: Wallet,
@@ -98,6 +106,9 @@ const navItems: Array<{
     icon: Radio,
     permission: "announcements",
   },
+  // Above Support on purpose: an emergency queue that sorts below the helpdesk
+  // is a queue nobody checks first.
+  { href: "/sos", label: "SOS", icon: Siren, permission: "safety" },
   { href: "/support", label: "Support", icon: LifeBuoy, permission: "support" },
   {
     href: "/activity",
@@ -109,6 +120,10 @@ const navItems: Array<{
 
 const secondaryItems: Array<{
   href: string
+  /** Where the link actually goes, when it differs from the active-match base
+   * (e.g. Settings highlights on /settings/* but links straight to its first
+   * tab so there's no /settings → /settings/flags redirect hop). */
+  linkHref?: string
   label: string
   icon: typeof Users
   permission?: OpsPermission
@@ -122,7 +137,13 @@ const secondaryItems: Array<{
   },
   { href: "/team", label: "Team", icon: UserCog, adminOnly: true },
   { href: "/users", label: "Users", icon: IdCard, adminOnly: true },
-  { href: "/settings", label: "Settings", icon: Settings, permission: "flags" },
+  {
+    href: "/settings",
+    linkHref: "/settings/flags",
+    label: "Settings",
+    icon: Settings,
+    permission: "flags",
+  },
 ]
 
 /** Routes that exist and need a breadcrumb label but never render in the sidebar. */
@@ -173,7 +194,7 @@ export function OpsShell({
   userName,
   orgName,
   userId,
-  pendingDriverApplicationsCount = 0,
+  pendingCounts = {},
 }: {
   children: React.ReactNode
   role: OpsRole
@@ -181,7 +202,11 @@ export function OpsShell({
   userName: string
   orgName: string | null
   userId: string
-  pendingDriverApplicationsCount?: number
+  /** Review-queue badge counts, keyed by nav href. Ops's review queues double
+   * as its notification inbox, so this is the only "unread count" the app has.
+   * Keyed rather than named per section: a third hardcoded branch here was the
+   * wrong shape. */
+  pendingCounts?: Partial<Record<string, number>>
 }) {
   const pathname = usePathname()
   const canSee = (item: {
@@ -198,6 +223,7 @@ export function OpsShell({
     (
       [
         "driver_applications",
+        "campaigns",
         "support",
         "leads",
         "fleet",
@@ -246,13 +272,12 @@ export function OpsShell({
                         >
                           <item.icon />
                           <span>{item.label}</span>
-                          {item.href === "/driver-applications" &&
-                          pendingDriverApplicationsCount > 0 ? (
+                          {(pendingCounts[item.href] ?? 0) > 0 ? (
                             <Badge
                               variant="secondary"
                               className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
                             >
-                              {pendingDriverApplicationsCount}
+                              {pendingCounts[item.href]}
                             </Badge>
                           ) : null}
                         </Link>
@@ -275,7 +300,7 @@ export function OpsShell({
                         tooltip={item.label}
                       >
                         <Link
-                          href={item.href}
+                          href={item.linkHref ?? item.href}
                           data-tour-id={`tour-nav-${tourSlug(item.href)}`}
                         >
                           <item.icon />

@@ -8,8 +8,8 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { QueryProvider } from "@workspace/query-client"
-import { getThemeBlockingScript } from "@workspace/ui/lib/theme/blocking-script"
 import { cn } from "@workspace/ui/lib/utils"
+import { ThemeScript } from "@workspace/ui/components/theme-script"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { webPublicUrl } from "@/lib/site-urls"
 
@@ -58,10 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={cn(geist.variable, geistMono.variable)}
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: getThemeBlockingScript() }}
-          suppressHydrationWarning
-        />
+        <ThemeScript />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <Providers>

@@ -15,6 +15,7 @@ import { AuthGate } from "@/components/AuthGate"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
 import { ProfileSetupGate } from "@/components/ProfileSetupGate"
+import { SosFab } from "@/components/sos/sos-fab"
 import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
@@ -82,7 +83,12 @@ function RootNavigator({
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false, animation: "fade" }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false, animation: "fade" }} />
+        <Stack.Screen name="sos" options={{ headerShown: false, presentation: "modal" }} />
       </Stack>
+      {/* Overlays every screen. Mounted here rather than per-screen so a
+          screen added later gets it for free — and inside AuthenticatedApp so
+          it never renders for a signed-out user. */}
+      <SosFab />
     </AuthenticatedApp>
   )
 }
@@ -119,6 +125,21 @@ function RootLayout() {
               persister: queryPersister,
               maxAge: 24 * 60 * 60 * 1000,
               buster: QUERY_CACHE_BUSTER,
+              dehydrateOptions: {
+                // The persister round-trips query data through JSON. Any
+                // query holding a Date or a method (a Clerk resource's
+                // revoke(), say) comes back as a string / undefined and
+                // throws "undefined is not a function" the moment the
+                // screen renders it. Such queries opt out with
+                // `meta: { persist: false }`.
+                // (inlines TanStack's default success-only check rather than
+                // importing defaultShouldDehydrateQuery — the persist-client
+                // package resolves its own query-core copy, so the imported
+                // predicate's Query type doesn't match this one.)
+                shouldDehydrateQuery: (query) =>
+                  query.meta?.persist !== false &&
+                  query.state.status === "success",
+              },
             }}
           >
             <RootNavigator

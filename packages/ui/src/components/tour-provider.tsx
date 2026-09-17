@@ -61,8 +61,9 @@ function availableChapterKeys(chapters: TourChapter[]): string[] {
 
 /**
  * Mounts once per authenticated app shell. Auto-opens the full tour the
- * first time a given userId has no completion record, then marks it done on
- * close. `useTourReplay()` (consumed by TourSettingsSection) lets Settings
+ * first time a given userId has no completion record — and, if the shell asks
+ * it to wait via `autoStartReady`, not until that clears — then marks it done
+ * on close. `useTourReplay()` (consumed by TourSettingsSection) lets Settings
  * trigger the same Tour instance for a single chapter or the whole thing
  * again later, without ever re-touching that completion record.
  */
@@ -70,6 +71,7 @@ export function TourProvider({
   app,
   userId,
   chapters,
+  autoStartReady = true,
   children,
 }: {
   /** Storage namespace — one per web app, e.g. "driver", "customer", "ops". */
@@ -77,6 +79,13 @@ export function TourProvider({
   /** Clerk user id, or null while unauthenticated/unloaded/auth-disabled. */
   userId: string | null
   chapters: TourChapter[]
+  /** Holds back the first-run auto-open until the shell says it is clear.
+   * customer-web gates this on the company-name prompt: that prompt is a modal
+   * dialog, and on a brand-new account both open on the same render — the
+   * dialog takes focus and its overlay covers the very sidebar items the tour
+   * points at. Defaults to true, so shells with nothing to wait for (driver,
+   * ops) are unaffected. */
+  autoStartReady?: boolean
   children: ReactNode
 }) {
   const { resolvedTheme } = useTheme()
@@ -91,7 +100,7 @@ export function TourProvider({
   }, [])
 
   useEffect(() => {
-    if (!mounted || !userId || readTourCompleted(app, userId)) return
+    if (!mounted || !userId || !autoStartReady || readTourCompleted(app, userId)) return
 
     const keys = availableChapterKeys(chapters)
     if (keys.length === 0) return
@@ -100,9 +109,11 @@ export function TourProvider({
     setActiveKeys(keys)
     setMode("auto")
     setOpen(true)
-    // Only ever auto-run once per mount, when userId first resolves.
+    // Runs when userId resolves, and again if the shell flips autoStartReady
+    // true later. The completion record written on close keeps that to a single
+    // auto-run per user either way.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, userId])
+  }, [mounted, userId, autoStartReady])
 
   function handleClose() {
     setOpen(false)

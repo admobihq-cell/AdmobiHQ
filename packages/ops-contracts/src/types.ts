@@ -1,7 +1,7 @@
-import type { DateRangeKey } from "./enums"
+import type { CampaignFlightPhase, DateRangeKey } from "./enums"
 import type { PaginationParams } from "./schemas"
 
-export type { DateRangeKey, PaginationParams }
+export type { CampaignFlightPhase, DateRangeKey, PaginationParams }
 
 export type PaginatedResponse<T> = {
   items: T[]
@@ -37,6 +37,10 @@ export type LeadDto = {
   duration: string | null
   budget_range: string | null
   campaign_start_date: string | null
+  objective: string | null
+  industry: string | null
+  creative_status: string | null
+  target_audience: string | null
   additional_info: string | null
   status: string | null
   created_at: string
@@ -55,6 +59,10 @@ export type FleetPartnerDto = {
   vehicles_active: string | null
   notes: string | null
   status: string | null
+  taxi_count: string | null
+  bike_count: string | null
+  operating_cities: string[]
+  ev_status: string | null
   created_at: string
   updated_at: string
 }
@@ -70,6 +78,13 @@ export type DriverDto = {
   heard_about: string | null
   status: string | null
   notes: string | null
+  vehicle_make_model: string | null
+  vehicle_year: string | null
+  vehicle_ownership: string | null
+  routes_areas: string | null
+  hours_per_day: string | null
+  platforms: string[]
+  applicant_message: string | null
   created_at: string
   updated_at: string
 }
@@ -112,6 +127,84 @@ export type DriverNotificationDto = {
   created_at: string
 }
 
+/** Advertiser-side counterpart to DriverNotificationDto. `href` is the deep
+ * link both the web inbox row and the Expo notification tap handler use. */
+export type CustomerNotificationDto = {
+  id: number
+  type: string
+  title: string
+  body: string
+  href: string | null
+  read_at: string | null
+  created_at: string
+}
+
+export type CampaignCreativeDto = {
+  id: number
+  /** "image" | "video" — mirrors Cloudinary's resource_type. */
+  resource_type: string
+  content_type: string
+  size_bytes: number
+  width: number | null
+  height: number | null
+  /** Decimal in the DB, so it crosses the wire as a string. */
+  duration_seconds: string | null
+  original_filename: string | null
+  slot: string
+  created_at: string
+}
+
+export type CampaignDto = {
+  id: number
+  name: string
+  /** Advertiser's company, resolved from Clerk at read time so ops knows who
+   * they're reviewing for. Only the ops routes populate it; customer-facing
+   * routes leave it null. */
+  company_name: string | null
+  objective: string | null
+  market: string | null
+  corridors: string | null
+  format: string
+  notes: string | null
+  /** Decimal in the DB, so it crosses the wire as a string. */
+  budget_kes: string | null
+  /** `YYYY-MM-DD`, or null when unscheduled. */
+  starts_on: string | null
+  ends_on: string | null
+  status: string
+  /** Derived from status + dates at read time, never stored. */
+  flight_phase: CampaignFlightPhase
+  submitted_at: string | null
+  reviewed_at: string | null
+  /** Advertiser-visible review note, shown verbatim. */
+  review_reason: string | null
+  contact_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  created_at: string
+  updated_at: string
+  creatives: CampaignCreativeDto[]
+}
+
+/** Flattened row shape for the ops campaigns list table — the detail view
+ * fetches the full CampaignDto separately. Mirrors
+ * DriverApplicationListItemDto. */
+export type CampaignListItemDto = {
+  id: number
+  name: string
+  contact_email: string | null
+  market: string | null
+  format: string
+  budget_kes: string | null
+  starts_on: string | null
+  ends_on: string | null
+  status: string
+  flight_phase: CampaignFlightPhase
+  creative_count: number
+  submitted_at: string | null
+  created_at: string
+}
+
 /** Flattened row shape for the ops driver-applications list table — the
  * detail view fetches the full DriverProfileDto separately. */
 export type DriverApplicationListItemDto = {
@@ -128,6 +221,8 @@ export type WaitlistEntryDto = {
   id: number
   email: string
   source: string | null
+  name: string | null
+  persona: string | null
   created_at: string
   updated_at: string
 }
@@ -136,6 +231,9 @@ export type MediaKitRequestDto = {
   id: number
   name: string
   email: string
+  company: string | null
+  role: string | null
+  use_case: string | null
   created_at: string
   updated_at: string
 }
@@ -275,4 +373,60 @@ export type ListQueryParams = Partial<PaginationParams> & {
   status?: string
   city?: string
   vehicleType?: string
+}
+
+// ---------------------------------------------------------------------------
+// Driver SOS / safety incidents
+// ---------------------------------------------------------------------------
+
+/** Deliberately carries no cloudinary_public_id — the private id and every
+ *  signed URL stay server-side; clients address a photo by this row id only. */
+export type SafetyIncidentPhotoDto = {
+  id: number
+  content_type: string
+  created_at: string
+}
+
+export type SafetyIncidentUpdateDto = {
+  id: number
+  author_type: "driver" | "ops" | "system"
+  author_email: string | null
+  body: string
+  internal_note: boolean
+  created_at: string
+}
+
+export type SafetyIncidentDto = {
+  id: number
+  driver_name: string | null
+  driver_phone: string | null
+  type: string
+  severity: string
+  status: string
+  description: string | null
+  reported_lat: number | null
+  reported_lng: number | null
+  reported_accuracy_m: number | null
+  last_lat: number | null
+  last_lng: number | null
+  last_location_at: string | null
+  acknowledged_at: string | null
+  acknowledged_by_email: string | null
+  resolved_at: string | null
+  resolved_by_email: string | null
+  resolution: string | null
+  photo_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type SafetyIncidentDetailDto = SafetyIncidentDto & {
+  updates: SafetyIncidentUpdateDto[]
+  photos: SafetyIncidentPhotoDto[]
+}
+
+export type SafetyListQueryParams = Partial<PaginationParams> & {
+  status?: string
+  type?: string
+  severity?: string
 }

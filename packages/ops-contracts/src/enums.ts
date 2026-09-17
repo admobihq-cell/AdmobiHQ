@@ -38,6 +38,41 @@ export const DRIVER_PROFILE_STATUSES = [
 ] as const
 export type DriverProfileStatus = (typeof DRIVER_PROFILE_STATUSES)[number]
 
+/** Review lifecycle of an advertiser campaign — mirrors
+ * DRIVER_PROFILE_STATUSES, plus "cancelled" for a campaign the advertiser
+ * pulls. Deliberately holds ONLY the review lifecycle: the flight phase
+ * (CAMPAIGN_FLIGHT_PHASES below) is derived from dates and never stored, and
+ * supplier dispatch state is a third axis that lives in neither. */
+export const CAMPAIGN_STATUSES = [
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "changes_requested",
+  "cancelled",
+] as const
+export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number]
+
+/** Derived at read time from starts_on / ends_on for approved campaigns —
+ * see apps/api/lib/campaign-dto.ts. Never persisted: a stored "live" goes
+ * stale the moment a date passes and would need a cron to repair. */
+export const CAMPAIGN_FLIGHT_PHASES = [
+  "unscheduled",
+  "scheduled",
+  "live",
+  "completed",
+] as const
+export type CampaignFlightPhase = (typeof CAMPAIGN_FLIGHT_PHASES)[number]
+
+/** Which physical panel a campaign runs on. Distinct from AD_FORMATS above,
+ * which belongs to the marketing lead-capture form and has no "both". */
+export const CAMPAIGN_FORMATS = ["taxi_top", "delivery_bike", "both"] as const
+export type CampaignFormat = (typeof CAMPAIGN_FORMATS)[number]
+
+// Campaign objectives are NOT redeclared here — CAMPAIGN_OBJECTIVES already
+// exists below for the marketing start-campaign lead form, and a real campaign
+// should speak the same vocabulary a lead does (a lead becomes a campaign).
+
 export const DRIVER_DOCUMENT_TYPES = [
   "national_id",
   "profile_photo",
@@ -71,6 +106,45 @@ export const HEARD_ABOUT = [
   "other",
 ] as const
 export type HeardAbout = (typeof HEARD_ABOUT)[number]
+
+export const VEHICLE_OWNERSHIP = ["owned", "rented", "financed"] as const
+export type VehicleOwnership = (typeof VEHICLE_OWNERSHIP)[number]
+
+export const HOURS_PER_DAY = ["under_4", "4_8", "8_12", "over_12"] as const
+export type HoursPerDay = (typeof HOURS_PER_DAY)[number]
+
+/** Ride-hailing / delivery platforms a driver or fleet operates on. */
+export const RIDEHAIL_PLATFORMS = [
+  "uber",
+  "bolt",
+  "little",
+  "faras",
+  "independent",
+] as const
+export type RidehailPlatform = (typeof RIDEHAIL_PLATFORMS)[number]
+
+export const FLEET_EV_STATUS = ["none", "some", "mostly", "all"] as const
+export type FleetEvStatus = (typeof FLEET_EV_STATUS)[number]
+
+export const CAMPAIGN_OBJECTIVES = [
+  "awareness",
+  "launch",
+  "promo",
+  "footfall",
+  "other",
+] as const
+export type CampaignObjective = (typeof CAMPAIGN_OBJECTIVES)[number]
+
+export const CREATIVE_STATUS = ["ready", "needs_design", "not_sure"] as const
+export type CreativeStatus = (typeof CREATIVE_STATUS)[number]
+
+export const WAITLIST_PERSONA = [
+  "advertiser",
+  "driver",
+  "fleet",
+  "other",
+] as const
+export type WaitlistPersona = (typeof WAITLIST_PERSONA)[number]
 
 export const VEHICLES_ACTIVE = ["yes", "no", "some"] as const
 export type VehiclesActive = (typeof VEHICLES_ACTIVE)[number]
@@ -142,6 +216,9 @@ export const AUDIT_ENTITY_TYPES = [
   "ops_role",
   "driver_profile",
   "driver_document",
+  "campaign",
+  "campaign_creative",
+  "safety_incident",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 
@@ -164,10 +241,15 @@ export const OPS_PERMISSIONS = [
   "flags",
   "activity",
   "driver_applications",
+  "campaigns",
+  "safety",
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 
-/** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema. */
+/** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema.
+ *
+ * SOS is deliberately NOT here: a driver's route to reporting an accident must
+ * not depend on a toggle someone can forget to turn on. */
 export const PLATFORM_FLAG_KEYS = ["deliveries"] as const
 export type PlatformFlagKey = (typeof PLATFORM_FLAG_KEYS)[number]
 
@@ -194,3 +276,56 @@ export type SupportStatus = (typeof SUPPORT_STATUSES)[number]
 
 export const SUPPORT_PRIORITIES = ["low", "normal", "high", "urgent"] as const
 export type SupportPriority = (typeof SUPPORT_PRIORITIES)[number]
+
+// ---------------------------------------------------------------------------
+// Driver SOS / safety incidents
+// ---------------------------------------------------------------------------
+
+export const SAFETY_INCIDENT_TYPES = [
+  "accident",
+  "harassment",
+  "theft",
+  "vehicle_damage",
+  "medical",
+  "breakdown",
+  "other",
+] as const
+export type SafetyIncidentType = (typeof SAFETY_INCIDENT_TYPES)[number]
+
+export const SAFETY_SEVERITIES = ["critical", "high", "medium"] as const
+export type SafetySeverity = (typeof SAFETY_SEVERITIES)[number]
+
+export const SAFETY_INCIDENT_STATUSES = [
+  "new",
+  "acknowledged",
+  "in_progress",
+  "resolved",
+  "cancelled",
+] as const
+export type SafetyIncidentStatus = (typeof SAFETY_INCIDENT_STATUSES)[number]
+
+/** Statuses that accept no further driver input and no location pings. */
+export const SAFETY_TERMINAL_STATUSES = ["resolved", "cancelled"] as const
+
+/**
+ * The driver is never asked to rate their own emergency — severity is derived
+ * from the incident type at create, and ops adjusts it if wrong. Asking
+ * someone who has just been hit to pick "critical" vs "high" is a worse form
+ * than guessing and letting a human correct it.
+ */
+export const SEVERITY_BY_TYPE: Record<SafetyIncidentType, SafetySeverity> = {
+  accident: "critical",
+  medical: "critical",
+  harassment: "critical",
+  theft: "high",
+  vehicle_damage: "medium",
+  breakdown: "medium",
+  other: "high",
+}
+
+/**
+ * Drives the red acknowledgement clock in the ops SOS list. There is
+ * deliberately no auto-escalation attached: an escalation path nobody is
+ * rota'd for is theatre.
+ */
+export const ACK_TARGET_SECONDS = 300
