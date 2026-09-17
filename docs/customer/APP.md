@@ -20,7 +20,7 @@ Sidebar app shell. What is real vs placeholder:
 | Route | Status |
 |-------|--------|
 | `/` Overview | **API-backed** — live / in-review / needs-you counts and committed budget derived from `/v1/customer/campaigns`; recent activity is the merged notification inbox. No impressions, delivery-rate or spend tiles: nothing serves those yet |
-| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns |
+| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns. The list has a **Cards / Table** layout toggle (persisted per browser under `admobi.campaigns.view`); the table adds a Created-by column once the org has more than one member |
 | `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=`; the budget step prices the flight off the shared rate card |
 | `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture; active-budget total + statement PDF download |
 | `/notifications` | Merged inbox: ops announcements + campaign lifecycle rows from `/v1/customer/notifications` |
@@ -28,7 +28,7 @@ Sidebar app shell. What is real vs placeholder:
 | `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
 | `/reports` | **Coming soon** |
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
-| `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
+| `/settings/support`, `/settings/support/new`, `/settings/support/[id]` | Support cases via the business API. Raising a case is its own **full page** at `/settings/support/new` — not a sheet — so it survives a reload and can be linked to directly |
 | `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix), **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`), and **admin access requests** (members ask with a reason; owners approve or decline with a note) |
 | `/invitations/[token]` | Public accept-invitation landing — shows who invited you and what accepting would replace, then **Accept** or **Decline**. Never auto-accepts. Offers **Create an account** first for signed-out visitors, since most invitees have never used Admobi |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), always on |

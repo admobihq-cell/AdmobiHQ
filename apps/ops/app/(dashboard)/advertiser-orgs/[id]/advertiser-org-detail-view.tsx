@@ -3,15 +3,124 @@
 import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Building2, MailPlus, MonitorPlay, Users } from "lucide-react"
 import { toast } from "sonner"
+import type {
+  AdvertiserInvitationDto,
+  AdvertiserMemberDto,
+  OpsAdvertiserOrgCampaignSummaryDto,
+} from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
 
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@workspace/ui/components/table"
+import { AdvertiserOrgDetailSkeleton } from "@/components/advertiser-org-detail-skeleton"
 import { StatusBadge } from "@/components/status-badge"
-import { formatDateTime } from "@/lib/format"
+import { SectionCard, SectionEmpty } from "@/components/ui/section-card"
+import { StatCard } from "@/components/ui/stat-card"
+import { formatDate, formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+
+/** Two letters off the org name, so a member-less workspace still reads as an
+ * identity rather than an empty tile. */
+function monogram(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "??"
+  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase()
+  return `${words[0]![0]}${words[1]![0]}`.toUpperCase()
+}
+
+function memberLabel(member: AdvertiserMemberDto): string {
+  return member.name ?? member.email ?? member.clerkUserId
+}
+
+function MemberRow({ member }: { member: AdvertiserMemberDto }) {
+  const label = memberLabel(member)
+  const secondary = member.name ? member.email : null
+
+  return (
+    <li className="flex items-center gap-3 px-4 py-3">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+        {monogram(label)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{label}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {secondary ?? `Joined ${formatDate(member.joinedAt)}`}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <Badge variant={member.isOwner ? "default" : "outline"}>
+          {member.isOwner ? "Owner" : (member.roleName ?? "Member")}
+        </Badge>
+        <span className="hidden w-24 text-right text-xs text-muted-foreground sm:block">
+          {formatDate(member.joinedAt)}
+        </span>
+      </div>
+    </li>
+  )
+}
+
+function InvitationRow({ invitation }: { invitation: AdvertiserInvitationDto }) {
+  return (
+    <li className="flex items-center gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{invitation.email}</p>
+        <p className="text-xs text-muted-foreground">Expires {formatDate(invitation.expiresAt)}</p>
+      </div>
+      <Badge variant="outline" className="shrink-0">
+        {invitation.roleName ?? "Member"}
+      </Badge>
+    </li>
+  )
+}
+
+function CampaignsTable({ campaigns }: { campaigns: OpsAdvertiserOrgCampaignSummaryDto[] }) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="pl-4">Campaign</TableHead>
+          <TableHead className="w-40">Status</TableHead>
+          <TableHead className="w-44 pr-4 text-right">Submitted</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {campaigns.map((campaign) => (
+          <TableRow key={campaign.id}>
+            <TableCell className="p-0">
+              <Link href={`/campaigns/${campaign.id}`} className="block px-4 py-2.5">
+                <span className="block truncate font-medium">{campaign.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {campaign.createdByName ?? campaign.contactEmail ?? "—"}
+                </span>
+              </Link>
+            </TableCell>
+            <TableCell>
+              <StatusBadge status={campaign.status} />
+            </TableCell>
+            <TableCell className="p-0 text-right">
+              <Link
+                href={`/campaigns/${campaign.id}`}
+                className="block py-2.5 pr-4 text-xs tabular-nums text-muted-foreground"
+              >
+                {campaign.submittedAt ? formatDateTime(campaign.submittedAt) : "Not submitted"}
+              </Link>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
 
 export function AdvertiserOrgDetailView({ orgId }: { orgId: number }) {
   const client = useOpsClient()
@@ -24,150 +133,121 @@ export function AdvertiserOrgDetailView({ orgId }: { orgId: number }) {
     if (query.isError) toast.error(formatApiError(query.error))
   }, [query.isError, query.error])
 
-  if (query.isLoading) {
-    return (
-      <div className="flex flex-1 flex-col gap-6">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-40 w-full max-w-3xl" />
-        <Skeleton className="h-40 w-full max-w-3xl" />
-      </div>
-    )
-  }
+  if (query.isLoading) return <AdvertiserOrgDetailSkeleton />
 
   const data = query.data
   if (!data) {
     return (
-      <div className="py-10 text-center text-muted-foreground">Organization not found.</div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/20 px-6 py-20 text-center">
+        <Building2 className="size-8 text-muted-foreground" aria-hidden />
+        <p className="text-sm font-medium">Organization not found</p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          It may have been removed, or the link points at an id that never existed.
+        </p>
+        <Button variant="outline" asChild className="mt-1">
+          <Link href="/advertiser-orgs">Back to advertiser orgs</Link>
+        </Button>
+      </div>
     )
   }
 
+  const name = data.name || "Untitled organization"
+
   return (
-    <div className="flex flex-1 flex-col gap-8">
+    <div className="flex w-full flex-1 flex-col gap-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon-sm" asChild>
           <Link href="/advertiser-orgs">
             <ArrowLeft aria-hidden />
+            <span className="sr-only">Back to advertiser orgs</span>
           </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">{data.name || "Untitled organization"}</h1>
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
+          {monogram(name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight">{name}</h1>
           <p className="text-sm text-muted-foreground">
-            {data.memberCount} member{data.memberCount === 1 ? "" : "s"} · {data.campaignCount}{" "}
-            campaign{data.campaignCount === 1 ? "" : "s"} · Created {formatDateTime(data.createdAt)}
+            Org #{data.id} · Created {formatDate(data.createdAt)} · Updated{" "}
+            {formatDateTime(data.updatedAt)}
           </p>
         </div>
       </div>
 
-      <section className="max-w-3xl space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Members
-        </h2>
-        <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-          {data.members.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No active members.</p>
-          ) : (
-            <ul className="divide-y">
-              {data.members.map((member) => (
-                <li key={member.id} className="flex items-start justify-between gap-4 px-4 py-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-medium">{member.name ?? member.email ?? member.clerkUserId}</p>
-                    <p className="truncate text-muted-foreground">
-                      {member.email ?? member.clerkUserId}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-medium">{member.isOwner ? "Admin" : (member.roleName ?? "Member")}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Joined {formatDateTime(member.joinedAt)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard icon={Users} label="Active members" value={data.memberCount} />
+        <StatCard icon={MonitorPlay} label="Campaigns" value={data.campaignCount} />
+        <StatCard
+          icon={MailPlus}
+          label="Pending invitations"
+          value={data.invitations.length}
+          hint={data.invitations.length > 0 ? "Awaiting acceptance" : undefined}
+        />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="flex flex-col gap-6">
+          <SectionCard title="Members" count={data.members.length} flush>
+            {data.members.length === 0 ? (
+              <SectionEmpty>No active members.</SectionEmpty>
+            ) : (
+              <ul className="divide-y">
+                {data.members.map((member) => (
+                  <MemberRow key={member.id} member={member} />
+                ))}
+              </ul>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Campaigns" count={data.campaignCount} flush>
+            {data.campaigns.length === 0 ? (
+              <SectionEmpty>No campaigns on this org yet.</SectionEmpty>
+            ) : (
+              <CampaignsTable campaigns={data.campaigns} />
+            )}
+          </SectionCard>
         </div>
-      </section>
 
-      {data.invitations.length > 0 ? (
-        <section className="max-w-3xl space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Pending invitations
-          </h2>
-          <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-            <ul className="divide-y">
-              {data.invitations.map((invite) => (
-                <li key={invite.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
-                  <span>{invite.email}</span>
-                  <span className="text-muted-foreground">{invite.roleName ?? "Member"}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
+        <div className="flex flex-col gap-6">
+          <SectionCard title="Pending invitations" count={data.invitations.length} flush>
+            {data.invitations.length === 0 ? (
+              <SectionEmpty>Nobody is waiting on an invite.</SectionEmpty>
+            ) : (
+              <ul className="divide-y">
+                {data.invitations.map((invitation) => (
+                  <InvitationRow key={invitation.id} invitation={invitation} />
+                ))}
+              </ul>
+            )}
+          </SectionCard>
 
-      <section className="max-w-3xl space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Campaigns
-        </h2>
-        <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-          {data.campaigns.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No campaigns on this org yet.</p>
-          ) : (
-            <ul className="divide-y">
-              {data.campaigns.map((campaign) => (
-                <li key={campaign.id}>
-                  <Link
-                    href={`/campaigns/${campaign.id}`}
-                    className="flex items-center justify-between gap-4 px-4 py-3 text-sm hover:bg-muted/40"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium">{campaign.name}</p>
-                      <p className="truncate text-muted-foreground">
-                        {campaign.createdByName
-                          ? `By ${campaign.createdByName}`
-                          : (campaign.contactEmail ?? "—")}
-                        {campaign.submittedAt
-                          ? ` · Submitted ${formatDateTime(campaign.submittedAt)}`
-                          : ""}
+          <SectionCard title="Activity" flush>
+            {data.activity.length === 0 ? (
+              <SectionEmpty>No recent activity.</SectionEmpty>
+            ) : (
+              <ol className="relative space-y-5 px-4 py-4 before:absolute before:bottom-6 before:left-[calc(1rem+3px)] before:top-6 before:w-px before:bg-border">
+                {data.activity.map((item) => (
+                  <li key={item.id} className="relative flex gap-3">
+                    <span
+                      className="mt-1.5 size-[7px] shrink-0 rounded-full bg-primary ring-4 ring-card"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <p className="text-sm font-medium leading-snug">{item.label}</p>
+                      {item.detail ? (
+                        <p className="text-sm text-muted-foreground">{item.detail}</p>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        {item.actorLabel} · {formatDateTime(item.createdAt)}
                       </p>
                     </div>
-                    <StatusBadge status={campaign.status} />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </SectionCard>
         </div>
-      </section>
-
-      <section className="max-w-3xl space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Activity
-        </h2>
-        <div className="overflow-hidden rounded-xl border bg-card shadow-none">
-          {data.activity.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No recent activity.</p>
-          ) : (
-            <ul className="divide-y">
-              {data.activity.map((item) => (
-                <li key={item.id} className="space-y-1 px-4 py-3 text-sm">
-                  <div className="flex items-start justify-between gap-4">
-                    <p className="font-medium">{item.label}</p>
-                    <p className="shrink-0 text-xs text-muted-foreground">
-                      {formatDateTime(item.createdAt)}
-                    </p>
-                  </div>
-                  <p className="text-muted-foreground">
-                    {item.actorLabel}
-                    {item.detail ? ` · ${item.detail}` : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+      </div>
     </div>
   )
 }

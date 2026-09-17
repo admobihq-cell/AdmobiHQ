@@ -7,7 +7,6 @@ import Link from "next/link"
 import {
   ArrowLeft,
   Check,
-  Loader2,
   MapPin,
   MessageSquare,
   Phone,
@@ -27,7 +26,6 @@ import { formatApiError } from "@workspace/ops-api-client"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -36,7 +34,9 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
 
 import { IncidentTypeIcon } from "@/components/incident-type-icon"
+import { SosDetailSkeleton } from "@/components/sos-detail-skeleton"
 import { StatusBadge } from "@/components/status-badge"
+import { SectionCard, SectionEmpty } from "@/components/ui/section-card"
 import { useOpsClient } from "@/lib/ops-client"
 
 const TERMINAL = new Set<string>(SAFETY_TERMINAL_STATUSES)
@@ -186,13 +186,7 @@ export function SosDetailView({ incidentId }: { incidentId: number }) {
     onError: (error) => toast.error(formatApiError(error)),
   })
 
-  if (incidentQuery.isPending) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
+  if (incidentQuery.isPending) return <SosDetailSkeleton />
 
   if (incidentQuery.isError || !incident) {
     return (
@@ -212,27 +206,35 @@ export function SosDetailView({ incidentId }: { incidentId: number }) {
     : null
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
+    <div className="flex w-full flex-1 flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="ghost" size="icon-sm" asChild>
           <Link href="/sos">
-            <ArrowLeft className="size-4" />
-            All incidents
+            <ArrowLeft aria-hidden />
+            <span className="sr-only">All incidents</span>
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <IncidentTypeIcon type={incident.type} className="size-5" />
-          <h1 className="text-lg font-semibold">
-            {formatLabel(incident.type)} · #{incident.id}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight">
+            {formatLabel(incident.type)}
           </h1>
+          <p className="truncate text-sm text-muted-foreground">
+            Incident #{incident.id} · {incident.driver_name ?? "Unnamed driver"} · Filed{" "}
+            {formatDateTime(incident.created_at)}
+          </p>
         </div>
-        <StatusBadge status={incident.status} />
-        <Badge variant="outline">{formatLabel(incident.severity)}</Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge variant="outline">{formatLabel(incident.severity)}</Badge>
+          <StatusBadge status={incident.status} />
+        </div>
       </div>
 
       <div
         className={cn(
-          "rounded-lg border px-4 py-3 text-sm",
+          "rounded-xl border px-4 py-3 text-sm",
           incident.acknowledged_at
             ? "border-border bg-muted/40 text-muted-foreground"
             : "border-destructive/40 bg-destructive/10 font-medium text-destructive",
@@ -241,18 +243,12 @@ export function SosDetailView({ incidentId }: { incidentId: number }) {
         {ackSummary(incident)}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">What the driver reported</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-foreground">
+          <SectionCard title="What the driver reported">
+            <div className="space-y-4">
+              <p className="whitespace-pre-line text-sm">
                 {incident.description || "No description given — call them."}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Filed {formatDateTime(incident.created_at)}
               </p>
 
               {incident.photos.length > 0 ? (
@@ -269,153 +265,82 @@ export function SosDetailView({ incidentId }: { incidentId: number }) {
               ) : (
                 <p className="text-xs text-muted-foreground">No photos attached.</p>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Updates</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {incident.updates.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing yet.</p>
-              ) : (
-                <ol className="space-y-3">
-                  {incident.updates.map((update) => (
-                    <li
-                      key={update.id}
-                      className={cn(
-                        "rounded-lg border px-3 py-2 text-sm",
-                        update.author_type === "system" &&
-                          "border-transparent bg-muted/50 text-xs text-muted-foreground",
-                        update.internal_note &&
-                          "border-amber-500/40 bg-amber-500/5",
-                      )}
-                    >
-                      {update.author_type !== "system" ? (
-                        <p className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            {update.author_type === "driver"
-                              ? incident.driver_name ?? "Driver"
-                              : update.author_email ?? "Ops"}
-                          </span>
-                          {update.internal_note ? (
-                            <Badge variant="outline" className="text-[10px]">
-                              Internal — not shown to the driver
-                            </Badge>
-                          ) : null}
-                          <span>{formatDateTime(update.created_at)}</span>
-                        </p>
-                      ) : null}
-                      <p>{update.body}</p>
-                    </li>
-                  ))}
-                </ol>
-              )}
-
-              <div className="space-y-2 border-t pt-4">
-                <Textarea
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  placeholder="Reply to the driver…"
-                  rows={3}
-                />
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Checkbox
-                      checked={internalNote}
-                      onCheckedChange={(v) => setInternalNote(v === true)}
-                    />
-                    Internal note — the driver won&apos;t see this
-                  </label>
-                  <Button
-                    size="sm"
-                    disabled={!reply.trim() || replyMutation.isPending}
-                    loading={replyMutation.isPending}
-                    onClick={() => replyMutation.mutate()}
+          <SectionCard title="Updates" count={incident.updates.length} flush>
+            {incident.updates.length === 0 ? (
+              <SectionEmpty>Nothing yet — the thread starts with your first reply.</SectionEmpty>
+            ) : (
+              <ol className="space-y-3 p-4">
+                {incident.updates.map((update) => (
+                  <li
+                    key={update.id}
+                    className={cn(
+                      "rounded-lg border px-3 py-2 text-sm",
+                      update.author_type === "system" &&
+                        "border-transparent bg-muted/50 text-xs text-muted-foreground",
+                      update.internal_note && "border-amber-500/40 bg-amber-500/5",
+                    )}
                   >
-                    <MessageSquare className="size-4" />
-                    Send
-                  </Button>
-                </div>
+                    {update.author_type !== "system" ? (
+                      <p className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {update.author_type === "driver"
+                            ? (incident.driver_name ?? "Driver")
+                            : (update.author_email ?? "Ops")}
+                        </span>
+                        {update.internal_note ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            Internal — not shown to the driver
+                          </Badge>
+                        ) : null}
+                        <span>{formatDateTime(update.created_at)}</span>
+                      </p>
+                    ) : null}
+                    <p className="whitespace-pre-line">{update.body}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            <div className="space-y-3 border-t p-4">
+              <Textarea
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                placeholder={internalNote ? "Write an internal note…" : "Reply to the driver…"}
+                rows={3}
+                className={cn(
+                  internalNote &&
+                    "border-amber-300 focus-visible:ring-amber-300/50 dark:border-amber-900",
+                )}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Checkbox
+                    checked={internalNote}
+                    onCheckedChange={(v) => setInternalNote(v === true)}
+                  />
+                  Internal note — the driver won&apos;t see this
+                </label>
+                <Button
+                  disabled={!reply.trim() || replyMutation.isPending}
+                  loading={replyMutation.isPending}
+                  loadingText="Sending…"
+                  onClick={() => replyMutation.mutate()}
+                >
+                  <MessageSquare className="size-4" />
+                  Send
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Driver</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm font-medium">{incident.driver_name ?? "Unnamed driver"}</p>
-              {incident.driver_phone ? (
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" asChild>
-                    <a href={`tel:${incident.driver_phone}`}>
-                      <Phone className="size-4" />
-                      Call {incident.driver_phone}
-                    </a>
-                  </Button>
-                  {whatsappHref ? (
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-                        WhatsApp
-                      </a>
-                    </Button>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  No number on file — reply in the thread instead.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Location</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {mapsHref ? (
-                <>
-                  <Button size="sm" variant="outline" asChild className="w-full">
-                    <a href={mapsHref} target="_blank" rel="noopener noreferrer">
-                      <MapPin className="size-4" />
-                      Open in Google Maps
-                    </a>
-                  </Button>
-                  <p className="font-mono text-xs text-muted-foreground">
-                    {lat?.toFixed(5)}, {lng?.toFixed(5)}
-                    {incident.reported_accuracy_m ? ` ±${incident.reported_accuracy_m}m` : ""}
-                  </p>
-                  {incident.last_location_at ? (
-                    <p className="text-xs text-muted-foreground">
-                      Position updated {formatDateTime(incident.last_location_at)}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Position as reported. Live updates only arrive while the driver has the app
-                      open.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No location — the device had no fix. Ask the driver where they are.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
           {live ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <SectionCard title="Actions">
+              <div className="space-y-2">
                 {!incident.acknowledged_at ? (
                   <Button
                     className="w-full"
@@ -439,35 +364,37 @@ export function SosDetailView({ incidentId }: { incidentId: number }) {
                 ) : null}
 
                 {resolving ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-1">
                     <Textarea
                       value={resolution}
                       onChange={(e) => setResolution(e.target.value)}
                       placeholder="What happened and how it was handled — the driver sees this."
                       rows={3}
+                      autoFocus
                     />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        // The API rejects an empty note with a 400; validating
-                        // here keeps that from surfacing as a red error toast.
-                        disabled={!resolution.trim() || updateMutation.isPending}
-                        loading={updateMutation.isPending}
-                        onClick={() =>
-                          updateMutation.mutate({
-                            status: "resolved",
-                            resolution: resolution.trim(),
-                          })
-                        }
-                      >
-                        <ShieldCheck className="size-4" />
-                        Resolve
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setResolving(false)}>
-                        Cancel
-                      </Button>
-                    </div>
+                    <Button
+                      className="w-full"
+                      // The API rejects an empty note with a 400; validating
+                      // here keeps that from surfacing as a red error toast.
+                      disabled={!resolution.trim() || updateMutation.isPending}
+                      loading={updateMutation.isPending}
+                      onClick={() =>
+                        updateMutation.mutate({
+                          status: "resolved",
+                          resolution: resolution.trim(),
+                        })
+                      }
+                    >
+                      <ShieldCheck className="size-4" />
+                      Resolve
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => setResolving(false)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 ) : (
                   <Button variant="outline" className="w-full" onClick={() => setResolving(true)}>
@@ -475,21 +402,76 @@ export function SosDetailView({ incidentId }: { incidentId: number }) {
                     Resolve…
                   </Button>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
           ) : incident.resolution ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Resolution</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                <p className="text-sm">{incident.resolution}</p>
+            <SectionCard title="Resolution">
+              <div className="space-y-1">
+                <p className="whitespace-pre-line text-sm">{incident.resolution}</p>
                 <p className="text-xs text-muted-foreground">
                   {incident.resolved_by_email} · {formatDateTime(incident.resolved_at)}
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
           ) : null}
+
+          <SectionCard title="Driver">
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{incident.driver_name ?? "Unnamed driver"}</p>
+              {incident.driver_phone ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <a href={`tel:${incident.driver_phone}`}>
+                      <Phone className="size-4" />
+                      Call {incident.driver_phone}
+                    </a>
+                  </Button>
+                  {whatsappHref ? (
+                    <Button variant="outline" asChild>
+                      <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                        WhatsApp
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No number on file — reply in the thread instead.
+                </p>
+              )}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Location">
+            {mapsHref ? (
+              <div className="space-y-2">
+                <Button variant="outline" asChild className="w-full">
+                  <a href={mapsHref} target="_blank" rel="noopener noreferrer">
+                    <MapPin className="size-4" />
+                    Open in Google Maps
+                  </a>
+                </Button>
+                <p className="font-mono text-xs text-muted-foreground">
+                  {lat?.toFixed(5)}, {lng?.toFixed(5)}
+                  {incident.reported_accuracy_m ? ` ±${incident.reported_accuracy_m}m` : ""}
+                </p>
+                {incident.last_location_at ? (
+                  <p className="text-xs text-muted-foreground">
+                    Position updated {formatDateTime(incident.last_location_at)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Position as reported. Live updates only arrive while the driver has the app
+                    open.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No location — the device had no fix. Ask the driver where they are.
+              </p>
+            )}
+          </SectionCard>
         </div>
       </div>
     </div>
