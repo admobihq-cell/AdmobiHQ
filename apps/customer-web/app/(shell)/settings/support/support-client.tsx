@@ -1,26 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { ChevronRight, Inbox, Plus } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@workspace/ui/components/sheet"
 
 import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
-import { NewSupportRequestForm } from "@/components/support/new-support-request-form"
 import { SupportStatusBadge } from "@/components/support-status-badge"
 import { useCustomerSession } from "@/lib/auth/customer-session"
 import {
@@ -31,10 +21,8 @@ import {
 import { CategoryIcon } from "@/lib/support-categories"
 
 export function SupportClient() {
-  const router = useRouter()
   const session = useCustomerSession()
   const { getToken } = useAuth()
-  const [newRequestOpen, setNewRequestOpen] = useState(false)
 
   // getStoredIdentity() guards its own localStorage access, so it's safe to
   // call during render — memoized on session status so its result stays
@@ -64,19 +52,22 @@ export function SupportClient() {
   const loadingCases =
     session.status === "loading" || ((hasIdentity || isAuthenticated) && casesQuery.isLoading)
 
-  function handleCreated(caseId: number) {
-    setNewRequestOpen(false)
-    router.push(`/settings/support/${caseId}`)
-  }
-
   return (
     <div className="relative flex flex-1 flex-col gap-8 pb-20">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Help &amp; contact</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Reach the Admobi team about billing, campaigns, or anything else — we
-          usually reply within one business day.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Help &amp; contact</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Reach the Admobi team about billing, campaigns, or anything else — we usually reply
+            within one business day.
+          </p>
+        </div>
+        <Button asChild className="w-fit">
+          <Link href="/settings/support/new">
+            <Plus data-icon="inline-start" />
+            New request
+          </Link>
+        </Button>
       </div>
 
       {loadingCases ? (
@@ -86,9 +77,14 @@ export function SupportClient() {
           <Inbox className="size-5 text-muted-foreground" aria-hidden />
           <p className="text-sm font-medium">No requests yet</p>
           <p className="max-w-sm text-xs text-muted-foreground">
-            Send a request below and the team&apos;s replies will show up here on
-            this device.
+            Send a request and the team&apos;s replies will show up here on this device.
           </p>
+          <Button asChild variant="outline" className="mt-2">
+            <Link href="/settings/support/new">
+              <Plus data-icon="inline-start" />
+              New request
+            </Link>
+          </Button>
         </div>
       ) : (
         <Card className="shadow-none">
@@ -117,24 +113,6 @@ export function SupportClient() {
           </CardContent>
         </Card>
       )}
-
-      <Sheet open={newRequestOpen} onOpenChange={setNewRequestOpen}>
-        <SheetTrigger asChild>
-          <Button className="fixed bottom-6 right-6 z-10 gap-2 rounded-full px-5 shadow-lg md:bottom-8 md:right-8">
-            <Plus className="size-4" aria-hidden />
-            New request
-          </Button>
-        </SheetTrigger>
-        <SheetContent className="sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>New request</SheetTitle>
-            <SheetDescription>
-              We&apos;ll email you at the address below when the team replies.
-            </SheetDescription>
-          </SheetHeader>
-          <NewSupportRequestForm onCreated={handleCreated} />
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

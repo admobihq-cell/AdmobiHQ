@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useAuth } from "@clerk/nextjs"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, FileCheck2, MapPin, Phone, Wallet } from "lucide-react"
 import { toast } from "sonner"
 import type { DriverProfileDto } from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
@@ -15,7 +15,15 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { StatusBadge } from "@/components/status-badge"
 import { DriverApplicationDetailSkeleton } from "@/components/driver-application-detail-skeleton"
-import { formatDateTime, formatLabel } from "@/lib/format"
+import { ReviewNote } from "@/components/review-note"
+import { Fact, FactStrip } from "@/components/ui/fact-strip"
+import {
+  SectionCard,
+  SectionEmpty,
+  SectionRow,
+  SectionRows,
+} from "@/components/ui/section-card"
+import { formatDate, formatDateTime, formatLabel } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
 const DOCUMENT_LABELS: Record<string, string> = {
@@ -25,13 +33,17 @@ const DOCUMENT_LABELS: Record<string, string> = {
   payout_proof: "Payout proof",
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between border-b border-border py-2 text-sm last:border-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
-    </div>
-  )
+function monogram(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "??"
+  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase()
+  return `${words[0]![0]}${words[1]![0]}`.toUpperCase()
+}
+
+function payoutSummary(data: DriverProfileDto): string {
+  if (data.payout_method === "mpesa") return data.payout_mpesa_msisdn ?? "M-Pesa"
+  if (data.payout_method === "bank") return data.payout_bank_account ?? "Bank transfer"
+  return formatLabel(data.payout_method)
 }
 
 function DocumentPreview({
@@ -169,146 +181,234 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
 
   const canReview = data.status === "submitted"
   const canUnapprove = data.status === "approved"
+  const name = data.full_name ?? "Driver application"
+
+  const reviewPanel = (
+    <SectionCard title="Review">
+      {deciding ? (
+        <div className="space-y-3">
+          <Textarea
+            placeholder={
+              deciding === "rejected"
+                ? "Why is this application being rejected?"
+                : deciding === "unapprove"
+                  ? "Why is this driver being unapproved?"
+                  : "What needs to change before this can be approved?"
+            }
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={4}
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            The driver sees this text exactly as written, in the app and by email.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="destructive"
+              loading={submitting}
+              loadingText="Submitting…"
+              onClick={() =>
+                void review(
+                  deciding === "unapprove" ? "changes_requested" : deciding,
+                  deciding === "rejected"
+                    ? "Application rejected"
+                    : deciding === "unapprove"
+                      ? "Driver unapproved"
+                      : "Changes requested",
+                )
+              }
+            >
+              Confirm{" "}
+              {deciding === "rejected"
+                ? "rejection"
+                : deciding === "unapprove"
+                  ? "unapprove"
+                  : "request"}
+            </Button>
+            <Button variant="ghost" onClick={() => setDeciding(null)} disabled={submitting}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : canReview ? (
+        <div className="flex flex-col gap-2">
+          <Button
+            loading={submitting}
+            loadingText="Approving…"
+            onClick={() => void review("approved", "Application approved")}
+          >
+            Approve
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setDeciding("changes_requested")}
+            disabled={submitting}
+          >
+            Request changes
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setDeciding("rejected")}
+            disabled={submitting}
+          >
+            Reject
+          </Button>
+        </div>
+      ) : canUnapprove ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Approved{data.reviewed_at ? ` ${formatDateTime(data.reviewed_at)}` : ""}. Unapproving
+            sends the application back to the driver as changes requested.
+          </p>
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => setDeciding("unapprove")}
+            disabled={submitting}
+          >
+            Unapprove
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Nothing to review — an application is only actionable once the driver submits it.
+        </p>
+      )}
+    </SectionCard>
+  )
 
   return (
     <div className="flex w-full flex-1 flex-col gap-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="icon-sm" asChild>
           <Link href="/driver-applications">
             <ArrowLeft aria-hidden />
+            <span className="sr-only">Back to driver applications</span>
           </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">{data.full_name ?? "Driver application"}</h1>
-          <p className="text-sm text-muted-foreground">Submitted {formatDateTime(data.submitted_at)}</p>
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
+          {monogram(name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight">{name}</h1>
+          <p className="truncate text-sm text-muted-foreground">
+            Application #{data.id} ·{" "}
+            {data.submitted_at
+              ? `Submitted ${formatDateTime(data.submitted_at)}`
+              : `Created ${formatDateTime(data.created_at)}`}
+            {data.reviewed_at ? ` · Reviewed ${formatDateTime(data.reviewed_at)}` : ""}
+          </p>
         </div>
         <StatusBadge status={data.status} />
       </div>
 
       {data.rejection_reason ? (
-        <div className="max-w-2xl rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          <p className="font-medium">Last review note</p>
-          <p className="mt-1">{data.rejection_reason}</p>
-        </div>
+        <ReviewNote
+          status={data.status}
+          reason={data.rejection_reason}
+          audience="the driver"
+        />
       ) : null}
 
-      <div className="max-w-2xl rounded-xl border bg-card p-4 shadow-none">
-        <DetailRow label="Full name" value={data.full_name ?? "—"} />
-        <DetailRow label="Phone" value={data.phone ?? "—"} />
-        <DetailRow label="City" value={data.city ?? "—"} />
-        <DetailRow label="National ID number" value={data.national_id_number ?? "—"} />
-        <DetailRow label="KRA PIN" value={data.kra_pin ?? "—"} />
-        <DetailRow
+      <FactStrip>
+        <Fact icon={Phone} label="Phone" value={data.phone ?? "—"} />
+        <Fact icon={MapPin} label="City" value={data.city ?? "—"} />
+        <Fact
+          icon={Wallet}
           label="Payout"
-          value={
-            data.payout_method === "mpesa"
-              ? `M-Pesa · ${data.payout_mpesa_msisdn ?? "—"}`
-              : data.payout_method === "bank"
-                ? `${data.payout_bank_name ?? "—"} · ${data.payout_bank_account ?? "—"}`
-                : formatLabel(data.payout_method)
+          value={formatLabel(data.payout_method)}
+          sub={payoutSummary(data)}
+        />
+        <Fact
+          icon={FileCheck2}
+          label="Documents"
+          value={`${data.documents.length} of ${Object.keys(DOCUMENT_LABELS).length}`}
+          sub={
+            data.documents.length < Object.keys(DOCUMENT_LABELS).length
+              ? "Incomplete"
+              : "All uploaded"
           }
         />
-      </div>
+      </FactStrip>
 
-      <div className="space-y-3">
-        <p className="text-sm font-medium">Documents</p>
-        {data.documents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {data.documents.map((doc) => (
-              <DocumentPreview
-                key={doc.id}
-                applicationId={applicationId}
-                documentId={doc.id}
-                label={DOCUMENT_LABELS[doc.type] ?? doc.type}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {canReview || canUnapprove ? (
-        <div className="max-w-2xl space-y-3 rounded-xl border bg-card p-4 shadow-none">
-          {deciding ? (
-            <div className="space-y-3">
-              <Textarea
-                placeholder={
-                  deciding === "rejected"
-                    ? "Why is this application being rejected?"
-                    : deciding === "unapprove"
-                      ? "Why is this driver being unapproved?"
-                      : "What needs to change before this can be approved?"
-                }
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-              />
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setDeciding(null)} disabled={submitting}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  loading={submitting}
-                  loadingText="Submitting…"
-                  onClick={() =>
-                    void review(
-                      deciding === "unapprove" ? "changes_requested" : deciding,
-                      deciding === "rejected"
-                        ? "Application rejected"
-                        : deciding === "unapprove"
-                          ? "Driver unapproved"
-                          : "Changes requested",
-                    )
-                  }
-                >
-                  Confirm{" "}
-                  {deciding === "rejected"
-                    ? "rejection"
-                    : deciding === "unapprove"
-                      ? "unapprove"
-                      : "request"}
-                </Button>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex flex-col gap-6">
+          <SectionCard title="Documents" count={data.documents.length}>
+            {data.documents.length === 0 ? (
+              <SectionEmpty>No documents uploaded yet.</SectionEmpty>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+                {data.documents.map((doc) => (
+                  <DocumentPreview
+                    key={doc.id}
+                    applicationId={applicationId}
+                    documentId={doc.id}
+                    label={DOCUMENT_LABELS[doc.type] ?? doc.type}
+                  />
+                ))}
               </div>
-            </div>
-          ) : canReview ? (
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeciding("changes_requested")}
-                disabled={submitting}
-              >
-                Request changes
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setDeciding("rejected")}
-                disabled={submitting}
-              >
-                Reject
-              </Button>
-              <Button
-                loading={submitting}
-                loadingText="Approving…"
-                onClick={() => void review("approved", "Application approved")}
-              >
-                Approve
-              </Button>
-            </div>
-          ) : (
-            <div className="flex justify-end">
-              <Button
-                variant="destructive"
-                onClick={() => setDeciding("unapprove")}
-                disabled={submitting}
-              >
-                Unapprove
-              </Button>
-            </div>
-          )}
+            )}
+          </SectionCard>
+
+          <SectionCard title="Applicant" flush>
+            <SectionRows>
+              <SectionRow label="Full name" value={data.full_name ?? "—"} />
+              <SectionRow
+                label="Phone"
+                value={
+                  data.phone ? (
+                    <a
+                      href={`tel:${data.phone}`}
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      {data.phone}
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <SectionRow label="City" value={data.city ?? "—"} />
+              <SectionRow label="National ID number" value={data.national_id_number ?? "—"} />
+              <SectionRow label="KRA PIN" value={data.kra_pin ?? "—"} />
+            </SectionRows>
+          </SectionCard>
         </div>
-      ) : null}
+
+        <div className="flex flex-col gap-6">
+          {reviewPanel}
+
+          <SectionCard title="Payout" flush>
+            <SectionRows>
+              <SectionRow label="Method" value={formatLabel(data.payout_method)} />
+              {data.payout_method === "bank" ? (
+                <>
+                  <SectionRow label="Bank" value={data.payout_bank_name ?? "—"} />
+                  <SectionRow label="Account" value={data.payout_bank_account ?? "—"} />
+                </>
+              ) : (
+                <SectionRow label="M-Pesa number" value={data.payout_mpesa_msisdn ?? "—"} />
+              )}
+            </SectionRows>
+          </SectionCard>
+
+          <SectionCard title="Timeline" flush>
+            <SectionRows>
+              <SectionRow label="Created" value={formatDate(data.created_at)} />
+              <SectionRow
+                label="Submitted"
+                value={data.submitted_at ? formatDateTime(data.submitted_at) : "—"}
+              />
+              <SectionRow
+                label="Reviewed"
+                value={data.reviewed_at ? formatDateTime(data.reviewed_at) : "—"}
+              />
+              <SectionRow label="Last updated" value={formatDateTime(data.updated_at)} />
+            </SectionRows>
+          </SectionCard>
+        </div>
+      </div>
     </div>
   )
 }

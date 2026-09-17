@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useAuth, useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { Button } from "@workspace/ui/components/button"
@@ -12,13 +13,10 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { useCustomerSession } from "@/lib/auth/customer-session"
 import { createSupportCase, getStoredIdentity } from "@/lib/support-client"
-import { CategoryIcon, SUPPORT_CATEGORIES } from "@/lib/support-categories"
+import { SUPPORT_CATEGORIES } from "@/lib/support-categories"
 
-export function NewSupportRequestForm({
-  onCreated,
-}: {
-  onCreated: (caseId: number) => void
-}) {
+export function NewSupportRequestForm() {
+  const router = useRouter()
   const session = useCustomerSession()
   const { getToken } = useAuth()
   const { user } = useUser()
@@ -58,19 +56,15 @@ export function NewSupportRequestForm({
         token,
       )
       toast.success(`Request sent — case #${created.id}`)
-      onCreated(created.id)
+      router.replace(`/settings/support/${created.id}`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't send your request.")
-    } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="support-name">Your name</Label>
@@ -79,6 +73,7 @@ export function NewSupportRequestForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Jane Doe"
+            autoComplete="name"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -89,6 +84,7 @@ export function NewSupportRequestForm({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
           />
         </div>
       </div>
@@ -136,13 +132,18 @@ export function NewSupportRequestForm({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Tell us what's going on"
-          rows={5}
+          rows={8}
         />
       </div>
 
-      <Button type="submit" disabled={submitting} className="mt-1">
-        {submitting ? "Sending…" : "Send request"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-3 pt-1">
+        <Button type="submit" loading={submitting} loadingText="Sending…">
+          Send request
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          You&apos;ll be taken to the conversation once it&apos;s sent.
+        </p>
+      </div>
     </form>
   )
 }

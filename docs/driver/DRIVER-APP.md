@@ -50,6 +50,8 @@ Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/
 
 Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk always mounts (publishable key required). Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
 
+Support has three routes under `app/(tabs)/support/`: `index` (case list), `new` (raise a case), `[id]` (thread). Raising a case is its own screen — it used to sit inline above the list, which pushed "My requests" below the fold.
+
 ```bash
 npm run env:pull -w driver-mobile
 npm run dev:mobile:driver          # Metro :8083, cleared cache

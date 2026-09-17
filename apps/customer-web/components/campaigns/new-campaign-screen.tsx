@@ -6,7 +6,7 @@ import { Button } from "@workspace/ui/components/button"
 import { CampaignWizard } from "@/components/campaigns/campaign-wizard"
 import {
   NewCampaignChrome as Screen,
-  NewCampaignSkeleton,
+  NewCampaignSkeletonBody,
 } from "@/components/campaigns/new-campaign-chrome"
 import { useCampaign } from "@/lib/use-campaigns"
 
@@ -24,7 +24,11 @@ export function NewCampaignScreen({
   const campaignQuery = useCampaign(campaignId)
 
   if (campaignId != null && campaignQuery.isPending) {
-    return <NewCampaignSkeleton />
+    return (
+      <Screen>
+        <NewCampaignSkeletonBody />
+      </Screen>
+    )
   }
 
   const campaign = campaignQuery.data ?? null

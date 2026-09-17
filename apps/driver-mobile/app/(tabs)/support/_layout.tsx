@@ -17,6 +17,7 @@ export default function SupportLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: "Help & contact" }} />
+      <Stack.Screen name="new" options={{ title: "New request" }} />
       <Stack.Screen name="[id]" options={{ title: "Request" }} />
     </Stack>
   )
