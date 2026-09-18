@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useClerk, useUser } from "@clerk/nextjs"
+import { useClerk, useUser, useAuth } from "@clerk/nextjs"
+import { useQuery } from "@tanstack/react-query"
 import { ChevronsUpDown, LogOut, UserCircle } from "lucide-react"
 
 import {
@@ -31,33 +32,13 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
+import { getOrg } from "@/lib/org-client"
 import { appHostLabel } from "@/lib/site-urls"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useUser() must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 function useSignOut() {
   const { signOut } = useClerk()
   return signOut
 }
-
-function useNoSignOut() {
-  return async () => {}
-}
-
-const useSignOutIfEnabled = isAuthEnabled() ? useSignOut : useNoSignOut
 
 function getInitials(name: string): string {
   return name
@@ -70,14 +51,24 @@ function getInitials(name: string): string {
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { user } = useUserIfEnabled()
-  const signOut = useSignOutIfEnabled()
+  const { user } = useUser()
+  const { getToken } = useAuth()
+  const signOut = useSignOut()
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const orgQuery = useQuery({
+    queryKey: ["customer-org", user?.id],
+    queryFn: () => getOrg(getToken),
+    enabled: Boolean(user),
+    staleTime: 60_000,
+    retry: false,
+  })
+  const roleName = orgQuery.data?.myRoleName?.trim() || null
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
   const email = user?.primaryEmailAddress?.emailAddress
   const displayName = fullName || (user ? "Add your name" : "Browsing anonymously")
-  const displaySubtitle = email ?? appHostLabel()
+  const displaySubtitle = roleName ?? email ?? appHostLabel()
   const initials = getInitials(fullName)
 
   return (
@@ -129,6 +120,11 @@ export function NavUser() {
                     <span className="truncate text-xs text-muted-foreground">
                       {displaySubtitle}
                     </span>
+                    {roleName && email ? (
+                      <span className="truncate text-[11px] text-muted-foreground/80">
+                        {email}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </DropdownMenuLabel>

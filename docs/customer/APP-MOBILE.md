@@ -2,7 +2,7 @@
 
 Expo customer product twin of the web app at **`app.admobihq.com`**.
 
-**Clerk sign-in is live** (email code + Google, same customer instance as `apps/customer-web`), gated by `EXPO_PUBLIC_AUTH_ENABLED`. Full reference: [AUTH.md](../shared/AUTH.md). Ops staff mobile is at [`apps/ops-mobile`](../../apps/ops-mobile) (separate, ops Clerk instance, always on).
+**Clerk sign-in is live** (email code + Google, same customer instance as `apps/customer-web`), always on. Full reference: [AUTH.md](../shared/AUTH.md). Ops staff mobile is at [`apps/ops-mobile`](../../apps/ops-mobile) (separate, ops Clerk instance, also always on).
 
 **Builds, APKs, OTA:** [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
@@ -37,8 +37,7 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 |----------|----------|--------|
 | `EXPO_PUBLIC_APP_URL` | Optional | Web customer origin (`http://localhost:3002`) |
 | `EXPO_PUBLIC_API_URL` | Yes (for support, announcements, flags, push) | Business API |
-| `EXPO_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts — see [AUTH.md](../shared/AUTH.md) §4 |
-| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Required when auth is enabled | Customer Clerk publishable key (mapped on `env:pull`) |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Required | Customer Clerk publishable key (mapped on `env:pull`) |
 
 ---
 
@@ -51,7 +50,23 @@ MapLibre React Native requires a **development build** or **EAS preview APK** (n
 | Scheme | `admobihq-app` |
 | EAS slug | `admobihq-app` |
 
-`lib/auth/use-customer-session.ts` still persists an `anonymousDeviceId` (via `getOrCreateDeviceId()`) for support-case identity tokens and push registration when Clerk is off or the user has not signed in. When `EXPO_PUBLIC_AUTH_ENABLED` is on, `<AuthGate>` uses the Clerk session for route protection; the anonymous device id remains the fallback identity for public support and push-token rows.
+`lib/auth/use-customer-session.ts` persists an `anonymousDeviceId` (via `getOrCreateDeviceId()`) for support-case identity tokens and push registration when the user has not signed in. `<AuthGate>` uses the Clerk session for route protection; the anonymous device id remains the fallback identity for public support and push-token rows.
+
+### Team, roles, and invitations
+
+Parity with customer-web, minus the billing-details form:
+
+| Screen | Notes |
+|--------|-------|
+| `app/(tabs)/settings/team.tsx` | Org rename, invite, member roles, transfer ownership, remove, invitations (resend / revoke, declined shown with **Ask again**), and admin access requests (approving grants the "Admin" role — an org can have several) |
+| `app/(tabs)/settings/roles.tsx` | Create, edit and delete org roles; editing a shared starter clones it for the org. Owner-only |
+| `app/(tabs)/settings/activity.tsx` | Org activity feed. Hidden from Settings without `activity:read` |
+| `app/(tabs)/settings/account.tsx` | Leave organization, or delete it when you're the owner (with the detached-campaign count in the confirm copy) |
+| `app/invitations/[token].tsx` | Review an invitation, then Accept or Decline — never auto-accepts |
+
+Capability comes from [lib/use-org.ts](../../apps/customer-mobile/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) and the shared `orgCan()` helper — the same contract customer-web uses. The campaign wizard hides *Submit for review* without `campaigns:submit`.
+
+**Invitation deep links.** Invite emails point at `https://app.admobihq.com/invitations/<token>`. `app.json` claims that path via Android `intentFilters` (`autoVerify`) and iOS `associatedDomains`, so the app opens it directly once customer-web serves the matching `/.well-known` files — see [DEPLOYMENT.md](../shared/DEPLOYMENT.md). Until those env vars are set the link opens in the browser, which still works. `admobihq-app://invitations/<token>` always works.
 
 ---
 

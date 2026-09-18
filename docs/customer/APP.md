@@ -20,7 +20,7 @@ Sidebar app shell. What is real vs placeholder:
 | Route | Status |
 |-------|--------|
 | `/` Overview | **API-backed** — live / in-review / needs-you counts and committed budget derived from `/v1/customer/campaigns`; recent activity is the merged notification inbox. No impressions, delivery-rate or spend tiles: nothing serves those yet |
-| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns |
+| `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns. The list has a **Cards / Table** layout toggle (persisted per browser under `admobi.campaigns.view`); the table adds a Created-by column once the org has more than one member |
 | `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review), not a side sheet; resume via `?id=`; the budget step prices the flight off the shared rate card |
 | `/calendar` | **API-backed** FullCalendar — drag only while editable (`draft` / `changes_requested`); submitted/approved refuse the gesture; active-budget total + statement PDF download |
 | `/notifications` | Merged inbox: ops announcements + campaign lifecycle rows from `/v1/customer/notifications` |
@@ -28,9 +28,22 @@ Sidebar app shell. What is real vs placeholder:
 | `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
 | `/reports` | **Coming soon** |
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
-| `/settings/support`, `/settings/support/[id]` | Support cases via the business API |
-| `/settings/account`, `/settings/notifications`, `/settings/tour` | Working UI |
-| `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), gated by `NEXT_PUBLIC_AUTH_ENABLED` |
+| `/settings/support`, `/settings/support/new`, `/settings/support/[id]` | Support cases via the business API. Raising a case is its own **full page** at `/settings/support/new` — not a sheet — so it survives a reload and can be linked to directly |
+| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix), **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`), and **admin access requests** (members ask with a reason; the owner or an existing Admin approves or declines with a note, granting the "Admin" role — an org can have any number of Admins). Reviewed requests stay visible via a small note icon on the requester's row, not just while pending |
+| `/invitations/[token]` | Public accept-invitation landing — shows who invited you and what accepting would replace, then **Accept** or **Decline**. Never auto-accepts. Offers **Create an account** first for signed-out visitors, since most invitees have never used Admobi |
+| `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), always on |
+
+### Org permissions in the UI
+
+`GET /v1/customer/org` returns the caller's `isOwner` and `permissions[]`. Read it through [lib/use-org.ts](../../apps/customer-web/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) with the shared `orgCan()` helper rather than inferring capability from a failed request — a network blip must not read as "demoted". What this gates today:
+
+**Owner vs Admin.** `isOwner` (displayed as "Owner") is exactly one member per org — it bypasses every permission check and is the only one who can delete the org, edit/create/delete roles, or transfer ownership. "Admin" is an ordinary, invitable starter role (`ADVERTISER_STARTER_ROLES.Admin`) holding every other permission (team, org settings, billing, campaign submission); an org can have as many Admins as it wants, either invited directly or promoted via an admin access request.
+
+- **Campaign wizard** hides *Submit for review* without `campaigns:submit` and explains why, instead of letting a Member fill in the whole flow and eat a 403 on the last click.
+- **Settings nav** hides Activity without `activity:read`; the Team tab strip hides Roles without `team:manage` (and disappears entirely when only one tab is left).
+- **Team settings** shows non-admins a read-only org card (name, member count, their role) rather than an error page.
+
+Hiding is a UX affordance — the server check stays authoritative. Any mutation that can change the caller's own role must invalidate the `["customer-org"]` query key.
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
 
@@ -90,8 +103,7 @@ the screen's own pending branch.
 | `NEXT_PUBLIC_WEB_URL` | Optional | Link back to marketing site |
 | `NEXT_PUBLIC_OPS_URL` | Optional | Cross-link to ops console |
 | `NEXT_PUBLIC_API_URL` | Yes (for support, announcements, flags) | Business API origin |
-| `NEXT_PUBLIC_AUTH_ENABLED` | Local-only, not in Infisical | Gates whether Clerk mounts at all — see [AUTH.md](../shared/AUTH.md) §4 |
-| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` | Required when auth is enabled | Customer Clerk instance — see [AUTH.md](../shared/AUTH.md) §4 |
+| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY` | Required | Customer Clerk instance — see [AUTH.md](../shared/AUTH.md) §4 |
 
 No database vars on this app — Prisma lives in `apps/api` / `apps/web`. Auth is the one exception, see [AUTH.md](../shared/AUTH.md).
 
@@ -116,6 +128,6 @@ Separate Vercel project (third customer-facing app; fourth in the monorepo):
 | Production Branch | `master` |
 | Build | `cd ../.. && npm run build -w customer-web` if default fails |
 
-Sync **only app env vars** from Infisical — not the full web secret set. Include customer Clerk keys when `NEXT_PUBLIC_AUTH_ENABLED=true`.
+Sync **only app env vars** from Infisical — not the full web secret set. Include customer Clerk keys (`NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`).
 
 Domains: `app.admobihq.com` (prod), `app.staging.admobihq.com` (`staging` branch).

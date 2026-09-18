@@ -10,36 +10,25 @@ import {
   Globe,
   HelpCircle,
   Person,
+  People,
+  Radio,
   RefreshCcw,
   Wallet,
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
 import { ThemeSettingsSection } from "@/components/theme-settings-section"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_APP_URL } from "@/lib/env"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/**
- * Same "pick the hook once at module load" pattern used elsewhere — useUser()
- * must never run unless ClerkProvider is mounted.
- */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
+import { useOrgPermissions } from "@/lib/use-org"
 
 export default function SettingsScreen() {
   const colors = useThemeColors()
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const { user } = useUserIfEnabled()
+  const { user } = useUser()
+  const { can } = useOrgPermissions()
   const [checkingUpdate, setCheckingUpdate] = useState(false)
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
@@ -188,6 +177,24 @@ export default function SettingsScreen() {
             description="Identity, sign-in methods, and sessions"
             onPress={() => router.push("/settings/account")}
           />
+          <View style={styles.divider} />
+          <SettingsRow
+            icon={People}
+            label="Team"
+            description="Organization name, members, and invites"
+            onPress={() => router.push("/settings/team")}
+          />
+          {can("activity:read") ? (
+            <>
+              <View style={styles.divider} />
+              <SettingsRow
+                icon={Radio}
+                label="Activity"
+                description="Campaign decisions and team changes"
+                onPress={() => router.push("/settings/activity")}
+              />
+            </>
+          ) : null}
         </View>
       </View>
 

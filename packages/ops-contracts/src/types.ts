@@ -157,10 +157,13 @@ export type CampaignCreativeDto = {
 export type CampaignDto = {
   id: number
   name: string
-  /** Advertiser's company, resolved from Clerk at read time so ops knows who
-   * they're reviewing for. Only the ops routes populate it; customer-facing
-   * routes leave it null. */
+  /** Advertiser's company, resolved from AdvertiserOrg (via org_id) at read
+   * time so ops knows who they're reviewing for. Only the ops routes populate
+   * it; customer-facing routes leave it null. */
   company_name: string | null
+  /** Advertiser org FK — ops routes populate so reviewers can open the org
+   * page; customer-facing routes leave it null. */
+  org_id: number | null
   objective: string | null
   market: string | null
   corridors: string | null
@@ -181,6 +184,9 @@ export type CampaignDto = {
   contact_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  /** Org member who authored the campaign, resolved from Campaign.clerk_user_id.
+   * Null for pre-org campaigns and when the identity can't be resolved. */
+  created_by_name: string | null
   created_at: string
   updated_at: string
   creatives: CampaignCreativeDto[]

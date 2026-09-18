@@ -36,12 +36,14 @@ There is **no admin dashboard** on this host — only a minimal info page at `/`
 | `/v1/users` | Ops Clerk JWT | Platform user search (ops Users page) |
 | `/v1/team`, `/v1/roles` | Ops Clerk JWT (admin) | Staff invites + custom RBAC |
 | `GET/POST/PATCH /v1/support` | Ops Clerk JWT | Ops support console |
-| `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`) |
+| `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`); personalizes `{{first_name}}` and `{{org_name}}` per recipient |
 | `POST /v1/notifications/broadcast-image` | Ops Clerk JWT | Upload announcement image (Vercel Blob) |
 | `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
 | `/v1/customer/notifications`, `/v1/customer/notifications/read`, `/v1/customer/notifications/[id]` | Customer Clerk JWT | Campaign lifecycle inbox (merged client-side with announcements) |
 | `/v1/customer/campaigns` (+ `[id]`, `submit`, `creatives`, creative `file`) | Customer Clerk JWT | Advertiser campaign CRUD, submit-for-review, creative upload/proxy |
+| `/v1/customer/org` (+ `members`, `roles`, `invitations`, `activity`, …) | Customer Clerk JWT | Advertiser org, team, roles, invites, activity |
 | `/v1/campaigns` (+ `[id]`, `review`, creative `file`) | Ops Clerk JWT + `campaigns` permission | Ops campaign list, detail, review decisions, creative proxy |
+| `/v1/advertiser-orgs` (+ `[id]`) | Ops Clerk JWT + `campaigns` permission | Ops advertiser org directory + detail (members, campaigns, activity) |
 | `/v1/driver/profile`, `/v1/driver/documents`, `/v1/driver/notifications`, `/v1/driver/announcements`, `/v1/driver/mobile-announcements` | Driver Clerk JWT | Driver self-service |
 | `/v1/driver/sos` (+ `[id]`, `messages`, `photos`, `location`) | Driver Clerk JWT | Driver SOS: file, track, reply, add photos, re-ping location |
 | `/v1/safety-incidents` (+ `[id]`, `messages`, photo `file`) | Ops Clerk JWT + `safety` permission | Ops SOS queue, review decisions, photo proxy |
@@ -124,6 +126,8 @@ codepoint rather than substituting one.
 | `GET` | `/v1/campaigns/[id]` | Ops `campaigns` | Detail + creatives |
 | `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `approve` / `request_changes` / `reject` / `unapprove` — reason required except approve; reason is **advertiser-visible** |
 | `GET` | `/v1/campaigns/[id]/creatives/[creativeId]/file` | Ops `campaigns` | Stream creative for review |
+| `GET` | `/v1/advertiser-orgs` | Ops `campaigns` | Paginated org directory (search by name) |
+| `GET` | `/v1/advertiser-orgs/[id]` | Ops `campaigns` | Members, pending invites, campaigns, projected activity |
 
 **Ownership mismatch returns 404, not 403** — otherwise campaign ids are enumerable. Flight phase (`scheduled` / `live` / `completed`) is derived from `starts_on` / `ends_on` at read time; there is no stored `live` column.
 
@@ -136,10 +140,10 @@ codepoint rather than substituting one.
 | Web marketing forms | `NEXT_PUBLIC_API_URL` | None (public routes) |
 | Ops console UI | `NEXT_PUBLIC_API_URL` | Ops Clerk session JWT (Bearer) |
 | Ops mobile | `EXPO_PUBLIC_API_URL` | Ops Clerk session JWT |
-| Customer web | `NEXT_PUBLIC_API_URL` | Customer Clerk JWT when `AUTH_ENABLED` |
-| Customer mobile | `EXPO_PUBLIC_API_URL` | Customer Clerk JWT when `AUTH_ENABLED` |
-| Driver web | `NEXT_PUBLIC_API_URL` | Driver Clerk JWT when `AUTH_ENABLED` |
-| Driver mobile | `EXPO_PUBLIC_API_URL` | Driver Clerk JWT when `AUTH_ENABLED` |
+| Customer web | `NEXT_PUBLIC_API_URL` | Customer Clerk JWT |
+| Customer mobile | `EXPO_PUBLIC_API_URL` | Customer Clerk JWT |
+| Driver web | `NEXT_PUBLIC_API_URL` | Driver Clerk JWT |
+| Driver mobile | `EXPO_PUBLIC_API_URL` | Driver Clerk JWT |
 
 Shared typed client: [`packages/ops-api-client`](../../packages/ops-api-client/src/index.ts) (`createOpsClient`, `publicApiUrl`).
 
@@ -171,6 +175,8 @@ Comparison is constant-time (`timingSafeEqual` in `lib/api-utils.ts`) — do not
 ## Rate limiting
 
 All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driver/sos`, which is limited to **3 per 5 minutes** because it pages every ops device) call `checkRateLimit(req, bucket, { limit, windowSeconds })` from `apps/api/lib/rate-limit.ts` as their first line — a sliding-window limiter backed by Upstash Redis, keyed by client IP.
+
+**Authenticated routes key by user, not IP.** Pass `identifier: access.userId`: Kenyan mobile carriers NAT many subscribers behind one address, so IP keying would throttle unrelated advertisers together. Four routes use this today — `POST /v1/customer/org/members` (**10 per 10 minutes**, because it sends mail from the Admobi domain on every call and an unbounded loop there is an outbound-spam vector, not just compute), `POST /v1/customer/org/invitations/accept/[token]` and `POST /v1/customer/org/invitations/decline/[token]` (**20 per 10 minutes** each), and `POST /v1/customer/org/admin-requests` (**5 per hour**, since each one notifies every owner).
 
 **Exception:** `GET /v1/public/config` serves an in-memory cache (5 minutes per isolate) before rate-limiting. Cache hits skip Redis and Neon, and responses set `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`. Ops `PATCH /v1/flags` calls `invalidatePublicConfigCache()` so the next miss sees the new value. Customer/driver Next.js apps poll with `revalidate: 300`.
 

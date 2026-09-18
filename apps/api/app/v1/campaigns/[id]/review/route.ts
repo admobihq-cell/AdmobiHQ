@@ -4,8 +4,10 @@ import { campaignReviewSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
+import { getOrgNameForOrgId } from "@/lib/advertiser-org-name"
+import { fanOutCustomerCampaignNotice } from "@/lib/advertiser-notify"
 import { toCampaignDto } from "@/lib/campaign-dto"
-import { getCustomerCompanyName, getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
+import { getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendEmail } from "@/lib/email/send-email"
 import {
@@ -13,7 +15,6 @@ import {
   type CampaignDecisionKind,
 } from "@/lib/email/templates/CampaignDecision"
 import { prisma } from "@/lib/prisma"
-import { notifyUserPush } from "@/lib/push/user-push"
 
 const NOTIFICATION_COPY: Record<
   CampaignDecisionKind,
@@ -80,27 +81,21 @@ export async function PATCH(req: Request, { params }: Params) {
     action: "update",
     entity_type: "campaign",
     entity_id: id,
+    org_id: existing.org_id,
     summary: isUnapprove
       ? `Campaign #${id} "${updated.name}" unapproved (now ${decision.replace(/_/g, " ")})`
       : `Campaign #${id} "${updated.name}" ${decision.replace(/_/g, " ")}`,
   })
 
-  // Notify the advertiser (fire-and-forget, never blocks the response).
+  // Notify every active org member with campaigns:read (fire-and-forget).
   try {
     const copy = NOTIFICATION_COPY[decision]
     const body = copy.body(updated.name, updated.review_reason)
 
-    await prisma.customerNotification.create({
-      data: {
-        clerk_user_id: updated.clerk_user_id,
-        type: copy.type,
-        title: copy.title,
-        body,
-        href: `/campaigns/${id}`,
-      },
-    })
-
-    await notifyUserPush("customer", updated.clerk_user_id, {
+    await fanOutCustomerCampaignNotice({
+      orgId: updated.org_id,
+      fallbackUserId: updated.clerk_user_id,
+      type: copy.type,
       title: copy.title,
       body,
       href: `/campaigns/${id}`,
@@ -123,6 +118,6 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   return NextResponse.json(
-    toCampaignDto(updated, undefined, await getCustomerCompanyName(updated.clerk_user_id)),
+    toCampaignDto(updated, undefined, await getOrgNameForOrgId(updated.org_id)),
   )
 }

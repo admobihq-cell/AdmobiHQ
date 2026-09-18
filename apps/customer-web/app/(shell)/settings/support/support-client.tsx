@@ -1,58 +1,90 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { ChevronRight, Inbox, Plus } from "lucide-react"
 
+import { formatDate, formatRelativeTime } from "@workspace/ops-contracts/format"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@workspace/ui/components/sheet"
 
 import { CaseListSkeleton } from "@/components/skeletons/case-list-skeleton"
-import { NewSupportRequestForm } from "@/components/support/new-support-request-form"
 import { SupportStatusBadge } from "@/components/support-status-badge"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useCustomerSession } from "@/lib/auth/customer-session"
 import {
   getStoredIdentity,
   listMySupportCases,
   listMySupportCasesForAccount,
+  type SupportCase,
 } from "@/lib/support-client"
-import { CategoryIcon } from "@/lib/support-categories"
+import { CategoryIcon, getCategoryLabel } from "@/lib/support-categories"
 
-function useSignedInAuth() {
-  return useAuth()
+const SETTLED_STATUSES = new Set(["resolved", "closed"])
+
+function CaseRow({ item }: { item: SupportCase }) {
+  return (
+    <Link
+      href={`/settings/support/${item.id}`}
+      className="flex items-center gap-3 p-4 text-sm transition-colors hover:bg-accent"
+    >
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+        <CategoryIcon value={item.category} className="size-4 text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{item.subject}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {getCategoryLabel(item.category)} · #{item.id} · Opened {formatDate(item.created_at)}
+        </p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <SupportStatusBadge status={item.status} />
+        <span className="text-xs text-muted-foreground">
+          {formatRelativeTime(item.updated_at)}
+        </span>
+      </div>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    </Link>
+  )
 }
 
-function useNoAuth() {
-  return { getToken: async () => null }
+function CaseGroup({
+  title,
+  hint,
+  cases,
+}: {
+  title: string
+  hint?: string
+  cases: SupportCase[]
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h2>
+        <span className="text-xs tabular-nums text-muted-foreground">{cases.length}</span>
+        {hint ? <span className="text-xs text-muted-foreground">· {hint}</span> : null}
+      </div>
+      <Card className="shadow-none">
+        <CardContent className="p-0">
+          {cases.map((item, index) => (
+            <div key={item.id}>
+              {index > 0 ? <Separator /> : null}
+              <CaseRow item={item} />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </section>
+  )
 }
-
-/**
- * Same "pick the hook once at module load" pattern as customer-session.ts —
- * useAuth() must never run unless ClerkProvider is mounted. session.status
- * can only be "authenticated" when isAuthEnabled() is true, but that gates
- * the branch that *uses* getToken, not the hook call itself — so the call
- * site still needs its own guard.
- */
-const useAuthIfEnabled = isAuthEnabled() ? useSignedInAuth : useNoAuth
 
 export function SupportClient() {
-  const router = useRouter()
   const session = useCustomerSession()
-  const { getToken } = useAuthIfEnabled()
-  const [newRequestOpen, setNewRequestOpen] = useState(false)
+  const { getToken } = useAuth()
 
   // getStoredIdentity() guards its own localStorage access, so it's safe to
   // call during render — memoized on session status so its result stays
@@ -74,7 +106,7 @@ export function SupportClient() {
     },
     enabled: hasIdentity || isAuthenticated,
   })
-  const cases = casesQuery.data ?? []
+  const cases = useMemo(() => casesQuery.data ?? [], [casesQuery.data])
   // Keep showing the skeleton while the session is still resolving (before
   // hasIdentity/isAuthenticated can even be known) so a first-time-this-tab
   // visitor doesn't flash the "no requests yet" empty state before the
@@ -82,19 +114,32 @@ export function SupportClient() {
   const loadingCases =
     session.status === "loading" || ((hasIdentity || isAuthenticated) && casesQuery.isLoading)
 
-  function handleCreated(caseId: number) {
-    setNewRequestOpen(false)
-    router.push(`/settings/support/${caseId}`)
-  }
+  // Newest activity first, and anything still in flight above anything settled
+  // — the request you're waiting on is the one you came here for.
+  const { active, settled } = useMemo(() => {
+    const byRecency = [...cases].sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    return {
+      active: byRecency.filter((c) => !SETTLED_STATUSES.has(c.status)),
+      settled: byRecency.filter((c) => SETTLED_STATUSES.has(c.status)),
+    }
+  }, [cases])
 
   return (
     <div className="relative flex flex-1 flex-col gap-8 pb-20">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Help &amp; contact</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Reach the Admobi team about billing, campaigns, or anything else — we
-          usually reply within one business day.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Help &amp; contact</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Reach the Admobi team about billing, campaigns, or anything else — we usually reply
+            within one business day.
+          </p>
+        </div>
+        <Button asChild className="w-fit">
+          <Link href="/settings/support/new">
+            <Plus data-icon="inline-start" />
+            New request
+          </Link>
+        </Button>
       </div>
 
       {loadingCases ? (
@@ -104,55 +149,23 @@ export function SupportClient() {
           <Inbox className="size-5 text-muted-foreground" aria-hidden />
           <p className="text-sm font-medium">No requests yet</p>
           <p className="max-w-sm text-xs text-muted-foreground">
-            Send a request below and the team&apos;s replies will show up here on
-            this device.
+            Send a request and the team&apos;s replies will show up here on this device.
           </p>
+          <Button asChild variant="outline" className="mt-2">
+            <Link href="/settings/support/new">
+              <Plus data-icon="inline-start" />
+              New request
+            </Link>
+          </Button>
         </div>
       ) : (
-        <Card className="shadow-none">
-          <CardContent className="p-0">
-            {cases.map((item, index) => (
-              <div key={item.id}>
-                {index > 0 ? <Separator /> : null}
-                <Link
-                  href={`/settings/support/${item.id}`}
-                  className="flex items-center gap-3 p-4 text-sm transition-colors hover:bg-accent"
-                >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                    <CategoryIcon value={item.category} className="size-4 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{item.subject}</p>
-                    <p className="text-xs text-muted-foreground">
-                      #{item.id} · {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <SupportStatusBadge status={item.status} />
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                </Link>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-8">
+          {active.length > 0 ? <CaseGroup title="Open" cases={active} /> : null}
+          {settled.length > 0 ? (
+            <CaseGroup title="Closed" hint="Replying reopens a request" cases={settled} />
+          ) : null}
+        </div>
       )}
-
-      <Sheet open={newRequestOpen} onOpenChange={setNewRequestOpen}>
-        <SheetTrigger asChild>
-          <Button className="fixed bottom-6 right-6 z-10 gap-2 rounded-full px-5 shadow-lg md:bottom-8 md:right-8">
-            <Plus className="size-4" aria-hidden />
-            New request
-          </Button>
-        </SheetTrigger>
-        <SheetContent className="sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>New request</SheetTitle>
-            <SheetDescription>
-              We&apos;ll email you at the address below when the team replies.
-            </SheetDescription>
-          </SheetHeader>
-          <NewSupportRequestForm onCreated={handleCreated} />
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

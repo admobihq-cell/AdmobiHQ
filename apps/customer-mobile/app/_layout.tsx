@@ -7,7 +7,7 @@ import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import * as WebBrowser from "expo-web-browser"
 import { useEffect, useState } from "react"
-import { InteractionManager } from "react-native"
+import { InteractionManager, StyleSheet, Text, useColorScheme, View } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { enableFreeze } from "react-native-screens"
 
@@ -15,13 +15,13 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary"
 import { AuthGate } from "@/components/AuthGate"
 import { BrandedSplashScreen } from "@/components/BrandedSplashScreen"
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useOtaUpdates, useSplashBootstrap } from "@/lib/bootstrap-splash"
 import { CLERK_PUBLISHABLE_KEY } from "@/lib/env"
 import { useOnboarding } from "@/lib/onboarding"
 import { QUERY_CACHE_BUSTER, queryClient, queryPersister } from "@/lib/query-client"
 import { initSentry } from "@/lib/sentry"
 import { ThemeProvider, useNavigationTheme } from "@/lib/theme"
+import { darkColors, lightColors } from "@/lib/theme/palettes"
 import { usePushRegistration } from "@/lib/use-push-registration"
 
 initSentry()
@@ -32,18 +32,47 @@ enableFreeze(true)
 // (via useSSO) closes and hands control back to the app after redirect.
 WebBrowser.maybeCompleteAuthSession()
 
+function MissingConfigScreen({ message }: { message: string }) {
+  const scheme = useColorScheme()
+  const colors = scheme === "dark" ? darkColors : lightColors
+
+  useEffect(() => {
+    void SplashScreen.hideAsync()
+  }, [])
+
+  return (
+    <View style={[configStyles.container, { backgroundColor: colors.bg }]}>
+      <Text style={[configStyles.title, { color: colors.text }]}>Configuration required</Text>
+      <Text style={[configStyles.body, { color: colors.mutedForeground }]}>{message}</Text>
+    </View>
+  )
+}
+
+const configStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  title: { fontSize: 20, fontWeight: "600" },
+  body: { fontSize: 15, lineHeight: 22 },
+})
+
 function PushRegistrationBridge({ children }: { children: React.ReactNode }) {
   usePushRegistration()
   return <>{children}</>
 }
 
-function AuthenticatedApp({ children }: { children: React.ReactNode }) {
-  if (!isAuthEnabled()) {
-    return <PushRegistrationBridge>{children}</PushRegistrationBridge>
-  }
-
+function AuthenticatedApp({
+  children,
+  publishableKey,
+}: {
+  children: React.ReactNode
+  publishableKey: string
+}) {
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <PushRegistrationBridge>
         <AuthGate>{children}</AuthGate>
       </PushRegistrationBridge>
@@ -74,14 +103,22 @@ function RootNavigator({
     return <OnboardingScreen onDone={onCompleteOnboarding} />
   }
 
+  const publishableKey = CLERK_PUBLISHABLE_KEY?.trim()
+  if (!publishableKey?.startsWith("pk_")) {
+    return (
+      <MissingConfigScreen message="EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY was not set when this build was created. Add the customer Clerk publishable key and rebuild." />
+    )
+  }
+
   return (
-    <AuthenticatedApp>
+    <AuthenticatedApp publishableKey={publishableKey}>
       <StatusBar style={statusBarStyle} />
       <Stack screenOptions={screenOptions}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false, animation: "fade" }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false, animation: "fade" }} />
+        <Stack.Screen name="invitations/[token]" options={{ title: "Invitation" }} />
       </Stack>
     </AuthenticatedApp>
   )

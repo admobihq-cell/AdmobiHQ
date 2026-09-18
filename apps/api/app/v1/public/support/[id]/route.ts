@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { jsonError, parseId } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getBearerToken, loadCaseByToken, toPublicCase, toPublicMessage } from "@/lib/support"
+import { getBearerToken, loadCaseForCaller, toPublicCase, toPublicMessage } from "@/lib/support"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -18,7 +18,7 @@ export async function GET(req: Request, { params }: Params) {
   const token = getBearerToken(req)
   if (!token) return jsonError("Unauthorized", 401)
 
-  const supportCase = await loadCaseByToken(id, token)
+  const supportCase = await loadCaseForCaller(id, token)
   if (!supportCase) return jsonError("Not found", 404)
 
   const messages = await prisma.supportMessage.findMany({

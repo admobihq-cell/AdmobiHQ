@@ -2,7 +2,9 @@
 
 Production and staging deployment for **Admobi** (`apps/web`), **API** (`apps/api`), **Ops console** (`apps/ops`), **Customer app** (`apps/customer-web`), **Driver app** (`apps/driver-web`), and **Expo mobile apps** (`apps/ops-mobile`, `apps/customer-mobile`, `apps/driver-mobile`).
 
-**Related:** [DEV-SETUP.md](./DEV-SETUP.md), [OPS-ADMIN.md](../ops/OPS-ADMIN.md), [API.md](../api/API.md), [APP.md](../customer/APP.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
+**Related:** [DEV-SETUP.md](./DEV-SETUP.md), [AUTH.md](./AUTH.md), [OPS-ADMIN.md](../ops/OPS-ADMIN.md), [API.md](../api/API.md), [APP.md](../customer/APP.md), [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)
+
+**New to the team?** Start with [Staging environment](#staging-environment) for how `*.staging.admobihq.com` is deployed, which Clerk/DB keys it uses, and how to update it safely.
 
 ---
 
@@ -17,7 +19,7 @@ Five **separate Vercel projects** from one GitHub repo. Each project has its own
 | **Production** | [admobihq.com](https://admobihq.com) | [api.admobihq.com](https://api.admobihq.com) | [ops.admobihq.com](https://ops.admobihq.com) | [app.admobihq.com](https://app.admobihq.com) | [driver.admobihq.com](https://driver.admobihq.com) |
 | **Staging** (`staging` branch) | staging.admobihq.com | api.staging.admobihq.com | ops.staging.admobihq.com | app.staging.admobihq.com | driver.staging.admobihq.com |
 | **Local port** | `:3000` | `:3003` | `:3001` | `:3002` | `:3004` |
-| **Auth** | Payload at `/admin` | Ops JWT on `/v1/*`; customer/driver JWTs on `/v1/customer/*` and `/v1/driver/*`; public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, flag-gated) | Clerk (own instance, flag-gated) |
+| **Auth** | Payload at `/admin` | Ops JWT on `/v1/*`; customer/driver JWTs on `/v1/customer/*` and `/v1/driver/*`; public on `/v1/public/*` | Clerk (staff UI only, `@admobihq.com`-locked) | Clerk (own instance, always on) | Clerk (own instance, always on) |
 | **Database** | Prisma + Payload (owner) | Prisma (shared) | Prisma read (server stats); CRUD via API | None (calls API) | None (calls API) |
 | **Build** | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` | `next build --webpack` |
 
@@ -61,6 +63,226 @@ Payload CMS REST stays on the web app (`admobihq.com/api/*`). Business APIs live
 
 ---
 
+## Staging environment
+
+Everything a developer needs to work with `*.staging.admobihq.com`. Auth product behavior (sign-in flows, orgs, roles) lives in [AUTH.md](./AUTH.md); this section is **deploy + secrets + data**.
+
+### Mental model
+
+| Question | Answer |
+|----------|--------|
+| What is staging? | The shared pre-production stack for the five web apps |
+| Where does code come from? | Git branch **`staging`** (keep it in sync with `master` via fast-forward / merge) |
+| How does Vercel treat it? | **Preview** deployments — **not** Production |
+| How do domains attach? | Custom domains assigned to the **`staging` git branch** on each project |
+| Which Clerk? | Each of the **three** Clerk apps’ **Development** instance (`pk_test_` / `sk_test_`) |
+| Which database? | Shared **dev Neon** (same as local Infisical `dev`) — **not** production Neon |
+| Infisical? | Ideal source of truth is Infisical env `staging`, but Preview sync has been unreliable; secrets are often set manually on Vercel Preview |
+
+Staging is **not** a sixth Clerk application. Ignore / do not wire the dashboard app named **“Admobi Staging”** (`clerk.staging.admobihq.com`) — it is a single instance and does not match the three-app (ops / customer / driver) layout the API verifies against.
+
+### URLs
+
+| App | Staging URL | Vercel project |
+|-----|-------------|----------------|
+| Marketing + CMS | https://staging.admobihq.com | `admobi-hq-web` |
+| API | https://api.staging.admobihq.com | `admobi-api` |
+| Ops | https://ops.staging.admobihq.com | `admobi-ops` |
+| Customer | https://app.staging.admobihq.com | `admobi-app` |
+| Driver | https://driver.staging.admobihq.com | `admobi-driver` |
+
+Team / scope on the CLI: `--scope admobihq`. Prefer **HTTPS** for ops (`https://ops.staging.admobihq.com`).
+
+### Deploy pipeline
+
+```text
+git push origin staging
+        │
+        ▼
+  Vercel Preview build  × 5 projects (root = apps/web|api|ops|customer-web|driver-web)
+        │
+        ▼
+  Domains bound to branch `staging` serve the new deployment
+```
+
+1. Push (or merge) to **`staging`**. Prefer keeping `staging` = latest `master`:
+
+   ```bash
+   git fetch origin
+   git checkout staging
+   git merge --ff-only origin/master   # staging should have no unique commits
+   git push origin staging
+   ```
+
+   **Testing a feature branch on staging before it's merged to `master`:** skip
+   the steps above and push the branch directly — no checkout needed, run this
+   from the feature branch:
+
+   ```bash
+   git fetch origin
+   git push origin HEAD:staging
+   ```
+
+   This only works as a plain fast-forward if `staging`'s current tip is an
+   ancestor of your branch (your branch already contains everything staging
+   has). Check first if unsure:
+
+   ```bash
+   git rev-list --left-right --count origin/staging...HEAD
+   # "0 N" = clean fast-forward, N commits of yours will land on staging
+   # anything else = staging has commits your branch doesn't; merge instead
+   ```
+
+   This leaves `staging` **ahead of `master`** until the branch is merged —
+   expected, but the next person doing the normal `merge --ff-only
+   origin/master` above will fail until that merge happens.
+
+2. Each of the five projects builds independently. Docs-only commits may be skipped by `scripts/vercel-ignore-build.mjs`.
+3. After env var changes (especially any `NEXT_PUBLIC_*`), **redeploy** — those values are inlined at build time:
+
+   ```bash
+   npx vercel redeploy https://ops.staging.admobihq.com --scope admobihq
+   # repeat for app / driver / api / staging.admobihq.com as needed
+   npx vercel alias set <new-deployment-url> ops.staging.admobihq.com --scope admobihq
+   ```
+
+4. Smoke-test ([below](#staging-smoke-test)). Merge feature work to `master` only after staging looks good; production uses **Production** env + live Clerk keys + prod Neon.
+
+**Custom domain vs latest build:** a git push to `staging` creates a new Preview deployment per project, but a **manually set alias** (e.g. from `vercel redeploy` + `vercel alias set`) can leave `api.staging.admobihq.com` pinned to an **older** deployment while app/ops already serve the new code. Symptom: customer app loads but `/v1/customer/org` returns **404** (route missing in old API build) — not a DB error; unauthenticated calls should return **401** once the API is current. Fix: alias the hostname to the latest `admobi-*-git-staging-admobihq.vercel.app` deployment:
+
+```bash
+npx vercel ls admobi-api --scope admobihq   # pick newest Ready Preview
+npx vercel alias set <that-url> api.staging.admobihq.com --scope admobihq
+curl -sS -o /dev/null -w '%{http_code}\n' https://api.staging.admobihq.com/v1/customer/org   # expect 401, not 404
+```
+
+**Vercel Authentication (SSO):** leave **disabled** on staging Preview for ops/app/driver/api, or the public staging hostnames will be blocked by Vercel’s login wall before Clerk.
+
+### Authentication (Clerk)
+
+Three **independent** Clerk applications — no shared session. Staging always uses the **Development** keys of those apps (browser console will warn about development keys; that is expected).
+
+| Surface | Clerk application | Staging keys | Production keys | Env vars |
+|---------|-------------------|--------------|-----------------|----------|
+| Ops UI + API ops JWTs | **AdmobiHQ** (`measured-spider-66.clerk.accounts.dev`) | `pk_test_` / `sk_test_` | `pk_live_` / `sk_live_` (`clerk.admobihq.com`) | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` |
+| Customer web/mobile | **Admobi** (advertiser) (`funky-lion-15…`) | `pk_test_` / `sk_test_` | `pk_live_` (`clerk.app.admobihq.com`) | `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY` |
+| Driver web/mobile | **Admobi Drivers** (`trusted-swine-71…`) | `pk_test_` / `sk_test_` | `pk_live_` (`clerk.driver.admobihq.com`) | `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY` |
+
+**Also required on staging:**
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `CLERK_ENCRYPTION_KEY` | App + Driver (+ API if used) | Required because customer/driver use dynamic Clerk key names |
+| `CLERK_ORG_ID` | Ops + API | Ops org membership gate (dev org id with test keys) |
+| `API_CORS_ORIGINS` | API | Must include `https://ops.staging.admobihq.com`, `https://app.staging.admobihq.com`, `https://driver.staging.admobihq.com`, `https://staging.admobihq.com` (plus localhost for local→staging API if needed) |
+
+Allowed origins / redirect URLs on each Clerk Development instance must include the staging hosts (and localhost). See [Clerk](#clerk) for the full origin list.
+
+The API verifies **three issuers**: ops routes use `CLERK_SECRET_KEY`; `/v1/customer/*` uses `CUSTOMER_CLERK_SECRET_KEY`; `/v1/driver/*` uses `DRIVER_CLERK_SECRET_KEY`. Mixing live and test keys, or pointing all three at one Clerk app, causes JWT / `jwk-kid-mismatch` failures.
+
+### Database
+
+| Environment | Neon | Used by |
+|-------------|------|---------|
+| Local / Infisical `dev` | Dev branch (e.g. `ep-sparkling-waterfall…`) | Local apps |
+| **Staging (current)** | **Same as dev Neon** | API + ops + web Preview `DATABASE_URL` |
+| Production | Prod Neon (e.g. `ep-winter-rain…`) | Production only |
+
+Customer and driver web apps have **no** direct DB — they call the API. Ops may read Prisma for a few server stats; most CRUD goes through the API.
+
+**Do not** point staging at production Neon. Staging auth users (Clerk development) and prod data must stay isolated.
+
+**Target state:** a dedicated Infisical `staging` Neon (documented in the Infisical table below). Until that exists and Preview sync works, keep Preview `DATABASE_URL` on the **dev** database.
+
+Schema changes: run additive ops migrations against the same Neon staging uses (`npm run db:ops-schema -w web` with that `DATABASE_URL`). Never `db:push` on a DB that also holds Payload tables.
+
+### Preview env checklist (per Vercel project)
+
+Set these on **Preview**, preferably scoped to git branch **`staging`**. Production vars do **not** apply to staging hostnames.
+
+**All five — URL / public** (staging values)
+
+| Variable | Web | API | Ops | App | Driver | Staging value |
+|----------|:---:|:---:|:---:|:---:|:------:|---------------|
+| `NEXT_PUBLIC_WEB_URL` | ✓ | | ✓ | opt | opt | `https://staging.admobihq.com` |
+| `NEXT_PUBLIC_API_URL` | ✓ | ✓ | ✓ | ✓ | ✓ | `https://api.staging.admobihq.com` |
+| `NEXT_PUBLIC_OPS_URL` | | ✓ | ✓ | opt | | `https://ops.staging.admobihq.com` |
+| `NEXT_PUBLIC_APP_URL` | | ✓ | | ✓ | opt | `https://app.staging.admobihq.com` |
+| `NEXT_PUBLIC_DRIVER_URL` | | ✓ | | | ✓ | `https://driver.staging.admobihq.com` |
+| `NEXT_PUBLIC_ALLOW_INDEXING` | ✓ | | | | | `false` |
+
+API needs `NEXT_PUBLIC_OPS_URL` / `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_DRIVER_URL` too — its email templates ([AdminAlert.tsx](../../apps/api/lib/email/templates/AdminAlert.tsx), [AdvertiserOrgInvite.tsx](../../apps/api/lib/email/templates/AdvertiserOrgInvite.tsx), [CampaignSubmitted.tsx](../../apps/api/lib/email/templates/CampaignSubmitted.tsx)) link back into those apps and fall back to the **production** origin when unset — so a staging deployment missing these silently emails production links instead of erroring.
+
+**Deep-link verification (customer-web, optional)**
+
+Team invite links are `https://app.admobihq.com/invitations/<token>`. The Expo app claims that path (`intentFilters` / `associatedDomains` in [apps/customer-mobile/app.json](../../apps/customer-mobile/app.json)), but the OS only hands it over once customer-web serves the matching verification file. Both routes **404 when their variable is unset**, which is the same behaviour as before they existed — the link just opens in the browser.
+
+| Variable | Serves | Value |
+|----------|--------|-------|
+| `ANDROID_APP_CERT_FINGERPRINTS` | `/.well-known/assetlinks.json` | Comma-separated SHA-256 signing-certificate fingerprints from `eas credentials`. Public, not secret. |
+| `ANDROID_APP_PACKAGE` | same | Defaults to `com.admobihq.app`. |
+| `APPLE_APP_TEAM_ID` | `/.well-known/apple-app-site-association` | 10-character Apple Developer Team ID. |
+| `APPLE_APP_BUNDLE_ID` | same | Defaults to `com.admobihq.app`. |
+
+**Secrets / auth**
+
+| Variable | Web | API | Ops | App | Driver |
+|----------|:---:|:---:|:---:|:---:|:------:|
+| `DATABASE_URL` | ✓ (dev Neon) | ✓ | ✓ | — | — |
+| `PAYLOAD_SECRET` | ✓ | — | — | — | — |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | — | ✓ ops test | ✓ ops test | — | — |
+| `CLERK_SECRET_KEY` | — | ✓ ops test | ✓ ops test | — | — |
+| `CUSTOMER_CLERK_SECRET_KEY` | — | ✓ | — | ✓ | — |
+| `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY` | — | — | — | ✓ | — |
+| `DRIVER_CLERK_SECRET_KEY` | — | ✓ | — | — | ✓ |
+| `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` | — | — | — | — | ✓ |
+| `CLERK_ENCRYPTION_KEY` | — | if needed | — | ✓ | ✓ |
+| `CLERK_ORG_ID` | — | ✓ | ✓ | — | — |
+| `API_CORS_ORIGINS` | — | ✓ staging hosts | — | — | — |
+| Sentry (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, org/project) | as used | as used | as used | as used | as used |
+
+CLI pattern (value from a known-good local `.env.local` or Infisical — **never** from a redacted `vercel env pull`):
+
+```bash
+npx vercel env add DATABASE_URL preview --git-branch staging --value "<url>" --project admobi-api --scope admobihq --yes --force
+```
+
+### Critical pitfalls
+
+1. **`vercel env pull` redacts Sensitive values as the literal string `[SENSITIVE]`.** If you write those back into Preview, you corrupt `DATABASE_URL`, Clerk secrets, and Sentry DSNs. Symptoms: `Invalid Sentry Dsn: [SENSITIVE]`, Prisma `Can't reach database server at base`, authenticated `/v1/driver/*` or `/v1/customer/*` **500**s after login.
+2. **Production env ≠ staging.** Staging hostnames only see Preview (and Preview@`staging`) variables.
+3. **Branch-scoped Preview overrides Preview-all.** A bad `Preview (staging)` value wins over a fixed `Preview` value — update both or delete the bad branch-scoped entry.
+4. **After changing `NEXT_PUBLIC_*`, redeploy** or the browser still runs the old inlined values.
+5. **Do not use the “Admobi Staging” Clerk app** for these hostnames.
+
+### Day-to-day commands
+
+```bash
+# Sync staging branch to master
+git fetch origin && git checkout staging
+git merge --ff-only origin/master && git push origin staging
+
+# Inspect / logs
+npx vercel ls admobi-api --scope admobihq
+npx vercel logs https://api.staging.admobihq.com --scope admobihq
+curl -sS https://api.staging.admobihq.com/v1/health
+
+# Local against staging-shaped secrets (if Infisical staging works)
+npm run env:pull:staging
+npm run dev:skip-pull
+```
+
+### Staging smoke test
+
+- [ ] `https://api.staging.admobihq.com/v1/health` → `{"ok":true,...}`
+- [ ] Ops sign-in at `https://ops.staging.admobihq.com` (Clerk development; `@admobihq.com`)
+- [ ] Customer login at `https://app.staging.admobihq.com/auth/login` (auth enabled, not “Browsing anonymously”)
+- [ ] Driver login at `https://driver.staging.admobihq.com/auth/login`; `/v1/driver/profile` returns **200** (or empty profile JSON), not 500
+- [ ] Staging marketing returns `X-Robots-Tag: noindex` / `NEXT_PUBLIC_ALLOW_INDEXING=false`
+- [ ] Browser may show Clerk “development keys” warning — expected
+
+---
+
 ## Before first deploy
 
 ### 1. Database — ops schema (required)
@@ -78,11 +300,11 @@ Or paste [`apps/web/prisma/scripts/ops-schema-additive.sql`](../../apps/web/pris
 
 ### 2. Infisical environments
 
-Create **`staging`** in Infisical alongside `dev` and `prod`.
+Create **`staging`** in Infisical alongside `dev` and `prod`. Sync must target **Preview** (and ideally branch `staging`) on each Vercel project — Production-only sync leaves staging hostnames without secrets (see [Staging environment](#staging-environment)).
 
 | Variable | dev | staging | prod |
 |----------|-----|---------|------|
-| `DATABASE_URL` | dev Neon | staging Neon | prod Neon |
+| `DATABASE_URL` | dev Neon | **Currently: same as dev Neon** (target: dedicated staging Neon) | prod Neon |
 | `PAYLOAD_SECRET` | dev | staging | prod |
 | `NEXT_PUBLIC_SERVER_URL` | `http://localhost:3000` | `https://staging.admobihq.com` | `https://admobihq.com` |
 | `NEXT_PUBLIC_WEB_URL` | `http://localhost:3000` | `https://staging.admobihq.com` | `https://admobihq.com` |
@@ -221,7 +443,7 @@ Ops is UI-only; CRUD calls go to `NEXT_PUBLIC_API_URL/v1/*`.
 - Production: `app.admobihq.com`
 - Staging: `app.staging.admobihq.com` → **`staging` branch**
 
-**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_API_URL`. When auth is on: `NEXT_PUBLIC_AUTH_ENABLED=true`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
+**App env vars:** `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_OPS_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_CUSTOMER_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
 
 Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-app" }`.
 
@@ -239,7 +461,7 @@ Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admob
 - Production: `driver.admobihq.com`
 - Staging: `driver.staging.admobihq.com` → **`staging` branch**
 
-**Driver env vars:** `NEXT_PUBLIC_DRIVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`. When auth is on: `NEXT_PUBLIC_AUTH_ENABLED=true`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
+**Driver env vars:** `NEXT_PUBLIC_DRIVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY`, `DRIVER_CLERK_SECRET_KEY`, `CLERK_ENCRYPTION_KEY`. See [AUTH.md](./AUTH.md).
 
 Smoke check after deploy: `GET /api/health` → `{ "ok": true, "service": "admobi-driver" }`.
 
@@ -266,7 +488,7 @@ Use the exact records shown in Vercel → Domains for your project.
 
 ## Clerk
 
-Deploy-time config only (allowed origins, key types per environment). For sign-in flows, the `AUTH_ENABLED` feature flag, organizations, and roles/permissions, see [AUTH.md](./AUTH.md).
+Deploy-time config only (allowed origins, key types per environment). For sign-in flows, organizations, and roles/permissions, see [AUTH.md](./AUTH.md).
 
 **Three independent Clerk applications** — no shared session, no satellite domains between them. This is a deliberate departure from the "two Clerk instances" plan in [ROADMAP.md](./ROADMAP.md) (customer + driver were originally meant to share one instance; splitting them removed a domain-primary/satellite conflict and all role-mismatch handling). Phone/SMS is also dropped — customer and driver both use email + optional Google.
 
@@ -301,9 +523,11 @@ Env vars: `NEXT_PUBLIC_DRIVER_CLERK_PUBLISHABLE_KEY` / `DRIVER_CLERK_SECRET_KEY`
 
 All three apps' secrets live in the **same flat Infisical project/environment** (one root `.infisical.json`, no per-app path scoping) — there is no folder isolation between apps. The customer/driver key names above are deliberately prefixed to avoid colliding with ops's plain `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`. **Never reuse the unprefixed names for a non-ops Clerk app** — doing so overwrites ops's working keys for every project pulling `dev`/`staging`/`prod` afterward.
 
-**Feature flag:** `NEXT_PUBLIC_AUTH_ENABLED` (web) / `EXPO_PUBLIC_AUTH_ENABLED` (mobile) gates whether each app mounts its `ClerkProvider` at all — defaults to `false`/unset, kept local-only (not in Infisical), so a missing key never crashes the app.
+Customer and driver apps always mount `ClerkProvider` (same as ops). Publishable and secret keys are required; a missing key fails clearly at startup rather than silently disabling auth.
 
 Ensure `CLERK_SECRET_KEY` (and the customer/driver equivalents) are the **full** key (truncated keys cause `secret-key-invalid`).
+
+**Staging:** Preview env, development keys, and pitfalls are documented in [Staging environment](#staging-environment) — do not duplicate setup here.
 
 ---
 
@@ -330,9 +554,21 @@ Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DE
 
 ## Deploy workflow
 
-1. Push to **`staging`** → Vercel deploys preview domains with Infisical `staging` env.
-2. Smoke test staging (see below).
-3. Merge to **`master`** → production deploy on `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, `app.admobihq.com`, and `driver.admobihq.com`.
+1. Keep **`staging`** fast-forwarded to **`master`** (or merge the feature branch into `staging` first), then push → Vercel **Preview** builds for all five projects; staging domains pick up the new deployments. Env comes from **Preview / Preview@staging** (see [Staging environment](#staging-environment)), not Production.
+2. Smoke test staging ([Staging smoke test](#staging-smoke-test)).
+3. Merge to **`master`** → production deploy on `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, `app.admobihq.com`, and `driver.admobihq.com` (Production env + live Clerk keys + prod Neon).
+
+### Releases that carry a Prisma migration
+
+Nothing applies migrations to prod for you — CI deliberately never connects to Neon, and the merge deploys code immediately. So a release with a new folder under `apps/web/prisma/migrations/` goes:
+
+1. **Before merging:** `npm run db:migrate:status:prod -w web`, then `npm run db:migrate:deploy:prod -w web` (reads `apps/web/.env.production.local`). Migrations must be additive (nullable columns, new tables) so the code still on prod keeps working against the new schema.
+2. Merge to `master` and wait for the API deployment to go live.
+3. Run any one-off data step the release names (below).
+
+Merging first means the new code queries columns prod doesn't have yet, and every affected route 500s until the migration lands.
+
+**One-off: advertiser organizations.** After step 1, also run `npm run seed:advertiser-roles:prod -w web` — no migration seeds the shared starter roles (`Admin`, `Member`), and without them invites have no role to assign and admin-request approval has no role to grant. It's idempotent and the pre-org code never reads the table, so it's safe before the merge. The release scopes every campaign read by `org_id`, so right after step 2 run `npm run backfill:advertiser-orgs:prod -w api`. It gives every customer Clerk user an owner org and stamps their campaigns; anyone lazily bootstrapped between deploy and backfill has their campaigns adopted into the org they own. Until it runs, existing advertisers see an empty campaign list. It must print `WARNING: … campaigns still have no org_id` **zero** times on this first run. Don't re-run it later: once advertisers can leave their workspace to join a team, an org-less campaign can be one they deliberately left behind — and if they've since become that team's owner, a re-run would pull it into the team.
 
 Mobile apps (Android APK) are **not** deployed on Vercel — they use **EAS Build** on [expo.dev](https://expo.dev). See [Mobile distribution](#mobile-distribution-eas) below.
 
@@ -445,9 +681,7 @@ See [MOBILE-BUILDS.md](./MOBILE-BUILDS.md).
 
 ### Staging
 
-Repeat on `staging.admobihq.com`, `api.staging.admobihq.com`, `ops.staging.admobihq.com`, `app.staging.admobihq.com`, and `driver.staging.admobihq.com` against the staging database.
-
-Verify staging returns `X-Robots-Tag: noindex` and does not generate a public sitemap.
+Use the checklist in [Staging smoke test](#staging-smoke-test). Against the **dev Neon** currently wired to Preview (not production). Verify staging returns `X-Robots-Tag: noindex` and does not generate a public sitemap.
 
 ---
 

@@ -230,13 +230,24 @@ export function AnnouncementFormDialog({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Use <code className="rounded bg-muted px-1 py-0.5">{"{{first_name}}"}</code> to
-            personalize with the recipient&apos;s first name.
-            {(title.includes("{{first_name}}") || body.includes("{{first_name}}")) && (
+            Use <code className="rounded bg-muted px-1 py-0.5">{"{{first_name}}"}</code> and{" "}
+            <code className="rounded bg-muted px-1 py-0.5">{"{{org_name}}"}</code> to personalize
+            (org name applies to customer recipients; stripped for drivers / anonymous).
+            {(title.includes("{{first_name}}") ||
+              body.includes("{{first_name}}") ||
+              title.includes("{{org_name}}") ||
+              body.includes("{{org_name}}")) && (
               <span className="mt-1 block rounded-md border border-dashed p-2">
-                Preview: <strong>{title.replace(/\{\{\s*first_name\s*\}\}/g, "Jordan")}</strong>
+                Preview:{" "}
+                <strong>
+                  {title
+                    .replace(/\{\{\s*first_name\s*\}\}/g, "Jordan")
+                    .replace(/\{\{\s*org_name\s*\}\}/g, "Acme Ads")}
+                </strong>
                 <br />
-                {body.replace(/\{\{\s*first_name\s*\}\}/g, "Jordan")}
+                {body
+                  .replace(/\{\{\s*first_name\s*\}\}/g, "Jordan")
+                  .replace(/\{\{\s*org_name\s*\}\}/g, "Acme Ads")}
               </span>
             )}
           </p>

@@ -7,6 +7,7 @@ import type {
 } from "@workspace/ops-contracts"
 
 import type { OpsAccess } from "@/lib/auth"
+import { getAdvertiserOrgId } from "@/lib/customer-auth"
 import { getCustomerEmail } from "@/lib/customer-clerk"
 import { getDriverEmail } from "@/lib/driver-clerk"
 import { prisma } from "@/lib/prisma"
@@ -19,6 +20,7 @@ export type RecordAuditEventInput = {
   action: AuditAction | string
   entity_type: AuditEntityType | string
   entity_id?: string | number | null
+  org_id?: number | null
   summary: string
   metadata?: Record<string, unknown> | null
 }
@@ -40,6 +42,7 @@ export async function recordAuditEvent(
           input.entity_id == null || input.entity_id === ""
             ? null
             : String(input.entity_id),
+        org_id: input.org_id ?? null,
         summary: input.summary,
         metadata:
           input.metadata == null
@@ -66,6 +69,7 @@ export function auditFromOpsUser(
     actor_type: "ops_user",
     actor_user_id: access.userId,
     actor_email: access.email,
+    org_id: input.org_id ?? null,
     action: input.action,
     entity_type: input.entity_type,
     entity_id: input.entity_id,
@@ -84,6 +88,7 @@ export async function auditFromDriverUser(
     actor_type: "driver_user",
     actor_user_id: userId,
     actor_email: actorEmail,
+    org_id: input.org_id ?? null,
     action: input.action,
     entity_type: input.entity_type,
     entity_id: input.entity_id,
@@ -94,14 +99,15 @@ export async function auditFromDriverUser(
 
 export async function auditFromCustomerUser(
   userId: string,
-  input: Omit<RecordAuditEventInput, "app" | "actor_type" | "actor_user_id" | "actor_email">,
+  input: Omit<RecordAuditEventInput, "app" | "actor_type" | "actor_user_id" | "actor_email" | "org_id">,
 ): Promise<void> {
-  const actorEmail = await getCustomerEmail(userId)
+  const [actorEmail, orgId] = await Promise.all([getCustomerEmail(userId), getAdvertiserOrgId(userId)])
   return recordAuditEvent({
     app: "api",
     actor_type: "customer",
     actor_user_id: userId,
     actor_email: actorEmail,
+    org_id: orgId,
     action: input.action,
     entity_type: input.entity_type,
     entity_id: input.entity_id,
@@ -121,6 +127,7 @@ export function auditPublic(
     actor_type: "public",
     actor_user_id: null,
     actor_email: input.actor_email ?? null,
+    org_id: input.org_id ?? null,
     action: input.action,
     entity_type: input.entity_type,
     entity_id: input.entity_id,
@@ -138,6 +145,7 @@ export function toAuditEventDto(row: {
   action: string
   entity_type: string
   entity_id: string | null
+  org_id: number | null
   summary: string
   metadata: Prisma.JsonValue
   created_at: Date
@@ -151,6 +159,7 @@ export function toAuditEventDto(row: {
     action: row.action,
     entity_type: row.entity_type,
     entity_id: row.entity_id,
+    org_id: row.org_id,
     summary: row.summary,
     metadata:
       row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)

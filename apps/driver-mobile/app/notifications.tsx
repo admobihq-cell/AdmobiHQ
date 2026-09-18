@@ -7,7 +7,6 @@ import { Bell } from "@/components/icons"
 import { NotificationRow } from "@/components/notifications/notification-row"
 import { FilterChips } from "@/components/ui/filter-chips"
 import { markDriverAnnouncementsRead } from "@/lib/announcements-client"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import {
   NOTIFICATION_CATEGORY_LABELS,
   NOTIFICATION_CATEGORY_ORDER,
@@ -21,26 +20,9 @@ const CATEGORY_OPTIONS = NOTIFICATION_CATEGORY_ORDER.map((key) => ({
   label: NOTIFICATION_CATEGORY_LABELS[key],
 }))
 
-// useAuth() throws without a mounted ClerkProvider. This screen is reached
-// from AuthenticatedApp (app/_layout.tsx), but that wrapper's disabled branch
-// renders the same children with no ClerkProvider when isAuthEnabled() is
-// false — so getToken must come from a hook that never calls useAuth() in
-// that case. Same "pick the hook implementation once at module load" pattern
-// as lib/use-push-registration.ts's useTokenGetter.
-function useTokenGetterEnabled(): () => Promise<string | null> {
-  const { getToken } = useAuth()
-  return getToken
-}
-
-function useTokenGetterDisabled(): () => Promise<string | null> {
-  return async () => null
-}
-
-const useTokenGetter = isAuthEnabled() ? useTokenGetterEnabled : useTokenGetterDisabled
-
 export default function NotificationsScreen() {
   const colors = useThemeColors()
-  const getToken = useTokenGetter()
+  const { getToken } = useAuth()
   const [category, setCategory] = useState<NotificationCategory | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   // Tick so relative timestamps (5m ago → 6m ago) refresh while the screen is open.

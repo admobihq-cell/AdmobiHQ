@@ -152,7 +152,7 @@ No shared session between instances; no satellite domains.
 | Customer | `apps/customer-web/app/layout.tsx` | `apps/customer-mobile/app/_layout.tsx` | None — email + Google |
 | Driver | `apps/driver-web/app/layout.tsx` | `apps/driver-mobile/app/_layout.tsx` | None — email + Google |
 
-`apps/api/middleware.ts` runs `clerkMiddleware()` for CORS/session cookies on ops-origin calls; it does **not** verify customer or driver tokens. Those use dedicated modules: `apps/api/lib/auth.ts` (ops), `customer-auth.ts`, `driver-auth.ts`. `apps/api/lib/support.ts` tries the customer Clerk secret, then the driver Clerk secret, to disambiguate a bearer token when the calling surface isn't otherwise known. **Ops** and **ops-mobile** mount Clerk unconditionally. Customer and driver web/mobile mounts are conditional on `NEXT_PUBLIC_AUTH_ENABLED` / `EXPO_PUBLIC_AUTH_ENABLED`, defaulting off.
+`apps/api/middleware.ts` runs `clerkMiddleware()` for CORS/session cookies on ops-origin calls; it does **not** verify customer or driver tokens. Those use dedicated modules: `apps/api/lib/auth.ts` (ops), `customer-auth.ts`, `driver-auth.ts`. `apps/api/lib/support.ts` tries the customer Clerk secret, then the driver Clerk secret, to disambiguate a bearer token when the calling surface isn't otherwise known. **Ops**, **ops-mobile**, **customer**, and **driver** web/mobile all mount Clerk unconditionally (publishable keys required).
 
 ### Resend — transactional email
 

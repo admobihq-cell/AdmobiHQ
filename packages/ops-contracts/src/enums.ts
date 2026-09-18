@@ -219,6 +219,10 @@ export const AUDIT_ENTITY_TYPES = [
   "campaign",
   "campaign_creative",
   "safety_incident",
+  "advertiser_org",
+  "advertiser_member",
+  "advertiser_invitation",
+  "advertiser_role",
 ] as const
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number]
 
@@ -245,6 +249,49 @@ export const OPS_PERMISSIONS = [
   "safety",
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
+
+/** Advertiser-org permission set. `resource:action` shape — deliberately not
+ * retrofitted onto the flat, section-shaped OpsPermission above, because the
+ * whole point here is separating "drafts a campaign" from "submits it and
+ * commits spend." campaigns:submit is the money boundary. */
+export const ADVERTISER_PERMISSIONS = [
+  "campaigns:read",
+  "campaigns:write",
+  "campaigns:submit",
+  "creatives:write",
+  "reports:read",
+  "billing:read",
+  "billing:write",
+  "team:manage",
+  "org:manage",
+  "activity:read",
+  "support:read_all",
+] as const
+export type AdvertiserPermission = (typeof ADVERTISER_PERMISSIONS)[number]
+
+/** Seeded once (org_id = null) by apps/web/prisma/seed-advertiser-roles.ts.
+ * "Owner" is not a role row — `is_owner` members bypass permission checks
+ * entirely and are unique per org (billing, deleting the org, and
+ * transferring ownership stay owner-only), exactly as org:admin is exempt in
+ * ops. "Admin" IS a real, invitable role — an org can have any number of
+ * admins, each holding every day-to-day permission (team, org settings,
+ * billing, campaign submission) short of the owner-only actions above. */
+export const ADVERTISER_STARTER_ROLES: Record<"Admin" | "Member", readonly AdvertiserPermission[]> = {
+  Admin: [
+    "campaigns:read",
+    "campaigns:write",
+    "campaigns:submit",
+    "creatives:write",
+    "reports:read",
+    "billing:read",
+    "billing:write",
+    "team:manage",
+    "org:manage",
+    "activity:read",
+    "support:read_all",
+  ],
+  Member: ["campaigns:read", "campaigns:write", "creatives:write", "reports:read"],
+}
 
 /** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema.
  *

@@ -32,25 +32,12 @@ import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 import { TourProvider } from "@workspace/ui/components/tour-provider"
 
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { driverTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { SosFab } from "@/components/shell/sos-fab"
 import { VerificationBadge } from "@/components/shell/verification-badge"
-
-function useSignedInUser() {
-  return useUser()
-}
-
-function useNoUser() {
-  return { user: null }
-}
-
-/** Same "pick the hook once at module load" pattern as nav-user.tsx —
- * useUser() must never run unless ClerkProvider is mounted. */
-const useUserIfEnabled = isAuthEnabled() ? useSignedInUser : useNoUser
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -87,7 +74,7 @@ export function AppShell({
   const pathname = usePathname()
   const currentNavHref = navItemForPath(pathname).href
   const navItems = visibleNavItems(new Set(enabledFlags))
-  const { user } = useUserIfEnabled()
+  const { user } = useUser()
 
   return (
     <TourProvider
@@ -149,7 +136,7 @@ export function AppShell({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DriverBreadcrumbs pathname={pathname} />
             <div className="ml-auto flex items-center gap-1">
-              {isAuthEnabled() ? <NotificationBell /> : null}
+              <NotificationBell />
               <ThemeToggle />
             </div>
           </header>

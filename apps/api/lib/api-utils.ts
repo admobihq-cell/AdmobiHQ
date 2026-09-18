@@ -6,13 +6,18 @@ import {
   paginatedResponse,
   paginationSchema,
   parseId,
+  type AdvertiserPermission,
   type OpsPermission,
   type PaginationParams,
 } from "@workspace/ops-contracts"
 
 import { requireOpsAdmin, requireOpsPermission, requireOpsUser } from "@/lib/auth"
 import { requireDriverUser } from "@/lib/driver-auth"
-import { requireCustomerUser } from "@/lib/customer-auth"
+import {
+  requireCustomerIdentity,
+  requireCustomerPermission,
+  requireCustomerUser,
+} from "@/lib/customer-auth"
 
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }
@@ -89,6 +94,38 @@ export async function requireCustomerAccess(): Promise<
 > {
   try {
     const access = await requireCustomerUser()
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Same as requireCustomerAccess, but the caller must also hold the given
+ * advertiser permission. Owners bypass the check inside
+ * requireCustomerPermission itself. */
+export async function requireCustomerPermissionAccess(
+  permission: AdvertiserPermission,
+): Promise<
+  | { access: Awaited<ReturnType<typeof requireCustomerPermission>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireCustomerPermission(permission)
+    return { access }
+  } catch (e) {
+    if (e instanceof Response) return { error: e as NextResponse }
+    return { error: jsonError("Unauthorized", 401) }
+  }
+}
+
+/** Bearer identity only — no org bootstrap. For invite accept. */
+export async function requireCustomerIdentityAccess(): Promise<
+  | { access: Awaited<ReturnType<typeof requireCustomerIdentity>>; error?: undefined }
+  | { access?: undefined; error: NextResponse }
+> {
+  try {
+    const access = await requireCustomerIdentity()
     return { access }
   } catch (e) {
     if (e instanceof Response) return { error: e as NextResponse }

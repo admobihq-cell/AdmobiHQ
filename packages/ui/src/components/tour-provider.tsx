@@ -34,6 +34,9 @@ export type TourChapter = {
 
 type TourContextValue = {
   chapters: TourChapter[]
+  /** True while the tour is on screen. Lets a shell hold back other first-load
+   * prompts rather than have them fight the tour for the same attention. */
+  isOpen: boolean
   /** Replay a single chapter. Never touches "has this user seen the tour". */
   replay: (key: string) => void
   /** Replay every chapter currently present in the DOM, from the top. */
@@ -124,6 +127,7 @@ export function TourProvider({
   const contextValue = useMemo<TourContextValue>(
     () => ({
       chapters,
+      isOpen: mounted && open,
       replay(key) {
         setActiveKeys([key])
         setMode("replay")
@@ -137,7 +141,7 @@ export function TourProvider({
         setOpen(true)
       },
     }),
-    [chapters]
+    [chapters, mounted, open]
   )
 
   const steps: TourProps["steps"] = useMemo(

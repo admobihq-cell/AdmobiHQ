@@ -18,27 +18,11 @@ import { AuthLogo } from "@/components/auth/AuthLogo"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import { OtpCodeInput } from "@/components/auth/OtpCodeInput"
 import { Mail } from "@/components/icons"
-import { isAuthEnabled } from "@/lib/auth/is-auth-enabled"
 import { useWarmUpBrowser } from "@/lib/auth/use-warm-up-browser"
 import { spacing, typography } from "@/lib/theme/tokens"
 import { useThemedStyles } from "@/lib/theme"
 
 const CODE_LENGTH = 6
-
-function useDisabledSignUp() {
-  return { isLoaded: false, signUp: undefined, setActive: undefined }
-}
-
-function useDisabledSSO() {
-  return { startSSOFlow: async () => ({ createdSessionId: undefined, setActive: undefined }) }
-}
-
-/**
- * Same "pick the hook once at module load" pattern used elsewhere in this
- * app — useSignUp()/useSSO() must never run unless ClerkProvider is mounted.
- */
-const useSignUpIfEnabled = isAuthEnabled() ? useSignUp : useDisabledSignUp
-const useSSOIfEnabled = isAuthEnabled() ? useSSO : useDisabledSSO
 
 function clerkErrorMessage(err: unknown, fallback: string) {
   if (err && typeof err === "object" && "errors" in err) {
@@ -51,8 +35,8 @@ function clerkErrorMessage(err: unknown, fallback: string) {
 
 export function SignUpForm() {
   useWarmUpBrowser()
-  const { isLoaded, signUp, setActive } = useSignUpIfEnabled()
-  const { startSSOFlow } = useSSOIfEnabled()
+  const { isLoaded, signUp, setActive } = useSignUp()
+  const { startSSOFlow } = useSSO()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")

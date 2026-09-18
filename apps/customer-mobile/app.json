@@ -11,6 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.admobihq.app",
+      "associatedDomains": [
+        "applinks:app.admobihq.com"
+      ],
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -27,6 +30,23 @@
       "package": "com.admobihq.app",
       "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.admobihq.com",
+              "pathPrefix": "/invitations"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

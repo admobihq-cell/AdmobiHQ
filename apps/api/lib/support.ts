@@ -84,22 +84,62 @@ export async function ensureCustomerRecord(clerkUserId: string) {
  */
 export async function resolveSupportAuthor(
   channel: string,
-): Promise<{ customerId: number | null; driverClerkUserId: string | null }> {
+): Promise<{
+  customerId: number | null
+  driverClerkUserId: string | null
+  orgId: number | null
+  clerkUserId: string | null
+  canReadAllOrgSupport: boolean
+}> {
   if (channel === "customer-web" || channel === "customer-mobile") {
     const access = await getCustomerAccess()
-    if (access.status !== "authorized") return { customerId: null, driverClerkUserId: null }
+    if (access.status !== "authorized") {
+      return {
+        customerId: null,
+        driverClerkUserId: null,
+        orgId: null,
+        clerkUserId: null,
+        canReadAllOrgSupport: false,
+      }
+    }
 
     const customer = await ensureCustomerRecord(access.userId)
-    return { customerId: customer.id, driverClerkUserId: null }
+    return {
+      customerId: customer.id,
+      driverClerkUserId: null,
+      orgId: access.orgId,
+      clerkUserId: access.userId,
+      canReadAllOrgSupport: access.isOwner || access.permissions.has("support:read_all"),
+    }
   }
 
   if (channel === "driver-web" || channel === "driver-mobile") {
     const access = await getDriverAccess()
-    if (access.status !== "authorized") return { customerId: null, driverClerkUserId: null }
-    return { customerId: null, driverClerkUserId: access.userId }
+    if (access.status !== "authorized") {
+      return {
+        customerId: null,
+        driverClerkUserId: null,
+        orgId: null,
+        clerkUserId: null,
+        canReadAllOrgSupport: false,
+      }
+    }
+    return {
+      customerId: null,
+      driverClerkUserId: access.userId,
+      orgId: null,
+      clerkUserId: access.userId,
+      canReadAllOrgSupport: false,
+    }
   }
 
-  return { customerId: null, driverClerkUserId: null }
+  return {
+    customerId: null,
+    driverClerkUserId: null,
+    orgId: null,
+    clerkUserId: null,
+    canReadAllOrgSupport: false,
+  }
 }
 
 /**
@@ -110,27 +150,66 @@ export async function resolveSupportAuthor(
  */
 export async function resolveSupportAuthorFromBearer(
   token: string,
-): Promise<{ authenticated: boolean; customerId: number | null; driverClerkUserId: string | null }> {
+): Promise<{
+  authenticated: boolean
+  customerId: number | null
+  driverClerkUserId: string | null
+  orgId: number | null
+  canReadAllOrgSupport: boolean
+}> {
   try {
-    const customerPayload = await verifyToken(token, { secretKey: process.env.CUSTOMER_CLERK_SECRET_KEY })
+    const customerPayload = await verifyToken(token, {
+      secretKey: process.env.CUSTOMER_CLERK_SECRET_KEY,
+    })
     if (customerPayload.sub) {
-      const customer = await prisma.customer.findUnique({ where: { clerk_user_id: customerPayload.sub } })
-      return { authenticated: true, customerId: customer?.id ?? null, driverClerkUserId: null }
+      const customer = await prisma.customer.findUnique({
+        where: { clerk_user_id: customerPayload.sub },
+      })
+      const member = await prisma.advertiserMember.findUnique({
+        where: { clerk_user_id: customerPayload.sub },
+        include: { role: true },
+      })
+      const active = member && !member.removed_at
+      const canReadAll =
+        !!active &&
+        (member.is_owner ||
+          (member.role?.permissions ?? []).includes("support:read_all"))
+      return {
+        authenticated: true,
+        customerId: customer?.id ?? null,
+        driverClerkUserId: null,
+        orgId: active ? member.org_id : null,
+        canReadAllOrgSupport: canReadAll,
+      }
     }
   } catch {
     // not a customer token — fall through to try driver
   }
 
   try {
-    const driverPayload = await verifyToken(token, { secretKey: process.env.DRIVER_CLERK_SECRET_KEY })
+    const driverPayload = await verifyToken(token, {
+      secretKey: process.env.DRIVER_CLERK_SECRET_KEY,
+    })
     if (driverPayload.sub) {
-      return { authenticated: true, customerId: null, driverClerkUserId: driverPayload.sub }
+      return {
+        authenticated: true,
+        customerId: null,
+        driverClerkUserId: driverPayload.sub,
+        orgId: null,
+        canReadAllOrgSupport: false,
+      }
     }
   } catch {
     // not a driver token either
   }
 
-  return { authenticated: false, customerId: null, driverClerkUserId: null }
+  return {
+    authenticated: false,
+    customerId: null,
+    driverClerkUserId: null,
+    orgId: null,
+    canReadAllOrgSupport: false,
+  }
 }
 
 /** Anonymous-access check: the token proves the caller owns this case, nothing more. */
@@ -142,6 +221,38 @@ export async function loadCaseByToken(
   if (!supportCase) return null
   if (!timingSafeEqual(supportCase.access_token_hash, hashAccessToken(token))) return null
   return supportCase
+}
+
+/**
+ * Case access for either kind of caller: the per-case token a device stored at
+ * creation time, or a signed-in account whose cases the list endpoint already
+ * returns. Without the account path a signed-in user can see a case in
+ * `GET /support` — raised on another device, or by a teammate when they hold
+ * `support:read_all` — and then get a 404 opening it.
+ *
+ * Ownership mirrors the list query in `app/v1/public/support/route.ts`.
+ */
+export async function loadCaseForCaller(
+  id: number,
+  token: string,
+): Promise<SupportCase | null> {
+  const byCaseToken = await loadCaseByToken(id, token)
+  if (byCaseToken) return byCaseToken
+
+  const { authenticated, customerId, driverClerkUserId, orgId, canReadAllOrgSupport } =
+    await resolveSupportAuthorFromBearer(token)
+  if (!authenticated) return null
+
+  const supportCase = await prisma.supportCase.findUnique({ where: { id } })
+  if (!supportCase) return null
+
+  if (driverClerkUserId) {
+    return supportCase.driver_clerk_user_id === driverClerkUserId ? supportCase : null
+  }
+  if (customerId != null && supportCase.customer_id === customerId) return supportCase
+  if (canReadAllOrgSupport && orgId != null && supportCase.org_id === orgId) return supportCase
+
+  return null
 }
 
 /**

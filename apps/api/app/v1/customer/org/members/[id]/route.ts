@@ -1,0 +1,118 @@
+import { NextResponse } from "next/server"
+
+import { advertiserMemberUpdateSchema } from "@workspace/ops-contracts"
+
+import { countOrgOwners, getAssignableRole, toMemberDto } from "@/lib/advertiser-org"
+import { auditFromCustomerUser } from "@/lib/audit"
+import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
+import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
+import { prisma } from "@/lib/prisma"
+
+type Params = { params: Promise<{ id: string }> }
+
+export async function PATCH(req: Request, { params }: Params) {
+  const auth = await requireCustomerPermissionAccess("team:manage")
+  if (auth.error) return auth.error
+
+  const id = parseId((await params).id)
+  if (id == null) return jsonError("Invalid member id", 400)
+
+  const parsed = await parseJsonBody(req, advertiserMemberUpdateSchema)
+  if ("error" in parsed) return parsed.error
+
+  const member = await prisma.advertiserMember.findFirst({
+    where: { id, org_id: auth.access.orgId, removed_at: null },
+    include: { role: true },
+  })
+  if (!member) return jsonError("Member not found", 404)
+
+  const nextIsOwner = parsed.data.isOwner ?? member.is_owner
+
+  // Minting an owner is owner-only, matching transfer-ownership and
+  // delete-organization. team:manage alone must not be able to promote —
+  // least of all the caller themselves, which would turn any role granting
+  // team:manage into a path to the full permission set.
+  if (parsed.data.isOwner !== undefined && nextIsOwner !== member.is_owner) {
+    if (!auth.access.isOwner) {
+      return jsonError(
+        "Only the owner can change who is the owner. Use \"Make owner\" instead.",
+        403,
+      )
+    }
+    if (member.clerk_user_id === auth.access.userId) {
+      return jsonError("You can't change your own owner status", 400)
+    }
+  }
+
+  let nextRoleId = parsed.data.roleId !== undefined ? parsed.data.roleId : member.role_id
+
+  if (nextIsOwner) {
+    nextRoleId = null
+  } else if (nextRoleId != null) {
+    const role = await getAssignableRole(auth.access.orgId, nextRoleId)
+    if (!role) return jsonError("Unknown role", 400)
+  } else if (!nextIsOwner && nextRoleId == null) {
+    return jsonError("Non-owners must have a role", 400)
+  }
+
+  if (member.is_owner && !nextIsOwner) {
+    const remainingOwners = await countOrgOwners(auth.access.orgId, member.id)
+    if (remainingOwners < 1) {
+      return jsonError("Cannot demote the last owner", 409)
+    }
+  }
+
+  const updated = await prisma.advertiserMember.update({
+    where: { id: member.id },
+    data: { is_owner: nextIsOwner, role_id: nextRoleId },
+    include: { role: true },
+  })
+
+  invalidateAdvertiserAccessCache(updated.clerk_user_id)
+
+  await auditFromCustomerUser(auth.access.userId, {
+    action: "update",
+    entity_type: "advertiser_member",
+    entity_id: updated.id,
+    summary: nextIsOwner
+      ? `Promoted member #${updated.id} to owner`
+      : `Changed member #${updated.id} role to ${updated.role?.name ?? "none"}`,
+  })
+
+  return NextResponse.json(await toMemberDto(updated))
+}
+
+export async function DELETE(_req: Request, { params }: Params) {
+  const auth = await requireCustomerPermissionAccess("team:manage")
+  if (auth.error) return auth.error
+
+  const id = parseId((await params).id)
+  if (id == null) return jsonError("Invalid member id", 400)
+
+  const member = await prisma.advertiserMember.findFirst({
+    where: { id, org_id: auth.access.orgId, removed_at: null },
+  })
+  if (!member) return jsonError("Member not found", 404)
+
+  if (member.is_owner) {
+    const remainingOwners = await countOrgOwners(auth.access.orgId, member.id)
+    if (remainingOwners < 1) {
+      return jsonError("Cannot remove the last owner", 409)
+    }
+  }
+
+  await prisma.advertiserMember.update({
+    where: { id: member.id },
+    data: { removed_at: new Date(), is_owner: false },
+  })
+  invalidateAdvertiserAccessCache(member.clerk_user_id)
+
+  await auditFromCustomerUser(auth.access.userId, {
+    action: "delete",
+    entity_type: "advertiser_member",
+    entity_id: member.id,
+    summary: `Removed member #${member.id} from the organization`,
+  })
+
+  return NextResponse.json({ success: true })
+}

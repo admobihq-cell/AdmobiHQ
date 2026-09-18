@@ -1,10 +1,14 @@
-import { Bell, Compass, UserCircle, type LucideIcon } from "lucide-react"
+import { Activity, Bell, Compass, Users, UserCircle, type LucideIcon } from "lucide-react"
+
+import type { AdvertiserPermission } from "@workspace/ops-contracts"
 
 export type SettingsNavItem = {
   href: string
   label: string
   icon: LucideIcon
   description: string
+  /** Hidden unless the caller holds it. Omitted = visible to every member. */
+  permission?: AdvertiserPermission
 }
 
 export const settingsNavItems: SettingsNavItem[] = [
@@ -13,6 +17,19 @@ export const settingsNavItems: SettingsNavItem[] = [
     label: "Profile & sign-in",
     icon: UserCircle,
     description: "Identity, sign-in, and sessions",
+  },
+  {
+    href: "/settings/team",
+    label: "Team",
+    icon: Users,
+    description: "Members, invites, and role permissions",
+  },
+  {
+    href: "/settings/activity",
+    label: "Activity",
+    icon: Activity,
+    description: "Campaign decisions and team changes",
+    permission: "activity:read",
   },
   {
     href: "/settings/notifications",

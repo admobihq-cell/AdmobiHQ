@@ -50,6 +50,7 @@ export const ChevronLeft = ionicon("chevron-back")
 export const CloudUpload = ionicon("cloud-upload-outline")
 export const Menu = ionicon("menu-outline")
 export const X = ionicon("close")
+export const Plus = ionicon("add")
 
 // SOS / safety incidents
 export const Siren = ionicon("alert-circle")
