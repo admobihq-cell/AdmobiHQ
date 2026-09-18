@@ -29,13 +29,15 @@ Sidebar app shell. What is real vs placeholder:
 | `/reports` | **Coming soon** |
 | `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
 | `/settings/support`, `/settings/support/new`, `/settings/support/[id]` | Support cases via the business API. Raising a case is its own **full page** at `/settings/support/new` — not a sheet — so it survives a reload and can be linked to directly |
-| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix), **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`), and **admin access requests** (members ask with a reason; owners approve or decline with a note) |
+| `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix), **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`), and **admin access requests** (members ask with a reason; the owner or an existing Admin approves or declines with a note, granting the "Admin" role — an org can have any number of Admins). Reviewed requests stay visible via a small note icon on the requester's row, not just while pending |
 | `/invitations/[token]` | Public accept-invitation landing — shows who invited you and what accepting would replace, then **Accept** or **Decline**. Never auto-accepts. Offers **Create an account** first for signed-out visitors, since most invitees have never used Admobi |
 | `/auth/login`, `/auth/signup`, … | Clerk (email code + Google), always on |
 
 ### Org permissions in the UI
 
 `GET /v1/customer/org` returns the caller's `isOwner` and `permissions[]`. Read it through [lib/use-org.ts](../../apps/customer-web/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) with the shared `orgCan()` helper rather than inferring capability from a failed request — a network blip must not read as "demoted". What this gates today:
+
+**Owner vs Admin.** `isOwner` (displayed as "Owner") is exactly one member per org — it bypasses every permission check and is the only one who can delete the org, edit/create/delete roles, or transfer ownership. "Admin" is an ordinary, invitable starter role (`ADVERTISER_STARTER_ROLES.Admin`) holding every other permission (team, org settings, billing, campaign submission); an org can have as many Admins as it wants, either invited directly or promoted via an admin access request.
 
 - **Campaign wizard** hides *Submit for review* without `campaigns:submit` and explains why, instead of letting a Member fill in the whole flow and eat a 403 on the last click.
 - **Settings nav** hides Activity without `activity:read`; the Team tab strip hides Roles without `team:manage` (and disappears entirely when only one tab is left).

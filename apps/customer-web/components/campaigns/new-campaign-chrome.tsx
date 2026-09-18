@@ -4,18 +4,8 @@ import { FlowChrome } from "@/components/flow-chrome"
 
 /** Enter motion and centred column come from the shared flow chrome; this just
  * pins the close affordance to the campaigns list. */
-export function NewCampaignChrome({
-  animateIn,
-  children,
-}: {
-  animateIn?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <FlowChrome closeHref="/campaigns" animateIn={animateIn}>
-      {children}
-    </FlowChrome>
-  )
+export function NewCampaignChrome({ children }: { children: React.ReactNode }) {
+  return <FlowChrome closeHref="/campaigns">{children}</FlowChrome>
 }
 
 /** Matches the wizard's first step — 4-dot stepper, progress line, then a
@@ -61,11 +51,10 @@ export function NewCampaignSkeletonBody() {
   )
 }
 
-/** The route's `loading.tsx` — the first thing to mount, so it owns the enter
- * animation. */
+/** The route's `loading.tsx` shell. */
 export function NewCampaignSkeleton() {
   return (
-    <NewCampaignChrome animateIn>
+    <NewCampaignChrome>
       <NewCampaignSkeletonBody />
     </NewCampaignChrome>
   )

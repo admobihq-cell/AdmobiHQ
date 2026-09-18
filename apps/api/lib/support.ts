@@ -224,6 +224,38 @@ export async function loadCaseByToken(
 }
 
 /**
+ * Case access for either kind of caller: the per-case token a device stored at
+ * creation time, or a signed-in account whose cases the list endpoint already
+ * returns. Without the account path a signed-in user can see a case in
+ * `GET /support` — raised on another device, or by a teammate when they hold
+ * `support:read_all` — and then get a 404 opening it.
+ *
+ * Ownership mirrors the list query in `app/v1/public/support/route.ts`.
+ */
+export async function loadCaseForCaller(
+  id: number,
+  token: string,
+): Promise<SupportCase | null> {
+  const byCaseToken = await loadCaseByToken(id, token)
+  if (byCaseToken) return byCaseToken
+
+  const { authenticated, customerId, driverClerkUserId, orgId, canReadAllOrgSupport } =
+    await resolveSupportAuthorFromBearer(token)
+  if (!authenticated) return null
+
+  const supportCase = await prisma.supportCase.findUnique({ where: { id } })
+  if (!supportCase) return null
+
+  if (driverClerkUserId) {
+    return supportCase.driver_clerk_user_id === driverClerkUserId ? supportCase : null
+  }
+  if (customerId != null && supportCase.customer_id === customerId) return supportCase
+  if (canReadAllOrgSupport && orgId != null && supportCase.org_id === orgId) return supportCase
+
+  return null
+}
+
+/**
  * Mints an email-level identity token the first time this email opens a case.
  * Returns the raw token only when newly minted — an email that already has an
  * identity keeps its existing token, since minting a new one on every case

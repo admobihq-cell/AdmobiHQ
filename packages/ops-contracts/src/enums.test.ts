@@ -14,4 +14,10 @@ describe("ADVERTISER_STARTER_ROLES", () => {
   it("Member cannot submit campaigns — that stays an admin/custom-role permission", () => {
     expect(ADVERTISER_STARTER_ROLES.Member).not.toContain("campaigns:submit")
   })
+
+  it("Admin holds every permission — the owner-invitable tier short of the bypass itself", () => {
+    for (const permission of ADVERTISER_PERMISSIONS) {
+      expect(ADVERTISER_STARTER_ROLES.Admin).toContain(permission)
+    }
+  })
 })
