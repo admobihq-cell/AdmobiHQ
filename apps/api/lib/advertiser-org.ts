@@ -24,6 +24,15 @@ export async function countOrgOwners(orgId: number, excludeMemberId?: number): P
   })
 }
 
+/** The role id an approved admin request should grant: the org's own
+ * "Admin" role if it has customized one, else the shared starter. */
+export async function getAdminRoleId(orgId: number): Promise<number | null> {
+  const roles = await prisma.advertiserRole.findMany({
+    where: { name: "Admin", OR: [{ org_id: orgId }, { org_id: null }] },
+  })
+  return (roles.find((r) => r.org_id === orgId) ?? roles.find((r) => r.org_id == null))?.id ?? null
+}
+
 export async function getAssignableRole(orgId: number, roleId: number) {
   return prisma.advertiserRole.findFirst({
     where: {
@@ -72,7 +81,7 @@ export async function listAssignableRoles(orgId: number) {
     ...starters.filter((r) => !overridden.has(r.name.toLowerCase())),
   ]
 
-  const starterOrder = ["Member"]
+  const starterOrder = ["Admin", "Member"]
   effective.sort((a, b) => {
     const ai = starterOrder.indexOf(a.name)
     const bi = starterOrder.indexOf(b.name)
@@ -137,7 +146,7 @@ export async function toOrgDto(
     })
     isOwner = me?.is_owner ?? false
     if (isOwner) {
-      myRoleName = "Admin"
+      myRoleName = "Owner"
       permissions = [...ADVERTISER_PERMISSIONS]
     } else {
       if (me?.role?.name) myRoleName = me.role.name
@@ -179,7 +188,7 @@ export async function toMemberDto(member: {
     name,
     isOwner: member.is_owner,
     roleId: member.role_id,
-    roleName: member.is_owner ? "Admin" : (member.role?.name ?? null),
+    roleName: member.is_owner ? "Owner" : (member.role?.name ?? null),
     joinedAt: member.created_at.toISOString(),
   }
 }
@@ -286,7 +295,7 @@ export async function resolveCampaignAuthorName(
       name: identity?.name ?? null,
       isOwner: member.is_owner,
       roleId: member.role_id,
-      roleName: member.is_owner ? "Admin" : (member.role?.name ?? null),
+      roleName: member.is_owner ? "Owner" : (member.role?.name ?? null),
       joinedAt: member.created_at.toISOString(),
     }
   })

@@ -14,7 +14,8 @@ import { Textarea } from "@workspace/ui/components/textarea"
 
 import { listAdminRequests, requestAdminAccess, reviewAdminRequest } from "@/lib/org-client"
 
-const KEY = ["customer-org-admin-requests"] as const
+export const ADMIN_REQUESTS_KEY = ["customer-org-admin-requests"] as const
+const KEY = ADMIN_REQUESTS_KEY
 
 function StatusBadge({ status }: { status: AdvertiserAdminRequestDto["status"] }) {
   if (status === "approved") return <Badge variant="secondary">Approved</Badge>
@@ -24,11 +25,12 @@ function StatusBadge({ status }: { status: AdvertiserAdminRequestDto["status"] }
 }
 
 /**
- * Two views of one queue. Owners review requests; everyone else sees only
- * their own and can raise one. Promotion is owner-only, so this is the
- * sanctioned route for someone who needs more access than their role gives.
+ * Two views of one queue. Owner and existing Admins review requests;
+ * everyone else sees only their own and can raise one. Approving grants the
+ * "Admin" role — an org can have any number of admins — while the singular
+ * owner only changes hands via ownership transfer.
  */
-export function AdminRequestsCard({ isOwner }: { isOwner: boolean }) {
+export function AdminRequestsCard({ canReview }: { canReview: boolean }) {
   const { getToken } = useAuth()
   const queryClient = useQueryClient()
   const [reason, setReason] = useState("")
@@ -70,7 +72,7 @@ export function AdminRequestsCard({ isOwner }: { isOwner: boolean }) {
   const pending = requests.filter((r) => r.status === "pending")
   const mine = requests.find((r) => r.status === "pending")
 
-  if (!isOwner) {
+  if (!canReview) {
     return (
       <Card>
         <CardContent className="space-y-4 p-6">
@@ -122,6 +124,7 @@ export function AdminRequestsCard({ isOwner }: { isOwner: boolean }) {
                   </span>
                   <StatusBadge status={r.status} />
                 </div>
+                <p className="mt-2 whitespace-pre-line text-muted-foreground">{r.reason}</p>
                 {r.reviewNote ? <p className="mt-2">{r.reviewNote}</p> : null}
               </div>
             ))}

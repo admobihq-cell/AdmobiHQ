@@ -17,7 +17,7 @@ type Params = { params: Promise<{ roleId: string }> }
 export async function PATCH(req: Request, { params }: Params) {
   const auth = await requireCustomerPermissionAccess("team:manage")
   if (auth.error) return auth.error
-  if (!auth.access.isOwner) return jsonError("Only an admin can edit roles", 403)
+  if (!auth.access.isOwner) return jsonError("Only the owner can edit roles", 403)
 
   const id = parseId((await params).roleId)
   if (id == null) return jsonError("Invalid role id", 400)
@@ -136,7 +136,7 @@ export async function PATCH(req: Request, { params }: Params) {
 export async function DELETE(_req: Request, { params }: Params) {
   const auth = await requireCustomerPermissionAccess("team:manage")
   if (auth.error) return auth.error
-  if (!auth.access.isOwner) return jsonError("Only an admin can delete roles", 403)
+  if (!auth.access.isOwner) return jsonError("Only the owner can delete roles", 403)
 
   const id = parseId((await params).roleId)
   if (id == null) return jsonError("Invalid role id", 400)

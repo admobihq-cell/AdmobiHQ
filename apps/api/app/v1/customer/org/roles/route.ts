@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const auth = await requireCustomerPermissionAccess("team:manage")
   if (auth.error) return auth.error
-  if (!auth.access.isOwner) return jsonError("Only an admin can create roles", 403)
+  if (!auth.access.isOwner) return jsonError("Only the owner can create roles", 403)
 
   const parsed = await parseJsonBody(req, advertiserRoleCreateSchema)
   if ("error" in parsed) return parsed.error

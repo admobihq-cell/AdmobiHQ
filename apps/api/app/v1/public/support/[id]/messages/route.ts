@@ -5,7 +5,7 @@ import { auditPublic } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getBearerToken, loadCaseByToken, toPublicMessage } from "@/lib/support"
+import { getBearerToken, loadCaseForCaller, toPublicMessage } from "@/lib/support"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: Params) {
   const token = getBearerToken(req)
   if (!token) return jsonError("Unauthorized", 401)
 
-  const supportCase = await loadCaseByToken(id, token)
+  const supportCase = await loadCaseForCaller(id, token)
   if (!supportCase) return jsonError("Not found", 404)
 
   const parsed = await parseJsonBody(req, customerMessageSchema)

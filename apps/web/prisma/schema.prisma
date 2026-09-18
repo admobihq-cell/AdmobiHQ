@@ -496,8 +496,9 @@ model AdvertiserRole {
 
 /// One row per advertiser user. clerk_user_id is globally unique, which is how
 /// "one org per user in v1" is enforced — a DB constraint, not app code.
-/// `is_owner` (Admin) members are exempt from permission checks entirely, exactly as
-/// org:admin is exempt in ops.
+/// `is_owner` (Owner) members are exempt from permission checks entirely, exactly as
+/// org:admin is exempt in ops. Exactly one per org. "Admin" is a separate,
+/// ordinary role (role_id) that any number of members can hold.
 model AdvertiserMember {
   id            Int             @id @default(autoincrement())
   org_id        Int

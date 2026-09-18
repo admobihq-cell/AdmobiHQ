@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { UserPlus } from "lucide-react"
+import { MessageSquareText, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 
 import type { AdvertiserInviteInput, AdvertiserMemberDto } from "@workspace/ops-contracts"
@@ -50,6 +50,7 @@ import {
 import {
   getOrg,
   inviteOrgMember,
+  listAdminRequests,
   listOrgMembers,
   listOrgRoles,
   removeOrgMember,
@@ -58,8 +59,8 @@ import {
   transferOrgOwnership,
   updateOrgMember,
 } from "@/lib/org-client"
-import { orgCan } from "@workspace/ops-contracts"
-import { AdminRequestsCard } from "@/components/settings/admin-requests-card"
+import { orgCan, type AdvertiserAdminRequestDto } from "@workspace/ops-contracts"
+import { ADMIN_REQUESTS_KEY, AdminRequestsCard } from "@/components/settings/admin-requests-card"
 import { OrgBillingCard } from "@/components/settings/org-billing-card"
 import { TeamSettingsSkeleton } from "@/components/skeletons/team-settings-skeleton"
 
@@ -85,6 +86,7 @@ export function TeamSettingsView() {
   const [orgName, setOrgName] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<AdvertiserMemberDto | null>(null)
   const [transferTarget, setTransferTarget] = useState<AdvertiserMemberDto | null>(null)
+  const [historyTarget, setHistoryTarget] = useState<AdvertiserAdminRequestDto | null>(null)
 
   const orgQuery = useQuery({
     queryKey: ORG_KEY,
@@ -103,6 +105,30 @@ export function TeamSettingsView() {
     enabled: isLoaded && canManageTeam,
     retry: false,
   })
+
+  // Same query AdminRequestsCard runs — shares its cache entry so this adds
+  // no extra request. Once a request is reviewed it drops out of that card
+  // entirely, so this is what keeps the requester's reason from vanishing:
+  // a small icon on their row that reopens it.
+  const adminRequestsQuery = useQuery({
+    queryKey: ADMIN_REQUESTS_KEY,
+    queryFn: () => listAdminRequests(getToken),
+    enabled: isLoaded && canManageTeam,
+    retry: false,
+  })
+  const latestRequestByMember = useMemo(() => {
+    const byMember = new Map<string, AdvertiserAdminRequestDto>()
+    for (const request of adminRequestsQuery.data ?? []) {
+      // Pending requests already have their own visible card above with
+      // action buttons — this icon is only for the ones that vanished.
+      if (request.status === "pending") continue
+      const current = byMember.get(request.clerkUserId)
+      if (!current || new Date(request.createdAt) > new Date(current.createdAt)) {
+        byMember.set(request.clerkUserId, request)
+      }
+    }
+    return byMember
+  }, [adminRequestsQuery.data])
 
   const rolesQuery = useQuery({
     queryKey: ROLES_KEY,
@@ -185,7 +211,7 @@ export function TeamSettingsView() {
   const transferMutation = useMutation({
     mutationFn: (memberId: number) => transferOrgOwnership(getToken, memberId),
     onSuccess: async () => {
-      toast.success("Admin transferred")
+      toast.success("Ownership transferred")
       setTransferTarget(null)
       await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
       await queryClient.invalidateQueries({ queryKey: ORG_KEY })
@@ -226,7 +252,7 @@ export function TeamSettingsView() {
             </p>
           </CardContent>
         </Card>
-        <AdminRequestsCard isOwner={false} />
+        <AdminRequestsCard canReview={false} />
       </div>
     )
   }
@@ -274,7 +300,7 @@ export function TeamSettingsView() {
 
       <OrgBillingCard org={orgQuery.data} />
 
-      <AdminRequestsCard isOwner={orgQuery.data?.isOwner ?? false} />
+      <AdminRequestsCard canReview={canManageTeam} />
 
       <Card>
         <CardContent className="space-y-4 p-6">
@@ -354,6 +380,7 @@ export function TeamSettingsView() {
               {members.map((member) => {
                 const displayName = member.name ?? member.email ?? member.clerkUserId
                 const isSelf = Boolean(userId) && member.clerkUserId === userId
+                const request = latestRequestByMember.get(member.clerkUserId)
                 return (
                   <TableRow key={member.id}>
                     <TableCell>
@@ -371,6 +398,19 @@ export function TeamSettingsView() {
                                 You
                               </span>
                             ) : null}
+                            {request ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-6 text-muted-foreground hover:text-foreground"
+                                title="View their admin request"
+                                onClick={() => setHistoryTarget(request)}
+                              >
+                                <MessageSquareText className="size-3.5" aria-hidden />
+                                <span className="sr-only">View their admin request</span>
+                              </Button>
+                            ) : null}
                           </div>
                           {member.email ? (
                             <div className="text-xs text-muted-foreground">{member.email}</div>
@@ -380,7 +420,7 @@ export function TeamSettingsView() {
                     </TableCell>
                     <TableCell>
                       {member.isOwner ? (
-                        <Badge variant="default">Admin</Badge>
+                        <Badge variant="default">Owner</Badge>
                       ) : (
                         <Select
                           value={member.roleId != null ? String(member.roleId) : undefined}
@@ -410,7 +450,7 @@ export function TeamSettingsView() {
                             disabled={transferMutation.isPending}
                             onClick={() => setTransferTarget(member)}
                           >
-                            Make admin
+                            Make owner
                           </Button>
                           <Button
                             variant="ghost"
@@ -518,11 +558,11 @@ export function TeamSettingsView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Make {transferTarget?.name ?? transferTarget?.email ?? "this member"} the admin?
+              Make {transferTarget?.name ?? transferTarget?.email ?? "this member"} the owner?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You&apos;ll become a regular member and lose admin access. They&apos;ll become the
-              organization&apos;s sole admin. This can only be undone by having them transfer it
+              You&apos;ll become a regular member and lose owner access. They&apos;ll become the
+              organization&apos;s sole owner. This can only be undone by having them transfer it
               back to you.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -531,11 +571,54 @@ export function TeamSettingsView() {
             <AlertDialogAction
               onClick={() => transferTarget && transferMutation.mutate(transferTarget.id)}
             >
-              Make admin
+              Make owner
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={historyTarget !== null} onOpenChange={(open) => !open && setHistoryTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Admin request</DialogTitle>
+          </DialogHeader>
+          {historyTarget ? (
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium">
+                  {historyTarget.name ?? historyTarget.email ?? "This member"}
+                </span>
+                <Badge variant={historyTarget.status === "approved" ? "secondary" : "outline"}>
+                  {historyTarget.status === "approved"
+                    ? "Approved"
+                    : historyTarget.status === "withdrawn"
+                      ? "Withdrawn"
+                      : "Declined"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Their reason
+                </p>
+                <p className="mt-1 whitespace-pre-line">{historyTarget.reason}</p>
+              </div>
+              {historyTarget.reviewNote ? (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Note from {historyTarget.reviewedByName ?? "the reviewer"}
+                  </p>
+                  <p className="mt-1 whitespace-pre-line">{historyTarget.reviewNote}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setHistoryTarget(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -221,7 +221,7 @@ export function AdvertiserOrgDetailView({ orgId }: { orgId: number }) {
             )}
           </SectionCard>
 
-          <SectionCard title="Activity" flush>
+          <SectionCard title="Activity" flush contentClassName="max-h-[420px] overflow-y-auto">
             {data.activity.length === 0 ? (
               <SectionEmpty>No recent activity.</SectionEmpty>
             ) : (

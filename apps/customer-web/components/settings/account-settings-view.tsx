@@ -492,7 +492,7 @@ export function AccountSettingsView() {
                 </p>
                 <p className="max-w-prose text-xs text-muted-foreground">
                   {isOrgOwner
-                    ? "You're the admin — transfer admin to someone else in Team settings before you can leave."
+                    ? "You're the owner — transfer ownership to someone else in Team settings before you can leave."
                     : "You'll lose access to its campaigns, reports, and activity immediately. An admin can re-invite you later."}
                 </p>
               </div>

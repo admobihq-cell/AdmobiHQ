@@ -25,7 +25,7 @@ export async function POST() {
   if (member.is_owner) {
     const remainingOwners = await countOrgOwners(auth.access.orgId, member.id)
     if (remainingOwners < 1) {
-      return jsonError("Transfer admin to someone else before leaving", 409)
+      return jsonError("Transfer ownership to someone else before leaving", 409)
     }
   }
 

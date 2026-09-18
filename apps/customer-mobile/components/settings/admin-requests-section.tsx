@@ -11,11 +11,12 @@ import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/them
 const KEY = ["customer-org-admin-requests"] as const
 
 /**
- * Expo twin of customer-web's <AdminRequestsCard>. Owners review; everyone
- * else can raise one. Promotion is owner-only, so this is the sanctioned route
- * for a member who needs more access.
+ * Expo twin of customer-web's <AdminRequestsCard>. Owner and existing Admins
+ * review; everyone else can raise one. Approving grants the "Admin" role
+ * (any number of members can hold it) — the singular owner only changes
+ * hands via ownership transfer.
  */
-export function AdminRequestsSection({ isOwner }: { isOwner: boolean }) {
+export function AdminRequestsSection({ canReview }: { canReview: boolean }) {
   const getToken = useTokenGetter()
   const queryClient = useQueryClient()
   const colors = useThemeColors()
@@ -104,7 +105,7 @@ export function AdminRequestsSection({ isOwner }: { isOwner: boolean }) {
   const requests: AdvertiserAdminRequestDto[] = query.data ?? []
   const pending = requests.filter((r) => r.status === "pending")
 
-  if (!isOwner) {
+  if (!canReview) {
     const mine = pending[0]
     return (
       <View style={styles.card}>
@@ -151,6 +152,7 @@ export function AdminRequestsSection({ isOwner }: { isOwner: boolean }) {
                 {r.status === "approved" ? "Approved" : "Declined"} by{" "}
                 {r.reviewedByName ?? "an admin"}
               </Text>
+              <Text style={styles.body}>{r.reason}</Text>
               {r.reviewNote ? <Text style={styles.body}>{r.reviewNote}</Text> : null}
             </View>
           ))}

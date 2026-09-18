@@ -28,19 +28,19 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const nextIsOwner = parsed.data.isOwner ?? member.is_owner
 
-  // Minting an admin is owner-only, matching transfer-ownership and
+  // Minting an owner is owner-only, matching transfer-ownership and
   // delete-organization. team:manage alone must not be able to promote —
   // least of all the caller themselves, which would turn any role granting
   // team:manage into a path to the full permission set.
   if (parsed.data.isOwner !== undefined && nextIsOwner !== member.is_owner) {
     if (!auth.access.isOwner) {
       return jsonError(
-        "Only an admin can change who is an admin. Request admin access instead.",
+        "Only the owner can change who is the owner. Use \"Make owner\" instead.",
         403,
       )
     }
     if (member.clerk_user_id === auth.access.userId) {
-      return jsonError("You can't change your own admin status", 400)
+      return jsonError("You can't change your own owner status", 400)
     }
   }
 
@@ -52,13 +52,13 @@ export async function PATCH(req: Request, { params }: Params) {
     const role = await getAssignableRole(auth.access.orgId, nextRoleId)
     if (!role) return jsonError("Unknown role", 400)
   } else if (!nextIsOwner && nextRoleId == null) {
-    return jsonError("Non-admins must have a role", 400)
+    return jsonError("Non-owners must have a role", 400)
   }
 
   if (member.is_owner && !nextIsOwner) {
     const remainingOwners = await countOrgOwners(auth.access.orgId, member.id)
     if (remainingOwners < 1) {
-      return jsonError("Cannot demote the last admin", 409)
+      return jsonError("Cannot demote the last owner", 409)
     }
   }
 
@@ -75,7 +75,7 @@ export async function PATCH(req: Request, { params }: Params) {
     entity_type: "advertiser_member",
     entity_id: updated.id,
     summary: nextIsOwner
-      ? `Promoted member #${updated.id} to admin`
+      ? `Promoted member #${updated.id} to owner`
       : `Changed member #${updated.id} role to ${updated.role?.name ?? "none"}`,
   })
 
@@ -97,7 +97,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (member.is_owner) {
     const remainingOwners = await countOrgOwners(auth.access.orgId, member.id)
     if (remainingOwners < 1) {
-      return jsonError("Cannot remove the last admin", 409)
+      return jsonError("Cannot remove the last owner", 409)
     }
   }
 
