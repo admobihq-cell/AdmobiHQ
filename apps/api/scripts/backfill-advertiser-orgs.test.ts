@@ -34,11 +34,12 @@ vi.mock("@/lib/load-env", () => ({}))
 
 describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
   const prisma = testPrisma
+  let preExistingId: number
 
   beforeAll(async () => {
-    await prisma.campaign.create({
+    ;({ id: preExistingId } = await prisma.campaign.create({
       data: { clerk_user_id: "backfill-test-user-a", name: "Pre-existing campaign" },
-    })
+    }))
   })
 
   afterAll(async () => {
@@ -59,7 +60,9 @@ describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
       const result = await backfillAdvertiserOrgs()
 
       expect(result.orgsCreated).toBe(2)
-      expect(result.orphanedCampaignIds).toEqual([])
+      // Scoped to this test's row: a shared DB legitimately holds campaigns
+      // detached by leave-to-join-a-team or org deletion.
+      expect(result.orphanedCampaignIds).not.toContain(preExistingId)
 
       const memberA = await prisma.advertiserMember.findUnique({ where: { clerk_user_id: "backfill-test-user-a" } })
       expect(memberA?.is_owner).toBe(true)
@@ -82,6 +85,30 @@ describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
       const { backfillAdvertiserOrgs } = await import("./backfill-advertiser-orgs")
       const result = await backfillAdvertiserOrgs()
       expect(result.orgsCreated).toBe(0)
+    },
+    30_000,
+  )
+
+  it(
+    "adopts org-less campaigns into the org an already-bootstrapped owner holds, but not a member's team",
+    async () => {
+      const { backfillAdvertiserOrgs } = await import("./backfill-advertiser-orgs")
+      const memberA = await prisma.advertiserMember.findUnique({ where: { clerk_user_id: "backfill-test-user-a" } })
+
+      // Created by pre-org code after lazy bootstrap already gave user A an org.
+      const late = await prisma.campaign.create({
+        data: { clerk_user_id: "backfill-test-user-a", name: "Created before backfill ran" },
+      })
+      await backfillAdvertiserOrgs()
+      expect((await prisma.campaign.findUnique({ where: { id: late.id } }))?.org_id).toBe(memberA!.org_id)
+
+      // Same shape, but user A is only a member of that org — never sweep their campaigns into a team.
+      await prisma.advertiserMember.update({ where: { id: memberA!.id }, data: { is_owner: false } })
+      const leftBehind = await prisma.campaign.create({
+        data: { clerk_user_id: "backfill-test-user-a", name: "Left behind" },
+      })
+      await backfillAdvertiserOrgs()
+      expect((await prisma.campaign.findUnique({ where: { id: leftBehind.id } }))?.org_id).toBeNull()
     },
     30_000,
   )

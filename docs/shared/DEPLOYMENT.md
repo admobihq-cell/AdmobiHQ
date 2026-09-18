@@ -558,6 +558,18 @@ Existing web secrets (`BLOB_READ_WRITE_TOKEN`, etc.) remain as documented in [DE
 2. Smoke test staging ([Staging smoke test](#staging-smoke-test)).
 3. Merge to **`master`** → production deploy on `admobihq.com`, `api.admobihq.com`, `ops.admobihq.com`, `app.admobihq.com`, and `driver.admobihq.com` (Production env + live Clerk keys + prod Neon).
 
+### Releases that carry a Prisma migration
+
+Nothing applies migrations to prod for you — CI deliberately never connects to Neon, and the merge deploys code immediately. So a release with a new folder under `apps/web/prisma/migrations/` goes:
+
+1. **Before merging:** `npm run db:migrate:status:prod -w web`, then `npm run db:migrate:deploy:prod -w web` (reads `apps/web/.env.production.local`). Migrations must be additive (nullable columns, new tables) so the code still on prod keeps working against the new schema.
+2. Merge to `master` and wait for the API deployment to go live.
+3. Run any one-off data step the release names (below).
+
+Merging first means the new code queries columns prod doesn't have yet, and every affected route 500s until the migration lands.
+
+**One-off: advertiser organizations.** The release that introduced `advertiser_orgs` scopes every campaign read by `org_id`, so right after step 2 run `npm run backfill:advertiser-orgs:prod -w api`. It gives every customer Clerk user an owner org and stamps their campaigns; anyone lazily bootstrapped between deploy and backfill has their campaigns adopted into the org they own. Until it runs, existing advertisers see an empty campaign list. It must print `WARNING: … campaigns still have no org_id` **zero** times on this first run. Don't re-run it later: once advertisers can leave their workspace to join a team, an org-less campaign can be one they deliberately left behind — and if they've since become that team's owner, a re-run would pull it into the team.
+
 Mobile apps (Android APK) are **not** deployed on Vercel — they use **EAS Build** on [expo.dev](https://expo.dev). See [Mobile distribution](#mobile-distribution-eas) below.
 
 ---
