@@ -132,6 +132,7 @@ Do not call `getPayloadClient()` from business API routes for lead capture. Do n
 
 ## Related docs
 
+- [DATABASE.md](./DATABASE.md) — full table-by-table schema reference for the entire repo
 - [API.md](../api/API.md) — business API routes and deployment
 - [DEV-SETUP.md](./DEV-SETUP.md) — **local dev commands**, Infisical, when to run migrations/seeds
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — repo layout and routing
