@@ -106,10 +106,14 @@ export async function createSupportCase(input: {
   return res.data.data
 }
 
+/** The per-case token only exists on the device that opened the case. A
+ * signed-in caller falls back to their account token, which the API accepts
+ * for any case the list endpoint would return to them. */
 export async function getSupportCase(
   caseId: number,
+  accountToken?: string | null,
 ): Promise<(SupportCase & { messages: SupportMessage[] }) | null> {
-  const token = getStoredCaseToken(caseId)
+  const token = getStoredCaseToken(caseId) ?? accountToken
   if (!token) return null
 
   const res = await publicApiFetch<SupportCase & { messages: SupportMessage[] }>(
@@ -120,8 +124,12 @@ export async function getSupportCase(
   return res.data
 }
 
-export async function replyToSupportCase(caseId: number, body: string): Promise<SupportMessage> {
-  const token = getStoredCaseToken(caseId)
+export async function replyToSupportCase(
+  caseId: number,
+  body: string,
+  accountToken?: string | null,
+): Promise<SupportMessage> {
+  const token = getStoredCaseToken(caseId) ?? accountToken
   if (!token) throw new Error("Missing access token for this case")
 
   const res = await publicApiFetch<{ data: SupportMessage }>(`/support/${caseId}/messages`, {

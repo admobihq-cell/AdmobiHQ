@@ -6,6 +6,7 @@ import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
 import { ChevronRight, Inbox, Plus } from "lucide-react"
 
+import { formatDate, formatRelativeTime } from "@workspace/ops-contracts/format"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
@@ -17,8 +18,69 @@ import {
   getStoredIdentity,
   listMySupportCases,
   listMySupportCasesForAccount,
+  type SupportCase,
 } from "@/lib/support-client"
-import { CategoryIcon } from "@/lib/support-categories"
+import { CategoryIcon, getCategoryLabel } from "@/lib/support-categories"
+
+const SETTLED_STATUSES = new Set(["resolved", "closed"])
+
+function CaseRow({ item }: { item: SupportCase }) {
+  return (
+    <Link
+      href={`/settings/support/${item.id}`}
+      className="flex items-center gap-3 p-4 text-sm transition-colors hover:bg-accent"
+    >
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+        <CategoryIcon value={item.category} className="size-4 text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{item.subject}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {getCategoryLabel(item.category)} · #{item.id} · Opened {formatDate(item.created_at)}
+        </p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <SupportStatusBadge status={item.status} />
+        <span className="text-xs text-muted-foreground">
+          {formatRelativeTime(item.updated_at)}
+        </span>
+      </div>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    </Link>
+  )
+}
+
+function CaseGroup({
+  title,
+  hint,
+  cases,
+}: {
+  title: string
+  hint?: string
+  cases: SupportCase[]
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h2>
+        <span className="text-xs tabular-nums text-muted-foreground">{cases.length}</span>
+        {hint ? <span className="text-xs text-muted-foreground">· {hint}</span> : null}
+      </div>
+      <Card className="shadow-none">
+        <CardContent className="p-0">
+          {cases.map((item, index) => (
+            <div key={item.id}>
+              {index > 0 ? <Separator /> : null}
+              <CaseRow item={item} />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
 
 export function SupportClient() {
   const session = useCustomerSession()
@@ -44,13 +106,23 @@ export function SupportClient() {
     },
     enabled: hasIdentity || isAuthenticated,
   })
-  const cases = casesQuery.data ?? []
+  const cases = useMemo(() => casesQuery.data ?? [], [casesQuery.data])
   // Keep showing the skeleton while the session is still resolving (before
   // hasIdentity/isAuthenticated can even be known) so a first-time-this-tab
   // visitor doesn't flash the "no requests yet" empty state before the
   // query has a chance to run.
   const loadingCases =
     session.status === "loading" || ((hasIdentity || isAuthenticated) && casesQuery.isLoading)
+
+  // Newest activity first, and anything still in flight above anything settled
+  // — the request you're waiting on is the one you came here for.
+  const { active, settled } = useMemo(() => {
+    const byRecency = [...cases].sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    return {
+      active: byRecency.filter((c) => !SETTLED_STATUSES.has(c.status)),
+      settled: byRecency.filter((c) => SETTLED_STATUSES.has(c.status)),
+    }
+  }, [cases])
 
   return (
     <div className="relative flex flex-1 flex-col gap-8 pb-20">
@@ -87,31 +159,12 @@ export function SupportClient() {
           </Button>
         </div>
       ) : (
-        <Card className="shadow-none">
-          <CardContent className="p-0">
-            {cases.map((item, index) => (
-              <div key={item.id}>
-                {index > 0 ? <Separator /> : null}
-                <Link
-                  href={`/settings/support/${item.id}`}
-                  className="flex items-center gap-3 p-4 text-sm transition-colors hover:bg-accent"
-                >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                    <CategoryIcon value={item.category} className="size-4 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{item.subject}</p>
-                    <p className="text-xs text-muted-foreground">
-                      #{item.id} · {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <SupportStatusBadge status={item.status} />
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                </Link>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-8">
+          {active.length > 0 ? <CaseGroup title="Open" cases={active} /> : null}
+          {settled.length > 0 ? (
+            <CaseGroup title="Closed" hint="Replying reopens a request" cases={settled} />
+          ) : null}
+        </div>
       )}
     </div>
   )

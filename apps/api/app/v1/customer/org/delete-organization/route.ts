@@ -9,16 +9,16 @@ import { prisma } from "@/lib/prisma"
 /**
  * Deletes the advertiser org (cascades members/invites/custom roles).
  * Campaigns are detached (org_id null) and retained for the ops record.
- * Sole-admin path when transfer is not desired.
+ * Sole-owner path when transfer is not desired.
  */
 export async function POST() {
   const auth = await requireCustomerPermissionAccess("org:manage")
   if (auth.error) return auth.error
-  if (!auth.access.isOwner) return jsonError("Only an admin can delete the organization", 403)
+  if (!auth.access.isOwner) return jsonError("Only the owner can delete the organization", 403)
 
   const owners = await countOrgOwners(auth.access.orgId)
   if (owners !== 1) {
-    return jsonError("Transfer admin or remove other admins first", 409)
+    return jsonError("Resolve the extra owners first", 409)
   }
 
   const memberIds = await prisma.advertiserMember.findMany({

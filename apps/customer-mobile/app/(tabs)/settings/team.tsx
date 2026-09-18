@@ -109,7 +109,7 @@ export default function TeamSettingsScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: MEMBERS_KEY })
       await queryClient.invalidateQueries({ queryKey: ORG_KEY })
-      Alert.alert("Admin transferred")
+      Alert.alert("Ownership transferred")
     },
     onError: (err: Error) => Alert.alert("Couldn't transfer", err.message),
   })
@@ -279,7 +279,7 @@ export default function TeamSettingsScreen() {
                     {member.name ?? member.email ?? member.clerkUserId}
                   </Text>
                   <Text style={styles.rowMeta}>
-                    {member.isOwner ? "Admin" : (member.roleName ?? "Member")}
+                    {member.isOwner ? "Owner" : (member.roleName ?? "Member")}
                     {member.email ? ` · ${member.email}` : ""}
                   </Text>
                 </View>
@@ -288,8 +288,8 @@ export default function TeamSettingsScreen() {
                     <Pressable
                       onPress={() =>
                         Alert.alert(
-                          "Make admin?",
-                          "You'll become a regular member. They'll become the admin.",
+                          "Make owner?",
+                          "You'll become a regular member. They'll become the sole owner.",
                           [
                             { text: "Cancel", style: "cancel" },
                             {
@@ -300,7 +300,7 @@ export default function TeamSettingsScreen() {
                         )
                       }
                     >
-                      <Text style={{ color: colors.primary, fontWeight: "600" }}>Make admin</Text>
+                      <Text style={{ color: colors.primary, fontWeight: "600" }}>Make owner</Text>
                     </Pressable>
                     <Pressable
                       onPress={() =>
@@ -360,7 +360,7 @@ export default function TeamSettingsScreen() {
             </View>
           ) : null}
 
-          <AdminRequestsSection isOwner />
+          <AdminRequestsSection canReview={canManage} />
 
           <View style={styles.card}>
             <Text style={styles.title}>Roles</Text>
@@ -395,7 +395,7 @@ export default function TeamSettingsScreen() {
             </Pressable>
           </View>
 
-          <AdminRequestsSection isOwner={false} />
+          <AdminRequestsSection canReview={false} />
         </>
       )}
     </ScrollView>

@@ -5,7 +5,7 @@ import {
   advertiserAdminRequestCreateSchema,
 } from "@workspace/ops-contracts"
 
-import { listOrgOwnerIds, notifyCustomerUsers } from "@/lib/advertiser-notify"
+import { listOrgMemberIdsWithPermission, notifyCustomerUsers } from "@/lib/advertiser-notify"
 import { toAdminRequestDtos } from "@/lib/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
@@ -16,18 +16,20 @@ import { prisma } from "@/lib/prisma"
 const MAX_ROWS = 100
 
 /**
- * Owners see every request for the org; everyone else sees only their own.
- * Deliberately not gated on `team:manage` — the whole point is that a member
- * without it can ask for more access.
+ * Owner and Admin-role members see every request for the org; everyone else
+ * sees only their own. Deliberately not gated on `team:manage` for the
+ * requester side — the whole point is that a member without it can ask for
+ * more access.
  */
 export async function GET() {
   const auth = await requireCustomerAccess()
   if (auth.error) return auth.error
 
+  const canReview = auth.access.isOwner || auth.access.permissions.has("team:manage")
   const rows = await prisma.advertiserAdminRequest.findMany({
     where: {
       org_id: auth.access.orgId,
-      ...(auth.access.isOwner ? {} : { clerk_user_id: auth.access.userId }),
+      ...(canReview ? {} : { clerk_user_id: auth.access.userId }),
     },
     orderBy: [{ status: "asc" }, { created_at: "desc" }],
     take: MAX_ROWS,
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
   const auth = await requireCustomerAccess()
   if (auth.error) return auth.error
 
-  if (auth.access.isOwner) {
+  if (auth.access.isOwner || auth.access.permissions.has("team:manage")) {
     return jsonError("You're already an admin", 409)
   }
 
@@ -69,7 +71,7 @@ export async function POST(req: Request) {
   })
 
   const requesterName = (await getCustomerName(auth.access.userId)) ?? "A teammate"
-  await notifyCustomerUsers(await listOrgOwnerIds(auth.access.orgId), {
+  await notifyCustomerUsers(await listOrgMemberIdsWithPermission(auth.access.orgId, "team:manage"), {
     orgId: auth.access.orgId,
     type: "org_admin_request",
     title: "Admin access requested",

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { advertiserAdminRequestReviewSchema } from "@workspace/ops-contracts"
 
 import { notifyCustomerUsers } from "@/lib/advertiser-notify"
-import { toAdminRequestDtos } from "@/lib/advertiser-org"
+import { getAdminRoleId, toAdminRequestDtos } from "@/lib/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
 import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
@@ -13,14 +13,17 @@ import { prisma } from "@/lib/prisma"
 type Params = { params: Promise<{ id: string }> }
 
 /**
- * Owner approves or denies a member's request for admin access. Approving is
- * the only path by which someone other than an existing owner becomes one
- * without a full ownership transfer.
+ * Owner or an existing Admin approves or denies a member's request for admin
+ * access. Approving grants the org's "Admin" role — day-to-day permissions,
+ * not the singular owner bypass, which only changes hands via ownership
+ * transfer.
  */
 export async function POST(req: Request, { params }: Params) {
   const auth = await requireCustomerAccess()
   if (auth.error) return auth.error
-  if (!auth.access.isOwner) return jsonError("Only an admin can review these requests", 403)
+  if (!auth.access.isOwner && !auth.access.permissions.has("team:manage")) {
+    return jsonError("Only an admin can review these requests", 403)
+  }
 
   const id = parseId((await params).id)
   if (id == null) return jsonError("Invalid request id", 400)
@@ -47,9 +50,10 @@ export async function POST(req: Request, { params }: Params) {
 
   const updated = await prisma.$transaction(async (tx) => {
     if (decision === "approve") {
+      const adminRoleId = await getAdminRoleId(auth.access.orgId)
       await tx.advertiserMember.update({
         where: { id: member.id },
-        data: { is_owner: true, role_id: null },
+        data: { role_id: adminRoleId },
       })
     }
     return tx.advertiserAdminRequest.update({

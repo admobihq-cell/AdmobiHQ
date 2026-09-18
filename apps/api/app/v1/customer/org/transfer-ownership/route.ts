@@ -10,11 +10,11 @@ const transferSchema = z.object({
   memberId: z.number().int().positive(),
 })
 
-/** Promote another active member to admin and demote the caller (admin only). */
+/** Promote another active member to owner and demote the caller (owner only). */
 export async function POST(req: Request) {
   const auth = await requireCustomerPermissionAccess("org:manage")
   if (auth.error) return auth.error
-  if (!auth.access.isOwner) return jsonError("Only an admin can transfer admin", 403)
+  if (!auth.access.isOwner) return jsonError("Only the owner can transfer ownership", 403)
 
   const parsed = await parseJsonBody(req, transferSchema)
   if ("error" in parsed) return parsed.error
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     action: "update",
     entity_type: "advertiser_member",
     entity_id: target.id,
-    summary: `Transferred admin to member #${target.id}`,
+    summary: `Transferred ownership to member #${target.id}`,
   })
 
   return NextResponse.json({ success: true })

@@ -5,29 +5,22 @@ import { FlowChrome } from "@/components/flow-chrome"
 /** Same overlay the campaign wizard uses — raising a support request is the
  * other thing someone comes here to actually *do*, so it gets the whole screen
  * rather than a side sheet that loses a half-written message on reload. */
-export function NewRequestChrome({
-  animateIn,
-  children,
-}: {
-  animateIn?: boolean
-  children: React.ReactNode
-}) {
+export function NewRequestChrome({ children }: { children: React.ReactNode }) {
   return (
     <FlowChrome
       closeHref="/settings/support"
       closeLabel="Close and go back to help & contact"
-      animateIn={animateIn}
     >
       {children}
     </FlowChrome>
   )
 }
 
-/** The route's `loading.tsx` — the first thing to mount, so it owns the enter
- * animation; the page that replaces it must not replay it. */
+/** Mirrors the form's first paint so `new/loading.tsx` doesn't flash the
+ * support *list* skeleton inside the app shell before this overlay mounts. */
 export function NewRequestSkeleton() {
   return (
-    <NewRequestChrome animateIn>
+    <NewRequestChrome>
       <div className="w-full space-y-8">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />

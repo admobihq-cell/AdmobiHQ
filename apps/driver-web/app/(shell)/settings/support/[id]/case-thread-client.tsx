@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
+import { useAuth } from "@clerk/nextjs"
 import { ArrowLeft, Send, SearchX } from "lucide-react"
 import { toast } from "sonner"
 
@@ -32,11 +33,12 @@ function initials(name: string) {
 
 export function CaseThreadClient({ caseId }: { caseId: number }) {
   const queryClient = useQueryClient()
+  const { getToken } = useAuth()
   const [reply, setReply] = useState("")
 
   const caseQuery = useQuery({
     queryKey: ["driver-support-case", caseId],
-    queryFn: () => getSupportCase(caseId),
+    queryFn: async () => getSupportCase(caseId, await getToken()),
     enabled: Number.isFinite(caseId),
     refetchInterval: refetchIntervalWhileActive(
       POLL_INTERVAL_MS,
@@ -53,7 +55,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
   const messages: SupportMessage[] = caseQuery.data?.messages ?? []
 
   const replyMutation = useMutation({
-    mutationFn: (body: string) => replyToSupportCase(caseId, body),
+    mutationFn: async (body: string) => replyToSupportCase(caseId, body, await getToken()),
     onSuccess: () => {
       setReply("")
       void queryClient.invalidateQueries({ queryKey: ["driver-support-case", caseId] })

@@ -79,15 +79,21 @@ const SEEDED_ROLE_GUIDE: Array<{
   permissions: readonly AdvertiserPermission[] | "all"
 }> = [
   {
+    name: "Owner",
+    summary:
+      "The one account that can never lose access to its own permissions. Owners rename the company, delete it, transfer ownership, and edit roles — on top of everything an Admin can do. Every org has exactly one.",
+    permissions: "all",
+  },
+  {
     name: "Admin",
     summary:
-      "Full control of the organization. Admins can rename the company, invite or remove people, edit roles, submit campaigns, and manage billing when it ships — everything a Member can plus the money and team boundaries.",
-    permissions: "all",
+      "Full day-to-day control: invite or remove people, edit roles, submit campaigns, and manage billing. An org can have as many Admins as it needs — invite someone straight into this role, no request required.",
+    permissions: ADVERTISER_STARTER_ROLES.Admin,
   },
   {
     name: "Member",
     summary:
-      "Prepares campaigns and creative but cannot submit for review — that spend boundary stays with Admins (or a custom role you create for it). Good for anyone drafting work an admin approves.",
+      "Prepares campaigns and creative but cannot submit for review — that spend boundary stays with Owners and Admins (or a custom role you create for it). Good for anyone drafting work an admin approves.",
     permissions: ADVERTISER_STARTER_ROLES.Member,
   },
 ]
@@ -291,7 +297,7 @@ export function RolesSettingsView() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="sticky left-0 z-10 min-w-44 bg-card">Permission</TableHead>
-                <TableHead className="min-w-28 text-center">Admin</TableHead>
+                <TableHead className="min-w-28 text-center">Owner</TableHead>
                 {roles.map((role) => {
                   const edit = edits[role.id]
                   const dirty = edit ? isDirty(edit, role) : false
@@ -364,7 +370,7 @@ export function RolesSettingsView() {
                   <TableCell className="text-center">
                     <Check
                       className="mx-auto size-4 text-muted-foreground"
-                      aria-label="Always included for admins"
+                      aria-label="Always included for the owner"
                     />
                   </TableCell>
                   {roles.map((role) => (
@@ -385,7 +391,7 @@ export function RolesSettingsView() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Admins always have every permission. Saving a starter role creates a customized copy for
+        The owner always has every permission. Saving a starter role creates a customized copy for
         this organization only — other advertisers keep the shared defaults.
       </p>
 
@@ -403,7 +409,7 @@ export function RolesSettingsView() {
               <div key={role.name} className="space-y-2 rounded-lg border p-3">
                 <div className="flex items-baseline justify-between gap-2">
                   <h3 className="text-sm font-semibold">{role.name}</h3>
-                  {role.name !== "Admin" ? (
+                  {role.name !== "Owner" ? (
                     <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                       Starter
                     </span>

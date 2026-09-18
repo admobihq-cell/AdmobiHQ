@@ -58,10 +58,10 @@ Parity with customer-web, minus the billing-details form:
 
 | Screen | Notes |
 |--------|-------|
-| `app/(tabs)/settings/team.tsx` | Org rename, invite, member roles, transfer admin, remove, invitations (resend / revoke, declined shown with **Ask again**), and admin access requests |
-| `app/(tabs)/settings/roles.tsx` | Create, edit and delete org roles; editing a shared starter clones it for the org. Admin-only |
+| `app/(tabs)/settings/team.tsx` | Org rename, invite, member roles, transfer ownership, remove, invitations (resend / revoke, declined shown with **Ask again**), and admin access requests (approving grants the "Admin" role — an org can have several) |
+| `app/(tabs)/settings/roles.tsx` | Create, edit and delete org roles; editing a shared starter clones it for the org. Owner-only |
 | `app/(tabs)/settings/activity.tsx` | Org activity feed. Hidden from Settings without `activity:read` |
-| `app/(tabs)/settings/account.tsx` | Leave organization, or delete it when you're the sole admin (with the detached-campaign count in the confirm copy) |
+| `app/(tabs)/settings/account.tsx` | Leave organization, or delete it when you're the owner (with the detached-campaign count in the confirm copy) |
 | `app/invitations/[token].tsx` | Review an invitation, then Accept or Decline — never auto-accepts |
 
 Capability comes from [lib/use-org.ts](../../apps/customer-mobile/lib/use-org.ts) (`useOrg` / `useOrgPermissions`) and the shared `orgCan()` helper — the same contract customer-web uses. The campaign wizard hides *Submit for review* without `campaigns:submit`.
