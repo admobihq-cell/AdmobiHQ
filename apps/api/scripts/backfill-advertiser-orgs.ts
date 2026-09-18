@@ -10,7 +10,8 @@ const PAGE_SIZE = 100
  * One-off, idempotent: for every customer Clerk user with no AdvertiserMember
  * row yet, creates an org (named from their Clerk company metadata, empty if
  * unset) and an owner membership, then points their campaigns at it. Safe to
- * run more than once — a user who already has a membership is skipped.
+ * run more than once — a user who already has a membership gets no new org,
+ * though an owner's org-less campaigns are still adopted (see below).
  */
 export async function backfillAdvertiserOrgs(): Promise<{
   orgsCreated: number
@@ -25,7 +26,20 @@ export async function backfillAdvertiserOrgs(): Promise<{
 
     for (const user of users) {
       const existing = await prisma.advertiserMember.findUnique({ where: { clerk_user_id: user.id } })
-      if (existing) continue
+      if (existing) {
+        // Lazy bootstrap got here first (they used the app between deploy and
+        // backfill) and gave them an empty org. Adopt their pre-org campaigns
+        // into the org they own — never into a team they joined as a member.
+        // One-shot deploy tool: a much later re-run would also sweep in
+        // campaigns someone deliberately left behind when joining a team.
+        if (existing.is_owner && !existing.removed_at) {
+          await prisma.campaign.updateMany({
+            where: { clerk_user_id: user.id, org_id: null },
+            data: { org_id: existing.org_id },
+          })
+        }
+        continue
+      }
 
       const name = readCompanyName(user) ?? ""
       await prisma.$transaction(async (tx) => {
