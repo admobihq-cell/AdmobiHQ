@@ -1,6 +1,7 @@
 "use client";
 
-import MapLibreGL, { type PopupOptions, type MarkerOptions } from "maplibre-gl";
+import * as MapLibreGL from "maplibre-gl";
+import type { PopupOptions, MarkerOptions } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type * as GeoJSON from "geojson";
 import {
@@ -319,7 +320,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
         }
       });
     };
-    const errorHandler = (event: { error?: Error; message?: string }) => {
+    const errorHandler = (event: { error?: { message?: string }; message?: string }) => {
       const message = event.error?.message ?? event.message ?? "";
       // If the requested basemap style fails, fall back to Carto so the map isn't blank.
       if (
@@ -1260,7 +1261,7 @@ function MapRoute({
     map.setPaintProperty(layerId, "line-color", color);
     map.setPaintProperty(layerId, "line-width", width);
     map.setPaintProperty(layerId, "line-opacity", opacity);
-    map.setPaintProperty(layerId, "line-dasharray", dashArray ?? null);
+    map.setPaintProperty(layerId, "line-dasharray", dashArray ?? undefined);
     if (map.getLayer(casingLayerId)) {
       map.setPaintProperty(casingLayerId, "line-color", casingColor);
       map.setPaintProperty(casingLayerId, "line-width", resolvedCasingWidth);
