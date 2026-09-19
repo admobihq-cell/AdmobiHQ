@@ -312,9 +312,9 @@ Both set `TURBO_UI=false` for non-interactive output.
 
 ## 11. Skills system — `.agents/skills/`
 
-Multiple skill bundles are checked into the repo. The actively used one is **`impeccable`** ([.agents/skills/impeccable/](../../.agents/skills/impeccable)) — the design skill invoked via `/impeccable`. It reads [PRODUCT.md](../../PRODUCT.md) and [DESIGN.md](../../DESIGN.md) for project context, then loads register-specific references (brand vs product) plus a command reference per sub-command (`craft`, `shape`, `audit`, `polish`, et al.).
+Skill bundles live in `.agents/skills/` locally but are **gitignored** (they're vendored third-party tool code; `.claude/skills/` is the tracked copy). The actively used one is **`impeccable`** (`.agents/skills/impeccable/`) — the design skill invoked via `/impeccable`. It reads [PRODUCT.md](../../PRODUCT.md) and [DESIGN.md](../../DESIGN.md) for project context, then loads register-specific references (brand vs product) plus a command reference per sub-command (`craft`, `shape`, `audit`, `polish`, et al.).
 
-Other skill folders present: `brandkit`, `design-taste-frontend`, `find-skills`, `frontend-design`, `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `shadcn`, `stitch-design-taste`, `web-design-guidelines`. They are not loaded by default; they exist as a library agents can read from.
+Other skill folders that may be present locally: `brandkit`, `design-taste-frontend`, `find-skills`, `frontend-design`, `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `shadcn`, `stitch-design-taste`, `web-design-guidelines`. They are not loaded by default; they exist as a library agents can read from.
 
 [`skills-lock.json`](../../skills-lock.json) at the repo root pins the synced skill versions.
 

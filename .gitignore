@@ -71,3 +71,6 @@ bruno/.env
 
 .vercel
 .env*
+
+# Local agent skill bundles (vendored tool code; .claude/skills is the tracked copy)
+.agents/
