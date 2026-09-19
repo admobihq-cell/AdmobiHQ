@@ -173,6 +173,8 @@ export function CampaignWizard({
     initialCampaign ? Date.now() : null,
   )
 
+  const campaignIdRef = useRef<number | null>(initialCampaign?.id ?? null)
+  const creating = useRef<Promise<CampaignDto> | null>(null)
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const skipNextAutosave = useRef(true)
 
@@ -234,13 +236,28 @@ export function CampaignWizard({
 
   async function persist(data: Record<string, unknown>): Promise<CampaignDto | null> {
     try {
-      if (!campaign) {
-        const created = await create.mutateAsync({ name: String(data.name), ...data } as never)
-        setCampaign(created)
-        setLastSavedAt(Date.now())
-        return created
+      // Read the id from a ref, not `campaign` state: state only updates after
+      // the create returns, so a save fired meanwhile (autosave timer, Continue)
+      // would see null and create a duplicate. Wait for the in-flight create.
+      if (!campaignIdRef.current && creating.current) await creating.current
+      if (!campaignIdRef.current) {
+        const request = create
+          .mutateAsync({ name: String(data.name), ...data } as never)
+          .then((created) => {
+            campaignIdRef.current = created.id
+            return created
+          })
+        creating.current = request
+        try {
+          const created = await request
+          setCampaign(created)
+          setLastSavedAt(Date.now())
+          return created
+        } finally {
+          creating.current = null
+        }
       }
-      const updated = await update.mutateAsync({ id: campaign.id, data: data as never })
+      const updated = await update.mutateAsync({ id: campaignIdRef.current, data: data as never })
       setCampaign(updated)
       setLastSavedAt(Date.now())
       return updated
