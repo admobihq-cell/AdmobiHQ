@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 
+import { StaleDeployReload } from "@/components/stale-deploy-reload"
 import { CookieConsentBanner } from "@workspace/ui/components/cookie-consent-banner"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </ThemeProvider>
         </Providers>
         <Analytics />
+        <StaleDeployReload />
         <CookieConsentBanner privacyHref={`${webPublicUrl()}/privacy#cookies`} />
       </body>
     </html>
