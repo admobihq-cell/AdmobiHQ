@@ -469,6 +469,47 @@ See [API.md](../api/API.md) and [DATA-LAYER.md](./DATA-LAYER.md).
 | **CORS errors on forms** | `API_CORS_ORIGINS` includes `http://localhost:3000` on api |
 | **Emails not sending** | `resend_api_key` on **api** app, not web |
 | **Media upload fails in admin** | Set `BLOB_READ_WRITE_TOKEN` on web |
+| **Map stuck on "Loading map"** | The maplibre worker isn't being served — see [Maps (MapLibre) worker](#maps-maplibre-worker) below |
+
+---
+
+## Maps (MapLibre) worker
+
+maplibre-gl 6 no longer inlines its web worker — it derives the worker URL from
+its own `import.meta.url` at runtime. Webpack inlines that as the *build
+machine's* `file://` path, so maplibre's detection bails, returns an empty
+string, and ends at `new Worker("")`, which loads the current HTML document as a
+module script. The console shows:
+
+```
+Failed to load module script: The server responded with a non-JavaScript
+MIME type of "text/html".
+```
+
+and the map sits on its loading spinner forever (no tiles are ever parsed).
+
+So the apps serve the worker themselves:
+
+- `scripts/copy-maplibre-worker.mjs` copies `maplibre-gl-worker.mjs` **and**
+  `maplibre-gl-shared.mjs` out of `node_modules/maplibre-gl/dist` into
+  `<app>/public/maplibre/`. Both files must land in the same directory — the
+  worker imports the shared chunk relatively. The copies are gitignored and
+  refreshed on every `dev` and `build` in `customer-web`, `driver-web` and `ops`.
+- `packages/ui/src/components/map.tsx` calls `setWorkerUrl("/maplibre/maplibre-gl-worker.mjs")`
+  at module load. The copy script asserts that constant still matches the path
+  it writes, so the two can't drift apart silently.
+
+Because the worker is served from `public/`, **auth middleware must not
+intercept it.** All three Clerk matchers exclude static extensions via
+`m?js(?!on)` — a matcher that only excludes `js` redirects the `.mjs` worker to
+`/auth/login`, which is HTML, and reproduces the exact same failure. Note the
+file name differs per app: `customer-web/middleware.ts` and
+`driver-web/middleware.ts` still use the legacy convention, `ops/proxy.ts` uses
+the Next 16 name. Whichever it is, keep the matcher in sync across all three.
+
+When bumping maplibre-gl, re-run a `dev` or `build` (the copy is automatic) and
+confirm `/maplibre/maplibre-gl-worker.mjs` returns `200` with a JavaScript
+content type.
 
 ---
 

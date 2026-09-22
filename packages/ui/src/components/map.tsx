@@ -23,6 +23,18 @@ import { ThinkingOrb } from "thinking-orbs";
 
 import { cn } from "@workspace/ui/lib/utils";
 
+/**
+ * maplibre-gl 6 resolves its worker from its own `import.meta.url`. Webpack
+ * inlines that as the build machine's `file://` path, so maplibre's detection
+ * bails and falls back to `new Worker("")` — which loads the current HTML
+ * document as a module script and hangs the map on its loader forever. Point
+ * it at the copy each app serves (scripts/copy-maplibre-worker.mjs).
+ */
+const MAPLIBRE_WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
+if (typeof window !== "undefined") {
+  MapLibreGL.setWorkerUrl(MAPLIBRE_WORKER_URL);
+}
+
 const defaultStyles = {
   dark: "https://tiles.openfreemap.org/styles/dark",
   light: "https://tiles.openfreemap.org/styles/liberty",

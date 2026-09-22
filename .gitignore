@@ -74,3 +74,6 @@ bruno/.env
 
 # Local agent skill bundles (vendored tool code; .claude/skills is the tracked copy)
 .agents/
+
+# Vendored maplibre-gl worker (scripts/copy-maplibre-worker.mjs)
+apps/*/public/maplibre/

@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e .env.local -e ../web/.env.local -- next dev --port 3002 --webpack",
-    "build": "next build --webpack",
+    "dev": "node ../../scripts/copy-maplibre-worker.mjs && dotenv -e .env.local -e ../web/.env.local -- next dev --port 3002 --webpack",
+    "build": "node ../../scripts/copy-maplibre-worker.mjs && next build --webpack",
     "start": "next start --port 3002",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
