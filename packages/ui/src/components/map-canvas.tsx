@@ -4,15 +4,11 @@ import { useState, type ReactNode } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import {
-  BASEMAP_ORDER,
   BASEMAP_PRESETS,
-  DEFAULT_BASEMAP,
   NAIROBI_CENTER,
   NAIROBI_DEFAULT_ZOOM,
-  type BasemapId,
 } from "@workspace/geo"
 import { cn } from "@workspace/ui/lib/utils"
-import { MapBasemapSelect } from "@workspace/ui/components/map-basemap-select"
 import {
   Map,
   MapBuildings3D,
@@ -21,11 +17,13 @@ import {
   type MapControlsProps,
 } from "@workspace/ui/components/map"
 
-const BASEMAP_OPTIONS = BASEMAP_ORDER.map((id: BasemapId) => ({
-  id,
-  label: BASEMAP_PRESETS[id].label,
-  description: BASEMAP_PRESETS[id].description,
-}))
+// OpenStreetMap (via OpenFreeMap) is the only basemap — same URL for both
+// light and dark app theme, so the map itself never re-skins when the user
+// switches theme.
+const OSM_STYLE_URL = BASEMAP_PRESETS.osm.light
+
+// Camera tilt for the 3D toggle — same pitch the old "3D" basemap preset used.
+const PITCH_3D = BASEMAP_PRESETS.streets3d.pitch
 
 export type MapCanvasSummaryItem = {
   value: string
@@ -53,8 +51,8 @@ export type MapCanvasProps = {
 /**
  * Shared full-bleed map layout for the three actor map pages (customer,
  * driver, ops). Owns the frame that escapes the shell's content padding, the
- * basemap, the floating rail, and the control cluster — each app only
- * supplies its copy, its summary numbers and its rail list markup.
+ * OpenStreetMap basemap, the floating rail, and the control cluster — each
+ * app only supplies its copy, its summary numbers and its rail list markup.
  */
 export function MapCanvas({
   title,
@@ -66,9 +64,8 @@ export function MapCanvas({
   controls,
   className,
 }: MapCanvasProps) {
-  const [basemap, setBasemap] = useState<BasemapId>(DEFAULT_BASEMAP)
   const [railOpen, setRailOpen] = useState(true)
-  const preset = BASEMAP_PRESETS[basemap]
+  const [is3D, setIs3D] = useState(false)
 
   return (
     <div
@@ -83,19 +80,17 @@ export function MapCanvas({
       )}
     >
       <Map
-        key={basemap}
         loadingLabel={loadingLabel}
         center={NAIROBI_CENTER}
         zoom={NAIROBI_DEFAULT_ZOOM}
-        pitch={preset.pitch}
         maxPitch={68}
         className="absolute inset-0 h-full w-full"
-        styles={{ light: preset.light, dark: preset.dark }}
+        styles={{ light: OSM_STYLE_URL, dark: OSM_STYLE_URL }}
       >
-        <MapPitch pitch={preset.pitch} />
-        <MapBuildings3D enabled={preset.buildings} />
+        <MapPitch pitch={is3D ? PITCH_3D : 0} />
+        <MapBuildings3D enabled={is3D} />
 
-        <div className="pointer-events-none absolute inset-y-3 left-3 z-10 flex max-w-[calc(100%-5.5rem)] items-start sm:max-w-sm">
+        <div className="pointer-events-none absolute inset-y-3 left-3 z-10 flex max-w-[calc(100%-1.5rem)] items-start sm:max-w-sm">
           {railOpen ? (
             <div className="pointer-events-auto flex max-h-full w-80 max-w-full flex-col overflow-hidden rounded-xl border bg-background shadow-sm">
               <div className="flex items-start justify-between gap-2 border-b px-4 py-3.5">
@@ -170,19 +165,15 @@ export function MapCanvas({
           )}
         </div>
 
-        <MapBasemapSelect
-          value={basemap}
-          onValueChange={(value) => setBasemap(value as BasemapId)}
-          options={BASEMAP_OPTIONS}
-          position="top-right"
-        />
-
         <MapControls
           position="bottom-right"
           showZoom
           showCompass
           showLocate={controls?.showLocate}
           showFullscreen={controls?.showFullscreen}
+          show3D
+          is3DActive={is3D}
+          on3DToggle={() => setIs3D((v) => !v)}
         />
       </Map>
     </div>

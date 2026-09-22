@@ -18,7 +18,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { X, Minus, Plus, Locate, Maximize, Loader2 } from "lucide-react";
+import { X, Minus, Plus, Locate, Maximize, Loader2, Box } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 
 import { cn } from "@workspace/ui/lib/utils";
@@ -926,6 +926,15 @@ type MapControlsProps = {
   showLocate?: boolean;
   /** Show fullscreen toggle button (default: false) */
   showFullscreen?: boolean;
+  /**
+   * Show a 3D toggle button that tilts the camera and extrudes buildings.
+   * Controlled — pair with `is3DActive` and `on3DToggle`. (default: false)
+   */
+  show3D?: boolean;
+  /** Whether the 3D view is currently on. */
+  is3DActive?: boolean;
+  /** Called when the 3D button is clicked. */
+  on3DToggle?: () => void;
   /** Additional CSS classes for the controls container */
   className?: string;
   /** Callback with user coordinates when located */
@@ -952,16 +961,20 @@ function ControlButton({
   label,
   children,
   disabled = false,
+  active = false,
 }: {
   onClick: () => void;
   label: string;
   children: React.ReactNode;
   disabled?: boolean;
+  /** Pressed/toggled-on visual state, e.g. for the 3D control. */
+  active?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
+      aria-pressed={active}
       type="button"
       className={cn(
         "flex size-8 items-center justify-center transition-colors",
@@ -969,6 +982,7 @@ function ControlButton({
         "hover:bg-accent dark:hover:bg-accent/40",
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
         "disabled:pointer-events-none disabled:opacity-50",
+        active && "bg-accent text-primary dark:bg-accent/40",
       )}
       disabled={disabled}
     >
@@ -983,6 +997,9 @@ function MapControls({
   showCompass = false,
   showLocate = false,
   showFullscreen = false,
+  show3D = false,
+  is3DActive = false,
+  on3DToggle,
   className,
   onLocate,
 }: MapControlsProps) {
@@ -1080,6 +1097,17 @@ function MapControls({
         <ControlGroup>
           <ControlButton onClick={handleFullscreen} label="Toggle fullscreen">
             <Maximize className="size-4" />
+          </ControlButton>
+        </ControlGroup>
+      )}
+      {show3D && (
+        <ControlGroup>
+          <ControlButton
+            onClick={() => on3DToggle?.()}
+            label={is3DActive ? "Turn off 3D view" : "Turn on 3D view"}
+            active={is3DActive}
+          >
+            <Box className="size-4" />
           </ControlButton>
         </ControlGroup>
       )}

@@ -27,7 +27,7 @@ export function OpsMapView() {
   return (
     <MapCanvas
       title="Network map"
-      description="Explore Nairobi on Clean, Streets, or 3D basemaps."
+      description="Live view of Nairobi's driver network and corridor coverage."
       summary={FLEET_STATUS.map((stat) => ({ ...stat }))}
       note="Live GPS overlays connecting soon"
       loadingLabel="Loading network map"
