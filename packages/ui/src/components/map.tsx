@@ -27,6 +27,32 @@ const defaultStyles = {
   light: "https://tiles.openfreemap.org/styles/liberty",
 };
 
+const CARTO_STYLES = {
+  light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+};
+const OPENFREEMAP_STYLES = {
+  light: "https://tiles.openfreemap.org/styles/liberty",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+};
+
+/** Neither provider is guaranteed reachable (CDN filtering, ad blockers,
+ * network hiccups) — whichever one is currently failing, the other is the
+ * fallback. */
+function fallbackStyleUrl(
+  currentStyle: MapStyleOption | null,
+  dark: boolean,
+): string {
+  const isCarto = typeof currentStyle === "string" && currentStyle.includes("cartocdn");
+  const target = isCarto ? OPENFREEMAP_STYLES : CARTO_STYLES;
+  return dark ? target.dark : target.light;
+}
+
+/** A style host that's slow, blocked, or silently rejected by maplibre-gl
+ * never fires "load" or an "error" maplibre listens for — it just hangs.
+ * This is the backstop so the map can never spin forever. */
+const LOAD_TIMEOUT_MS = 15_000;
+
 // A tile-less, dependency-free style with a transparent background. Use it for
 // data visualizations (choropleths, world arcs, dot maps) where you draw your
 // own layers and don't need a street basemap. The easiest way to opt in is the
@@ -219,6 +245,24 @@ function DefaultLoader() {
   );
 }
 
+/** Shown once both the original basemap and its fallback provider have
+ * failed/timed out — an infinite spinner gives the viewer (and us, in
+ * support) no signal that something is actually wrong. */
+function LoadFailedOverlay({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="bg-background/80 absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 backdrop-blur-xs">
+      <p className="text-muted-foreground text-sm">Couldn&apos;t load the map</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="text-foreground text-sm font-medium underline underline-offset-4"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 function getViewport(map: MapLibreGL.Map): MapViewport {
   const center = map.getCenter();
   return {
@@ -248,10 +292,15 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [pendingStyle, setPendingStyle] = useState<MapStyleOption | null>(null);
   const currentStyleRef = useRef<MapStyleOption | null>(null);
   const styleSwapInFlightRef = useRef(false);
   const internalUpdateRef = useRef(false);
+  const hasFallenBackRef = useRef(false);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const retry = useCallback(() => setRetryCount((c) => c + 1), []);
   const resolvedTheme = useResolvedTheme(themeProp);
 
   const isControlled = viewport !== undefined && onViewportChange !== undefined;
@@ -286,6 +335,8 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     const initialStyle =
       resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
     currentStyleRef.current = initialStyle;
+    hasFallenBackRef.current = false;
+    setLoadFailed(false);
 
     const map = new MapLibreGL.Map({
       container: containerRef.current,
@@ -297,6 +348,33 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       ...props,
       ...viewport,
     });
+
+    function clearLoadTimeout() {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+    }
+
+    function scheduleLoadTimeout() {
+      clearLoadTimeout();
+      loadTimeoutRef.current = setTimeout(handleLoadFailure, LOAD_TIMEOUT_MS);
+    }
+
+    // One fallback attempt (switch basemap provider), then give up rather
+    // than loop forever between two providers that are both unreachable.
+    function handleLoadFailure() {
+      if (hasFallenBackRef.current) {
+        clearLoadTimeout();
+        setLoadFailed(true);
+        return;
+      }
+      hasFallenBackRef.current = true;
+      const fallback = fallbackStyleUrl(currentStyleRef.current, resolvedTheme === "dark");
+      currentStyleRef.current = fallback;
+      map.setStyle(fallback, { diff: false });
+      scheduleLoadTimeout();
+    }
 
     const styleLoadHandler = () => {
       styleSwapInFlightRef.current = false;
@@ -311,6 +389,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       });
     };
     const loadHandler = () => {
+      clearLoadTimeout();
       setIsLoaded(true);
       requestAnimationFrame(() => {
         try {
@@ -322,20 +401,8 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     };
     const errorHandler = (event: { error?: { message?: string }; message?: string }) => {
       const message = event.error?.message ?? event.message ?? "";
-      // If the requested basemap style fails, fall back to Carto so the map isn't blank.
-      if (
-        typeof currentStyleRef.current === "string" &&
-        currentStyleRef.current.includes("openfreemap") &&
-        /style|fetch|network|failed|load/i.test(message)
-      ) {
-        const fallback =
-          resolvedTheme === "dark"
-            ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-            : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
-        if (currentStyleRef.current !== fallback) {
-          currentStyleRef.current = fallback;
-          map.setStyle(fallback, { diff: false });
-        }
+      if (/style|fetch|network|failed|load/i.test(message)) {
+        handleLoadFailure();
       }
     };
 
@@ -350,8 +417,10 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     map.on("error", errorHandler);
     map.on("move", handleMove);
     setMapInstance(map);
+    scheduleLoadTimeout();
 
     return () => {
+      clearLoadTimeout();
       map.off("load", loadHandler);
       map.off("style.load", styleLoadHandler);
       map.off("error", errorHandler);
@@ -361,8 +430,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       setIsStyleLoaded(false);
       setMapInstance(null);
     };
+    // Deliberately excludes most deps (style/theme changes are handled by
+    // the dedicated style-swap effect below) — retryCount is the one
+    // intentional trigger to tear down and recreate the map instance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [retryCount]);
 
   // Sync controlled viewport to map
   useEffect(() => {
@@ -438,7 +510,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       <div className={cn("relative h-full w-full", className)}>
         {/* MapLibre must own an empty node — overlays stay as siblings. */}
         <div ref={containerRef} className="absolute inset-0 h-full w-full" />
-        {(!isLoaded || loading) && <DefaultLoader />}
+        {loadFailed ? (
+          <LoadFailedOverlay onRetry={retry} />
+        ) : (
+          (!isLoaded || loading) && <DefaultLoader />
+        )}
         {mapInstance ? children : null}
       </div>
     </MapContext.Provider>
