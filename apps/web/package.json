@@ -8,7 +8,7 @@
     "dev:turbo": "tsx scripts/fix-importmap.ts && next dev --turbopack",
     "generate:ai-seo": "tsx scripts/generate-ai-seo-static.ts",
     "prebuild": "npm run generate:ai-seo && tsx scripts/fix-importmap.ts",
-    "build": "prisma generate && next build --webpack",
+    "build": "node ../../scripts/prisma-generate-safe.mjs && next build --webpack",
     "postbuild": "node scripts/run-sitemap.mjs",
     "start": "next start",
     "lint": "eslint",

@@ -1,6 +1,7 @@
 /**
- * Windows-safe Prisma generate for concurrent turbo `dev` (api + ops).
- * Retries on EBUSY when both workspaces copy the same client files.
+ * Windows-safe Prisma generate for concurrent turbo `dev`/`build` (api, ops,
+ * web all generate against the same schema). Retries on EBUSY when more than
+ * one workspace copies the same hoisted client files at once.
  */
 import { spawnSync } from "node:child_process"
 import path from "node:path"
