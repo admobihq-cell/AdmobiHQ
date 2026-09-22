@@ -194,6 +194,7 @@ export function DeliveryTrackView({ id }: { id: string }) {
             <Map
               center={truckLng && truckLat ? [truckLng, truckLat] : undefined}
               zoom={13.2}
+              loadingLabel="Loading delivery route"
               className="absolute inset-0 h-full w-full"
             >
               <MapRoute coordinates={delivery.route} color="#f97316" width={4} interactive={false} />

@@ -19,6 +19,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { X, Minus, Plus, Locate, Maximize, Loader2 } from "lucide-react";
+import { ThinkingOrb } from "thinking-orbs";
 
 import { cn } from "@workspace/ui/lib/utils";
 
@@ -231,16 +232,15 @@ type MapProps = {
   onViewportChange?: (viewport: MapViewport) => void;
   /** Show a loading indicator on the map */
   loading?: boolean;
+  /** Text shown under the loading indicator. @default "Loading map" */
+  loadingLabel?: string;
 } & Omit<MapLibreGL.MapOptions, "container" | "style">;
 
-function DefaultLoader() {
+function DefaultLoader({ label = "Loading map" }: { label?: string }) {
   return (
-    <div className="bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-xs">
-      <div className="flex gap-1">
-        <span className="bg-muted-foreground/60 size-1.5 animate-pulse rounded-full" />
-        <span className="bg-muted-foreground/60 size-1.5 animate-pulse rounded-full [animation-delay:150ms]" />
-        <span className="bg-muted-foreground/60 size-1.5 animate-pulse rounded-full [animation-delay:300ms]" />
-      </div>
+    <div className="bg-background/50 absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 backdrop-blur-xs">
+      <ThinkingOrb state="searching" size={20} aria-label={label} />
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
     </div>
   );
 }
@@ -284,6 +284,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     viewport,
     onViewportChange,
     loading = false,
+    loadingLabel,
     ...props
   },
   ref,
@@ -513,7 +514,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
         {loadFailed ? (
           <LoadFailedOverlay onRetry={retry} />
         ) : (
-          (!isLoaded || loading) && <DefaultLoader />
+          (!isLoaded || loading) && <DefaultLoader label={loadingLabel} />
         )}
         {mapInstance ? children : null}
       </div>
