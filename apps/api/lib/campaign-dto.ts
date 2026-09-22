@@ -69,13 +69,14 @@ export function toCampaignDto(
  * full CampaignDto separately, so this deliberately omits creatives, notes and
  * corridors. */
 export function toCampaignListItemDto(
-  campaign: Campaign & { _count: { creatives: number } },
+  campaign: Campaign & { _count: { creatives: number }; org: { name: string } | null },
   today?: Date,
 ): CampaignListItemDto {
   return {
     id: campaign.id,
     name: campaign.name,
     contact_email: campaign.contact_email,
+    advertiser_org_name: campaign.org?.name?.trim() || null,
     market: campaign.market,
     format: campaign.format,
     budget_kes: campaign.budget_kes?.toString() ?? null,

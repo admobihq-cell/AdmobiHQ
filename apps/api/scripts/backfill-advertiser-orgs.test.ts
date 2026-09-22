@@ -17,6 +17,9 @@ vi.mock("@/lib/customer-clerk", () => ({
     const companyName = (metadata as Record<string, unknown>).companyName
     return typeof companyName === "string" && companyName.trim() ? companyName.trim() : null
   },
+  // Neither FAKE_USERS entry has a firstName, so the fallback always resolves
+  // to the no-name case.
+  defaultOrgName: vi.fn(async () => "My Organization"),
   customerClerkClient: {
     users: {
       getUserList: vi.fn(async ({ offset }: { offset: number }) => ({
@@ -74,7 +77,7 @@ describe.skipIf(!databaseUrl)("backfillAdvertiserOrgs", () => {
 
       const memberB = await prisma.advertiserMember.findUnique({ where: { clerk_user_id: "backfill-test-user-b" } })
       const orgB = await prisma.advertiserOrg.findUnique({ where: { id: memberB!.org_id } })
-      expect(orgB?.name).toBe("")
+      expect(orgB?.name).toBe("My Organization")
     },
     30_000,
   )

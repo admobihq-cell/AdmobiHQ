@@ -59,3 +59,12 @@ export async function getCustomerName(clerkUserId: string): Promise<string | nul
     return null
   }
 }
+
+/** Used when sign-up skipped the optional company field (e.g. Google SSO).
+ * The org always gets a real name now — no more empty-string orgs waiting on
+ * a blocking "name your company" prompt. customer-web's <OrgNameNudge>
+ * recognizes this exact pattern to offer a one-time, dismissible rename. */
+export async function defaultOrgName(clerkUserId: string): Promise<string> {
+  const firstName = await getCustomerName(clerkUserId)
+  return firstName ? `${firstName}'s Organization` : "My Organization"
+}

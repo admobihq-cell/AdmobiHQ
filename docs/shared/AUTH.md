@@ -96,54 +96,43 @@ its submit and Google buttons — see
 [driver-sign-up.tsx](../../apps/driver-web/components/auth/driver-sign-up.tsx), and
 [admobi-otp-sign-up-form.tsx](../../apps/ops/components/admobi-otp-sign-up-form.tsx).
 
-### Advertiser sign-up collects a company name
+### Advertiser sign-up collects a name and an optional company name
 
-`<AdvertiserSignUp>` asks for a company or organization name and passes it as
-`unsafeMetadata: { companyName }` to both `signUp.create()` and `signUp.sso()`. Clerk copies
-`unsafeMetadata` onto the created user once the sign-up completes, so the value survives the
-Google OAuth round-trip with no extra storage of our own — which matters because the ops
-Users list reads Clerk, not Postgres (`listPlatformUsers` in
+`<AdvertiserSignUp>` requires a first and last name — sent as Clerk's native `firstName` /
+`lastName` params, not metadata — and asks separately for an optional company or organization
+name, passed as `unsafeMetadata: { companyName }`, to both `signUp.create()` and
+`signUp.sso()`. Clerk copies both onto the created user once sign-up completes, so they
+survive the Google OAuth round-trip with no extra storage of our own — which matters because
+the ops Users list reads Clerk, not Postgres (`listPlatformUsers` in
 [apps/api/lib/platform-users.ts](../../apps/api/lib/platform-users.ts)).
 
-The field is **optional at sign-up**, and deliberately so. Google's consent screen has no
-place to ask for a company, and Clerk owns the OAuth step, so gating "Continue with Google"
-on the field only produced a permanently dead button with nothing explaining why. Instead
-[`<CompanyNamePrompt>`](../../apps/customer-web/components/shell/company-name-prompt.tsx),
-mounted in the app shell, opens a non-dismissible dialog on first load for any signed-in user
-whose `unsafeMetadata.companyName` is empty, and writes it with `user.update()` —
-`unsafeMetadata` is client-writable, so this needs no API route. Whichever path skipped the
-field, the value still gets collected exactly once.
+Name is required because Google's consent screen always returns one and the email-code path
+has nowhere else to collect it; company stays **optional at sign-up**, deliberately, since
+gating "Continue with Google" on it only produced a dead button with nothing explaining why.
+Whoever signs up without a company gets a real org name anyway:
+[`defaultOrgName`](../../apps/api/lib/customer-clerk.ts) falls back to `"{FirstName}'s
+Organization"` (or `"My Organization"` if even that's missing) wherever an org gets created —
+lazy bootstrap in [apps/api/lib/customer-auth.ts](../../apps/api/lib/customer-auth.ts) and the
+one-off `apps/api/scripts/backfill-advertiser-orgs.ts` both call it, so no org is ever created
+with an empty name. `<OrgNameNudge>` (below) is the non-blocking way to invite a rename later —
+there's no blocking "name your company" dialog anymore.
 
-That dialog is modal, so it has to win the first-load race against the product tour, which
-auto-opens for anyone with no completion record. Left alone the two fired on the same render:
-the dialog took focus while its overlay covered the very sidebar items the tour was pointing
-at. `<AppShell>` now owns the ordering: it passes an `autoStartReady` flag to
-[`<TourProvider>`](../../packages/ui/src/components/tour-provider.tsx), and only raises it
-once `readCompanyName(user?.unsafeMetadata)` is non-empty **and** a short settle has elapsed.
-The settle is not decoration — the dialog fades out over `duration-100`, so handing the tour
-its go-ahead in the same commit opens it underneath a scrim that is still on screen.
-
-`autoStartReady` defaults to `true`, so driver-web and ops — neither of which prompts for
-anything — are unchanged. The gate lives in the shell rather than in `<TourProvider>` because
-the provider is shared: it knows about "something is holding me back", not about companies or
-dialog timings.
-
-Three client call sites write that key, so it lives in one place —
-[lib/company-name.ts](../../apps/customer-web/lib/company-name.ts) exports `readCompanyName`
-and `withCompanyName` (which **merges**, since `user.update()` replaces the whole metadata
-bag). The server-side reader is `readCompanyName` in
-[apps/api/lib/customer-clerk.ts](../../apps/api/lib/customer-clerk.ts).
+If Clerk ever hands back a user missing first or last name (pre-dating this change, or a
+Google account with an incomplete profile), `<ProfileNameNudge>` in
+[apps/customer-web/components/shell/profile-name-nudge.tsx](../../apps/customer-web/components/shell/profile-name-nudge.tsx)
+— wrapping the sidebar's user pill — nudges them to Settings → Account once, non-blocking, and
+stays quiet after a dismiss.
 
 ### Settings → Account is the place to finish an account
 
 [`<AccountSettingsView>`](../../apps/customer-web/components/settings/account-settings-view.tsx)
-edits first name, last name, **username**, and **company** in one `user.update()` call, and
-offers **account deletion** behind a confirm dialog. Details worth keeping:
+edits first name, last name, and **username** in one `user.update()` call, and offers
+**account deletion** behind a confirm dialog. Details worth keeping:
 
 - The username is only sent when non-empty — Clerk reads `""` as "clear it", so an untouched
   field would otherwise wipe an existing handle.
-- Company is required to save. It is the one field `<CompanyNamePrompt>` re-demands on next
-  load, so letting settings blank it would trap the user in that dialog.
+- Company/organization name lives on `AdvertiserOrg`, not the Clerk user, and is renamed from
+  Settings → Team, not here — see `<OrgNameNudge>` above.
 - Delete is gated on `user.deleteSelfEnabled` (a Clerk instance setting), and on success does
   a **hard** `window.location.assign("/auth/login")` — the Clerk client still holds a session
   for a user that no longer exists, and only a full reload clears it.
@@ -305,7 +294,9 @@ There's no sign-up-time org creation — [apps/api/lib/customer-auth.ts](../../a
 
 Same two-layer shape as ops: `is_owner` bypasses every permission check (like `org:admin`); everyone else gets whatever their assigned `AdvertiserRole.permissions` grants, from the closed `AdvertiserPermission` set ([packages/ops-contracts/src/enums.ts](../../packages/ops-contracts/src/enums.ts)). One starter role (`Member`, deliberately not `campaigns:submit` — that stays admin-only) is seeded once, shared by every org (`org_id = null`), by [apps/web/scripts/seed-advertiser-roles.ts](../../apps/web/scripts/seed-advertiser-roles.ts) — orgs that want a tiered submitter or read-only role create it themselves under Settings → Team → Roles. `getCustomerAccess()` returns `{ status: "authorized", userId, orgId, isOwner, permissions }` and caches it 60s per user, same pattern as `resolveOpsPermissions()`; `requireCustomerPermission()` mirrors `requireOpsPermission()`.
 
-Campaigns are `org_id`-scoped (see [apps/api/lib/campaign-store.ts](../../apps/api/lib/campaign-store.ts)), and carry `created_by_name` on read — resolved from the retained `Campaign.clerk_user_id` — so a team can see who drafted what. Team management is live under `/v1/customer/org/**`: rename and billing details (`org:manage`, with `billing:write` additionally required to change `AdvertiserOrg.billing_email` / `tax_pin` — the KRA PIN a Kenyan tax invoice is issued against, present ahead of the Pesapal work that will consume it), list/invite/remove members (`team:manage`), accept invites via identity-only auth (no lazy bootstrap, so the invitee joins the inviting org instead of getting a solo org), and role listing/editing. Admins can customize starter roles (clone-on-save per org) or create org-scoped roles via `GET/POST /v1/customer/org/roles` and `PATCH/DELETE /v1/customer/org/roles/[roleId]` — Settings → Team → Roles on customer-web, Settings → Team → Manage roles on customer-mobile. Invite emails go through Resend; the accept landing is `/invitations/[token]` on customer-web, which offers **Create an account** as the primary action (most invitees have never used Admobi) and suppresses the company-name field on that sign-up path. customer-mobile has the twin route `app/invitations/[token].tsx`, reachable from the `admobihq-app://` scheme and — once the `.well-known` files below are configured — as a universal link on `app.admobihq.com/invitations/*`. Organization name defaults to `"{FirstName}'s Organization"` at bootstrap when Clerk's `companyName` metadata is empty (Google SSO, say) — customer-web's `<OrgNameNudge>` offers a one-time, dismissible rename prompt for that exact case, replacing the old blocking `<CompanyNamePrompt>` modal. Ops campaign review and the Users list read `AdvertiserOrg.name` via membership join, not Clerk. Org activity feed: `GET /v1/customer/org/activity` (`activity:read`) — allowlisted projection over `audit_events` (never raw `summary` / ops emails). Member removal is soft-delete (`removed_at`); re-invite reactivates the row. Campaign submit/review notifications fan out to every active member with `campaigns:read`, and each `CustomerNotification` is stamped with `org_id` so the inbox filters to the caller's current org — leaving an org stops surfacing its campaign notices. Sole admins cannot delete their Clerk account until they transfer admin or delete the organization. Support cases stamp `org_id`; members with `support:read_all` see all org cases. Ops directory: `GET /v1/advertiser-orgs` (+ `[id]`) gated on the `campaigns` permission — sidebar **Advertiser orgs** in ops web and ops-mobile.
+Campaigns are `org_id`-scoped (see [apps/api/lib/campaign-store.ts](../../apps/api/lib/campaign-store.ts)), and carry `created_by_name` on read — resolved from the retained `Campaign.clerk_user_id` — so a team can see who drafted what. Team management is live under `/v1/customer/org/**`: rename and billing details (`org:manage`, with `billing:write` additionally required to change `AdvertiserOrg.billing_email` / `tax_pin` — the KRA PIN a Kenyan tax invoice is issued against, present ahead of the Pesapal work that will consume it), list/invite/remove members (`team:manage`), accept invites via identity-only auth (no lazy bootstrap, so the invitee joins the inviting org instead of getting a solo org), and role listing/editing. Admins can customize starter roles (clone-on-save per org) or create org-scoped roles via `GET/POST /v1/customer/org/roles` and `PATCH/DELETE /v1/customer/org/roles/[roleId]` — Settings → Team → Roles on customer-web, Settings → Team → Manage roles on customer-mobile. Invite emails go through Resend; the accept landing is `/invitations/[token]` on customer-web, which offers **Create an account** as the primary action (most invitees have never used Admobi) and suppresses the company-name field on that sign-up path. customer-mobile has the twin route `app/invitations/[token].tsx`, reachable from the `admobihq-app://` scheme and — once the `.well-known` files below are configured — as a universal link on `app.admobihq.com/invitations/*`. Organization name defaults to `"{FirstName}'s Organization"` at bootstrap when Clerk's `companyName` metadata is empty (Google SSO, say) — customer-web's `<OrgNameNudge>` offers a one-time, dismissible rename prompt for that exact case, replacing the old blocking `<CompanyNamePrompt>` modal. Ops campaign review, the ops Campaigns list's Advertiser column, and the Users list all read
+`AdvertiserOrg.name` via `campaign.org_id` / membership join, not Clerk — the Campaigns list
+falls back to the campaign's free-text `contact_email` only if the campaign has no org. Org activity feed: `GET /v1/customer/org/activity` (`activity:read`) — allowlisted projection over `audit_events` (never raw `summary` / ops emails). Member removal is soft-delete (`removed_at`); re-invite reactivates the row. Campaign submit/review notifications fan out to every active member with `campaigns:read`, and each `CustomerNotification` is stamped with `org_id` so the inbox filters to the caller's current org — leaving an org stops surfacing its campaign notices. Sole admins cannot delete their Clerk account until they transfer admin or delete the organization. Support cases stamp `org_id`; members with `support:read_all` see all org cases. Ops directory: `GET /v1/advertiser-orgs` (+ `[id]`) gated on the `campaigns` permission — sidebar **Advertiser orgs** in ops web and ops-mobile.
 
 **Accepting an invitation is an explicit, reversible choice.** Nothing about an invite link may move the invitee's account on its own — opening one out of curiosity must be safe, and the page never auto-accepts.
 

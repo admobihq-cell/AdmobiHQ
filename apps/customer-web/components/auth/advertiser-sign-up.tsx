@@ -36,6 +36,8 @@ export function AdvertiserSignUp() {
   // seed a throwaway one and then immediately abandon it on accept.
   const joiningTeam = redirectUrl.startsWith("/invitations/")
   const [email, setEmail] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [company, setCompany] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "code">("email")
@@ -43,7 +45,7 @@ export function AdvertiserSignUp() {
   const [error, setError] = useState<string | null>(null)
 
   async function handleSendCode() {
-    if (!signUp || !email.trim()) return
+    if (!signUp || !email.trim() || !firstName.trim() || !lastName.trim()) return
     setSubmitting(true)
     setError(null)
 
@@ -51,6 +53,8 @@ export function AdvertiserSignUp() {
     // copies it onto the created user, which is what the ops Users list reads.
     const { error: createError } = await signUp.create({
       emailAddress: email.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
       ...companyMetadata(company),
     })
     if (createError) {
@@ -194,6 +198,31 @@ export function AdvertiserSignUp() {
                 : "We'll email you a one-time code."}
             </p>
           </div>
+          <div className="flex gap-3">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="firstName">First name</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Victor"
+                autoComplete="given-name"
+                disabled={submitting}
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor="lastName">Last name</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Musembi"
+                autoComplete="family-name"
+                disabled={submitting}
+              />
+            </div>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -204,7 +233,6 @@ export function AdvertiserSignUp() {
               placeholder="you@example.com"
               autoComplete="email"
               disabled={submitting}
-              autoFocus
             />
           </div>
           {joiningTeam ? null : (
@@ -231,7 +259,9 @@ export function AdvertiserSignUp() {
           <Button
             className="w-full"
             size="lg"
-            disabled={submitting || !signUp || !email.trim()}
+            disabled={
+              submitting || !signUp || !email.trim() || !firstName.trim() || !lastName.trim()
+            }
             loading={submitting}
             loadingText="Sending…"
             onClick={() => void handleSendCode()}

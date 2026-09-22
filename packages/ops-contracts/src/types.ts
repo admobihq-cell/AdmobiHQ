@@ -199,6 +199,7 @@ export type CampaignListItemDto = {
   id: number
   name: string
   contact_email: string | null
+  advertiser_org_name: string | null
   market: string | null
   format: string
   budget_kes: string | null

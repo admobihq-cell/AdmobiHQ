@@ -85,7 +85,7 @@ const columns: ColumnDef<CampaignListItemDto, any>[] = [
     meta: { cellClassName: "p-0" },
     cell: ({ row }) => (
       <CampaignLink id={row.original.id} className="block px-2 py-2">
-        {row.original.contact_email ?? "—"}
+        {row.original.advertiser_org_name ?? row.original.contact_email ?? "—"}
       </CampaignLink>
     ),
   },

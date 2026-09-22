@@ -6,8 +6,10 @@ import { useSignUp } from "@clerk/nextjs"
 import { AdmobiEmailField } from "@/components/admobi-email-field"
 import { isAdmobiEmail } from "@/lib/allowed-email"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@workspace/ui/components/input-otp"
 import { Label } from "@workspace/ui/components/label"
+
+const CODE_LENGTH = 6
 
 export function AdmobiOtpSignUpForm() {
   const { signUp } = useSignUp()
@@ -52,7 +54,7 @@ export function AdmobiOtpSignUpForm() {
 
   async function handleVerifyCode(event: React.FormEvent) {
     event.preventDefault()
-    if (!signUp || !code.trim()) {
+    if (!signUp || code.trim().length < CODE_LENGTH) {
       return
     }
 
@@ -105,21 +107,29 @@ export function AdmobiOtpSignUpForm() {
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sign-up-code">Verification code</Label>
-          <Input
+        <div className="flex flex-col items-center gap-2">
+          <Label htmlFor="sign-up-code" className="self-start">
+            Verification code
+          </Label>
+          <InputOTP
             id="sign-up-code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
             value={code}
-            onChange={(event) => setCode(event.target.value)}
+            onChange={setCode}
+            maxLength={CODE_LENGTH}
             disabled={submitting}
-          />
+            autoFocus
+          >
+            <InputOTPGroup>
+              {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                <InputOTPSlot key={i} index={i} />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
         </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <Button type="submit" disabled={submitting || !code.trim()}>
+        <Button type="submit" disabled={submitting || code.trim().length < CODE_LENGTH}>
           {submitting ? "Verifying..." : "Verify and continue"}
         </Button>
 

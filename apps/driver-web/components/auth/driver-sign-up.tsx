@@ -10,6 +10,7 @@ import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
 import { Button } from "@workspace/ui/components/button"
 import { GoogleIcon } from "@workspace/ui/components/google-icon"
 import { Input } from "@workspace/ui/components/input"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@workspace/ui/components/input-otp"
 import { Label } from "@workspace/ui/components/label"
 
 import { appPublicUrl, webPublicUrl } from "@/lib/site-urls"
@@ -117,18 +118,24 @@ export function DriverSignUp() {
               Enter the {CODE_LENGTH}-digit code sent to {email.trim()}
             </p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="code">Verification code</Label>
-            <Input
+          <div className="flex flex-col items-center gap-1.5">
+            <Label htmlFor="code" className="self-start">
+              Verification code
+            </Label>
+            <InputOTP
               id="code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              inputMode="numeric"
+              onChange={setCode}
               maxLength={CODE_LENGTH}
               disabled={submitting}
               autoFocus
-            />
+            >
+              <InputOTPGroup>
+                {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button

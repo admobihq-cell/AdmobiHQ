@@ -4,7 +4,7 @@ import { headers } from "next/headers"
 
 import { ADVERTISER_PERMISSIONS, type AdvertiserPermission } from "@workspace/ops-contracts"
 
-import { getCustomerCompanyName, getCustomerName } from "@/lib/customer-clerk"
+import { defaultOrgName, getCustomerCompanyName } from "@/lib/customer-clerk"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -78,15 +78,6 @@ async function resolveCustomerUserId(): Promise<string | null> {
 
 function isUniqueConstraintError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
-}
-
-/** Used when sign-up skipped the optional company field (e.g. Google SSO).
- * The org always gets a real name now — no more empty-string orgs waiting on
- * a blocking "name your company" prompt. customer-web's <OrgNameNudge>
- * recognizes this exact pattern to offer a one-time, dismissible rename. */
-async function defaultOrgName(clerkUserId: string): Promise<string> {
-  const firstName = await getCustomerName(clerkUserId)
-  return firstName ? `${firstName}'s Organization` : "My Organization"
 }
 
 async function resolveRolePermissions(roleId: number | null): Promise<Set<AdvertiserPermission>> {

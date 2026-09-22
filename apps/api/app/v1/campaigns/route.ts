@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       orderBy: { created_at: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { _count: { select: { creatives: true } } },
+      include: { _count: { select: { creatives: true } }, org: { select: { name: true } } },
     }),
     prisma.campaign.count({ where }),
   ])

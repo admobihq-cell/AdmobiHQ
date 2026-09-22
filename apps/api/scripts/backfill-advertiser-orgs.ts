@@ -1,6 +1,6 @@
 import "@/lib/load-env"
 
-import { customerClerkClient, readCompanyName } from "@/lib/customer-clerk"
+import { customerClerkClient, defaultOrgName, readCompanyName } from "@/lib/customer-clerk"
 import { prisma } from "@/lib/prisma"
 import { fileURLToPath } from "node:url"
 
@@ -8,10 +8,12 @@ const PAGE_SIZE = 100
 
 /**
  * One-off, idempotent: for every customer Clerk user with no AdvertiserMember
- * row yet, creates an org (named from their Clerk company metadata, empty if
- * unset) and an owner membership, then points their campaigns at it. Safe to
- * run more than once — a user who already has a membership gets no new org,
- * though an owner's org-less campaigns are still adopted (see below).
+ * row yet, creates an org (named from their Clerk company metadata, falling
+ * back to the same "<FirstName>'s Organization" / "My Organization" default
+ * lazy bootstrap uses) and an owner membership, then points their campaigns
+ * at it. Safe to run more than once — a user who already has a membership
+ * gets no new org, though an owner's org-less campaigns are still adopted
+ * (see below).
  */
 export async function backfillAdvertiserOrgs(): Promise<{
   orgsCreated: number
@@ -41,7 +43,7 @@ export async function backfillAdvertiserOrgs(): Promise<{
         continue
       }
 
-      const name = readCompanyName(user) ?? ""
+      const name = readCompanyName(user) ?? (await defaultOrgName(user.id))
       await prisma.$transaction(async (tx) => {
         const org = await tx.advertiserOrg.create({ data: { name } })
         await tx.advertiserMember.create({

@@ -191,7 +191,7 @@ export async function listCampaigns(
       orderBy: { created_at: "desc" },
       skip: (parsed.page - 1) * parsed.pageSize,
       take: parsed.pageSize,
-      include: { _count: { select: { creatives: true } } },
+      include: { _count: { select: { creatives: true } }, org: { select: { name: true } } },
     }),
     prisma.campaign.count({ where }),
   ])
@@ -201,6 +201,7 @@ export async function listCampaigns(
       id: campaign.id,
       name: campaign.name,
       contact_email: campaign.contact_email,
+      advertiser_org_name: campaign.org?.name?.trim() || null,
       market: campaign.market,
       format: campaign.format,
       budget_kes: campaign.budget_kes?.toString() ?? null,
