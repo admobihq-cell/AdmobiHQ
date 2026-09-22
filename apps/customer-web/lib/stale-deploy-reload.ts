@@ -1,4 +1,5 @@
 const RELOAD_FLAG = "admobi:stale-deploy-reloaded"
+const STATIC_ASSET_PREFIX = "/_next/static/"
 
 /**
  * True for a failed request to a Next.js build asset — the content-hashed
@@ -11,7 +12,7 @@ const RELOAD_FLAG = "admobi:stale-deploy-reloaded"
 export function isStaleDeployAssetUrl(url: string | null | undefined): boolean {
   if (!url) return false
   try {
-    return new URL(url, "http://localhost").pathname.startsWith("/_next/static/")
+    return new URL(url, "http://localhost").pathname.startsWith(STATIC_ASSET_PREFIX)
   } catch {
     return false
   }
@@ -62,4 +63,71 @@ export function registerStaleDeployReload(): () => void {
     window.removeEventListener("error", handleResourceError, true)
     window.removeEventListener("unhandledrejection", handleRejection)
   }
+}
+
+/**
+ * The pre-hydration half of stale-deploy recovery. registerStaleDeployReload
+ * above only starts listening once React has hydrated and mounted
+ * <StaleDeployReload> — but if the very first script the browser tries to
+ * load is itself the stale one, the app never boots that far, so nothing
+ * ever registers and the tab is stuck. This runs as a plain (non-module)
+ * inline <script> in <head>, before any module script can fail, so it
+ * catches that case too.
+ *
+ * Self-contained on purpose: serialized via `.toString()` into a literal
+ * script tag (see getStaleDeployBlockingScript), so it can't close over
+ * anything outside its own body — config comes in as arguments instead.
+ * Keep its matching behavior in sync with isStaleDeployAssetUrl /
+ * isStaleDeployRejection above; it can't share their code, only their logic.
+ */
+function detectStaleDeployBeforeHydration(
+  flagKey: string,
+  staticPrefix: string,
+  chunkPatternSource: string,
+) {
+  function isStaleAssetUrl(url: unknown): boolean {
+    if (typeof url !== "string" || !url) return false
+    try {
+      return new URL(url, window.location.href).pathname.indexOf(staticPrefix) === 0
+    } catch {
+      return false
+    }
+  }
+
+  function reloadOnce() {
+    try {
+      if (sessionStorage.getItem(flagKey)) return
+      sessionStorage.setItem(flagKey, "1")
+    } catch {
+      // sessionStorage unavailable (private mode, etc.) — reload anyway,
+      // just without the once-per-session guard.
+    }
+    window.location.reload()
+  }
+
+  window.addEventListener(
+    "error",
+    (event) => {
+      const target = event.target as { src?: string; href?: string } | null
+      if (isStaleAssetUrl(target?.src ?? target?.href)) reloadOnce()
+    },
+    true,
+  )
+
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = (event as PromiseRejectionEvent).reason
+    const message = reason instanceof Error ? reason.message : String(reason ?? "")
+    if (new RegExp(chunkPatternSource, "i").test(message)) reloadOnce()
+  })
+}
+
+/** Builds the literal inline script — see detectStaleDeployBeforeHydration's
+ * doc comment. Render via <script dangerouslySetInnerHTML>, the same way
+ * ThemeScript works: next/script lands after first paint, which is too late
+ * for either of these. */
+export function getStaleDeployBlockingScript(): string {
+  const args = [RELOAD_FLAG, STATIC_ASSET_PREFIX, CHUNK_REJECTION_PATTERN.source]
+    .map((value) => JSON.stringify(value))
+    .join(",")
+  return `(${detectStaleDeployBeforeHydration.toString()})(${args})`
 }

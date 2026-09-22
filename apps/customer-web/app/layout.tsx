@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 
 import { StaleDeployReload } from "@/components/stale-deploy-reload"
+import { StaleDeployBlockingScript } from "@/components/stale-deploy-blocking-script"
 import { CookieConsentBanner } from "@workspace/ui/components/cookie-consent-banner"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/components/sonner"
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={cn(geist.variable, geistMono.variable)}
     >
       <head>
+        <StaleDeployBlockingScript />
         <ThemeScript />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
