@@ -10,6 +10,7 @@ export function CookieConsentBanner({ privacyHref = "/privacy#cookies" }: { priv
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- cookie is client-only; reading it after hydration avoids a mismatch
     setVisible(readCookieConsent() === null)
   }, [])
 

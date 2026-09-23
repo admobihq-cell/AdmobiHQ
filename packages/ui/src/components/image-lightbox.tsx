@@ -42,7 +42,6 @@ export function ImageLightbox({
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">{alt}</DialogTitle>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} className="max-h-[85vh] w-full rounded-xl object-contain" />
         <DialogClose className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm ring-1 ring-foreground/10 hover:bg-background">
           <XIcon className="size-4" aria-hidden />

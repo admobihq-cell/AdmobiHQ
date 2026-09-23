@@ -45,7 +45,6 @@ export function LogoBrandTile({ size, padding, borderRadius }: LogoBrandTileProp
         borderRadius: radius,
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={getMarkDataUri()} width={markWidth} height={markHeight} alt="" />
     </div>
   )

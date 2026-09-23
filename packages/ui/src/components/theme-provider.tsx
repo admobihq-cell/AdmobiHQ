@@ -55,7 +55,7 @@ function suspendTransitions() {
   style.textContent = "*, *::before, *::after { transition: none !important; }"
   document.head.appendChild(style)
   // Force a layout flush so the override is active before the class swap.
-  window.getComputedStyle(style).opacity
+  window.getComputedStyle(style).getPropertyValue("opacity")
   return () => {
     // Wait a frame so the new colors paint before transitions resume.
     requestAnimationFrame(() => {

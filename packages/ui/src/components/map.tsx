@@ -1,5 +1,10 @@
 "use client";
 
+// The "latest callback" ref pattern (ref.current = prop during render, read
+// inside MapLibre event handlers) is deliberate here: handlers are bound once
+// per map object and must always see the newest props.
+/* eslint-disable react-hooks/refs */
+
 import * as MapLibreGL from "maplibre-gl";
 import type { PopupOptions, MarkerOptions } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -495,6 +500,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   useEffect(() => {
     if (!mapInstance || !pendingStyle) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- consume the queued style once
     setPendingStyle(null);
     styleSwapInFlightRef.current = true;
     // Full reload (no diff) so `style.load` fires deterministically. A
