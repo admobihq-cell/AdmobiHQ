@@ -11,7 +11,7 @@ The marketing site serves operational help content and the **blog** from **Paylo
 | `/help/[slug]` | A product guide or an FAQ answer, in the same layout (sidebar, "On this page", previous/next) |
 | `/admin` | Payload admin (editors only) |
 
-Homepage FAQ remains in [`apps/web/lib/seo/faq-data.ts`](../../apps/web/lib/seo/faq-data.ts) for AI citation schema. Help articles are support guides, not duplicate FAQ JSON-LD.
+Homepage FAQ remains in [`apps/web/lib/seo/faq-data.ts`](../../apps/web/lib/seo/faq-data.ts) for AI citation schema. Help article pages emit `TechArticle` and `BreadcrumbList` JSON-LD. `/help/faq` emits `FAQPage`, built from each FAQ article's title and excerpt (the same text the page shows), so it does not repeat the homepage FAQ items.
 
 ## Guides and FAQ
 
@@ -122,6 +122,19 @@ Prisma config must live at **`apps/web/prisma.config.ts`** (not `prisma/prisma.c
 Open `/admin` to sign in, `/help` to preview public pages.
 
 If you need Turbopack for unrelated work, `npm run dev:turbo -w web` may work after `serverExternalPackages` in `next.config.mjs`, but Webpack dev is the supported path with Payload.
+
+## Production rollout
+
+Production is not migrated or seeded by CI. When a change adds a file under `migrations/` or new seed content:
+
+```bash
+npm run env:pull:prod -w web          # writes apps/web/.env.production.local
+npm run payload:migrate:prod -w web   # 1. BEFORE the deploy
+# 2. deploy
+npm run seed:help:prod -w web         # 3. AFTER the deploy
+```
+
+Migrate first: the build and the running site query the new columns, and a query that fails on a missing column leaves `/help` empty and makes article pages error. Seed last: content seeded before the new code is live would be listed by the old pages in the wrong place.
 
 ## Editorial workflow
 

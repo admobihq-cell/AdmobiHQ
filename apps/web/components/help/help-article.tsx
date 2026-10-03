@@ -88,7 +88,7 @@ export function HelpArticleView({ article, categories, articles }: HelpArticleVi
           { name: "Home", path: "/" },
           { name: "Help", path: "/help" },
           ...(isGuide ? [] : [{ name: "FAQ", path: "/help/faq" }]),
-          { name: article.title, path:  },
+          { name: article.title, path: `/help/${article.slug}` },
         ])}
       />
       <div className="border-border border-b py-8 sm:py-12">

@@ -52,6 +52,7 @@
     "cms:bootstrap:ci": "npm run payload:migrate:ci && npm run seed:help:ci && npm run seed:blog:ci",
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts",
     "seed:help": "dotenv -e .env.local -- tsx scripts/seed-help.ts",
+    "seed:help:prod": "dotenv -e .env.production.local -- tsx scripts/seed-help.ts",
     "seed:blog": "dotenv -e .env.local -- tsx scripts/seed-blog.ts",
     "seed:advertiser-roles": "dotenv -e .env.local -- tsx scripts/seed-advertiser-roles.ts",
     "seed:advertiser-roles:prod": "dotenv -e .env.production.local -- tsx scripts/seed-advertiser-roles.ts",

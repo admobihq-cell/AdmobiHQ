@@ -141,7 +141,8 @@ export function buildLlmsTxt(): string {
 - [Driver sign-up](${SITE_URL}/drivers): Driver applications
 - [Media kit](${SITE_URL}/media-kit): Creative specifications request
 - [Blog](${SITE_URL}/blog): OOH insights, campaigns, and product updates
-- [Help center](${SITE_URL}/help): Guides for advertisers, drivers, and fleet partners
+- [Help center](${SITE_URL}/help): Step-by-step guides for the advertiser and driver apps
+- [Frequently asked questions](${SITE_URL}/help/faq): Short answers for advertisers, drivers, and fleet partners
 
 ## Contact
 
