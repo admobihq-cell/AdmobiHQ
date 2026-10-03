@@ -29,10 +29,39 @@ function textNode(text: string) {
   }
 }
 
+/**
+ * Body text with links. Write a link as [label](url); everything else is plain
+ * text. Site paths (/pricing) stay in the tab, full URLs open a new one.
+ */
+function inline(text: string) {
+  const nodes: unknown[] = []
+  let last = 0
+  for (const match of text.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)) {
+    const [whole, label = "", url = ""] = match
+    if (match.index > last) {
+      nodes.push(textNode(text.slice(last, match.index)))
+    }
+    nodes.push({
+      type: "link",
+      version: 3,
+      direction: "ltr" as const,
+      format: "",
+      indent: 0,
+      fields: { linkType: "custom", url, newTab: !url.startsWith("/") },
+      children: [textNode(label)],
+    })
+    last = match.index + whole.length
+  }
+  if (last < text.length) {
+    nodes.push(textNode(text.slice(last)))
+  }
+  return nodes
+}
+
 function paragraph(text: string) {
   return {
     type: "paragraph",
-    children: [textNode(text)],
+    children: inline(text),
     direction: "ltr" as const,
     format: "",
     indent: 0,
@@ -67,7 +96,7 @@ function bulletList(items: string[]) {
     children: items.map((item, index) => ({
       type: "listitem",
       value: index + 1,
-      children: [textNode(item)],
+      children: inline(item),
       direction: "ltr" as const,
       format: "",
       indent: 0,
@@ -135,7 +164,7 @@ function steps(items: [name: string, detail: string][]) {
     children: items.map(([name, detail], index) => ({
       type: "listitem",
       value: index + 1,
-      children: [{ ...textNode(name), format: 1 }, lineBreak, textNode(detail)],
+      children: [{ ...textNode(name), format: 1 }, lineBreak, ...inline(detail)],
       direction: "ltr" as const,
       format: "",
       indent: 0,
@@ -148,7 +177,7 @@ function steps(items: [name: string, detail: string][]) {
 function callout(title: string, text: string) {
   return {
     type: "quote",
-    children: [{ ...textNode(title), format: 1 }, lineBreak, textNode(text)],
+    children: [{ ...textNode(title), format: 1 }, lineBreak, ...inline(text)],
     direction: "ltr" as const,
     format: "",
     indent: 0,
@@ -298,7 +327,7 @@ const articles = [
       ),
       heading("Creative checklist", "h2"),
       bulletList([
-        "Confirm canvas size against the current media kit, not a previous flight.",
+        "Confirm canvas size against the current [media kit](/media-kit), not a previous flight.",
         "Keep contact details and URLs inside the safe zone.",
         "Avoid thin type; Nairobi daylight and motion punish hairlines.",
         "Send a master plus a flattened review copy so ops can spot-check on a phone.",
@@ -356,7 +385,7 @@ const articles = [
       ),
       heading("How to speed it up", "h2"),
       paragraph(
-        "Send creative with the brief, name real corridors (Thika Road, Waiyaki Way, Mombasa Road, not only “Nairobi”), and keep legal copy ready. Share the brief via the start-campaign form for a concrete window.",
+        "Send creative with the brief, name real corridors (Thika Road, Waiyaki Way, Mombasa Road, not only “Nairobi”), and keep legal copy ready. Share the brief via the [start-campaign form](/start-campaign) for a concrete window.",
       ),
     ),
   },
@@ -484,7 +513,7 @@ const articles = [
         "Creative that misses spec can delay go-live without changing the hold logic.",
       ]),
       paragraph(
-        "Use the start-campaign form or your account contact. Do not treat a past flight’s number as the next one.",
+        "Use the [start-campaign form](/start-campaign) or your account contact. Do not treat a past flight’s number as the next one.",
       ),
     ),
   },
@@ -543,7 +572,7 @@ const articles = [
       ),
       heading("If a summary looks wrong", "h2"),
       paragraph(
-        "Write to support with the month, the vehicle, and what you expected. Do not wait until the next cycle if hours look short after a week of downtime.",
+        "[Write to support](/help/contact) with the month, the vehicle, and what you expected. Do not wait until the next cycle if hours look short after a week of downtime.",
       ),
     ),
   },
@@ -571,7 +600,7 @@ const articles = [
       ),
       heading("If payout is late", "h2"),
       paragraph(
-        "Check the summary first. If hours look right and the date has passed, contact support with the month and the number used for payout. Do not remove the unit yourself while a case is open.",
+        "Check the summary first. If hours look right and the date has passed, [contact support](/help/contact) with the month and the number used for payout. Do not remove the unit yourself while a case is open.",
       ),
     ),
   },
@@ -786,11 +815,11 @@ const articles = [
     sortOrder: 1,
     body: richText(
       paragraph(
-        "The advertiser app lives at app.admobihq.com, and the Admobi mobile app mirrors it. Both show the same campaigns, calendar, and notifications, so you can start on one and continue on the other.",
+        "The advertiser app lives at [app.admobihq.com](https://app.admobihq.com), and the Admobi mobile app mirrors it. Both show the same campaigns, calendar, and notifications, so you can start on one and continue on the other.",
       ),
       heading("Create your account", "h2"),
       steps([
-        ["Open the app", "Go to app.admobihq.com, or open the Admobi mobile app, and choose to sign up."],
+        ["Open the app", "Go to [app.admobihq.com](https://app.admobihq.com), or open the Admobi mobile app, and choose to sign up."],
         [
           "Sign in with an email code or Google",
           "There is no password. Enter the code sent to your email, or continue with your Google account.",
@@ -862,7 +891,7 @@ const articles = [
       ),
       heading("Estimate the budget", "h2"),
       paragraph(
-        "Under “Not sure what to budget?” on the Flight & budget step, the estimator prices your flight from the same rate card as the pricing page. It already knows your brief: the market sets the pricing zone and the flight dates set the length. You only enter what it cannot know, then apply the estimate to fill in the budget field.",
+        "Under “Not sure what to budget?” on the Flight & budget step, the estimator prices your flight from the same rate card as the [pricing page](/pricing). It already knows your brief: the market sets the pricing zone and the flight dates set the length. You only enter what it cannot know, then apply the estimate to fill in the budget field.",
       ),
       table(
         ["Format", "How it is priced", "What you enter"],
@@ -994,7 +1023,7 @@ const articles = [
     sortOrder: 1,
     body: richText(
       paragraph(
-        "The driver app is at driver.admobihq.com, and there is an Admobi Driver mobile app. Profile setup is the same on both.",
+        "The driver app is at [driver.admobihq.com](https://driver.admobihq.com), and there is an Admobi Driver mobile app. Profile setup is the same on both.",
       ),
       callout(
         "Have these ready",

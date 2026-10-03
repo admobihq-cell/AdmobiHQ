@@ -24,7 +24,7 @@ The help center holds two kinds of content, split by the **kind** field on a hel
 
 A guide page lists the FAQ answers whose category has the same **audience**. An FAQ page lists the other questions in its category.
 
-In a guide body, a **numbered list** renders as step markers and a **quote** renders as a boxed callout (styled in [`help-article.tsx`](../../apps/web/components/help/help-article.tsx)). Start a step or callout with bold text for its name.
+In a guide body, a **numbered list** renders as step markers and a **quote** renders as a boxed callout (styled in [`help-article.tsx`](../../apps/web/components/help/help-article.tsx)). Start a step or callout with bold text for its name. In the seed script, body text takes links as `[label](url)`: a site path such as `/pricing` opens in the same tab, a full URL such as `https://app.admobihq.com` opens in a new one. Any address or page a reader is told to go to should be a link.
 
 "Popular tasks" on the hub is a fixed list of guide-section links in [`help-hub.tsx`](../../apps/web/components/help/help-hub.tsx). A link is hidden when its guide slug or section heading no longer exists, so renaming a heading in the CMS removes the task until the list is updated.
 
