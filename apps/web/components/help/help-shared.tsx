@@ -48,6 +48,14 @@ export function ArticleRow({ href, title, excerpt, index, className }: ArticleRo
   )
 }
 
+/** Audiences in display order, as labelled on the FAQ preview and the FAQ page. */
+export const HELP_AUDIENCES: { value: HelpCategory["audience"]; label: string }[] = [
+  { value: "advertiser", label: "Advertisers" },
+  { value: "driver", label: "Drivers" },
+  { value: "fleet", label: "Fleet partners" },
+  { value: "general", label: "Coverage" },
+]
+
 export type HelpGroup = {
   category: HelpCategory
   articles: HelpArticleListItem[]

@@ -8,6 +8,7 @@ import { LexicalRenderer } from "@/components/help/lexical-renderer"
 import { Container } from "@/components/landing/container"
 import { JsonLd } from "@/components/seo/json-ld"
 import { extractHeadingIds } from "@/lib/payload/lexical-headings"
+import { breadcrumbListJsonLd } from "@/lib/seo/schema"
 import type { HelpArticleDoc, HelpArticleListItem } from "@/lib/payload/types"
 import { SITE_NAME, SITE_URL } from "@/lib/seo/site"
 import type { HelpCategory } from "@/payload-types"
@@ -82,6 +83,14 @@ export function HelpArticleView({ article, categories, articles }: HelpArticleVi
   return (
     <>
       <JsonLd data={techArticleJsonLd} />
+      <JsonLd
+        data={breadcrumbListJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Help", path: "/help" },
+          ...(isGuide ? [] : [{ name: "FAQ", path: "/help/faq" }]),
+          { name: article.title, path:  },
+        ])}
+      />
       <div className="border-border border-b py-8 sm:py-12">
         <Container>
           <div className="grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12 xl:grid-cols-[13rem_minmax(0,1fr)_12rem]">
@@ -117,7 +126,7 @@ export function HelpArticleView({ article, categories, articles }: HelpArticleVi
                   ) : (
                     <li>
                       <Link
-                        href="/help#faq"
+                        href="/help/faq"
                         className={cn("hover:text-foreground transition-colors", LINK_FOCUS)}
                       >
                         Frequently asked questions
@@ -231,7 +240,7 @@ function HelpNav({
         <p className={EYEBROW}>Support</p>
         <ul className="mt-3 space-y-1">
           <li>
-            <NavLink href="/help#faq" current={faqCurrent}>
+            <NavLink href="/help/faq" current={faqCurrent}>
               Frequently asked questions
             </NavLink>
           </li>

@@ -13,6 +13,12 @@ export async function fetchHelpSitemapPaths() {
       priority: 0.8,
       lastmod: now,
     },
+    {
+      loc: "/help/faq",
+      changefreq: "weekly",
+      priority: 0.7,
+      lastmod: now,
+    },
   ]
 
   const connectionString = process.env.DATABASE_URL?.trim()

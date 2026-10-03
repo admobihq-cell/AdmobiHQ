@@ -6,7 +6,8 @@ The marketing site serves operational help content and the **blog** from **Paylo
 
 | URL | Purpose |
 |-----|---------|
-| `/help` | Help hub: search, product-guide cards, popular tasks, and the FAQ section (`/help#faq`) |
+| `/help` | Help hub: search with popular tasks, the product guides, and an FAQ preview (a few questions per audience) |
+| `/help/faq` | Every FAQ answer, grouped by category |
 | `/help/[slug]` | A product guide or an FAQ answer, in the same layout (sidebar, "On this page", previous/next) |
 | `/admin` | Payload admin (editors only) |
 
@@ -19,7 +20,7 @@ The help center holds two kinds of content, split by the **kind** field on a hel
 | Kind | What it is | Where it shows |
 |------|------------|----------------|
 | `guide` | How to do something in the product (advertiser app, driver app), written as steps | Cards on the hub and the sidebar on every help page |
-| `faq` (default) | A short answer to one question | The FAQ section on the hub, and under guides for the same audience |
+| `faq` (default) | A short answer to one question | The FAQ preview on the hub, the full list at `/help/faq`, and under guides for the same audience |
 
 A guide page lists the FAQ answers whose category has the same **audience**. An FAQ page lists the other questions in its category.
 

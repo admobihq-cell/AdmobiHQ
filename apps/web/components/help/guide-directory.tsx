@@ -25,62 +25,68 @@ const GUIDE_ICONS: Record<string, LucideIcon> = {
   "driver-sos-and-support": Siren,
 }
 
-type PanelRowProps = {
+type GuideRowProps = {
   href: string
   title: string
   text?: string
   icon?: LucideIcon
 }
 
-/** A destination row on the hub's coloured panel: icon tile, title, travelling arrow. */
-export function PanelRow({ href, title, text, icon: Icon }: PanelRowProps) {
+/** A destination row on the help hub: icon tile, title, one-line summary, travelling arrow. */
+export function GuideRow({ href, title, text, icon: Icon }: GuideRowProps) {
   return (
     <Link
       href={href}
-      className="group hover:bg-primary-foreground/10 focus-visible:bg-primary-foreground/10 focus-visible:ring-primary-foreground flex items-center gap-4 px-5 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset sm:px-8 sm:py-5"
+      className="group hover:bg-muted/70 focus-visible:ring-ring -mx-3 flex items-center gap-4 rounded-2xl px-3 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
       {Icon ? (
-        <span className="bg-primary-foreground text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+        <span className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-11 shrink-0 items-center justify-center rounded-xl transition-colors">
           <Icon aria-hidden className="size-5" strokeWidth={1.75} />
         </span>
       ) : null}
       <span className="min-w-0 flex-1">
-        <span className="block text-lg leading-snug font-semibold tracking-tight text-pretty sm:text-xl">
+        <span className="text-foreground block text-lg leading-snug font-semibold tracking-tight text-pretty">
           {title}
         </span>
         {text ? (
-          <span className="text-primary-foreground/80 mt-1 line-clamp-2 block text-sm leading-relaxed">
+          <span className="text-muted-foreground mt-1 line-clamp-2 block text-sm leading-relaxed">
             {text}
           </span>
         ) : null}
       </span>
-      <span className="border-primary-foreground/40 group-hover:bg-primary-foreground group-hover:text-primary group-focus-visible:bg-primary-foreground group-focus-visible:text-primary flex size-9 shrink-0 items-center justify-center rounded-full border transition-[background-color,color,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 motion-reduce:transform-none">
-        <ArrowRight aria-hidden className="size-4" />
-      </span>
+      <ArrowRight
+        aria-hidden
+        className="text-muted-foreground group-hover:text-primary size-5 shrink-0 transition-[color,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 motion-reduce:transform-none"
+      />
     </Link>
   )
 }
 
-/** The product guides on the hub panel: one column per guide category. */
+/** The product guides on the hub: one column per guide category. */
 export function GuideDirectory({ groups }: { groups: HelpGroup[] }) {
   if (groups.length === 0) {
     return null
   }
 
   return (
-    <div className="divide-primary-foreground/20 border-primary-foreground/20 grid divide-y border-t lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+    <div className="grid gap-x-16 gap-y-12 lg:grid-cols-2">
       {groups.map((group) => (
         <section key={group.category.id} aria-labelledby={`guides-${group.category.slug}`}>
           <h2
             id={`guides-${group.category.slug}`}
-            className="text-primary-foreground/80 px-5 pt-6 pb-2 text-sm font-medium sm:px-8"
+            className="text-foreground text-2xl font-semibold tracking-tight sm:text-[1.75rem]"
           >
             {group.category.title}
           </h2>
-          <ul className="divide-primary-foreground/20 divide-y">
+          {group.category.description ? (
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed sm:text-base">
+              {group.category.description}
+            </p>
+          ) : null}
+          <ul className="divide-border border-border mt-5 divide-y border-t">
             {group.articles.map((article) => (
               <li key={article.id}>
-                <PanelRow
+                <GuideRow
                   href={`/help/${article.slug}`}
                   title={article.title}
                   text={article.excerpt}

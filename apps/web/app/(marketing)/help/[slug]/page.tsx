@@ -58,7 +58,9 @@ export default async function HelpArticlePage({ params }: PageProps) {
     notFound()
   }
 
-  const article = await getHelpArticleBySlug(slug).catch(() => null)
+  // A database error must throw, not fall through to notFound(): ISR would
+  // cache that 404 for a day and take a real article offline.
+  const article = await getHelpArticleBySlug(slug)
   if (!article) {
     notFound()
   }
