@@ -18,6 +18,16 @@ updates:
       # Pinned to 0.34.5 across the workspace; hold off on 0.35+ for now.
       - dependency-name: "sharp"
         versions: [">=0.35.0"]
+      # Versioned by the Expo SDK (currently 54); bump these with `npx expo install --fix`
+      # during an SDK upgrade, never individually.
+      - dependency-name: "expo*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react-native*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "@types/react"
+      - dependency-name: "metro"
+      - dependency-name: "@sentry/react-native"
     groups:
       npm-minor-patch:
         patterns: ["*"]
