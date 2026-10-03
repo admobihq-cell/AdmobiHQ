@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { unstable_noStore as noStore } from "next/cache"
 
-import { Container } from "@/components/landing/container"
-import { HelpArticleSearch } from "@/components/help/help-article-search"
+import { HelpHub } from "@/components/help/help-hub"
 import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld"
 import { getCachedHelpIndexData, isPayloadConfigured } from "@/lib/payload/help-queries"
 import { pageMetadata } from "@/lib/seo/site"
@@ -40,22 +39,7 @@ export default async function HelpPage() {
           { name: "Help", path: "/help" },
         ]}
       />
-      <section className="pt-12 pb-2 sm:pt-16">
-        <Container>
-          <p className="text-primary font-mono text-[0.7rem] font-medium uppercase tracking-[0.2em] sm:text-xs">
-            Help
-          </p>
-          <h1 className="text-foreground mt-3 max-w-2xl text-balance text-4xl font-semibold leading-[1.08] tracking-tight sm:text-[2.75rem]">
-            Find an answer
-          </h1>
-          <p className="text-muted-foreground mt-4 max-w-[58ch] text-lg leading-relaxed">
-            Campaign setup, driver payouts, fleet install, and Nairobi coverage. Search first, then
-            pick a role.
-          </p>
-        </Container>
-      </section>
-
-      <HelpArticleSearch categories={data.categories} articles={data.articles} />
+      <HelpHub categories={data.categories} articles={data.articles} />
     </>
   )
 }

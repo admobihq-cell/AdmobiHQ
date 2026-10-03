@@ -2,6 +2,9 @@ import Link from "next/link"
 
 import { cn } from "@workspace/ui/lib/utils"
 
+import type { HelpArticleListItem } from "@/lib/payload/types"
+import type { HelpCategory } from "@/payload-types"
+
 type ArticleRowProps = {
   href: string
   title: string
@@ -43,4 +46,24 @@ export function ArticleRow({ href, title, excerpt, index, className }: ArticleRo
       </span>
     </Link>
   )
+}
+
+export type HelpGroup = {
+  category: HelpCategory
+  articles: HelpArticleListItem[]
+}
+
+/** Categories of one kind, in sort order, each with its articles. Empty categories are dropped. */
+export function groupHelpArticles(
+  categories: HelpCategory[],
+  articles: HelpArticleListItem[],
+  kind: HelpCategory["kind"],
+): HelpGroup[] {
+  return categories
+    .filter((category) => (category.kind === "guide") === (kind === "guide"))
+    .map((category) => ({
+      category,
+      articles: articles.filter((article) => String(article.category.id) === String(category.id)),
+    }))
+    .filter((group) => group.articles.length > 0)
 }

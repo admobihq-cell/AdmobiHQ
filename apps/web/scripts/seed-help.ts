@@ -119,11 +119,50 @@ function table(headers: string[], rows: string[][]) {
   }
 }
 
+const lineBreak = { type: "linebreak", version: 1 }
+
+/** Numbered steps: a bold step name, then what to do. Rendered as step markers in guides. */
+function steps(items: [name: string, detail: string][]) {
+  return {
+    type: "list",
+    listType: "number",
+    tag: "ol",
+    start: 1,
+    direction: "ltr" as const,
+    format: "",
+    indent: 0,
+    version: 1,
+    children: items.map(([name, detail], index) => ({
+      type: "listitem",
+      value: index + 1,
+      children: [{ ...textNode(name), format: 1 }, lineBreak, textNode(detail)],
+      direction: "ltr" as const,
+      format: "",
+      indent: 0,
+      version: 1,
+    })),
+  }
+}
+
+/** A quote block, rendered as a boxed callout in guides. */
+function callout(title: string, text: string) {
+  return {
+    type: "quote",
+    children: [{ ...textNode(title), format: 1 }, lineBreak, textNode(text)],
+    direction: "ltr" as const,
+    format: "",
+    indent: 0,
+    version: 1,
+  }
+}
+
 type BodyBlock =
   | ReturnType<typeof paragraph>
   | ReturnType<typeof heading>
   | ReturnType<typeof bulletList>
   | ReturnType<typeof table>
+  | ReturnType<typeof steps>
+  | ReturnType<typeof callout>
 
 function richText(...blocks: BodyBlock[]): SerializedEditorState {
   return {
@@ -205,6 +244,23 @@ const categories = [
     description: "Where the network runs today and how additional cities join.",
     audience: "general" as const,
     sortOrder: 9,
+  },
+  // Product guides: how to do things in the apps. These form the help sidebar.
+  {
+    title: "For advertisers",
+    slug: "advertiser-guides",
+    description: "Create, submit, and track campaigns in the advertiser app, and manage your team.",
+    audience: "advertiser" as const,
+    kind: "guide" as const,
+    sortOrder: 1,
+  },
+  {
+    title: "For drivers",
+    slug: "driver-guides",
+    description: "Set up your driver account, read your dashboard, and reach Admobi when you need help.",
+    audience: "driver" as const,
+    kind: "guide" as const,
+    sortOrder: 2,
   },
 ]
 
@@ -720,6 +776,336 @@ const articles = [
       ),
     ),
   },
+  {
+    title: "Get started in the advertiser app",
+    slug: "advertiser-getting-started",
+    categorySlug: "advertiser-guides",
+    excerpt:
+      "Create your account, read the Overview, and find your way around the advertiser app on web and mobile.",
+    featured: false,
+    sortOrder: 1,
+    body: richText(
+      paragraph(
+        "The advertiser app lives at app.admobihq.com, and the Admobi mobile app mirrors it. Both show the same campaigns, calendar, and notifications, so you can start on one and continue on the other.",
+      ),
+      heading("Create your account", "h2"),
+      steps([
+        ["Open the app", "Go to app.admobihq.com, or open the Admobi mobile app, and choose to sign up."],
+        [
+          "Sign in with an email code or Google",
+          "There is no password. Enter the code sent to your email, or continue with your Google account.",
+        ],
+        ["Land on the Overview", "The Overview is your home screen. It is empty until you create a campaign."],
+      ]),
+      heading("Join from an invitation", "h2"),
+      paragraph(
+        "If a colleague invited you, open the link in the invitation email. The page shows who invited you and what accepting would replace. Choose Accept or Decline; nothing is accepted for you. If you have never used Admobi, create an account from the same page first.",
+      ),
+      heading("Read the Overview", "h2"),
+      table(
+        ["Tile", "What it counts"],
+        [
+          ["Live now", "Approved campaigns whose flight is running. Scheduled flights are noted underneath."],
+          ["In review", "Campaigns you submitted that are with the Admobi team."],
+          ["Needs you", "Drafts and campaigns where a change was requested."],
+          ["Committed budget", "The budget of approved campaigns only. A draft does not count until it is approved."],
+        ],
+      ),
+      paragraph("Recent activity below the tiles lists announcements and campaign updates. Select a row to open what it refers to."),
+      callout(
+        "No impressions or spend figures yet",
+        "The Overview does not show impressions, delivery rate, or spend, and Reports is marked coming soon. For verified delivery, download proof of play from an approved campaign.",
+      ),
+      heading("Find your way around", "h2"),
+      table(
+        ["Area", "What it is for"],
+        [
+          ["Campaigns", "Every campaign, its status, and the wizard to create a new one."],
+          ["Calendar", "Flights laid out by date, with the active budget total and a statement download."],
+          ["Map", "Nairobi corridors and coverage areas."],
+          ["Notifications", "Announcements and campaign updates. Open it from the bell in the header."],
+          ["Settings", "Account, team and roles, billing, notification preferences, and support."],
+        ],
+      ),
+      heading("Get help from inside the app", "h2"),
+      paragraph(
+        "Open Settings, then Support, and raise a case. Replies arrive in the same thread, and the case keeps its own page so you can return to it later.",
+      ),
+    ),
+  },
+  {
+    title: "Create and submit a campaign",
+    slug: "create-a-campaign",
+    categorySlug: "advertiser-guides",
+    excerpt:
+      "Build a campaign in the four-step wizard, estimate the budget from the rate card, and submit it for review.",
+    featured: false,
+    sortOrder: 2,
+    body: richText(
+      paragraph(
+        "A campaign is built in a full-page wizard with four steps: Brief, Flight & budget, Creative, and Review. A draft can be left and picked up again from Campaigns.",
+      ),
+      heading("Build the campaign", "h2"),
+      steps([
+        ["Start a new campaign", "Open Campaigns and choose New campaign."],
+        [
+          "Brief",
+          "Give the campaign a name, pick the market, and choose the format: taxi top, delivery bike, or both. Add an objective and any corridors or routes that matter.",
+        ],
+        ["Flight & budget", "Set the start and end dates and enter a budget in KES."],
+        ["Creative", "Upload your creative. PNG, JPG, GIF, and MP4 files are accepted."],
+        ["Review", "Check the summary, then choose Submit for review."],
+      ]),
+      callout(
+        "Cannot see Submit for review?",
+        "Your role does not include submitting campaigns. A Member can build the draft; an Admin or the Owner submits it.",
+      ),
+      heading("Estimate the budget", "h2"),
+      paragraph(
+        "Under “Not sure what to budget?” on the Flight & budget step, the estimator prices your flight from the same rate card as the pricing page. It already knows your brief: the market sets the pricing zone and the flight dates set the length. You only enter what it cannot know, then apply the estimate to fill in the budget field.",
+      ),
+      table(
+        ["Format", "How it is priced", "What you enter"],
+        [
+          ["Taxi top", "Per play", "Screens, slot length, and plays per day"],
+          ["Delivery bike", "Per side, per bike, per day", "Bikes and sides"],
+          ["Both", "The two added together", "All of the above"],
+        ],
+      ),
+      heading("After you submit", "h2"),
+      table(
+        ["Status", "What it means", "What you can do"],
+        [
+          ["Draft", "Not submitted yet", "Edit freely and submit when ready"],
+          ["Submitted", "With the Admobi team for review", "Wait for the decision; it arrives as a notification"],
+          ["Changes requested", "The reviewer needs something fixed", "Read the note on the campaign, edit, and submit again"],
+          ["Approved", "Cleared to run on its flight dates", "Track it as scheduled, live, then completed"],
+          ["Rejected", "Will not run as submitted", "Read the reason shown on the campaign"],
+        ],
+      ),
+      paragraph(
+        "When a campaign comes back with changes requested or is rejected, the reviewer’s reason is shown in a banner at the top of the campaign, word for word.",
+      ),
+    ),
+  },
+  {
+    title: "Track campaigns and download proof of play",
+    slug: "track-campaigns",
+    categorySlug: "advertiser-guides",
+    excerpt:
+      "Browse campaigns, move flights on the calendar, and download proof of play and budget statements as PDFs.",
+    featured: false,
+    sortOrder: 3,
+    body: richText(
+      paragraph(
+        "Once campaigns exist, Campaigns and Calendar are where you follow them. Both show the same data on web and mobile.",
+      ),
+      heading("Browse your campaigns", "h2"),
+      paragraph(
+        "On the web, switch the Campaigns list between Cards and Table. Your choice is remembered in that browser. Once your organization has more than one member, the table adds a Created by column.",
+      ),
+      heading("Move a flight on the calendar", "h2"),
+      paragraph(
+        "The calendar lays out each flight by date. You can drag a flight to new dates only while the campaign is a draft or has changes requested. Submitted and approved campaigns stay where they are.",
+      ),
+      heading("Download proof of play", "h2"),
+      steps([
+        ["Open the campaign", "Choose it from Campaigns."],
+        ["Choose Proof of play", "The report downloads as a PDF. On mobile it opens the share sheet so you can save or send it."],
+      ]),
+      callout(
+        "Only for approved campaigns with dates",
+        "Proof of play is offered on campaigns that are approved and have flight dates. A draft or a campaign still in review has nothing to report.",
+      ),
+      heading("Download a budget statement", "h2"),
+      paragraph(
+        "The calendar shows an active campaign budget total: approved campaigns whose flight is live or scheduled. Download the statement from the calendar to get the same figure as a PDF.",
+      ),
+      heading("Follow updates", "h2"),
+      paragraph(
+        "Campaign decisions and announcements land in Notifications, opened from the bell. On mobile, a push notification opens the campaign it refers to.",
+      ),
+    ),
+  },
+  {
+    title: "Manage your team and roles",
+    slug: "team-and-roles",
+    categorySlug: "advertiser-guides",
+    excerpt:
+      "Invite colleagues, choose what each role can do, handle admin access requests, and set billing details.",
+    featured: false,
+    sortOrder: 4,
+    body: richText(
+      paragraph("Team settings live under Settings, then Team, on web and mobile."),
+      heading("What each role can do", "h2"),
+      table(
+        ["Role", "Can do", "How many"],
+        [
+          [
+            "Owner",
+            "Everything, including deleting the organization, editing roles, and transferring ownership",
+            "Exactly one",
+          ],
+          ["Admin", "Manage the team, organization settings, and billing, and submit campaigns", "Any number"],
+          ["Member", "Create and edit campaigns and creative. Cannot submit for review", "Any number"],
+        ],
+      ),
+      heading("Invite a teammate", "h2"),
+      steps([
+        ["Open Team", "Go to Settings, then Team."],
+        ["Send the invitation", "Enter their email and choose a role."],
+        [
+          "They accept or decline",
+          "The email links to a page that shows who invited them. They can create an account there if they do not have one.",
+        ],
+      ]),
+      paragraph(
+        "Pending invitations can be resent or revoked from the same screen. A declined invitation stays visible so you can ask again.",
+      ),
+      heading("Request or grant admin access", "h2"),
+      paragraph(
+        "A Member can ask for admin access and give a reason. The Owner or any Admin approves or declines with a note. Approving gives the person the Admin role.",
+      ),
+      heading("Create custom roles", "h2"),
+      paragraph(
+        "The Owner can create, edit, and delete roles from the Roles tab, using the permission matrix. Editing one of the starter roles creates a copy for your organization.",
+      ),
+      heading("Set billing details", "h2"),
+      paragraph(
+        "On the web, Team settings include billing details: the invoice email and KRA PIN. You need a role with billing access to change them.",
+      ),
+      heading("Leave or hand over", "h2"),
+      paragraph(
+        "The Owner can transfer ownership to another member from Team. Anyone can leave the organization from Account settings; the Owner can delete it there.",
+      ),
+      callout(
+        "One Owner per organization",
+        "Ownership is not a role you can invite someone into. To change the Owner, transfer ownership.",
+      ),
+    ),
+  },
+  {
+    title: "Set up your driver account",
+    slug: "driver-account-setup",
+    categorySlug: "driver-guides",
+    excerpt:
+      "Sign in to the driver app and complete profile setup: your details, tax and payout information, then submit for review.",
+    featured: false,
+    sortOrder: 1,
+    body: richText(
+      paragraph(
+        "The driver app is at driver.admobihq.com, and there is an Admobi Driver mobile app. Profile setup is the same on both.",
+      ),
+      callout(
+        "Have these ready",
+        "A photo of the front of your national ID, a profile photo, your KRA PIN, and the M-Pesa number or bank account you want payouts sent to.",
+      ),
+      heading("Sign in", "h2"),
+      paragraph(
+        "Sign up with an email code or your Google account. There is no password to remember.",
+      ),
+      heading("Complete profile setup", "h2"),
+      steps([
+        [
+          "Your profile",
+          "Enter your full name, phone number, city, and national ID number. Upload the front of your national ID and a profile photo.",
+        ],
+        [
+          "Tax & payout",
+          "Enter your KRA PIN; the PIN certificate is optional. Then choose how you are paid: an M-Pesa number, or a bank name and account number.",
+        ],
+        ["Review & submit", "Check every line, then submit your profile."],
+      ]),
+      heading("After you submit", "h2"),
+      paragraph(
+        "Admobi operations reviews your profile and documents. The decision arrives in your notifications and by email.",
+      ),
+    ),
+  },
+  {
+    title: "Read your dashboard, earnings, and routes",
+    slug: "driver-dashboard",
+    categorySlug: "driver-guides",
+    excerpt:
+      "What each part of the driver app shows today, and which numbers to rely on while earnings data is being built.",
+    featured: false,
+    sortOrder: 2,
+    body: richText(
+      heading("What each section shows", "h2"),
+      table(
+        ["Section", "What it shows"],
+        [
+          ["Dashboard", "Your home screen, with a summary of activity."],
+          ["Earnings", "An earnings breakdown by period."],
+          ["Routes", "A map of Nairobi corridors."],
+          ["Payouts", "Marked coming soon. Admobi operations settles payouts directly."],
+          ["Notifications", "Announcements and updates on your application."],
+          ["Settings", "Profile, account, preferences, and support."],
+        ],
+      ),
+      callout(
+        "Earnings figures are illustrative for now",
+        "Until screen data feeds the app, the numbers on Dashboard and Earnings are examples, not your real earnings. Your monthly summary, sent by SMS and WhatsApp, is the record to keep.",
+      ),
+      heading("How you are paid today", "h2"),
+      paragraph(
+        "Payouts are settled by Admobi operations on the schedule explained at onboarding, to the M-Pesa number or bank account in your profile.",
+      ),
+    ),
+  },
+  {
+    title: "Report an emergency or get support",
+    slug: "driver-sos-and-support",
+    categorySlug: "driver-guides",
+    excerpt:
+      "Use SOS to report a safety incident, track it until it is resolved, and raise a support case for everything else.",
+    featured: false,
+    sortOrder: 3,
+    body: richText(
+      callout(
+        "Call 999 first",
+        "Admobi is not an emergency service. If someone is hurt or in danger, call 999 for police, ambulance, or fire before you report in the app.",
+      ),
+      heading("Report a safety incident", "h2"),
+      steps([
+        ["Tap the red SOS button", "It sits on every screen of the driver app."],
+        [
+          "Choose what happened",
+          "Accident, harassment, theft, damage, medical, breakdown, or something else. You can add a short description.",
+        ],
+        ["Add photos", "Attach up to four photos if it is safe to take them."],
+        ["Send the report", "Operations is alerted straight away, with your location if you allow it."],
+      ]),
+      paragraph(
+        "Opening SOS does not send anything. Nothing reaches Admobi until you choose what happened and send the report, so an accidental tap is harmless.",
+      ),
+      heading("Track your report", "h2"),
+      table(
+        ["Status", "What it means"],
+        [
+          ["New", "Filed, waiting for operations to see it"],
+          ["Acknowledged", "Someone at Admobi has seen it. You get a notification"],
+          ["In progress", "Operations is working on it"],
+          ["Resolved", "Closed with a note on what was done. You get a notification"],
+        ],
+      ),
+      paragraph("If it was a false alarm, cancel the report yourself from its page."),
+      heading("Raise a support case", "h2"),
+      steps([
+        ["Open Support", "On the web it is under Settings. On mobile it has its own Support screen."],
+        ["Start a new case", "Describe the problem and send it."],
+        ["Follow the thread", "Replies appear in the case, listed under your requests."],
+      ]),
+      heading("SOS or support?", "h2"),
+      table(
+        ["Use SOS for", "Use support for"],
+        [
+          ["Accidents, theft, harassment, medical problems", "Questions about earnings or payouts"],
+          ["A breakdown or damage that needs attention now", "Profile, document, or account problems"],
+        ],
+      ),
+    ),
+  },
 ]
 
 async function findBySlug(
@@ -760,6 +1146,7 @@ async function seed() {
       slug: category.slug,
       description: category.description,
       audience: category.audience,
+      kind: category.kind ?? ("faq" as const),
       sortOrder: category.sortOrder,
     }
 

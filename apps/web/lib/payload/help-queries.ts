@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache"
 
 import type { HelpArticle, HelpCategory } from "@/payload-types"
 
+import { extractHeadingIds } from "@/lib/payload/lexical-headings"
 import { getPayloadClient } from "@/lib/payload/get-payload"
 import { PUBLIC_FIND, PUBLISHED_WHERE } from "@/lib/payload/public-find"
 import { resolvePayloadDatabaseUrl } from "@/lib/resolve-database-url"
@@ -27,6 +28,7 @@ function toListItem(article: HelpArticle): HelpArticleListItem | null {
     featured: Boolean(article.featured),
     sortOrder: article.sortOrder ?? 0,
     category: article.category,
+    sections: extractHeadingIds(article.body),
   }
 }
 
@@ -69,7 +71,7 @@ export function getCachedHelpIndexData(): Promise<{
   categories: HelpCategory[]
   articles: HelpArticleListItem[]
 }> {
-  return unstable_cache(getHelpIndexData, ["marketing-help-index-v4"], {
+  return unstable_cache(getHelpIndexData, ["marketing-help-index-v5"], {
     revalidate: MARKETING_REVALIDATE_SECONDS,
     tags: [MARKETING_HELP_INDEX_TAG],
   })()
@@ -122,44 +124,6 @@ export async function getHelpArticleBySlug(slug: string): Promise<HelpArticleDoc
     ...article,
     category: article.category,
   }
-}
-
-export async function getRelatedHelpArticles(
-  article: HelpArticleDoc,
-  limit = 4,
-): Promise<HelpArticleListItem[]> {
-  const payload = await getPayloadClient()
-  const categoryId = article.category.id
-  const audience = article.category.audience
-
-  const result = await payload.find({
-    collection: "help-articles",
-    depth: 1,
-    limit: 50,
-    pagination: false,
-    where: {
-      and: [
-        {
-          id: {
-            not_equals: article.id,
-          },
-        },
-        PUBLISHED_WHERE,
-      ],
-    },
-    ...PUBLIC_FIND,
-  })
-
-  const items = result.docs
-    .map(toListItem)
-    .filter((item): item is HelpArticleListItem => item !== null)
-
-  const sameCategory = items.filter((item) => item.category.id === categoryId)
-  const sameAudience = items.filter(
-    (item) => item.category.id !== categoryId && item.category.audience === audience,
-  )
-
-  return [...sameCategory, ...sameAudience].slice(0, limit)
 }
 
 export function isPayloadConfigured(): boolean {

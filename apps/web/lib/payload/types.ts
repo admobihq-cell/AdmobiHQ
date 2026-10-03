@@ -1,22 +1,5 @@
+import type { HeadingAnchor } from "@/lib/payload/lexical-headings"
 import type { HelpArticle, HelpCategory } from "@/payload-types"
-
-export type HelpAudience = HelpCategory["audience"]
-
-export const AUDIENCE_LABELS: Record<HelpAudience, string> = {
-  advertiser: "For advertisers",
-  driver: "For drivers",
-  fleet: "For fleet partners",
-  general: "General",
-}
-
-export const HELP_ROLE_FILTERS = [
-  { value: "all", label: "Everyone" },
-  { value: "advertiser", label: "Advertisers" },
-  { value: "driver", label: "Drivers" },
-  { value: "fleet", label: "Fleet" },
-] as const
-
-export type HelpRoleFilter = (typeof HELP_ROLE_FILTERS)[number]["value"]
 
 export type HelpCategoryDoc = HelpCategory
 
@@ -28,6 +11,8 @@ export type HelpArticleListItem = {
   featured: boolean
   sortOrder: number
   category: HelpCategoryDoc
+  /** h2/h3 anchors in the body, so search and task links can point at a section. */
+  sections: HeadingAnchor[]
 }
 
 export type HelpArticleDoc = HelpArticle & {

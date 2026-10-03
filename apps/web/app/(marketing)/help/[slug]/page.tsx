@@ -5,7 +5,7 @@ import { HelpArticleView } from "@/components/help/help-article"
 import {
   getHelpArticleBySlug,
   getHelpArticleSlugs,
-  getRelatedHelpArticles,
+  getCachedHelpIndexData,
   isPayloadConfigured,
 } from "@/lib/payload/help-queries"
 import { pageMetadata } from "@/lib/seo/site"
@@ -63,7 +63,7 @@ export default async function HelpArticlePage({ params }: PageProps) {
     notFound()
   }
 
-  const related = await getRelatedHelpArticles(article).catch(() => [])
+  const index = await getCachedHelpIndexData().catch(() => ({ categories: [], articles: [] }))
 
-  return <HelpArticleView article={article} related={related} />
+  return <HelpArticleView article={article} categories={index.categories} articles={index.articles} />
 }

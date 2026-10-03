@@ -6,11 +6,28 @@ The marketing site serves operational help content and the **blog** from **Paylo
 
 | URL | Purpose |
 |-----|---------|
-| `/help` | Help index with search |
-| `/help/[slug]` | Published help article |
+| `/help` | Help hub: search, product-guide cards, popular tasks, and the FAQ section (`/help#faq`) |
+| `/help/[slug]` | A product guide or an FAQ answer, in the same layout (sidebar, "On this page", previous/next) |
 | `/admin` | Payload admin (editors only) |
 
 Homepage FAQ remains in [`apps/web/lib/seo/faq-data.ts`](../../apps/web/lib/seo/faq-data.ts) for AI citation schema. Help articles are support guides, not duplicate FAQ JSON-LD.
+
+## Guides and FAQ
+
+The help center holds two kinds of content, split by the **kind** field on a help category:
+
+| Kind | What it is | Where it shows |
+|------|------------|----------------|
+| `guide` | How to do something in the product (advertiser app, driver app), written as steps | Cards on the hub and the sidebar on every help page |
+| `faq` (default) | A short answer to one question | The FAQ section on the hub, and under guides for the same audience |
+
+A guide page lists the FAQ answers whose category has the same **audience**. An FAQ page lists the other questions in its category.
+
+In a guide body, a **numbered list** renders as step markers and a **quote** renders as a boxed callout (styled in [`help-article.tsx`](../../apps/web/components/help/help-article.tsx)). Start a step or callout with bold text for its name.
+
+"Popular tasks" on the hub is a fixed list of guide-section links in [`help-hub.tsx`](../../apps/web/components/help/help-hub.tsx). A link is hidden when its guide slug or section heading no longer exists, so renaming a heading in the CMS removes the task until the list is updated.
+
+Components: `guide-directory.tsx` and `faq-section.tsx` are the two halves of the hub; `help-article.tsx` and `help-shared.tsx` serve both kinds.
 
 ## Environment
 
@@ -107,7 +124,7 @@ If you need Turbopack for unrelated work, `npm run dev:turbo -w web` may work af
 
 ## Editorial workflow
 
-1. Create or edit **Help categories** (audience, sort order).
+1. Create or edit **Help categories** (kind, audience, sort order). Set kind to **Product guides** for how-to guides; leave it as **FAQ** for question-and-answer articles.
 2. Create **Help articles** with title, slug, excerpt, body (Lexical), and category.
 3. **Publish** drafts from the admin UI (drafts are hidden on `/help`).
 4. ISR (`revalidate = 86400` in [`lib/seo/isr.ts`](../../apps/web/lib/seo/isr.ts)) is the time-based fallback. Collection hooks also call `revalidateTag` (`marketing-help-index`) and `revalidatePath` on publish.

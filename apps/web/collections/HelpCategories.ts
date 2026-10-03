@@ -6,7 +6,7 @@ export const HelpCategories: CollectionConfig = {
   slug: "help-categories",
   admin: {
     useAsTitle: "title",
-    defaultColumns: ["title", "audience", "sortOrder"],
+    defaultColumns: ["title", "kind", "audience", "sortOrder"],
   },
   fields: [
     {
@@ -30,6 +30,21 @@ export const HelpCategories: CollectionConfig = {
     {
       name: "description",
       type: "textarea",
+    },
+    {
+      // "guide" categories hold how-to guides for the product and form the help
+      // sidebar; "faq" categories hold the short question-and-answer articles.
+      name: "kind",
+      type: "select",
+      required: true,
+      defaultValue: "faq",
+      options: [
+        { label: "FAQ", value: "faq" },
+        { label: "Product guides", value: "guide" },
+      ],
+      admin: {
+        position: "sidebar",
+      },
     },
     {
       name: "audience",
