@@ -26,7 +26,7 @@ vi.mock("@/lib/api-utils", async () => {
   }
 })
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   getCustomerEmail: vi.fn(async (id: string) => `${id}@example.com`),
   getCustomerName: vi.fn(async () => "Test User"),
   customerClerkClient: {
@@ -40,7 +40,7 @@ vi.mock("@/lib/audit", () => ({
 /**
  * Approving an admin request grants the org's "Admin" role, not the singular
  * owner bypass — an org can have any number of admins, while ownership only
- * changes hands through explicit transfer. See apps/api/lib/advertiser-org.ts
+ * changes hands through explicit transfer. See apps/api/lib/advertiser/advertiser-org.ts
  * getAdminRoleId and the admin-requests [id] route.
  */
 describe.skipIf(!databaseUrl)("admin-requests approval grants the Admin role", () => {

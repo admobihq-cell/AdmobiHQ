@@ -1,9 +1,9 @@
 import type { User } from "@clerk/backend"
 import type { PlatformUserDto, PlatformUserListDto, PlatformUserType } from "@workspace/ops-contracts"
 
-import { getOrgNamesForClerkUsers } from "@/lib/advertiser-org-name"
-import { customerClerkClient } from "@/lib/customer-clerk"
-import { driverClerkClient } from "@/lib/driver-clerk"
+import { getOrgNamesForClerkUsers } from "@/lib/advertiser/advertiser-org-name"
+import { customerClerkClient } from "@/lib/customer/customer-clerk"
+import { driverClerkClient } from "@/lib/driver/driver-clerk"
 
 const DEFAULT_LIMIT = 25
 const MAX_LIMIT = 100
@@ -46,7 +46,7 @@ export type ListPlatformUsersParams = {
 /** Dispatches to the driver or customer Clerk instance's admin API based on
  * `type` — these are two separate Clerk applications, so which secret key
  * (and thus which client) is used depends entirely on the requested type.
- * See lib/driver-clerk.ts and lib/customer-clerk.ts for why these must
+ * See lib/driver/driver-clerk.ts and lib/customer/customer-clerk.ts for why these must
  * never be crossed. */
 type ClerkUserListParams = NonNullable<Parameters<typeof driverClerkClient.users.getUserList>[0]>
 

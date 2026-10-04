@@ -1,7 +1,7 @@
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { fetchCampaignCreative } from "@/lib/campaign-creative-storage"
-import { getOwnedCampaign } from "@/lib/campaign-store"
-import type { PrivateResourceType } from "@/lib/private-media"
+import { fetchCampaignCreative } from "@/lib/campaigns/campaign-creative-storage"
+import { getOwnedCampaign } from "@/lib/campaigns/campaign-store"
+import type { PrivateResourceType } from "@/lib/storage/private-media"
 
 type Params = { params: Promise<{ id: string; creativeId: string }> }
 

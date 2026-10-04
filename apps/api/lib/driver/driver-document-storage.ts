@@ -2,11 +2,11 @@ import {
   destroyPrivateAsset,
   fetchPrivateAsset,
   uploadPrivateAsset,
-} from "@/lib/private-media"
+} from "@/lib/storage/private-media"
 
 /**
  * Driver documents (National ID, profile photo, KRA PIN certificate, payout
- * proof) — a thin, image-only binding over lib/private-media.ts, which holds
+ * proof) — a thin, image-only binding over lib/storage/private-media.ts, which holds
  * the shared Cloudinary "authenticated" storage logic and is also used by
  * campaign creatives.
  *

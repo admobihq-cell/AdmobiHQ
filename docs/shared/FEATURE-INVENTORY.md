@@ -136,7 +136,7 @@ Every third-party service actually wired into the code — confirmed by reading 
 
 ### Cloudinary — private media (driver documents + campaign creatives)
 
-`apps/api/lib/private-media.ts` wraps the `cloudinary` v2 SDK for **authenticated** (private) assets — images and video. Driver documents remain a thin image-only wrapper (`driver-document-storage.ts`). Campaign creatives use the same helper with PNG/JPG/GIF/MP4; bytes reach clients only through authenticated `/file` proxy routes. Callers: `apps/api/app/v1/driver/documents/*`, `apps/api/app/v1/driver-applications/*`, `apps/api/app/v1/customer/campaigns/*/creatives/*`, `apps/api/app/v1/campaigns/*/creatives/*/file`.
+`apps/api/lib/storage/private-media.ts` wraps the `cloudinary` v2 SDK for **authenticated** (private) assets — images and video. Driver documents remain a thin image-only wrapper (`driver-document-storage.ts`). Campaign creatives use the same helper with PNG/JPG/GIF/MP4; bytes reach clients only through authenticated `/file` proxy routes. Callers: `apps/api/app/v1/driver/documents/*`, `apps/api/app/v1/driver-applications/*`, `apps/api/app/v1/customer/campaigns/*/creatives/*`, `apps/api/app/v1/campaigns/*/creatives/*/file`.
 
 Targeted single-user push (`notifyUserPush` in `apps/api/lib/push/user-push.ts`) is the first per-account push path in the repo; campaign decisions and submit confirmations use it. Ops staff alerts remain fan-out via `notifyOpsStaffAlert`.
 
@@ -152,7 +152,7 @@ No shared session between instances; no satellite domains.
 | Customer | `apps/customer-web/app/layout.tsx` | `apps/customer-mobile/app/_layout.tsx` | None — email + Google |
 | Driver | `apps/driver-web/app/layout.tsx` | `apps/driver-mobile/app/_layout.tsx` | None — email + Google |
 
-`apps/api/middleware.ts` runs `clerkMiddleware()` for CORS/session cookies on ops-origin calls; it does **not** verify customer or driver tokens. Those use dedicated modules: `apps/api/lib/auth.ts` (ops), `customer-auth.ts`, `driver-auth.ts`. `apps/api/lib/support.ts` tries the customer Clerk secret, then the driver Clerk secret, to disambiguate a bearer token when the calling surface isn't otherwise known. **Ops**, **ops-mobile**, **customer**, and **driver** web/mobile all mount Clerk unconditionally (publishable keys required).
+`apps/api/middleware.ts` runs `clerkMiddleware()` for CORS/session cookies on ops-origin calls; it does **not** verify customer or driver tokens. Those use dedicated modules: `apps/api/lib/auth.ts` (ops), `customer-auth.ts`, `driver-auth.ts`. `apps/api/lib/support/support.ts` tries the customer Clerk secret, then the driver Clerk secret, to disambiguate a bearer token when the calling surface isn't otherwise known. **Ops**, **ops-mobile**, **customer**, and **driver** web/mobile all mount Clerk unconditionally (publishable keys required).
 
 ### Resend — transactional email
 
@@ -189,7 +189,7 @@ Shared via `packages/sentry-config` (`@sentry/nextjs ^10.64.0` for web, api, ops
 
 ### Support case identity system
 
-Anonymous, email-based access without requiring sign-in: a random 24-byte token is generated per case, only its SHA-256 hash is ever persisted (`apps/api/lib/support-token.ts`), and the raw token is returned once to the submitter. A separate `SupportIdentity` table mints one token per email address (not per case) the first time that email opens any case, so a user can look up all their cases without re-authenticating per case. Authenticated callers (customer/driver web and mobile) instead resolve identity via Clerk bearer tokens, trying the customer secret then the driver secret to disambiguate origin app.
+Anonymous, email-based access without requiring sign-in: a random 24-byte token is generated per case, only its SHA-256 hash is ever persisted (`apps/api/lib/support/support-token.ts`), and the raw token is returned once to the submitter. A separate `SupportIdentity` table mints one token per email address (not per case) the first time that email opens any case, so a user can look up all their cases without re-authenticating per case. Authenticated callers (customer/driver web and mobile) instead resolve identity via Clerk bearer tokens, trying the customer secret then the driver secret to disambiguate origin app.
 
 ### Audit trail — never blocks the write it's auditing
 
@@ -293,8 +293,8 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 |---|---|---|
 | **Authentication** | Clerk, 3 fully independent tenant instances (ops, customer, driver) — no shared session, no satellite domains; JWT bearer tokens verified server-side | `apps/api/middleware.ts`, `apps/{ops,customer-web,driver-web}/app/layout.tsx` |
 | **Role-based access control (RBAC)** | Custom, resource-scoped permission model — `requireOpsPermissionAccess("<resource>")` gates every ops route individually (`flags`, `activity`, `drivers`, `waitlist`, `fleet`, `leads`, `announcements`, `driver_applications`, and more), backed by `OpsRole` + `OpsRoleAssignment` tables so permissions are assignable per staff member, not hardcoded to a single "admin" bit | `apps/api/lib/api-utils.ts:55`, `apps/api/lib/auth.ts:4` (`OPS_PERMISSIONS`, `OpsPermission` type), enforced per-route across ~20 files under `apps/api/app/v1/**/route.ts` |
-| **Capability-based access (no login required)** | Anonymous support-case access via a possession token, not a password: a random 24-byte token is generated per case, only its SHA-256 hash is persisted, and a separate per-email `SupportIdentity` token lets one identity access all their cases without re-authenticating | `apps/api/lib/support-token.ts`, `apps/api/lib/support.ts` |
-| **Timing-safe secret comparison** | Cron-secret and support-token verification use constant-time comparison rather than `===`, closing the standard timing side-channel on secret-matching logic | `apps/api/app/v1/push-receipts/check/route.ts` (`hasCronSecret`), `apps/api/lib/support.ts` (`loadCaseByToken`) |
+| **Capability-based access (no login required)** | Anonymous support-case access via a possession token, not a password: a random 24-byte token is generated per case, only its SHA-256 hash is persisted, and a separate per-email `SupportIdentity` token lets one identity access all their cases without re-authenticating | `apps/api/lib/support/support-token.ts`, `apps/api/lib/support/support.ts` |
+| **Timing-safe secret comparison** | Cron-secret and support-token verification use constant-time comparison rather than `===`, closing the standard timing side-channel on secret-matching logic | `apps/api/app/v1/push-receipts/check/route.ts` (`hasCronSecret`), `apps/api/lib/support/support.ts` (`loadCaseByToken`) |
 | **CORS control** | Centralized origin allow-listing rather than a blanket `*`, driven by an env var so it can differ per environment | `apps/api/lib/cors.ts`, `API_CORS_ORIGINS` |
 
 ### 7.2 Data & API reliability patterns
@@ -315,7 +315,7 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 |---|---|---|
 | **Transactional email** | Template-based (8 React email templates) with two send paths (SDK + raw HTTP) and a queued path for non-blocking sends | `apps/api/lib/email/` |
 | **Push notification fan-out + delivery tracking** | Broadcast-to-many via Expo's push API, chunked sends, per-recipient delivery rows (`AnnouncementDelivery`), per-message tickets (`PushTicket`), and a scheduled job that reconciles delivery receipts and prunes dead device tokens | `apps/api/lib/push/`, `apps/api/vercel.json` (daily cron) |
-| **Object storage with signed/authenticated URLs** | Sensitive files (driver ID documents) never get a public URL — Cloudinary `type: "authenticated"` plus a server-minted, short-lived signed URL on every read; less-sensitive assets (CMS media, announcement images) use plain public Vercel Blob URLs, a deliberate two-tier trust split | `apps/api/lib/driver-document-storage.ts` vs. `apps/api/app/v1/notifications/broadcast-image/route.ts` |
+| **Object storage with signed/authenticated URLs** | Sensitive files (driver ID documents) never get a public URL — Cloudinary `type: "authenticated"` plus a server-minted, short-lived signed URL on every read; less-sensitive assets (CMS media, announcement images) use plain public Vercel Blob URLs, a deliberate two-tier trust split | `apps/api/lib/driver/driver-document-storage.ts` vs. `apps/api/app/v1/notifications/broadcast-image/route.ts` |
 
 ### 7.4 Platform & operational hygiene
 

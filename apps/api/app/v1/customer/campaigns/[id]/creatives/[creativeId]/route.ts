@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { destroyCampaignCreative } from "@/lib/campaign-creative-storage"
-import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaign-store"
-import type { PrivateResourceType } from "@/lib/private-media"
+import { destroyCampaignCreative } from "@/lib/campaigns/campaign-creative-storage"
+import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
+import type { PrivateResourceType } from "@/lib/storage/private-media"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string; creativeId: string }> }

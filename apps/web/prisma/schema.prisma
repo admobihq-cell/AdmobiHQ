@@ -350,7 +350,7 @@ model SafetyIncident {
 
   /// Overwritten by foreground re-pings while the incident is open. There is
   /// deliberately no ping-history table — ops sees the current pin move, not a
-  /// breadcrumb trail. See pingAdmission in apps/api/lib/safety-incident.ts.
+  /// breadcrumb trail. See pingAdmission in apps/api/lib/safety/safety-incident.ts.
   last_lat         Float?
   last_lng         Float?
   last_location_at DateTime?
@@ -373,7 +373,7 @@ model SafetyIncident {
 }
 
 /// A photo of the damage/scene attached to an incident. Stored with
-/// Cloudinary's "authenticated" delivery type via lib/private-media.ts —
+/// Cloudinary's "authenticated" delivery type via apps/api/lib/storage/private-media.ts —
 /// cloudinary_public_id is private and never exposed to a client.
 model SafetyIncidentPhoto {
   id                   Int            @id @default(autoincrement())
@@ -650,7 +650,7 @@ model DriverNotification {
 ///
 /// `status` holds ONLY the review lifecycle. The flight phase (scheduled /
 /// live / completed) is DERIVED from starts_on / ends_on at read time — see
-/// apps/api/lib/campaign-dto.ts. Never store it, or it goes stale the moment
+/// apps/api/lib/campaigns/campaign-dto.ts. Never store it, or it goes stale the moment
 /// a date passes and needs a cron to repair.
 ///
 /// Supplier dispatch state is deliberately absent — see the "Supplier /

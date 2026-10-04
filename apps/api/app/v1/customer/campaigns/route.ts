@@ -4,9 +4,9 @@ import { campaignCreateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { resolveCustomerIdentities } from "@/lib/advertiser-org"
-import { toCampaignDto } from "@/lib/campaign-dto"
-import { listOwnedCampaigns } from "@/lib/campaign-store"
+import { resolveCustomerIdentities } from "@/lib/advertiser/advertiser-org"
+import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
+import { listOwnedCampaigns } from "@/lib/campaigns/campaign-store"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {

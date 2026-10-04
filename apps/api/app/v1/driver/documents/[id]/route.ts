@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 
 import { auditFromDriverUser } from "@/lib/audit"
 import { jsonError, parseId, requireDriverAccess } from "@/lib/api-utils"
-import { destroyDriverDocument } from "@/lib/driver-document-storage"
-import { EDITABLE_STATUSES } from "@/lib/driver-profile-store"
+import { destroyDriverDocument } from "@/lib/driver/driver-document-storage"
+import { EDITABLE_STATUSES } from "@/lib/driver/driver-profile-store"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }

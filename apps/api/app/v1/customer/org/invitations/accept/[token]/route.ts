@@ -2,18 +2,18 @@ import { NextResponse } from "next/server"
 
 import type { AdvertiserInviteConflict } from "@workspace/ops-contracts"
 
-import { hashAdvertiserInviteToken } from "@/lib/advertiser-invite-token"
+import { hashAdvertiserInviteToken } from "@/lib/advertiser/advertiser-invite-token"
 import {
   detachAndDeleteOrg,
   getOrgDetachmentImpact,
   isUntouchedSoloOrg,
   resolveInviterLabel,
   toOrgDto,
-} from "@/lib/advertiser-org"
+} from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, requireCustomerIdentityAccess } from "@/lib/api-utils"
-import { getCustomerIdentity, invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
-import { getCustomerEmail } from "@/lib/customer-clerk"
+import { getCustomerIdentity, invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
+import { getCustomerEmail } from "@/lib/customer/customer-clerk"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 

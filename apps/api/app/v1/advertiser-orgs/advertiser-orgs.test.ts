@@ -16,7 +16,7 @@ vi.mock("@/lib/api-utils", async () => {
   }
 })
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   getCustomerEmail: vi.fn(async (id: string) => `${id}@example.com`),
   getCustomerName: vi.fn(async (id: string) => `User ${id}`),
   customerClerkClient: { users: { getUserList: vi.fn(async () => ({ data: [] })) } },

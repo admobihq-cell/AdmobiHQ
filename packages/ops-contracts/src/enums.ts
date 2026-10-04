@@ -54,7 +54,7 @@ export const CAMPAIGN_STATUSES = [
 export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number]
 
 /** Derived at read time from starts_on / ends_on for approved campaigns —
- * see apps/api/lib/campaign-dto.ts. Never persisted: a stored "live" goes
+ * see apps/api/lib/campaigns/campaign-dto.ts. Never persisted: a stored "live" goes
  * stale the moment a date passes and would need a cron to repair. */
 export const CAMPAIGN_FLIGHT_PHASES = [
   "unscheduled",

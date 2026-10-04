@@ -1,5 +1,5 @@
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { fetchIncidentPhoto } from "@/lib/incident-photo-storage"
+import { fetchIncidentPhoto } from "@/lib/safety/incident-photo-storage"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string; photoId: string }> }

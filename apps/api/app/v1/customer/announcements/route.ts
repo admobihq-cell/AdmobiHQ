@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { requireCustomerAccess } from "@/lib/api-utils"
 import { listAnnouncementDeliveriesPage } from "@/lib/push/announcement-inbox"
-import { ensureCustomerRecord } from "@/lib/support"
+import { ensureCustomerRecord } from "@/lib/support/support"
 
 export async function GET(req: Request) {
   const auth = await requireCustomerAccess()

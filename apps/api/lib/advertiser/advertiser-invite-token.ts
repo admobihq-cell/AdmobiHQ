@@ -1,4 +1,4 @@
-import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
+import { generateAccessToken, hashAccessToken } from "@/lib/support/support-token"
 
 /** Opaque invite token returned once in the email link; only the SHA-256 hash is stored. */
 export function generateAdvertiserInviteToken(): string {

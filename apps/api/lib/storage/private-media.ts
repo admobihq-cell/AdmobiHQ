@@ -1,6 +1,6 @@
 import type { UploadApiOptions, UploadApiResponse } from "cloudinary"
 
-import { cloudinary } from "@/lib/cloudinary"
+import { cloudinary } from "@/lib/storage/cloudinary"
 
 /**
  * Private file storage on Cloudinary, shared by driver documents (National ID,

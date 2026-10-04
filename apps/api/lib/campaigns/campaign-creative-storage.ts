@@ -9,13 +9,13 @@ import {
   fetchPrivateAsset,
   uploadPrivateAsset,
   type PrivateResourceType,
-} from "@/lib/private-media"
+} from "@/lib/storage/private-media"
 
 /**
  * Campaign creatives — advertiser artwork for the taxi-top (960x320mm,
  * double-sided) and delivery-bike (320x320mm P2.5, three sides) LED panels.
- * Image-or-video binding over lib/private-media.ts, the sibling of
- * lib/driver-document-storage.ts.
+ * Image-or-video binding over lib/storage/private-media.ts, the sibling of
+ * lib/driver/driver-document-storage.ts.
  *
  * The accepted format list lives in @workspace/ops-contracts so the API, both
  * advertiser upload UIs, and both ops review UIs enforce and display exactly

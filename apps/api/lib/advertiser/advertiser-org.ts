@@ -8,7 +8,7 @@ import {
   type AdvertiserRoleDto,
 } from "@workspace/ops-contracts"
 
-import { customerClerkClient, getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
+import { customerClerkClient, getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
 import { prisma } from "@/lib/prisma"
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { jsonError, parseId } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getBearerToken, loadCaseForCaller, toPublicCase, toPublicMessage } from "@/lib/support"
+import { getBearerToken, loadCaseForCaller, toPublicCase, toPublicMessage } from "@/lib/support/support"
 
 type Params = { params: Promise<{ id: string }> }
 

@@ -72,7 +72,7 @@ budget field.
 
 The calendar's "Active campaign budget" counts approved campaigns whose flight
 is `live` or `scheduled`, matching `isActive()` in
-`apps/api/lib/campaign-statement.ts` so the figure on screen equals the one in
+`apps/api/lib/campaigns/campaign-statement.ts` so the figure on screen equals the one in
 the downloaded statement. Both PDF downloads go through `useDownloadPdf()` —
 the API is a separate authenticated origin, so the bytes are fetched with the
 bearer token and handed to the browser as a blob, never linked to directly.

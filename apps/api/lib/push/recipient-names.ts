@@ -1,5 +1,5 @@
-import { customerClerkClient } from "@/lib/customer-clerk"
-import { driverClerkClient } from "@/lib/driver-clerk"
+import { customerClerkClient } from "@/lib/customer/customer-clerk"
+import { driverClerkClient } from "@/lib/driver/driver-clerk"
 
 /** Clerk's Backend API caps getUserList at 100 user ids per request. */
 const BATCH_SIZE = 100

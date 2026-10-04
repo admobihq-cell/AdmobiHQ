@@ -2,7 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-import { isAdvertiserVisibleActivity, toAdvertiserActivityItem } from "@/lib/advertiser-activity"
+import { isAdvertiserVisibleActivity, toAdvertiserActivityItem } from "@/lib/advertiser/advertiser-activity"
 import { testDatabaseUrl } from "@/lib/test-database-url"
 
 const databaseUrl = testDatabaseUrl()
@@ -37,7 +37,7 @@ vi.mock("@/lib/api-utils", async () => {
   }
 })
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   getCustomerEmail: vi.fn(async () => "actor@example.com"),
   getCustomerName: vi.fn(async () => "Ada"),
 }))
@@ -145,7 +145,7 @@ describe.skipIf(!databaseUrl)("GET /v1/customer/org/activity", () => {
   it(
     "returns only allowlisted events for this org, masking ops identity and summary",
     async () => {
-      const { GET } = await import("../app/v1/customer/org/activity/route")
+      const { GET } = await import("@/app/v1/customer/org/activity/route")
       const res = await GET(new Request("http://localhost/v1/customer/org/activity"))
       expect(res.status).toBe(200)
       const body = await res.json()
@@ -171,7 +171,7 @@ describe.skipIf(!databaseUrl)("GET /v1/customer/org/activity", () => {
     async () => {
       actingIsOwner = false
       actingPermissions = new Set(["campaigns:read"])
-      const { GET } = await import("../app/v1/customer/org/activity/route")
+      const { GET } = await import("@/app/v1/customer/org/activity/route")
       const res = await GET(new Request("http://localhost/v1/customer/org/activity"))
       expect(res.status).toBe(403)
       actingIsOwner = true

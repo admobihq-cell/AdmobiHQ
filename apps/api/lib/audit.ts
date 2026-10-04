@@ -7,9 +7,9 @@ import type {
 } from "@workspace/ops-contracts"
 
 import type { OpsAccess } from "@/lib/auth"
-import { getAdvertiserOrgId } from "@/lib/customer-auth"
-import { getCustomerEmail } from "@/lib/customer-clerk"
-import { getDriverEmail } from "@/lib/driver-clerk"
+import { getAdvertiserOrgId } from "@/lib/customer/customer-auth"
+import { getCustomerEmail } from "@/lib/customer/customer-clerk"
+import { getDriverEmail } from "@/lib/driver/driver-clerk"
 import { prisma } from "@/lib/prisma"
 
 export type RecordAuditEventInput = {

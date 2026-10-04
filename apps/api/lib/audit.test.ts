@@ -2,7 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { afterAll, describe, expect, it, vi } from "vitest"
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   getCustomerEmail: vi.fn(async () => "advertiser@example.com"),
 }))
 

@@ -701,7 +701,7 @@ Use this when going live:
   - `npm run db:platform-flags -w web`
   - `npm run db:driver-push-and-targeting -w web`
   - `npm run db:campaigns -w web` (or `db:campaigns:prod` against production Infisical / Neon)
-- [ ] **Cloudinary:** `CLOUDINARY_URL` is load-bearing for driver documents **and** campaign creatives (`apps/api/lib/private-media.ts`)
+- [ ] **Cloudinary:** `CLOUDINARY_URL` is load-bearing for driver documents **and** campaign creatives (`apps/api/lib/storage/private-media.ts`)
 - [ ] **GitHub:** Clerk + URL secrets added for CI
 - [ ] **Expo / EAS:** Logged in; all three mobile projects linked (`admobihq-ops`, `admobihq-app`, `admobihq-driver`); preview APKs built for team testing (`eas build --profile preview --environment preview` — never omit `--environment preview` or the builder's LAN IP gets baked in)
 

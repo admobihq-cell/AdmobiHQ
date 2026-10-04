@@ -16,7 +16,7 @@
 -- NOTE ON campaigns.status: it holds ONLY the review lifecycle (draft,
 -- submitted, approved, rejected, changes_requested, cancelled). The flight
 -- phase (scheduled / live / completed) is DERIVED from starts_on / ends_on at
--- read time in apps/api/lib/campaign-dto.ts — do not add a column for it, and
+-- read time in apps/api/lib/campaigns/campaign-dto.ts — do not add a column for it, and
 -- do not add supplier dispatch state here either (see the
 -- "Supplier / screen-API seam" note in docs/shared/DATA-LAYER.md).
 --

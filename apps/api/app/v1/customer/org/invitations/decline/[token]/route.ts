@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 
-import { hashAdvertiserInviteToken } from "@/lib/advertiser-invite-token"
-import { notifyCustomerUsers } from "@/lib/advertiser-notify"
+import { hashAdvertiserInviteToken } from "@/lib/advertiser/advertiser-invite-token"
+import { notifyCustomerUsers } from "@/lib/advertiser/advertiser-notify"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, requireCustomerIdentityAccess } from "@/lib/api-utils"
-import { getCustomerEmail } from "@/lib/customer-clerk"
+import { getCustomerEmail } from "@/lib/customer/customer-clerk"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 

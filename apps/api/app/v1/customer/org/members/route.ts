@@ -9,11 +9,11 @@ import {
   resolveInviterLabel,
   toInvitationDto,
   toMemberDtos,
-} from "@/lib/advertiser-org"
+} from "@/lib/advertiser/advertiser-org"
 import {
   generateAdvertiserInviteToken,
   hashAdvertiserInviteToken,
-} from "@/lib/advertiser-invite-token"
+} from "@/lib/advertiser/advertiser-invite-token"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { checkRateLimit } from "@/lib/rate-limit"

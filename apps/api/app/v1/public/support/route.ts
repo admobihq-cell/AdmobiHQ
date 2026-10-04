@@ -11,8 +11,8 @@ import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getBearerToken, mintIdentityTokenIfAbsent, resolveSupportAuthor, resolveSupportAuthorFromBearer, toPublicCase, verifyIdentityToken } from "@/lib/support"
-import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
+import { getBearerToken, mintIdentityTokenIfAbsent, resolveSupportAuthor, resolveSupportAuthorFromBearer, toPublicCase, verifyIdentityToken } from "@/lib/support/support"
+import { generateAccessToken, hashAccessToken } from "@/lib/support/support-token"
 
 export async function POST(req: Request) {
   const limited = await checkRateLimit(req, "support-create", { limit: 5, windowSeconds: 60 })

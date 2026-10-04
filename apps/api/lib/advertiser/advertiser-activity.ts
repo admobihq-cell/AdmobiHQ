@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client"
 import type { AdvertiserActivityItemDto } from "@workspace/ops-contracts"
 
-import { getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
+import { getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
 import { prisma } from "@/lib/prisma"
 
 type AllowTriple = { actor_type: string; action: string; entity_type: string }

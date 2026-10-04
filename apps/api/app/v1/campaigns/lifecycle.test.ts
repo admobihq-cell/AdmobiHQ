@@ -69,7 +69,7 @@ vi.mock("@/lib/email/send-email", () => ({
   sendEmail: (...a: unknown[]) => sendEmail(...a),
   sendAdminEmail: (...a: unknown[]) => sendAdminEmail(...a),
 }))
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   customerClerkClient: {},
   getCustomerEmail: async () => "advertiser@example.com",
   getCustomerName: async () => "Amina",

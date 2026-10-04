@@ -1,6 +1,6 @@
 import type { AnnouncementTargetApp, BroadcastCreateInput } from "@workspace/ops-contracts"
 
-import { getOrgNamesForClerkUsers } from "@/lib/advertiser-org-name"
+import { getOrgNamesForClerkUsers } from "@/lib/advertiser/advertiser-org-name"
 import { prisma } from "@/lib/prisma"
 import { renderAnnouncementTemplate } from "@/lib/push/announcement-template"
 import { resolveFirstNames } from "@/lib/push/recipient-names"

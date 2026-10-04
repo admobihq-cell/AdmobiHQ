@@ -6,11 +6,11 @@ import {
   resolveCustomerIdentities,
   toInvitationDto,
   toMemberDtos,
-} from "@/lib/advertiser-org"
+} from "@/lib/advertiser/advertiser-org"
 import {
   advertiserActivityWhere,
   toAdvertiserActivityItem,
-} from "@/lib/advertiser-activity"
+} from "@/lib/advertiser/advertiser-activity"
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 

@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 import { driverProfileUpdateSchema } from "@workspace/ops-contracts"
 
 import { jsonError, parseJsonBody, requireDriverAccess } from "@/lib/api-utils"
-import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver-profile-store"
-import { toDriverProfileDto } from "@/lib/driver-profile-dto"
+import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver/driver-profile-store"
+import { toDriverProfileDto } from "@/lib/driver/driver-profile-dto"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {

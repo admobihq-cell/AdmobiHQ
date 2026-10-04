@@ -2,12 +2,12 @@ import { NextResponse } from "next/server"
 
 import { advertiserAdminRequestReviewSchema } from "@workspace/ops-contracts"
 
-import { notifyCustomerUsers } from "@/lib/advertiser-notify"
-import { getAdminRoleId, toAdminRequestDtos } from "@/lib/advertiser-org"
+import { notifyCustomerUsers } from "@/lib/advertiser/advertiser-notify"
+import { getAdminRoleId, toAdminRequestDtos } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
-import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
-import { getCustomerName } from "@/lib/customer-clerk"
+import { invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
+import { getCustomerName } from "@/lib/customer/customer-clerk"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }

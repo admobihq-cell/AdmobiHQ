@@ -2,7 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   getCustomerCompanyName: vi.fn(async () => "Acme Media"),
 }))
 vi.mock("next/headers", () => ({
@@ -165,7 +165,7 @@ describe.skipIf(!databaseUrl)("customer-auth org bootstrap", () => {
         data: { org_id: org.id, clerk_user_id: userId, is_owner: false, role_id: memberRole.id },
       })
 
-      const { toOrgDto } = await import("./advertiser-org")
+      const { toOrgDto } = await import("@/lib/advertiser/advertiser-org")
       const dto = await toOrgDto(org.id, userId)
 
       expect(dto?.isOwner).toBe(false)

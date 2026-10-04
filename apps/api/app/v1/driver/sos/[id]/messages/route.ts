@@ -4,8 +4,8 @@ import { safetyIncidentMessageCreateSchema } from "@workspace/ops-contracts"
 
 import { jsonError, parseId, parseJsonBody, requireDriverAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { isTerminalStatus, toIncidentUpdate } from "@/lib/safety-incident"
-import { loadOwnedIncident } from "@/lib/safety-incident-store"
+import { isTerminalStatus, toIncidentUpdate } from "@/lib/safety/safety-incident"
+import { loadOwnedIncident } from "@/lib/safety/safety-incident-store"
 
 type Params = { params: Promise<{ id: string }> }
 

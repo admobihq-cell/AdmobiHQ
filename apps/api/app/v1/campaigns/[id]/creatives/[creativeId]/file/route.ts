@@ -1,6 +1,6 @@
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { fetchCampaignCreative } from "@/lib/campaign-creative-storage"
-import type { PrivateResourceType } from "@/lib/private-media"
+import { fetchCampaignCreative } from "@/lib/campaigns/campaign-creative-storage"
+import type { PrivateResourceType } from "@/lib/storage/private-media"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string; creativeId: string }> }

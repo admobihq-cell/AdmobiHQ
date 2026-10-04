@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { getCustomerAccess } from "@/lib/customer-auth"
+import { getCustomerAccess } from "@/lib/customer/customer-auth"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"

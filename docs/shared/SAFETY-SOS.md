@@ -108,8 +108,8 @@ the loop is deliberately cheap:
 ## Photos
 
 Up to **4** per incident, **8MB** each, `image/jpeg | image/png | image/webp`.
-Stored through `apps/api/lib/incident-photo-storage.ts`, a thin wrapper over
-the shared `apps/api/lib/private-media.ts` helper — Cloudinary `authenticated`
+Stored through `apps/api/lib/safety/incident-photo-storage.ts`, a thin wrapper over
+the shared `apps/api/lib/storage/private-media.ts` helper — Cloudinary `authenticated`
 delivery type, signed URLs minted and fetched server-side only. Clients only
 ever see the DB-assigned photo id; the `cloudinary_public_id` never leaves the
 API.

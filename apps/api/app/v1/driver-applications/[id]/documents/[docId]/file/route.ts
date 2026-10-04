@@ -1,5 +1,5 @@
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { fetchDriverDocument } from "@/lib/driver-document-storage"
+import { fetchDriverDocument } from "@/lib/driver/driver-document-storage"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string; docId: string }> }

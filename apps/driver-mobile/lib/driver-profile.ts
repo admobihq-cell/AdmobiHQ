@@ -160,7 +160,7 @@ export function useDriverProfile() {
 
 /** Which profile-setup route a driver should land on next, given their
  * current profile — mirrors the required-field checks in
- * apps/api/lib/driver-profile-dto.ts's missingProfileFields/Documents.
+ * apps/api/lib/driver/driver-profile-dto.ts's missingProfileFields/Documents.
  * Three steps: profile (personal info + ID + photo), tax & payout, review. */
 export function nextProfileSetupStep(profile: DriverProfileDto): string {
   const hasPersonalInfo =

@@ -4,12 +4,12 @@ import { headers } from "next/headers"
 
 import { ADVERTISER_PERMISSIONS, type AdvertiserPermission } from "@workspace/ops-contracts"
 
-import { defaultOrgName, getCustomerCompanyName } from "@/lib/customer-clerk"
+import { defaultOrgName, getCustomerCompanyName } from "@/lib/customer/customer-clerk"
 import { prisma } from "@/lib/prisma"
 
 /**
  * Verifies against the CUSTOMER Clerk instance (CUSTOMER_CLERK_SECRET_KEY), a
- * separate instance from ops (lib/auth.ts) and driver (lib/driver-auth.ts).
+ * separate instance from ops (lib/auth.ts) and driver (lib/driver/driver-auth.ts).
  * Bearer-token only, no session-cookie fallback — apps/api is a separate
  * origin from customer-web/customer-mobile. Callers must send
  * `Authorization: Bearer <token>` using a token from the customer Clerk

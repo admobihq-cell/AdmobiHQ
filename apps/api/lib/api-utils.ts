@@ -12,12 +12,12 @@ import {
 } from "@workspace/ops-contracts"
 
 import { requireOpsAdmin, requireOpsPermission, requireOpsUser } from "@/lib/auth"
-import { requireDriverUser } from "@/lib/driver-auth"
+import { requireDriverUser } from "@/lib/driver/driver-auth"
 import {
   requireCustomerIdentity,
   requireCustomerPermission,
   requireCustomerUser,
-} from "@/lib/customer-auth"
+} from "@/lib/customer/customer-auth"
 
 export { paginatedResponse, paginationSchema, parseId }
 export type { PaginationParams }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { getDriverAccess } from "@/lib/driver-auth"
+import { getDriverAccess } from "@/lib/driver/driver-auth"
 import { jsonError, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"

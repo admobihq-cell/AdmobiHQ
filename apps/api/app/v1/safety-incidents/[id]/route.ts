@@ -6,8 +6,8 @@ import { formatLabel, safetyIncidentOpsUpdateSchema } from "@workspace/ops-contr
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { toIncidentPhoto, toIncidentUpdate, toOpsIncident } from "@/lib/safety-incident"
-import { appendSystemUpdate } from "@/lib/safety-incident-store"
+import { toIncidentPhoto, toIncidentUpdate, toOpsIncident } from "@/lib/safety/safety-incident"
+import { appendSystemUpdate } from "@/lib/safety/safety-incident-store"
 
 type Params = { params: Promise<{ id: string }> }
 
