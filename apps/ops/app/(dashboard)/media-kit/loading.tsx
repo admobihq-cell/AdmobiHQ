@@ -1,4 +1,4 @@
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { MEDIA_KIT_PAGE } from "@/lib/entity-pages"
 
 export default function MediaKitLoading() {

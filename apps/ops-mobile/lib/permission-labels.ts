@@ -1,6 +1,6 @@
 import type { OpsPermission } from "@workspace/ops-contracts"
 
-/** Mirrors apps/ops/components/roles-view.tsx's PERMISSION_LABELS so role copy matches web exactly. */
+/** Mirrors apps/ops/components/team/roles-view.tsx's PERMISSION_LABELS so role copy matches web exactly. */
 export const PERMISSION_LABELS: Record<OpsPermission, string> = {
   leads: "Campaign Leads",
   fleet: "Fleet Partners",

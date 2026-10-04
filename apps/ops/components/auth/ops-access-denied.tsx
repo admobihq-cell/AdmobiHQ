@@ -3,7 +3,7 @@
 import { SignOutButton } from "@clerk/nextjs"
 import { ShieldAlert } from "lucide-react"
 
-import { AuthThemeToggle } from "@/components/auth-theme-toggle"
+import { AuthThemeToggle } from "@/components/auth/auth-theme-toggle"
 import { Button } from "@workspace/ui/components/button"
 
 type OpsAccessDeniedProps = {

@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { AnnouncementsView } from "./announcements-view"
 import { ANNOUNCEMENTS_PAGE } from "@/lib/entity-pages"
 import { listAnnouncementBroadcasts } from "@/lib/queries/entities"

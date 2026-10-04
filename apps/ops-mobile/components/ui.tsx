@@ -11,7 +11,7 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { ThemeToggleButton } from "@/components/theme-toggle-button"
+import { ThemeToggleButton } from "@/components/settings/theme-toggle-button"
 import {
   radius,
   spacing,

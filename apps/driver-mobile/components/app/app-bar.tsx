@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Menu } from "@/components/icons"
 import { NotificationBellButton } from "@/components/notifications/notification-bell-button"
-import { ThemeToggleButton } from "@/components/theme-toggle-button"
+import { ThemeToggleButton } from "@/components/settings/theme-toggle-button"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
 /** Persistent top bar shown above every tab — brand, theme access, and the menu button that opens NavDrawer for tabs that don't fit the bottom bar. */

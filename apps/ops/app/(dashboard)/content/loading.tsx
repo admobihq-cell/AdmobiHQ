@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-import { ContentOverviewSkeleton } from "@/components/content-overview-skeleton"
+import { ContentOverviewSkeleton } from "@/components/content/content-overview-skeleton"
 import { cmsAdminLabel, cmsAdminUrl } from "@/lib/site-urls"
 import { Button } from "@workspace/ui/components/button"
 

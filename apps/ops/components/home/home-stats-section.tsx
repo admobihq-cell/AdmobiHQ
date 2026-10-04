@@ -1,5 +1,5 @@
 import { getOverviewStats } from "@/lib/queries/stats"
-import { OpsHomeStats } from "@/components/ops-home-stats"
+import { OpsHomeStats } from "@/components/home/ops-home-stats"
 
 export async function HomeStatsSection() {
   try {

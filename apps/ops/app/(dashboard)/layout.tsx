@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { OpsShell } from "@/components/ops-shell"
+import { OpsShell } from "@/components/shell/ops-shell"
 import { requireOpsUser } from "@/lib/auth"
 import {
   getPendingCampaignsCount,

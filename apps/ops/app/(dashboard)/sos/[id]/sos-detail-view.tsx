@@ -33,9 +33,9 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
 
-import { IncidentTypeIcon } from "@/components/incident-type-icon"
-import { SosDetailSkeleton } from "@/components/sos-detail-skeleton"
-import { StatusBadge } from "@/components/status-badge"
+import { IncidentTypeIcon } from "@/components/sos/incident-type-icon"
+import { SosDetailSkeleton } from "@/components/sos/sos-detail-skeleton"
+import { StatusBadge } from "@/components/entity/status-badge"
 import { SectionCard, SectionEmpty } from "@/components/ui/section-card"
 import { useOpsClient } from "@/lib/ops-client"
 

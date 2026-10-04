@@ -12,7 +12,7 @@ import {
 
 import { StatCard } from "@/components/ui/stat-card"
 import { SectionHeading } from "@/components/ui/section-heading"
-import { CmsHealthCard } from "@/components/cms-health-card"
+import { CmsHealthCard } from "@/components/content/cms-health-card"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import {
   Card,

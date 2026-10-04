@@ -17,7 +17,7 @@ import {
 } from "@/components/icons"
 import { SettingsRow } from "@/components/settings/settings-row"
 import { UserAvatar } from "@/components/settings/user-avatar"
-import { ThemeSettingsSection } from "@/components/theme-settings-section"
+import { ThemeSettingsSection } from "@/components/settings/theme-settings-section"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_APP_URL } from "@/lib/env"
 import { spacing, typography, useThemeColors } from "@/lib/theme"

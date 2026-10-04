@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { UsersTabs } from "@/components/users-tabs"
+import { UsersTabs } from "@/components/users/users-tabs"
 import { requireOpsAdmin } from "@/lib/auth"
 
 export default async function UsersLayout({ children }: { children: React.ReactNode }) {

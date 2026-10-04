@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { AdvertiserOrgsView } from "./advertiser-orgs-view"
 import { ADVERTISER_ORGS_PAGE } from "@/lib/entity-pages"
 import { requireOpsPermission } from "@/lib/auth"

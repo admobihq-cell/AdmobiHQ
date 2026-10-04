@@ -13,7 +13,7 @@ import {
   Wallet,
 } from "lucide-react"
 
-import { ComingSoonDialog } from "@/components/coming-soon-dialog"
+import { ComingSoonDialog } from "@/components/shell/coming-soon-dialog"
 import { StatCard } from "@/components/ui/stat-card"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Card, CardContent } from "@workspace/ui/components/card"

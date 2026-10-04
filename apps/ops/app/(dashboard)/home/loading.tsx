@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, BarChart3, Car, FileText, LayoutDashboard, Megaphone, Mail, Truck, Users } from "lucide-react"
 
-import { HomeStatsSkeleton } from "@/components/home-stats-skeleton"
+import { HomeStatsSkeleton } from "@/components/home/home-stats-skeleton"
 import { cmsAdminLabel } from "@/lib/site-urls"
 import { Button } from "@workspace/ui/components/button"
 

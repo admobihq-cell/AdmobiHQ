@@ -5,7 +5,7 @@ import { radius, spacing, typography, useThemedStyles } from "@/lib/theme"
 
 type TeamTab = "members" | "roles"
 
-/** Segmented Members/Roles switcher — mirrors apps/ops/components/team-tabs.tsx on web. */
+/** Segmented Members/Roles switcher — mirrors apps/ops/components/team/team-tabs.tsx on web. */
 export function TeamTabs({ active }: { active: TeamTab }) {
   const router = useRouter()
   const styles = useThemedStyles((c) => ({

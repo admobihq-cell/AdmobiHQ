@@ -1,6 +1,6 @@
 import { Download, Plus, Search } from "lucide-react"
 
-import { EntityTableSkeleton } from "@/components/entity-table-skeleton"
+import { EntityTableSkeleton } from "@/components/entity/entity-table-skeleton"
 import { PageHero } from "@/components/ui/page-hero"
 import type { EntityPageMeta } from "@/lib/entity-pages"
 import { Button } from "@workspace/ui/components/button"

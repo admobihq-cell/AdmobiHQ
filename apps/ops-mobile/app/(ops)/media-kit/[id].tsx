@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 
-import { detailValue, EntityDetail } from "@/components/EntityDetail"
+import { detailValue, EntityDetail } from "@/components/entity/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function MediaKitDetailScreen() {

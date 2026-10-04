@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { DriverApplicationsView } from "./driver-applications-view"
 import { DRIVER_APPLICATIONS_PAGE } from "@/lib/entity-pages"
 import { listDriverApplications } from "@/lib/queries/entities"
