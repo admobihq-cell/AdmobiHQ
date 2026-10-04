@@ -115,7 +115,7 @@ name cannot break out of the quoted filename.
 The filename is set in two places per download and they must agree: the route's
 `Content-Disposition`, and the client's `a.download` / `File` name (which wins
 where present). See `apps/customer-web/lib/use-campaigns.ts` and
-`apps/ops/components/entity-page.tsx`.
+`apps/ops/components/entity/entity-page.tsx`.
 
 Proof of play reports the **booked schedule**, not measured plays: no play
 telemetry reaches the platform yet, so the document claims no play volume and

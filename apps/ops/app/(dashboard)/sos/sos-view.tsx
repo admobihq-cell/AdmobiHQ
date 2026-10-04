@@ -34,9 +34,9 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@/components/ui/data-table"
-import { IncidentTypeIcon } from "@/components/incident-type-icon"
+import { IncidentTypeIcon } from "@/components/sos/incident-type-icon"
 import { PageHero } from "@/components/ui/page-hero"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusBadge } from "@/components/entity/status-badge"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { useOpsClient } from "@/lib/ops-client"
 

@@ -1,1 +1,1 @@
-export { EntityStackLayout as default } from "@/components/EntityStackLayout"
+export { EntityStackLayout as default } from "@/components/entity/EntityStackLayout"

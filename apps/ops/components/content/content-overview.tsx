@@ -4,7 +4,7 @@ import { StatCard } from "@/components/ui/stat-card"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Card, CardContent } from "@workspace/ui/components/card"
 
-import { ContentDraftsTable } from "@/components/content-drafts-table"
+import { ContentDraftsTable } from "@/components/content/content-drafts-table"
 import { getContentStats } from "@/lib/queries/content"
 import { formatBytes } from "@/lib/format"
 

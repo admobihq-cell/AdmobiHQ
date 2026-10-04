@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { PlatformFlagsView } from "@/components/platform-flags-view"
+import { PlatformFlagsView } from "@/components/settings/platform-flags-view"
 import { requireOpsPermission } from "@/lib/auth"
 
 export const metadata = { title: "Platform flags" }

@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { WaitlistView } from "./waitlist-view"
 import { WAITLIST_PAGE } from "@/lib/entity-pages"
 import { listWaitlist } from "@/lib/queries/entities"

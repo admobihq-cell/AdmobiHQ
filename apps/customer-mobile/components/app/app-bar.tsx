@@ -2,7 +2,7 @@ import { Image, Platform, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { NotificationBellButton } from "@/components/notifications/notification-bell-button"
-import { ThemeToggleButton } from "@/components/theme-toggle-button"
+import { ThemeToggleButton } from "@/components/settings/theme-toggle-button"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
 /** Persistent top bar shown above every tab — brand, notifications, and theme access that used to live only on the Overview tab and scroll out of view. */

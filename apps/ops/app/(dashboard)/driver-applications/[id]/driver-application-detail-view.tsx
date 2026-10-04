@@ -13,9 +13,9 @@ import { Button } from "@workspace/ui/components/button"
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Textarea } from "@workspace/ui/components/textarea"
-import { StatusBadge } from "@/components/status-badge"
-import { DriverApplicationDetailSkeleton } from "@/components/driver-application-detail-skeleton"
-import { ReviewNote } from "@/components/review-note"
+import { StatusBadge } from "@/components/entity/status-badge"
+import { DriverApplicationDetailSkeleton } from "@/components/driver-applications/driver-application-detail-skeleton"
+import { ReviewNote } from "@/components/entity/review-note"
 import { Fact, FactStrip } from "@/components/ui/fact-strip"
 import {
   SectionCard,

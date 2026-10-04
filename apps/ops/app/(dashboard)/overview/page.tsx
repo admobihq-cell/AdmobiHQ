@@ -8,9 +8,9 @@ import {
   Truck,
 } from "lucide-react"
 
-import { OverviewDashboardSkeleton } from "@/components/overview-dashboard-skeleton"
-import { OverviewRangePicker } from "@/components/overview-range-picker"
-import { OverviewStats } from "@/components/overview-stats"
+import { OverviewDashboardSkeleton } from "@/components/overview/overview-dashboard-skeleton"
+import { OverviewRangePicker } from "@/components/overview/overview-range-picker"
+import { OverviewStats } from "@/components/overview/overview-stats"
 import { PageHero } from "@/components/ui/page-hero"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Button } from "@workspace/ui/components/button"

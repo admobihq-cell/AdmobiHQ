@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 
-import { AdmobiOtpSignUpForm } from "@/components/admobi-otp-sign-up-form"
-import { AuthThemeToggle } from "@/components/auth-theme-toggle"
+import { AdmobiOtpSignInForm } from "@/components/auth/admobi-otp-sign-in-form"
+import { AuthThemeToggle } from "@/components/auth/auth-theme-toggle"
 import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
 
-export function SignUpForm() {
+export function SignInForm() {
   return (
     <>
       <AuthThemeToggle />
@@ -22,17 +22,17 @@ export function SignUpForm() {
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">
               Admobi Ops
             </p>
-            <h1 className="font-heading text-xl font-medium">Create your account</h1>
-            <p className="text-sm text-muted-foreground">@admobihq.com email required</p>
+            <h1 className="font-heading text-xl font-medium">Sign in to Ops Console</h1>
+            <p className="text-sm text-muted-foreground">Use your @admobihq.com account</p>
           </div>
-          <AdmobiOtpSignUpForm />
+          <AdmobiOtpSignInForm />
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            No account?{" "}
             <Link
-              href="/sign-in"
+              href="/sign-up"
               className="font-medium text-foreground underline underline-offset-4"
             >
-              Sign in
+              Sign up
             </Link>
           </p>
         </div>

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useSignIn } from "@clerk/nextjs"
 
-import { AdmobiEmailField } from "@/components/admobi-email-field"
+import { AdmobiEmailField } from "@/components/auth/admobi-email-field"
 import { isAdmobiEmail } from "@/lib/allowed-email"
 import { Button } from "@workspace/ui/components/button"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@workspace/ui/components/input-otp"

@@ -1,7 +1,7 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
-import { StatusBadge } from "@/components/status-badge"
+import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
+import { StatusBadge } from "@/components/entity/status-badge"
 import {
   LEAD_FORM_FIELDS,
   LEAD_STATUS_OPTIONS,

@@ -6,7 +6,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { LeadListRow } from "@/components/app/entity-list-rows"
-import { EntityList } from "@/components/EntityList"
+import { EntityList } from "@/components/entity/EntityList"
 import { Megaphone } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 

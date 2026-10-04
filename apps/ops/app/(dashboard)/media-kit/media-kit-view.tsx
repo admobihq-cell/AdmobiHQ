@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
+import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
 import {
   MEDIA_KIT_FORM_FIELDS,
   mediaKitFormFromRecord,

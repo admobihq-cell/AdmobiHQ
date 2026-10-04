@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { TeamTabs } from "@/components/team-tabs"
+import { TeamTabs } from "@/components/team/team-tabs"
 import { requireOpsAdmin } from "@/lib/auth"
 
 export default async function TeamLayout({ children }: { children: React.ReactNode }) {

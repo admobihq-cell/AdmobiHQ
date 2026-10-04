@@ -1,7 +1,7 @@
 import Link from "next/link"
 
-import { OverviewDashboardSkeleton } from "@/components/overview-dashboard-skeleton"
-import { OverviewRangePicker } from "@/components/overview-range-picker"
+import { OverviewDashboardSkeleton } from "@/components/overview/overview-dashboard-skeleton"
+import { OverviewRangePicker } from "@/components/overview/overview-range-picker"
 import { Button } from "@workspace/ui/components/button"
 
 const QUICK_LINKS = [

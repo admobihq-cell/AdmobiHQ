@@ -29,9 +29,9 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { CaseDetailSkeleton } from "@/components/case-detail-skeleton"
-import { StatusBadge } from "@/components/status-badge"
-import { SupportCategoryIcon } from "@/components/support-category-icon"
+import { CaseDetailSkeleton } from "@/components/support/case-detail-skeleton"
+import { StatusBadge } from "@/components/entity/status-badge"
+import { SupportCategoryIcon } from "@/components/support/support-category-icon"
 import {
   SectionCard,
   SectionEmpty,

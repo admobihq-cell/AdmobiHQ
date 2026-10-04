@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { StatusBadge } from "@/components/status-badge"
+import { StatusBadge } from "@/components/entity/status-badge"
 import { DataTable, type ColumnDef } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
