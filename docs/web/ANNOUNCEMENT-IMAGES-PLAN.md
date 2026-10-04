@@ -42,7 +42,7 @@ return (
 )
 ```
 
-**Fields today:** only `category` (single-select), `title` (text), `body` (multiline text) — defined declaratively in `packages/ops-contracts/src/form-fields.ts` as `ANNOUNCEMENT_FORM_FIELDS` and rendered generically by `apps/ops-mobile/components/EntityFormScreen.tsx`.
+**Fields today:** only `category` (single-select), `title` (text), `body` (multiline text) — defined declaratively in `packages/ops-contracts/src/form-fields.ts` as `ANNOUNCEMENT_FORM_FIELDS` and rendered generically by `apps/ops-mobile/components/entity/EntityFormScreen.tsx`.
 
 **Form pattern:** All ops-mobile entity forms (leads, drivers, fleet, media-kit, announcements) share one generic renderer, `EntityFormScreen`, driven by a `FormFieldDef[]` array (`{ name, label, type?: "text"|"email"|"multiline", required?, options?, multi?, placeholder?, section? }`). It manages a flat `Record<string,string>` state, renders `TextInput` for text fields and a `BottomSheetPicker` for `options` fields. **There is no field type for images/files at all** — adding image support means either extending `FormFieldDef`/`EntityFormScreen` with a new field type, or building a bespoke picker section outside the generic renderer (more likely, given upload needs a preview + picker button, not a plain input).
 

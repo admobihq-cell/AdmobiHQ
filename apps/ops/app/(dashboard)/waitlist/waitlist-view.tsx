@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity-page"
+import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
 import {
   WAITLIST_FORM_FIELDS,
   waitlistFormFromRecord,

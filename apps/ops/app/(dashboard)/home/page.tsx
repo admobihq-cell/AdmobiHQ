@@ -1,9 +1,9 @@
 import { Suspense } from "react"
 
-import { HomeStatsSection } from "@/components/home-stats-section"
-import { HomeStatsSkeleton } from "@/components/home-stats-skeleton"
-import { HomeWelcome } from "@/components/home-welcome"
-import { HomeModules } from "@/components/home-modules"
+import { HomeStatsSection } from "@/components/home/home-stats-section"
+import { HomeStatsSkeleton } from "@/components/home/home-stats-skeleton"
+import { HomeWelcome } from "@/components/home/home-welcome"
+import { HomeModules } from "@/components/home/home-modules"
 
 export const metadata = { title: "Home" }
 

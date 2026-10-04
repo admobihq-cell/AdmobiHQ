@@ -56,7 +56,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 import { TourProvider } from "@workspace/ui/components/tour-provider"
 
-import { NotificationBell } from "@/components/notification-bell"
+import { NotificationBell } from "@/components/shell/notification-bell"
 import { opsTourChapters } from "@/lib/tour-chapters"
 
 const navItems: Array<{

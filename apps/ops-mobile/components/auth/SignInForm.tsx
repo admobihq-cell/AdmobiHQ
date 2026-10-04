@@ -28,7 +28,7 @@ import {
   AuthSecondaryButton,
   AuthUsernameField,
 } from "@/components/auth/AuthFormKit"
-import { OtpCodeInput } from "@/components/otp-code-input"
+import { OtpCodeInput } from "@/components/auth/otp-code-input"
 import {
   ErrorText,
   IconBox,

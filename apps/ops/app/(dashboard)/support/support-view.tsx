@@ -34,8 +34,8 @@ import {
 } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
-import { StatusBadge } from "@/components/status-badge"
-import { SupportCategoryIcon } from "@/components/support-category-icon"
+import { StatusBadge } from "@/components/entity/status-badge"
+import { SupportCategoryIcon } from "@/components/support/support-category-icon"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 

@@ -94,7 +94,7 @@ Every hand-rolled sign-up form must render `<div id="clerk-captcha" />` in the s
 its submit and Google buttons — see
 [advertiser-sign-up.tsx](../../apps/customer-web/components/auth/advertiser-sign-up.tsx),
 [driver-sign-up.tsx](../../apps/driver-web/components/auth/driver-sign-up.tsx), and
-[admobi-otp-sign-up-form.tsx](../../apps/ops/components/admobi-otp-sign-up-form.tsx).
+[admobi-otp-sign-up-form.tsx](../../apps/ops/components/auth/admobi-otp-sign-up-form.tsx).
 
 ### Advertiser sign-up collects a name and an optional company name
 
@@ -166,7 +166,7 @@ Driver sign-up deliberately does not ask for this; drivers sign up as individual
 ### Ops (`apps/ops`)
 
 - [app/sign-in/[[...sign-in]]/page.tsx](../../apps/ops/app/sign-in/%5B%5B...sign-in%5D%5D/page.tsx) and the sign-up equivalent call `getOpsAccess()` server-side first — already-authorized users are redirected straight to `/home`; non-`@admobihq.com` emails get `<OpsAccessDenied>` instead of a form.
-- Domain check happens **client-side too**, before the form will even submit (`isAdmobiEmail(email)` in [admobi-otp-sign-in-form.tsx](../../apps/ops/components/admobi-otp-sign-in-form.tsx)) — belt-and-suspenders on top of the server-side gate in §5.
+- Domain check happens **client-side too**, before the form will even submit (`isAdmobiEmail(email)` in [admobi-otp-sign-in-form.tsx](../../apps/ops/components/auth/admobi-otp-sign-in-form.tsx)) — belt-and-suspenders on top of the server-side gate in §5.
 - Route protection: [apps/ops/proxy.ts](../../apps/ops/proxy.ts) (renamed from `middleware.ts` on purpose) is just `clerkMiddleware()` with no route logic — actual authorization happens per-route via `requireOpsUser()` and in [app/(dashboard)/layout.tsx](../../apps/ops/app/(dashboard)/layout.tsx), which calls `requireOpsUser()` and redirects to `/` on failure.
 
 ### Customer (`apps/customer-web`, `apps/customer-mobile`) and Driver (`apps/driver-web`, `apps/driver-mobile`)

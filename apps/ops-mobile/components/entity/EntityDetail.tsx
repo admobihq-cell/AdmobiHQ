@@ -25,7 +25,7 @@ import {
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Pencil, Trash } from "@/components/icons"
-import { StatusPicker } from "@/components/StatusPicker"
+import { StatusPicker } from "@/components/entity/StatusPicker"
 import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL } from "@/lib/ops-client"

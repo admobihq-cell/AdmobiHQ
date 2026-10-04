@@ -1,7 +1,7 @@
 import type { DateRangeKey } from "@/lib/queries/stats"
 import { getContentStats } from "@/lib/queries/content"
 import { getOverviewStats, getSubmissionsOverTime } from "@/lib/queries/stats"
-import { OverviewDashboard } from "@/components/overview-dashboard"
+import { OverviewDashboard } from "@/components/overview/overview-dashboard"
 
 type OverviewStatsProps = {
   range: DateRangeKey

@@ -17,7 +17,7 @@ import {
 } from "@/components/icons"
 
 import { SettingsRow } from "@/components/settings/settings-row"
-import { ThemeSettingsSection } from "@/components/theme-settings-section"
+import { ThemeSettingsSection } from "@/components/settings/theme-settings-section"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { getPrimaryEmail } from "@/lib/auth"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"

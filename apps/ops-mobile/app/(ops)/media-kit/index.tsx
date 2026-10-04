@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 
-import { EntityList } from "@/components/EntityList"
+import { EntityList } from "@/components/entity/EntityList"
 import { FileText } from "@/components/icons"
 import { useOpsClient } from "@/lib/ops-client"
 

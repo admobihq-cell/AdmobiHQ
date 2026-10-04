@@ -2,7 +2,7 @@ import { useCallback } from "react"
 import { DRIVER_STATUS_OPTIONS } from "@workspace/ops-contracts"
 
 import { driverStatusVariant } from "@/components/app/entity-list-rows"
-import { detailValue, EntityDetail } from "@/components/EntityDetail"
+import { detailValue, EntityDetail } from "@/components/entity/EntityDetail"
 import { useOpsClient } from "@/lib/ops-client"
 
 export default function DriverDetailScreen() {

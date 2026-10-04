@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { SkeletonFormRecord } from "@/components/app/skeleton"
-import { EntityFormScreen } from "@/components/EntityFormScreen"
+import { EntityFormScreen } from "@/components/entity/EntityFormScreen"
 import { getEntityFormConfig, type EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
 import { useOpsClient, API_URL } from "@/lib/ops-client"

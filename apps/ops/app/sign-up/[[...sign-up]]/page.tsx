@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 
-import { OpsAccessDenied } from "@/components/ops-access-denied"
-import { SignUpForm } from "@/components/sign-up-form"
+import { OpsAccessDenied } from "@/components/auth/ops-access-denied"
+import { SignUpForm } from "@/components/auth/sign-up-form"
 import { getOpsAccess } from "@/lib/auth"
 
 export const metadata = { title: "Sign up" }

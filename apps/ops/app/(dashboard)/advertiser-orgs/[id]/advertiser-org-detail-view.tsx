@@ -22,8 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { AdvertiserOrgDetailSkeleton } from "@/components/advertiser-org-detail-skeleton"
-import { StatusBadge } from "@/components/status-badge"
+import { AdvertiserOrgDetailSkeleton } from "@/components/advertiser-orgs/advertiser-org-detail-skeleton"
+import { StatusBadge } from "@/components/entity/status-badge"
 import { SectionCard, SectionEmpty } from "@/components/ui/section-card"
 import { StatCard } from "@/components/ui/stat-card"
 import { formatDate, formatDateTime } from "@/lib/format"

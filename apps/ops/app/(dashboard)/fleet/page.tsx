@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { FleetView } from "./fleet-view"
 import { FLEET_PAGE } from "@/lib/entity-pages"
 import { listFleetPartners } from "@/lib/queries/entities"

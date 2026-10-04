@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
-import { EntityPageChrome } from "@/components/entity-page-chrome"
+import { EntityPageChrome } from "@/components/entity/entity-page-chrome"
 import { MediaKitView } from "./media-kit-view"
 import { MEDIA_KIT_PAGE } from "@/lib/entity-pages"
 import { listMediaKitRequests } from "@/lib/queries/entities"

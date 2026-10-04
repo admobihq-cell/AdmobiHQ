@@ -1,4 +1,4 @@
-import { PlatformUsersView } from "@/components/platform-users-view"
+import { PlatformUsersView } from "@/components/users/platform-users-view"
 
 export default function CustomersUsersPage() {
   return <PlatformUsersView type="customers" />
