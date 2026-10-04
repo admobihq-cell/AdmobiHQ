@@ -2,8 +2,8 @@ import { safetyIncidentLocationSchema } from "@workspace/ops-contracts"
 
 import { jsonError, parseId, parseJsonBody, requireDriverAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { pingAdmission } from "@/lib/safety-incident"
-import { loadOwnedIncident } from "@/lib/safety-incident-store"
+import { pingAdmission } from "@/lib/safety/safety-incident"
+import { loadOwnedIncident } from "@/lib/safety/safety-incident-store"
 
 type Params = { params: Promise<{ id: string }> }
 

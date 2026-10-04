@@ -4,11 +4,11 @@ import { campaignUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { resolveCampaignAuthorName } from "@/lib/advertiser-org"
-import { toCampaignDto, toDayIso } from "@/lib/campaign-dto"
-import { destroyCampaignCreative } from "@/lib/campaign-creative-storage"
-import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaign-store"
-import type { PrivateResourceType } from "@/lib/private-media"
+import { resolveCampaignAuthorName } from "@/lib/advertiser/advertiser-org"
+import { toCampaignDto, toDayIso } from "@/lib/campaigns/campaign-dto"
+import { destroyCampaignCreative } from "@/lib/campaigns/campaign-creative-storage"
+import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
+import type { PrivateResourceType } from "@/lib/storage/private-media"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }

@@ -51,7 +51,7 @@ export function CampaignCalendarView({ campaigns }: { campaigns: CampaignDto[] }
   const downloadPdf = useDownloadPdf()
 
   /** Money already committed: approved campaigns whose flight hasn't finished.
-   * Mirrors isActive() in apps/api/lib/campaign-statement.ts and the same tile
+   * Mirrors isActive() in apps/api/lib/campaigns/campaign-statement.ts and the same tile
    * on customer-web, so the phone, the browser and the PDF all show one
    * number. */
   const activeCampaigns = useMemo(

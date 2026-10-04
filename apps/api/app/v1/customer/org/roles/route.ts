@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { advertiserRoleCreateSchema } from "@workspace/ops-contracts"
 
-import { listAssignableRoles, toRoleDto } from "@/lib/advertiser-org"
+import { listAssignableRoles, toRoleDto } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { countOrgOwners, getOrgDetachmentImpact } from "@/lib/advertiser-org"
+import { countOrgOwners, getOrgDetachmentImpact } from "@/lib/advertiser/advertiser-org"
 import { requireCustomerAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 

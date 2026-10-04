@@ -4,7 +4,7 @@ import { safetyIncidentMessageCreateSchema } from "@workspace/ops-contracts"
 
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { toIncidentUpdate } from "@/lib/safety-incident"
+import { toIncidentUpdate } from "@/lib/safety/safety-incident"
 
 type Params = { params: Promise<{ id: string }> }
 

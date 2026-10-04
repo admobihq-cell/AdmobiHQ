@@ -10,9 +10,9 @@ import {
   buildDriverDocumentPublicId,
   destroyDriverDocument,
   uploadDriverDocument,
-} from "@/lib/driver-document-storage"
-import { toDriverDocumentDto } from "@/lib/driver-profile-dto"
-import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver-profile-store"
+} from "@/lib/driver/driver-document-storage"
+import { toDriverDocumentDto } from "@/lib/driver/driver-profile-dto"
+import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver/driver-profile-store"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {

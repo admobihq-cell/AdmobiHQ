@@ -5,8 +5,8 @@ import { safetyIncidentDriverUpdateSchema } from "@workspace/ops-contracts"
 import { auditFromDriverUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireDriverAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
-import { isTerminalStatus, toDriverIncident } from "@/lib/safety-incident"
-import { appendSystemUpdate, loadOwnedIncident } from "@/lib/safety-incident-store"
+import { isTerminalStatus, toDriverIncident } from "@/lib/safety/safety-incident"
+import { appendSystemUpdate, loadOwnedIncident } from "@/lib/safety/safety-incident-store"
 
 type Params = { params: Promise<{ id: string }> }
 

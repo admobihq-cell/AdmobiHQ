@@ -4,7 +4,7 @@ import { advertiserOrgUpdateSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerAccess, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { toOrgDto } from "@/lib/advertiser-org"
+import { toOrgDto } from "@/lib/advertiser/advertiser-org"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {

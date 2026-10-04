@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 import { exportFileName } from "@workspace/ops-contracts"
 
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { buildProofOfPlay } from "@/lib/campaign-statement"
-import { getOwnedCampaign } from "@/lib/campaign-store"
+import { buildProofOfPlay } from "@/lib/campaigns/campaign-statement"
+import { getOwnedCampaign } from "@/lib/campaigns/campaign-store"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 

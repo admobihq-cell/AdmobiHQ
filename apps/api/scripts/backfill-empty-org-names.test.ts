@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 const databaseUrl = process.env.DATABASE_URL
 const testPrisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl! }) })
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   defaultOrgName: vi.fn(async (clerkUserId: string) =>
     clerkUserId === "empty-org-owner" ? "Victor's Organization" : "My Organization",
   ),

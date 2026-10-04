@@ -38,7 +38,7 @@ export function CampaignCalendarView() {
   const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
 
   /** Money already committed: approved campaigns whose flight hasn't finished.
-   * Mirrors isActive() in apps/api/lib/campaign-statement.ts so the figure on
+   * Mirrors isActive() in apps/api/lib/campaigns/campaign-statement.ts so the figure on
    * screen and the figure in the downloaded statement are the same number. */
   const active = useMemo(
     () =>

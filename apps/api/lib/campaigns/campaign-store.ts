@@ -5,7 +5,7 @@ import { checkCreativeDimensions, specsForFormat } from "@workspace/ops-contract
 import { prisma } from "@/lib/prisma"
 
 /** Statuses in which an advertiser may still change a campaign. Mirrors
- * EDITABLE_STATUSES in lib/driver-profile-store.ts. A campaign under review
+ * EDITABLE_STATUSES in lib/driver/driver-profile-store.ts. A campaign under review
  * ("submitted") is frozen so its content can't shift under the reviewer, and
  * an "approved" one is frozen so a flight can't be rewritten after sign-off —
  * both cases need ops to walk the status back first. */

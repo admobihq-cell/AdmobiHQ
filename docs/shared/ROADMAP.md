@@ -44,7 +44,7 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 **API surface** (`apps/api`, following existing route/validation/audit patterns):
 
 - `GET/POST /v1/customer/campaigns`, `GET /v1/customer/campaigns/[id]` — authenticated with the **customer** Clerk JWT (see §6 Auth).
-- `POST /v1/customer/campaigns/[id]/creative` — signed Cloudinary upload, pattern already in [apps/api/lib/cloudinary.ts](../../apps/api/lib/cloudinary.ts).
+- `POST /v1/customer/campaigns/[id]/creative` — signed Cloudinary upload, pattern already in [apps/api/lib/storage/cloudinary.ts](../../apps/api/lib/storage/cloudinary.ts).
 - `GET /v1/customer/zones` — bookable inventory with pricing and availability.
 - `GET /v1/customer/stats`, `GET /v1/customer/plays` — overview numbers and map data (fixtures first, telemetry later — same response shape so the UI doesn't change when real data lands).
 - Zod DTOs go in `@workspace/ops-contracts`; typed client methods in `@workspace/ops-api-client` (both already exist and are shared with mobile).

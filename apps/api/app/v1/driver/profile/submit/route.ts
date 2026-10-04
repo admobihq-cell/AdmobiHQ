@@ -2,13 +2,13 @@ import { NextResponse } from "next/server"
 
 import { auditFromDriverUser } from "@/lib/audit"
 import { jsonError, requireDriverAccess } from "@/lib/api-utils"
-import { getDriverEmail } from "@/lib/driver-clerk"
+import { getDriverEmail } from "@/lib/driver/driver-clerk"
 import {
   missingProfileDocuments,
   missingProfileFields,
   toDriverProfileDto,
-} from "@/lib/driver-profile-dto"
-import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver-profile-store"
+} from "@/lib/driver/driver-profile-dto"
+import { EDITABLE_STATUSES, getOrCreateDriverProfile } from "@/lib/driver/driver-profile-store"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"

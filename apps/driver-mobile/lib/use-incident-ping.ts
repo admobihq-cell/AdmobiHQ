@@ -17,7 +17,7 @@ const TERMINAL = new Set<string>(SAFETY_TERMINAL_STATUSES)
  * store-review burden of always-on location buy nothing an ops responder
  * actually uses, and Neon compute is this platform's main cost driver. The
  * server independently refuses pings on terminal or >6h-old incidents (see
- * pingAdmission in apps/api/lib/safety-incident.ts), so a stuck client cannot
+ * pingAdmission in apps/api/lib/safety/safety-incident.ts), so a stuck client cannot
  * ping forever even if this hook misbehaves.
  */
 export function useIncidentPing(

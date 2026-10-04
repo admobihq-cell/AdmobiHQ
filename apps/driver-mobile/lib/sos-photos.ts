@@ -2,7 +2,7 @@ import type { ImagePickerAsset } from "expo-image-picker"
 
 import type { PendingPhoto } from "@/lib/sos"
 
-/** Mirrors MAX_INCIDENT_PHOTOS in apps/api/lib/safety-incident.ts. The server
+/** Mirrors MAX_INCIDENT_PHOTOS in apps/api/lib/safety/safety-incident.ts. The server
  *  is the real gate; this just stops the picker offering a fifth. */
 export const MAX_PENDING_PHOTOS = 4
 

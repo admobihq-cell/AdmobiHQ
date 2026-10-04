@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { paginatedResponse, paginationSchema } from "@workspace/ops-contracts"
 
 import { requireOpsPermissionAccess } from "@/lib/api-utils"
-import { toCampaignListItemDto } from "@/lib/campaign-dto"
+import { toCampaignListItemDto } from "@/lib/campaigns/campaign-dto"
 import { prisma } from "@/lib/prisma"
 
 /** Drafts aren't ops's concern yet — an advertiser still filling out the

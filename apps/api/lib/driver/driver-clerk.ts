@@ -3,7 +3,7 @@ import { createClerkClient } from "@clerk/backend"
 /**
  * Admin client for the SEPARATE driver Clerk instance (DRIVER_CLERK_SECRET_KEY)
  * — never the ops instance's clerkClient() singleton in lib/auth.ts, which
- * reads CLERK_SECRET_KEY. See lib/driver-auth.ts's comment on why these two
+ * reads CLERK_SECRET_KEY. See lib/driver/driver-auth.ts's comment on why these two
  * instances must never be crossed.
  */
 export const driverClerkClient = createClerkClient({
@@ -11,7 +11,7 @@ export const driverClerkClient = createClerkClient({
 })
 
 /** DriverProfile has no email column and the driver JWT only carries `sub`
- * (see lib/driver-auth.ts), so notification emails resolve the address from
+ * (see lib/driver/driver-auth.ts), so notification emails resolve the address from
  * Clerk directly. Never throws — a Clerk hiccup should log, not block
  * submit/review. */
 export async function getDriverEmail(clerkUserId: string): Promise<string | null> {

@@ -3,10 +3,10 @@ import { Prisma } from "@prisma/client"
 import { verifyToken } from "@clerk/backend"
 
 import { timingSafeEqual } from "@/lib/api-utils"
-import { getCustomerAccess } from "@/lib/customer-auth"
-import { getDriverAccess } from "@/lib/driver-auth"
+import { getCustomerAccess } from "@/lib/customer/customer-auth"
+import { getDriverAccess } from "@/lib/driver/driver-auth"
 import { prisma } from "@/lib/prisma"
-import { generateAccessToken, hashAccessToken } from "@/lib/support-token"
+import { generateAccessToken, hashAccessToken } from "@/lib/support/support-token"
 
 export function getBearerToken(req: Request): string | null {
   const header = req.headers.get("authorization")

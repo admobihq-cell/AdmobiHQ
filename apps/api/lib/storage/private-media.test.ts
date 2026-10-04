@@ -21,11 +21,11 @@ beforeAll(async () => {
   process.env.CLOUDINARY_URL = "cloudinary://123456789012345:test-api-secret@test-cloud"
   vi.resetModules()
   await import("./private-media")
-  await import("./campaign-creative-storage")
+  await import("@/lib/campaigns/campaign-creative-storage")
 }, 30_000)
 
 async function urlFor(...args: Parameters<typeof import("./private-media").fetchPrivateAsset>) {
-  const { cloudinary } = await import("@/lib/cloudinary")
+  const { cloudinary } = await import("@/lib/storage/cloudinary")
   const spy = vi.spyOn(cloudinary, "url")
   // Make the fetch fail fast — we only care about the URL that was minted.
   const fetchSpy = vi
@@ -117,7 +117,7 @@ describe("fetchPrivateAsset delivery URL", () => {
 
 describe("resourceTypeForMime", () => {
   it("maps the supplier's four accepted formats", async () => {
-    const { resourceTypeForMime } = await import("./campaign-creative-storage")
+    const { resourceTypeForMime } = await import("@/lib/campaigns/campaign-creative-storage")
     expect(resourceTypeForMime("image/png")).toBe("image")
     expect(resourceTypeForMime("image/jpeg")).toBe("image")
     // Cloudinary classifies GIF, animated included, as an image resource.
@@ -126,7 +126,7 @@ describe("resourceTypeForMime", () => {
   })
 
   it("rejects formats the supplier player cannot decode", async () => {
-    const { resourceTypeForMime } = await import("./campaign-creative-storage")
+    const { resourceTypeForMime } = await import("@/lib/campaigns/campaign-creative-storage")
     expect(resourceTypeForMime("image/webp")).toBeNull()
     expect(resourceTypeForMime("video/webm")).toBeNull()
     expect(resourceTypeForMime("image/bmp")).toBeNull()

@@ -7,7 +7,7 @@ import {
   decodeActivityCursor,
   encodeActivityCursor,
   toAdvertiserActivityItem,
-} from "@/lib/advertiser-activity"
+} from "@/lib/advertiser/advertiser-activity"
 import { jsonError, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 

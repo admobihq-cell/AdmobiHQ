@@ -1,6 +1,6 @@
 import "@/lib/load-env"
 
-import { defaultOrgName } from "@/lib/customer-clerk"
+import { defaultOrgName } from "@/lib/customer/customer-clerk"
 import { prisma } from "@/lib/prisma"
 import { fileURLToPath } from "node:url"
 

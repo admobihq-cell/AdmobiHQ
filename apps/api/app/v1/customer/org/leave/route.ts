@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 
-import { countOrgOwners } from "@/lib/advertiser-org"
+import { countOrgOwners } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, requireCustomerAccess } from "@/lib/api-utils"
-import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
+import { invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
 import { prisma } from "@/lib/prisma"
 
 /**

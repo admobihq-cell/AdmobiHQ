@@ -1,6 +1,6 @@
 import "@/lib/load-env"
 
-import { customerClerkClient, defaultOrgName, readCompanyName } from "@/lib/customer-clerk"
+import { customerClerkClient, defaultOrgName, readCompanyName } from "@/lib/customer/customer-clerk"
 import { prisma } from "@/lib/prisma"
 import { fileURLToPath } from "node:url"
 

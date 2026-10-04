@@ -3,7 +3,7 @@ import { z } from "zod"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
+import { invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
 import { prisma } from "@/lib/prisma"
 
 const transferSchema = z.object({

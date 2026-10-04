@@ -11,7 +11,7 @@ import { sendAdminEmail } from "@/lib/email/send-email"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { severityForType, toDriverIncident, toOpsIncident } from "@/lib/safety-incident"
+import { severityForType, toDriverIncident, toOpsIncident } from "@/lib/safety/safety-incident"
 
 /** Google Maps deep link, or null when the device had no fix. */
 function mapsUrlFor(lat: number | null, lng: number | null): string | null {

@@ -10,7 +10,7 @@ const FAKE_USERS = [
 const databaseUrl = process.env.DATABASE_URL
 const testPrisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl! }) })
 
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   readCompanyName: (user: { unsafeMetadata?: unknown }) => {
     const metadata = user.unsafeMetadata
     if (typeof metadata !== "object" || metadata === null) return null

@@ -5,7 +5,7 @@ import { auditPublic } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody } from "@/lib/api-utils"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { getBearerToken, loadCaseForCaller, toPublicMessage } from "@/lib/support"
+import { getBearerToken, loadCaseForCaller, toPublicMessage } from "@/lib/support/support"
 
 type Params = { params: Promise<{ id: string }> }
 

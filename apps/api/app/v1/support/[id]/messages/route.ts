@@ -8,7 +8,7 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { SupportCaseReply } from "@/lib/email/templates/SupportCaseReply"
 import { sendEmail } from "@/lib/email/send-email"
 import { prisma } from "@/lib/prisma"
-import { toOpsMessage } from "@/lib/support"
+import { toOpsMessage } from "@/lib/support/support"
 
 type Params = { params: Promise<{ id: string }> }
 

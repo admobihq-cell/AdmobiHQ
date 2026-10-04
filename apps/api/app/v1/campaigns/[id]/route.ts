@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { getOrgNameForOrgId } from "@/lib/advertiser-org-name"
-import { resolveCampaignAuthorName } from "@/lib/advertiser-org"
-import { toCampaignDto } from "@/lib/campaign-dto"
+import { getOrgNameForOrgId } from "@/lib/advertiser/advertiser-org-name"
+import { resolveCampaignAuthorName } from "@/lib/advertiser/advertiser-org"
+import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }

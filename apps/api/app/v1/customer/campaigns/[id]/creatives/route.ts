@@ -17,9 +17,9 @@ import {
   destroyCampaignCreative,
   resourceTypeForMime,
   uploadCampaignCreative,
-} from "@/lib/campaign-creative-storage"
-import { toCampaignCreativeDto } from "@/lib/campaign-dto"
-import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaign-store"
+} from "@/lib/campaigns/campaign-creative-storage"
+import { toCampaignCreativeDto } from "@/lib/campaigns/campaign-dto"
+import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }

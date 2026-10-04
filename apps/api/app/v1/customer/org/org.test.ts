@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   generateAdvertiserInviteToken,
   hashAdvertiserInviteToken,
-} from "@/lib/advertiser-invite-token"
+} from "@/lib/advertiser/advertiser-invite-token"
 import { testDatabaseUrl } from "@/lib/test-database-url"
 
 const databaseUrl = testDatabaseUrl()
@@ -56,7 +56,7 @@ vi.mock("@/lib/email/send-email", () => ({
 vi.mock("@/lib/email/render-template", () => ({
   renderTemplate: vi.fn(async () => "<html></html>"),
 }))
-vi.mock("@/lib/customer-clerk", () => ({
+vi.mock("@/lib/customer/customer-clerk", () => ({
   getCustomerEmail: vi.fn(async (id: string) => `${id}@example.com`),
   getCustomerName: vi.fn(async () => "Test User"),
   getCustomerCompanyName: vi.fn(async () => "Test Co"),

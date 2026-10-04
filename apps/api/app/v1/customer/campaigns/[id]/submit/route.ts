@@ -2,15 +2,15 @@ import { NextResponse } from "next/server"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { toCampaignDto } from "@/lib/campaign-dto"
+import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
 import {
   EDITABLE_STATUSES,
   getOwnedCampaign,
   missingCampaignCreatives,
   missingCampaignFields,
-} from "@/lib/campaign-store"
-import { fanOutCustomerCampaignNotice } from "@/lib/advertiser-notify"
-import { getCustomerEmail, getCustomerName } from "@/lib/customer-clerk"
+} from "@/lib/campaigns/campaign-store"
+import { fanOutCustomerCampaignNotice } from "@/lib/advertiser/advertiser-notify"
+import { getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"

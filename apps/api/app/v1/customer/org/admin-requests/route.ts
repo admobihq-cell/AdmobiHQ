@@ -5,11 +5,11 @@ import {
   advertiserAdminRequestCreateSchema,
 } from "@workspace/ops-contracts"
 
-import { listOrgMemberIdsWithPermission, notifyCustomerUsers } from "@/lib/advertiser-notify"
-import { toAdminRequestDtos } from "@/lib/advertiser-org"
+import { listOrgMemberIdsWithPermission, notifyCustomerUsers } from "@/lib/advertiser/advertiser-notify"
+import { toAdminRequestDtos } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
-import { getCustomerName } from "@/lib/customer-clerk"
+import { getCustomerName } from "@/lib/customer/customer-clerk"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { prisma } from "@/lib/prisma"
 

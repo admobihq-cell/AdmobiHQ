@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 
 import { advertiserRoleUpdateSchema } from "@workspace/ops-contracts"
 
-import { toRoleDto } from "@/lib/advertiser-org"
+import { toRoleDto } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { invalidateAdvertiserAccessCache } from "@/lib/customer-auth"
+import { invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ roleId: string }> }

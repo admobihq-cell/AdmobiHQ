@@ -12,11 +12,17 @@ Dedicated REST API at **`api.admobihq.com`** for marketing form submissions, ops
 | Staging | `https://api.staging.admobihq.com` | same |
 | Local dev | `http://localhost:3003` | same |
 
-There is **no admin dashboard** on this host — only a minimal info page at `/` and JSON endpoints under `/v1`.
+There is **no admin dashboard** on this host — only an info page at `/` and JSON endpoints under `/v1`.
+
+### Landing page route list
+
+The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may call it: Public, Ops console, Advertiser app, Driver app, System. It is prerendered at build time from `apps/api/lib/route-catalog.ts`, which reads the route files under `app/v1` for paths and methods, so the list cannot fall behind the code. Only the one-line note per route is hand-written, in the `NOTES` map in that file.
+
+**When you add a route**, add its note to `NOTES`. `lib/route-catalog.test.ts` fails until you do. A route under a new first path segment also wants a title in `RESOURCE_LABELS`; without one it falls back to the title-cased segment.
 
 ## Route map
 
-~65 `route.ts` handlers under `/v1`. Grouped by auth, not every `[id]`/`bulk` variant:
+110 route handlers under `/v1` (the landing page at `/` has the full, generated list). Grouped by auth, not every `[id]`/`bulk` variant:
 
 | Path | Auth | Purpose |
 |------|------|---------|
@@ -90,7 +96,7 @@ Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
 `Content-Disposition: attachment`. Unlike `/v1/ops/documents/export`, which
 takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
-letterhead. Row building lives in `lib/campaign-statement.ts`.
+letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
 
 ### Download filenames
 
@@ -184,7 +190,7 @@ All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driv
 
 ## Support case identity token
 
-`GET /v1/public/support` (list a customer's own cases) requires `Authorization: Bearer <identity-token>`, not just an `email` query param — email alone is guessable. The token is minted once per email, the first time that email opens a case (`POST /v1/public/support`), and returned as `identityToken` in that response only — an email that already has one doesn't get reissued (this would silently invalidate whatever device already stored the original). See `mintIdentityTokenIfAbsent` / `verifyIdentityToken` in `apps/api/lib/support.ts`, backed by the `support_identities` table (mirrors the existing per-case `access_token_hash` model).
+`GET /v1/public/support` (list a customer's own cases) requires `Authorization: Bearer <identity-token>`, not just an `email` query param — email alone is guessable. The token is minted once per email, the first time that email opens a case (`POST /v1/public/support`), and returned as `identityToken` in that response only — an email that already has one doesn't get reissued (this would silently invalidate whatever device already stored the original). See `mintIdentityTokenIfAbsent` / `verifyIdentityToken` in `apps/api/lib/support/support.ts`, backed by the `support_identities` table (mirrors the existing per-case `access_token_hash` model).
 
 **Known gap:** a customer who cleared local storage before ever opening a case has no way to recover access to old cases from a new device — that needs an email-verification/magic-link flow, not yet built.
 
@@ -209,7 +215,7 @@ All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driv
 | `REDIS_URL` | Optional | Bull **email queue** (not rate limiting) |
 | `CRON_SECRET` | For scheduled/system callers | See [Service-to-service auth](#service-to-service-auth) |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | For rate limiting | Sliding-window limiter on `/v1/public/*` — see [Rate limiting](#rate-limiting) |
-| `CLOUDINARY_URL` | For private media | Driver documents **and** campaign creatives (`apps/api/lib/private-media.ts`) |
+| `CLOUDINARY_URL` | For private media | Driver documents **and** campaign creatives (`apps/api/lib/storage/private-media.ts`) |
 
 ### Pull locally
 

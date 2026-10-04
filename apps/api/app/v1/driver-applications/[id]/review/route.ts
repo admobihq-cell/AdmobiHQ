@@ -4,8 +4,8 @@ import { driverProfileReviewSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { getDriverEmail } from "@/lib/driver-clerk"
-import { toDriverProfileDto } from "@/lib/driver-profile-dto"
+import { getDriverEmail } from "@/lib/driver/driver-clerk"
+import { toDriverProfileDto } from "@/lib/driver/driver-profile-dto"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendEmail } from "@/lib/email/send-email"
 import {

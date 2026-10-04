@@ -33,7 +33,7 @@ describe("buildIncidentPhotoPublicId", () => {
 
 describe("fetchIncidentPhoto", () => {
   it("requests an authenticated, signed, width-capped image", async () => {
-    const { cloudinary } = await import("@/lib/cloudinary")
+    const { cloudinary } = await import("@/lib/storage/cloudinary")
     const spy = vi.spyOn(cloudinary, "url")
     // Make the fetch fail fast — we only care about the URL that was minted.
     const fetchSpy = vi

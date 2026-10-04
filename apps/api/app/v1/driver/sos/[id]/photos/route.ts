@@ -4,10 +4,10 @@ import { jsonError, parseId, requireDriverAccess } from "@/lib/api-utils"
 import {
   buildIncidentPhotoPublicId,
   uploadIncidentPhoto,
-} from "@/lib/incident-photo-storage"
+} from "@/lib/safety/incident-photo-storage"
 import { prisma } from "@/lib/prisma"
-import { canAcceptPhoto, isTerminalStatus, toIncidentPhoto } from "@/lib/safety-incident"
-import { loadOwnedIncident } from "@/lib/safety-incident-store"
+import { canAcceptPhoto, isTerminalStatus, toIncidentPhoto } from "@/lib/safety/safety-incident"
+import { loadOwnedIncident } from "@/lib/safety/safety-incident-store"
 
 type Params = { params: Promise<{ id: string }> }
 

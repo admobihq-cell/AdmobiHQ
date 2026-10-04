@@ -3,14 +3,14 @@ import {
   fetchPrivateAsset,
   uploadPrivateAsset,
   type UploadedAsset,
-} from "@/lib/private-media"
+} from "@/lib/storage/private-media"
 
 /**
  * SOS incident photos — damage, the scene, an injury.
  *
  * Deliberately thin: all Cloudinary behaviour (authenticated delivery type,
  * signed URLs minted and fetched server-side only, the Dynamic Folder Mode
- * asset_folder handling) lives in lib/private-media.ts and is shared with
+ * asset_folder handling) lives in lib/storage/private-media.ts and is shared with
  * driver documents and campaign creatives. This file owns only the SOS naming
  * convention and the fact that incident photos are always images.
  */

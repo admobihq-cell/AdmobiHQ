@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { toDriverProfileDto } from "@/lib/driver-profile-dto"
+import { toDriverProfileDto } from "@/lib/driver/driver-profile-dto"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
