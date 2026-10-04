@@ -12,11 +12,17 @@ Dedicated REST API at **`api.admobihq.com`** for marketing form submissions, ops
 | Staging | `https://api.staging.admobihq.com` | same |
 | Local dev | `http://localhost:3003` | same |
 
-There is **no admin dashboard** on this host — only a minimal info page at `/` and JSON endpoints under `/v1`.
+There is **no admin dashboard** on this host — only an info page at `/` and JSON endpoints under `/v1`.
+
+### Landing page route list
+
+The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may call it: Public, Ops console, Advertiser app, Driver app, System. It is prerendered at build time from `apps/api/lib/route-catalog.ts`, which reads the route files under `app/v1` for paths and methods, so the list cannot fall behind the code. Only the one-line note per route is hand-written, in the `NOTES` map in that file.
+
+**When you add a route**, add its note to `NOTES`. `lib/route-catalog.test.ts` fails until you do. A route under a new first path segment also wants a title in `RESOURCE_LABELS`; without one it falls back to the title-cased segment.
 
 ## Route map
 
-~65 `route.ts` handlers under `/v1`. Grouped by auth, not every `[id]`/`bulk` variant:
+110 route handlers under `/v1` (the landing page at `/` has the full, generated list). Grouped by auth, not every `[id]`/`bulk` variant:
 
 | Path | Auth | Purpose |
 |------|------|---------|
