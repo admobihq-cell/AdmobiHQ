@@ -4,6 +4,7 @@ const DEFAULT_ADMIN_EMAILS = [
   "admobihq@gmail.com",
   "victor@admobihq.com",
   "japheth@admobihq.com",
+  "nelson@admobihq.com",
 ] as const
 
 export function getSenderEmail(): string {
