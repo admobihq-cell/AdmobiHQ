@@ -570,6 +570,25 @@ Merging first means the new code queries columns prod doesn't have yet, and ever
 
 **One-off: advertiser organizations.** After step 1, also run `npm run seed:advertiser-roles:prod -w web` — no migration seeds the shared starter roles (`Admin`, `Member`), and without them invites have no role to assign and admin-request approval has no role to grant. It's idempotent and the pre-org code never reads the table, so it's safe before the merge. The release scopes every campaign read by `org_id`, so right after step 2 run `npm run backfill:advertiser-orgs:prod -w api`. It gives every customer Clerk user an owner org and stamps their campaigns; anyone lazily bootstrapped between deploy and backfill has their campaigns adopted into the org they own. Until it runs, existing advertisers see an empty campaign list. It must print `WARNING: … campaigns still have no org_id` **zero** times on this first run. Don't re-run it later: once advertisers can leave their workspace to join a team, an org-less campaign can be one they deliberately left behind — and if they've since become that team's owner, a re-run would pull it into the team.
 
+### Migration commands by environment
+
+All database migrations live in `apps/web`, for both ORMs: Prisma (`apps/web/prisma/migrations/`, app tables in `public`) and Payload (`apps/web/migrations/`, CMS tables in `cms`). The API, ops, customer, driver and mobile apps share that database and have no migrations of their own, so there is nothing to run per app.
+
+The environment is chosen by which secrets file you pull from Infisical (`infisical login` once per machine):
+
+| Environment | 1. Pull secrets | 2. Prisma | 3. Payload |
+|-------------|-----------------|-----------|------------|
+| Dev | `npm run env:pull -w web` | `npm run db:migrate:deploy -w web` | `npm run payload:migrate -w web` |
+| Staging | `npm run env:pull:staging -w web` | `npm run db:migrate:deploy -w web` | `npm run payload:migrate -w web` |
+| Production | `npm run env:pull:prod -w web` | `npm run db:migrate:deploy:prod -w web` | `npm run payload:migrate:prod -w web` |
+
+- Dev and staging both write `apps/web/.env.local`, so the same commands hit whichever one you pulled last. After migrating staging, run `npm run env:pull -w web` to point back at dev.
+- Production writes `apps/web/.env.production.local` and only the `:prod` scripts read it.
+- Check what is pending first: `npm run db:migrate:status -w web` (`:prod` for production) and `npm run payload -w web -- migrate:status` (dev/staging).
+- Run both columns before deploying the code that needs them, and keep migrations additive.
+
+More detail: [apps/web/prisma/README.md](../../apps/web/prisma/README.md) (Prisma) and [HELP-CMS.md](../web/HELP-CMS.md) (Payload).
+
 Mobile apps (Android APK) are **not** deployed on Vercel — they use **EAS Build** on [expo.dev](https://expo.dev). See [Mobile distribution](#mobile-distribution-eas) below.
 
 ---

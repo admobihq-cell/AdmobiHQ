@@ -101,7 +101,7 @@ Both stacks usually share the same Postgres URL (`DATABASE_URL`). Table names ar
 
 | Action | Tool | Safe on shared DB? |
 |--------|------|-------------------|
-| Change lead/driver/fleet schema | Prisma (`db push` or future `migrate`) | **Only** if you understand impact on Payload tables — see below |
+| Change lead/driver/fleet schema | `npm run db:migrate -w web` (Prisma migrate) | Yes — Payload tables live in the separate `cms` schema |
 | Change help/blog/media schema | `npm run payload:migrate -w web` | Yes for Prisma tables |
 | Payload auto-push | Disabled (`push: false` in `payload.config.ts`) | N/A — do not enable |
 
