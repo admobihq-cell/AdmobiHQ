@@ -156,6 +156,12 @@ See [DATA-LAYER.md](../shared/DATA-LAYER.md) for the full split (Prisma = main b
 
 Run both migration flows after schema changes. Do not merge schemas into one ORM.
 
+## Upgrading Payload
+
+`payload` and every `@payloadcms/*` package in [`apps/web/package.json`](../../apps/web/package.json) are pinned to one exact version (no `^`) and must move together. A partial bump (e.g. `npm audit fix` raising only `payload` and `@payloadcms/db-postgres`) breaks the admin: the login page fails with minified React error #441 because the server render throws.
+
+A Payload upgrade can also add columns to its own tables, and `push: false` means nothing creates them for you. After bumping, load `/admin/login` locally; if the server log shows `column ... does not exist`, add a migration in `apps/web/migrations/` (the two `20261005_*` files are the 3.86 → 3.90 example) and run `payload:migrate` in each environment **before** deploying the upgrade.
+
 ## Payload admin build (`worker_threads` / `child_process`)
 
 Payload always registers `VercelBlobClientUploadHandler` in the admin import map when Vercel Blob storage is enabled. The real handler imports `@payloadcms/plugin-cloud-storage/utilities`, whose barrel re-exports server-only `resolveSignedURLKey` → full `payload` → `pino-pretty` → Node `worker_threads`, which webpack cannot bundle for the browser.

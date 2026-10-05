@@ -17,10 +17,6 @@ function webpackPath(...segments) {
 }
 
 const vercelBlobClientStub = webpackPath(appDir, "lib/payload/vercel-blob-client-stub.tsx")
-const cloudStorageClientUtilities = webpackPath(
-  appDir,
-  "lib/payload/cloud-storage-client-utilities.js",
-)
 
 function mediaHostnamesFromEnv() {
   const hosts = new Set(["admobihq.com", "staging.admobihq.com"])
@@ -101,9 +97,6 @@ const nextConfig = {
   turbopack: {
     resolveAlias: {
       "@payloadcms/storage-vercel-blob/client": vercelBlobClientStub,
-      "@payloadcms/plugin-cloud-storage/utilities": cloudStorageClientUtilities,
-      "@payloadcms/plugin-cloud-storage/dist/exports/utilities.js":
-        cloudStorageClientUtilities,
     },
   },
   async rewrites() {
@@ -197,9 +190,6 @@ const nextConfig = {
     webpackConfig.resolve.alias = {
       ...webpackConfig.resolve.alias,
       "@payloadcms/storage-vercel-blob/client": vercelBlobClientStub,
-      "@payloadcms/plugin-cloud-storage/utilities": cloudStorageClientUtilities,
-      "@payloadcms/plugin-cloud-storage/dist/exports/utilities.js":
-        cloudStorageClientUtilities,
     }
 
     if (!isServer) {
@@ -217,10 +207,6 @@ const nextConfig = {
       new webpack.NormalModuleReplacementPlugin(
         /@payloadcms[\\/]storage-vercel-blob[\\/]dist[\\/]exports[\\/]client\.js$/,
         vercelBlobClientStub,
-      ),
-      new webpack.NormalModuleReplacementPlugin(
-        /@payloadcms[\\/]plugin-cloud-storage[\\/]dist[\\/]exports[\\/]utilities\.js$/,
-        cloudStorageClientUtilities,
       ),
     )
 
