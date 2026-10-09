@@ -66,6 +66,22 @@ A campaign whose `org_id` is null was detached when its org was deleted (or aban
 
 Compose supports merge tags `{{first_name}}` (Clerk) and `{{org_name}}` (active `AdvertiserOrg` membership). Org name is filled for customer recipients only; drivers and anonymous tokens get the tag stripped. Preview in the composer uses sample values “Jordan” / “Acme Ads”.
 
+### Network map (demo fleet)
+
+Ops web **Map** (`/map`) shows a **simulated** fleet: no GPS or screen data is wired yet, and the rail footer says so. Everything lives in [`components/maps/demo-fleet/`](../../apps/ops/components/maps/demo-fleet/):
+
+- [`fleet.ts`](../../apps/ops/components/maps/demo-fleet/fleet.ts) — 13 made-up vehicles (taxi-tops + delivery bikes, active / idle / offline), eleven made-up advertisers, zone geotargeting, and the simulation. Position, the ad on screen, "up next" and the play log are pure functions of wall-clock time (15 s slots), so the marker, popup and detail rail always agree. Routes in `routes.json` are real road centrelines fetched once from the public OSRM router.
+- Click a vehicle (or a row in the rail) for a popup with the live 3:1 (taxi) or 1:1 (bike) screen; **Open details** swaps the rail for the vehicle: now playing, location, play log, zone rotation, screen health, driver. The camera follows the vehicle until you drag the map. Esc steps back.
+- **Markets (H3)** — the six campaign-wizard markets (CBD, Westlands, Karen, Kilimani, Mombasa Rd, Eastlands) as sets of H3 resolution-8 cells from [`@workspace/geo/markets`](../../packages/geo/src/markets.ts) — the same keys as `marketZoneIds` in pricing and the same resolution as the planned audience index. A screen's zone is one cell lookup (`marketAt`); road outside every market plays the run-of-network rotation. A market pulses when a screen's next spot is booked from it.
+- **Campaigns tab** — every campaign with screens showing it now and plays since 06:00. Picking one shades its booked markets' hexes in its colour (chips show each market's pricing tier), fades every vehicle not showing it, and shows plays today, est. views (illustrative: plays × a per-zone traffic factor) and the next airing when it's between spots.
+- **Needs attention** (Vehicles tab) — offline screens, panels ≥ 42 °C, weak signal, firmware behind. Each row opens the vehicle.
+- **Deep links** — the address bar tracks the view: `/map?vehicle=KDH-482T` opens a vehicle, `/map?campaign=savanna-air` a campaign. **Copy link** in either view copies it.
+- Vehicle sprites in `public/demo-fleet/vehicles/` are Blender renders — regenerate with [`scripts/render-demo-vehicles.py`](../../apps/ops/scripts/render-demo-vehicles.py) (instructions in its header).
+- Ad clips in `public/demo-fleet/ads/` are 640×360 stock footage from Pexels (free licence, no attribution required; don't redistribute the files standalone): Safari Cola ← 4465062, Pesa Mint ← 7821646, Nairobi Nights ← 3042698, Soko Fresh ← 15645011, Kahawa House ← 6950167, Mtaa Kicks ← 7644257, Savanna Air ← 11282762, Chakula Express ← 8627109, Kasi 5G ← 6754320, Fit254 ← 4367572, Tatu Heights ← 4783895 (`pexels.com/video/<id>`). Brand names and copy are drawn over them in code.
+- Self-check: `npx tsx --test apps/ops/components/maps/demo-fleet/fleet.test.ts`.
+
+When real telemetry lands, replace `poseAt` / `playAt` / `playLog` with API data — the UI only reads those.
+
 ### Activity / audit
 
 Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET /v1/audit`.

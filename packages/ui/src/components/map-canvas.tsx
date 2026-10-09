@@ -43,6 +43,8 @@ export type MapCanvasProps = {
   /** The rail's scrollable list content */
   children?: ReactNode
   loadingLabel?: string
+  /** Rendered inside the map (markers, routes, popups) — needs the map context */
+  overlay?: ReactNode
   /** Which optional controls to enable beyond the always-on zoom + compass */
   controls?: Pick<MapControlsProps, "showLocate" | "showFullscreen">
   className?: string
@@ -60,6 +62,7 @@ export function MapCanvas({
   summary,
   note,
   children,
+  overlay,
   loadingLabel = "Loading map",
   controls,
   className,
@@ -89,6 +92,7 @@ export function MapCanvas({
       >
         <MapPitch pitch={is3D ? PITCH_3D : 0} />
         <MapBuildings3D enabled={is3D} />
+        {overlay}
 
         <div className="pointer-events-none absolute inset-y-3 left-3 z-10 flex max-w-[calc(100%-1.5rem)] items-start sm:max-w-sm">
           {railOpen ? (

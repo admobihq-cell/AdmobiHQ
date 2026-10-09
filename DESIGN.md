@@ -50,6 +50,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 ## Imagery
 
 - **Hero / sections:** Placeholder rectangles or photography slots until shoot; no fake dashboard screenshots.
+- **Ops map vehicles:** The "no literal taxi clipart" rule is for marketing surfaces. The ops network map (an Operate tool) uses top-down 3D-rendered vehicle sprites, the fleet-tracker convention ops staff read instantly. The roof screen is lit in the playing ad's brand colour.
 - **Brand kit:** Reference board `public/brand/admobi-brand-kit.png` — 3×3 identity overview (logo, construction, digital crop, tagline, palette, type, taxi application, atmosphere, UI strip).
 
 ## Anti-patterns (enforced)

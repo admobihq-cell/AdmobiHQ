@@ -915,3 +915,9 @@ The decisions from the 2026-09-24 research. Each step gets its own plan when it 
 | **6. Telco density** | A business-development deal with Safaricom for aggregated network density (CAMARA Population Density or a custom arrangement). It replaces the modelled density with measured data and supports CPM pricing. | Best data source, longest lead time. Start the conversation early. |
 
 Also later: port the index to the customer-mobile wizard and map, which renders through a WebView, so it can take the same GeoJSON.
+
+---
+
+## Addendum (2026-10-09)
+
+`h3-js@^4` is already a dependency of `packages/geo` (added for the ops demo-fleet map), so Task 2 Step 1's `npm install` is a no-op — still add the `./audience` subpath. A sibling subpath `@workspace/geo/markets` ([`markets.ts`](../../../packages/geo/src/markets.ts)) now defines the six wizard markets as H3 resolution-8 cell sets (`MARKET_H3_RES = 8`, `MARKET_CELLS`, `marketAt`). The audience index can reuse it to aggregate cell scores per market instead of re-deriving market areas. Like `./audience`, it is not re-exported from the package root.

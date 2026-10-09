@@ -24,8 +24,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./nairobi": "./src/nairobi.ts",
+    "./markets": "./src/markets.ts",
     "./map-theme": "./src/map-theme.ts",
     "./types": "./src/types.ts",
     "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "h3-js": "^4.5.0"
   }
 }
