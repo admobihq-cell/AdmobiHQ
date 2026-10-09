@@ -62,7 +62,7 @@ jobs:
           curl -fL -o app-release.apk "$(cat /tmp/artifact-url.txt)"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: driver-mobile-release-apk
           path: apps/driver-mobile/app-release.apk
