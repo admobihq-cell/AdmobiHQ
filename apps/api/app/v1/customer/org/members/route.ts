@@ -5,6 +5,7 @@ import { advertiserInviteSchema } from "@workspace/ops-contracts"
 import {
   INVITE_TTL_MS,
   findClerkUserIdByEmail,
+  canGrantRole,
   getAssignableRole,
   resolveInviterLabel,
   toInvitationDto,
@@ -95,6 +96,9 @@ export async function POST(req: Request) {
   const email = parsed.data.email.toLowerCase()
   const role = await getAssignableRole(auth.access.orgId, parsed.data.roleId)
   if (!role) return jsonError("Unknown role", 400)
+  if (!canGrantRole(auth.access, role)) {
+    return jsonError("You can only invite people to a role with permissions you already have", 403)
+  }
 
   // Without this, re-inviting a current member creates an invitation that can
   // never be accepted — and a sole owner inviting their own address could

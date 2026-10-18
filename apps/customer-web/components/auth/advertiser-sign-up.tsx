@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useSignUp } from "@clerk/nextjs"
 
+import { safeRedirectPath } from "@workspace/ops-contracts"
 import { AuthLegalLine } from "@workspace/ui/components/auth-legal-line"
 import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
 import { Button } from "@workspace/ui/components/button"
@@ -27,7 +28,7 @@ export function AdvertiserSignUp() {
   const { signUp } = useSignUp()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUrl = searchParams.get("redirect_url") || "/"
+  const redirectUrl = safeRedirectPath(searchParams.get("redirect_url"))
   const rawRedirectUrl = searchParams.get("redirect_url")
   const signInHref = rawRedirectUrl
     ? `/auth/login/advertiser?redirect_url=${encodeURIComponent(rawRedirectUrl)}`
@@ -91,7 +92,7 @@ export function AdvertiserSignUp() {
     if (signUp.status === "complete") {
       await signUp.finalize({
         navigate: () => {
-          router.push(redirectUrl.startsWith("/") ? redirectUrl : "/")
+          router.push(redirectUrl)
         },
       })
       return
@@ -118,7 +119,7 @@ export function AdvertiserSignUp() {
     const { error: ssoError } = await signUp.sso({
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
-      redirectUrl: redirectUrl.startsWith("/") ? redirectUrl : "/",
+      redirectUrl,
       ...companyMetadata(company),
     })
     // Success navigates away to Google, so only the failure path gets here.

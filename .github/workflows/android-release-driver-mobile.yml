@@ -91,7 +91,7 @@ jobs:
         run: mv dist/app-release.apk dist/admobihq-driver-${{ steps.short-sha.outputs.value }}.apk
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: driver-apk-${{ steps.short-sha.outputs.value }}
           name: "Driver App APK - ${{ steps.short-sha.outputs.value }}"

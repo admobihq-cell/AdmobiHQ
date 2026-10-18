@@ -62,8 +62,22 @@ const CLIENT_NODE_FALLBACKS = {
   dns: false,
 }
 
+// Baseline hardening on every response. frame-ancestors / X-Frame-Options stop
+// clickjacking — SAMEORIGIN rather than DENY because the /app-demo iframe and
+// Payload live preview are same-origin. nosniff stops browsers second-guessing
+// Content-Type. HSTS is left to Vercel, which already sends it. See
+// docs/shared/SECURITY.md.
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   // Monorepo root: avoids Next picking C:\Users\victo\package-lock.json and breaking CSS traces.
   outputFileTracingRoot: repoRoot,
   experimental: {
@@ -121,6 +135,7 @@ const nextConfig = {
       : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
 
     return [
+      { source: "/(.*)", headers: securityHeaders },
       {
         source: "/icon",
         headers: [

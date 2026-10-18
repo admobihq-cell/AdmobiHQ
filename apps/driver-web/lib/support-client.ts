@@ -87,11 +87,14 @@ export async function createSupportCase(input: {
   category: string
   subject: string
   message: string
-}): Promise<SupportCase & { accessToken: string }> {
+}, accountToken?: string | null): Promise<SupportCase & { accessToken: string }> {
+  // The account token links the case to the signed-in driver, so it is listed
+  // by listMySupportCasesForAccount on any device, not just this browser.
   const res = await publicApiFetch<{
     data: SupportCase & { accessToken: string; identityToken?: string }
   }>("/support", {
     method: "POST",
+    headers: accountToken ? { Authorization: `Bearer ${accountToken}` } : undefined,
     body: JSON.stringify({ ...input, channel: "driver-web" }),
   })
   if (!res.ok) throw new Error(res.message)
@@ -149,6 +152,14 @@ export async function listMySupportCases(): Promise<SupportCase[]> {
     `/support?email=${encodeURIComponent(identity.email)}`,
     { headers: { Authorization: `Bearer ${identity.token}` } },
   )
+  if (!res.ok) return []
+  return res.data.items
+}
+
+export async function listMySupportCasesForAccount(token: string): Promise<SupportCase[]> {
+  const res = await publicApiFetch<{ items: SupportCase[] }>("/support", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
   if (!res.ok) return []
   return res.data.items
 }

@@ -27,6 +27,15 @@ const payloadDatabaseUrl = resolvePayloadDatabaseUrlForConfig()
 
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim()
 
+// Payload signs admin session JWTs with this. A known fallback on a deployed
+// site would let anyone forge a CMS admin session, so only local dev gets one.
+function resolvePayloadSecret(): string {
+  const secret = process.env.PAYLOAD_SECRET?.trim()
+  if (secret) return secret
+  if (process.env.VERCEL) throw new Error("PAYLOAD_SECRET must be set on every Vercel deployment")
+  return "dev-only-change-me"
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -38,7 +47,7 @@ export default buildConfig({
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [...defaultFeatures, EXPERIMENTAL_TableFeature()],
   }),
-  secret: process.env.PAYLOAD_SECRET || "dev-only-change-me",
+  secret: resolvePayloadSecret(),
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
@@ -85,11 +94,12 @@ export default buildConfig({
             },
             // Server-side uploads only, avoids browser → Blob direct upload path.
             clientUploads: false,
-            // Vercel Blob rejects re-uploading an existing path outright (no
-            // overwrite support in this adapter version). Without this, any
-            // upload that reuses a filename already in the bucket — a retried
-            // seed run, two people uploading the same asset — fails hard.
-            addRandomSuffix: true,
+            // No addRandomSuffix. The adapter only writes the suffixed name back
+            // for the ORIGINAL file — thumbnail/card/hero keep their plain
+            // names in the DB while Blob stores them suffixed, so every resized
+            // URL 404s. It's not needed anyway: the adapter put()s with
+            // allowOverwrite (a retried seed run just overwrites), and Payload
+            // already renames a clashing upload to `name-1.ext` per collection.
             token: blobToken,
           }),
         ]

@@ -26,6 +26,15 @@ export function jsonError(message: string, status: number, issues?: unknown) {
   return NextResponse.json({ error: message, issues }, { status })
 }
 
+/** 403s are worth a log line: an authenticated caller asking for something
+ * their role does not allow is the signal for probing or a broken role. 401s
+ * are not logged — expired tokens produce them constantly. Vercel attaches
+ * the request path to each log line, so the route needs no extra plumbing. */
+function logDenied(response: Response): Response {
+  if (response.status === 403) console.warn("[authz] 403 forbidden")
+  return response
+}
+
 /** Every ops route repeated this same try/catch around requireOpsUser() —
  * centralized here so each route is just the two lines below instead. */
 export async function requireOpsAccess(): Promise<
@@ -36,7 +45,7 @@ export async function requireOpsAccess(): Promise<
     const access = await requireOpsUser()
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }
@@ -50,7 +59,7 @@ export async function requireOpsAdminAccess(): Promise<
     const access = await requireOpsAdmin()
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }
@@ -66,7 +75,7 @@ export async function requireOpsPermissionAccess(
     const access = await requireOpsPermission(permission)
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }
@@ -81,7 +90,7 @@ export async function requireDriverAccess(): Promise<
     const access = await requireDriverUser()
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }
@@ -96,7 +105,7 @@ export async function requireCustomerAccess(): Promise<
     const access = await requireCustomerUser()
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }
@@ -114,7 +123,7 @@ export async function requireCustomerPermissionAccess(
     const access = await requireCustomerPermission(permission)
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }
@@ -128,7 +137,7 @@ export async function requireCustomerIdentityAccess(): Promise<
     const access = await requireCustomerIdentity()
     return { access }
   } catch (e) {
-    if (e instanceof Response) return { error: e as NextResponse }
+    if (e instanceof Response) return { error: logDenied(e) as NextResponse }
     return { error: jsonError("Unauthorized", 401) }
   }
 }

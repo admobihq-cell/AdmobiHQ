@@ -331,7 +331,7 @@ Infisical holds **all** keys below. Each Vercel project only needs **its row** �
 | Variable | Web Vercel | API Vercel | Ops Vercel | App Vercel | Driver Vercel | Notes |
 |----------|:----------:|:----------:|:----------:|:----------:|:--------------:|-------|
 | `DATABASE_URL` | ✓ | ✓ | ✓ | — | — | Shared Neon |
-| `PAYLOAD_SECRET` | ✓ | — | — | — | — | Payload CMS only |
+| `PAYLOAD_SECRET` | ✓ | — | — | — | — | Payload CMS only — required on every Vercel deploy; `payload.config.ts` throws without it rather than fall back to a known dev secret |
 | `NEXT_PUBLIC_SERVER_URL` | ✓ | — | — | — | — | Legacy web canonical URL |
 | `NEXT_PUBLIC_WEB_URL` | ✓ | — | ✓ | optional | optional | Marketing + CMS links |
 | `NEXT_PUBLIC_API_URL` | ✓ | ✓ | ✓ | optional | ✓ | Business API origin; **redeploy after change** |

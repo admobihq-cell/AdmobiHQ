@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
 import { ChevronRight, Inbox } from "lucide-react"
 import { toast } from "sonner"
@@ -26,11 +27,13 @@ import {
   createSupportCase,
   getStoredIdentity,
   listMySupportCases,
+  listMySupportCasesForAccount,
 } from "@/lib/support-client"
 import { CategoryIcon, SUPPORT_CATEGORIES } from "@/lib/support-categories"
 
 export function SupportClient() {
   const session = useDriverSession()
+  const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
   const [name, setName] = useState("")
@@ -57,20 +60,32 @@ export function SupportClient() {
     setEmail(identity.email)
   }, [identity])
 
+  // Signed in: list by account, so cases from every device show and nothing
+  // depends on the email-level identity token (which anyone who first used
+  // that email can hold). The identity path is only for signed-out visitors.
+  const isAuthenticated = session.status === "authenticated"
   const casesQuery = useQuery({
-    queryKey: ["driver-support-cases"],
-    queryFn: listMySupportCases,
-    enabled: Boolean(identity),
+    queryKey: isAuthenticated ? ["driver-support-cases", "account"] : ["driver-support-cases"],
+    queryFn: async () => {
+      if (isAuthenticated) {
+        const token = await getToken()
+        return token ? listMySupportCasesForAccount(token) : []
+      }
+      return listMySupportCases()
+    },
+    enabled: isAuthenticated || Boolean(identity),
   })
   const cases = casesQuery.data ?? []
   // Keep showing the skeleton while the session is still resolving (before
   // `identity` can even be known) so a first-time-this-tab visitor doesn't
   // flash the "no requests yet" empty state before the query has a chance
   // to run.
-  const loadingCases = session.status === "loading" || (Boolean(identity) && casesQuery.isLoading)
+  const loadingCases =
+    session.status === "loading" || ((isAuthenticated || Boolean(identity)) && casesQuery.isLoading)
 
   const createCaseMutation = useMutation({
-    mutationFn: (input: Parameters<typeof createSupportCase>[0]) => createSupportCase(input),
+    mutationFn: async (input: Parameters<typeof createSupportCase>[0]) =>
+      createSupportCase(input, isAuthenticated ? await getToken() : null),
     onSuccess: (created) => {
       setSubject("")
       setMessage("")

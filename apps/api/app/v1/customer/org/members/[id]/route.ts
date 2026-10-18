@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { advertiserMemberUpdateSchema } from "@workspace/ops-contracts"
 
-import { countOrgOwners, getAssignableRole, toMemberDto } from "@/lib/advertiser/advertiser-org"
+import { canGrantRole, countOrgOwners, getAssignableRole, toMemberDto } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
@@ -45,12 +45,22 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   let nextRoleId = parsed.data.roleId !== undefined ? parsed.data.roleId : member.role_id
+  const roleChanges = nextRoleId !== member.role_id
+
+  // Your own access is set by someone else, or by an owner — never by you.
+  // Members who want more use an admin request (/org/admin-requests).
+  if (roleChanges && !auth.access.isOwner && member.clerk_user_id === auth.access.userId) {
+    return jsonError("You can't change your own role. Ask an owner, or request admin access.", 403)
+  }
 
   if (nextIsOwner) {
     nextRoleId = null
   } else if (nextRoleId != null) {
     const role = await getAssignableRole(auth.access.orgId, nextRoleId)
     if (!role) return jsonError("Unknown role", 400)
+    if (roleChanges && !canGrantRole(auth.access, role)) {
+      return jsonError("You can only assign a role with permissions you already have", 403)
+    }
   } else if (!nextIsOwner && nextRoleId == null) {
     return jsonError("Non-owners must have a role", 400)
   }

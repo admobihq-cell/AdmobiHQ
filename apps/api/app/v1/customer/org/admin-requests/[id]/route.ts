@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { advertiserAdminRequestReviewSchema } from "@workspace/ops-contracts"
 
 import { notifyCustomerUsers } from "@/lib/advertiser/advertiser-notify"
-import { getAdminRoleId, toAdminRequestDtos } from "@/lib/advertiser/advertiser-org"
+import { canGrantRole, getAdminRoleId, toAdminRequestDtos } from "@/lib/advertiser/advertiser-org"
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerAccess } from "@/lib/api-utils"
 import { invalidateAdvertiserAccessCache } from "@/lib/customer/customer-auth"
@@ -42,6 +42,19 @@ export async function POST(req: Request, { params }: Params) {
   })
   if (!request) return jsonError("Request not found", 404)
   if (request.status !== "pending") return jsonError("That request was already reviewed", 409)
+  if (request.clerk_user_id === auth.access.userId) {
+    return jsonError("You can't review your own request", 403)
+  }
+
+  const adminRoleId = await getAdminRoleId(auth.access.orgId)
+  if (decision === "approve") {
+    const adminRole =
+      adminRoleId != null ? await prisma.advertiserRole.findUnique({ where: { id: adminRoleId } }) : null
+    if (!adminRole) return jsonError("This organization has no Admin role to grant", 409)
+    if (!canGrantRole(auth.access, adminRole)) {
+      return jsonError("Only an owner or an existing Admin can approve admin access", 403)
+    }
+  }
 
   const member = await prisma.advertiserMember.findFirst({
     where: { org_id: auth.access.orgId, clerk_user_id: request.clerk_user_id, removed_at: null },
@@ -50,7 +63,6 @@ export async function POST(req: Request, { params }: Params) {
 
   const updated = await prisma.$transaction(async (tx) => {
     if (decision === "approve") {
-      const adminRoleId = await getAdminRoleId(auth.access.orgId)
       await tx.advertiserMember.update({
         where: { id: member.id },
         data: { role_id: adminRoleId },
