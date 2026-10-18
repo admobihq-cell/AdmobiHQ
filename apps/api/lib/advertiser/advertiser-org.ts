@@ -13,6 +13,20 @@ import { prisma } from "@/lib/prisma"
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
+/**
+ * A non-owner may only hand out permissions they already hold. Without this
+ * ceiling, `team:manage` alone was every permission: assign yourself (or an
+ * alt account you invite) the Admin role and inherit `billing:write` and
+ * `org:manage`. Owners bypass it, as they bypass every permission check.
+ */
+export function canGrantRole(
+  granter: { isOwner: boolean; permissions: Set<AdvertiserPermission> },
+  role: { permissions: string[] },
+): boolean {
+  if (granter.isOwner) return true
+  return role.permissions.every((p) => granter.permissions.has(p as AdvertiserPermission))
+}
+
 export async function countOrgOwners(orgId: number, excludeMemberId?: number): Promise<number> {
   return prisma.advertiserMember.count({
     where: {

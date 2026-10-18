@@ -39,7 +39,7 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `/v1/driver-applications` | Ops Clerk JWT | Onboarding review (documents via driver instance) |
 | `GET /v1/stats`, `GET /v1/audit`, `GET /v1/me` | Ops Clerk JWT | Dashboard stats, activity trail, current user |
 | `GET/PATCH /v1/flags` | Ops Clerk JWT | Platform flags (write); public read is `/v1/public/config` |
-| `/v1/users` | Ops Clerk JWT | Platform user search (ops Users page) |
+| `/v1/users` | Ops Clerk JWT, **admin role** | Platform user search (ops Users page) |
 | `/v1/team`, `/v1/roles` | Ops Clerk JWT (admin) | Staff invites + custom RBAC |
 | `GET/POST/PATCH /v1/support` | Ops Clerk JWT | Ops support console |
 | `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`); personalizes `{{first_name}}` and `{{org_name}}` per recipient |
@@ -191,6 +191,8 @@ All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driv
 ## Support case identity token
 
 `GET /v1/public/support` (list a customer's own cases) requires `Authorization: Bearer <identity-token>`, not just an `email` query param — email alone is guessable. The token is minted once per email, the first time that email opens a case (`POST /v1/public/support`), and returned as `identityToken` in that response only — an email that already has one doesn't get reissued (this would silently invalidate whatever device already stored the original). See `mintIdentityTokenIfAbsent` / `verifyIdentityToken` in `apps/api/lib/support/support.ts`, backed by the `support_identities` table (mirrors the existing per-case `access_token_hash` model).
+
+That token proves only that its holder was the **first** to open a case under the email — the email itself is never verified. So the email path lists **anonymous cases only** (`customer_id` and `driver_clerk_user_id` both null); anything opened by a signed-in customer or driver is reachable solely through the account path (`GET /v1/public/support` with a Clerk bearer and no `email` param). Every first-party app sends the account token on create and lists by account when signed in.
 
 **Known gap:** a customer who cleared local storage before ever opening a case has no way to recover access to old cases from a new device — that needs an email-verification/magic-link flow, not yet built.
 

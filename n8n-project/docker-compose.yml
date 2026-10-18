@@ -2,10 +2,14 @@ version: '3.8'
 
 services:
   n8n:
-    image: n8nio/n8n:latest
+    # Pinned: `latest` would silently pull whatever ships next, on a box that
+    # holds database credentials. Bump deliberately after reading release notes.
+    image: n8nio/n8n:2.43.7
     restart: always
     ports:
-      - "5678:5678"
+      # Loopback only — Caddy (Caddyfile) is the sole public entry point and
+      # terminates TLS. Publishing 5678 on all interfaces would bypass it.
+      - "127.0.0.1:5678:5678"
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678

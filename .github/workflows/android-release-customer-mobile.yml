@@ -56,7 +56,7 @@ jobs:
           java-version: 17
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
 
       - name: Cache Gradle
         uses: actions/cache@v5
@@ -137,7 +137,7 @@ jobs:
         run: mv dist/app-release.apk dist/admobihq-customer-${{ steps.short-sha.outputs.value }}.apk
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: customer-apk-${{ steps.short-sha.outputs.value }}
           name: "Customer App APK - ${{ steps.short-sha.outputs.value }}"

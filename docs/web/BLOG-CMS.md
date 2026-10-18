@@ -71,6 +71,8 @@ Imported files are stored like any other upload (local disk without Blob token, 
 
 **Production (Vercel):** `@payloadcms/storage-vercel-blob` in [`payload.config.ts`](../../apps/web/payload.config.ts) when `BLOB_READ_WRITE_TOKEN` is set. Uploads go through the Payload API (server-side) to Blob. `clientUploads: true` is **not** enabled — that mode pulls server-only Payload code into the admin client bundle and breaks Next.js 16 webpack builds.
 
+Don't turn on `addRandomSuffix`. The adapter writes the suffixed name back only for the original file, so the `thumbnail` / `card` / `hero` sizes are recorded under names Blob never stored and every resized URL 404s (this happened between 2026-08-15 and 2026-10-18; no production upload was affected). It isn't needed: the adapter uploads with `allowOverwrite`, and Payload renames a clashing filename to `name-1.ext`.
+
 Sync `BLOB_READ_WRITE_TOKEN` from Infisical to Vercel Production (or link Blob store in Vercel — one token is enough).
 
 Legacy rows that still reference `/api/media/file/...` need re-upload after switching to Blob.

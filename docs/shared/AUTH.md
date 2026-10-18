@@ -281,7 +281,8 @@ The closed set of assignable permissions ([packages/ops-contracts/src/enums.ts](
 
 ```
 leads · fleet · drivers · waitlist · media_kit · announcements ·
-support · finances · content · flags · activity · driver_applications
+support · finances · content · flags · activity · driver_applications ·
+campaigns · safety
 ```
 
 `resolveOpsPermissions()` in `apps/api/lib/auth.ts` computes the effective set per request (all of them for `admin`, the assigned `OpsRole.permissions` for `member`) and caches it 60s per user. `getOpsAccess()` returns a discriminated union — `unauthenticated | forbidden | authorized` — that every route handler narrows before doing anything else.
@@ -325,13 +326,22 @@ requires the **caller** to be an owner, and refuses to act on the caller's own
 membership. Without that guard any custom role granting `team:manage` was a
 path to the full permission set — a `team:manage` holder could PATCH their own
 member id to `isOwner: true` and inherit `billing:write`, `org:manage` and
-org deletion. Role (`roleId`) changes remain a plain `team:manage` operation.
+org deletion.
+
+Role (`roleId`) changes are a `team:manage` operation with two more guards,
+both in `canGrantRole()` / the member routes: a non-owner **can't change their
+own role**, and can only assign (or invite someone into) a role whose
+permissions are a **subset of their own**. Without the ceiling, `team:manage`
+alone was still every permission — assign yourself, or an alt account you
+invite, the Admin role. Owners are exempt from both.
 
 The sanctioned alternative is `AdvertiserAdminRequest`: a member posts to
 `POST /v1/customer/org/admin-requests` with a written reason (10–1000 chars),
-every active owner gets an inbox notification + push, and an owner resolves it
-at `POST /v1/customer/org/admin-requests/[id]` with
-`{ decision: "approve" | "deny", note? }`. Approving promotes them in the same
+every active owner gets an inbox notification + push, and an owner (or anyone
+already holding every permission of the org's Admin role) resolves it at
+`POST /v1/customer/org/admin-requests/[id]` with
+`{ decision: "approve" | "deny", note? }` — never the requester themselves
+(`403`). Approving promotes them in the same
 transaction that closes the request; denying **requires** a note, which is
 shown to the requester verbatim — a refusal they can't understand just gets
 asked again. `GET` returns the whole queue to owners and only their own rows to

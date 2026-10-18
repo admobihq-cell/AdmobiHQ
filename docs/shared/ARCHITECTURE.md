@@ -4,7 +4,7 @@ How the codebase is laid out, what each part does, and how to extend it without 
 
 ## 1. What this is
 
-Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../../PRODUCT.md). The visual system lives in [DESIGN.md](../../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer web app**, **driver web app**, **ops mobile**, **customer mobile**, and **driver mobile**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md). Auth, Clerk instances, organizations and roles: [AUTH.md](./AUTH.md). Actor-by-actor product roadmap (what each app becomes, and why): [ROADMAP.md](./ROADMAP.md), [DRIVER-APP.md](../driver/DRIVER-APP.md).
+Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-flexible. The product story and brand voice live in [PRODUCT.md](../../PRODUCT.md). The visual system lives in [DESIGN.md](../../DESIGN.md). This monorepo hosts the **marketing site**, **business API**, **internal ops console**, **customer web app**, **driver web app**, **ops mobile**, **customer mobile**, and **driver mobile**. Deploy domains: [DEPLOYMENT.md](./DEPLOYMENT.md). Auth, Clerk instances, organizations and roles: [AUTH.md](./AUTH.md). Security controls, layer by layer: [SECURITY.md](./SECURITY.md). Actor-by-actor product roadmap (what each app becomes, and why): [ROADMAP.md](./ROADMAP.md), [DRIVER-APP.md](../driver/DRIVER-APP.md).
 
 ## 2. Stack at a glance
 

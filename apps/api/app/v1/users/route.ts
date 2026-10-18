@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server"
 
-import { jsonError, requireOpsAccess } from "@/lib/api-utils"
+import { jsonError, requireOpsAdminAccess } from "@/lib/api-utils"
 import { listPlatformUsers, type PlatformUserSortField } from "@/lib/platform-users"
 
 const SORT_FIELDS: PlatformUserSortField[] = ["email", "phone", "createdAt"]
 
 export async function GET(req: Request) {
-  const auth = await requireOpsAccess()
+  // Admin-only, matching the ops Users page (users/layout.tsx): this pages
+  // through every customer and driver contact in Clerk, so it must not be
+  // reachable by an ops member whose role grants no section permissions.
+  const auth = await requireOpsAdminAccess()
   if (auth.error) return auth.error
 
   const { searchParams } = new URL(req.url)

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useSignIn } from "@clerk/nextjs"
 
+import { safeRedirectPath } from "@workspace/ops-contracts"
 import { AuthLegalLine } from "@workspace/ui/components/auth-legal-line"
 import { AuthSplitShell } from "@workspace/ui/components/auth-split-shell"
 import { Button } from "@workspace/ui/components/button"
@@ -22,7 +23,7 @@ export function AdvertiserSignIn() {
   const { signIn } = useSignIn()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUrl = searchParams.get("redirect_url") || "/"
+  const redirectUrl = safeRedirectPath(searchParams.get("redirect_url"))
   // Only the raw param, not the "/" default — avoid an unnecessary
   // ?redirect_url=%2F when the visitor just landed here directly.
   const rawRedirectUrl = searchParams.get("redirect_url")
@@ -84,7 +85,7 @@ export function AdvertiserSignIn() {
     if (signIn.status === "complete") {
       await signIn.finalize({
         navigate: () => {
-          router.push(redirectUrl.startsWith("/") ? redirectUrl : "/")
+          router.push(redirectUrl)
         },
       })
       return
@@ -101,7 +102,7 @@ export function AdvertiserSignIn() {
     const { error: ssoError } = await signIn.sso({
       strategy: "oauth_google",
       redirectCallbackUrl: "/auth/sso-callback/advertiser",
-      redirectUrl: redirectUrl.startsWith("/") ? redirectUrl : "/",
+      redirectUrl,
     })
     if (ssoError) {
       setError(ssoError.longMessage ?? ssoError.message ?? "Google sign-in failed.")

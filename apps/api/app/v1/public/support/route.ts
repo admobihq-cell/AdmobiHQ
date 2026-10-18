@@ -149,8 +149,14 @@ export async function GET(req: Request) {
   const verified = await verifyIdentityToken(email, token)
   if (!verified) return jsonError("Unauthorized", 401)
 
+  // The identity token goes to whoever FIRST opened a case under this email,
+  // and the email is never verified — so it proves nothing about owning the
+  // address. Never let it reach a case tied to an account: those are listed by
+  // the account path above. ponytail: anonymous cases stay exposed to a
+  // pre-claimed token until the email path is retired or the token is sent by
+  // magic link instead of returned in the create response.
   const cases = await prisma.supportCase.findMany({
-    where: { contact_email: email },
+    where: { contact_email: email, customer_id: null, driver_clerk_user_id: null },
     orderBy: { created_at: "desc" },
     take: 50,
   })
