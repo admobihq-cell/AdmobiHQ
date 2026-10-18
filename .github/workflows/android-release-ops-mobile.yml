@@ -108,7 +108,7 @@ jobs:
           ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: ops-mobile-release-apk
           path: apps/ops-mobile/android/app/build/outputs/apk/release/app-release.apk
