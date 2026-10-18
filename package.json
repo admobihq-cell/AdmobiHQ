@@ -60,7 +60,7 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.9.16",
     "typescript": "5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "packageManager": "npm@11.12.1",
   "overrides": {
@@ -89,7 +89,11 @@
     "customer-mobile": {
       "react": "19.1.0",
       "react-dom": "19.1.0"
-    }
+    },
+    "@expo/metro-config": {
+      "postcss": "^8.5.23"
+    },
+    "uuid@<11.1.1": "^11.1.1"
   },
   "engines": {
     "node": ">=22"
