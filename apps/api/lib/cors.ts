@@ -68,7 +68,7 @@ export function corsHeaders(origin: string | null): HeadersInit {
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers":
-      "Authorization, Content-Type, X-Requested-With",
+      "Authorization, Content-Type, X-Requested-With, X-Turnstile-Token",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   }

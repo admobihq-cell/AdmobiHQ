@@ -19,7 +19,7 @@
 | M4 | ✅ Fixed | `/v1/users` is admin-only, matching the ops Users page |
 | M5 | ✅ Fixed | `payload` + `@payloadcms/*` 3.91.0 (undici 7.29.1), `sharp` 0.35.5; Dependabot sharp hold removed. Per HELP-CMS.md § Upgrading Payload: all packages on one version; Drizzle-vs-`information_schema` check shows 0 missing tables/columns in `cms` on dev **and** prod (no migration needed); `npm run build -w web` passes, import map intact |
 | L1 | ✅ Fixed | `safeRedirectPath()` in ops-contracts, used by advertiser sign-in/sign-up (with tests) |
-| L2 | ⏳ Open | Needs a BotID/Turnstile decision |
+| L2 | 🟡 Code shipped | Cloudflare Turnstile verified server-side on leads/drivers (403) and support (no confirmation email when unverified); BotID ruled out (same-origin only). Live once the Turnstile keys are set — see [API.md § Bot check](../api/API.md#bot-check-cloudflare-turnstile) |
 | L3 | ⏳ Open | Payload roles need a CMS schema migration |
 | L4 | ✅ Fixed | JSON-LD escapes `<` |
 | L5 | ⏳ Open | Needs a new env var provisioned for the release notifier |

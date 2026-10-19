@@ -10,6 +10,7 @@ import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConf
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { verifyTurnstile } from "@/lib/turnstile"
 
 // Database: Neon PostgreSQL with Prisma ORM
 // Email: Resend with Bull queue for reliability
@@ -17,6 +18,10 @@ import { checkRateLimit } from "@/lib/rate-limit"
 export async function POST(req: Request) {
   const limited = await checkRateLimit(req, "leads", { limit: 5, windowSeconds: 60 })
   if (limited) return limited
+
+  if (!(await verifyTurnstile(req))) {
+    return NextResponse.json({ error: "We couldn't verify this submission — please refresh the page and try again." }, { status: 403 })
+  }
 
   let body: unknown
   try {

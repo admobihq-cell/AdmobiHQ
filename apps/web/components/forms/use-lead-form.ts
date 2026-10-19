@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import { publicApiFetch } from "@workspace/ops-api-client"
 
+import { getTurnstileToken } from "@/components/forms/turnstile"
 import { trackEvent } from "@/lib/analytics"
 
 type UseLeadFormOptions = {
@@ -34,8 +35,17 @@ export function useLeadForm(options: UseLeadFormOptions) {
       return
     }
 
+    let token: string | undefined
+    try {
+      token = await getTurnstileToken()
+    } catch {
+      setSubmitError("We couldn't verify you're human — please refresh the page and try again.")
+      return
+    }
+
     const result = await publicApiFetch<{ success?: boolean }>(options.endpoint, {
       method: "POST",
+      headers: token ? { "X-Turnstile-Token": token } : undefined,
       body: JSON.stringify({ ...data, ...options.extra }),
     })
 

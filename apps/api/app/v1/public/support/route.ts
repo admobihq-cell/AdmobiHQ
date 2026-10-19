@@ -13,10 +13,16 @@ import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getBearerToken, mintIdentityTokenIfAbsent, resolveSupportAuthor, resolveSupportAuthorFromBearer, toPublicCase, verifyIdentityToken } from "@/lib/support/support"
 import { generateAccessToken, hashAccessToken } from "@/lib/support/support-token"
+import { verifyTurnstile } from "@/lib/turnstile"
 
 export async function POST(req: Request) {
   const limited = await checkRateLimit(req, "support-create", { limit: 5, windowSeconds: 60 })
   if (limited) return limited
+
+  // The mobile apps can't run Turnstile, so an unverified case is still
+  // created (they show it in-app) — it just gets no confirmation email, which
+  // is what makes this route worth abusing.
+  const verified = await verifyTurnstile(req)
 
   const parsed = await parseJsonBody(req, supportCaseCreateSchema)
   if ("error" in parsed) return parsed.error
@@ -83,11 +89,13 @@ export async function POST(req: Request) {
         additionalInfo: data.message,
       })
 
-      await sendEmail(
-        data.contact_email,
-        `We've received your request — case #${supportCase.id}`,
-        confirmationHtml,
-      )
+      if (verified) {
+        await sendEmail(
+          data.contact_email,
+          `We've received your request — case #${supportCase.id}`,
+          confirmationHtml,
+        )
+      }
       await sendAdminEmail(`New support case #${supportCase.id}: ${data.subject}`, adminHtml)
     } catch (emailError) {
       console.error("[support] Failed to queue emails:", emailError)

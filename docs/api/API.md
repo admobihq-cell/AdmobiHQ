@@ -188,6 +188,17 @@ All `/v1/public/*` routes (plus the support reply/list routes and `POST /v1/driv
 
 **Fails open** when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are unset — requests pass through unthrottled rather than erroring, so local dev and any environment missing those vars keeps working. Confirm they're set before relying on this in production.
 
+## Bot check (Cloudflare Turnstile)
+
+The public routes that email a submitted address verify a Cloudflare Turnstile token, sent in the `X-Turnstile-Token` header (allowed by CORS), via `verifyTurnstile(req)` in `apps/api/lib/turnstile.ts`, right after the rate limit:
+
+- `POST /v1/public/leads` and `POST /v1/public/drivers` — **403** without a valid token. Only the marketing site calls these.
+- `POST /v1/public/support` — the mobile apps can't run Turnstile, so an unverified case is still created (and still alerts ops), but **no confirmation email** goes to the submitted address.
+
+The marketing site's shared `useLeadForm` hook gets the token from an invisible widget (`apps/web/components/forms/turnstile.ts`) that only shows a checkbox when Cloudflare wants an interaction. Vercel BotID was ruled out: its client only attaches its header to same-origin requests, and the forms post cross-origin to `api.admobihq.com`.
+
+**Fails open** when `TURNSTILE_SECRET_KEY` is unset (local dev, PR previews) or Cloudflare's siteverify is unreachable. Set `TURNSTILE_SECRET_KEY` (api) and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (web) together, on Production and the `staging` branch only — a site key without a secret is harmless, a secret without a site key 403s every lead.
+
 ## Support case identity token
 
 `GET /v1/public/support` (list a customer's own cases) requires `Authorization: Bearer <identity-token>`, not just an `email` query param — email alone is guessable. The token is minted once per email, the first time that email opens a case (`POST /v1/public/support`), and returned as `identityToken` in that response only — an email that already has one doesn't get reissued (this would silently invalidate whatever device already stored the original). See `mintIdentityTokenIfAbsent` / `verifyIdentityToken` in `apps/api/lib/support/support.ts`, backed by the `support_identities` table (mirrors the existing per-case `access_token_hash` model).

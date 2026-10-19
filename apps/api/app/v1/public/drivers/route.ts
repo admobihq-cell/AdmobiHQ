@@ -9,10 +9,15 @@ import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { verifyTurnstile } from "@/lib/turnstile"
 
 export async function POST(req: Request) {
   const limited = await checkRateLimit(req, "drivers", { limit: 5, windowSeconds: 60 })
   if (limited) return limited
+
+  if (!(await verifyTurnstile(req))) {
+    return NextResponse.json({ error: "We couldn't verify this submission — please refresh the page and try again." }, { status: 403 })
+  }
 
   let body: unknown
   try {
