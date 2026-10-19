@@ -20,14 +20,12 @@ import type { DriverJoinInput } from "@/lib/validation/lead-schemas"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { FormSection, formPageGrid } from "@/components/forms/form-section"
 import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { useLeadForm } from "@/components/forms/use-lead-form"
 import { Container } from "@/components/landing/container"
-import {
-  IsoCrossPattern,
-  NodeGardenPattern,
-} from "@/components/landing/pattern-shapes"
+import { NodeGardenPattern } from "@/components/landing/pattern-shapes"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { driverFaqItems } from "@/lib/seo/faq-data"
 
@@ -264,33 +262,36 @@ export default function DriversClient() {
         id="raise-hand"
         className="scroll-mt-24 border-t border-border py-14 sm:py-20"
       >
-        <Container>
-          <div className="lg:grid lg:grid-cols-[1fr_0.8fr] lg:items-start lg:gap-16">
-            <div>
-              <div className="max-w-xl space-y-2">
-                <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-                  Raise your hand
-                </h2>
-                <p className="text-base leading-relaxed text-muted-foreground">
-                  Takes 2 minutes. We&apos;ll be in touch within 3 days.
-                </p>
-              </div>
+        <Container className={formPageGrid}>
+          <div className="space-y-4 lg:sticky lg:top-24">
+            <h2 className="text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-[2rem]">
+              Raise your hand
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              Takes 2 minutes. We&apos;ll be in touch within 3 days.
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Admobi is not an employer. Drivers participate as independent
+              contractors. Payouts are subject to active screen hours verified
+              by GPS.
+            </p>
+          </div>
 
-              {submitted ? (
-                <div className="mt-10">
-                  <SubmissionSuccess
-                    icon={Car}
-                    title="You're in the queue"
-                    message="We've got your details. Someone from our driver team will call or WhatsApp you within 3 business days to confirm eligibility and schedule your install."
-                    onReset={handleReset}
-                  />
-                </div>
-              ) : (
-                <form
-                  className="mt-10 max-w-xl space-y-8"
-                  noValidate
-                  onSubmit={handleSubmit(onSubmit)}
-                >
+          <div>
+            {submitted ? (
+              <SubmissionSuccess
+                icon={Car}
+                title="You're in the queue"
+                message="We've got your details. Someone from our driver team will call or WhatsApp you within 3 business days to confirm eligibility and schedule your install."
+                onReset={handleReset}
+              />
+            ) : (
+              <form
+                className="space-y-8 sm:space-y-10"
+                noValidate
+                onSubmit={handleSubmit(onSubmit)}
+              >
+                <FormSection title="About you">
                   <div className="grid gap-2">
                     <Label htmlFor="dr-name">Name *</Label>
                     <Input
@@ -356,8 +357,10 @@ export default function DriversClient() {
                       <option value="Kisumu">Kisumu</option>
                     </select>
                   </div>
+                </FormSection>
 
-                  <fieldset className="space-y-3">
+                <FormSection title="Your vehicle">
+                  <fieldset className="space-y-3 sm:col-span-2">
                     <legend className="mb-1 text-sm font-medium text-foreground">
                       Vehicle type *
                     </legend>
@@ -402,22 +405,6 @@ export default function DriversClient() {
                   </fieldset>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="dr-days">
-                      How many days a week do you drive? *
-                    </Label>
-                    <select
-                      id="dr-days"
-                      className={selectClass}
-                      {...register("daysPerWeek")}
-                    >
-                      <option value="1_2">1–2</option>
-                      <option value="3_4">3–4</option>
-                      <option value="5_6">5–6</option>
-                      <option value="daily">Every day</option>
-                    </select>
-                  </div>
-
-                  <div className="grid gap-2">
                     <Label htmlFor="dr-make">Vehicle make &amp; model</Label>
                     <Input
                       id="dr-make"
@@ -448,14 +435,23 @@ export default function DriversClient() {
                       <option value="financed">On finance / loan</option>
                     </select>
                   </div>
+                </FormSection>
 
+                <FormSection title="Your driving">
                   <div className="grid gap-2">
-                    <Label htmlFor="dr-routes">Areas you usually drive</Label>
-                    <Input
-                      id="dr-routes"
-                      placeholder="e.g. Kilimani, CBD, Rongai"
-                      {...register("routesAreas")}
-                    />
+                    <Label htmlFor="dr-days">
+                      How many days a week do you drive? *
+                    </Label>
+                    <select
+                      id="dr-days"
+                      className={selectClass}
+                      {...register("daysPerWeek")}
+                    >
+                      <option value="1_2">1–2</option>
+                      <option value="3_4">3–4</option>
+                      <option value="5_6">5–6</option>
+                      <option value="daily">Every day</option>
+                    </select>
                   </div>
 
                   <div className="grid gap-2">
@@ -474,7 +470,16 @@ export default function DriversClient() {
                     </select>
                   </div>
 
-                  <fieldset className="space-y-3">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label htmlFor="dr-routes">Areas you usually drive</Label>
+                    <Input
+                      id="dr-routes"
+                      placeholder="e.g. Kilimani, CBD, Rongai"
+                      {...register("routesAreas")}
+                    />
+                  </div>
+
+                  <fieldset className="space-y-3 sm:col-span-2">
                     <legend className="mb-1 text-sm font-medium text-foreground">
                       Which apps do you drive on?
                     </legend>
@@ -495,8 +500,10 @@ export default function DriversClient() {
                       ))}
                     </div>
                   </fieldset>
+                </FormSection>
 
-                  <div className="grid gap-2">
+                <FormSection title="Anything else">
+                  <div className="grid gap-2 sm:col-span-2">
                     <Label htmlFor="dr-msg">
                       Anything else we should know? (optional)
                     </Label>
@@ -524,7 +531,9 @@ export default function DriversClient() {
                       <option value="other">Other</option>
                     </select>
                   </div>
+                </FormSection>
 
+                <div className="space-y-6">
                   <label className="flex items-start gap-3 text-sm text-foreground">
                     <input
                       type="checkbox"
@@ -571,23 +580,9 @@ export default function DriversClient() {
                   >
                     Raise my hand
                   </Button>
-                </form>
-              )}
-
-              <p className="mt-10 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                Admobi is not an employer. Drivers participate as independent
-                contractors. Payouts are subject to active screen hours verified
-                by GPS.
-              </p>
-            </div>
-
-            <div className="relative isolate mt-12 hidden overflow-hidden rounded-2xl border border-border bg-muted/20 lg:mt-0 lg:block lg:aspect-[4/5]">
-              <IsoCrossPattern
-                className="opacity-100"
-                maskImage="radial-gradient(ellipse 75% 75% at 50% 45%, black, transparent 75%)"
-                colorClassName="text-primary/35"
-              />
-            </div>
+                </div>
+              </form>
+            )}
           </div>
         </Container>
       </section>

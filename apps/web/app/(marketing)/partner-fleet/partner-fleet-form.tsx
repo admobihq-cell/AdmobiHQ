@@ -13,6 +13,7 @@ import type { FleetLeadInput } from "@/lib/validation/lead-schemas"
 import { fleetLeadSchema } from "@/lib/validation/lead-schemas"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { FormSection } from "@/components/forms/form-section"
 import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { useLeadForm } from "@/components/forms/use-lead-form"
@@ -21,8 +22,15 @@ const selectClass =
   "border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base outline-none focus-visible:ring-3 md:text-sm disabled:opacity-50"
 
 export default function PartnerFleetForm() {
-  const { submitted, submitError, dismissError, honeypot, setHoneypot, submit, reset: resetLeadForm } =
-    useLeadForm({ endpoint: "/leads" })
+  const {
+    submitted,
+    submitError,
+    dismissError,
+    honeypot,
+    setHoneypot,
+    submit,
+    reset: resetLeadForm,
+  } = useLeadForm({ endpoint: "/leads" })
 
   const form = useForm<FleetLeadInput>({
     resolver: zodResolver(fleetLeadSchema),
@@ -49,17 +57,22 @@ export default function PartnerFleetForm() {
   // eslint-disable-next-line react-hooks/incompatible-library
   const fleetTypesWatch = watch("fleetTypes").slice()
   const operatingCitiesWatch = watch("operatingCities")?.slice() ?? []
-  const radioClass = "border-input accent-primary size-4 shrink-0 rounded-full border"
+  const radioClass =
+    "border-input accent-primary size-4 shrink-0 rounded-full border"
 
   function toggleOperatingCity(key: "Nairobi" | "Mombasa" | "Kisumu") {
     const curr = operatingCitiesWatch.slice()
-    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    const next = curr.includes(key)
+      ? curr.filter((v) => v !== key)
+      : [...curr, key]
     setValue("operatingCities", next, { shouldValidate: true })
   }
 
   function toggleFleetType(key: "taxi" | "delivery_bike") {
     const curr = fleetTypesWatch.slice()
-    const next = curr.includes(key) ? curr.filter((v) => v !== key) : [...curr, key]
+    const next = curr.includes(key)
+      ? curr.filter((v) => v !== key)
+      : [...curr, key]
     setValue("fleetTypes", next, { shouldValidate: true })
   }
 
@@ -71,7 +84,7 @@ export default function PartnerFleetForm() {
         fleetTypesWatch.includes("delivery_bike")
         ? []
         : ["taxi", "delivery_bike"],
-      { shouldValidate: true },
+      { shouldValidate: true }
     )
   }
 
@@ -86,235 +99,296 @@ export default function PartnerFleetForm() {
 
   if (submitted) {
     return (
-      <div className="mt-10">
-        <SubmissionSuccess
-          icon={Handshake}
-          title="Deck's on its way"
-          message="We'll send over the partnership deck and follow up within 48 hours with onboarding steps and commercial terms sized to your fleet."
-          onReset={handleReset}
-        />
-      </div>
+      <SubmissionSuccess
+        icon={Handshake}
+        title="Deck's on its way"
+        message="We'll send over the partnership deck and follow up within 48 hours with onboarding steps and commercial terms sized to your fleet."
+        onReset={handleReset}
+      />
     )
   }
 
   return (
-    <form className="mt-10 max-w-xl space-y-8" noValidate onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid gap-2">
-        <Label htmlFor="pf-co">Fleet or company name *</Label>
-        <Input
-          id="pf-co"
-          {...register("fleetOrCompanyName")}
-          aria-invalid={!!formState.errors.fleetOrCompanyName}
-        />
-        {formState.errors.fleetOrCompanyName ? (
-          <p className="text-destructive text-xs font-medium" role="alert">
-            {formState.errors.fleetOrCompanyName.message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="pf-name">Primary contact name *</Label>
-        <Input
-          id="pf-name"
-          {...register("primaryContactName")}
-          aria-invalid={!!formState.errors.primaryContactName}
-        />
-        {formState.errors.primaryContactName ? (
-          <p className="text-destructive text-xs font-medium" role="alert">
-            {formState.errors.primaryContactName.message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="pf-email">Email *</Label>
-        <Input id="pf-email" type="email" autoComplete="email" {...register("email")} />
-        {formState.errors.email ? (
-          <p className="text-destructive text-xs font-medium" role="alert">
-            {formState.errors.email.message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="pf-phone">Phone / WhatsApp *</Label>
-        <Input id="pf-phone" type="tel" autoComplete="tel" {...register("phone")} />
-        {formState.errors.phone ? (
-          <p className="text-destructive text-xs font-medium" role="alert">
-            {formState.errors.phone.message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="pf-city">City of operation *</Label>
-        <select id="pf-city" className={selectClass} {...register("city")}>
-          <option value="Nairobi">Nairobi</option>
-          <option value="Mombasa">Mombasa</option>
-          <option value="Kisumu">Kisumu</option>
-        </select>
-      </div>
-
-      <fieldset className="space-y-2">
-        <legend className="mb-3 text-sm font-medium text-foreground">Fleet type *</legend>
-        <div className="flex flex-wrap gap-x-6 gap-y-3">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={fleetTypesWatch.includes("taxi")}
-              onChange={() => toggleFleetType("taxi")}
-              className="border-input accent-primary size-4 rounded border"
-            />
-            <span>Taxis</span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={fleetTypesWatch.includes("delivery_bike")}
-              onChange={() => toggleFleetType("delivery_bike")}
-              className="border-input accent-primary size-4 rounded border"
-            />
-            <span>Delivery bikes</span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={
-                fleetTypesWatch.includes("taxi") &&
-                fleetTypesWatch.includes("delivery_bike")
-              }
-              onChange={setBothFleetTypes}
-              className="border-input accent-primary size-4 rounded border"
-            />
-            <span>Both</span>
-          </label>
+    <form className="space-y-8 sm:space-y-10" noValidate onSubmit={handleSubmit(onSubmit)}>
+      <FormSection title="Your company">
+        <div className="grid gap-2">
+          <Label htmlFor="pf-co">Fleet or company name *</Label>
+          <Input
+            id="pf-co"
+            {...register("fleetOrCompanyName")}
+            aria-invalid={!!formState.errors.fleetOrCompanyName}
+          />
+          {formState.errors.fleetOrCompanyName ? (
+            <p className="text-xs font-medium text-destructive" role="alert">
+              {formState.errors.fleetOrCompanyName.message}
+            </p>
+          ) : null}
         </div>
-        {formState.errors.fleetTypes ? (
-          <p className="text-destructive text-xs font-medium" role="alert">
-            {formState.errors.fleetTypes.message as string}
-          </p>
-        ) : null}
-      </fieldset>
 
-      <div className="grid gap-2">
-        <Label htmlFor="pf-count">Number of vehicles available *</Label>
-        <Input
-          id="pf-count"
-          type="number"
-          min={1}
-          step={1}
-          {...register("vehicleCount", { valueAsNumber: true })}
-        />
-        {formState.errors.vehicleCount ? (
-          <p className="text-destructive text-xs font-medium" role="alert">
-            {formState.errors.vehicleCount.message}
-          </p>
-        ) : null}
-      </div>
+        <div className="grid gap-2">
+          <Label htmlFor="pf-name">Primary contact name *</Label>
+          <Input
+            id="pf-name"
+            {...register("primaryContactName")}
+            aria-invalid={!!formState.errors.primaryContactName}
+          />
+          {formState.errors.primaryContactName ? (
+            <p className="text-xs font-medium text-destructive" role="alert">
+              {formState.errors.primaryContactName.message}
+            </p>
+          ) : null}
+        </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2">
+          <Label htmlFor="pf-email">Email *</Label>
+          <Input
+            id="pf-email"
+            type="email"
+            autoComplete="email"
+            {...register("email")}
+          />
+          {formState.errors.email ? (
+            <p className="text-xs font-medium text-destructive" role="alert">
+              {formState.errors.email.message}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="pf-phone">Phone / WhatsApp *</Label>
+          <Input
+            id="pf-phone"
+            type="tel"
+            autoComplete="tel"
+            {...register("phone")}
+          />
+          {formState.errors.phone ? (
+            <p className="text-xs font-medium text-destructive" role="alert">
+              {formState.errors.phone.message}
+            </p>
+          ) : null}
+        </div>
+      </FormSection>
+
+      <FormSection title="Your fleet">
+        <div className="grid gap-2">
+          <Label htmlFor="pf-city">City of operation *</Label>
+          <select id="pf-city" className={selectClass} {...register("city")}>
+            <option value="Nairobi">Nairobi</option>
+            <option value="Mombasa">Mombasa</option>
+            <option value="Kisumu">Kisumu</option>
+          </select>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="pf-count">Number of vehicles available *</Label>
+          <Input
+            id="pf-count"
+            type="number"
+            min={1}
+            step={1}
+            {...register("vehicleCount", { valueAsNumber: true })}
+          />
+          {formState.errors.vehicleCount ? (
+            <p className="text-xs font-medium text-destructive" role="alert">
+              {formState.errors.vehicleCount.message}
+            </p>
+          ) : null}
+        </div>
+
+        <fieldset className="space-y-2 sm:col-span-2">
+          <legend className="mb-3 text-sm font-medium text-foreground">
+            Fleet type *
+          </legend>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={fleetTypesWatch.includes("taxi")}
+                onChange={() => toggleFleetType("taxi")}
+                className="size-4 rounded border border-input accent-primary"
+              />
+              <span>Taxis</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={fleetTypesWatch.includes("delivery_bike")}
+                onChange={() => toggleFleetType("delivery_bike")}
+                className="size-4 rounded border border-input accent-primary"
+              />
+              <span>Delivery bikes</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={
+                  fleetTypesWatch.includes("taxi") &&
+                  fleetTypesWatch.includes("delivery_bike")
+                }
+                onChange={setBothFleetTypes}
+                className="size-4 rounded border border-input accent-primary"
+              />
+              <span>Both</span>
+            </label>
+          </div>
+          {formState.errors.fleetTypes ? (
+            <p className="text-xs font-medium text-destructive" role="alert">
+              {formState.errors.fleetTypes.message as string}
+            </p>
+          ) : null}
+        </fieldset>
+
         <div className="grid gap-2">
           <Label htmlFor="pf-taxis">Number of taxis</Label>
-          <Input id="pf-taxis" type="number" min={0} step={1} {...register("taxiCount", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })} />
+          <Input
+            id="pf-taxis"
+            type="number"
+            min={0}
+            step={1}
+            {...register("taxiCount", {
+              setValueAs: (v) =>
+                v === "" || v == null ? undefined : Number(v),
+            })}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="pf-bikes">Number of bikes</Label>
-          <Input id="pf-bikes" type="number" min={0} step={1} {...register("bikeCount", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })} />
+          <Input
+            id="pf-bikes"
+            type="number"
+            min={0}
+            step={1}
+            {...register("bikeCount", {
+              setValueAs: (v) =>
+                v === "" || v == null ? undefined : Number(v),
+            })}
+          />
         </div>
-      </div>
 
-      <fieldset className="space-y-2">
-        <legend className="mb-3 text-sm font-medium text-foreground">Cities you operate in</legend>
-        <div className="flex flex-wrap gap-x-6 gap-y-3">
-          {(["Nairobi", "Mombasa", "Kisumu"] as const).map((city) => (
-            <label key={city} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+        <fieldset className="space-y-2 sm:col-span-2">
+          <legend className="mb-3 text-sm font-medium text-foreground">
+            Cities you operate in
+          </legend>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {(["Nairobi", "Mombasa", "Kisumu"] as const).map((city) => (
+              <label
+                key={city}
+                className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+              >
+                <input
+                  type="checkbox"
+                  checked={operatingCitiesWatch.includes(city)}
+                  onChange={() => toggleOperatingCity(city)}
+                  className="size-4 rounded border border-input accent-primary"
+                />
+                <span>{city}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="grid gap-2">
+          <Label htmlFor="pf-ev">
+            Does your fleet include electric vehicles?
+          </Label>
+          <select id="pf-ev" className={selectClass} {...register("evStatus")}>
+            <option value="none">No, none</option>
+            <option value="some">Yes, some</option>
+            <option value="mostly">Mostly electric</option>
+            <option value="all">Fully electric</option>
+          </select>
+        </div>
+
+        <fieldset className="space-y-3">
+          <legend className="mb-1 text-sm font-medium text-foreground">
+            Are vehicles currently active? *
+          </legend>
+          <div className="flex flex-wrap gap-6">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
               <input
-                type="checkbox"
-                checked={operatingCitiesWatch.includes(city)}
-                onChange={() => toggleOperatingCity(city)}
-                className="border-input accent-primary size-4 rounded border"
+                type="radio"
+                value="yes"
+                className={radioClass}
+                {...register("vehiclesActive")}
               />
-              <span>{city}</span>
+              Yes
             </label>
-          ))}
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="radio"
+                value="no"
+                className={radioClass}
+                {...register("vehiclesActive")}
+              />
+              No
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <input
+                type="radio"
+                value="some"
+                className={radioClass}
+                {...register("vehiclesActive")}
+              />
+              Some
+            </label>
+          </div>
+        </fieldset>
+      </FormSection>
+
+      <FormSection title="Anything else">
+        <div className="grid gap-2 sm:col-span-2">
+          <Label htmlFor="pf-notes">Additional notes (optional)</Label>
+          <textarea
+            id="pf-notes"
+            rows={3}
+            className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+            {...register("notes")}
+          />
         </div>
-      </fieldset>
+      </FormSection>
 
-      <div className="grid gap-2">
-        <Label htmlFor="pf-ev">Does your fleet include electric vehicles?</Label>
-        <select id="pf-ev" className={selectClass} {...register("evStatus")}>
-          <option value="none">No, none</option>
-          <option value="some">Yes, some</option>
-          <option value="mostly">Mostly electric</option>
-          <option value="all">Fully electric</option>
-        </select>
+      <div className="space-y-6">
+        <label className="flex items-start gap-3 text-sm text-foreground">
+          <input
+            type="checkbox"
+            className="mt-1 size-4 shrink-0 rounded border border-input accent-primary"
+            {...register("consent")}
+          />
+          <span>
+            I agree to the{" "}
+            <Link
+              href="/privacy"
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              privacy policy
+            </Link>{" "}
+            and understand these are the working terms described above.
+          </span>
+        </label>
+        {formState.errors.consent ? (
+          <p className="text-xs font-medium text-destructive" role="alert">
+            {formState.errors.consent.message}
+          </p>
+        ) : null}
+
+        {submitError ? (
+          <ApiErrorBanner message={submitError} onDismiss={dismissError} />
+        ) : null}
+
+        <HoneypotField value={honeypot} onChange={setHoneypot} />
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={formState.isSubmitting}
+          loading={formState.isSubmitting}
+          loadingText="Sending…"
+          size="lg"
+        >
+          Request partnership deck
+        </Button>
       </div>
-
-      <fieldset className="space-y-3">
-        <legend className="mb-1 text-sm font-medium text-foreground">
-          Are vehicles currently active? *
-        </legend>
-        <div className="flex flex-wrap gap-6">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <input type="radio" value="yes" className={radioClass} {...register("vehiclesActive")} />
-            Yes
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <input type="radio" value="no" className={radioClass} {...register("vehiclesActive")} />
-            No
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <input type="radio" value="some" className={radioClass} {...register("vehiclesActive")} />
-            Some
-          </label>
-        </div>
-      </fieldset>
-
-      <div className="grid gap-2">
-        <Label htmlFor="pf-notes">Additional notes (optional)</Label>
-        <textarea
-          id="pf-notes"
-          rows={3}
-          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring/50 focus-visible:border-ring flex min-h-20 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-3 md:text-sm"
-          {...register("notes")}
-        />
-      </div>
-
-      <label className="flex items-start gap-3 text-sm text-foreground">
-        <input
-          type="checkbox"
-          className="border-input accent-primary mt-1 size-4 shrink-0 rounded border"
-          {...register("consent")}
-        />
-        <span>
-          I agree to the{" "}
-          <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
-            privacy policy
-          </Link>{" "}
-          and understand these are the working terms described above.
-        </span>
-      </label>
-      {formState.errors.consent ? (
-        <p className="text-destructive text-xs font-medium" role="alert">
-          {formState.errors.consent.message}
-        </p>
-      ) : null}
-
-      {submitError ? <ApiErrorBanner message={submitError} onDismiss={dismissError} /> : null}
-
-      <HoneypotField value={honeypot} onChange={setHoneypot} />
-
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={formState.isSubmitting}
-        loading={formState.isSubmitting}
-        loadingText="Sending…"
-        size="lg"
-      >
-        Request partnership deck
-      </Button>
     </form>
   )
 }

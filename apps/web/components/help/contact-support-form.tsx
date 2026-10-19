@@ -101,7 +101,8 @@ export function ContactSupportForm() {
           />
         ) : (
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-14">
-            <form className="max-w-xl space-y-6" noValidate onSubmit={handleSubmit(onSubmit)}>
+            <form className="space-y-6" noValidate onSubmit={handleSubmit(onSubmit)}>
+              <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="cs-name">Your name *</Label>
                 <Input
@@ -131,6 +132,7 @@ export function ContactSupportForm() {
                     {errors.contact_email.message}
                   </p>
                 ) : null}
+              </div>
               </div>
 
               <fieldset className="grid gap-2">

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Check, ClipboardList, Cpu, Smartphone, Wallet } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { formPageGrid } from "@/components/forms/form-section"
 import { Container } from "@/components/landing/container"
 import { ChevronPattern } from "@/components/landing/pattern-shapes"
 import { FaqDetails } from "@/components/seo/faq-details"
@@ -208,23 +209,22 @@ export default function PartnerFleetPage() {
           id="request-deck"
           className="scroll-mt-24 border-t border-border py-14 sm:py-20"
         >
-          <Container>
-            <div className="max-w-xl space-y-2">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+          <Container className={formPageGrid}>
+            <div className="space-y-4 lg:sticky lg:top-24">
+              <h2 className="text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-[2rem]">
                 Request partnership deck
               </h2>
               <p className="text-base leading-relaxed text-muted-foreground">
                 Share operational basics. Expect a structured follow-up inside
                 two business days.
               </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Admobi contracts with licensed fleet partners. Final economics sit
+                in your signed agreement, not on this marketing page.
+              </p>
             </div>
 
             <PartnerFleetForm />
-
-            <p className="mt-10 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-              Admobi contracts with licensed fleet partners. Final economics sit
-              in your signed agreement, not on this marketing page.
-            </p>
           </Container>
         </section>
       </div>

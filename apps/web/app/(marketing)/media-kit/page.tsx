@@ -65,7 +65,7 @@ export default function MediaKitPage() {
             />
           </div>
         ) : (
-          <form className="mt-10 grid max-w-md gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <form className="mt-10 grid gap-x-4 gap-y-5 sm:grid-cols-2" noValidate onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-2">
               <Label htmlFor="mk-name">Name *</Label>
               <Input id="mk-name" autoComplete="name" {...register("name")} />
@@ -92,17 +92,20 @@ export default function MediaKitPage() {
               <Label htmlFor="mk-role">Your role (optional)</Label>
               <Input id="mk-role" autoComplete="organization-title" {...register("role")} />
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 sm:col-span-2">
               <Label htmlFor="mk-usecase">What are you evaluating Admobi for? (optional)</Label>
               <Input id="mk-usecase" {...register("useCase")} />
             </div>
             {submitError ? (
-              <ApiErrorBanner message={submitError} onDismiss={dismissError} />
+              <div className="sm:col-span-2">
+                <ApiErrorBanner message={submitError} onDismiss={dismissError} />
+              </div>
             ) : null}
             <HoneypotField value={honeypot} onChange={setHoneypot} />
             <Button
               type="submit"
               size="lg"
+              className="mt-1 sm:col-span-2 sm:justify-self-start"
               disabled={isSubmitting}
               loading={isSubmitting}
               loadingText="Sending…"

@@ -41,6 +41,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 - Long-scroll landing with anchor IDs: `#product`, `#markets`, `#campaign`, `#fleet`, `#waitlist`, `#drivers`, `#media-kit`, `#faq`.
 - Responsive nav collapses to menu button on small screens.
 - Optional **sticky mobile bar** with two actions (Start campaign / Fleet manager); no modal-first signup.
+- **Lead forms** (start campaign, partner fleet, drivers): pitch left, form right from `lg` (`formPageGrid` in `apps/web/components/forms/form-section.tsx`), never a lone `max-w-xl` column against an empty right half. Fields group into titled `FormSection`s that pair short fields two-across from `sm`. In DOM order the form follows the intro directly, so phones reach it without scrolling past supporting copy.
 
 ## Motion
 

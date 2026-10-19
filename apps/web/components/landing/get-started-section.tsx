@@ -113,11 +113,11 @@ export function GetStartedSection() {
         ) : (
           <form
             id="waitlist"
-            className="mt-14 max-w-xl scroll-mt-20 space-y-4 border-t border-border pt-10"
+            className="mt-14 grid scroll-mt-20 gap-4 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-x-16"
             onSubmit={onNotify}
             noValidate
           >
-            <Label htmlFor="notify-email" className="text-foreground">
+            <Label htmlFor="notify-email" className="text-base leading-relaxed text-foreground lg:row-span-3 lg:self-start">
               Stay updated on city launches and network news.
             </Label>
             <div className="flex flex-col gap-3 sm:flex-row">
