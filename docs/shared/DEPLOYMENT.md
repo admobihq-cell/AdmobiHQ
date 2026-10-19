@@ -407,6 +407,8 @@ After first prod deploy: run Payload migrate + seed once if CMS is empty ([BLOG-
 
 **API env vars:** `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_ORG_ID`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CUSTOMER_CLERK_SECRET_KEY`, `DRIVER_CLERK_SECRET_KEY`, `NEXT_PUBLIC_API_URL`, `API_CORS_ORIGINS`, `resend_api_key`, `SENDER_EMAIL`, `ADMIN_EMAIL`, `REDIS_URL`, `CRON_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 
+**Email sending domains (Resend).** Each mail stream sends from its own subdomain so a spam-complaint spike on one doesn't sink the others' reputation: app/transactional mail from `mail.admobihq.com` (`SENDER_EMAIL`, defaulting to `Admobi <noreply@mail.admobihq.com>` in [config.ts](../../apps/api/lib/email/config.ts) — it is not set on Vercel, so the default is what production uses), marketing broadcasts from `news.admobihq.com`, and people's own mail stays on the root `admobihq.com`. Both subdomains are verified Resend domains (DKIM `resend._domainkey.<sub>`, SPF + bounce MX on `send.<sub>`, DNS-only in Cloudflare) and inherit the root `_dmarc.admobihq.com` policy. Inbound mail for the root is Cloudflare Email Routing; an address with no rule hits the catch-all.
+
 `CRON_SECRET` gates the Vercel Cron push-receipts sweep and system-triggered broadcasts (see [API.md](../api/API.md#service-to-service-auth)). `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` back rate limiting on public routes — the API **fails open** (no throttling, not a 500) if either is unset, so it's safe to deploy without them, just not safe to stay that way in production. See [API.md](../api/API.md#rate-limiting).
 
 Smoke check: `GET /v1/health` → `{ "ok": true, "service": "admobi-api", "version": "v1" }`.

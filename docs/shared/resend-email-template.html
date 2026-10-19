@@ -3,8 +3,8 @@
   This is a BROADCAST / AUTOMATION template (it carries an unsubscribe link).
 
   ── Settings to fill in the Resend editor (these are NOT in the HTML) ──
-    From:          Admobi <updates@admobihq.com>
-                   (marketing blasts: Admobi <marketing@admobihq.com>)
+    From:          Admobi <updates@mail.admobihq.com>
+                   (marketing blasts: Admobi <news@news.admobihq.com> — never from mail.)
     Reply-To:      hello@admobihq.com   (an inbox someone actually reads)
     Subject:       set per send, or make it a variable: {{{SUBJECT}}}
     Preview text:  set per send — reuse the PREHEADER value
@@ -27,7 +27,7 @@
     resend.broadcasts.send("<broadcast-id>", { ... })
   ── or transactional (drop the unsubscribe <tr> first) ──
     resend.emails.send({
-      from: "Admobi <updates@admobihq.com>",
+      from: "Admobi <updates@mail.admobihq.com>",
       to: ["x@example.com"],
       subject: "…",
       template: { id: "<template-id-or-alias>", variables: {

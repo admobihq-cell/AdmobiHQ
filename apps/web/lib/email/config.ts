@@ -1,4 +1,4 @@
-const DEFAULT_SENDER = "Admobi <noreply@admobihq.com>"
+const DEFAULT_SENDER = "Admobi <noreply@mail.admobihq.com>"
 
 const DEFAULT_ADMIN_EMAILS = [
   "admobihq@gmail.com",
