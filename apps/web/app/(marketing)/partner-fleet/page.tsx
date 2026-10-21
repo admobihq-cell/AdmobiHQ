@@ -30,7 +30,7 @@ const heroSteps = [
   {
     title: "Partnership review",
     detail:
-      "We respond within 48 hours with onboarding steps, install windows, and commercial terms framed for your fleet size.",
+      "We respond in 3 to 7 working days with onboarding steps, install windows, and commercial terms framed for your fleet size.",
     icon: Smartphone,
   },
   {
@@ -215,8 +215,8 @@ export default function PartnerFleetPage() {
                 Request partnership deck
               </h2>
               <p className="text-base leading-relaxed text-muted-foreground">
-                Share operational basics. Expect a structured follow-up inside
-                two business days.
+                Share operational basics. Expect a structured follow-up in 3 to 7
+                working days.
               </p>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Admobi contracts with licensed fleet partners. Final economics sit

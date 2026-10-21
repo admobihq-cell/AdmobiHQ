@@ -3,7 +3,6 @@
 import Link from "next/link"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Rocket } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -137,7 +136,7 @@ export default function StartCampaignPage() {
             </h2>
             <p className="text-base leading-relaxed text-muted-foreground">
               Fill in the brief and we&apos;ll come back with availability,
-              pricing, and a flight plan within 48 hours. Campaigns start from
+              pricing, and a flight plan in 3 to 7 working days. Campaigns start from
               one day, no long-term contracts, no minimum fleet commitment.
               Outdoor advertising in Nairobi doesn&apos;t have to mean locking
               into a 6-month billboard. Admobi taxi-top screens let you run
@@ -150,9 +149,13 @@ export default function StartCampaignPage() {
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
           {submitted ? (
             <SubmissionSuccess
-              icon={Rocket}
-              title="Brief received"
-              message="Someone from Admobi will reach out within 24 hours with availability, pricing, and a flight plan tailored to your brief."
+              title="Your brief is with us"
+              steps={[
+                { label: "Brief received", when: "Just now" },
+                { label: "We check screen availability for your cities and dates" },
+                { label: "Someone from Admobi reaches out with pricing and a flight plan", when: "In 3 to 7 working days" },
+              ]}
+              resetLabel="Submit another brief"
               onReset={handleReset}
             />
           ) : (

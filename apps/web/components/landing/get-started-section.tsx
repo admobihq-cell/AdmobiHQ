@@ -4,7 +4,6 @@ import Link from "next/link"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
-import { Sparkles } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -104,9 +103,11 @@ export function GetStartedSection() {
         {status === "success" ? (
           <div id="waitlist" className="mt-14 max-w-xl scroll-mt-20 border-t border-border pt-10">
             <SubmissionSuccess
-              icon={Sparkles}
-              title="You're on the radar"
-              message="We'll only email when there's real network news — new cities, launches, or milestones worth knowing about. No noise in between."
+              title="You're on the list"
+              steps={[
+                { label: "Subscribed", when: "Just now" },
+                { label: "We email only when there's real network news: new cities, launches, milestones. Nothing in between." },
+              ]}
               onReset={handleReset}
             />
           </div>

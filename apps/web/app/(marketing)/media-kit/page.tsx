@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { FileDown } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -58,9 +57,12 @@ export default function MediaKitPage() {
         {submitted ? (
           <div className="mt-10">
             <SubmissionSuccess
-              icon={FileDown}
-              title="Kit's in your inbox"
-              message="Check your inbox for the downloadable media kit — specs, reach data, and creative guidance ready to drop into your next brief."
+              title="The media kit is on its way"
+              steps={[
+                { label: "Request received", when: "Just now" },
+                { label: "The kit lands in your inbox: specs, reach data, and creative guidance" },
+                { label: "Drop it into your next brief" },
+              ]}
               onReset={handleReset}
             />
           </div>

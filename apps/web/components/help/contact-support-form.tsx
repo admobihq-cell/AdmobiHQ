@@ -7,7 +7,6 @@ import {
   ArrowRight,
   CircleCheck,
   Clock,
-  LifeBuoy,
   Mail,
   Megaphone,
   MessageCircle,
@@ -93,9 +92,12 @@ export function ContactSupportForm() {
 
         {submitted ? (
           <SubmissionSuccess
-            icon={LifeBuoy}
-            title="Request received"
-            message="We've got your case and will follow up by email shortly."
+            title="We've got your request"
+            steps={[
+              { label: "Case opened", when: "Just now" },
+              { label: "The Admobi team looks into it" },
+              { label: "We follow up by email", when: "Shortly" },
+            ]}
             onReset={handleReset}
             resetLabel="Send another request"
           />

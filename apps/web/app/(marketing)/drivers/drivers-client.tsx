@@ -4,7 +4,6 @@ import Link from "next/link"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
-  Car,
   Check,
   ClipboardList,
   Cpu,
@@ -42,7 +41,7 @@ const heroSteps = [
   {
     title: "Get approved",
     detail:
-      "Our team contacts you within 3 business days to confirm eligibility and schedule installation.",
+      "Our team contacts you in 3 to 7 working days to confirm eligibility and schedule installation.",
     icon: Smartphone,
   },
   {
@@ -268,7 +267,7 @@ export default function DriversClient() {
               Raise your hand
             </h2>
             <p className="text-base leading-relaxed text-muted-foreground">
-              Takes 2 minutes. We&apos;ll be in touch within 3 days.
+              Takes 2 minutes. We&apos;ll be in touch in 3 to 7 working days.
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Admobi is not an employer. Drivers participate as independent
@@ -280,9 +279,12 @@ export default function DriversClient() {
           <div>
             {submitted ? (
               <SubmissionSuccess
-                icon={Car}
                 title="You're in the queue"
-                message="We've got your details. Someone from our driver team will call or WhatsApp you within 3 business days to confirm eligibility and schedule your install."
+                steps={[
+                  { label: "Application received", when: "Just now" },
+                  { label: "Our driver team calls or WhatsApps you to confirm eligibility", when: "In 3 to 7 working days" },
+                  { label: "We schedule your screen install" },
+                ]}
                 onReset={handleReset}
               />
             ) : (

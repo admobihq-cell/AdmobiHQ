@@ -3,7 +3,6 @@
 import Link from "next/link"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Handshake } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -100,9 +99,12 @@ export default function PartnerFleetForm() {
   if (submitted) {
     return (
       <SubmissionSuccess
-        icon={Handshake}
-        title="Deck's on its way"
-        message="We'll send over the partnership deck and follow up within 48 hours with onboarding steps and commercial terms sized to your fleet."
+        title="Thanks, we'll be in touch"
+        steps={[
+          { label: "Fleet details received", when: "Just now" },
+          { label: "We send over the partnership deck" },
+          { label: "We follow up with onboarding steps and terms sized to your fleet", when: "In 3 to 7 working days" },
+        ]}
         onReset={handleReset}
       />
     )
