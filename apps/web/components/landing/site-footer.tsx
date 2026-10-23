@@ -5,11 +5,12 @@ import { LastUpdated } from "@/components/seo/last-updated"
 import { BLOG_PATH } from "@/lib/seo/site"
 
 import { Container } from "./container"
+import { FooterVideo } from "./footer-video"
 import { Logo } from "./logo"
 import { SocialLinks } from "./social-links"
 
 const footerLinkClass =
-  "inline-block rounded-md py-1 text-muted-foreground text-sm underline-offset-[3px] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "inline-block rounded-md py-1 text-foreground/85 text-[0.9375rem] font-medium underline-offset-[3px] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 const columns = [
   {
@@ -62,7 +63,7 @@ const columns = [
 
 function FooterHeading({ children }: { children: string }) {
   return (
-    <p className="text-foreground font-mono text-[0.6875rem] font-medium uppercase tracking-[0.17em]">
+    <p className="text-foreground font-mono text-xs font-semibold uppercase tracking-[0.17em]">
       {children}
     </p>
   )
@@ -72,7 +73,10 @@ export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-border border-t bg-muted/25">
+    <footer className="border-border relative isolate overflow-hidden border-t">
+      <FooterVideo />
+      {/* Scrim keeps footer text readable over the video in both themes. */}
+      <div aria-hidden className="bg-background/50 absolute inset-0 -z-10" />
       <Container className="py-12 sm:py-16 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,3fr)] lg:gap-16 xl:gap-20">
           <div className="space-y-5">
@@ -82,10 +86,10 @@ export function SiteFooter() {
             >
               <Logo />
             </Link>
-            <p className="text-muted-foreground max-w-[42ch] text-sm leading-relaxed">
+            <p className="text-foreground/90 max-w-[42ch] text-base leading-relaxed">
               Geo-led taxi-top screens for brands running motion in Kenyan cities.
             </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p className="text-foreground/80 text-sm leading-relaxed">
               Nairobi-first network. Scheduling, creative QA, and proof-of-play that respect how streets actually move.
             </p>
             <SocialLinks />
@@ -109,11 +113,11 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-border text-muted-foreground mt-12 flex flex-col gap-4 border-t pt-8 text-xs sm:mt-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pt-10">
+        <div className="border-border text-foreground/80 mt-12 flex flex-col gap-4 border-t pt-8 text-sm sm:mt-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pt-10">
           <div className="space-y-1">
             <p className="text-foreground text-sm tabular-nums">
               © {year} Admobi
-              <span className="text-muted-foreground font-normal">&nbsp;&middot;&nbsp;</span>
+              <span className="text-foreground/60 font-normal">&nbsp;&middot;&nbsp;</span>
               <span>Kenya</span>
             </p>
             <p className="max-w-xl leading-relaxed">
@@ -121,7 +125,7 @@ export function SiteFooter() {
             </p>
             <LastUpdated className="mt-2" />
           </div>
-          <p className="hidden font-mono text-[0.65rem] leading-relaxed uppercase tracking-[0.12em] sm:block sm:shrink-0 sm:text-end">
+          <p className="hidden font-mono text-xs leading-relaxed uppercase tracking-[0.12em] sm:block sm:shrink-0 sm:text-end">
             Press D for theme
           </p>
         </div>
