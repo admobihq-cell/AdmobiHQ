@@ -195,6 +195,12 @@
   }
 }
 
+/* Without motion (reduced motion, off screen): the first route only, and no travelling dot. */
+.anim-route-cycle > :not(:first-child),
+.anim-route-dot {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   [data-visible="true"] .anim-route {
     stroke-dasharray: var(--route-len, 600);
@@ -206,6 +212,54 @@
     opacity: 0;
     animation: fade-rise 500ms var(--ease-out-strong) forwards;
     animation-delay: var(--rise-delay, 0ms);
+  }
+
+  /* Hero route chip: five stacked routes, each shown for a fifth of the cycle, with a
+     signal dot crossing the connector once per route. */
+  @keyframes route-cycle {
+    0% {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    3%,
+    18% {
+      opacity: 1;
+      transform: none;
+    }
+    21%,
+    100% {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  [data-visible="true"] .anim-route-cycle > * {
+    animation: route-cycle 16s ease-in-out infinite both;
+    animation-delay: calc(var(--i) * 3.2s);
+  }
+
+  @keyframes route-dot {
+    0%,
+    10% {
+      opacity: 0;
+      transform: translateX(0);
+    }
+    20% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+      transform: translateX(22px);
+    }
+    85%,
+    100% {
+      opacity: 0;
+      transform: translateX(22px);
+    }
+  }
+
+  [data-visible="true"] .anim-route-dot {
+    animation: route-dot 3.2s var(--ease-out-strong) infinite both;
   }
 
   .anim-pulse {
