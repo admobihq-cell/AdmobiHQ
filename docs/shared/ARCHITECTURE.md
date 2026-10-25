@@ -167,7 +167,7 @@ These are imported by [`landing-page.tsx`](../../apps/web/components/landing/lan
 | [`process.tsx`](../../apps/web/components/landing/process.tsx) | Four-step brief-to-launch flow |
 | [`faq.tsx`](../../apps/web/components/landing/faq.tsx) | Native `<details>` accordion |
 | [`get-started-section.tsx`](../../apps/web/components/landing/get-started-section.tsx) | Three CTA cards + waitlist form |
-| [`site-footer.tsx`](../../apps/web/components/landing/site-footer.tsx) | Footer nav + theme hint |
+| [`site-footer.tsx`](../../apps/web/components/landing/site-footer.tsx) | Footer nav + theme hint over `<FooterVideo />` (`footer-video.tsx`): `public/videos/footer-bg.jpg` poster shows at once; the looping `footer-bg.mp4` (faststart, keep `moov` first when re-encoding) loads within 400px of the footer. Reduced motion keeps the poster as a still |
 | [`mobile-sticky-cta.tsx`](../../apps/web/components/landing/mobile-sticky-cta.tsx) | Bottom-fixed mobile CTA bar (`lg:hidden`) |
 | [`whatsapp-fab.tsx`](../../apps/web/components/landing/whatsapp-fab.tsx) | Sitewide floating WhatsApp chat button (mounted in root layout, not just landing) |
 
@@ -176,7 +176,7 @@ Plus three building blocks:
 - [`container.tsx`](../../apps/web/components/landing/container.tsx) — `max-w-72rem` centered wrapper used by every section.
 - [`logo.tsx`](../../apps/web/components/landing/logo.tsx) — the Admobi mark: terra signal-wave glyph + `Admobi` wordmark in foreground. Used by site header and footer.
 - [`in-view.tsx`](../../apps/web/components/landing/in-view.tsx) — `"use client"` IntersectionObserver wrapper that flips `data-visible="true"` on its host when scrolled into view. Drives the animation gates in `globals.css`.
-- [`system-illustration.tsx`](../../apps/web/components/landing/system-illustration.tsx) — semantic SVG primitives used in three places: `<RouteSignal />` (Hero — skyline, signal arcs and brand-kit UI chips; the LED screen itself is in the car clip), `<SystemAnatomy />` (Product section — four-node horizontal flow), `<StaticVsMoving />` (Why Taxis — comparison diagram).
+- [`system-illustration.tsx`](../../apps/web/components/landing/system-illustration.tsx) — semantic SVG primitives used in three places: `<RouteSignal />` (Hero — skyline, signal arcs fanned from the car's roof screen, a red LIVE chip and a route chip cycling high-value routes; the LED screen itself is in the car clip), `<SystemAnatomy />` (Product section — four-node horizontal flow), `<StaticVsMoving />` (Why Taxis — comparison diagram).
 
 #### `components/`
 
