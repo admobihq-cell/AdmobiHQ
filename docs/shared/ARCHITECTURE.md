@@ -166,7 +166,7 @@ These are imported by [`landing-page.tsx`](../../apps/web/components/landing/lan
 | [`markets.tsx`](../../apps/web/components/landing/markets.tsx) | Kenya rollout map / timeline |
 | [`process.tsx`](../../apps/web/components/landing/process.tsx) | Four-step brief-to-launch flow |
 | [`faq.tsx`](../../apps/web/components/landing/faq.tsx) | Native `<details>` accordion |
-| [`get-started-section.tsx`](../../apps/web/components/landing/get-started-section.tsx) | Three CTA cards + waitlist form |
+| [`get-started-section.tsx`](../../apps/web/components/landing/get-started-section.tsx) | Two door cards (campaign, fleet) over one muted panel split on the same line: owner-drivers link left, city-launch waitlist (`#waitlist`, styled `Select` for persona) right. City names come from [`rollout.ts`](../../apps/web/components/landing/rollout.ts) |
 | [`site-footer.tsx`](../../apps/web/components/landing/site-footer.tsx) | Footer nav + theme hint over `<FooterVideo />` (`footer-video.tsx`): `public/videos/footer-bg.jpg` poster shows at once; the looping `footer-bg.mp4` (faststart, keep `moov` first when re-encoding) loads within 400px of the footer. Reduced motion keeps the poster as a still |
 | [`mobile-sticky-cta.tsx`](../../apps/web/components/landing/mobile-sticky-cta.tsx) | Bottom-fixed mobile CTA bar (`lg:hidden`) |
 | [`whatsapp-fab.tsx`](../../apps/web/components/landing/whatsapp-fab.tsx) | Sitewide floating WhatsApp chat button (mounted in root layout, not just landing) |

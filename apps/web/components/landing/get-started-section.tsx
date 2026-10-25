@@ -3,11 +3,18 @@
 import Link from "next/link"
 import type { FormEvent } from "react"
 import { useState } from "react"
-
+import { ArrowRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 
 import { publicApiFetch } from "@workspace/ops-api-client"
 
@@ -15,10 +22,14 @@ import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 
 import { Container } from "./container"
+import { ChevronPattern, FlowLinesPattern } from "./pattern-shapes"
+import { LIVE_CITY, nextCitiesList } from "./rollout"
+
+/** Waitlist fields sit on the muted panel, so they take the page colour to read as inputs. */
+const fieldClass = "h-10 bg-background px-3 text-sm dark:bg-background"
 
 export function GetStartedSection() {
   const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
   const [persona, setPersona] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle",
@@ -33,7 +44,6 @@ export function GetStartedSection() {
       method: "POST",
       body: JSON.stringify({
         email,
-        ...(name.trim() ? { name: name.trim() } : {}),
         ...(persona ? { persona } : {}),
       }),
     })
@@ -47,131 +57,165 @@ export function GetStartedSection() {
 
   function handleReset() {
     setEmail("")
-    setName("")
     setPersona("")
     setErrorMessage(null)
     setStatus("idle")
   }
 
   return (
-    <section id="get-started" className="scroll-mt-20 border-b border-border py-14 sm:py-20">
-      <Container>
-        <div className="max-w-2xl space-y-4">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
-            Get started
-          </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Choose the path that fits.
-          </p>
-        </div>
+    <section id="get-started" className="scroll-mt-20 py-14 sm:py-20 lg:py-24">
+      <Container className="max-w-[min(100%,88rem)]">
+        <h2 className="text-balance text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[2.5rem]">
+          Get started
+        </h2>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-3 lg:items-stretch">
-          <div className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8 lg:col-span-1">
-            <h3 className="text-lg font-semibold text-foreground">Start a campaign</h3>
-            <p className="text-muted-foreground mt-2 flex-1 text-sm leading-relaxed">
-              Run ads on taxi tops and delivery bikes across Nairobi, Mombasa, and Kisumu. Any
-              budget. Any duration.
-            </p>
-            <Button asChild className="mt-6 w-full sm:w-auto" size="lg">
-              <Link href="/start-campaign">Talk to us</Link>
-            </Button>
-          </div>
-
-          <div className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8 lg:col-span-1">
-            <h3 className="text-lg font-semibold text-foreground">Partner your fleet</h3>
-            <p className="text-muted-foreground mt-2 flex-1 text-sm leading-relaxed">
-              Register your taxis or bikes and earn consistent revenue on every route you already
-              drive.
-            </p>
-            <Button asChild className="mt-6 w-full sm:w-auto" size="lg" variant="outline">
-              <Link href="/partner-fleet">Join as partner</Link>
-            </Button>
-          </div>
-
-          <div className="flex flex-col rounded-xl border border-border bg-muted/25 p-5 sm:p-6">
-            <h3 className="text-base font-semibold text-foreground">Drive with Admobi</h3>
-            <p className="text-muted-foreground mt-2 flex-1 text-sm leading-relaxed">
-              Individual driver? See working terms, hardware details, and apply to carry our
-              screens.
-            </p>
-            <Button asChild className="mt-5 w-full sm:w-auto" variant="ghost" size="sm">
-              <Link href="/drivers">See driver info</Link>
-            </Button>
-          </div>
-        </div>
-
-        {status === "success" ? (
-          <div id="waitlist" className="mt-14 max-w-xl scroll-mt-20 border-t border-border pt-10">
-            <SubmissionSuccess
-              title="You're on the list"
-              steps={[
-                { label: "Subscribed", when: "Just now" },
-                { label: "We email only when there's real network news: new cities, launches, milestones. Nothing in between." },
-              ]}
-              onReset={handleReset}
+        <div className="mt-10 grid gap-4 lg:grid-cols-2">
+          <div className="relative isolate flex min-h-[19rem] flex-col overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-10 lg:min-h-[22rem] lg:p-12">
+            <FlowLinesPattern
+              maskImage="radial-gradient(ellipse 70% 90% at 100% 0%, black, transparent 70%)"
+              colorClassName="text-primary-foreground/40"
             />
+            <h3 className="max-w-[16ch] text-balance text-3xl font-semibold leading-[1.1] tracking-tight sm:text-[2.25rem]">
+              Put your brand on {LIVE_CITY} taxis
+            </h3>
+            <p className="mt-4 max-w-[44ch] leading-relaxed opacity-90">
+              Taxi tops and delivery bikes, any budget, from a one-day test up. Tell us the goal and
+              we plan the areas and hours with you.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="mt-auto self-start bg-primary-foreground text-primary hover:bg-primary-foreground/90 max-lg:mt-8"
+            >
+              <Link href="/start-campaign">Start a campaign</Link>
+            </Button>
           </div>
-        ) : (
-          <form
+
+          <div className="relative isolate flex min-h-[19rem] flex-col overflow-hidden rounded-2xl bg-foreground p-8 text-background sm:p-10 lg:min-h-[22rem] lg:p-12">
+            <ChevronPattern
+              maskImage="radial-gradient(ellipse 70% 90% at 100% 0%, black, transparent 70%)"
+              colorClassName="text-background/50"
+            />
+            <h3 className="max-w-[16ch] text-balance text-3xl font-semibold leading-[1.1] tracking-tight sm:text-[2.25rem]">
+              Earn on the routes you already drive
+            </h3>
+            <p className="mt-4 max-w-[44ch] leading-relaxed opacity-85">
+              Register your taxis or bikes. We install the screens and sell the media; you keep your
+              routes and dispatch.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="mt-auto self-start bg-background text-foreground hover:bg-background/90 max-lg:mt-8"
+            >
+              <Link href="/partner-fleet">Partner your fleet</Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Third row of the same card system: one quiet panel for everyone who isn't an
+            advertiser or a fleet, split on the line between the two cards above. */}
+        <div className="mt-4 grid overflow-hidden rounded-2xl bg-muted lg:grid-cols-2">
+          <div className="flex flex-col p-8 sm:p-10 lg:px-12">
+            <h3 className="text-xl font-semibold tracking-tight text-foreground">
+              Driving your own taxi?
+            </h3>
+            <p className="mt-1.5 max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
+              Carry a screen on your own taxi or bike and get paid monthly. Just drive as usual.
+            </p>
+            {/* Bottom-aligned with the waitlist form row, as the door cards pin their buttons. */}
+            <Button
+              asChild
+              className="group mt-auto h-10 self-start bg-foreground px-4 text-background hover:bg-foreground/85 max-lg:mt-5"
+            >
+              <Link href="/drivers">
+                Apply as a driver
+                <ArrowRight
+                  className="size-4 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
+                  aria-hidden
+                />
+              </Link>
+            </Button>
+          </div>
+
+          <div
             id="waitlist"
-            className="mt-14 grid scroll-mt-20 gap-4 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-x-16"
-            onSubmit={onNotify}
-            noValidate
+            className="scroll-mt-20 border-t border-border p-8 sm:p-10 lg:border-t-0 lg:border-l lg:px-12"
           >
-            <Label htmlFor="notify-email" className="text-base leading-relaxed text-foreground lg:row-span-3 lg:self-start">
-              Stay updated on city launches and network news.
-            </Label>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Input
-                aria-label="Your name (optional)"
-                placeholder="Your name (optional)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={status === "loading"}
-                className="sm:flex-1"
+            {status === "success" ? (
+              <SubmissionSuccess
+                title="You're on the list"
+                steps={[
+                  { label: "Subscribed", when: "Just now" },
+                  { label: "We email only when there's real network news: new cities, launches, milestones. Nothing in between." },
+                ]}
+                onReset={handleReset}
               />
-              <select
-                aria-label="I am a"
-                value={persona}
-                onChange={(e) => setPersona(e.target.value)}
-                disabled={status === "loading"}
-                className="border-input focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base outline-none focus-visible:ring-3 sm:w-48 md:text-sm"
-              >
-                <option value="">I am a…</option>
-                <option value="advertiser">Advertiser</option>
-                <option value="driver">Driver</option>
-                <option value="fleet">Fleet operator</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <Input
-                id="notify-email"
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={status === "loading"}
-                className="sm:min-w-0 sm:flex-1"
-                aria-invalid={!!errorMessage}
-                aria-describedby={errorMessage ? "notify-email-error" : undefined}
-              />
-              <Button type="submit" disabled={status === "loading"} className="sm:shrink-0">
-                {status === "loading" ? "Sending…" : "Notify me"}
-              </Button>
-            </div>
-            {errorMessage ? (
-              <ApiErrorBanner
-                message={errorMessage}
-                onDismiss={() => {
-                  setErrorMessage(null)
-                  setStatus("idle")
-                }}
-              />
-            ) : null}
-          </form>
-        )}
+            ) : (
+              <form className="flex flex-col" onSubmit={onNotify} noValidate>
+                <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                  Hear when we launch near you
+                </h3>
+                <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
+                  We only email when a new city goes live or the network changes. Next up:{" "}
+                  {nextCitiesList}.
+                </p>
+                <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                  <Label htmlFor="notify-email" className="sr-only">
+                    Email
+                  </Label>
+                  <Input
+                    id="notify-email"
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    placeholder="you@company.co.ke"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={status === "loading"}
+                    className={`${fieldClass} sm:min-w-0 sm:flex-1`}
+                    aria-invalid={!!errorMessage}
+                    aria-describedby={errorMessage ? "notify-email-error" : undefined}
+                  />
+                  <Select value={persona} onValueChange={setPersona} disabled={status === "loading"}>
+                    <SelectTrigger
+                      aria-label="I am a"
+                      className={`${fieldClass} w-full data-[size=default]:h-10 sm:w-40 sm:shrink-0`}
+                    >
+                      <SelectValue placeholder="I am a…" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="rounded-xl p-1">
+                      <SelectItem value="advertiser">Advertiser</SelectItem>
+                      <SelectItem value="driver">Driver</SelectItem>
+                      <SelectItem value="fleet">Fleet operator</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="submit"
+                    disabled={status === "loading"}
+                    className="h-10 bg-foreground px-4 text-background hover:bg-foreground/85 sm:shrink-0"
+                  >
+                    {status === "loading" ? "Sending…" : "Notify me"}
+                  </Button>
+                </div>
+                {errorMessage ? (
+                  <div id="notify-email-error">
+                    <ApiErrorBanner
+                      message={errorMessage}
+                      onDismiss={() => {
+                        setErrorMessage(null)
+                        setStatus("idle")
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </form>
+            )}
+          </div>
+        </div>
       </Container>
     </section>
   )
