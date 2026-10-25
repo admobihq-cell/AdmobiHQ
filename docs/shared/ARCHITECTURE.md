@@ -156,7 +156,7 @@ These are imported by [`landing-page.tsx`](../../apps/web/components/landing/lan
 
 | Component | Renders |
 |---|---|
-| [`site-header.tsx`](../../apps/web/components/landing/site-header.tsx) | Sticky top nav: from `xl` a nav-link pill (active section highlighted via `usePathname`), centred logo mark and a CTA pill with both front doors; below `xl` logo, campaign CTA and a menu button. Theme toggle in the bar at every width |
+| [`site-header.tsx`](../../apps/web/components/landing/site-header.tsx) | Sticky top nav: from `xl` a nav-link pill (active section highlighted via `usePathname`), centred logo and a CTA pill with both front doors; below `xl` logo, campaign CTA and a menu button. Theme toggle in the bar at every width |
 | [`hero.tsx`](../../apps/web/components/landing/hero.tsx) | Centered headline / dual CTA / trust strip / `<RouteSignal />` illustration with `<GreenScreenCarVideo />` (`green-screen-car.tsx`): a chroma-keyed clip of the car with its roof LED screen, `public/videos/car-hero-screen-greenscreen.mp4` |
 | [`why-taxis.tsx`](../../apps/web/components/landing/why-taxis.tsx) | Argument for moving screens + `<StaticVsMoving />` figure |
 | [`mission-section.tsx`](../../apps/web/components/landing/mission-section.tsx) | Mission copy |
