@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useId, useRef, useState, type ReactNode } from "react"
 import {
   Car,
@@ -119,13 +120,25 @@ const navItems: NavItem[] = [
   },
 ]
 
+/** Mobile menu rows. */
 const linkClass =
-  "rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:py-1.5"
+  "rounded-md px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
-const triggerClass = `${linkClass} inline-flex items-center gap-1 pe-1.5`
+/** Desktop: links sit inside one outlined pill; the current section turns terracotta. */
+const pillLinkClass =
+  "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-[0.95rem] leading-none font-medium tracking-tight text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:text-primary"
+
+/** The outline shared by the nav pill, the action pill and the mobile menu button. */
+const pillFrameClass = "rounded-full border-[1.5px] border-foreground/85"
 
 const panelClass =
-  "border-border bg-background animate-in fade-in-0 slide-in-from-top-1 motion-reduce:animate-none absolute left-0 top-full z-50 mt-2 rounded-xl border p-2 shadow-lg duration-150 ease-out"
+  "border-border bg-background animate-in fade-in-0 slide-in-from-top-1 motion-reduce:animate-none absolute left-0 top-full z-50 mt-3 rounded-xl border p-2 shadow-lg duration-150 ease-out"
+
+/** True when the current page lives under this nav item (the "/" overview card never counts). */
+function isInSection(item: NavItem, pathname: string) {
+  const hrefs = [item.href, ...(item.kind === "links" ? item.children.map((child) => child.href) : [])]
+  return hrefs.some((href) => href !== "/" && (pathname === href || pathname.startsWith(`${href}/`)))
+}
 
 /**
  * Coordinates every desktop nav dropdown so at most one is ever open. Moving
@@ -283,6 +296,7 @@ function BlogPreviewCard({
 /** Nav trigger that opens its panel on hover-intent as well as click/tap, on the whole label + chevron. */
 function NavPopover({
   label,
+  isActive,
   isOpen,
   onActivate,
   onToggle,
@@ -291,6 +305,7 @@ function NavPopover({
   render,
 }: {
   label: string
+  isActive: boolean
   isOpen: boolean
   onActivate: () => void
   onToggle: () => void
@@ -304,7 +319,8 @@ function NavPopover({
     <div className="relative flex items-center" onMouseEnter={onActivate}>
       <button
         type="button"
-        className={triggerClass}
+        className={pillLinkClass}
+        data-active={isActive}
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-controls={menuId}
@@ -332,6 +348,7 @@ function NavPopover({
 function DesktopNavItem({
   item,
   recentPosts,
+  isActive,
   isOpen,
   onActivate,
   onToggle,
@@ -340,6 +357,7 @@ function DesktopNavItem({
 }: {
   item: NavItem
   recentPosts: BlogPostListItem[]
+  isActive: boolean
   isOpen: boolean
   onActivate: () => void
   onToggle: () => void
@@ -348,7 +366,12 @@ function DesktopNavItem({
 }) {
   if (item.kind === "link") {
     return (
-      <Link href={item.href} className={linkClass}>
+      <Link
+        href={item.href}
+        className={pillLinkClass}
+        data-active={isActive}
+        aria-current={isActive ? "page" : undefined}
+      >
         {item.label}
       </Link>
     )
@@ -358,6 +381,7 @@ function DesktopNavItem({
     return (
       <NavPopover
         label={item.label}
+        isActive={isActive}
         isOpen={isOpen}
         onActivate={onActivate}
         onToggle={onToggle}
@@ -388,7 +412,12 @@ function DesktopNavItem({
 
   if (recentPosts.length === 0) {
     return (
-      <Link href={item.href} className={linkClass}>
+      <Link
+        href={item.href}
+        className={pillLinkClass}
+        data-active={isActive}
+        aria-current={isActive ? "page" : undefined}
+      >
         {item.label}
       </Link>
     )
@@ -397,6 +426,7 @@ function DesktopNavItem({
   return (
     <NavPopover
       label={item.label}
+      isActive={isActive}
       isOpen={isOpen}
       onActivate={onActivate}
       onToggle={onToggle}
@@ -486,6 +516,7 @@ export function SiteHeader({
 }) {
   const [open, setOpen] = useState(false)
   const closeMobile = () => setOpen(false)
+  const pathname = usePathname() ?? "/"
 
   const { active, activate, closeSoon, closeNow, toggle } = useNavMenu()
   const desktopNavRef = useRef<HTMLElement>(null)
@@ -511,18 +542,14 @@ export function SiteHeader({
   }, [active, closeNow])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background">
-      <Container className="flex h-14 items-center justify-between gap-4 sm:h-16">
-        <Link
-          href="/"
-          className="min-w-0 shrink rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <Logo />
-        </Link>
+    <header className="sticky top-0 z-50 bg-background">
+      {/* Desktop is three zones: nav pill | centred mark | action pill. The 1fr columns keep
+          the mark on the page's centre line whatever the two pills measure. */}
+      <Container className="flex h-16 max-w-[min(100%,88rem)] items-center justify-between gap-3 xl:grid xl:h-20 xl:grid-cols-[1fr_auto_1fr] xl:gap-6">
         <nav
           ref={desktopNavRef}
           aria-label="Primary"
-          className="hidden flex-wrap items-center justify-end gap-1 lg:flex"
+          className={`hidden items-center gap-0.5 justify-self-start p-1 xl:flex ${pillFrameClass}`}
           onMouseLeave={closeSoon}
         >
           {navItems.map((item) => (
@@ -530,49 +557,71 @@ export function SiteHeader({
               key={item.href}
               item={item}
               recentPosts={recentPosts}
+              isActive={isInSection(item, pathname)}
               isOpen={active === item.label}
               onActivate={() => activate(item.label)}
               onToggle={() => toggle(item.label)}
               onClose={closeNow}
             />
           ))}
-          <ThemeToggle />
-          <span
-            className="mx-1 hidden h-6 w-px bg-border xl:block"
-            aria-hidden
-          />
-          <Button asChild size="sm" variant="outline" className="ml-2 shrink-0">
-            <Link href="/partner-fleet">Partner your fleet</Link>
-          </Button>
-          <Button asChild size="sm" className="ml-1 shrink-0">
-            <Link href="/start-campaign">Start a campaign</Link>
-          </Button>
         </nav>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="lg:hidden"
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          onClick={() => setOpen((v) => !v)}
+
+        <Link
+          href="/"
+          className="min-w-0 shrink rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50 xl:justify-self-center"
         >
-          <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </Button>
+          <Logo className="xl:hidden" />
+          {/* Mark only once the bar is wide enough to centre it; one of the two is always hidden. */}
+          <Image
+            src="/brand/logo-mark.png"
+            alt="Admobi"
+            width={65}
+            height={36}
+            priority
+            className="hidden h-9 w-auto xl:block"
+          />
+        </Link>
+
+        <div className="flex items-center gap-2 justify-self-end">
+          <ThemeToggle />
+          <div className={`hidden items-center gap-0.5 p-1 xl:flex ${pillFrameClass}`}>
+            <Link
+              href="/partner-fleet"
+              className="rounded-full px-4 py-2 text-[0.95rem] leading-none font-medium tracking-tight text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Partner your fleet
+            </Link>
+            <Link
+              href="/start-campaign"
+              className="rounded-full bg-primary px-4 py-2 text-[0.95rem] leading-none font-semibold tracking-tight text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Start a campaign
+            </Link>
+          </div>
+          <Link
+            href="/start-campaign"
+            className="hidden rounded-full bg-primary px-4 py-2.5 text-sm leading-none font-semibold tracking-tight text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex xl:hidden"
+          >
+            Start a campaign
+          </Link>
+          <button
+            type="button"
+            className={`inline-flex size-9 items-center justify-center text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:hidden ${pillFrameClass}`}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+            {open ? <X className="size-4.5" aria-hidden /> : <Menu className="size-4.5" aria-hidden />}
+          </button>
+        </div>
       </Container>
       {open ? (
         <div
           id="mobile-nav"
-          className="border-t border-border bg-background lg:hidden"
+          className="border-t border-border bg-background xl:hidden"
         >
           <Container className="flex flex-col gap-4 py-4">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <span className="text-sm font-medium text-foreground">
-                Appearance
-              </span>
-              <ThemeToggle />
-            </div>
             <nav aria-label="Mobile primary" className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <MobileNavItem
@@ -588,13 +637,13 @@ export function SiteHeader({
                 asChild
                 variant="outline"
                 size="sm"
-                className="w-full sm:flex-1"
+                className="w-full rounded-full sm:flex-1"
               >
                 <Link href="/partner-fleet" onClick={closeMobile}>
                   Partner your fleet
                 </Link>
               </Button>
-              <Button asChild size="sm" className="w-full sm:flex-1">
+              <Button asChild size="sm" className="w-full rounded-full sm:flex-1">
                 <Link href="/start-campaign" onClick={closeMobile}>
                   Start a campaign
                 </Link>

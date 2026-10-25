@@ -39,7 +39,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 ## Layout
 
 - Long-scroll landing with anchor IDs: `#product`, `#markets`, `#campaign`, `#fleet`, `#waitlist`, `#drivers`, `#media-kit`, `#faq`.
-- Responsive nav collapses to menu button on small screens.
+- **Header** (`site-header.tsx`): from `xl`, three zones on one centre line: the nav links inside a 1.5px foreground-outlined pill (current section in terracotta, dropdowns hang below it), the logo mark alone in the middle, and a matching pill holding both front doors ("Partner your fleet" as text, "Start a campaign" filled terracotta). Below `xl` it's logo + wordmark, a "Start a campaign" pill (from `sm`) and an outlined round menu button; the theme toggle stays in the bar at every width.
 - Optional **sticky mobile bar** with two actions (Start campaign / Fleet manager); no modal-first signup.
 - **Lead forms** (start campaign, partner fleet, drivers): pitch left, form right from `lg` (`formPageGrid` in `apps/web/components/forms/form-section.tsx`), never a lone `max-w-xl` column against an empty right half. Fields group into titled `FormSection`s that pair short fields two-across from `sm`. In DOM order the form follows the intro directly, so phones reach it without scrolling past supporting copy. On submit the form is replaced by `SubmissionSuccess` (`apps/web/components/forms/submission-success.tsx`): a headline plus a short route of what happens next (done node → pulsing next node → later steps, each with an optional "when" promise), not an icon-in-a-circle card. It takes focus on mount.
 
