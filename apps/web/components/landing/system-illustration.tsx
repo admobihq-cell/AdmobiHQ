@@ -30,7 +30,7 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
         Admobi taxi-top LED unit broadcasting in Nairobi
       </title>
       <desc id="route-signal-desc">
-        A taxi-top LED display showing the Admobi mark, with a live Nairobi
+        A taxi with a roof-top LED screen driving past the Nairobi skyline, with a live Nairobi
         indicator, a route reading CBD to Westlands, and a five-step campaign
         flow from Plan, Target, Book, Go Live, to Report.
       </desc>
@@ -95,33 +95,39 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       <HeroForegroundFade>
       {/* Parallax city layers — masked at viewport edges so buildings fade in/out smoothly */}
       <g mask="url(#city-edge-mask)" aria-hidden="true">
-        {/* Far skyline layer: slow parallax, scaled down, faint — distant horizon */}
-        <g className="anim-city-far" transform="translate(0 50) scale(0.85)">
-          {[0, 800, 1600].map((offset) => (
-            <use
-              key={`far-${offset}`}
-              href="#skyline-silhouette"
-              x={offset}
-              className="fill-foreground/[0.03]"
-            />
-          ))}
-        </g>
-
-        {/* Near skyline layer: faster parallax, full-size */}
-        <g className="anim-city-near">
-          {[0, 800, 1600].map((offset) => (
-            <g key={`near-${offset}`} transform={`translate(${offset} 0)`}>
-              <use href="#skyline-silhouette" className="fill-foreground/[0.05]" />
-              <use href="#skyline-silhouette" fill="url(#skyline-windows)" />
+        {/* Scaled up from the ground line (y 380) to match the car clip. Transforms live on
+            wrapper groups because the scroll animation's CSS transform replaces the attribute. */}
+        <g transform="translate(400 380) scale(1.6) translate(-400 -380)">
+          {/* Far skyline layer: slow parallax, scaled down, faint — distant horizon */}
+          <g transform="translate(0 50) scale(0.85)">
+            <g className="anim-city-far">
+              {[0, 800, 1600].map((offset) => (
+                <use
+                  key={`far-${offset}`}
+                  href="#skyline-silhouette"
+                  x={offset}
+                  className="fill-foreground/[0.03]"
+                />
+              ))}
             </g>
-          ))}
-          {[0, 800, 1600].map((offset) => (
-            <use key={`landmark-${offset}`} href="#skyline-landmarks" x={offset} />
-          ))}
+          </g>
+
+          {/* Near skyline layer: faster parallax, full-size */}
+          <g className="anim-city-near">
+            {[0, 800, 1600].map((offset) => (
+              <g key={`near-${offset}`} transform={`translate(${offset} 0)`}>
+                <use href="#skyline-silhouette" className="fill-foreground/[0.05]" />
+                <use href="#skyline-silhouette" fill="url(#skyline-windows)" />
+              </g>
+            ))}
+            {[0, 800, 1600].map((offset) => (
+              <use key={`landmark-${offset}`} href="#skyline-landmarks" x={offset} />
+            ))}
+          </g>
         </g>
       </g>
 
-      {/* Signal arcs above the LED unit (broadcast metaphor) */}
+      {/* Signal arcs above the car's roof screen (broadcast metaphor) */}
       <g className="text-primary" stroke="currentColor" fill="none" strokeLinecap="round">
         <path
           d="M 260 180 A 140 140 0 0 1 540 180"
@@ -164,109 +170,9 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       </g>
 
       {/* Contact shadow beneath the car */}
-      <ellipse cx={365} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
+      <ellipse cx={350} cy={399} rx={215} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
 
-      {/* Centerpiece: stylized taxi-top LED unit, lit up like an active screen at night */}
-      <g
-        className="anim-rise"
-        style={{ ["--rise-delay" as string]: `100ms` }}
-      >
-        <defs>
-          <filter id="screen-glow" x="-60%" y="-120%" width="220%" height="420%">
-            <feGaussianBlur stdDeviation="14" />
-          </filter>
-        </defs>
-
-        {/* Soft light bloom behind the panel */}
-        <rect
-          x={224}
-          y={194}
-          width={352}
-          height={52}
-          rx={8}
-          className="text-primary opacity-40"
-          fill="currentColor"
-          filter="url(#screen-glow)"
-        />
-
-        {/* Unit body / housing */}
-        <rect
-          x={210}
-          y={180}
-          width={380}
-          height={80}
-          rx={9}
-          className="fill-foreground/[0.06] stroke-foreground/40"
-          strokeWidth={1.5}
-          vectorEffect="non-scaling-stroke"
-        />
-
-        {/* Vent grilles at each end of the housing */}
-        {[222, 232, 242].map((x) => (
-          <line
-            key={`vent-l-${x}`}
-            x1={x}
-            y1={186}
-            x2={x}
-            y2={254}
-            className="stroke-foreground/15"
-            strokeWidth={1.5}
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-        {[558, 568, 578].map((x) => (
-          <line
-            key={`vent-r-${x}`}
-            x1={x}
-            y1={186}
-            x2={x}
-            y2={254}
-            className="stroke-foreground/15"
-            strokeWidth={1.5}
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-
-        {/* Inset LED panel: dark and emissive, independent of light/dark theme */}
-        <rect x={224} y={194} width={352} height={52} rx={5} fill="#171310" />
-        <rect
-          x={224}
-          y={194}
-          width={352}
-          height={52}
-          rx={5}
-          fill="none"
-          stroke="#000000"
-          strokeOpacity={0.4}
-          strokeWidth={1}
-        />
-
-        {/* Admobi typemark, lit on the screen face */}
-        <image
-          href="/brand/logo-typemark.png"
-          x={400 - 30.5}
-          y={220 - 17}
-          width={61}
-          height={34}
-          preserveAspectRatio="xMidYMid meet"
-        />
-
-        {/* Roof mount: two support legs, centered on the canvas (not the car) */}
-        {[
-          { x: 383, roofY: 281 },
-          { x: 417, roofY: 281 },
-        ].map(({ x, roofY }) => (
-          <rect
-            key={`leg-${x}`}
-            x={x - 5}
-            y={260}
-            width={10}
-            height={roofY - 260}
-            rx={2}
-            className="fill-foreground/30"
-          />
-        ))}
-      </g>
+      {/* The LED unit itself is the roof screen in the car clip (green-screen-car.tsx). */}
 
       {/* Top-left chip: Live · Nairobi */}
       <g

@@ -157,7 +157,7 @@ These are imported by [`landing-page.tsx`](../../apps/web/components/landing/lan
 | Component | Renders |
 |---|---|
 | [`site-header.tsx`](../../apps/web/components/landing/site-header.tsx) | Sticky top nav, theme toggle, mobile menu, CTAs |
-| [`hero.tsx`](../../apps/web/components/landing/hero.tsx) | Centered headline / dual CTA / trust strip / `<RouteSignal />` illustration |
+| [`hero.tsx`](../../apps/web/components/landing/hero.tsx) | Centered headline / dual CTA / trust strip / `<RouteSignal />` illustration with `<GreenScreenCarVideo />` (`green-screen-car.tsx`): a chroma-keyed clip of the car with its roof LED screen, `public/videos/car-hero-screen-greenscreen.mp4` |
 | [`why-taxis.tsx`](../../apps/web/components/landing/why-taxis.tsx) | Argument for moving screens + `<StaticVsMoving />` figure |
 | [`mission-section.tsx`](../../apps/web/components/landing/mission-section.tsx) | Mission copy |
 | [`product-section.tsx`](../../apps/web/components/landing/product-section.tsx) | `<SystemAnatomy />` (lg) + four-up `<dl>` |
@@ -176,7 +176,7 @@ Plus three building blocks:
 - [`container.tsx`](../../apps/web/components/landing/container.tsx) — `max-w-72rem` centered wrapper used by every section.
 - [`logo.tsx`](../../apps/web/components/landing/logo.tsx) — the Admobi mark: terra signal-wave glyph + `Admobi` wordmark in foreground. Used by site header and footer.
 - [`in-view.tsx`](../../apps/web/components/landing/in-view.tsx) — `"use client"` IntersectionObserver wrapper that flips `data-visible="true"` on its host when scrolled into view. Drives the animation gates in `globals.css`.
-- [`system-illustration.tsx`](../../apps/web/components/landing/system-illustration.tsx) — semantic SVG primitives used in three places: `<RouteSignal />` (Hero — taxi-top LED + brand-kit UI chips), `<SystemAnatomy />` (Product section — four-node horizontal flow), `<StaticVsMoving />` (Why Taxis — comparison diagram).
+- [`system-illustration.tsx`](../../apps/web/components/landing/system-illustration.tsx) — semantic SVG primitives used in three places: `<RouteSignal />` (Hero — skyline, signal arcs and brand-kit UI chips; the LED screen itself is in the car clip), `<SystemAnatomy />` (Product section — four-node horizontal flow), `<StaticVsMoving />` (Why Taxis — comparison diagram).
 
 #### `components/`
 

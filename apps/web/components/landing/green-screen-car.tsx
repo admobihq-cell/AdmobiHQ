@@ -1,11 +1,34 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type CSSProperties } from "react"
 
-const W = 1280
-const H = 720
-const KEY_W = 640
-const KEY_H = 360
+/** The clip is 1280×720. Crop to the car, which also drops the generator's watermark. */
+const CROP = { x: 200, y: 120, w: 900, h: 450 }
+/** The roof screen's face in clip pixels: the anchor for placing the car in the scene. */
+const SCREEN = { x: 658, y: 138, w: 172 }
+/** Key at 2/3 of crop size: sharp enough at hero width, half the pixels to loop over. */
+const KEY_W = 600
+const KEY_H = 300
+
+/**
+ * Scene placement in RouteSignal's 800×450 viewBox: scene units per clip pixel,
+ * chosen so the screen's top centre lands on the signal arcs' origin (400, 180)
+ * and the tyres on the contact shadow at y 399.
+ */
+const SCALE = 0.534
+const ORIGIN_X = 400 - (SCREEN.x + SCREEN.w / 2 - CROP.x) * SCALE
+const ORIGIN_Y = 180 - (SCREEN.y - CROP.y) * SCALE
+
+function sceneBox(x: number, y: number, w: number, h: number): CSSProperties {
+  return {
+    left: `${((ORIGIN_X + (x - CROP.x) * SCALE) / 800) * 100}%`,
+    top: `${((ORIGIN_Y + (y - CROP.y) * SCALE) / 450) * 100}%`,
+    width: `${((w * SCALE) / 800) * 100}%`,
+    height: `${((h * SCALE) / 450) * 100}%`,
+  }
+}
+
+const CAR_BOX = sceneBox(CROP.x, CROP.y, CROP.w, CROP.h)
 
 /**
  * Chroma key tuning — adjust if green fringe remains on tires/windows.
@@ -74,33 +97,29 @@ export function GreenScreenCarVideo() {
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true })
     if (!ctx) return
+    canvas.width = KEY_W
+    canvas.height = KEY_H
 
-    const keyCanvas = document.createElement("canvas")
-    keyCanvas.width = KEY_W
-    keyCanvas.height = KEY_H
-    const keyCtx = keyCanvas.getContext("2d", { willReadFrequently: true })
-    if (!keyCtx) return
-
-    let animationFrameId = 0
     let running = false
+    let frameId = 0
+    // Key once per decoded frame (24fps) where supported, not once per display refresh.
+    const schedule = () => {
+      frameId =
+        "requestVideoFrameCallback" in video
+          ? video.requestVideoFrameCallback(renderFrame)
+          : requestAnimationFrame(renderFrame)
+    }
 
     const renderFrame = () => {
       if (!running) return
       if (video.videoWidth === 0 || video.paused || video.ended) {
-        animationFrameId = requestAnimationFrame(renderFrame)
+        schedule()
         return
       }
 
-      const cropHeight = video.videoHeight * 0.92
-
-      if (canvas.width !== W || canvas.height !== H) {
-        canvas.width = W
-        canvas.height = H
-      }
-
       try {
-        keyCtx.drawImage(video, 0, 0, video.videoWidth, cropHeight, 0, 0, KEY_W, KEY_H)
-        const frame = keyCtx.getImageData(0, 0, KEY_W, KEY_H)
+        ctx.drawImage(video, CROP.x, CROP.y, CROP.w, CROP.h, 0, 0, KEY_W, KEY_H)
+        const frame = ctx.getImageData(0, 0, KEY_W, KEY_H)
         const data = frame.data
         const len = data.length
 
@@ -112,14 +131,12 @@ export function GreenScreenCarVideo() {
           data[i + 3] = a
         }
 
-        keyCtx.putImageData(frame, 0, 0)
-        ctx.clearRect(0, 0, W, H)
-        ctx.drawImage(keyCanvas, 0, 0, W, H)
+        ctx.putImageData(frame, 0, 0)
       } catch {
         // ignore transient canvas errors
       }
 
-      animationFrameId = requestAnimationFrame(renderFrame)
+      schedule()
     }
 
     const start = () => {
@@ -135,7 +152,8 @@ export function GreenScreenCarVideo() {
 
     return () => {
       running = false
-      cancelAnimationFrame(animationFrameId)
+      if ("cancelVideoFrameCallback" in video) video.cancelVideoFrameCallback(frameId)
+      cancelAnimationFrame(frameId)
       video.removeEventListener("loadedmetadata", start)
       video.removeEventListener("play", start)
     }
@@ -145,7 +163,7 @@ export function GreenScreenCarVideo() {
     <div className="anim-drive-bob pointer-events-none absolute inset-0 z-10">
       <video
         ref={videoRef}
-        src="/videos/car-hero-admobi-greenscreen.mp4"
+        src="/videos/car-hero-screen-greenscreen.mp4"
         autoPlay
         loop
         muted
@@ -153,17 +171,7 @@ export function GreenScreenCarVideo() {
         preload="auto"
         className="pointer-events-none absolute opacity-0"
       />
-      <canvas
-        ref={canvasRef}
-        className="absolute"
-        style={{
-          left: "14.3%",
-          top: "54.7%",
-          width: "62%",
-          height: "41%",
-          objectFit: "contain",
-        }}
-      />
+      <canvas ref={canvasRef} className="absolute" style={CAR_BOX} />
     </div>
   )
 }
