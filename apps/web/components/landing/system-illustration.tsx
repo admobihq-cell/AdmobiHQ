@@ -10,6 +10,15 @@ const stepperNodes = [
   { label: "Report", x: 560 },
 ] as const
 
+/** Five, to match the 20% slots in globals.css's route-cycle keyframes. Origins stay short so the chip has no hole before them. */
+const highValueRoutes = [
+  ["CBD", "Westlands"],
+  ["JKIA", "Upper Hill"],
+  ["Sarit", "Gigiri"],
+  ["Yaya", "Karen"],
+  ["TRM", "CBD"],
+] as const
+
 export function RouteSignal(props: SVGProps<SVGSVGElement>) {
   // A varied Nairobi-inspired skyline: stepped building heights, a pointed spire,
   // and two landmark towers — one echoing KICC (disc + mast), one echoing Britam
@@ -30,8 +39,8 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
         Admobi taxi-top LED unit broadcasting in Nairobi
       </title>
       <desc id="route-signal-desc">
-        A taxi-top LED display showing the Admobi mark, with a live Nairobi
-        indicator, a route reading CBD to Westlands, and a five-step campaign
+        A taxi with a roof-top LED screen driving past the Nairobi skyline, with a live Nairobi
+        indicator, high-value routes such as CBD to Westlands, and a five-step campaign
         flow from Plan, Target, Book, Go Live, to Report.
       </desc>
 
@@ -95,49 +104,68 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       <HeroForegroundFade>
       {/* Parallax city layers — masked at viewport edges so buildings fade in/out smoothly */}
       <g mask="url(#city-edge-mask)" aria-hidden="true">
-        {/* Far skyline layer: slow parallax, scaled down, faint — distant horizon */}
-        <g className="anim-city-far" transform="translate(0 50) scale(0.85)">
-          {[0, 800, 1600].map((offset) => (
-            <use
-              key={`far-${offset}`}
-              href="#skyline-silhouette"
-              x={offset}
-              className="fill-foreground/[0.03]"
-            />
-          ))}
-        </g>
-
-        {/* Near skyline layer: faster parallax, full-size */}
-        <g className="anim-city-near">
-          {[0, 800, 1600].map((offset) => (
-            <g key={`near-${offset}`} transform={`translate(${offset} 0)`}>
-              <use href="#skyline-silhouette" className="fill-foreground/[0.05]" />
-              <use href="#skyline-silhouette" fill="url(#skyline-windows)" />
+        {/* Scaled 2x from the ground line (y 380), the same as the car clip grew. Transforms live on
+            wrapper groups because the scroll animation's CSS transform replaces the attribute. */}
+        <g transform="translate(400 380) scale(2) translate(-400 -380)">
+          {/* Far skyline layer: slow parallax, scaled down, faint — distant horizon */}
+          <g transform="translate(0 50) scale(0.85)">
+            <g className="anim-city-far">
+              {[0, 800, 1600].map((offset) => (
+                <use
+                  key={`far-${offset}`}
+                  href="#skyline-silhouette"
+                  x={offset}
+                  className="fill-foreground/[0.03]"
+                />
+              ))}
             </g>
-          ))}
-          {[0, 800, 1600].map((offset) => (
-            <use key={`landmark-${offset}`} href="#skyline-landmarks" x={offset} />
-          ))}
+          </g>
+
+          {/* Near skyline layer: faster parallax, full-size */}
+          <g className="anim-city-near">
+            {[0, 800, 1600].map((offset) => (
+              <g key={`near-${offset}`} transform={`translate(${offset} 0)`}>
+                <use href="#skyline-silhouette" className="fill-foreground/[0.05]" />
+                <use href="#skyline-silhouette" fill="url(#skyline-windows)" />
+              </g>
+            ))}
+            {[0, 800, 1600].map((offset) => (
+              <use key={`landmark-${offset}`} href="#skyline-landmarks" x={offset} />
+            ))}
+          </g>
         </g>
       </g>
 
-      {/* Signal arcs above the LED unit (broadcast metaphor) */}
-      <g className="text-primary" stroke="currentColor" fill="none" strokeLinecap="round">
+      {/* Broadcast waves from the car's roof screen (centre 400, 201 and 92 wide, set by
+          green-screen-car.tsx), fanned upward so they read as coming off the screen. */}
+      <defs>
+        <clipPath id="signal-wedge">
+          <polygon points="400,201 222,40 578,40" />
+        </clipPath>
+      </defs>
+      <g
+        className="text-primary"
+        stroke="currentColor"
+        fill="none"
+        strokeLinecap="round"
+        clipPath="url(#signal-wedge)"
+      >
         <path
-          d="M 260 180 A 140 140 0 0 1 540 180"
+          d="M 334.6 142.1 A 88 88 0 0 1 465.4 142.1"
           strokeWidth={1.5}
           className="anim-rise opacity-20"
           style={{ ["--rise-delay" as string]: `200ms` }}
           vectorEffect="non-scaling-stroke"
         />
         <path
-          d="M 300 180 A 100 100 0 0 1 500 180"
+          d="M 351.0 156.8 A 66 66 0 0 1 449.0 156.8"
           strokeWidth={1.5}
           className="anim-route opacity-30"
+          style={{ ["--route-len" as string]: "111" }}
           vectorEffect="non-scaling-stroke"
         />
         <path
-          d="M 340 180 A 60 60 0 0 1 460 180"
+          d="M 367.3 171.6 A 44 44 0 0 1 432.7 171.6"
           strokeWidth={1.5}
           className="anim-rise opacity-40"
           style={{ ["--rise-delay" as string]: `350ms` }}
@@ -146,16 +174,16 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
         {/* Broadcast pulse: two staggered rings sweeping out through the static arcs */}
         <circle
           cx={400}
-          cy={180}
-          r={64}
+          cy={201}
+          r={40}
           strokeWidth={1.5}
           className="anim-pulse opacity-35"
           vectorEffect="non-scaling-stroke"
         />
         <circle
           cx={400}
-          cy={180}
-          r={64}
+          cy={201}
+          r={40}
           strokeWidth={1.5}
           className="anim-pulse opacity-35"
           vectorEffect="non-scaling-stroke"
@@ -164,111 +192,11 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
       </g>
 
       {/* Contact shadow beneath the car */}
-      <ellipse cx={365} cy={399} rx={150} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
+      <ellipse cx={350} cy={399} rx={215} ry={10} className="anim-rise fill-foreground/[0.12]" style={{ ["--rise-delay" as string]: `50ms` }} />
 
-      {/* Centerpiece: stylized taxi-top LED unit, lit up like an active screen at night */}
-      <g
-        className="anim-rise"
-        style={{ ["--rise-delay" as string]: `100ms` }}
-      >
-        <defs>
-          <filter id="screen-glow" x="-60%" y="-120%" width="220%" height="420%">
-            <feGaussianBlur stdDeviation="14" />
-          </filter>
-        </defs>
+      {/* The LED unit itself is the roof screen in the car clip (green-screen-car.tsx). */}
 
-        {/* Soft light bloom behind the panel */}
-        <rect
-          x={224}
-          y={194}
-          width={352}
-          height={52}
-          rx={8}
-          className="text-primary opacity-40"
-          fill="currentColor"
-          filter="url(#screen-glow)"
-        />
-
-        {/* Unit body / housing */}
-        <rect
-          x={210}
-          y={180}
-          width={380}
-          height={80}
-          rx={9}
-          className="fill-foreground/[0.06] stroke-foreground/40"
-          strokeWidth={1.5}
-          vectorEffect="non-scaling-stroke"
-        />
-
-        {/* Vent grilles at each end of the housing */}
-        {[222, 232, 242].map((x) => (
-          <line
-            key={`vent-l-${x}`}
-            x1={x}
-            y1={186}
-            x2={x}
-            y2={254}
-            className="stroke-foreground/15"
-            strokeWidth={1.5}
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-        {[558, 568, 578].map((x) => (
-          <line
-            key={`vent-r-${x}`}
-            x1={x}
-            y1={186}
-            x2={x}
-            y2={254}
-            className="stroke-foreground/15"
-            strokeWidth={1.5}
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-
-        {/* Inset LED panel: dark and emissive, independent of light/dark theme */}
-        <rect x={224} y={194} width={352} height={52} rx={5} fill="#171310" />
-        <rect
-          x={224}
-          y={194}
-          width={352}
-          height={52}
-          rx={5}
-          fill="none"
-          stroke="#000000"
-          strokeOpacity={0.4}
-          strokeWidth={1}
-        />
-
-        {/* Admobi typemark, lit on the screen face */}
-        <image
-          href="/brand/logo-typemark.png"
-          x={400 - 30.5}
-          y={220 - 17}
-          width={61}
-          height={34}
-          preserveAspectRatio="xMidYMid meet"
-        />
-
-        {/* Roof mount: two support legs, centered on the canvas (not the car) */}
-        {[
-          { x: 383, roofY: 281 },
-          { x: 417, roofY: 281 },
-        ].map(({ x, roofY }) => (
-          <rect
-            key={`leg-${x}`}
-            x={x - 5}
-            y={260}
-            width={10}
-            height={roofY - 260}
-            rx={2}
-            className="fill-foreground/30"
-          />
-        ))}
-      </g>
-
-      {/* Top-left chip: Live · Nairobi */}
+      {/* Top-left chip: LIVE · Nairobi, red like a broadcast tally light */}
       <g
         className="anim-rise"
         style={{ ["--rise-delay" as string]: `450ms` }}
@@ -276,54 +204,65 @@ export function RouteSignal(props: SVGProps<SVGSVGElement>) {
         <rect
           x={40}
           y={42}
-          width={142}
+          width={150}
           height={32}
           rx={16}
           className="fill-background stroke-border"
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
         />
-        <circle cx={58} cy={58} r={5} className="anim-pulse fill-primary opacity-60" />
-        <circle cx={58} cy={58} r={4} className="fill-primary" />
-        <text x={72} y={62} fontSize={13} fontWeight={600} className="fill-foreground">
-          Live
+        <circle cx={58} cy={58} r={5} className="anim-pulse fill-destructive opacity-60" />
+        <circle cx={58} cy={58} r={4} className="fill-destructive" />
+        <text
+          x={72}
+          y={62}
+          fontSize={13}
+          fontWeight={700}
+          letterSpacing="0.08em"
+          className="fill-destructive"
+        >
+          LIVE
         </text>
-        <circle cx={108} cy={58} r={1.5} className="fill-muted-foreground" />
-        <text x={118} y={62} fontSize={13} className="fill-muted-foreground">
+        <circle cx={116} cy={58} r={1.5} className="fill-muted-foreground" />
+        <text x={126} y={62} fontSize={13} className="fill-muted-foreground">
           Nairobi
         </text>
       </g>
 
-      {/* Top-right chip: Route · CBD → Westlands — same pill shape and baseline as the Live chip */}
+      {/* Top-right chip, read like a departure board: the Admobi mark, then origin and
+          destination set either side of a fixed connector (so any route length stays centred
+          on it) with a signal dot travelling along it. Same height and baseline as LIVE. */}
       <g
         className="anim-rise"
         style={{ ["--rise-delay" as string]: `550ms` }}
       >
         <rect
-          x={558}
+          x={562}
           y={42}
-          width={210}
+          width={206}
           height={32}
           rx={16}
           className="fill-background stroke-border"
           strokeWidth={1.5}
           vectorEffect="non-scaling-stroke"
         />
-        {/* Pin glyph, echoing the Live chip's dot marker */}
-        <g className="text-primary">
-          <path
-            d="M 569 53 A 5 5 0 1 1 579 53 Q 579 59 574 67 Q 569 59 569 53 Z"
-            fill="currentColor"
-          />
-          <circle cx={574} cy={53} r={1.8} className="fill-background" />
+        <image href="/brand/logo-mark.png" x={578} y={51} width={25.3} height={14} />
+        <line x1={657} y1={58} x2={679} y2={58} className="stroke-border" strokeWidth={1.5} />
+        <circle cx={657} cy={58} r={2.25} className="fill-background stroke-border" strokeWidth={1.5} />
+        <circle cx={679} cy={58} r={2.25} className="fill-primary" />
+        <circle cx={657} cy={58} r={2.25} className="anim-route-dot fill-primary" />
+        <g className="anim-route-cycle">
+          {highValueRoutes.map(([from, to], i) => (
+            <g key={from + to} style={{ ["--i" as string]: i }}>
+              <text x={649} y={62} fontSize={13} textAnchor="end" className="fill-muted-foreground">
+                {from}
+              </text>
+              <text x={687} y={62} fontSize={13} fontWeight={600} className="fill-foreground">
+                {to}
+              </text>
+            </g>
+          ))}
         </g>
-        <text x={588} y={62} fontSize={13} fontWeight={600} className="fill-foreground">
-          Route
-        </text>
-        <circle cx={622} cy={58} r={1.5} className="fill-muted-foreground" />
-        <text x={632} y={62} fontSize={13} className="fill-muted-foreground">
-          CBD → Westlands
-        </text>
       </g>
 
       {/* Bottom stepper: Plan · Target · Book · Go Live · Report */}

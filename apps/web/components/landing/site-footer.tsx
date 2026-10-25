@@ -73,9 +73,11 @@ export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-border relative isolate overflow-hidden border-t">
+    // Always the dark palette: a light scrim over the video washed it out, a dark one keeps
+    // its colour and holds the text. text-foreground re-resolves the inherited ink.
+    <footer className="dark border-border text-foreground relative isolate overflow-hidden border-t">
       <FooterVideo />
-      {/* Scrim keeps footer text readable over the video in both themes. */}
+      {/* Scrim keeps footer text readable over the video. */}
       <div aria-hidden className="bg-background/50 absolute inset-0 -z-10" />
       <Container className="py-12 sm:py-16 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,3fr)] lg:gap-16 xl:gap-20">
