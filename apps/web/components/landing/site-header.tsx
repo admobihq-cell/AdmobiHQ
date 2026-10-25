@@ -126,7 +126,7 @@ const linkClass =
 
 /** Desktop: links sit inside one outlined pill; the current section turns terracotta. */
 const pillLinkClass =
-  "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-[0.95rem] leading-none font-medium tracking-tight text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:text-primary"
+  "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-[0.95rem] leading-none font-medium whitespace-nowrap tracking-tight text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:text-primary"
 
 /** The outline shared by the nav pill, the action pill and the mobile menu button. */
 const pillFrameClass = "rounded-full border-[1.5px] border-foreground/85"
@@ -543,9 +543,10 @@ export function SiteHeader({
 
   return (
     <header className="sticky top-0 z-50 bg-background">
-      {/* Desktop is three zones: nav pill | centred mark | action pill. The 1fr columns keep
-          the mark on the page's centre line whatever the two pills measure. */}
-      <Container className="flex h-16 max-w-[min(100%,88rem)] items-center justify-between gap-3 xl:grid xl:h-20 xl:grid-cols-[1fr_auto_1fr] xl:gap-6">
+      {/* Desktop is three zones: nav pill | centred logo | action pill. Equal 1fr columns keep
+          the logo on the centre line; near 1280px the nav pill outgrows its share and the
+          logo gives way a little rather than the links wrapping. */}
+      <Container className="flex h-16 max-w-[min(100%,88rem)] items-center justify-between gap-3 xl:grid xl:h-20 xl:grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] xl:gap-6">
         <nav
           ref={desktopNavRef}
           aria-label="Primary"
@@ -568,18 +569,9 @@ export function SiteHeader({
 
         <Link
           href="/"
-          className="min-w-0 shrink rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50 xl:justify-self-center"
+          className="flex min-w-0 shrink rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50 xl:justify-self-center"
         >
-          <Logo className="xl:hidden" />
-          {/* Mark only once the bar is wide enough to centre it; one of the two is always hidden. */}
-          <Image
-            src="/brand/logo-mark.png"
-            alt="Admobi"
-            width={65}
-            height={36}
-            priority
-            className="hidden h-9 w-auto xl:block"
-          />
+          <Logo />
         </Link>
 
         <div className="flex items-center gap-2 justify-self-end">
