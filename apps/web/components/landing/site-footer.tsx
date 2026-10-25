@@ -73,65 +73,70 @@ export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    // Always the dark palette: a light scrim over the video washed it out, a dark one keeps
-    // its colour and holds the text. text-foreground re-resolves the inherited ink.
-    <footer className="dark border-border text-foreground relative isolate overflow-hidden border-t">
-      <FooterVideo />
-      {/* Scrim keeps footer text readable over the video. */}
-      <div aria-hidden className="bg-background/50 absolute inset-0 -z-10" />
-      <Container className="py-12 sm:py-16 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,3fr)] lg:gap-16 xl:gap-20">
-          <div className="space-y-5">
-            <Link
-              href="/"
-              className="inline-flex max-w-fit rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <Logo />
-            </Link>
-            <p className="text-foreground/90 max-w-[42ch] text-base leading-relaxed">
-              Geo-led taxi-top screens for brands running motion in Kenyan cities.
-            </p>
-            <p className="text-foreground/80 text-sm leading-relaxed">
-              Nairobi-first network. Scheduling, creative QA, and proof-of-play that respect how streets actually move.
-            </p>
-            <SocialLinks />
+    // Page-coloured band: insets the footer on three sides, and -mt-px paints over the last
+    // section's border-b so that hairline doesn't run into the rounded corners.
+    <div className="bg-background relative -mt-px p-2 sm:p-4">
+      {/* Always the dark palette: a light scrim over the video washed it out, a dark one keeps
+          its colour and holds the text. text-foreground re-resolves the inherited ink. Rounded
+          to match the pill header; isolate keeps Safari clipping the video to the corners. */}
+      <footer className="dark text-foreground relative isolate overflow-hidden rounded-[1.75rem] sm:rounded-[2.5rem]">
+        <FooterVideo />
+        {/* Scrim keeps footer text readable over the video. */}
+        <div aria-hidden className="bg-background/50 absolute inset-0 -z-10" />
+        <Container className="py-12 sm:py-16 lg:py-20">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,3fr)] lg:gap-16 xl:gap-20">
+            <div className="space-y-5">
+              <Link
+                href="/"
+                className="inline-flex max-w-fit rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <Logo />
+              </Link>
+              <p className="text-foreground/90 max-w-[42ch] text-base leading-relaxed">
+                Geo-led taxi-top screens for brands running motion in Kenyan cities.
+              </p>
+              <p className="text-foreground/80 text-sm leading-relaxed">
+                Nairobi-first network. Scheduling, creative QA, and proof-of-play that respect how streets actually move.
+              </p>
+              <SocialLinks />
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 md:grid-cols-3 md:gap-8 xl:grid-cols-5">
+              {columns.map(({ id, heading, links }) => (
+                <nav key={id} aria-label={heading} className="min-w-0 space-y-4">
+                  <FooterHeading>{heading}</FooterHeading>
+                  <ul className="flex flex-col gap-2">
+                    {links.map(({ href, label }) => (
+                      <li key={`${href}-${label}`}>
+                        <Link href={href} className={footerLinkClass}>
+                          {label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 md:grid-cols-3 md:gap-8 xl:grid-cols-5">
-            {columns.map(({ id, heading, links }) => (
-              <nav key={id} aria-label={heading} className="min-w-0 space-y-4">
-                <FooterHeading>{heading}</FooterHeading>
-                <ul className="flex flex-col gap-2">
-                  {links.map(({ href, label }) => (
-                    <li key={`${href}-${label}`}>
-                      <Link href={href} className={footerLinkClass}>
-                        {label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            ))}
-          </div>
-        </div>
-
-        <div className="border-border text-foreground/80 mt-12 flex flex-col gap-4 border-t pt-8 text-sm sm:mt-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pt-10">
-          <div className="space-y-1">
-            <p className="text-foreground text-sm tabular-nums">
-              © {year} Admobi
-              <span className="text-foreground/60 font-normal">&nbsp;&middot;&nbsp;</span>
-              <span>Kenya</span>
+          <div className="border-border text-foreground/80 mt-12 flex flex-col gap-4 border-t pt-8 text-sm sm:mt-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pt-10">
+            <div className="space-y-1">
+              <p className="text-foreground text-sm tabular-nums">
+                © {year} Admobi
+                <span className="text-foreground/60 font-normal">&nbsp;&middot;&nbsp;</span>
+                <span>Kenya</span>
+              </p>
+              <p className="max-w-xl leading-relaxed">
+                English first · Copy and policies update as programmes expand.
+              </p>
+              <LastUpdated className="mt-2" />
+            </div>
+            <p className="hidden font-mono text-xs leading-relaxed uppercase tracking-[0.12em] sm:block sm:shrink-0 sm:text-end">
+              Press D for theme
             </p>
-            <p className="max-w-xl leading-relaxed">
-              English first · Copy and policies update as programmes expand.
-            </p>
-            <LastUpdated className="mt-2" />
           </div>
-          <p className="hidden font-mono text-xs leading-relaxed uppercase tracking-[0.12em] sm:block sm:shrink-0 sm:text-end">
-            Press D for theme
-          </p>
-        </div>
-      </Container>
-    </footer>
+        </Container>
+      </footer>
+    </div>
   )
 }
