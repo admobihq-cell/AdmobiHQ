@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation"
+
 import { buildCatalog, type HttpMethod } from "@/lib/route-catalog"
 
 import { ApiLogo } from "../components/api-logo"
@@ -36,6 +38,9 @@ function RoutePath({ path }: { path: string }) {
 }
 
 export default function HomePage() {
+  // No need to publish the route list in production (audit I1). VERCEL_ENV is set at build time.
+  if (process.env.VERCEL_ENV === "production") notFound()
+
   const catalog = buildCatalog()
   const total = catalog.reduce((sum, audience) => sum + audience.count, 0)
 
