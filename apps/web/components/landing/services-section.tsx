@@ -116,7 +116,10 @@ export function ServicesSection() {
   return (
     <section id="services" aria-labelledby="services-title" className="scroll-mt-20 border-b border-border py-14 sm:py-20">
       <Container>
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-16">
+        {/* One reading path: label, title, then the line that explains it. The link is the
+            section's "see all" for the cards below, so it sits at the far end of the header
+            on desktop instead of under the paragraph competing with the title. */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
           <div>
             <p className="inline-flex rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground">
               Our services
@@ -127,15 +130,15 @@ export function ServicesSection() {
             >
               What we can run for you
             </h2>
-          </div>
-          <div>
-            <p className="max-w-[44ch] text-lg leading-relaxed text-muted-foreground">
+            <p className="mt-4 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
               Screens on taxis and delivery bikes, the ads to put on them, and a record of every
               play. Pick one to see how it works.
             </p>
+          </div>
+          <div>
             <Link
               href="/products-solutions"
-              className="group mt-6 inline-flex items-center gap-3 rounded-full border border-foreground/15 bg-card py-1.5 pr-1.5 pl-5 text-sm font-medium text-foreground transition-colors hover:border-foreground/30"
+              className="group inline-flex items-center gap-3 rounded-full border border-foreground/15 bg-card py-1.5 pr-1.5 pl-5 text-sm font-medium text-foreground transition-colors hover:border-foreground/30"
             >
               See products &amp; solutions
               <span className="grid size-9 place-items-center rounded-full bg-foreground text-background transition-transform duration-300 ease-out group-hover:rotate-45">
