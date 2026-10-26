@@ -4,6 +4,8 @@ Status: **implemented** (2026). `broadcastCreateSchema` includes `image_url`; `P
 
 The rest of this file is the original research/plan from before that work shipped. Treat it as historical context, not current-state.
 
+> **Addendum 2026-10-26:** the "no Cloudinary anywhere in the codebase" findings below (Part 1, dated 2026-08-02) are no longer true. Cloudinary was added afterwards for private media only: driver documents, campaign creatives, and SOS incident photos, all through `apps/api/lib/storage/private-media.ts`. Announcement images still use Vercel Blob as planned here.
+
 ---
 
 ---

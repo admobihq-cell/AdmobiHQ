@@ -95,6 +95,15 @@ campaign *list* skeleton inside the app shell before the overlay takes over.
 `NewCampaignChrome` / `NewCampaignSkeleton` are shared by the route loader and
 the screen's own pending branch.
 
+### Stale-deploy reload
+
+A tab left open across a deploy still references the previous build's content-hashed `_next/static` chunks. Those now 404, and Vercel's HTML fallback shows up as a "non-JavaScript MIME type" error or a failed dynamic `import()`. [`lib/stale-deploy-reload.ts`](../../apps/customer-web/lib/stale-deploy-reload.ts) catches both cases and reloads the page **once per tab session**, so a genuinely broken deploy still surfaces as an error on the second load instead of looping. It is wired twice in the root layout:
+
+- `StaleDeployBlockingScript`: an inline `<script>` in `<head>`, placed before any module script, so it can catch a chunk that fails before React hydrates.
+- `StaleDeployReload`: a client component that handles chunk failures after hydration.
+
+Only `_next/static` failures trigger the reload. Analytics, ad-blocker, and image failures are ignored.
+
 ## Secrets (Infisical)
 
 | Variable | Required | Notes |

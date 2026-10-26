@@ -15,11 +15,11 @@ Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 | Marketing site | `https://admobihq.com` |
 | Payload CMS | `https://admobihq.com/admin` |
 
-Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC_API_URL/v1/*` via `@workspace/ops-api-client`. Server-rendered home/overview stats still read Postgres directly through Prisma in `apps/ops`.
+Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC_API_URL/v1/*` via `@workspace/ops-api-client`. Two exceptions read or write Postgres directly through Prisma in `apps/ops`: server-rendered home/overview stats (read-only), and the integrations ledger (admin-only server actions, see below).
 
 ### Routes (dashboard)
 
-Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, Waitlist, Media Kit, Announcements, **SOS**, Support, **Finances**, **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, tour).
+Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, **Advertiser orgs**, Waitlist, Media Kit, Announcements, **SOS**, Support, **Finances** (sample data — payout/transfer actions open "coming soon" dialogs), **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, **integrations**, tour). **Notifications** (`/notifications`) is reached from the header bell rather than the sidebar: a permission-filtered attention queue of open review work and new public-form submissions.
 
 ### SOS (driver safety incidents)
 
@@ -90,6 +90,20 @@ Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET
 - Each event stores `app`, `actor_type`, `actor_email`, `action`, `entity_type`, `summary`, and `created_at`.
 - Apply the table with `npm run db:ops-schema -w web` (see [`ops-schema-additive.sql`](../../apps/web/prisma/scripts/ops-schema-additive.sql)).
 - Future customer apps: record from API handlers via `recordAuditEvent` — never from the client. Details in [DATA-LAYER.md](../shared/DATA-LAYER.md).
+
+### Exports
+
+Every entity list page (`EntityPage`) exports the **selected rows** in three formats. The columns are those with a `csv` accessor, and filenames come from `exportFileName()`.
+
+| Format | Built where |
+|--------|-------------|
+| CSV | In the browser (`toCsv` in `lib/format.ts`) |
+| XLSX | In the browser, styled header row (`buildStyledXlsx` in `lib/xlsx.ts`, `exceljs`) |
+| PDF | Rows are posted to `POST /v1/ops/documents/export`, which renders the `EntityExportPdf` template with `takumi-pdf` (logo, footer, page numbers). See [API.md](../api/API.md). |
+
+### Integrations ledger
+
+**Settings → Integrations** (`/settings/integrations`, ops admins only via `requireOpsAdmin`) tracks every third-party tool and subscription: category, purpose, plan, cost, currency, billing cycle, status and owner. Rows live in the `Integration` table and are written by server actions in `app/(dashboard)/settings/(prefs)/integrations/actions.ts`, not through the API. The view rolls every subscription up to monthly USD and KES totals with a by-category pie chart. Exchange rates are constants in [`lib/integration-costs.ts`](../../apps/ops/lib/integration-costs.ts) (`USD_KES`, `EUR_USD`, `RATES_AS_OF`); bump them when rates move. The same file holds the seed list.
 
 ## Secrets (Infisical)
 
@@ -171,6 +185,7 @@ Full checklist: [DEPLOYMENT.md](../shared/DEPLOYMENT.md).
 |------|--------|-------------------|
 | Campaign leads, fleet, drivers, waitlist, media kit | Prisma via **API** (`/v1/*`) | Full CRUD (client-side) |
 | Home/overview stats | Prisma direct (server components) | Read-only |
+| Integrations ledger | Prisma direct (server actions, admin-only) | Full CRUD |
 | Blog, help, media | Payload (Postgres) | Read-only overview; edit at `/admin` |
 
 Public form POSTs go to `api.admobihq.com/v1/public/*`. Ops admin routes require Clerk + `@admobihq.com`.

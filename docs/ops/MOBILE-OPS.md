@@ -58,6 +58,10 @@ Download the APK from the EAS dashboard when the build completes. See [MOBILE-BU
 
 `/(ops)/campaigns` — list + detail, gated on the `campaigns` permission (label already in `permission-labels.ts`). Uses `client.campaigns.*` from `@workspace/ops-api-client`. Same decisions as ops web (Approve / Request changes / Reject / Unapprove); reason required for non-approve and is **advertiser-visible**. Image creatives load via the authenticated proxy; video uses a play affordance. Ops push for a new submission uses alert type `campaign_submission` and deep-links to `/(ops)/campaigns/:id`.
 
+## Advertiser orgs
+
+`/(ops)/advertiser-orgs` — list + detail from the drawer's **Advertiser orgs** entry, gated on the `campaigns` permission like ops web. Detail shows active members and roles, pending invitations, the org's campaigns (each opens `/(ops)/campaigns/:id`), and the same allowlisted activity feed advertisers see. Read-only: org membership is managed by the advertiser's own admins. See [OPS-ADMIN.md § Advertiser orgs](./OPS-ADMIN.md#advertiser-orgs).
+
 ## SOS review
 
 `/(ops)/sos` — list + detail, gated on the `safety` permission. Uses
