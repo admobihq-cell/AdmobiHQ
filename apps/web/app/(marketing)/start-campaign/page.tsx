@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
+import { CREATIVE_STATUS, type CreativeStatus } from "@workspace/ops-contracts/enums"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -66,6 +68,14 @@ export default function StartCampaignPage() {
     watch,
     formState: { errors, isSubmitting },
   } = form
+
+  // /products-solutions links here with ?creative=needs_design to preselect "Need design help".
+  useEffect(() => {
+    const creative = new URLSearchParams(window.location.search).get("creative")
+    if (creative && (CREATIVE_STATUS as readonly string[]).includes(creative)) {
+      setValue("creativeStatus", creative as CreativeStatus)
+    }
+  }, [setValue])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const citiesWatch = watch("cities").slice()

@@ -302,6 +302,103 @@
   }
 }
 
+/* Products page LED panels (products-solutions/screens.tsx): each new ad in the taxi loop
+   wipes in, and the active loop segment fills over its slot. Without motion the ad holds
+   still and the active segment shows full. */
+@media (prefers-reduced-motion: no-preference) {
+  .led-swap {
+    animation: led-ad 600ms var(--ease-out-strong) both;
+  }
+
+  .loop-fill {
+    transform-origin: left;
+    animation: loop-fill var(--slot-ms, 3000ms) linear both;
+  }
+
+  @keyframes loop-fill {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes led-ad {
+    from {
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      filter: blur(4px);
+    }
+  }
+}
+
+/* Products page hero (apps/web products-solutions): the full-bleed hero pins under the sticky
+   header, then, as the page scrolls through .hero-spacer, clips down to an inset rounded card
+   with the footer's inset and radius while its photo settles from a slight zoom. Scroll-linked
+   CSS only; without scroll-driven animations or with reduced motion it is a plain full-bleed hero. */
+.hero-morph {
+  --hero-top: 4rem; /* sticky header height */
+  --hero-inset: 0.5rem;
+  --hero-radius: 1.75rem;
+  --hero-travel: 50dvh;
+}
+
+.hero-spacer {
+  display: none;
+}
+
+@media (min-width: 40rem) {
+  .hero-morph {
+    --hero-inset: 1rem;
+    --hero-radius: 2.5rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .hero-morph {
+    --hero-top: 5rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll()) {
+    .hero-spacer {
+      display: block;
+      height: var(--hero-travel);
+    }
+
+    .hero-morph .hero-frame {
+      position: sticky;
+      top: var(--hero-top);
+      animation: hero-morph linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0px var(--hero-travel);
+    }
+
+    .hero-morph .hero-photo {
+      animation: hero-photo linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0px var(--hero-travel);
+    }
+
+    @keyframes hero-morph {
+      from {
+        clip-path: inset(0 round 0);
+      }
+      to {
+        clip-path: inset(var(--hero-inset) round var(--hero-radius));
+      }
+    }
+
+    @keyframes hero-photo {
+      from {
+        transform: scale(1.1);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+  }
+}
+
 /* Landing globe: each pinned badge alternates between its LIVE and satellite face.
    data-mode is flipped on the overlay by components/landing/globe.tsx. */
 .globe-badges [data-face="sat"],

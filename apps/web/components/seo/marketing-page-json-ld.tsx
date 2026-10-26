@@ -15,6 +15,8 @@ type MarketingPageJsonLdProps = {
   faqItems?: readonly FaqItem[]
   /** Override canonical page URL (rare; defaults to SITE_URL + path). */
   pageUrl?: string
+  /** ISO date this page last changed; defaults to the site-wide SEO_LAST_UPDATED. */
+  dateModified?: string
 }
 
 export function MarketingPageJsonLd({
@@ -24,6 +26,7 @@ export function MarketingPageJsonLd({
   breadcrumbs,
   faqItems,
   pageUrl: pageUrlOverride,
+  dateModified,
 }: MarketingPageJsonLdProps) {
   const pageUrl =
     pageUrlOverride ?? (path === "/" ? SITE_URL : `${SITE_URL}${path}`)
@@ -36,6 +39,7 @@ export function MarketingPageJsonLd({
           name,
           description,
           url: pageUrl,
+          dateModified,
         })}
       />
       <JsonLd data={breadcrumbListJsonLd(breadcrumbs)} />

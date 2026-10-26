@@ -46,11 +46,14 @@ export function marketingWebPageJsonLd({
   name,
   description,
   url: urlOverride,
+  dateModified = SEO_LAST_UPDATED,
 }: {
   path: string
   name: string
   description: string
   url?: string
+  /** ISO date; defaults to the site-wide SEO_LAST_UPDATED. */
+  dateModified?: string
 }) {
   const url = urlOverride ?? (path === "/" ? SITE_URL : `${SITE_URL}${path}`)
   return {
@@ -61,7 +64,7 @@ export function marketingWebPageJsonLd({
     name,
     description,
     inLanguage: "en-KE",
-    dateModified: SEO_LAST_UPDATED,
+    dateModified,
     isPartOf: { "@id": `${SITE_URL}/#website` },
     about: { "@id": ORGANIZATION_ID },
   }

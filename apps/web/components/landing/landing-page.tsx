@@ -9,6 +9,7 @@ import { MissionSection } from "./mission-section"
 import { MobileStickyCta } from "./mobile-sticky-cta"
 import { ProcessSection } from "./process"
 import { ProductSection } from "./product-section"
+import { ServicesSection } from "./services-section"
 import { TelemetrySection } from "./telemetry-section"
 import { WhyTaxisSection } from "./why-taxis"
 
@@ -16,6 +17,7 @@ export function LandingPage() {
   return (
     <>
       <HeroSection />
+      <ServicesSection />
       <WhyTaxisSection />
       <MissionSection />
       <ProductSection />
