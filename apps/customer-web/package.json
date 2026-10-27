@@ -20,7 +20,7 @@
     "@fullcalendar/list": "^6.1.21",
     "@fullcalendar/react": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
-    "@sentry/nextjs": "^10.64.0",
+    "@sentry/nextjs": "^10.76.2",
     "@tanstack/react-query": "^5.101.4",
     "@vercel/analytics": "^2.0.1",
     "@workspace/geo": "*",

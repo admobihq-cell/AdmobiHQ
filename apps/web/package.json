@@ -75,7 +75,7 @@
     "@payloadcms/ui": "3.91.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
-    "@sentry/nextjs": "^10.64.0",
+    "@sentry/nextjs": "^10.76.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^3.7.5",
     "@workspace/ops-api-client": "*",
