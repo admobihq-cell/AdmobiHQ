@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 
 import { trackEvent } from "@/lib/analytics"
 
-const WHATSAPP_NUMBER = "254703643560"
+export const WHATSAPP_NUMBER = "254703643560"
 const WHATSAPP_MESSAGE = "Hi Admobi, I'd like to learn more about taxi-top campaigns."
 
 // The interactive app demo is a live iframe the visitor taps around in — a

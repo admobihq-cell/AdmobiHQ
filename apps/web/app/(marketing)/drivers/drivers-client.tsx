@@ -15,11 +15,13 @@ import { useForm } from "react-hook-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import { Textarea } from "@workspace/ui/components/textarea"
 import type { DriverJoinInput } from "@/lib/validation/lead-schemas"
 import { driverJoinSchema } from "@/lib/validation/lead-schemas"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { FormSection, formPageGrid } from "@/components/forms/form-section"
+import { FormSelect } from "@/components/forms/form-select"
 import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { useLeadForm } from "@/components/forms/use-lead-form"
@@ -27,9 +29,6 @@ import { Container } from "@/components/landing/container"
 import { NodeGardenPattern } from "@/components/landing/pattern-shapes"
 import { FaqDetails } from "@/components/seo/faq-details"
 import { driverFaqItems } from "@/lib/seo/faq-data"
-
-const selectClass =
-  "border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base outline-none focus-visible:ring-3 md:text-sm disabled:opacity-50"
 
 const heroSteps = [
   {
@@ -129,7 +128,7 @@ export default function DriversClient() {
     },
   })
 
-  const { register, handleSubmit, formState, reset } = form
+  const { register, handleSubmit, control, formState, reset } = form
   const radioClass =
     "border-input accent-primary size-4 shrink-0 rounded-full border"
 
@@ -349,15 +348,16 @@ export default function DriversClient() {
 
                   <div className="grid gap-2">
                     <Label htmlFor="dr-city">City *</Label>
-                    <select
+                    <FormSelect
                       id="dr-city"
-                      className={selectClass}
-                      {...register("city")}
-                    >
-                      <option value="Nairobi">Nairobi</option>
-                      <option value="Mombasa">Mombasa</option>
-                      <option value="Kisumu">Kisumu</option>
-                    </select>
+                      control={control}
+                      name="city"
+                      options={[
+                        { value: "Nairobi", label: "Nairobi" },
+                        { value: "Mombasa", label: "Mombasa" },
+                        { value: "Kisumu", label: "Kisumu" },
+                      ]}
+                    />
                   </div>
                 </FormSection>
 
@@ -427,15 +427,16 @@ export default function DriversClient() {
 
                   <div className="grid gap-2">
                     <Label htmlFor="dr-ownership">Is the vehicle yours?</Label>
-                    <select
+                    <FormSelect
                       id="dr-ownership"
-                      className={selectClass}
-                      {...register("vehicleOwnership")}
-                    >
-                      <option value="owned">I own it</option>
-                      <option value="rented">I rent it</option>
-                      <option value="financed">On finance / loan</option>
-                    </select>
+                      control={control}
+                      name="vehicleOwnership"
+                      options={[
+                        { value: "owned", label: "I own it" },
+                        { value: "rented", label: "I rent it" },
+                        { value: "financed", label: "On finance / loan" },
+                      ]}
+                    />
                   </div>
                 </FormSection>
 
@@ -444,32 +445,34 @@ export default function DriversClient() {
                     <Label htmlFor="dr-days">
                       How many days a week do you drive? *
                     </Label>
-                    <select
+                    <FormSelect
                       id="dr-days"
-                      className={selectClass}
-                      {...register("daysPerWeek")}
-                    >
-                      <option value="1_2">1–2</option>
-                      <option value="3_4">3–4</option>
-                      <option value="5_6">5–6</option>
-                      <option value="daily">Every day</option>
-                    </select>
+                      control={control}
+                      name="daysPerWeek"
+                      options={[
+                        { value: "1_2", label: "1–2" },
+                        { value: "3_4", label: "3–4" },
+                        { value: "5_6", label: "5–6" },
+                        { value: "daily", label: "Every day" },
+                      ]}
+                    />
                   </div>
 
                   <div className="grid gap-2">
                     <Label htmlFor="dr-hours">
                       Hours on the road on a typical day
                     </Label>
-                    <select
+                    <FormSelect
                       id="dr-hours"
-                      className={selectClass}
-                      {...register("hoursPerDay")}
-                    >
-                      <option value="under_4">Under 4</option>
-                      <option value="4_8">4–8</option>
-                      <option value="8_12">8–12</option>
-                      <option value="over_12">Over 12</option>
-                    </select>
+                      control={control}
+                      name="hoursPerDay"
+                      options={[
+                        { value: "under_4", label: "Under 4" },
+                        { value: "4_8", label: "4–8" },
+                        { value: "8_12", label: "8–12" },
+                        { value: "over_12", label: "Over 12" },
+                      ]}
+                    />
                   </div>
 
                   <div className="grid gap-2 sm:col-span-2">
@@ -509,10 +512,10 @@ export default function DriversClient() {
                     <Label htmlFor="dr-msg">
                       Anything else we should know? (optional)
                     </Label>
-                    <textarea
+                    <Textarea
                       id="dr-msg"
                       rows={3}
-                      className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+                      className="min-h-20"
                       {...register("applicantMessage")}
                     />
                   </div>
@@ -521,17 +524,18 @@ export default function DriversClient() {
                     <Label htmlFor="dr-heard">
                       How did you hear about Admobi?
                     </Label>
-                    <select
+                    <FormSelect
                       id="dr-heard"
-                      className={selectClass}
-                      {...register("heardAbout")}
-                    >
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="facebook">Facebook</option>
-                      <option value="friend">Friend</option>
-                      <option value="roadside">Roadside</option>
-                      <option value="other">Other</option>
-                    </select>
+                      control={control}
+                      name="heardAbout"
+                      options={[
+                        { value: "whatsapp", label: "WhatsApp" },
+                        { value: "facebook", label: "Facebook" },
+                        { value: "friend", label: "Friend" },
+                        { value: "roadside", label: "Roadside" },
+                        { value: "other", label: "Other" },
+                      ]}
+                    />
                   </div>
                 </FormSection>
 

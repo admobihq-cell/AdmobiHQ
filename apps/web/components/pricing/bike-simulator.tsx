@@ -2,10 +2,6 @@
 
 import { useId, useMemo, useState } from "react"
 
-import Link from "next/link"
-import { ArrowRightIcon } from "lucide-react"
-
-import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -19,6 +15,8 @@ import {
 } from "@/lib/seo/pricing-data"
 import { useAnimatedNumber } from "@workspace/ui/hooks/use-animated-number"
 import { NumberStepper } from "@workspace/ui/components/number-stepper"
+
+import { ConfirmEstimate } from "./confirm-estimate"
 
 type ZoneChoiceId = (typeof zoneTiers)[number]["id"] | "all-zones"
 
@@ -221,12 +219,12 @@ export function BikeSimulator() {
           </div>
         </div>
 
-        <Button asChild size="lg" className="mt-4 w-full">
-          <Link href="/start-campaign">
-            Get this confirmed
-            <ArrowRightIcon data-icon="inline-end" />
-          </Link>
-        </Button>
+        <ConfirmEstimate
+          format="delivery_bike"
+          days={days}
+          total={result.total}
+          summary={`Pricing estimate ${formatKes(result.total)}: ${bikes} delivery bike${bikes === 1 ? "" : "s"}, ${sides} side${sides === 1 ? "" : "s"}, ${zone.name}, ${days} day${days === 1 ? "" : "s"} (${formatKesPrecise(result.pricePerSidePerDay)} per side/day).`}
+        />
       </div>
     </div>
   )

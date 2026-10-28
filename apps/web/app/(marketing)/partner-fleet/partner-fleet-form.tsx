@@ -8,17 +8,16 @@ import { useForm } from "react-hook-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import { Textarea } from "@workspace/ui/components/textarea"
 import type { FleetLeadInput } from "@/lib/validation/lead-schemas"
 import { fleetLeadSchema } from "@/lib/validation/lead-schemas"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { FormSection } from "@/components/forms/form-section"
+import { FormSelect } from "@/components/forms/form-select"
 import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { useLeadForm } from "@/components/forms/use-lead-form"
-
-const selectClass =
-  "border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base outline-none focus-visible:ring-3 md:text-sm disabled:opacity-50"
 
 export default function PartnerFleetForm() {
   const {
@@ -52,7 +51,7 @@ export default function PartnerFleetForm() {
     },
   })
 
-  const { register, handleSubmit, setValue, watch, formState } = form
+  const { register, handleSubmit, setValue, watch, control, formState } = form
   // eslint-disable-next-line react-hooks/incompatible-library
   const fleetTypesWatch = watch("fleetTypes").slice()
   const operatingCitiesWatch = watch("operatingCities")?.slice() ?? []
@@ -175,11 +174,16 @@ export default function PartnerFleetForm() {
       <FormSection title="Your fleet">
         <div className="grid gap-2">
           <Label htmlFor="pf-city">City of operation *</Label>
-          <select id="pf-city" className={selectClass} {...register("city")}>
-            <option value="Nairobi">Nairobi</option>
-            <option value="Mombasa">Mombasa</option>
-            <option value="Kisumu">Kisumu</option>
-          </select>
+          <FormSelect
+            id="pf-city"
+            control={control}
+            name="city"
+            options={[
+              { value: "Nairobi", label: "Nairobi" },
+              { value: "Mombasa", label: "Mombasa" },
+              { value: "Kisumu", label: "Kisumu" },
+            ]}
+          />
         </div>
 
         <div className="grid gap-2">
@@ -294,12 +298,17 @@ export default function PartnerFleetForm() {
           <Label htmlFor="pf-ev">
             Does your fleet include electric vehicles?
           </Label>
-          <select id="pf-ev" className={selectClass} {...register("evStatus")}>
-            <option value="none">No, none</option>
-            <option value="some">Yes, some</option>
-            <option value="mostly">Mostly electric</option>
-            <option value="all">Fully electric</option>
-          </select>
+          <FormSelect
+            id="pf-ev"
+            control={control}
+            name="evStatus"
+            options={[
+              { value: "none", label: "No, none" },
+              { value: "some", label: "Yes, some" },
+              { value: "mostly", label: "Mostly electric" },
+              { value: "all", label: "Fully electric" },
+            ]}
+          />
         </div>
 
         <fieldset className="space-y-3">
@@ -341,10 +350,10 @@ export default function PartnerFleetForm() {
       <FormSection title="Anything else">
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="pf-notes">Additional notes (optional)</Label>
-          <textarea
+          <Textarea
             id="pf-notes"
             rows={3}
-            className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+            className="min-h-20"
             {...register("notes")}
           />
         </div>

@@ -10,21 +10,18 @@ import { CREATIVE_STATUS, type CreativeStatus } from "@workspace/ops-contracts/e
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import { Textarea } from "@workspace/ui/components/textarea"
 import type { CampaignLeadInput } from "@/lib/validation/lead-schemas"
 import { campaignLeadSchema } from "@/lib/validation/lead-schemas"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { FormSection, formPageGrid } from "@/components/forms/form-section"
+import { FormSelect } from "@/components/forms/form-select"
 import { HoneypotField } from "@/components/forms/honeypot-field"
 import { SubmissionSuccess } from "@/components/forms/submission-success"
 import { useLeadForm } from "@/components/forms/use-lead-form"
 import { Container } from "@/components/landing/container"
-
-const selectClass =
-  "border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base outline-none focus-visible:ring-3 md:text-sm disabled:opacity-50"
-
-const textareaClass =
-  "border-input placeholder:text-muted-foreground focus-visible:ring-ring/50 aria-invalid:border-destructive focus-visible:border-ring flex w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-3 md:text-sm"
+import { readEstimate } from "@/lib/estimate-handoff"
 
 const cityOptions = ["Nairobi", "Mombasa", "Kisumu", "All"] as const
 
@@ -66,15 +63,22 @@ export default function StartCampaignPage() {
     handleSubmit,
     setValue,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = form
 
-  // /products-solutions links here with ?creative=needs_design to preselect "Need design help".
+  // /products-solutions links here with ?creative=needs_design to preselect "Need design help";
+  // the /pricing simulators link here with their estimate (see lib/estimate-handoff).
   useEffect(() => {
     const creative = new URLSearchParams(window.location.search).get("creative")
     if (creative && (CREATIVE_STATUS as readonly string[]).includes(creative)) {
       setValue("creativeStatus", creative as CreativeStatus)
     }
+    const estimate = readEstimate(window.location.search)
+    if (estimate.adFormats) setValue("adFormats", estimate.adFormats)
+    if (estimate.duration) setValue("duration", estimate.duration)
+    if (estimate.budget) setValue("budget", estimate.budget)
+    if (estimate.brief) setValue("brief", estimate.brief)
   }, [setValue])
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -320,64 +324,64 @@ export default function StartCampaignPage() {
 
                 <div className="grid gap-2">
                   <Label htmlFor="sc-duration">Campaign duration *</Label>
-                  <select
+                  <FormSelect
                     id="sc-duration"
-                    className={selectClass}
-                    {...register("duration")}
-                  >
-                    <option value="1_day">1 day</option>
-                    <option value="1_week">1 week</option>
-                    <option value="2_weeks">2 weeks</option>
-                    <option value="1_month">1 month</option>
-                    <option value="ongoing">Ongoing</option>
-                  </select>
+                    control={control}
+                    name="duration"
+                    options={[
+                      { value: "1_day", label: "1 day" },
+                      { value: "1_week", label: "1 week" },
+                      { value: "2_weeks", label: "2 weeks" },
+                      { value: "1_month", label: "1 month" },
+                      { value: "ongoing", label: "Ongoing" },
+                    ]}
+                  />
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="sc-budget">Estimated budget range *</Label>
-                  <select
+                  <FormSelect
                     id="sc-budget"
-                    className={selectClass}
-                    {...register("budget")}
-                  >
-                    <option value="under_50k">Under KSh 50,000</option>
-                    <option value="50k_150k">KSh 50,000–150,000</option>
-                    <option value="150k_500k">KSh 150,000–500,000</option>
-                    <option value="500k_plus">KSh 500,000+</option>
-                    <option value="not_sure">Not sure yet</option>
-                  </select>
+                    control={control}
+                    name="budget"
+                    options={[
+                      { value: "under_50k", label: "Under KSh 50,000" },
+                      { value: "50k_150k", label: "KSh 50,000–150,000" },
+                      { value: "150k_500k", label: "KSh 150,000–500,000" },
+                      { value: "500k_plus", label: "KSh 500,000+" },
+                      { value: "not_sure", label: "Not sure yet" },
+                    ]}
+                  />
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="sc-objective">Campaign objective</Label>
-                  <select
+                  <FormSelect
                     id="sc-objective"
-                    className={selectClass}
-                    {...register("objective")}
-                  >
-                    <option value="">Select…</option>
-                    <option value="awareness">Brand awareness</option>
-                    <option value="launch">Product / service launch</option>
-                    <option value="promo">Promotion / offer</option>
-                    <option value="footfall">
-                      Drive footfall / store visits
-                    </option>
-                    <option value="other">Other</option>
-                  </select>
+                    control={control}
+                    name="objective"
+                    options={[
+                      { value: "awareness", label: "Brand awareness" },
+                      { value: "launch", label: "Product / service launch" },
+                      { value: "promo", label: "Promotion / offer" },
+                      { value: "footfall", label: "Drive footfall / store visits" },
+                      { value: "other", label: "Other" },
+                    ]}
+                  />
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="sc-creative">Creative status</Label>
-                  <select
+                  <FormSelect
                     id="sc-creative"
-                    className={selectClass}
-                    {...register("creativeStatus")}
-                  >
-                    <option value="">Select…</option>
-                    <option value="ready">Artwork ready to go</option>
-                    <option value="needs_design">Need design help</option>
-                    <option value="not_sure">Not sure yet</option>
-                  </select>
+                    control={control}
+                    name="creativeStatus"
+                    options={[
+                      { value: "ready", label: "Artwork ready to go" },
+                      { value: "needs_design", label: "Need design help" },
+                      { value: "not_sure", label: "Not sure yet" },
+                    ]}
+                  />
                 </div>
 
                 <div className="grid gap-2">
@@ -404,22 +408,22 @@ export default function StartCampaignPage() {
                   <Label htmlFor="sc-audience">
                     Who are you trying to reach? (optional)
                   </Label>
-                  <textarea
+                  <Textarea
                     id="sc-audience"
                     rows={3}
                     placeholder="Age, location, interests, the customer you picture."
-                    className={`${textareaClass} min-h-20`}
+                    className="min-h-20"
                     {...register("targetAudience")}
                   />
                 </div>
 
                 <div className="grid gap-2 sm:col-span-2">
                   <Label htmlFor="sc-brief">Brief (optional)</Label>
-                  <textarea
+                  <Textarea
                     id="sc-brief"
                     rows={4}
                     placeholder="Target area, flight dates, audience, creative status; whatever helps us prepare."
-                    className={`${textareaClass} min-h-24`}
+                    className="min-h-24"
                     {...register("brief")}
                   />
                 </div>

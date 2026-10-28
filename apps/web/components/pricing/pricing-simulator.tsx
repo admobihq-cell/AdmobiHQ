@@ -2,10 +2,6 @@
 
 import { useId, useMemo, useState } from "react"
 
-import Link from "next/link"
-import { ArrowRightIcon } from "lucide-react"
-
-import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -20,6 +16,8 @@ import {
 } from "@/lib/seo/pricing-data"
 import { useAnimatedNumber } from "@workspace/ui/hooks/use-animated-number"
 import { NumberStepper, clampInt } from "@workspace/ui/components/number-stepper"
+
+import { ConfirmEstimate } from "./confirm-estimate"
 
 type ZoneChoiceId = (typeof zoneTiers)[number]["id"] | "all-screens"
 
@@ -241,12 +239,12 @@ export function PricingSimulator() {
           </div>
         </div>
 
-        <Button asChild size="lg" className="mt-4 w-full">
-          <Link href="/start-campaign">
-            Get this confirmed
-            <ArrowRightIcon data-icon="inline-end" />
-          </Link>
-        </Button>
+        <ConfirmEstimate
+          format="taxi_top"
+          days={days}
+          total={result.total}
+          summary={`Pricing estimate ${formatKes(result.total)}: ${screens} taxi-top screen${screens === 1 ? "" : "s"}, ${slotSeconds}s slot, ${zone.name}, ${playsPerDay} plays/day, ${days} day${days === 1 ? "" : "s"} (${formatKesPrecise(result.pricePerPlay)} per play).`}
+        />
       </div>
     </div>
   )
