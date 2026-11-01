@@ -90,6 +90,22 @@ export async function submitCampaign(getToken: GetToken, id: number): Promise<Ca
   return res.json()
 }
 
+/** Attaches a file already in the Media Library. Same response as an upload,
+ * including the advisory `warning`. */
+export async function attachMediaAsset(
+  getToken: GetToken,
+  campaignId: number,
+  mediaAssetId: number,
+  slot = "all",
+): Promise<UploadedCreative> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/campaigns/${campaignId}/creatives`,
+    jsonInit("POST", { mediaAssetId, slot }),
+  )
+  return res.json()
+}
+
 export async function uploadCreative(
   getToken: GetToken,
   campaignId: number,

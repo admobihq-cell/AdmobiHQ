@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import type { CampaignCreateInput, CampaignDto, CampaignUpdateInput } from "@workspace/ops-contracts"
 
 import {
+  attachMediaAsset,
   createCampaign,
   deleteCampaign,
   deleteCreative,
@@ -120,6 +121,19 @@ export function useSubmitCampaign() {
       ]
       toast.error(missing.length > 0 ? `Still needed: ${missing.join(", ")}` : messageOf(error))
     },
+  })
+}
+
+export function useAttachMediaAsset(campaignId: number) {
+  const { getToken } = useAuth()
+  const invalidate = useInvalidate()
+  return useMutation({
+    mutationFn: (mediaAssetId: number) => attachMediaAsset(getToken, campaignId, mediaAssetId),
+    onSuccess: (creative) => {
+      invalidate(campaignId)
+      if (creative.warning) toast.warning(creative.warning)
+    },
+    onError: (error) => toast.error(messageOf(error)),
   })
 }
 

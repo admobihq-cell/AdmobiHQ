@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs"
 
 import { useRef, useState } from "react"
-import { Film, Trash2, Upload } from "lucide-react"
+import { Film, FolderOpen, Trash2, Upload } from "lucide-react"
 import {
   CREATIVE_FILE_EXTENSIONS,
   CREATIVE_FORMATS_LABEL,
@@ -13,13 +13,23 @@ import {
   specsForFormat,
   type CampaignCreativeDto,
   type CampaignFormat,
+  type MediaAssetDto,
 } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
 import { cn } from "@workspace/ui/lib/utils"
 import { BlobPreview } from "@/components/media/blob-preview"
+import { MediaGrid } from "@/components/media/media-grid"
 import { fetchCreativeBlob } from "@/lib/campaigns-client"
-import { useDeleteCreative, useUploadCreative } from "@/lib/use-campaigns"
+import { useAttachMediaAsset, useDeleteCreative, useUploadCreative } from "@/lib/use-campaigns"
+import { useOrgPermissions } from "@/lib/use-org"
 
 const ACCEPT = CREATIVE_FILE_EXTENSIONS.join(",")
 const MAX_MB = Math.floor(MAX_CREATIVE_BYTES / 1024 / 1024)
@@ -118,6 +128,9 @@ export function CreativeUploadField({
   const [error, setError] = useState<string | null>(null)
   const upload = useUploadCreative(campaignId)
   const remove = useDeleteCreative(campaignId)
+  const attach = useAttachMediaAsset(campaignId)
+  const { can } = useOrgPermissions()
+  const [libraryOpen, setLibraryOpen] = useState(false)
 
   const specs = specsForFormat(format)
   const atLimit = creatives.length >= MAX_CREATIVES_PER_CAMPAIGN
@@ -149,6 +162,14 @@ export function CreativeUploadField({
     }
 
     if (inputRef.current) inputRef.current.value = ""
+  }
+
+  async function handlePick(asset: MediaAssetDto) {
+    // The hook toasts the reason on failure; the picker stays open to retry.
+    const created = await attach.mutateAsync(asset.id).catch(() => null)
+    if (!created) return
+    onCreativesChange?.([...creatives, created])
+    setLibraryOpen(false)
   }
 
   return (
@@ -201,18 +222,52 @@ export function CreativeUploadField({
         onChange={(event) => void handleFiles(event.target.files)}
       />
 
-      <Button
-        type="button"
-        variant="outline"
-        className={cn("w-full", atLimit && "hidden")}
-        disabled={busy}
-        loading={upload.isPending}
-        loadingText="Uploading…"
-        onClick={() => inputRef.current?.click()}
-      >
-        <Upload data-icon="inline-start" />
-        {creatives.length > 0 ? "Add another creative" : "Upload creative"}
-      </Button>
+      <div className={cn("flex flex-col gap-2 sm:flex-row", atLimit && "hidden")}>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full sm:flex-1"
+          disabled={busy}
+          loading={upload.isPending}
+          loadingText="Uploading…"
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload data-icon="inline-start" />
+          {creatives.length > 0 ? "Add another creative" : "Upload creative"}
+        </Button>
+        {!disabled && can("media:read") ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:flex-1"
+            disabled={busy}
+            onClick={() => setLibraryOpen(true)}
+          >
+            <FolderOpen data-icon="inline-start" />
+            Browse media library
+          </Button>
+        ) : null}
+      </div>
+
+      <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Media library</DialogTitle>
+            <DialogDescription>
+              Pick a file you&apos;ve already uploaded. It stays in your library and can be used on
+              other campaigns too.
+            </DialogDescription>
+          </DialogHeader>
+          <MediaGrid
+            selection={{
+              format,
+              attachedAssetIds: creatives.map((creative) => creative.media_asset_id),
+              pendingAssetId: attach.isPending ? (attach.variables ?? null) : null,
+              onSelect: (asset) => void handlePick(asset),
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
