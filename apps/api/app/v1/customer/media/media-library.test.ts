@@ -118,6 +118,11 @@ async function listIds(query: string): Promise<number[]> {
   return (await listItems(query)).map((item) => item.id)
 }
 
+async function attach(campaignId: number, mediaAssetId: number) {
+  const { POST } = await import("../campaigns/[id]/creatives/route")
+  return POST(json({ mediaAssetId }), idParams(campaignId))
+}
+
 describe.skipIf(!databaseUrl)("media library", () => {
   beforeAll(async () => {
     process.env.DATABASE_URL = databaseUrl!
@@ -357,6 +362,88 @@ describe.skipIf(!databaseUrl)("media library", () => {
       expect(res.status).toBe(200)
       expect(res.headers.get("Content-Type")).toBe("image/png")
       expect(await res.text()).toBe("bytes")
+    }, 30_000)
+  })
+
+  describe("attaching a library file", () => {
+    it("attaches without uploading anything again", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const campaign = await createCampaign()
+      const before = await prisma.mediaAsset.count({ where: { org_id: orgId } })
+
+      const res = await attach(campaign.id, asset.id)
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body).toMatchObject({ media_asset_id: asset.id, slot: "all", warning: null })
+      expect(await prisma.mediaAsset.count({ where: { org_id: orgId } })).toBe(before)
+    }, 30_000)
+
+    it("keeps the file and the other attachment when one of two campaigns is deleted", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const first = await createCampaign()
+      const second = await createCampaign()
+      expect((await attach(first.id, asset.id)).status).toBe(201)
+      expect((await attach(second.id, asset.id)).status).toBe(201)
+
+      const { DELETE } = await import("../campaigns/[id]/route")
+      expect((await DELETE(bare("DELETE"), idParams(first.id))).status).toBe(200)
+
+      expect(await prisma.mediaAsset.findUnique({ where: { id: asset.id } })).not.toBeNull()
+      expect(
+        await prisma.campaignCreative.count({
+          where: { campaign_id: second.id, media_asset_id: asset.id },
+        }),
+      ).toBe(1)
+      expect(destroyPrivateAsset).not.toHaveBeenCalled()
+    }, 30_000)
+
+    it("lets a file rejected for one panel be attached to a campaign it does fit", async () => {
+      nextDims = { width: 320, height: 320 }
+      const square = await (await uploadToLibrary(png("square.png"))).json()
+      const taxi = await createCampaign("taxi_top")
+      const bike = await createCampaign("delivery_bike")
+
+      const rejected = await attach(taxi.id, square.id)
+      expect(rejected.status).toBe(400)
+      expect((await rejected.json()).issues.specs[0].label).toBe("Taxi-top LED")
+
+      expect((await attach(bike.id, square.id)).status).toBe(201)
+    }, 30_000)
+
+    it("answers 404 for another org's file", async () => {
+      const campaign = await createCampaign()
+      actingOrgId = otherOrgId
+      const foreign = await (await uploadToLibrary(png("foreign.png"))).json()
+      actingOrgId = orgId
+
+      expect((await attach(campaign.id, foreign.id)).status).toBe(404)
+      expect(await prisma.campaignCreative.count({ where: { campaign_id: campaign.id } })).toBe(0)
+    }, 30_000)
+
+    it("answers 409 when the same file is attached twice", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const campaign = await createCampaign()
+      expect((await attach(campaign.id, asset.id)).status).toBe(201)
+      expect((await attach(campaign.id, asset.id)).status).toBe(409)
+      expect(await prisma.campaignCreative.count({ where: { campaign_id: campaign.id } })).toBe(1)
+    }, 30_000)
+
+    it("refuses while the campaign is under review", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const campaign = await createCampaign()
+      await prisma.campaign.update({ where: { id: campaign.id }, data: { status: "submitted" } })
+      expect((await attach(campaign.id, asset.id)).status).toBe(409)
+    }, 30_000)
+
+    it("still lets ops open an attached library file", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const campaign = await createCampaign()
+      const creative = await (await attach(campaign.id, asset.id)).json()
+
+      const { GET } = await import("../../campaigns/[id]/creatives/[creativeId]/file/route")
+      const res = await GET(bare("GET"), creativeParams(campaign.id, creative.id))
+      expect(res.status).toBe(200)
+      expect(res.headers.get("Content-Type")).toBe("image/png")
     }, 30_000)
   })
 })
