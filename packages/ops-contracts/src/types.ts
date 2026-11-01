@@ -154,6 +154,31 @@ export type CampaignCreativeDto = {
   created_at: string
 }
 
+/** A file in an advertiser org's Media Library. */
+export type MediaAssetDto = {
+  id: number
+  name: string
+  /** "image" | "video" — mirrors Cloudinary's resource_type. */
+  resource_type: string
+  content_type: string
+  size_bytes: number
+  width: number | null
+  height: number | null
+  /** Decimal in the DB, so it crosses the wire as a string. */
+  duration_seconds: string | null
+  original_filename: string | null
+  /** "ready" | "invalid" — about the file itself, not about any one panel. */
+  status: string
+  source: string
+  /** Whoever uploaded it, for the library's "by" line. Null once they've left
+   * the org or their account can't be read. */
+  created_by_name: string | null
+  created_at: string
+  /** Campaigns this file is attached to. Drives "used in N campaigns" and
+   * explains why a delete was refused. */
+  campaigns: { id: number; name: string }[]
+}
+
 export type CampaignDto = {
   id: number
   name: string

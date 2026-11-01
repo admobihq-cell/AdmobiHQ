@@ -21,6 +21,8 @@ const PERMISSION_LABELS: Record<AdvertiserPermission, string> = {
   "campaigns:write": "Create and edit campaigns",
   "campaigns:submit": "Submit campaigns",
   "creatives:write": "Upload creative",
+  "media:read": "View media library",
+  "media:write": "Manage media library",
   "reports:read": "View reports",
   "billing:read": "View billing",
   "billing:write": "Change billing",

@@ -12,9 +12,11 @@ import {
   parseId,
 } from "./format"
 import {
+  campaignCreativeAttachSchema,
   driverCreateSchema,
   fleetCreateSchema,
   leadCreateSchema,
+  mediaAssetRenameSchema,
   mediaKitCreateSchema,
   waitlistCreateSchema,
 } from "./schemas"
@@ -231,5 +233,25 @@ describe("announcement target apps", () => {
       "customer-web",
       "driver-web",
     ])
+  })
+})
+
+describe("media library schemas", () => {
+  it("defaults an attach to the 'all' slot", () => {
+    expect(campaignCreativeAttachSchema.parse({ mediaAssetId: 3 })).toEqual({
+      mediaAssetId: 3,
+      slot: "all",
+    })
+  })
+
+  it("rejects an attach without a positive integer id", () => {
+    expect(campaignCreativeAttachSchema.safeParse({ mediaAssetId: 0 }).success).toBe(false)
+    expect(campaignCreativeAttachSchema.safeParse({ mediaAssetId: "3" }).success).toBe(false)
+  })
+
+  it("trims a rename and rejects an empty or over-long name", () => {
+    expect(mediaAssetRenameSchema.parse({ name: "  Launch hero  " })).toEqual({ name: "Launch hero" })
+    expect(mediaAssetRenameSchema.safeParse({ name: "   " }).success).toBe(false)
+    expect(mediaAssetRenameSchema.safeParse({ name: "x".repeat(121) }).success).toBe(false)
   })
 })

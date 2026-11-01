@@ -218,6 +218,7 @@ export const AUDIT_ENTITY_TYPES = [
   "driver_document",
   "campaign",
   "campaign_creative",
+  "media_asset",
   "safety_incident",
   "advertiser_org",
   "advertiser_member",
@@ -259,6 +260,8 @@ export const ADVERTISER_PERMISSIONS = [
   "campaigns:write",
   "campaigns:submit",
   "creatives:write",
+  "media:read",
+  "media:write",
   "reports:read",
   "billing:read",
   "billing:write",
@@ -282,6 +285,8 @@ export const ADVERTISER_STARTER_ROLES: Record<"Admin" | "Member", readonly Adver
     "campaigns:write",
     "campaigns:submit",
     "creatives:write",
+    "media:read",
+    "media:write",
     "reports:read",
     "billing:read",
     "billing:write",
@@ -290,7 +295,14 @@ export const ADVERTISER_STARTER_ROLES: Record<"Admin" | "Member", readonly Adver
     "activity:read",
     "support:read_all",
   ],
-  Member: ["campaigns:read", "campaigns:write", "creatives:write", "reports:read"],
+  Member: [
+    "campaigns:read",
+    "campaigns:write",
+    "creatives:write",
+    "media:read",
+    "media:write",
+    "reports:read",
+  ],
 }
 
 /** Ops-controlled visibility switches — see PlatformFlag in the Prisma schema.
