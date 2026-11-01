@@ -61,8 +61,8 @@ export async function deleteMedia(getToken: GetToken, id: number): Promise<void>
   await authedFetch(getToken, `/v1/customer/media/${id}`, { method: "DELETE" })
 }
 
-/** Bytes via the authenticated proxy. Turn the Blob into an object URL — never
- * point an <img src> at Cloudinary, which this deliberately is not. */
+/** Bytes via the authenticated proxy. Turn the Blob into an object URL — an
+ * image tag must never point at Cloudinary, which this deliberately is not. */
 export async function fetchMediaBlob(getToken: GetToken, id: number): Promise<Blob> {
   const res = await authedFetch(getToken, `/v1/customer/media/${id}/file`)
   return res.blob()
