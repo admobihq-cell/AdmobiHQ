@@ -17,6 +17,7 @@ import {
   updateCampaign,
   uploadCreative,
 } from "@/lib/campaigns-client"
+import { MEDIA_QUERY_KEY } from "@/lib/media-client"
 
 /**
  * Single source of truth for the campaign list, the detail page, and the
@@ -58,6 +59,9 @@ function useInvalidate() {
   const queryClient = useQueryClient()
   return (id?: number) => {
     void queryClient.invalidateQueries({ queryKey: LIST_KEY })
+    // Uploading, attaching, removing or deleting changes which library files
+    // are in use.
+    void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY })
     if (id != null) void queryClient.invalidateQueries({ queryKey: detailKey(id) })
   }
 }

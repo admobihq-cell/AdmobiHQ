@@ -19,7 +19,7 @@ export type UploadedCreative = CampaignCreativeDto & { warning: string | null }
  * 4-second budget is right for a small JSON poll and fatal for a 50MB creative
  * over Kenyan mobile data. Uploads finish or the user cancels.
  */
-async function authedFetch(getToken: GetToken, path: string, init?: RequestInit) {
+export async function authedFetch(getToken: GetToken, path: string, init?: RequestInit) {
   const token = await getToken()
   const headers = new Headers(init?.headers)
   if (token) headers.set("Authorization", `Bearer ${token}`)
@@ -40,7 +40,7 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
   return res
 }
 
-function jsonInit(method: string, body: unknown): RequestInit {
+export function jsonInit(method: string, body: unknown): RequestInit {
   return {
     method,
     headers: { "Content-Type": "application/json" },

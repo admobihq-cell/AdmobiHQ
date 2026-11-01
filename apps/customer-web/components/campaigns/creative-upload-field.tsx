@@ -2,8 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useRef, useState } from "react"
 import { Film, Trash2, Upload } from "lucide-react"
 import {
   CREATIVE_FILE_EXTENSIONS,
@@ -17,9 +16,8 @@ import {
 } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
-import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
+import { BlobPreview } from "@/components/media/blob-preview"
 import { fetchCreativeBlob } from "@/lib/campaigns-client"
 import { useDeleteCreative, useUploadCreative } from "@/lib/use-campaigns"
 
@@ -68,49 +66,14 @@ function CreativeThumb({
   const { getToken } = useAuth()
   const isVideo = creative.resource_type === "video"
 
-  const blobQuery = useQuery({
-    queryKey: ["campaign-creative-blob", campaignId, creative.id],
-    queryFn: () => fetchCreativeBlob(getToken, campaignId, creative.id),
-  })
-
-  // The Blob is cached; the object URL derived from it is not — it's revoked
-  // on unmount, so caching the URL string would let a revoked URL leak into
-  // another consumer of the same cache entry.
-  const url = useMemo(
-    () => (blobQuery.data ? URL.createObjectURL(blobQuery.data) : null),
-    [blobQuery.data],
-  )
-  useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
-
-  const preview = url ? (
-    isVideo ? (
-      <video src={url} controls className="h-32 w-full bg-black object-contain" />
-    ) : (
-      <ImageLightbox src={url} alt={creative.original_filename ?? "Creative"}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- object URL from an authenticated blob, not a remote asset next/image can optimize */}
-        <img
-          src={url}
-          alt={creative.original_filename ?? "Creative"}
-          className="h-32 w-full object-contain"
-        />
-      </ImageLightbox>
-    )
-  ) : blobQuery.isError ? (
-    <button
-      type="button"
-      onClick={() => void blobQuery.refetch()}
-      className="flex h-32 w-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground hover:bg-muted"
-    >
-      <span>Couldn&apos;t load preview</span>
-      <span className="font-medium text-foreground">Click to retry</span>
-    </button>
-  ) : (
-    <Skeleton className="h-32 w-full" />
-  )
-
   return (
     <div className="group relative overflow-hidden rounded-lg border border-border bg-muted/20 duration-200 ease-out animate-in fade-in-0 zoom-in-95 motion-reduce:animate-none">
-      {preview}
+      <BlobPreview
+        queryKey={["campaign-creative-blob", campaignId, creative.id]}
+        load={() => fetchCreativeBlob(getToken, campaignId, creative.id)}
+        isVideo={isVideo}
+        alt={creative.original_filename ?? "Creative"}
+      />
 
       <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-1.5 text-xs">
         <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
