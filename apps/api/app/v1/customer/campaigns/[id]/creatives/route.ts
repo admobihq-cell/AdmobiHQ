@@ -87,7 +87,7 @@ async function attachFromLibrary(req: Request, campaign: CampaignWithCreatives, 
   if ("error" in parsed) return parsed.error
 
   const asset = await getOwnedMediaAsset(actor.orgId, parsed.data.mediaAssetId)
-  if (!asset) return jsonError("That file isn't in your media library", 404)
+  if (!asset) return jsonError("That file isn't in your Media Manager", 404)
 
   const format = campaign.format as CampaignFormat
   const check = checkAgainstFormat(format, asset.width, asset.height)

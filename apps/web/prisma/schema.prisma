@@ -469,6 +469,7 @@ model AdvertiserOrg {
   notifications CustomerNotification[]
   adminRequests AdvertiserAdminRequest[]
   mediaAssets   MediaAsset[]
+  mediaFolders  MediaFolder[]
 
   @@map("advertiser_orgs")
 }
@@ -721,6 +722,10 @@ model MediaAsset {
   org_id                   Int?
   org                      AdvertiserOrg? @relation(fields: [org_id], references: [id], onDelete: SetNull)
   name                     String
+  /// Null means the file sits in no folder. Deleting a folder clears this and
+  /// keeps the file.
+  folder_id                Int?
+  folder                   MediaFolder?   @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   /// "image" | "video" — mirrors Cloudinary's resource_type; needed to sign
   /// the fetch URL correctly.
   resource_type            String         @default("image")
@@ -741,10 +746,42 @@ model MediaAsset {
   updated_at               DateTime       @updatedAt
 
   attachments CampaignCreative[]
+  stars       MediaAssetStar[]
 
   @@index([org_id, created_at])
   @@index([org_id, resource_type])
+  @@index([folder_id])
   @@map("media_assets")
+}
+
+/// A folder in an org's Media Manager, shared by everyone in the org. One
+/// level only: folders don't nest, and a file sits in at most one.
+model MediaFolder {
+  id                       Int           @id @default(autoincrement())
+  org_id                   Int
+  org                      AdvertiserOrg @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  name                     String
+  created_by_clerk_user_id String
+  created_at               DateTime      @default(now())
+  updated_at               DateTime      @updatedAt
+
+  assets MediaAsset[]
+
+  @@unique([org_id, name])
+  @@map("media_folders")
+}
+
+/// One person's star on a file. Per person, so starring never changes what a
+/// teammate sees.
+model MediaAssetStar {
+  media_asset_id Int
+  media_asset    MediaAsset @relation(fields: [media_asset_id], references: [id], onDelete: Cascade)
+  clerk_user_id  String
+  created_at     DateTime   @default(now())
+
+  @@id([media_asset_id, clerk_user_id])
+  @@index([clerk_user_id])
+  @@map("media_asset_stars")
 }
 
 /// Attaches a MediaAsset to a campaign. Deleting a campaign cascades these

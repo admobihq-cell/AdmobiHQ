@@ -4,10 +4,11 @@ import { NextResponse } from "next/server"
 import { paginatedResponse, paginationSchema } from "@workspace/ops-contracts"
 
 import { auditFromCustomerUser } from "@/lib/audit"
-import { jsonError, requireCustomerPermissionAccess } from "@/lib/api-utils"
+import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { resolveCustomerIdentities } from "@/lib/advertiser/advertiser-org"
 import {
   MEDIA_ASSET_INCLUDE,
+  getOwnedMediaFolder,
   mediaAssetCreateData,
   storeCreativeFile,
   toMediaAssetDto,
@@ -37,6 +38,8 @@ export async function GET(req: Request) {
   const search = searchParams.get("search")?.trim() || undefined
   const type = searchParams.get("type")
   const usage = searchParams.get("usage")
+  const folderId = parseId(searchParams.get("folder") ?? "")
+  const userId = auth.access.userId
 
   const where: Prisma.MediaAssetWhereInput = {
     org_id: auth.access.orgId,
@@ -47,6 +50,10 @@ export async function GET(req: Request) {
       : usage === "unused"
         ? { attachments: { none: {} } }
         : {}),
+    ...(folderId ? { folder_id: folderId } : {}),
+    ...(searchParams.get("starred") === "true"
+      ? { stars: { some: { clerk_user_id: userId } } }
+      : {}),
   }
 
   const [rows, total] = await Promise.all([
@@ -61,10 +68,20 @@ export async function GET(req: Request) {
   ])
 
   // One batched Clerk lookup for the page, same as the campaigns list.
-  const uploaders = await resolveCustomerIdentities(rows.map((r) => r.created_by_clerk_user_id))
+  const [uploaders, stars] = await Promise.all([
+    resolveCustomerIdentities(rows.map((r) => r.created_by_clerk_user_id)),
+    prisma.mediaAssetStar.findMany({
+      where: { clerk_user_id: userId, media_asset_id: { in: rows.map((r) => r.id) } },
+      select: { media_asset_id: true },
+    }),
+  ])
+  const starredIds = new Set(stars.map((star) => star.media_asset_id))
   const items = rows.map((row) => {
     const uploader = uploaders.get(row.created_by_clerk_user_id)
-    return toMediaAssetDto(row, uploader?.name ?? uploader?.email ?? null)
+    return toMediaAssetDto(row, {
+      createdByName: uploader?.name ?? uploader?.email ?? null,
+      starred: starredIds.has(row.id),
+    })
   })
 
   return NextResponse.json(paginatedResponse(items, total, page, pageSize))
@@ -81,6 +98,16 @@ export async function POST(req: Request) {
   const file = form?.get("file")
   if (!(file instanceof File)) return jsonError("Missing file", 400)
 
+  // Checked before storing, so a bad folder never leaves a file behind.
+  const rawFolderId = form?.get("folderId")
+  let folderId: number | null = null
+  if (typeof rawFolderId === "string") {
+    folderId = parseId(rawFolderId)
+    if (!folderId || !(await getOwnedMediaFolder(auth.access.orgId, folderId))) {
+      return jsonError("That folder doesn't exist", 404)
+    }
+  }
+
   const result = await storeCreativeFile(auth.access.orgId, file)
   if (result.error) return result.error
 
@@ -90,6 +117,7 @@ export async function POST(req: Request) {
       userId: auth.access.userId,
       file,
       stored: result.stored,
+      folderId,
     }),
     include: MEDIA_ASSET_INCLUDE,
   })

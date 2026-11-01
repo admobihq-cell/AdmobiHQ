@@ -10,13 +10,14 @@ const databaseUrl = testDatabaseUrl()
 
 const USER = `media-adv-${Date.now()}`
 let actingOrgId = 0
+let actingUserId = USER
 
 vi.mock("@/lib/api-utils", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-utils")>("@/lib/api-utils")
   return {
     ...actual,
     requireCustomerPermissionAccess: vi.fn(async () => ({
-      access: { userId: USER, orgId: actingOrgId, isOwner: true, permissions: new Set() },
+      access: { userId: actingUserId, orgId: actingOrgId, isOwner: true, permissions: new Set() },
     })),
     requireOpsPermissionAccess: vi.fn(async () => ({
       access: { userId: "ops_1", email: "ops@admobihq.com" },
@@ -68,9 +69,10 @@ function png(name = "taxi.png", bytes = 16): File {
   return new File([new Uint8Array(bytes)], name, { type: "image/png" })
 }
 
-function fileRequest(file: File): Request {
+function fileRequest(file: File, folderId?: number): Request {
   const form = new FormData()
   form.append("file", file)
+  if (folderId != null) form.append("folderId", String(folderId))
   return new Request("http://localhost/x", { method: "POST", body: form })
 }
 
@@ -102,16 +104,44 @@ async function uploadInline(campaignId: number, file = png()) {
   return POST(fileRequest(file), idParams(campaignId))
 }
 
-async function uploadToLibrary(file = png()) {
+async function uploadToLibrary(file = png(), folderId?: number) {
   const { POST } = await import("./route")
-  return POST(fileRequest(file))
+  return POST(fileRequest(file, folderId))
+}
+
+async function createFolder(name: string) {
+  const { POST } = await import("./folders/route")
+  return POST(json({ name }))
+}
+
+async function listFolders() {
+  const { GET } = await import("./folders/route")
+  const res = await GET()
+  expect(res.status).toBe(200)
+  return (await res.json()) as {
+    id: number
+    name: string
+    file_count: number
+    size_bytes: number
+    updated_at: string
+  }[]
+}
+
+async function moveFile(id: number, folderId: number | null) {
+  const { PATCH } = await import("./[id]/route")
+  return PATCH(json({ folderId }, "PATCH"), idParams(id))
 }
 
 async function listItems(query: string) {
   const { GET } = await import("./route")
   const res = await GET(new Request(`http://localhost/v1/customer/media${query}`))
   expect(res.status).toBe(200)
-  return (await res.json()).items as { id: number; name: string; created_by_name: string | null }[]
+  return (await res.json()).items as {
+    id: number
+    name: string
+    created_by_name: string | null
+    starred: boolean
+  }[]
 }
 
 async function listIds(query: string): Promise<number[]> {
@@ -133,6 +163,7 @@ describe.skipIf(!databaseUrl)("media library", () => {
 
   beforeEach(() => {
     actingOrgId = orgId
+    actingUserId = USER
     nextDims = { width: 960, height: 320 }
     uploadFails = false
     destroyPrivateAsset.mockClear()
@@ -444,6 +475,162 @@ describe.skipIf(!databaseUrl)("media library", () => {
       const res = await GET(bare("GET"), creativeParams(campaign.id, creative.id))
       expect(res.status).toBe(200)
       expect(res.headers.get("Content-Type")).toBe("image/png")
+    }, 30_000)
+  })
+
+  describe("stars", () => {
+    it("stars and unstars a file, and repeating either is harmless", async () => {
+      const asset = await (await uploadToLibrary(png("star-me.png"))).json()
+      const { PUT, DELETE } = await import("./[id]/star/route")
+
+      expect((await PUT(bare("PUT"), idParams(asset.id))).status).toBe(200)
+      expect((await PUT(bare("PUT"), idParams(asset.id))).status).toBe(200)
+      expect((await listItems("?search=star-me"))[0]?.starred).toBe(true)
+
+      expect((await DELETE(bare("DELETE"), idParams(asset.id))).status).toBe(200)
+      expect((await DELETE(bare("DELETE"), idParams(asset.id))).status).toBe(200)
+      expect((await listItems("?search=star-me"))[0]?.starred).toBe(false)
+    }, 30_000)
+
+    it("keeps a star to the person who set it", async () => {
+      const asset = await (await uploadToLibrary(png("mine-only.png"))).json()
+      const { PUT } = await import("./[id]/star/route")
+      await PUT(bare("PUT"), idParams(asset.id))
+
+      expect(await listIds("?starred=true")).toContain(asset.id)
+
+      actingUserId = `${USER}-teammate`
+      expect((await listItems("?search=mine-only"))[0]?.starred).toBe(false)
+      expect(await listIds("?starred=true")).not.toContain(asset.id)
+    }, 30_000)
+
+    it("answers 404 for another org's file", async () => {
+      const asset = await (await uploadToLibrary(png("no-star.png"))).json()
+      actingOrgId = otherOrgId
+      const { PUT } = await import("./[id]/star/route")
+      expect((await PUT(bare("PUT"), idParams(asset.id))).status).toBe(404)
+    }, 30_000)
+
+    it("goes away with the file", async () => {
+      const asset = await (await uploadToLibrary(png("star-gone.png"))).json()
+      const { PUT } = await import("./[id]/star/route")
+      await PUT(bare("PUT"), idParams(asset.id))
+
+      const { DELETE } = await import("./[id]/route")
+      expect((await DELETE(bare("DELETE"), idParams(asset.id))).status).toBe(200)
+      expect(await prisma.mediaAssetStar.count({ where: { media_asset_id: asset.id } })).toBe(0)
+    }, 30_000)
+  })
+
+  describe("folders", () => {
+    it("creates a folder, trimming its name and refusing a blank or repeated one", async () => {
+      const res = await createFolder("  Brand assets  ")
+      expect(res.status).toBe(201)
+      expect((await res.json()).name).toBe("Brand assets")
+
+      expect((await createFolder("   ")).status).toBe(400)
+      expect((await createFolder("Brand assets")).status).toBe(409)
+    }, 30_000)
+
+    it("counts a folder's files and their size", async () => {
+      const folder = await (await createFolder("Counted")).json()
+      await uploadToLibrary(png("one.png", 100), folder.id)
+      await uploadToLibrary(png("two.png", 50), folder.id)
+
+      const listed = (await listFolders()).find((item) => item.id === folder.id)
+      expect(listed).toMatchObject({ file_count: 2, size_bytes: 150 })
+    }, 30_000)
+
+    it("lists an empty folder with zero files", async () => {
+      const folder = await (await createFolder("Nothing yet")).json()
+      const listed = (await listFolders()).find((item) => item.id === folder.id)
+      expect(listed).toMatchObject({ file_count: 0, size_bytes: 0 })
+    }, 30_000)
+
+    it("uploads into a folder, and lists only that folder's files", async () => {
+      const folder = await (await createFolder("Uploads")).json()
+      const inside = await (await uploadToLibrary(png("inside.png"), folder.id)).json()
+      const outside = await (await uploadToLibrary(png("outside.png"))).json()
+
+      expect(inside.folder_id).toBe(folder.id)
+      expect(outside.folder_id).toBeNull()
+
+      const listed = await listIds(`?folder=${folder.id}`)
+      expect(listed).toEqual([inside.id])
+    }, 30_000)
+
+    it("refuses an upload into another org's folder without storing anything", async () => {
+      const foreign = await (await createFolder("Not yours")).json()
+      actingOrgId = otherOrgId
+      const before = await prisma.mediaAsset.count({ where: { org_id: otherOrgId } })
+
+      expect((await uploadToLibrary(png("sneaky.png"), foreign.id)).status).toBe(404)
+      expect(await prisma.mediaAsset.count({ where: { org_id: otherOrgId } })).toBe(before)
+    }, 30_000)
+
+    it("moves a file into a folder and back out", async () => {
+      const folder = await (await createFolder("Moves")).json()
+      const asset = await (await uploadToLibrary(png("mover.png"))).json()
+
+      const moved = await moveFile(asset.id, folder.id)
+      expect(moved.status).toBe(200)
+      expect((await moved.json()).folder_id).toBe(folder.id)
+
+      expect((await (await moveFile(asset.id, null)).json()).folder_id).toBeNull()
+    }, 30_000)
+
+    it("refuses a move into another org's folder", async () => {
+      const asset = await (await uploadToLibrary(png("stay.png"))).json()
+      actingOrgId = otherOrgId
+      const foreign = await (await createFolder("Other side")).json()
+      actingOrgId = orgId
+
+      expect((await moveFile(asset.id, foreign.id)).status).toBe(404)
+      expect((await prisma.mediaAsset.findUnique({ where: { id: asset.id } }))?.folder_id).toBeNull()
+    }, 30_000)
+
+    it("still renames with the same route, and refuses an empty change", async () => {
+      const asset = await (await uploadToLibrary(png("rename.png"))).json()
+      const { PATCH } = await import("./[id]/route")
+      const res = await PATCH(json({ name: "Renamed" }, "PATCH"), idParams(asset.id))
+      expect((await res.json()).name).toBe("Renamed")
+      expect((await PATCH(json({}, "PATCH"), idParams(asset.id))).status).toBe(400)
+    }, 30_000)
+
+    it("renames a folder, refusing a name already taken", async () => {
+      const first = await (await createFolder("First")).json()
+      await createFolder("Second")
+      const { PATCH } = await import("./folders/[id]/route")
+
+      const res = await PATCH(json({ name: "Renamed first" }, "PATCH"), idParams(first.id))
+      expect(res.status).toBe(200)
+      expect((await res.json()).name).toBe("Renamed first")
+
+      expect((await PATCH(json({ name: "Second" }, "PATCH"), idParams(first.id))).status).toBe(409)
+    }, 30_000)
+
+    it("deleting a folder keeps its files", async () => {
+      const folder = await (await createFolder("Doomed folder")).json()
+      const asset = await (await uploadToLibrary(png("survivor.png"), folder.id)).json()
+
+      const { DELETE } = await import("./folders/[id]/route")
+      expect((await DELETE(bare("DELETE"), idParams(folder.id))).status).toBe(200)
+
+      const row = await prisma.mediaAsset.findUnique({ where: { id: asset.id } })
+      expect(row).not.toBeNull()
+      expect(row?.folder_id).toBeNull()
+      expect(destroyPrivateAsset).not.toHaveBeenCalled()
+    }, 30_000)
+
+    it("hides another org's folder behind a 404", async () => {
+      const folder = await (await createFolder("Private folder")).json()
+      actingOrgId = otherOrgId
+
+      const { PATCH, DELETE } = await import("./folders/[id]/route")
+      expect((await PATCH(json({ name: "Hijacked" }, "PATCH"), idParams(folder.id))).status).toBe(404)
+      expect((await DELETE(bare("DELETE"), idParams(folder.id))).status).toBe(404)
+      expect((await listFolders()).map((item) => item.id)).not.toContain(folder.id)
+      expect(await listIds(`?folder=${folder.id}`)).toEqual([])
     }, 30_000)
   })
 

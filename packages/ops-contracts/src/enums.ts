@@ -219,6 +219,7 @@ export const AUDIT_ENTITY_TYPES = [
   "campaign",
   "campaign_creative",
   "media_asset",
+  "media_folder",
   "safety_incident",
   "advertiser_org",
   "advertiser_member",

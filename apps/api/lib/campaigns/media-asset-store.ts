@@ -77,10 +77,12 @@ export function mediaAssetCreateData(input: {
   userId: string
   file: File
   stored: StoredCreativeFile
+  folderId?: number | null
 }) {
   const { uploaded } = input.stored
   return {
     org_id: input.orgId,
+    folder_id: input.folderId ?? null,
     name: defaultAssetName(input.file.name),
     resource_type: input.stored.resourceType,
     cloudinary_public_id: uploaded.publicId,
@@ -122,11 +124,18 @@ export async function getOwnedMediaAsset(
   return asset
 }
 
+/** Same null-for-both rule as getOwnedMediaAsset. */
+export async function getOwnedMediaFolder(orgId: number, id: number) {
+  const folder = await prisma.mediaFolder.findUnique({ where: { id } })
+  if (!folder || folder.org_id !== orgId) return null
+  return folder
+}
+
 export function toMediaAssetDto(
   asset: MediaAssetWithCampaigns,
-  /** Resolved from created_by_clerk_user_id by the list route, the only reader
-   * that shows it — same split as toCampaignDto's createdByName. */
-  createdByName?: string | null,
+  /** Both resolved per request by the list route, the only reader that shows
+   * them — same split as toCampaignDto's createdByName. */
+  viewer?: { createdByName: string | null; starred: boolean },
 ): MediaAssetDto {
   // A file can sit in several slots of one campaign; people count campaigns.
   const campaigns = [
@@ -145,7 +154,9 @@ export function toMediaAssetDto(
     original_filename: asset.original_filename,
     status: asset.status,
     source: asset.source,
-    created_by_name: createdByName ?? null,
+    folder_id: asset.folder_id,
+    starred: viewer?.starred ?? false,
+    created_by_name: viewer?.createdByName ?? null,
     created_at: asset.created_at.toISOString(),
     campaigns,
   }

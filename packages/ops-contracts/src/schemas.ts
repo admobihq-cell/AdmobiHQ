@@ -242,8 +242,20 @@ export const campaignCreativeAttachSchema = z.object({
 
 export const MEDIA_ASSET_NAME_MAX = 120
 
-export const mediaAssetRenameSchema = z.object({
-  name: z.string().trim().min(1).max(MEDIA_ASSET_NAME_MAX),
+/** Rename a file, move it (`folderId` null takes it out of any folder), or both. */
+export const mediaAssetUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(MEDIA_ASSET_NAME_MAX).optional(),
+    folderId: z.number().int().positive().nullable().optional(),
+  })
+  .refine((value) => value.name !== undefined || value.folderId !== undefined, {
+    message: "Nothing to update",
+  })
+
+export const MEDIA_FOLDER_NAME_MAX = 60
+
+export const mediaFolderNameSchema = z.object({
+  name: z.string().trim().min(1).max(MEDIA_FOLDER_NAME_MAX),
 })
 
 export const paginationSchema = z.object({

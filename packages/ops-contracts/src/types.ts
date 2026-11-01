@@ -176,6 +176,11 @@ export type MediaAssetDto = {
   /** "ready" | "invalid" — about the file itself, not about any one panel. */
   status: string
   source: string
+  /** Null when the file sits in no folder. */
+  folder_id: number | null
+  /** Whether the person asking starred it. Set by the list route; false
+   * elsewhere. */
+  starred: boolean
   /** Whoever uploaded it, for the library's "by" line. Set by the list route;
    * null elsewhere, or when their account can't be read. */
   created_by_name: string | null
@@ -183,6 +188,16 @@ export type MediaAssetDto = {
   /** Campaigns this file is attached to. Drives "used in N campaigns" and
    * explains why a delete was refused. */
   campaigns: { id: number; name: string }[]
+}
+
+/** A folder in an org's Media Manager, with what's in it. */
+export type MediaFolderDto = {
+  id: number
+  name: string
+  file_count: number
+  size_bytes: number
+  /** The later of the folder's own change and its newest file's. */
+  updated_at: string
 }
 
 export type CampaignDto = {
