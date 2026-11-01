@@ -27,6 +27,8 @@ export const config = [
     },
   },
   {
-    ignores: ["dist/**", ".next/**", "**/.turbo/**", "**/coverage/**"],
+    // public/ holds static and generated files. Linting the 4MB app-demo bundle
+    // in apps/web exhausts CI's heap.
+    ignores: ["dist/**", ".next/**", "**/.turbo/**", "**/coverage/**", "**/public/**"],
   },
 ]
