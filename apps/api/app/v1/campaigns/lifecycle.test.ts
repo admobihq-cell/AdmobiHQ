@@ -32,6 +32,15 @@ function resolveDatabaseUrl(): string | undefined {
 
 const databaseUrl = resolveDatabaseUrl()
 
+/** Relative to the run date, so the flight stays ahead of it and the phase
+ * assertions can't expire. */
+function daysFromNow(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10)
+}
+
+const FLIGHT_START = daysFromNow(30)
+const FLIGHT_END = daysFromNow(59)
+
 const CUSTOMER = `lifecycle-adv-${Date.now()}`
 const OTHER_CUSTOMER = `lifecycle-other-${Date.now()}`
 let actingUserId = CUSTOMER
@@ -156,8 +165,8 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
         {
           market: "Kilimani",
           budget_kes: 120000,
-          starts_on: "2026-11-01",
-          ends_on: "2026-11-30",
+          starts_on: FLIGHT_START,
+          ends_on: FLIGHT_END,
         },
         "PATCH",
       ),
@@ -166,8 +175,8 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.budget_kes).toBe("120000")
-    expect(body.starts_on).toBe("2026-11-01")
-    expect(body.ends_on).toBe("2026-11-30")
+    expect(body.starts_on).toBe(FLIGHT_START)
+    expect(body.ends_on).toBe(FLIGHT_END)
   }, 30_000)
 
   it("still refuses to submit with no creative", async () => {
@@ -283,7 +292,6 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     // Ops reviews on behalf of a company, so the decision response has to carry
     // it — the detail view re-renders from exactly this payload.
     expect(body.company_name).toBe("Lifecycle Test Org")
-    // Window is Nov 2026, which is ahead of this suite's run date.
     expect(body.flight_phase).toBe("scheduled")
   }, 60_000)
 
