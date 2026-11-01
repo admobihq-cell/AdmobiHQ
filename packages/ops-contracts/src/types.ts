@@ -176,8 +176,8 @@ export type MediaAssetDto = {
   /** "ready" | "invalid" — about the file itself, not about any one panel. */
   status: string
   source: string
-  /** Whoever uploaded it, for the library's "by" line. Null once they've left
-   * the org or their account can't be read. */
+  /** Whoever uploaded it, for the library's "by" line. Set by the list route;
+   * null elsewhere, or when their account can't be read. */
   created_by_name: string | null
   created_at: string
   /** Campaigns this file is attached to. Drives "used in N campaigns" and

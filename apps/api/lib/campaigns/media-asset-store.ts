@@ -1,6 +1,11 @@
+import type { MediaAsset } from "@prisma/client"
 import type { NextResponse } from "next/server"
 
-import { CREATIVE_FORMATS_LABEL, MEDIA_ASSET_NAME_MAX } from "@workspace/ops-contracts"
+import {
+  CREATIVE_FORMATS_LABEL,
+  MEDIA_ASSET_NAME_MAX,
+  type MediaAssetDto,
+} from "@workspace/ops-contracts"
 
 import { jsonError } from "@/lib/api-utils"
 import {
@@ -10,6 +15,7 @@ import {
   uploadCampaignCreative,
 } from "@/lib/campaigns/campaign-creative-storage"
 import type { PrivateResourceType, UploadedAsset } from "@/lib/storage/private-media"
+import { prisma } from "@/lib/prisma"
 
 /**
  * Media Library storage rules, shared by the two ways a file gets in: the
@@ -87,5 +93,60 @@ export function mediaAssetCreateData(input: {
     duration_seconds: uploaded.durationSeconds,
     original_filename: input.file.name || null,
     created_by_clerk_user_id: input.userId,
+  }
+}
+
+/** Which campaigns a file is on — for "used in N campaigns" and the delete guard. */
+export const MEDIA_ASSET_INCLUDE = {
+  attachments: { select: { campaign: { select: { id: true, name: true } } } },
+} as const
+
+export type MediaAssetWithCampaigns = MediaAsset & {
+  attachments: { campaign: { id: number; name: string } }[]
+}
+
+/**
+ * Returns the file only if this org owns it, and null otherwise — for both
+ * "no such file" and "another org's file". Callers turn null into a 404, never
+ * a 403, so nobody can enumerate the table. Same rule as getOwnedCampaign.
+ */
+export async function getOwnedMediaAsset(
+  orgId: number,
+  id: number,
+): Promise<MediaAssetWithCampaigns | null> {
+  const asset = await prisma.mediaAsset.findUnique({
+    where: { id },
+    include: MEDIA_ASSET_INCLUDE,
+  })
+  if (!asset || asset.org_id !== orgId) return null
+  return asset
+}
+
+export function toMediaAssetDto(
+  asset: MediaAssetWithCampaigns,
+  /** Resolved from created_by_clerk_user_id by the list route, the only reader
+   * that shows it — same split as toCampaignDto's createdByName. */
+  createdByName?: string | null,
+): MediaAssetDto {
+  // A file can sit in several slots of one campaign; people count campaigns.
+  const campaigns = [
+    ...new Map(asset.attachments.map((a) => [a.campaign.id, a.campaign])).values(),
+  ]
+  return {
+    id: asset.id,
+    name: asset.name,
+    resource_type: asset.resource_type,
+    content_type: asset.content_type,
+    size_bytes: asset.size_bytes,
+    width: asset.width,
+    height: asset.height,
+    // Prisma Decimal is not JSON-safe, so it crosses the wire as a string.
+    duration_seconds: asset.duration_seconds?.toString() ?? null,
+    original_filename: asset.original_filename,
+    status: asset.status,
+    source: asset.source,
+    created_by_name: createdByName ?? null,
+    created_at: asset.created_at.toISOString(),
+    campaigns,
   }
 }

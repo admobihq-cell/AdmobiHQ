@@ -25,7 +25,13 @@ vi.mock("@/lib/api-utils", async () => {
 })
 
 vi.mock("@/lib/customer/customer-clerk", () => ({
-  customerClerkClient: {},
+  customerClerkClient: {
+    users: {
+      getUserList: async () => ({
+        data: [{ id: USER, firstName: "Amina", username: null, emailAddresses: [] }],
+      }),
+    },
+  },
   getCustomerEmail: async () => "advertiser@example.com",
   getCustomerName: async () => "Amina",
   getCustomerCompanyName: async () => "Acme Media",
@@ -94,6 +100,22 @@ function createCampaign(format = "taxi_top", org = orgId, name = `Media test ${f
 async function uploadInline(campaignId: number, file = png()) {
   const { POST } = await import("../campaigns/[id]/creatives/route")
   return POST(fileRequest(file), idParams(campaignId))
+}
+
+async function uploadToLibrary(file = png()) {
+  const { POST } = await import("./route")
+  return POST(fileRequest(file))
+}
+
+async function listItems(query: string) {
+  const { GET } = await import("./route")
+  const res = await GET(new Request(`http://localhost/v1/customer/media${query}`))
+  expect(res.status).toBe(200)
+  return (await res.json()).items as { id: number; name: string; created_by_name: string | null }[]
+}
+
+async function listIds(query: string): Promise<number[]> {
+  return (await listItems(query)).map((item) => item.id)
 }
 
 describe.skipIf(!databaseUrl)("media library", () => {
@@ -182,6 +204,159 @@ describe.skipIf(!databaseUrl)("media library", () => {
         await prisma.mediaAsset.findUnique({ where: { id: creative.media_asset_id } }),
       ).not.toBeNull()
       expect(destroyPrivateAsset).not.toHaveBeenCalled()
+    }, 30_000)
+  })
+
+  describe("library routes", () => {
+    it("uploads straight into the library, whatever the file's shape", async () => {
+      // 4:3 fits no panel, and that is fine here: fit is judged on attach.
+      nextDims = { width: 400, height: 300 }
+      const res = await uploadToLibrary(png("moodboard.png"))
+      expect(res.status).toBe(201)
+      const body = await res.json()
+      expect(body).toMatchObject({ name: "moodboard.png", status: "ready", campaigns: [] })
+      expect(body.cloudinary_public_id).toBeUndefined()
+    }, 30_000)
+
+    it("refuses a format the panel can't play, an empty file, and a non-form body", async () => {
+      const webp = new File([new Uint8Array(16)], "x.webp", { type: "image/webp" })
+      expect((await uploadToLibrary(webp)).status).toBe(400)
+      expect((await uploadToLibrary(png("empty.png", 0))).status).toBe(400)
+
+      const { POST } = await import("./route")
+      const res = await POST(json({ file: "nope" }))
+      expect(res.status).toBe(400)
+      expect((await res.json()).error).toBe("Missing file")
+    }, 30_000)
+
+    it("answers 502 and stores nothing when the upload itself fails", async () => {
+      const before = await prisma.mediaAsset.count({ where: { org_id: orgId } })
+      uploadFails = true
+      expect((await uploadToLibrary()).status).toBe(502)
+      expect(await prisma.mediaAsset.count({ where: { org_id: orgId } })).toBe(before)
+    }, 30_000)
+
+    it("lists with search, type and usage filters", async () => {
+      const alpha = await (await uploadToLibrary(png("alpha-hero.png"))).json()
+      const beta = await prisma.mediaAsset.create({
+        data: {
+          org_id: orgId,
+          name: "beta-loop.mp4",
+          resource_type: "video",
+          cloudinary_public_id: `media-test/${orgId}/beta-${Date.now()}`,
+          content_type: "video/mp4",
+          size_bytes: 5000,
+          width: 960,
+          height: 320,
+          created_by_clerk_user_id: USER,
+        },
+      })
+      const campaign = await createCampaign()
+      await prisma.campaignCreative.create({
+        data: { campaign_id: campaign.id, media_asset_id: alpha.id },
+      })
+
+      const bySearch = await listIds("?search=ALPHA-he")
+      expect(bySearch).toContain(alpha.id)
+      expect(bySearch).not.toContain(beta.id)
+
+      const videos = await listIds("?type=video")
+      expect(videos).toContain(beta.id)
+      expect(videos).not.toContain(alpha.id)
+
+      const used = await listIds("?usage=used")
+      expect(used).toContain(alpha.id)
+      expect(used).not.toContain(beta.id)
+
+      const unused = await listIds("?usage=unused")
+      expect(unused).toContain(beta.id)
+      expect(unused).not.toContain(alpha.id)
+    }, 30_000)
+
+    it("sorts newest first by default, or by name or file size", async () => {
+      const sorted = await prisma.advertiserOrg.create({ data: { name: "Media Sort Org" } })
+      extraOrgIds.push(sorted.id)
+      actingOrgId = sorted.id
+
+      const big = await (await uploadToLibrary(png("zebra.png", 900))).json()
+      const small = await (await uploadToLibrary(png("Apple.png", 10))).json()
+      const mid = await (await uploadToLibrary(png("mango.png", 300))).json()
+
+      expect(await listIds("")).toEqual([mid.id, small.id, big.id])
+      expect(await listIds("?sort=name")).toEqual([small.id, mid.id, big.id])
+      expect(await listIds("?sort=size")).toEqual([big.id, mid.id, small.id])
+      expect(await listIds("?sort=nonsense")).toEqual([mid.id, small.id, big.id])
+    }, 30_000)
+
+    it("names who uploaded each file", async () => {
+      const asset = await (await uploadToLibrary(png("by-whom.png"))).json()
+      const items = await listItems("?search=by-whom")
+      expect(items.find((item) => item.id === asset.id)?.created_by_name).toBe("Amina")
+    }, 30_000)
+
+    it("hides another org's file behind a 404 on every route", async () => {
+      const asset = await (await uploadToLibrary(png("private.png"))).json()
+      actingOrgId = otherOrgId
+
+      const { PATCH, DELETE } = await import("./[id]/route")
+      expect((await PATCH(json({ name: "Hijacked" }, "PATCH"), idParams(asset.id))).status).toBe(404)
+      expect((await DELETE(bare("DELETE"), idParams(asset.id))).status).toBe(404)
+
+      const { GET } = await import("./[id]/file/route")
+      expect((await GET(bare("GET"), idParams(asset.id))).status).toBe(404)
+
+      expect(await listIds("")).not.toContain(asset.id)
+      expect((await prisma.mediaAsset.findUnique({ where: { id: asset.id } }))?.name).toBe(
+        "private.png",
+      )
+    }, 30_000)
+
+    it("renames, trimming the name and refusing a blank one", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const { PATCH } = await import("./[id]/route")
+
+      const res = await PATCH(json({ name: "  Launch hero  " }, "PATCH"), idParams(asset.id))
+      expect(res.status).toBe(200)
+      expect((await res.json()).name).toBe("Launch hero")
+
+      expect((await PATCH(json({ name: "   " }, "PATCH"), idParams(asset.id))).status).toBe(400)
+    }, 30_000)
+
+    it("deletes an unused file from the library and from storage", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const row = await prisma.mediaAsset.findUnique({ where: { id: asset.id } })
+
+      const { DELETE } = await import("./[id]/route")
+      expect((await DELETE(bare("DELETE"), idParams(asset.id))).status).toBe(200)
+
+      expect(await prisma.mediaAsset.findUnique({ where: { id: asset.id } })).toBeNull()
+      expect(destroyPrivateAsset).toHaveBeenCalledWith(row!.cloudinary_public_id, "image")
+    }, 30_000)
+
+    it("refuses to delete a file a campaign still uses, and names the campaign", async () => {
+      const campaign = await createCampaign("taxi_top", orgId, "Kilimani Launch")
+      const creative = await (await uploadInline(campaign.id)).json()
+
+      const { DELETE } = await import("./[id]/route")
+      const res = await DELETE(bare("DELETE"), idParams(creative.media_asset_id))
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("Kilimani Launch")
+      expect(body.issues.campaigns).toEqual([{ id: campaign.id, name: "Kilimani Launch" }])
+
+      expect(
+        await prisma.mediaAsset.findUnique({ where: { id: creative.media_asset_id } }),
+      ).not.toBeNull()
+      expect(destroyPrivateAsset).not.toHaveBeenCalled()
+    }, 30_000)
+
+    it("streams the file through the proxy", async () => {
+      const asset = await (await uploadToLibrary()).json()
+      const { GET } = await import("./[id]/file/route")
+      const res = await GET(bare("GET"), idParams(asset.id))
+      expect(res.status).toBe(200)
+      expect(res.headers.get("Content-Type")).toBe("image/png")
+      expect(await res.text()).toBe("bytes")
     }, 30_000)
   })
 })
