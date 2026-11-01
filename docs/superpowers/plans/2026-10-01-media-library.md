@@ -3578,3 +3578,22 @@ git add apps/web/prisma/migrations apps/web/package.json apps/web/prisma/README.
 git rm apps/api/scripts/media-library-backfill.test.ts
 git commit -m "feat(db): drop legacy creative file columns (media library contract step)"
 ```
+
+---
+
+## Addendum — 2026-11-01 (ideas from the studio-admin file manager)
+
+Nothing above has been built yet, so these apply before execution. They come from the [template's file manager](https://github.com/arhamkhnz/next-shadcn-admin-dashboard/tree/main/src/app/(main)/dashboard/file-manager) (read from source; its live demo was down).
+
+**Changes to Task 7 (customer-web Media page):**
+
+- **Grid and list views.** Add a toggle in the page header, with the choice held in the URL (`/media?view=list`), defaulting to grid. The list view is a table: preview thumbnail, name, type, dimensions or duration, size (`formatBytes`), "used in N campaigns", uploaded date. Use the same data and the same actions as the grid. The in-wizard picker from Task 8 stays grid-only.
+- **Toolbar above the files.** Search and the All / Images / Videos / Used / Unused chips sit in one row with the view toggle, stacking at phone width. Upload stays the primary header action.
+- **Per-file actions menu.** Rename and Delete sit in a `DropdownMenu` on each card and table row, rather than as separate buttons, so the delete 409 message behaves the same in both views.
+
+**Not taken:**
+
+- **Folders.** They are the template's main feature but remain out of scope (§8 of the spec). The used/unused filters cover the early need. Revisit once an org has enough files to struggle.
+- **Folder size tiles and storage totals.** No folders, and no storage quota to report.
+
+**Migration ordering.** The [dashboards plan](2026-11-01-dashboards-and-charts.md) adds `20261101090000_dashboard_ledger`. If it ships first, rename this plan's `20261001000000_media_library` to the date it is actually written, so it sorts last and `prisma migrate dev` doesn't flag history drift. Update Task 2 and Task 10 Step 2 to match.
