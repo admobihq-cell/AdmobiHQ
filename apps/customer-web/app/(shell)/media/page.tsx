@@ -4,7 +4,7 @@ import { MediaLibraryView } from "@/components/media/media-library-view"
 
 import MediaLoading from "./loading"
 
-export const metadata = { title: "Media" }
+export const metadata = { title: "Media Manager" }
 
 export default function MediaPage() {
   return (

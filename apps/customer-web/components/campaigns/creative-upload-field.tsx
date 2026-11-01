@@ -244,7 +244,7 @@ export function CreativeUploadField({
             onClick={() => setLibraryOpen(true)}
           >
             <FolderOpen data-icon="inline-start" />
-            Browse media library
+            Browse Media Manager
           </Button>
         ) : null}
       </div>
@@ -252,10 +252,10 @@ export function CreativeUploadField({
       <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Media library</DialogTitle>
+            <DialogTitle>Media Manager</DialogTitle>
             <DialogDescription>
-              Pick a file you&apos;ve already uploaded. It stays in your library and can be used on
-              other campaigns too.
+              Pick a file you&apos;ve already uploaded. It stays in Media Manager and can be used
+              on other campaigns too.
             </DialogDescription>
           </DialogHeader>
           <MediaGrid

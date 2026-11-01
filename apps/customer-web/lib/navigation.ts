@@ -39,7 +39,7 @@ export const appNavItems: AppNavItem[] = [
   },
   {
     href: "/media",
-    label: "Media",
+    label: "Media Manager",
     icon: Images,
     description: "Upload creative once and reuse it across campaigns.",
   },

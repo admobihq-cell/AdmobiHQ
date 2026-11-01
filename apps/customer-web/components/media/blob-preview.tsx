@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query"
 import { FileVideo } from "lucide-react"
 
 import { ImageLightbox } from "@workspace/ui/components/image-lightbox"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
+import { LedPanel } from "@/components/media/media-skeletons"
 
 /**
  * Preview of a private file fetched through an authenticated proxy. Used by a
@@ -94,5 +94,5 @@ export function BlobPreview({
     )
   }
 
-  return <Skeleton className={box} />
+  return <LedPanel className={box} />
 }
