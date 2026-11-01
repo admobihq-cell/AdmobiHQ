@@ -29,7 +29,8 @@ Tables (see Prisma schema):
 | `audit_events` | `AuditEvent` | Cross-app activity trail (who did what, when, email) |
 | `support_identities` | `SupportIdentity` | Email-level identity token gating `GET /v1/public/support` — see [API.md](../api/API.md#support-case-identity-token) |
 | `campaigns` | `Campaign` | Advertiser campaign briefs + review state (`/v1/customer/campaigns`, `/v1/campaigns`) |
-| `campaign_creatives` | `CampaignCreative` | Private Cloudinary creatives (width/height/duration/slot captured at upload) |
+| `media_assets` | `MediaAsset` | Org-owned private Cloudinary files (width/height/duration captured at upload) — `/v1/customer/media` |
+| `campaign_creatives` | `CampaignCreative` | Join row attaching a media asset to a campaign, with its panel `slot` |
 | `customer_notifications` | `CustomerNotification` | Per-advertiser campaign lifecycle inbox rows |
 
 Apply campaigns tables with `npm run db:campaigns -w web` (prod: `npm run db:campaigns:prod -w web`) — additive SQL only; **never** `db push` / `migrate` on the shared Neon DB.
@@ -52,7 +53,7 @@ Aspect ratio is a hard reject; pixel dimensions currently warn only (panel px re
 
 Approved campaigns will eventually dispatch to supplier screen APIs. This does not block shipping review, but keep these decisions:
 
-1. Creative metadata (mime, bytes, width, height, duration, slot) is captured eagerly at upload — never backfill for a supplier.
+1. Creative metadata (mime, bytes, width, height, duration) is captured eagerly at upload on `MediaAsset`, and `slot` on the attachment — never backfill for a supplier.
 2. Private (`authenticated`) Cloudinary storage does **not** block supplier delivery: we hold `public_id`, so a signed URL or token-scoped proxy can be minted at dispatch time with **no re-upload**.
 3. Dispatch state is a separate axis from review status. When the first supplier contract lands, it becomes its own additive table (`campaign_placements`: campaign, supplier, external ref, screen ids, accepted/rejected, playout counts) — do **not** widen `campaigns.status` or add speculative `dispatched_at` columns with no consumer.
 

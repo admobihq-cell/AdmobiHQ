@@ -3597,3 +3597,11 @@ Nothing above has been built yet, so these apply before execution. They come fro
 - **Folder size tiles and storage totals.** No folders, and no storage quota to report.
 
 **Migration ordering.** The [dashboards plan](2026-11-01-dashboards-and-charts.md) adds `20261101090000_dashboard_ledger`. If it ships first, rename this plan's `20261001000000_media_library` to the date it is actually written, so it sorts last and `prisma migrate dev` doesn't flag history drift. Update Task 2 and Task 10 Step 2 to match.
+
+## Addendum — 2026-11-01 (execution)
+
+Executed on `feat/media-library`. Tasks 1–9 are done; Tasks 10 and 11 remain human-run.
+
+- **Paths.** The API's `lib/` was reorganised after this plan was written: `lib/campaigns/`, `lib/storage/`, `lib/customer/`, `lib/advertiser/`. The new store lives at `lib/campaigns/media-asset-store.ts`.
+- **Task 4.** New routes also got notes in `lib/route-catalog.ts`, which its test requires. The list route gained `sort` and fills `created_by_name`.
+- **Task 7.** The UI follows the file manager screenshots over the addendum above where they differ: a Filter & sort menu instead of chips, type icons rather than thumbnails in the list view, and no eyebrow. `BlobPreview` creates its object URL in the effect, because the extracted code reused a revoked URL when the Blob was already cached at mount.

@@ -47,6 +47,7 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
 | `/v1/customer/notifications`, `/v1/customer/notifications/read`, `/v1/customer/notifications/[id]` | Customer Clerk JWT | Campaign lifecycle inbox (merged client-side with announcements) |
 | `/v1/customer/campaigns` (+ `[id]`, `submit`, `creatives`, creative `file`) | Customer Clerk JWT | Advertiser campaign CRUD, submit-for-review, creative upload/proxy |
+| `/v1/customer/media` (+ `[id]`, `[id]/file`) | Customer Clerk JWT + `media:read` / `media:write` | Org Media Library — list, upload, rename, delete, file proxy |
 | `/v1/customer/org` (+ `members`, `roles`, `invitations`, `activity`, …) | Customer Clerk JWT | Advertiser org, team, roles, invites, activity |
 | `/v1/campaigns` (+ `[id]`, `review`, creative `file`) | Ops Clerk JWT + `campaigns` permission | Ops campaign list, detail, review decisions, creative proxy |
 | `/v1/advertiser-orgs` (+ `[id]`) | Ops Clerk JWT + `campaigns` permission | Ops advertiser org directory + detail (members, campaigns, activity) |
@@ -85,8 +86,8 @@ Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/
 | `GET` / `POST` | `/v1/customer/campaigns` | Customer | List own campaigns / create draft |
 | `GET` / `PATCH` / `DELETE` | `/v1/customer/campaigns/[id]` | Customer | Detail / edit while editable / delete draft |
 | `POST` | `/v1/customer/campaigns/[id]/submit` | Customer | Submit for review (fires email + inbox + push + ops alert) |
-| `POST` | `/v1/customer/campaigns/[id]/creatives` | Customer | Multipart upload — **PNG/JPG/GIF/MP4 only**, ≤50 MB |
-| `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Remove creative while editable |
+| `POST` | `/v1/customer/campaigns/[id]/creatives` | Customer | Add creative. **Multipart** `file` uploads a new one (**PNG/JPG/GIF/MP4 only**, ≤50 MB) and also files it in the Media Library; **JSON** `{ mediaAssetId, slot? }` attaches a file already in the library. Either way the file must fit the campaign's panel — `400` with `issues.specs` otherwise; `409` if that file is already attached |
+| `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Detach the creative while editable. The file stays in the Media Library |
 | `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
 | `GET` | `/v1/customer/campaigns/statement` | Customer | Budget statement PDF — every own campaign, its budget, an active subtotal and an all-campaigns total |
 | `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated |
@@ -97,6 +98,18 @@ Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
 takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
+
+### Media Library (advertiser)
+
+Files are owned by the advertiser org, not by a campaign: one file can be attached to many campaigns. Every route checks the file's org and answers `404` (never `403`) for another org's file. Bytes are private Cloudinary assets streamed only through the `…/file` proxy.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| `GET` | `/v1/customer/media` | Customer `media:read` | Paginated (`page`, `pageSize` default 24). `search` matches the name; `type=image\|video`; `usage=used\|unused`; `sort=name\|size` (default newest first). Each item lists the `campaigns` using it and `created_by_name` |
+| `POST` | `/v1/customer/media` | Customer `media:write` | Multipart `file` — PNG/JPG/GIF/MP4, ≤50 MB. No panel-shape check here; fit is judged when the file is attached. `502` if storage fails |
+| `PATCH` | `/v1/customer/media/[id]` | Customer `media:write` | Rename — `{ name }`, 1–120 characters |
+| `DELETE` | `/v1/customer/media/[id]` | Customer `media:write` | `409` naming the campaigns (`issues.campaigns`) while any campaign uses the file |
+| `GET` | `/v1/customer/media/[id]/file` | Customer `media:read` | Stream the file's bytes |
 
 ### Download filenames
 
