@@ -446,4 +446,52 @@ describe.skipIf(!databaseUrl)("media library", () => {
       expect(res.headers.get("Content-Type")).toBe("image/png")
     }, 30_000)
   })
+
+  describe("org deletion", () => {
+    it("removes unused files and keeps the ones a campaign still uses", async () => {
+      const doomed = await prisma.advertiserOrg.create({ data: { name: "Doomed Org" } })
+      extraOrgIds.push(doomed.id)
+      actingOrgId = doomed.id
+
+      const campaign = await createCampaign("taxi_top", doomed.id)
+      const used = await (await uploadInline(campaign.id, png("used.png"))).json()
+      const unused = await (await uploadToLibrary(png("unused.png"))).json()
+      destroyPrivateAsset.mockClear()
+
+      const { detachAndDeleteOrg, getOrgDetachmentImpact } = await import(
+        "@/lib/advertiser/advertiser-org"
+      )
+      expect((await getOrgDetachmentImpact(doomed.id)).mediaAssetCount).toBe(2)
+
+      await detachAndDeleteOrg(doomed.id)
+
+      expect(await prisma.advertiserOrg.findUnique({ where: { id: doomed.id } })).toBeNull()
+      expect(await prisma.mediaAsset.findUnique({ where: { id: unused.id } })).toBeNull()
+      expect(destroyPrivateAsset).toHaveBeenCalledTimes(1)
+
+      const kept = await prisma.mediaAsset.findUnique({ where: { id: used.media_asset_id } })
+      expect(kept).not.toBeNull()
+      expect(kept?.org_id).toBeNull()
+
+      // Ops keeps the detached campaign, and can still open its creative.
+      const { GET } = await import("../../campaigns/[id]/creatives/[creativeId]/file/route")
+      const res = await GET(bare("GET"), creativeParams(campaign.id, used.id))
+      expect(res.status).toBe(200)
+    }, 60_000)
+
+    it("does not treat an org that holds library files as untouched", async () => {
+      const solo = await prisma.advertiserOrg.create({ data: { name: "My Organization" } })
+      extraOrgIds.push(solo.id)
+      await prisma.advertiserMember.create({
+        data: { org_id: solo.id, clerk_user_id: `${USER}-solo`, is_owner: true },
+      })
+
+      const { isUntouchedSoloOrg } = await import("@/lib/advertiser/advertiser-org")
+      expect(await isUntouchedSoloOrg(solo.id, true)).toBe(true)
+
+      actingOrgId = solo.id
+      await uploadToLibrary(png("only-thing-here.png"))
+      expect(await isUntouchedSoloOrg(solo.id, true)).toBe(false)
+    }, 30_000)
+  })
 })
