@@ -100,7 +100,8 @@ to a new `media_assets` table. It ships in two migrations so the API already
 on prod never meets a schema it can't use:
 
 1. `db:migrate:deploy` — applies `20261001000000_media_library` (additive:
-   new table, nullable `campaign_creatives.media_asset_id`, permission grant).
+   new table, nullable `campaign_creatives.media_asset_id`, permission grant)
+   and `20261102000000_media_folders_and_stars` (additive).
 2. `npm run db:media-library-backfill -w web` — links every existing creative
    to a new asset. Idempotent.
 3. Deploy the app code.

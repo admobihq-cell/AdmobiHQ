@@ -47,7 +47,7 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
 | `/v1/customer/notifications`, `/v1/customer/notifications/read`, `/v1/customer/notifications/[id]` | Customer Clerk JWT | Campaign lifecycle inbox (merged client-side with announcements) |
 | `/v1/customer/campaigns` (+ `[id]`, `submit`, `creatives`, creative `file`) | Customer Clerk JWT | Advertiser campaign CRUD, submit-for-review, creative upload/proxy |
-| `/v1/customer/media` (+ `[id]`, `[id]/file`) | Customer Clerk JWT + `media:read` / `media:write` | Org Media Library — list, upload, rename, delete, file proxy |
+| `/v1/customer/media` (+ `[id]`, `[id]/file`, `[id]/star`, `folders`, `folders/[id]`) | Customer Clerk JWT + `media:read` / `media:write` | Org Media Manager — list, upload, rename, move, delete, star, folders, file proxy |
 | `/v1/customer/org` (+ `members`, `roles`, `invitations`, `activity`, …) | Customer Clerk JWT | Advertiser org, team, roles, invites, activity |
 | `/v1/campaigns` (+ `[id]`, `review`, creative `file`) | Ops Clerk JWT + `campaigns` permission | Ops campaign list, detail, review decisions, creative proxy |
 | `/v1/advertiser-orgs` (+ `[id]`) | Ops Clerk JWT + `campaigns` permission | Ops advertiser org directory + detail (members, campaigns, activity) |
@@ -99,17 +99,20 @@ takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
 
-### Media Library (advertiser)
+### Media Manager (advertiser)
 
-Files are owned by the advertiser org, not by a campaign: one file can be attached to many campaigns. Every route checks the file's org and answers `404` (never `403`) for another org's file. Bytes are private Cloudinary assets streamed only through the `…/file` proxy.
+The Media Library's product name. Files are owned by the advertiser org, not by a campaign: one file can be attached to many campaigns. Every route checks the file's org and answers `404` (never `403`) for another org's file. Bytes are private Cloudinary assets streamed only through the `…/file` proxy.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| `GET` | `/v1/customer/media` | Customer `media:read` | Paginated (`page`, `pageSize` default 24). `search` matches the name; `type=image\|video`; `usage=used\|unused`; `sort=name\|size` (default newest first). Each item lists the `campaigns` using it and `created_by_name` |
-| `POST` | `/v1/customer/media` | Customer `media:write` | Multipart `file` — PNG/JPG/GIF/MP4, ≤50 MB. No panel-shape check here; fit is judged when the file is attached. `502` if storage fails |
-| `PATCH` | `/v1/customer/media/[id]` | Customer `media:write` | Rename — `{ name }`, 1–120 characters |
+| `GET` | `/v1/customer/media` | Customer `media:read` | Paginated (`page`, `pageSize` default 24). `search` matches the name; `type=image\|video`; `usage=used\|unused`; `sort=name\|size` (default newest first); `folder=<id>`; `starred=true` (the caller's own stars). Each item lists the `campaigns` using it, `created_by_name`, `folder_id` and `starred` |
+| `POST` | `/v1/customer/media` | Customer `media:write` | Multipart `file` — PNG/JPG/GIF/MP4, ≤50 MB, optional `folderId` (`404` before anything is stored if it isn't this org's). No panel-shape check here; fit is judged when the file is attached. `502` if storage fails |
+| `PATCH` | `/v1/customer/media/[id]` | Customer `media:write` | Rename and/or move — `{ name?, folderId? }`. `name` is 1–120 characters; `folderId: null` takes the file out of its folder |
 | `DELETE` | `/v1/customer/media/[id]` | Customer `media:write` | `409` naming the campaigns (`issues.campaigns`) while any campaign uses the file |
 | `GET` | `/v1/customer/media/[id]/file` | Customer `media:read` | Stream the file's bytes |
+| `PUT` / `DELETE` | `/v1/customer/media/[id]/star` | Customer `media:read` | Star or unstar for the caller only. Repeating either is harmless |
+| `GET` / `POST` | `/v1/customer/media/folders` | Customer `media:read` / `media:write` | List folders with `file_count`, `size_bytes`, `updated_at` / create one — `{ name }`, 1–60 characters, `409` if taken |
+| `PATCH` / `DELETE` | `/v1/customer/media/folders/[id]` | Customer `media:write` | Rename (`409` if taken) / delete. Deleting keeps the files, out of any folder |
 
 ### Download filenames
 

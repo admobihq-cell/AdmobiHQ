@@ -104,6 +104,8 @@ The advertiser product surface — briefs, review, and creative assets.
 |---|---|---|
 | `Campaign` | `campaigns` | One advertiser campaign brief. `status` holds **only** the review lifecycle (`draft → submitted → approved/rejected/changes_requested/cancelled`) — the flight phase (scheduled/live/completed) is derived from `starts_on`/`ends_on`, never stored |
 | `MediaAsset` | `media_assets` | A file in an advertiser org's Media Library. Org-owned (`org_id`, null once the org is deleted), reusable across campaigns. Only PNG/JPG/GIF/MP4 accepted — the supplier LED player can't decode anything else. `width`/`height`/`duration_seconds` are captured eagerly at upload, never backfilled |
+| `MediaFolder` | `media_folders` | An org-shared folder in the Media Manager. One level, names unique per org. Deleting one sets its files' `folder_id` to null |
+| `MediaAssetStar` | `media_asset_stars` | One person's star on a file, keyed by asset and Clerk user |
 | `CampaignCreative` | `campaign_creatives` | Attaches a `MediaAsset` to a campaign in a `slot`. Deleting a campaign removes these rows and keeps the files; a file can't be deleted while a row here points at it |
 | `CustomerNotification` | `customer_notifications` | Per-advertiser inbox row (campaign submitted/reviewed), field-for-field the same shape as `DriverNotification` plus `href` for deep-linking |
 

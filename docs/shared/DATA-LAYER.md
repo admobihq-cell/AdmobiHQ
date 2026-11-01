@@ -30,6 +30,8 @@ Tables (see Prisma schema):
 | `support_identities` | `SupportIdentity` | Email-level identity token gating `GET /v1/public/support` — see [API.md](../api/API.md#support-case-identity-token) |
 | `campaigns` | `Campaign` | Advertiser campaign briefs + review state (`/v1/customer/campaigns`, `/v1/campaigns`) |
 | `media_assets` | `MediaAsset` | Org-owned private Cloudinary files (width/height/duration captured at upload) — `/v1/customer/media` |
+| `media_folders` | `MediaFolder` | Org-shared, one-level folders — `/v1/customer/media/folders` |
+| `media_asset_stars` | `MediaAssetStar` | Per-person stars — `/v1/customer/media/[id]/star` |
 | `campaign_creatives` | `CampaignCreative` | Join row attaching a media asset to a campaign, with its panel `slot` |
 | `customer_notifications` | `CustomerNotification` | Per-advertiser campaign lifecycle inbox rows |
 

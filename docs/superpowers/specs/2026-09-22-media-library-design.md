@@ -259,3 +259,10 @@ The Media page was built to the studio-admin file manager screenshots:
 - **Not built, because they need schema §8 rules out:** folders (the
   reference's New folder button and folder tiles) and starred files. Both are
   additive if wanted later.
+
+## Addendum — 2026-11-02 (folders, stars, Media Manager)
+
+This supersedes the "Not built" line in the addendum above and §8's folder
+exclusion: the product name is now **Media Manager**, and folders and stars
+are built. Folders are org-shared and one level deep; a file sits in at most
+one, and deleting a folder keeps its files. Stars are per person.

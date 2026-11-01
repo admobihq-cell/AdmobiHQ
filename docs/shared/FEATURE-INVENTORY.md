@@ -96,7 +96,7 @@ Per the team's own docs, this app is **UI-only by design** for business CRUD; ev
 | Route | Status |
 |---|---|
 | `/`, `/map` | **Real** — overview with live campaign data; Map uses `@workspace/geo` |
-| `/campaigns`, `/campaigns/[id]`, `/campaigns/new` | **Real** — list/detail + full-page create/edit wizard against `/v1/customer/campaigns`; creative upload (PNG/JPG/GIF/MP4) or pick from the org Media Library (`/media`), via Cloudinary private proxy; budget statement + proof-of-play PDFs |
+| `/campaigns`, `/campaigns/[id]`, `/campaigns/new` | **Real** — list/detail + full-page create/edit wizard against `/v1/customer/campaigns`; creative upload (PNG/JPG/GIF/MP4) or pick from the org Media Manager (`/media`), via Cloudinary private proxy; budget statement + proof-of-play PDFs |
 | `/calendar` | **Real** — FullCalendar; drag a window to pre-fill a new campaign; drag only while editable |
 | `/notifications` | **Real** — merged announcements + campaign lifecycle inbox; header bell shares it |
 | `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/invitations/[token]` | **Real** — org members, roles, org-scoped activity log, invitation accept/decline with explicit consent |

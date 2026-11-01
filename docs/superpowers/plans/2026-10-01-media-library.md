@@ -3605,3 +3605,7 @@ Executed on `feat/media-library`. Tasks 1–9 are done; Tasks 10 and 11 remain h
 - **Paths.** The API's `lib/` was reorganised after this plan was written: `lib/campaigns/`, `lib/storage/`, `lib/customer/`, `lib/advertiser/`. The new store lives at `lib/campaigns/media-asset-store.ts`.
 - **Task 4.** New routes also got notes in `lib/route-catalog.ts`, which its test requires. The list route gained `sort` and fills `created_by_name`.
 - **Task 7.** The UI follows the file manager screenshots over the addendum above where they differ: a Filter & sort menu instead of chips, type icons rather than thumbnails in the list view, and no eyebrow. `BlobPreview` creates its object URL in the effect, because the extracted code reused a revoked URL when the Blob was already cached at mount.
+
+## Addendum — 2026-11-02 (folders, stars, rollout change)
+
+Folders and stars were added after Task 9, reversing the 2026-11-01 "Not taken" list, in migration `20261102000000_media_folders_and_stars`. **Task 10 Step 2 now expects two pending migrations**, this one and `20261001000000_media_library`. Everything else in Task 10 is unchanged.
