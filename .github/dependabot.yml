@@ -7,14 +7,21 @@ updates:
     open-pull-requests-limit: 10
     labels: ["dependencies"]
     ignore:
-      # Stay on Zod 3 until schemas + @hookform/resolvers are migrated (see lead-schemas.ts).
-      - dependency-name: "zod"
-        update-types: ["version-update:semver-major"]
       # TypeScript 6 / ESLint 10 need dedicated migration PRs, not grouped bumps.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
+      # Versioned by the Expo SDK (currently 54); bump these with `npx expo install --fix`
+      # during an SDK upgrade, never individually.
+      - dependency-name: "expo*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react-native*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "@types/react"
+      - dependency-name: "metro"
+      - dependency-name: "@sentry/react-native"
     groups:
       npm-minor-patch:
         patterns: ["*"]
