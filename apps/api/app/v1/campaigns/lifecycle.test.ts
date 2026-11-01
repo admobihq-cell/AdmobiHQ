@@ -110,6 +110,9 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     await prisma.campaign.deleteMany({
       where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
     })
+    await prisma.mediaAsset.deleteMany({
+      where: { created_by_clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
+    })
     await prisma.customerNotification.deleteMany({
       where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
     })
@@ -180,13 +183,20 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
   it("submits once a correctly shaped creative exists, and fires every notification", async () => {
     await prisma.campaignCreative.create({
       data: {
-        campaign_id: campaignId,
-        resource_type: "image",
-        cloudinary_public_id: `lifecycle-test/${campaignId}`,
-        content_type: "image/png",
-        size_bytes: 1000,
-        width: 960,
-        height: 320,
+        campaign: { connect: { id: campaignId } },
+        media_asset: {
+          create: {
+            org_id: customerOrg.id,
+            name: "lifecycle.png",
+            resource_type: "image",
+            cloudinary_public_id: `lifecycle-test/${campaignId}`,
+            content_type: "image/png",
+            size_bytes: 1000,
+            width: 960,
+            height: 320,
+            created_by_clerk_user_id: CUSTOMER,
+          },
+        },
       },
     })
 

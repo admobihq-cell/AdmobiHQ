@@ -18,7 +18,10 @@ export async function GET(_req: Request, { params }: Params) {
   const creativeId = parseId(rawCreativeId)
   if (!campaignId || !creativeId) return jsonError("Invalid id", 400)
 
-  const creative = await prisma.campaignCreative.findUnique({ where: { id: creativeId } })
+  const creative = await prisma.campaignCreative.findUnique({
+    where: { id: creativeId },
+    include: { media_asset: true },
+  })
   if (!creative || creative.campaign_id !== campaignId) {
     return jsonError("Not found", 404)
   }
@@ -26,9 +29,9 @@ export async function GET(_req: Request, { params }: Params) {
   let upstream: Response
   try {
     upstream = await fetchCampaignCreative(
-      creative.cloudinary_public_id,
-      creative.resource_type as PrivateResourceType,
-      creative.content_type,
+      creative.media_asset.cloudinary_public_id,
+      creative.media_asset.resource_type as PrivateResourceType,
+      creative.media_asset.content_type,
     )
   } catch (error) {
     console.error("[ops campaign creative file]", error)
@@ -38,7 +41,7 @@ export async function GET(_req: Request, { params }: Params) {
   return new Response(upstream.body, {
     status: 200,
     headers: {
-      "Content-Type": creative.content_type,
+      "Content-Type": creative.media_asset.content_type,
       "Cache-Control": "private, max-age=300",
       "Content-Disposition": "inline",
     },

@@ -1,4 +1,4 @@
-import type { Campaign, CampaignCreative } from "@prisma/client"
+import type { Campaign, CampaignCreative, MediaAsset } from "@prisma/client"
 
 import { checkCreativeDimensions, specsForFormat } from "@workspace/ops-contracts"
 
@@ -11,9 +11,16 @@ import { prisma } from "@/lib/prisma"
  * both cases need ops to walk the status back first. */
 export const EDITABLE_STATUSES = new Set(["draft", "changes_requested", "rejected"])
 
-export type CampaignWithCreatives = Campaign & { creatives: CampaignCreative[] }
+/** An attachment together with the library file it points at — everything a
+ * creative's DTO, file proxy and submit check need. */
+export type CampaignCreativeWithAsset = CampaignCreative & { media_asset: MediaAsset }
 
-const CREATIVE_ORDER = { creatives: { orderBy: { created_at: "asc" } } } as const
+export type CampaignWithCreatives = Campaign & { creatives: CampaignCreativeWithAsset[] }
+
+/** Every campaign read that ends in toCampaignDto uses this include. */
+export const CREATIVES_INCLUDE = {
+  creatives: { orderBy: { created_at: "asc" }, include: { media_asset: true } },
+} as const
 
 /**
  * Returns the campaign only if this org owns it, and null otherwise — for
@@ -29,7 +36,7 @@ export async function getOwnedCampaign(
 ): Promise<CampaignWithCreatives | null> {
   const campaign = await prisma.campaign.findUnique({
     where: { id },
-    include: CREATIVE_ORDER,
+    include: CREATIVES_INCLUDE,
   })
   if (!campaign || campaign.org_id !== orgId) return null
   return campaign
@@ -39,7 +46,7 @@ export function listOwnedCampaigns(orgId: number): Promise<CampaignWithCreatives
   return prisma.campaign.findMany({
     where: { org_id: orgId },
     orderBy: { created_at: "desc" },
-    include: CREATIVE_ORDER,
+    include: CREATIVES_INCLUDE,
   })
 }
 
@@ -69,14 +76,14 @@ export function missingCampaignFields(campaign: Campaign): string[] {
  *
  * A "both" campaign runs on two physically different panels (3:1 taxi top and
  * 1:1 bike box), so one creative cannot satisfy it — each spec needs at least
- * one creative whose dimensions fit. Creatives are only stored after passing
- * the dimension check at upload, so matching on aspect ratio here is enough.
+ * one creative whose dimensions fit. Creatives are only attached after passing
+ * the dimension check, so matching on aspect ratio here is enough.
  *
  * Returns the labels of unsatisfied panels (empty = ready).
  */
 export function missingCampaignCreatives(
   format: string,
-  creatives: CampaignCreative[],
+  creatives: Array<{ width: number | null; height: number | null }>,
 ): string[] {
   const specs = specsForFormat(format as Parameters<typeof specsForFormat>[0])
 

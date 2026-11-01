@@ -6,7 +6,7 @@ import { auditFromCustomerUser } from "@/lib/audit"
 import { parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { resolveCustomerIdentities } from "@/lib/advertiser/advertiser-org"
 import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
-import { listOwnedCampaigns } from "@/lib/campaigns/campaign-store"
+import { CREATIVES_INCLUDE, listOwnedCampaigns } from "@/lib/campaigns/campaign-store"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       starts_on: starts_on ? new Date(`${starts_on}T00:00:00Z`) : null,
       ends_on: ends_on ? new Date(`${ends_on}T00:00:00Z`) : null,
     },
-    include: { creatives: true },
+    include: CREATIVES_INCLUDE,
   })
 
   await auditFromCustomerUser(auth.access.userId, {

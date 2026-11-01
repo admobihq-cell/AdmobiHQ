@@ -7,6 +7,7 @@ import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@
 import { getOrgNameForOrgId } from "@/lib/advertiser/advertiser-org-name"
 import { fanOutCustomerCampaignNotice } from "@/lib/advertiser/advertiser-notify"
 import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
+import { CREATIVES_INCLUDE } from "@/lib/campaigns/campaign-store"
 import { getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendEmail } from "@/lib/email/send-email"
@@ -74,7 +75,7 @@ export async function PATCH(req: Request, { params }: Params) {
       reviewed_by_email: access.email,
       review_reason: decision === "approved" ? null : (reason ?? null),
     },
-    include: { creatives: { orderBy: { created_at: "asc" } } },
+    include: CREATIVES_INCLUDE,
   })
 
   await auditFromOpsUser(access, {

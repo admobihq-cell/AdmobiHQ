@@ -140,7 +140,13 @@ export type CustomerNotificationDto = {
 }
 
 export type CampaignCreativeDto = {
+  /** The attachment's id — what the creative routes key on. */
   id: number
+  /** The library file behind this attachment. The same file can be attached
+   * to other campaigns. */
+  media_asset_id: number
+  /** The file's name in the Media Library. */
+  name: string
   /** "image" | "video" — mirrors Cloudinary's resource_type. */
   resource_type: string
   content_type: string

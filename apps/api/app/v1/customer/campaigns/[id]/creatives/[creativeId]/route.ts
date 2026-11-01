@@ -2,13 +2,14 @@ import { NextResponse } from "next/server"
 
 import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
-import { destroyCampaignCreative } from "@/lib/campaigns/campaign-creative-storage"
 import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
-import type { PrivateResourceType } from "@/lib/storage/private-media"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string; creativeId: string }> }
 
+/** Detaches the creative from this campaign. The file itself stays in the
+ * org's Media Library — it may be on other campaigns, and deleting it is a
+ * library action (DELETE /v1/customer/media/:id). */
 export async function DELETE(_req: Request, { params }: Params) {
   const auth = await requireCustomerPermissionAccess("creatives:write")
   if (auth.error) return auth.error
@@ -28,10 +29,6 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!creative) return jsonError("Not found", 404)
 
   await prisma.campaignCreative.delete({ where: { id: creativeId } })
-  await destroyCampaignCreative(
-    creative.cloudinary_public_id,
-    creative.resource_type as PrivateResourceType,
-  )
 
   await auditFromCustomerUser(auth.access.userId, {
     action: "delete",

@@ -26,9 +26,9 @@ export async function GET(_req: Request, { params }: Params) {
   let upstream: Response
   try {
     upstream = await fetchCampaignCreative(
-      creative.cloudinary_public_id,
-      creative.resource_type as PrivateResourceType,
-      creative.content_type,
+      creative.media_asset.cloudinary_public_id,
+      creative.media_asset.resource_type as PrivateResourceType,
+      creative.media_asset.content_type,
     )
   } catch (error) {
     console.error("[customer campaign creative file]", error)
@@ -38,7 +38,7 @@ export async function GET(_req: Request, { params }: Params) {
   return new Response(upstream.body, {
     status: 200,
     headers: {
-      "Content-Type": creative.content_type,
+      "Content-Type": creative.media_asset.content_type,
       // "private" keeps this out of any shared/CDN cache; a short max-age lets
       // the same authorized browser reuse it across quick remounts instead of
       // re-running the full sign-and-fetch round trip.

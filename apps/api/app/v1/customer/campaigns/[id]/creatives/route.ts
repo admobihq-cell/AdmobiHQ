@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 
 import {
-  CREATIVE_FORMATS_LABEL,
   campaignCreativeSlotSchema,
   checkCreativeForFormat,
   specsForFormat,
@@ -12,17 +11,36 @@ import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import {
   MAX_CREATIVES_PER_CAMPAIGN,
-  MAX_CREATIVE_BYTES,
-  buildCampaignCreativePublicId,
   destroyCampaignCreative,
-  resourceTypeForMime,
-  uploadCampaignCreative,
 } from "@/lib/campaigns/campaign-creative-storage"
 import { toCampaignCreativeDto } from "@/lib/campaigns/campaign-dto"
 import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
+import { mediaAssetCreateData, storeCreativeFile } from "@/lib/campaigns/media-asset-store"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
+
+/** Whether a file fits this campaign's panel(s). Dimensions come from
+ * Cloudinary's upload response — the only trustworthy source; a client-side
+ * check is a convenience, not a gate. A file with no readable dimensions is
+ * let through, as it always has been. */
+function checkAgainstFormat(format: CampaignFormat, width: number | null, height: number | null) {
+  return width != null && height != null
+    ? checkCreativeForFormat(format, width, height)
+    : { level: "ok" as const, ok: true, message: undefined }
+}
+
+function formatMismatch(format: CampaignFormat, message: string | undefined) {
+  return jsonError(message ?? "Creative doesn't match the panel", 400, {
+    specs: specsForFormat(format).map((spec) => ({
+      format: spec.format,
+      label: spec.label,
+      aspect: spec.aspectLabel,
+      width: spec.recommendedWidthPx,
+      height: spec.recommendedHeightPx,
+    })),
+  })
+}
 
 export async function POST(req: Request, { params }: Params) {
   const auth = await requireCustomerPermissionAccess("creatives:write")
@@ -40,71 +58,49 @@ export async function POST(req: Request, { params }: Params) {
     return jsonError(`A campaign can hold at most ${MAX_CREATIVES_PER_CAMPAIGN} creatives`, 400)
   }
 
-  const form = await req.formData()
-  const file = form.get("file")
+  const form = await req.formData().catch(() => null)
+  const file = form?.get("file")
   if (!(file instanceof File)) return jsonError("Missing file", 400)
 
-  const slotParsed = campaignCreativeSlotSchema.safeParse(form.get("slot") ?? "all")
+  const slotParsed = campaignCreativeSlotSchema.safeParse(form?.get("slot") ?? "all")
   if (!slotParsed.success) return jsonError("Invalid slot", 400)
 
-  // The supplier's player decodes PNG, JPG, GIF and MP4 and nothing else.
-  // Accepting anything wider would let creative pass ops review and then fail
-  // silently on the vehicle.
-  const resourceType = resourceTypeForMime(file.type)
-  if (!resourceType) {
-    return jsonError(`Creative must be ${CREATIVE_FORMATS_LABEL}`, 400)
-  }
-  if (file.size > MAX_CREATIVE_BYTES) {
-    return jsonError(`Creative must be under ${Math.floor(MAX_CREATIVE_BYTES / 1024 / 1024)}MB`, 400)
-  }
+  const result = await storeCreativeFile(auth.access.orgId, file)
+  if (result.error) return result.error
+  const { stored } = result
 
-  const publicId = buildCampaignCreativePublicId(campaign.id, crypto.randomUUID())
-  const uploaded = await uploadCampaignCreative(file, publicId, resourceType)
-
-  // Dimensions are checked AFTER upload because Cloudinary's response is the
-  // only trustworthy source for them — a client-side check is a convenience,
-  // not a gate.
   const format = campaign.format as CampaignFormat
-  const check =
-    uploaded.width != null && uploaded.height != null
-      ? checkCreativeForFormat(format, uploaded.width, uploaded.height)
-      : { level: "ok" as const, ok: true, message: undefined }
-
+  const check = checkAgainstFormat(format, stored.uploaded.width, stored.uploaded.height)
   if (!check.ok) {
-    // Roll the upload back rather than leaving an asset the DB has no row for
-    // and therefore no way to ever find again.
-    await destroyCampaignCreative(publicId, resourceType)
-    return jsonError(check.message ?? "Creative doesn't match the panel", 400, {
-      specs: specsForFormat(format).map((spec) => ({
-        format: spec.format,
-        label: spec.label,
-        aspect: spec.aspectLabel,
-        width: spec.recommendedWidthPx,
-        height: spec.recommendedHeightPx,
-      })),
-    })
+    // Roll the upload back: the advertiser picked this file for this campaign,
+    // so a file that can't run here shouldn't be left sitting in their library.
+    await destroyCampaignCreative(stored.uploaded.publicId, stored.resourceType)
+    return formatMismatch(format, check.message)
   }
 
   const created = await prisma.campaignCreative.create({
     data: {
-      campaign_id: campaign.id,
-      resource_type: resourceType,
-      cloudinary_public_id: uploaded.publicId,
-      content_type: uploaded.contentType,
-      size_bytes: uploaded.sizeBytes,
-      width: uploaded.width,
-      height: uploaded.height,
-      duration_seconds: uploaded.durationSeconds,
-      original_filename: file.name || null,
+      campaign: { connect: { id: campaign.id } },
       slot: slotParsed.data,
+      // Every upload lands in the org's Media Library, so it can be reused on
+      // another campaign without uploading it again.
+      media_asset: {
+        create: mediaAssetCreateData({
+          orgId: auth.access.orgId,
+          userId: auth.access.userId,
+          file,
+          stored,
+        }),
+      },
     },
+    include: { media_asset: true },
   })
 
   await auditFromCustomerUser(auth.access.userId, {
     action: "create",
     entity_type: "campaign_creative",
     entity_id: created.id,
-    summary: `Campaign #${campaign.id} creative uploaded (${resourceType})`,
+    summary: `Campaign #${campaign.id} creative uploaded (${stored.resourceType})`,
   })
 
   return NextResponse.json(
