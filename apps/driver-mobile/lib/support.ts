@@ -1,11 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import * as SecureStore from "expo-secure-store"
 
 import { EXPO_PUBLIC_API_URL } from "@/lib/env"
 
 const API_URL = EXPO_PUBLIC_API_URL ?? "http://localhost:3003"
 
-const CASE_TOKENS_KEY = "admobi.driver.supportCaseTokens"
+// One SecureStore entry per case: Android warns on values over 2 KB.
+const CASE_TOKEN_KEY_PREFIX = "admobi.driver.supportCaseToken."
 const IDENTITY_KEY = "admobi.driver.supportIdentity"
+// Where older builds kept the tokens. AsyncStorage is in Android backups, SecureStore isn't.
+const LEGACY_CASE_TOKENS_KEY = "admobi.driver.supportCaseTokens"
+const LEGACY_IDENTITY_KEY = IDENTITY_KEY
 
 export type SupportCase = {
   id: number
@@ -45,24 +50,44 @@ async function getJson<T>(path: string, headers?: Record<string, string>): Promi
   return (await res.json()) as T
 }
 
-async function getCaseTokens(): Promise<Record<number, string>> {
-  const raw = await AsyncStorage.getItem(CASE_TOKENS_KEY)
-  return raw ? (JSON.parse(raw) as Record<number, string>) : {}
+let migration: Promise<void> | null = null
+
+/** Moves tokens saved by older builds from AsyncStorage into SecureStore, once per launch. */
+function migrateLegacyTokens(): Promise<void> {
+  migration ??= (async () => {
+    const [tokens, identity] = await Promise.all([
+      AsyncStorage.getItem(LEGACY_CASE_TOKENS_KEY),
+      AsyncStorage.getItem(LEGACY_IDENTITY_KEY),
+    ])
+    if (!tokens && !identity) return
+    const legacyTokens = JSON.parse(tokens ?? "{}") as Record<string, string>
+    for (const [caseId, token] of Object.entries(legacyTokens)) {
+      await SecureStore.setItemAsync(CASE_TOKEN_KEY_PREFIX + caseId, token)
+    }
+    if (identity && !(await SecureStore.getItemAsync(IDENTITY_KEY))) {
+      await SecureStore.setItemAsync(IDENTITY_KEY, identity)
+    }
+    await AsyncStorage.multiRemove([LEGACY_CASE_TOKENS_KEY, LEGACY_IDENTITY_KEY])
+  })().catch((error: unknown) => {
+    migration = null
+    throw error
+  })
+  return migration
 }
 
 async function saveCaseToken(caseId: number, token: string) {
-  const tokens = await getCaseTokens()
-  tokens[caseId] = token
-  await AsyncStorage.setItem(CASE_TOKENS_KEY, JSON.stringify(tokens))
+  await migrateLegacyTokens()
+  await SecureStore.setItemAsync(CASE_TOKEN_KEY_PREFIX + caseId, token)
 }
 
 export async function getStoredCaseToken(caseId: number): Promise<string | null> {
-  const tokens = await getCaseTokens()
-  return tokens[caseId] ?? null
+  await migrateLegacyTokens()
+  return SecureStore.getItemAsync(CASE_TOKEN_KEY_PREFIX + caseId)
 }
 
 export async function getStoredIdentity(): Promise<SupportIdentity | null> {
-  const raw = await AsyncStorage.getItem(IDENTITY_KEY)
+  await migrateLegacyTokens()
+  const raw = await SecureStore.getItemAsync(IDENTITY_KEY)
   return raw ? (JSON.parse(raw) as SupportIdentity) : null
 }
 
@@ -72,7 +97,7 @@ export async function getStoredIdentity(): Promise<SupportIdentity | null> {
 async function saveIdentity(identity: SupportIdentity) {
   const existing = await getStoredIdentity()
   const merged: SupportIdentity = { ...identity, token: identity.token ?? existing?.token }
-  await AsyncStorage.setItem(IDENTITY_KEY, JSON.stringify(merged))
+  await SecureStore.setItemAsync(IDENTITY_KEY, JSON.stringify(merged))
 }
 
 export async function createSupportCase(

@@ -107,6 +107,17 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
+      - name: Refuse a debug-signed APK
+        working-directory: apps/ops-mobile/android
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          certs="$("$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk)"
+          echo "$certs"
+          if grep -q "CN=Android Debug" <<<"$certs"; then
+            echo "::error::Release APK is signed with the debug keystore"
+            exit 1
+          fi
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
         with:
