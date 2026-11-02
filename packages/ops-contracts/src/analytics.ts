@@ -304,12 +304,12 @@ export function resolveReportRange(
 }
 
 // ---------------------------------------------------------------------------
-// DTOs — a starting shape for the finance and report endpoints. Money fields
-// are null when the caller can't see money (no `billing:read`) or when it
-// can't be computed (a market filter on cost per 1,000).
+// DTOs — a starting shape for the finance and report endpoints.
 // ---------------------------------------------------------------------------
 
 export type ImpressionRange = { low: number | null; likely: number | null; high: number | null }
+
+// Finance DTOs: plain `number` money, because every finance endpoint sits behind `billing:read`.
 
 export type UpcomingChargeDto = {
   campaignId: number
@@ -322,8 +322,8 @@ export type FinanceSummaryDto = {
   range: ReportRange
   hasLedgerRows: boolean
   /** All-time; ignores the range. */
-  balanceKes: number | null
-  committedKes: number | null
+  balanceKes: number
+  committedKes: number
   /** Balance minus committed. Null until the first ledger row. */
   availableKes: number | null
   spentKes: Delta
@@ -334,7 +334,8 @@ export type FinanceSummaryDto = {
   funding: {
     level: FundingLevel
     runwayDays: number | null
-    avgDailySpendKes: number | null
+    avgDailySpendKes: number
+    /** Null when no scheduled campaign has budget left. */
     nextChargeKes: number | null
     nextChargeOn: string | null
   }
@@ -351,8 +352,8 @@ export type TransactionDto = {
   campaignId: number | null
   campaignName: string | null
   spendCategory: SpendCategory | null
-  amountKes: number | null
-  balanceAfterKes: number | null
+  amountKes: number
+  balanceAfterKes: number
 }
 
 export type TransactionPageDto = {
@@ -362,14 +363,14 @@ export type TransactionPageDto = {
   pageSize: number
   totalPages: number
   summary: {
-    topUpsKes: number | null
-    spendKes: number | null
-    refundsKes: number | null
-    netKes: number | null
+    topUpsKes: number
+    spendKes: number
+    refundsKes: number
+    netKes: number
   }
 }
 
-export type InvoiceLineDto = { description: string; amountKes: number | null }
+export type InvoiceLineDto = { description: string; amountKes: number }
 
 export type InvoiceDto = {
   id: number
@@ -378,9 +379,9 @@ export type InvoiceDto = {
   periodEnd: string
   campaignId: number | null
   campaignName: string | null
-  subtotalKes: number | null
-  taxKes: number | null
-  totalKes: number | null
+  subtotalKes: number
+  taxKes: number
+  totalKes: number
   status: InvoiceStatus
   issuedOn: string
   dueOn: string
@@ -389,6 +390,10 @@ export type InvoiceDto = {
 }
 
 export type StatementRowDto = StatementRow
+
+// Report DTOs: every money field is nullable. It is null without `billing:read`,
+// and spend-based values are null under a market or daypart filter, since spend
+// is held per campaign.
 
 type ReportBase = {
   range: ReportRange
@@ -482,9 +487,9 @@ export type ReportSpendDto = ReportBase & {
   budgetUsed: number | null
   unspentKes: number | null
   costPerThousandTrend: DailyPoint[]
-  byCampaign: NamedValue[]
-  byObjective: NamedValue[]
-  byFormat: NamedValue[]
+  byCampaign: NamedValue[] | null
+  byObjective: NamedValue[] | null
+  byFormat: NamedValue[] | null
   burn: {
     campaignId: number
     name: string

@@ -8,7 +8,8 @@ import { formatKes } from "./format"
 export const CREATIVE_LEAD_DAYS = 7
 export const UNDER_DELIVERY_RATE = 0.8
 export const WATCH_DELIVERY_RATE = 0.95
-/** Early-flight delivery is noisy; don't judge it before this many days. */
+/** Both delivery rules (At risk and Watch) are skipped until this many days
+ * into the flight: early delivery is noisy. */
 export const MIN_DAYS_TO_JUDGE_DELIVERY = 3
 export const ENDING_SOON_DAYS = 7
 export const LOW_RUNWAY_DAYS = 14
@@ -47,6 +48,10 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`
 }
 
+/**
+ * Spec §9.3, first match wins. The delivery rules are skipped with no delivery
+ * rows, and until MIN_DAYS_TO_JUDGE_DELIVERY days into the flight.
+ */
 export function campaignHealth(input: CampaignHealthInput): HealthResult {
   if (input.status === "rejected" || input.status === "changes_requested") {
     return {

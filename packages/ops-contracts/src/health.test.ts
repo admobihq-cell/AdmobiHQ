@@ -86,6 +86,10 @@ describe("campaignHealth", () => {
     expect(campaignHealth(base({ deliveryRate: 0.95, daysIntoFlight: 5 })).level).toBe("on_track")
   })
 
+  it("waits 3 days into the flight before the watch rule too", () => {
+    expect(campaignHealth(base({ deliveryRate: 0.9, daysIntoFlight: 1 })).level).toBe("on_track")
+  })
+
   it("watches a campaign ending within 7 days", () => {
     const health = campaignHealth(base({ endsOn: "2026-11-06" }))
     expect(health.level).toBe("watch")
