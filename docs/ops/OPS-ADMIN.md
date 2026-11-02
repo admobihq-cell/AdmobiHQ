@@ -97,7 +97,7 @@ Every entity list page (`EntityPage`) exports the **selected rows** in three for
 
 | Format | Built where |
 |--------|-------------|
-| CSV | In the browser (`toCsv` in `lib/format.ts`) |
+| CSV | In the browser (`toCsv` from `@workspace/ops-contracts/format`, re-exported by `lib/format.ts`) |
 | XLSX | In the browser, styled header row (`buildStyledXlsx` in `lib/xlsx.ts`, `exceljs`) |
 | PDF | Rows are posted to `POST /v1/ops/documents/export`, which renders the `EntityExportPdf` template with `takumi-pdf` (logo, footer, page numbers). See [API.md](../api/API.md). |
 
