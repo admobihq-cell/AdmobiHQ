@@ -234,6 +234,30 @@ export const campaignReviewSchema = z.object({
 
 export const campaignCreativeSlotSchema = z.enum(CREATIVE_SLOTS)
 
+/** Attaches a file already in the Media Library to a campaign. */
+export const campaignCreativeAttachSchema = z.object({
+  mediaAssetId: z.number().int().positive(),
+  slot: campaignCreativeSlotSchema.default("all"),
+})
+
+export const MEDIA_ASSET_NAME_MAX = 120
+
+/** Rename a file, move it (`folderId` null takes it out of any folder), or both. */
+export const mediaAssetUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(MEDIA_ASSET_NAME_MAX).optional(),
+    folderId: z.number().int().positive().nullable().optional(),
+  })
+  .refine((value) => value.name !== undefined || value.folderId !== undefined, {
+    message: "Nothing to update",
+  })
+
+export const MEDIA_FOLDER_NAME_MAX = 60
+
+export const mediaFolderNameSchema = z.object({
+  name: z.string().trim().min(1).max(MEDIA_FOLDER_NAME_MAX),
+})
+
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),

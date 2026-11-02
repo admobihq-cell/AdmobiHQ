@@ -48,8 +48,13 @@ export function resourceTypeForMime(mimeType: string): PrivateResourceType | nul
   return null
 }
 
-export function buildCampaignCreativePublicId(campaignId: number, uploadId: string): string {
-  return `campaign-creatives/${campaignId}/${uploadId}`
+/** Org-centric: a file can be attached to many campaigns, so the org is the
+ * only owner that stays true for the life of the file. Cosmetic — folder
+ * placement gives no access control; every asset is "authenticated" and the
+ * API's org check is the boundary. Files uploaded before the Media Library
+ * keep their old `campaign-creatives/{campaignId}/…` ids. */
+export function buildMediaAssetPublicId(orgId: number, uploadId: string): string {
+  return `media/${orgId}/${uploadId}`
 }
 
 export function uploadCampaignCreative(

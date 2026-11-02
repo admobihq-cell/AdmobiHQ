@@ -140,7 +140,13 @@ export type CustomerNotificationDto = {
 }
 
 export type CampaignCreativeDto = {
+  /** The attachment's id — what the creative routes key on. */
   id: number
+  /** The library file behind this attachment. The same file can be attached
+   * to other campaigns. */
+  media_asset_id: number
+  /** The file's name in the Media Library. */
+  name: string
   /** "image" | "video" — mirrors Cloudinary's resource_type. */
   resource_type: string
   content_type: string
@@ -152,6 +158,46 @@ export type CampaignCreativeDto = {
   original_filename: string | null
   slot: string
   created_at: string
+}
+
+/** A file in an advertiser org's Media Library. */
+export type MediaAssetDto = {
+  id: number
+  name: string
+  /** "image" | "video" — mirrors Cloudinary's resource_type. */
+  resource_type: string
+  content_type: string
+  size_bytes: number
+  width: number | null
+  height: number | null
+  /** Decimal in the DB, so it crosses the wire as a string. */
+  duration_seconds: string | null
+  original_filename: string | null
+  /** "ready" | "invalid" — about the file itself, not about any one panel. */
+  status: string
+  source: string
+  /** Null when the file sits in no folder. */
+  folder_id: number | null
+  /** Whether the person asking starred it. Set by the list route; false
+   * elsewhere. */
+  starred: boolean
+  /** Whoever uploaded it, for the library's "by" line. Set by the list route;
+   * null elsewhere, or when their account can't be read. */
+  created_by_name: string | null
+  created_at: string
+  /** Campaigns this file is attached to. Drives "used in N campaigns" and
+   * explains why a delete was refused. */
+  campaigns: { id: number; name: string }[]
+}
+
+/** A folder in an org's Media Manager, with what's in it. */
+export type MediaFolderDto = {
+  id: number
+  name: string
+  file_count: number
+  size_bytes: number
+  /** The later of the folder's own change and its newest file's. */
+  updated_at: string
 }
 
 export type CampaignDto = {

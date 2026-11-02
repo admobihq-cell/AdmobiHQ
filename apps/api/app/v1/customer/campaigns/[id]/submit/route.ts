@@ -4,6 +4,7 @@ import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
 import {
+  CREATIVES_INCLUDE,
   EDITABLE_STATUSES,
   getOwnedCampaign,
   missingCampaignCreatives,
@@ -34,7 +35,10 @@ export async function POST(_req: Request, { params }: Params) {
   }
 
   const missingFields = missingCampaignFields(campaign)
-  const missingCreatives = missingCampaignCreatives(campaign.format, campaign.creatives)
+  const missingCreatives = missingCampaignCreatives(
+    campaign.format,
+    campaign.creatives.map((creative) => creative.media_asset),
+  )
   if (missingFields.length > 0 || missingCreatives.length > 0) {
     return jsonError("Campaign is incomplete", 400, { missingFields, missingCreatives })
   }
@@ -49,7 +53,7 @@ export async function POST(_req: Request, { params }: Params) {
       // campaign that is now awaiting review.
       review_reason: null,
     },
-    include: { creatives: { orderBy: { created_at: "asc" } } },
+    include: CREATIVES_INCLUDE,
   })
 
   await auditFromCustomerUser(auth.access.userId, {

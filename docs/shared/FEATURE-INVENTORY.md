@@ -96,7 +96,7 @@ Per the team's own docs, this app is **UI-only by design** for business CRUD; ev
 | Route | Status |
 |---|---|
 | `/`, `/map` | **Real** — overview with live campaign data; Map uses `@workspace/geo` |
-| `/campaigns`, `/campaigns/[id]`, `/campaigns/new` | **Real** — list/detail + full-page create/edit wizard against `/v1/customer/campaigns`; creative upload (PNG/JPG/GIF/MP4) via Cloudinary private proxy; budget statement + proof-of-play PDFs |
+| `/campaigns`, `/campaigns/[id]`, `/campaigns/new` | **Real** — list/detail + full-page create/edit wizard against `/v1/customer/campaigns`; creative upload (PNG/JPG/GIF/MP4) or pick from the org Media Manager (`/media`), via Cloudinary private proxy; budget statement + proof-of-play PDFs |
 | `/calendar` | **Real** — FullCalendar; drag a window to pre-fill a new campaign; drag only while editable |
 | `/notifications` | **Real** — merged announcements + campaign lifecycle inbox; header bell shares it |
 | `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/invitations/[token]` | **Real** — org members, roles, org-scoped activity log, invitation accept/decline with explicit consent |
@@ -159,6 +159,8 @@ Every third-party service actually wired into the code — confirmed by reading 
 ### Cloudinary — private media (driver documents, campaign creatives, SOS photos)
 
 `apps/api/lib/storage/private-media.ts` wraps the `cloudinary` v2 SDK for **authenticated** (private) assets — images and video. Three thin wrappers sit on it: `lib/driver/driver-document-storage.ts` (image-only), `lib/campaigns/campaign-creative-storage.ts` (PNG/JPG/GIF/MP4), and `lib/safety/incident-photo-storage.ts`. Bytes reach clients only through authenticated `/file` proxy routes. Callers: `apps/api/app/v1/driver/documents/*`, `driver-applications/*`, `customer/campaigns/*/creatives/*`, `campaigns/*/creatives/*/file`, `driver/sos/[id]/photos`, `safety-incidents/*/photos/*/file`.
+
+`apps/api/app/v1/customer/media/*` calls it too. Campaign creatives are org-owned `MediaAsset` rows stored under `media/{orgId}/…`; files uploaded before the Media Library keep their `campaign-creatives/{campaignId}/…` ids.
 
 *Announcement images shipped on Vercel Blob as [ANNOUNCEMENT-IMAGES-PLAN.md](../web/ANNOUNCEMENT-IMAGES-PLAN.md) proposed. Cloudinary was added for private documents and later extended to campaign creatives and incident photos.*
 
@@ -416,7 +418,7 @@ Distinct from §2 (which catalogs *third-party services*), this section catalogs
 |---|---|---|
 | **Authentication** | Clerk, 3 fully independent tenant instances (ops, customer, driver) — no shared session, no satellite domains; JWT bearer tokens verified server-side | `apps/api/lib/auth.ts`, `lib/customer/customer-auth.ts`, `lib/driver/driver-auth.ts` |
 | **Ops RBAC** | Resource-scoped `requireOpsPermissionAccess("<resource>")` gates every ops route individually, backed by `OpsRole` + `OpsRoleAssignment` | `apps/api/lib/api-utils.ts:68`, `apps/api/lib/auth.ts` |
-| **Multi-tenant RBAC** | 9 advertiser permissions (`campaigns:read/write`, `creatives:write`, `reports:read`, `billing:read/write`, `team:manage`, `org:manage`, `activity:read`), editable roles per org, `Admin`/`Member` starter roles, checked by `requireCustomerPermissionAccess()` | `apps/api/lib/api-utils.ts:116`, `packages/ops-contracts/src/enums.ts` |
+| **Multi-tenant RBAC** | 13 advertiser permissions (`campaigns:read/write/submit`, `creatives:write`, `media:read/write`, `reports:read`, `billing:read/write`, `team:manage`, `org:manage`, `activity:read`), editable roles per org, `Admin`/`Member` starter roles, checked by `requireCustomerPermissionAccess()` | `apps/api/lib/api-utils.ts:116`, `packages/ops-contracts/src/enums.ts` |
 | **Tenant isolation (IDOR)** | Every advertiser read/write is scoped to the caller's `orgId`. Customer-facing PDFs query their own rows rather than accepting posted data | `apps/api/lib/campaigns/campaign-store.ts` (`getOwnedCampaign`, `listOwnedCampaigns`) |
 | **Privilege ceiling** | `canGrantRole()` blocks granting more than you hold, changing your own role, and approving your own admin request. Admin promotion is owner-only | `apps/api/lib/advertiser/advertiser-org.ts:22` |
 | **Consent-based invitations** | Hashed single-use invite tokens with explicit accept/decline; acceptance rate-limited | `apps/api/lib/advertiser/advertiser-invite-token.ts` |

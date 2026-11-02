@@ -58,6 +58,13 @@ describe("advertiser activity allowlist", () => {
         entity_type: "announcement",
       }),
     ).toBe(false)
+    expect(
+      isAdvertiserVisibleActivity({
+        actor_type: "customer",
+        action: "delete",
+        entity_type: "media_asset",
+      }),
+    ).toBe(true)
   })
 })
 

@@ -92,3 +92,23 @@ being missing:
    (Manager/Member/Viewer), shared by every org.
 3. `npm run backfill:advertiser-orgs -w api` — backfills existing advertisers
    into orgs so their campaigns have an `org_id` to be scoped by.
+
+## Deploy order: media library
+
+The Media Library moves a creative's file columns from `campaign_creatives`
+to a new `media_assets` table. It ships in two migrations so the API already
+on prod never meets a schema it can't use:
+
+1. `db:migrate:deploy` — applies `20261001000000_media_library` (additive:
+   new table, nullable `campaign_creatives.media_asset_id`, permission grant)
+   and `20261102000000_media_folders_and_stars` (additive).
+2. `npm run db:media-library-backfill -w web` — links every existing creative
+   to a new asset. Idempotent.
+3. Deploy the app code.
+4. `npm run db:media-library-backfill -w web` **again** — picks up any
+   creative the old code wrote between steps 2 and 3. Until this runs, a
+   campaign holding such a creative fails to load.
+5. Later, once verified: the contract migration drops the old columns. It
+   refuses to run while any creative is still unlinked.
+
+Use the `:prod` variants of each script for production.

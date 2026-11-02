@@ -3,6 +3,7 @@ import {
   Bell,
   CalendarDays,
   HelpCircle,
+  Images,
   LayoutDashboard,
   Map,
   Megaphone,
@@ -35,6 +36,12 @@ export const appNavItems: AppNavItem[] = [
     label: "Campaigns",
     icon: Megaphone,
     description: "Create and manage out-of-home campaigns from this workspace.",
+  },
+  {
+    href: "/media",
+    label: "Media Manager",
+    icon: Images,
+    description: "Upload creative once and reuse it across campaigns.",
   },
   {
     href: "/calendar",

@@ -12,9 +12,12 @@ import {
   parseId,
 } from "./format"
 import {
+  campaignCreativeAttachSchema,
   driverCreateSchema,
   fleetCreateSchema,
   leadCreateSchema,
+  mediaAssetUpdateSchema,
+  mediaFolderNameSchema,
   mediaKitCreateSchema,
   waitlistCreateSchema,
 } from "./schemas"
@@ -231,5 +234,36 @@ describe("announcement target apps", () => {
       "customer-web",
       "driver-web",
     ])
+  })
+})
+
+describe("media library schemas", () => {
+  it("defaults an attach to the 'all' slot", () => {
+    expect(campaignCreativeAttachSchema.parse({ mediaAssetId: 3 })).toEqual({
+      mediaAssetId: 3,
+      slot: "all",
+    })
+  })
+
+  it("rejects an attach without a positive integer id", () => {
+    expect(campaignCreativeAttachSchema.safeParse({ mediaAssetId: 0 }).success).toBe(false)
+    expect(campaignCreativeAttachSchema.safeParse({ mediaAssetId: "3" }).success).toBe(false)
+  })
+
+  it("trims a rename and rejects an empty or over-long name", () => {
+    expect(mediaAssetUpdateSchema.parse({ name: "  Launch hero  " })).toEqual({ name: "Launch hero" })
+    expect(mediaAssetUpdateSchema.safeParse({ name: "   " }).success).toBe(false)
+    expect(mediaAssetUpdateSchema.safeParse({ name: "x".repeat(121) }).success).toBe(false)
+  })
+
+  it("takes a move, including out of a folder, and refuses an empty update", () => {
+    expect(mediaAssetUpdateSchema.parse({ folderId: 4 })).toEqual({ folderId: 4 })
+    expect(mediaAssetUpdateSchema.parse({ folderId: null })).toEqual({ folderId: null })
+    expect(mediaAssetUpdateSchema.safeParse({}).success).toBe(false)
+  })
+
+  it("trims a folder name and rejects a blank one", () => {
+    expect(mediaFolderNameSchema.parse({ name: "  Brand assets " })).toEqual({ name: "Brand assets" })
+    expect(mediaFolderNameSchema.safeParse({ name: "  " }).success).toBe(false)
   })
 })

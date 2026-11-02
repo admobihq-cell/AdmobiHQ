@@ -55,7 +55,7 @@ Guards: `requireOpsAccess()` (any staff), `requireOpsPermissionAccess(p)`, `requ
 
 ### Advertisers — Postgres-backed organizations
 
-- Every advertiser belongs to exactly one `AdvertiserOrg`. Owners (`is_owner`) bypass permission checks; everyone else gets their `AdvertiserRole.permissions` from a closed set (`campaigns:read|write|submit`, `creatives:write`, `reports:read`, `billing:read|write`, `team:manage`, `org:manage`, `activity:read`, `support:read_all`).
+- Every advertiser belongs to exactly one `AdvertiserOrg`. Owners (`is_owner`) bypass permission checks; everyone else gets their `AdvertiserRole.permissions` from a closed set (`campaigns:read|write|submit`, `creatives:write`, `media:read|write`, `reports:read`, `billing:read|write`, `team:manage`, `org:manage`, `activity:read`, `support:read_all`).
 - **Owner-only:** ownership transfer, organization deletion, editing/deleting roles, and changing anyone's `isOwner`.
 - **No self-service escalation.** A non-owner cannot change their own role, and can only assign or invite into a role whose permissions are a subset of their own (`canGrantRole()` in [lib/advertiser/advertiser-org.ts](../../apps/api/lib/advertiser/advertiser-org.ts)). The sanctioned path to more access is an admin request, which the requester can never approve themselves.
 - **Consent before destructive moves.** Accepting an invitation that would replace an existing workspace requires an explicit `{ leaveSoleOrg: true }`; nothing is inferred from a link visit.

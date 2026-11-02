@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import type { CampaignCreateInput, CampaignDto, CampaignUpdateInput } from "@workspace/ops-contracts"
 
 import {
+  attachMediaAsset,
   createCampaign,
   deleteCampaign,
   deleteCreative,
@@ -17,6 +18,7 @@ import {
   updateCampaign,
   uploadCreative,
 } from "@/lib/campaigns-client"
+import { MEDIA_QUERY_KEY } from "@/lib/media-client"
 
 /**
  * Single source of truth for the campaign list, the detail page, and the
@@ -58,6 +60,9 @@ function useInvalidate() {
   const queryClient = useQueryClient()
   return (id?: number) => {
     void queryClient.invalidateQueries({ queryKey: LIST_KEY })
+    // Uploading, attaching, removing or deleting changes which library files
+    // are in use.
+    void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY })
     if (id != null) void queryClient.invalidateQueries({ queryKey: detailKey(id) })
   }
 }
@@ -116,6 +121,19 @@ export function useSubmitCampaign() {
       ]
       toast.error(missing.length > 0 ? `Still needed: ${missing.join(", ")}` : messageOf(error))
     },
+  })
+}
+
+export function useAttachMediaAsset(campaignId: number) {
+  const { getToken } = useAuth()
+  const invalidate = useInvalidate()
+  return useMutation({
+    mutationFn: (mediaAssetId: number) => attachMediaAsset(getToken, campaignId, mediaAssetId),
+    onSuccess: (creative) => {
+      invalidate(campaignId)
+      if (creative.warning) toast.warning(creative.warning)
+    },
+    onError: (error) => toast.error(messageOf(error)),
   })
 }
 

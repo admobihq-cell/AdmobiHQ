@@ -9,6 +9,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { customerClerkClient, getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
+import type { PrivateResourceType } from "@/lib/storage/private-media"
 import { prisma } from "@/lib/prisma"
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -363,15 +364,17 @@ export async function findClerkUserIdByEmail(email: string): Promise<string | nu
  * detached (org_id = null) rather than deleted, and campaign reads are scoped
  * purely by org_id — so a detached campaign is unreachable by every advertiser
  * afterwards. Callers surface these counts before asking for confirmation.
+ * Library files nobody uses are deleted outright; see detachAndDeleteOrg.
  */
 export async function getOrgDetachmentImpact(
   orgId: number,
-): Promise<{ campaignCount: number; supportCaseCount: number }> {
-  const [campaignCount, supportCaseCount] = await Promise.all([
+): Promise<{ campaignCount: number; supportCaseCount: number; mediaAssetCount: number }> {
+  const [campaignCount, supportCaseCount, mediaAssetCount] = await Promise.all([
     prisma.campaign.count({ where: { org_id: orgId } }),
     prisma.supportCase.count({ where: { org_id: orgId } }),
+    prisma.mediaAsset.count({ where: { org_id: orgId } }),
   ])
-  return { campaignCount, supportCaseCount }
+  return { campaignCount, supportCaseCount, mediaAssetCount }
 }
 
 /** The auto-generated names lazy bootstrap gives an org when sign-up skipped
@@ -408,17 +411,37 @@ export async function isUntouchedSoloOrg(
     memberCount === 1 &&
     impact.campaignCount === 0 &&
     impact.supportCaseCount === 0 &&
+    impact.mediaAssetCount === 0 &&
     pendingInvites === 0
   )
 }
 
 /** Detaches an org's retained rows and deletes it. Campaigns and support cases
- * survive for the ops record; members/invitations/custom roles cascade. */
+ * survive for the ops record; members/invitations/custom roles cascade.
+ *
+ * Library files split two ways. A file no campaign uses belongs to nobody once
+ * the org is gone, so it is deleted, here and in storage. A file a campaign
+ * still uses must stay, or the detached campaign would lose its creative — the
+ * foreign key sets its org_id to null when the org row goes. */
 export async function detachAndDeleteOrg(orgId: number): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+  const unused = await prisma.$transaction(async (tx) => {
+    const unusedAssets = await tx.mediaAsset.findMany({
+      where: { org_id: orgId, attachments: { none: {} } },
+      select: { id: true, cloudinary_public_id: true, resource_type: true },
+    })
+    await tx.mediaAsset.deleteMany({ where: { id: { in: unusedAssets.map((a) => a.id) } } })
     await tx.campaign.updateMany({ where: { org_id: orgId }, data: { org_id: null } })
     await tx.supportCase.updateMany({ where: { org_id: orgId }, data: { org_id: null } })
     await tx.advertiserOrg.delete({ where: { id: orgId } })
+    return unusedAssets
   })
+
+  if (unused.length === 0) return
+  // Loaded on demand: this module is imported by nearly every customer route,
+  // and almost none of them should pay for the Cloudinary SDK.
+  const { destroyPrivateAsset } = await import("@/lib/storage/private-media")
+  for (const asset of unused) {
+    await destroyPrivateAsset(asset.cloudinary_public_id, asset.resource_type as PrivateResourceType)
+  }
 }
 

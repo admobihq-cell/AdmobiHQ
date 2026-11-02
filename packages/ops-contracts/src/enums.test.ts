@@ -15,6 +15,11 @@ describe("ADVERTISER_STARTER_ROLES", () => {
     expect(ADVERTISER_STARTER_ROLES.Member).not.toContain("campaigns:submit")
   })
 
+  it("lets Members use the media library — they already upload creative", () => {
+    expect(ADVERTISER_STARTER_ROLES.Member).toContain("media:read")
+    expect(ADVERTISER_STARTER_ROLES.Member).toContain("media:write")
+  })
+
   it("Admin holds every permission — the owner-invitable tier short of the bypass itself", () => {
     for (const permission of ADVERTISER_PERMISSIONS) {
       expect(ADVERTISER_STARTER_ROLES.Admin).toContain(permission)

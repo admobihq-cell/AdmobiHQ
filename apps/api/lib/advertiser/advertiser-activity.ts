@@ -14,6 +14,12 @@ export const ADVERTISER_ACTIVITY_ALLOWLIST: readonly AllowTriple[] = [
   { actor_type: "ops_user", action: "update", entity_type: "campaign" },
   { actor_type: "customer", action: "create", entity_type: "campaign_creative" },
   { actor_type: "customer", action: "delete", entity_type: "campaign_creative" },
+  { actor_type: "customer", action: "create", entity_type: "media_asset" },
+  { actor_type: "customer", action: "update", entity_type: "media_asset" },
+  { actor_type: "customer", action: "delete", entity_type: "media_asset" },
+  { actor_type: "customer", action: "create", entity_type: "media_folder" },
+  { actor_type: "customer", action: "update", entity_type: "media_folder" },
+  { actor_type: "customer", action: "delete", entity_type: "media_folder" },
   { actor_type: "customer", action: "create", entity_type: "advertiser_invitation" },
   { actor_type: "customer", action: "delete", entity_type: "advertiser_invitation" },
   { actor_type: "customer", action: "update", entity_type: "advertiser_invitation" },
@@ -76,6 +82,18 @@ function baseLabel(action: string, entityType: string): string {
       return "Creative uploaded"
     case "delete:campaign_creative":
       return "Creative removed"
+    case "create:media_asset":
+      return "Media uploaded"
+    case "update:media_asset":
+      return "Media updated"
+    case "delete:media_asset":
+      return "Media deleted"
+    case "create:media_folder":
+      return "Media folder created"
+    case "update:media_folder":
+      return "Media folder renamed"
+    case "delete:media_folder":
+      return "Media folder deleted"
     case "create:advertiser_invitation":
       return "Teammate invited"
     case "delete:advertiser_invitation":

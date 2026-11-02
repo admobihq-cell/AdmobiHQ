@@ -468,6 +468,8 @@ model AdvertiserOrg {
   supportCases SupportCase[]
   notifications CustomerNotification[]
   adminRequests AdvertiserAdminRequest[]
+  mediaAssets   MediaAsset[]
+  mediaFolders  MediaFolder[]
 
   @@map("advertiser_orgs")
 }
@@ -698,10 +700,11 @@ model Campaign {
   @@map("campaigns")
 }
 
-/// A single uploaded creative asset for a campaign. cloudinary_public_id uses
-/// Cloudinary's "authenticated" delivery type and is never exposed to a
-/// browser — always served via an authenticated proxy, exactly like
-/// DriverDocument.
+/// A file in an advertiser org's Media Library. One asset can be attached to
+/// many campaigns (see CampaignCreative), so it is owned by the org, never by
+/// a campaign. cloudinary_public_id uses Cloudinary's "authenticated" delivery
+/// type and is never exposed to a browser — always served via an
+/// authenticated proxy, exactly like DriverDocument.
 ///
 /// Only PNG, JPG, GIF and MP4 are accepted: the supplier's player decodes
 /// nothing else, so accepting WebP/WebM/BMP would let creative pass review
@@ -711,28 +714,95 @@ model Campaign {
 /// response and stored eagerly — they are the exact spec fields the supplier
 /// screen API asks for, and recovering them later means re-downloading every
 /// asset. Do not make them lazy.
-model CampaignCreative {
-  id                   Int      @id @default(autoincrement())
-  campaign_id          Int
-  campaign             Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+model MediaAsset {
+  id                       Int            @id @default(autoincrement())
+  /// Null once the owning org is deleted. Campaigns are detached rather than
+  /// deleted with their org (ops keeps the record), and their creatives must
+  /// stay viewable — so this is SetNull, not Cascade.
+  org_id                   Int?
+  org                      AdvertiserOrg? @relation(fields: [org_id], references: [id], onDelete: SetNull)
+  name                     String
+  /// Null means the file sits in no folder. Deleting a folder clears this and
+  /// keeps the file.
+  folder_id                Int?
+  folder                   MediaFolder?   @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   /// "image" | "video" — mirrors Cloudinary's resource_type; needed to sign
   /// the fetch URL correctly.
-  resource_type        String   @default("image")
-  cloudinary_public_id String   @unique
-  content_type         String
-  size_bytes           Int
-  width                Int?
-  height               Int?
-  duration_seconds     Decimal? @db.Decimal(8, 2)
-  original_filename    String?
+  resource_type            String         @default("image")
+  cloudinary_public_id     String         @unique
+  content_type             String
+  size_bytes               Int
+  width                    Int?
+  height                   Int?
+  duration_seconds         Decimal?       @db.Decimal(8, 2)
+  original_filename        String?
+  /// "ready" | "invalid". Readiness is about the file itself, not about any
+  /// one panel — format fit is checked when the asset is attached.
+  status                   String         @default("ready")
+  /// "upload" today; "google_drive" | "google_photos" are reserved.
+  source                   String         @default("upload")
+  created_by_clerk_user_id String
+  created_at               DateTime       @default(now())
+  updated_at               DateTime       @updatedAt
+
+  attachments CampaignCreative[]
+  stars       MediaAssetStar[]
+
+  @@index([org_id, created_at])
+  @@index([org_id, resource_type])
+  @@index([folder_id])
+  @@map("media_assets")
+}
+
+/// A folder in an org's Media Manager, shared by everyone in the org. One
+/// level only: folders don't nest, and a file sits in at most one.
+model MediaFolder {
+  id                       Int           @id @default(autoincrement())
+  org_id                   Int
+  org                      AdvertiserOrg @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  name                     String
+  created_by_clerk_user_id String
+  created_at               DateTime      @default(now())
+  updated_at               DateTime      @updatedAt
+
+  assets MediaAsset[]
+
+  @@unique([org_id, name])
+  @@map("media_folders")
+}
+
+/// One person's star on a file. Per person, so starring never changes what a
+/// teammate sees.
+model MediaAssetStar {
+  media_asset_id Int
+  media_asset    MediaAsset @relation(fields: [media_asset_id], references: [id], onDelete: Cascade)
+  clerk_user_id  String
+  created_at     DateTime   @default(now())
+
+  @@id([media_asset_id, clerk_user_id])
+  @@index([clerk_user_id])
+  @@map("media_asset_stars")
+}
+
+/// Attaches a MediaAsset to a campaign. Deleting a campaign cascades these
+/// rows away and leaves the asset in the library; an asset cannot be deleted
+/// while any row here still points at it (Restrict).
+model CampaignCreative {
+  id             Int        @id @default(autoincrement())
+  campaign_id    Int
+  campaign       Campaign   @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  media_asset_id Int
+  media_asset    MediaAsset @relation(fields: [media_asset_id], references: [id], onDelete: Restrict)
   /// Which face of the vehicle unit this plays on. The taxi top is
   /// double-sided (960x320mm) and the bike box is three-sided (320x320mm,
   /// P2.5), so the hardware needs this even though the app only offers "all"
   /// today: "all" | "side_a" | "side_b" | "left" | "right" | "rear".
-  slot                 String   @default("all")
-  created_at           DateTime @default(now())
+  slot           String     @default("all")
+  created_at     DateTime   @default(now())
 
+  @@unique([campaign_id, media_asset_id, slot])
   @@index([campaign_id])
+  @@index([media_asset_id])
   @@map("campaign_creatives")
 }
 

@@ -19,7 +19,7 @@ export type UploadedCreative = CampaignCreativeDto & { warning: string | null }
  * 4-second budget is right for a small JSON poll and fatal for a 50MB creative
  * over Kenyan mobile data. Uploads finish or the user cancels.
  */
-async function authedFetch(getToken: GetToken, path: string, init?: RequestInit) {
+export async function authedFetch(getToken: GetToken, path: string, init?: RequestInit) {
   const token = await getToken()
   const headers = new Headers(init?.headers)
   if (token) headers.set("Authorization", `Bearer ${token}`)
@@ -40,7 +40,7 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
   return res
 }
 
-function jsonInit(method: string, body: unknown): RequestInit {
+export function jsonInit(method: string, body: unknown): RequestInit {
   return {
     method,
     headers: { "Content-Type": "application/json" },
@@ -87,6 +87,22 @@ export async function submitCampaign(getToken: GetToken, id: number): Promise<Ca
   const res = await authedFetch(getToken, `/v1/customer/campaigns/${id}/submit`, {
     method: "POST",
   })
+  return res.json()
+}
+
+/** Attaches a file already in the Media Library. Same response as an upload,
+ * including the advisory `warning`. */
+export async function attachMediaAsset(
+  getToken: GetToken,
+  campaignId: number,
+  mediaAssetId: number,
+  slot = "all",
+): Promise<UploadedCreative> {
+  const res = await authedFetch(
+    getToken,
+    `/v1/customer/campaigns/${campaignId}/creatives`,
+    jsonInit("POST", { mediaAssetId, slot }),
+  )
   return res.json()
 }
 

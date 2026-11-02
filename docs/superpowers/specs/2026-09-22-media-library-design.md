@@ -222,3 +222,47 @@ in brainstorming:
 - Migration: running the `CampaignCreative` → `MediaAsset` split against a
   snapshot of prod data leaves every historical creative attached to exactly
   the campaign it was originally uploaded into, and idempotent on a second run
+
+---
+
+## Addendum — 2026-10-01 (implementation plan)
+
+Changes made while planning, recorded in
+[the implementation plan](../plans/2026-10-01-media-library.md):
+
+- **§3 `MediaAsset.org_id` is nullable with `onDelete: SetNull`**, not
+  required with `Cascade`. `Cascade` on the org combined with `Restrict` on
+  the attachment makes org deletion fail whenever a campaign still uses a
+  file, and campaigns can already have `org_id = null`. Unused files are
+  deleted with the org; in-use files stay, org-less, so the detached
+  campaign's creative remains viewable by ops.
+- **§3 Migration is expand → backfill → deploy → backfill → contract**, not
+  one migration, to honour the additive-migration deploy rule.
+- **§6 Existing files keep their `campaign-creatives/{campaignId}/…` ids.**
+  Only new uploads use `media/{orgId}/…`.
+- **§4 An inline campaign upload that fails the panel check is rejected
+  entirely** and not kept in the library.
+- **§5 Permissions** are granted in the migration to every role holding
+  `creatives:write`, custom roles included.
+- **§7 `apps/customer-mobile` library screens are deferred** to their own
+  plan. Mobile's inline upload keeps working unchanged.
+
+## Addendum — 2026-11-01 (built to the file manager reference)
+
+The Media page was built to the studio-admin file manager screenshots:
+
+- **§7 Filter chips became a Filter & sort menu**, and the page gained a
+  grid/list toggle (`?view=list`). Rename and delete moved into a per-file
+  menu.
+- **§5 `GET /v1/customer/media` gained `sort=name|size`**, and each item
+  carries `created_by_name` for the "by" line and the Uploaded by column.
+- **Not built, because they need schema §8 rules out:** folders (the
+  reference's New folder button and folder tiles) and starred files. Both are
+  additive if wanted later.
+
+## Addendum — 2026-11-02 (folders, stars, Media Manager)
+
+This supersedes the "Not built" line in the addendum above and §8's folder
+exclusion: the product name is now **Media Manager**, and folders and stars
+are built. Folders are org-shared and one level deep; a file sits in at most
+one, and deleting a folder keeps its files. Stars are per person.

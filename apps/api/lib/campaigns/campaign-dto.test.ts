@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { flightPhase, toDayIso } from "./campaign-dto"
+import { flightPhase, toCampaignCreativeDto, toDayIso } from "./campaign-dto"
 import { missingCampaignCreatives, missingCampaignFields } from "./campaign-store"
 
 /** A Prisma `@db.Date` value: UTC midnight of that calendar day. */
@@ -161,5 +161,43 @@ describe("missingCampaignCreatives", () => {
   it("ignores creatives with unknown dimensions rather than counting them", () => {
     const unknown = { width: null, height: null } as never
     expect(missingCampaignCreatives("taxi_top", [unknown])).toEqual(["Taxi-top LED"])
+  })
+})
+
+describe("toCampaignCreativeDto", () => {
+  it("keeps the attachment's id and slot, and reads the file's facts off its asset", () => {
+    const dto = toCampaignCreativeDto({
+      id: 7,
+      campaign_id: 1,
+      media_asset_id: 42,
+      slot: "side_a",
+      created_at: new Date("2026-10-01T09:00:00.000Z"),
+      media_asset: {
+        id: 42,
+        name: "Launch hero",
+        resource_type: "video",
+        content_type: "video/mp4",
+        size_bytes: 9000,
+        width: 960,
+        height: 320,
+        duration_seconds: { toString: () => "12.5" },
+        original_filename: "hero.mp4",
+      },
+    } as never)
+
+    expect(dto).toEqual({
+      id: 7,
+      media_asset_id: 42,
+      name: "Launch hero",
+      resource_type: "video",
+      content_type: "video/mp4",
+      size_bytes: 9000,
+      width: 960,
+      height: 320,
+      duration_seconds: "12.5",
+      original_filename: "hero.mp4",
+      slot: "side_a",
+      created_at: "2026-10-01T09:00:00.000Z",
+    })
   })
 })

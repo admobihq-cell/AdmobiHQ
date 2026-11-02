@@ -4,6 +4,7 @@ import { jsonError, parseId, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { getOrgNameForOrgId } from "@/lib/advertiser/advertiser-org-name"
 import { resolveCampaignAuthorName } from "@/lib/advertiser/advertiser-org"
 import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
+import { CREATIVES_INCLUDE } from "@/lib/campaigns/campaign-store"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
@@ -17,7 +18,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const campaign = await prisma.campaign.findUnique({
     where: { id },
-    include: { creatives: { orderBy: { created_at: "asc" } } },
+    include: CREATIVES_INCLUDE,
   })
   if (!campaign) return jsonError("Not found", 404)
 

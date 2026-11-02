@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "turbo build",
+    "build": "turbo build --concurrency=2",
     "dev": "node scripts/dev-with-env.mjs",
     "dev:all": "node scripts/dev-with-env.mjs --mobile",
     "dev:stack:mobile": "node scripts/dev-with-env.mjs --mobile-stack",

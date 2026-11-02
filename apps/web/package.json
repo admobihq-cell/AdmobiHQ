@@ -35,6 +35,8 @@
     "db:campaigns:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/campaigns-additive.sql",
     "db:safety-incidents": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/safety-incidents-additive.sql",
     "db:safety-incidents:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/safety-incidents-additive.sql",
+    "db:media-library-backfill": "dotenv -e .env.local -- prisma db execute --file prisma/scripts/media-library-backfill.sql",
+    "db:media-library-backfill:prod": "dotenv -e .env.production.local -- prisma db execute --file prisma/scripts/media-library-backfill.sql",
     "db:pull": "dotenv -e .env.local -- prisma db pull",
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",

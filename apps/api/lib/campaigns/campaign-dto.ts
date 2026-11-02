@@ -1,4 +1,4 @@
-import type { Campaign, CampaignCreative } from "@prisma/client"
+import type { Campaign } from "@prisma/client"
 import { campaignFlightPhase, toDayIso } from "@workspace/ops-contracts"
 import type {
   CampaignCreativeDto,
@@ -6,29 +6,34 @@ import type {
   CampaignListItemDto,
 } from "@workspace/ops-contracts"
 
+import type { CampaignCreativeWithAsset } from "@/lib/campaigns/campaign-store"
+
 /** Both live in contracts because apps/ops derives the same phase from its own
  * Prisma query when it renders the campaigns table server-side. Re-exported
  * under the names the campaign routes and tests already import. */
 export { campaignFlightPhase as flightPhase, toDayIso }
 
-export function toCampaignCreativeDto(creative: CampaignCreative): CampaignCreativeDto {
+export function toCampaignCreativeDto(creative: CampaignCreativeWithAsset): CampaignCreativeDto {
+  const asset = creative.media_asset
   return {
     id: creative.id,
-    resource_type: creative.resource_type,
-    content_type: creative.content_type,
-    size_bytes: creative.size_bytes,
-    width: creative.width,
-    height: creative.height,
+    media_asset_id: asset.id,
+    name: asset.name,
+    resource_type: asset.resource_type,
+    content_type: asset.content_type,
+    size_bytes: asset.size_bytes,
+    width: asset.width,
+    height: asset.height,
     // Prisma Decimal is not JSON-safe, so it crosses the wire as a string.
-    duration_seconds: creative.duration_seconds?.toString() ?? null,
-    original_filename: creative.original_filename,
+    duration_seconds: asset.duration_seconds?.toString() ?? null,
+    original_filename: asset.original_filename,
     slot: creative.slot,
     created_at: creative.created_at.toISOString(),
   }
 }
 
 export function toCampaignDto(
-  campaign: Campaign & { creatives: CampaignCreative[] },
+  campaign: Campaign & { creatives: CampaignCreativeWithAsset[] },
   today?: Date,
   /** Resolved from AdvertiserOrg via campaign.org_id by ops routes.
    * Customer-facing routes pass nothing — an advertiser knows their own company. */

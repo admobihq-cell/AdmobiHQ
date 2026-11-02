@@ -6,9 +6,7 @@ import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { resolveCampaignAuthorName } from "@/lib/advertiser/advertiser-org"
 import { toCampaignDto, toDayIso } from "@/lib/campaigns/campaign-dto"
-import { destroyCampaignCreative } from "@/lib/campaigns/campaign-creative-storage"
-import { EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
-import type { PrivateResourceType } from "@/lib/storage/private-media"
+import { CREATIVES_INCLUDE, EDITABLE_STATUSES, getOwnedCampaign } from "@/lib/campaigns/campaign-store"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
@@ -66,7 +64,7 @@ export async function PATCH(req: Request, { params }: Params) {
         ? { ends_on: ends_on ? new Date(`${ends_on}T00:00:00Z`) : null }
         : {}),
     },
-    include: { creatives: { orderBy: { created_at: "asc" } } },
+    include: CREATIVES_INCLUDE,
   })
 
   await auditFromCustomerUser(auth.access.userId, {
@@ -94,14 +92,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     return jsonError(`Only a draft can be deleted — this one is "${campaign.status}"`, 409)
   }
 
-  // Cloudinary first: the DB row is the only record of the public_id, so
-  // deleting it first would orphan the asset with no way to find it again.
-  for (const creative of campaign.creatives) {
-    await destroyCampaignCreative(
-      creative.cloudinary_public_id,
-      creative.resource_type as PrivateResourceType,
-    )
-  }
+  // Attachments cascade away with the campaign. The files stay in the org's
+  // Media Library — another campaign may be using them.
   await prisma.campaign.delete({ where: { id } })
 
   await auditFromCustomerUser(auth.access.userId, {
