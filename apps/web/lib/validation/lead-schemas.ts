@@ -51,10 +51,10 @@ export const fleetLeadSchema = z.object({
   fleetTypes: z
     .array(z.enum(["taxi", "delivery_bike"]))
     .min(1, "Pick at least one fleet type"),
-  vehicleCount: z.coerce.number().int().min(1),
+  vehicleCount: z.coerce.number<number>().int().min(1),
   vehiclesActive: z.enum(["yes", "no", "some"]),
-  taxiCount: z.coerce.number().int().min(0).optional(),
-  bikeCount: z.coerce.number().int().min(0).optional(),
+  taxiCount: z.coerce.number<number>().int().min(0).optional(),
+  bikeCount: z.coerce.number<number>().int().min(0).optional(),
   operatingCities: z.array(z.enum(["Nairobi", "Mombasa", "Kisumu"])).optional(),
   evStatus: z.enum(["none", "some", "mostly", "all"]).optional(),
   notes: z.string().trim().optional(),
@@ -73,8 +73,8 @@ export const driverJoinSchema = z.object({
   phone: z.string().trim().min(1),
   email: z
     .union([z.literal(""), z.string().email()])
-    .optional()
-    .transform((v) => (!v || v === "" ? undefined : v)),
+    .transform((v) => (!v ? undefined : v))
+    .optional(),
   city: z.enum(["Nairobi", "Mombasa", "Kisumu"]),
   vehicleType: z.enum(["taxi", "delivery_bike", "three_wheeler", "other"]),
   daysPerWeek: z.enum(["1_2", "3_4", "5_6", "daily"]),

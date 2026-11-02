@@ -264,7 +264,7 @@ Every form follows the same pattern:
 
 Forms live in the page files themselves: [`drivers/page.tsx`](../../apps/web/app/(marketing)/drivers/page.tsx), [`partner-fleet/page.tsx`](../../apps/web/app/(marketing)/partner-fleet/page.tsx), [`start-campaign/page.tsx`](../../apps/web/app/(marketing)/start-campaign/page.tsx), [`media-kit/page.tsx`](../../apps/web/app/(marketing)/media-kit/page.tsx), plus the waitlist form inline in [`get-started-section.tsx`](../../apps/web/components/landing/get-started-section.tsx).
 
-The `zod` version is pinned to `3.25.76` via a workspace-root [package.json](../../package.json) `overrides` block, so every transitive dependency uses the same Zod.
+Zod 4 is set in a workspace-root [package.json](../../package.json) `overrides` block and declared as a root dev dependency, so the workspaces share one Zod. npm keeps nested copies for `shadcn` (Zod 3) and `@vercel/cli-config`, both CLI tooling.
 
 ## 8. Build, dev, lint, typecheck
 
