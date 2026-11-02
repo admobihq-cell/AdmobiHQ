@@ -91,6 +91,8 @@ model Driver {
   deleted_at         DateTime?
   deleted_by_email   String?
 
+  payouts Payout[]
+
   @@index([created_at])
   @@index([city])
   @@index([status])
@@ -470,6 +472,8 @@ model AdvertiserOrg {
   adminRequests AdvertiserAdminRequest[]
   mediaAssets   MediaAsset[]
   mediaFolders  MediaFolder[]
+  walletTransactions WalletTransaction[]
+  invoices           Invoice[]
 
   @@map("advertiser_orgs")
 }
@@ -688,7 +692,12 @@ model Campaign {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  creatives CampaignCreative[]
+  creatives          CampaignCreative[]
+  walletTransactions WalletTransaction[]
+  dailyStats         CampaignDailyStat[]
+  creativeDailyStats CampaignCreativeDailyStat[]
+  reachStats         CampaignReachStat[]
+  invoices           Invoice[]
 
   org_id Int?
   org    AdvertiserOrg? @relation(fields: [org_id], references: [id])
@@ -745,8 +754,9 @@ model MediaAsset {
   created_at               DateTime       @default(now())
   updated_at               DateTime       @updatedAt
 
-  attachments CampaignCreative[]
-  stars       MediaAssetStar[]
+  attachments        CampaignCreative[]
+  stars              MediaAssetStar[]
+  creativeDailyStats CampaignCreativeDailyStat[]
 
   @@index([org_id, created_at])
   @@index([org_id, resource_type])
@@ -834,6 +844,170 @@ model CustomerNotification {
   @@index([clerk_user_id, created_at])
   @@index([org_id, created_at])
   @@map("customer_notifications")
+}
+
+/// An advertiser org's money ledger. Append-only: a correction is a new
+/// "adjustment" row, never an edit or a delete. The balance is
+/// SUM(amount_kes) for the org and is never stored. org_id and campaign_id
+/// are SetNull so finance history outlives a deleted org or campaign.
+model WalletTransaction {
+  id             Int            @id @default(autoincrement())
+  org_id         Int?
+  org            AdvertiserOrg? @relation(fields: [org_id], references: [id], onDelete: SetNull)
+  campaign_id    Int?
+  campaign       Campaign?      @relation(fields: [campaign_id], references: [id], onDelete: SetNull)
+  kind           String // top_up, spend, refund, adjustment
+  /// Signed: credits are positive, debits negative.
+  amount_kes     Decimal        @db.Decimal(12, 2)
+  /// Spend rows only. A proposed split, not yet confirmed commercially.
+  /// "tax" rows are never revenue.
+  spend_category String? // screen_time, production, service_fee, tax
+  provider       String // manual, pesapal, seed
+  reference      String?        @unique
+  description    String
+  occurred_at    DateTime
+  /// Clerk user id of whoever recorded the row. Null for provider-written rows.
+  created_by     String?
+  is_demo        Boolean        @default(false)
+  created_at     DateTime       @default(now())
+
+  @@index([org_id, occurred_at])
+  @@index([occurred_at])
+  @@index([campaign_id])
+  @@index([is_demo])
+  @@map("wallet_transactions")
+}
+
+/// Delivery aggregates, one row per campaign, day, market, daypart and format.
+/// Not dispatch state: that is the campaign_placements table reserved in
+/// docs/shared/DATA-LAYER.md. `market` is where the plays happened, which can
+/// differ from campaigns.market because a vehicle moves between markets.
+/// `day` is an Africa/Nairobi calendar day.
+model CampaignDailyStat {
+  id                 Int      @id @default(autoincrement())
+  campaign_id        Int
+  campaign           Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  day                DateTime @db.Date
+  market             String
+  daypart            String // morning, midday, evening, night (Kenya time)
+  format             String // taxi_top, delivery_bike
+  plays_scheduled    Int      @default(0)
+  plays_delivered    Int      @default(0)
+  plays_missed       Int      @default(0)
+  plays_over         Int      @default(0)
+  vehicle_hours      Decimal  @default(0) @db.Decimal(10, 2)
+  distance_km        Decimal  @default(0) @db.Decimal(10, 2)
+  active_vehicles    Int      @default(0)
+  /// Null means not estimated, not zero.
+  impressions_low    Int?
+  impressions_likely Int?
+  impressions_high   Int?
+  source             String // schedule, logged, modelled, calibrated
+  /// Which impression model wrote the row, so recalibration can't silently
+  /// change history.
+  model_version      String?
+  is_demo            Boolean  @default(false)
+  created_at         DateTime @default(now())
+
+  @@unique([campaign_id, day, market, daypart, format])
+  @@index([day])
+  @@index([market, day])
+  @@index([is_demo])
+  @@map("campaign_daily_stats")
+}
+
+/// Plays per creative per day. Kept apart from CampaignDailyStat because a
+/// creative split at the daypart grain multiplies rows for little value.
+/// creative_name is a snapshot, so the row still reads after the asset goes.
+model CampaignCreativeDailyStat {
+  id                 Int         @id @default(autoincrement())
+  campaign_id        Int
+  campaign           Campaign    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  media_asset_id     Int?
+  media_asset        MediaAsset? @relation(fields: [media_asset_id], references: [id], onDelete: SetNull)
+  creative_name      String
+  day                DateTime    @db.Date
+  plays_delivered    Int         @default(0)
+  /// Null means not estimated, not zero.
+  impressions_likely Int?
+  is_demo            Boolean     @default(false)
+  created_at         DateTime    @default(now())
+
+  @@index([campaign_id, day])
+  @@index([is_demo])
+  @@map("campaign_creative_daily_stats")
+}
+
+/// Campaign-to-date reach as of a day. Reach is cumulative and not additive
+/// (one person can see two days or two campaigns), so never sum these rows,
+/// across days or across campaigns.
+model CampaignReachStat {
+  id            Int      @id @default(autoincrement())
+  campaign_id   Int
+  campaign      Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  as_of         DateTime @db.Date
+  reach_low     Int
+  reach_likely  Int
+  reach_high    Int
+  source        String // modelled, calibrated
+  model_version String?
+  is_demo       Boolean  @default(false)
+  created_at    DateTime @default(now())
+
+  @@unique([campaign_id, as_of])
+  @@map("campaign_reach_stats")
+}
+
+/// A payout to a CRM Driver (the drivers table), sent manually over M-Pesa
+/// today; ops records the M-Pesa ref once it settles.
+model Payout {
+  id           Int       @id @default(autoincrement())
+  driver_id    Int?
+  driver       Driver?   @relation(fields: [driver_id], references: [id], onDelete: SetNull)
+  amount_kes   Decimal   @db.Decimal(12, 2)
+  status       String    @default("pending") // pending, settled, failed
+  mpesa_ref    String?
+  /// First day of the month the payout covers.
+  period_month DateTime  @db.Date
+  paid_at      DateTime?
+  is_demo      Boolean   @default(false)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([status, period_month])
+  @@index([driver_id])
+  @@index([is_demo])
+  @@map("payouts")
+}
+
+/// An issued invoice. `lines` is an immutable snapshot of what was billed,
+/// never recomputed from the ledger. Only the demo seed writes these for now.
+model Invoice {
+  id              Int            @id @default(autoincrement())
+  org_id          Int?
+  org             AdvertiserOrg? @relation(fields: [org_id], references: [id], onDelete: SetNull)
+  campaign_id     Int?
+  campaign        Campaign?      @relation(fields: [campaign_id], references: [id], onDelete: SetNull)
+  number          String         @unique
+  period_start    DateTime       @db.Date
+  period_end      DateTime       @db.Date
+  subtotal_kes    Decimal        @db.Decimal(12, 2)
+  tax_kes         Decimal        @db.Decimal(12, 2)
+  total_kes       Decimal        @db.Decimal(12, 2)
+  status          String         @default("issued") // issued, paid, overdue, void
+  issued_on       DateTime       @db.Date
+  due_on          DateTime       @db.Date
+  paid_at         DateTime?
+  lines           Json
+  /// KRA eTIMS invoice number, once eTIMS is wired up.
+  tax_invoice_ref String?
+  is_demo         Boolean        @default(false)
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  @@index([org_id, issued_on])
+  @@index([is_demo])
+  @@map("invoices")
 }
 
 model AuditEvent {
