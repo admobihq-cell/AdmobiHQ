@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 
 import { OverviewDashboardSkeleton } from "@/components/overview/overview-dashboard-skeleton"
-import { OverviewRangePicker } from "@/components/overview/overview-range-picker"
+import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { OverviewStats } from "@/components/overview/overview-stats"
 import { PageHero } from "@/components/ui/page-hero"
 import { SectionHeading } from "@/components/ui/section-heading"
@@ -42,11 +42,11 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
   return (
     <div className="flex flex-1 flex-col gap-8">
       <PageHero
-        eyebrow="Analytics"
+        eyebrow="Dashboards"
         title="Operational overview"
-        description="Operational pulse across leads, fleet, drivers, and signups."
-        actions={<OverviewRangePicker range={range} />}
+        description="Operational pulse across leads, fleet, drivers, and signups, and what needs someone."
       />
+      <DashboardNav range={range} />
 
       <Suspense fallback={<OverviewDashboardSkeleton />} key={range}>
         <OverviewStats range={range} />

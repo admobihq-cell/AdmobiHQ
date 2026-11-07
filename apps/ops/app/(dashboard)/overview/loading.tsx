@@ -1,8 +1,8 @@
 import Link from "next/link"
 
 import { OverviewDashboardSkeleton } from "@/components/overview/overview-dashboard-skeleton"
-import { OverviewRangePicker } from "@/components/overview/overview-range-picker"
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 const QUICK_LINKS = [
   { href: "/leads", label: "Campaign Leads" },
@@ -22,7 +22,7 @@ export default function OverviewLoading() {
             Operational pulse across leads, fleet, drivers, and signups.
           </p>
         </div>
-        <OverviewRangePicker range="30d" />
+        <Skeleton className="h-8 w-64" />
       </div>
 
       <OverviewDashboardSkeleton />
