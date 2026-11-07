@@ -4,6 +4,7 @@ import Link from "next/link"
 import {
   ArrowLeft,
   CalendarDays,
+  BarChart3,
   FileDown,
   Image as ImageIcon,
   MapPin,
@@ -20,6 +21,7 @@ import { CreativeUploadField } from "@/components/campaigns/creative-upload-fiel
 import { CampaignDetailSkeleton } from "@/components/skeletons/campaign-detail-skeleton"
 import { StatCard } from "@/components/stat-card"
 import { useCampaign, useDownloadPdf } from "@/lib/use-campaigns"
+import { useOrgPermissions } from "@/lib/use-org"
 
 const FORMAT_LABELS: Record<string, string> = {
   taxi_top: "Taxi-top LED",
@@ -37,6 +39,7 @@ function formatKes(value: string | null): string {
 export function CampaignDetailView({ id }: { id: number }) {
   const campaignQuery = useCampaign(id)
   const downloadPdf = useDownloadPdf()
+  const { can } = useOrgPermissions()
 
   const backLink = (
     <Link
@@ -97,6 +100,14 @@ export function CampaignDetailView({ id }: { id: number }) {
                 <Link href={`/campaigns/new?id=${campaign.id}`}>
                   <Pencil data-icon="inline-start" />
                   Edit
+                </Link>
+              </Button>
+            ) : null}
+            {can("reports:read") && campaign.status === "approved" && campaign.starts_on ? (
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/reports/campaigns/${campaign.id}`}>
+                  <BarChart3 data-icon="inline-start" />
+                  View report
                 </Link>
               </Button>
             ) : null}

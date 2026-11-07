@@ -81,7 +81,7 @@ export type ReportFilterParams = {
   daypart?: string
 }
 
-export type ReportRoute = "overview" | "delivery" | "audience" | "spend" | "campaigns" | `campaigns/${number}`
+export type ReportRoute = "overview" | "delivery" | "audience" | "spend" | "campaigns" | `campaigns/${number}` | `campaigns/${number}/pdf`
 
 /** `csv` swaps the JSON body for a download; the API uses `export=csv` because `format` is a filter. */
 export function reportPath(

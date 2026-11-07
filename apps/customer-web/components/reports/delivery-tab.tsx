@@ -15,7 +15,7 @@ import { NO_DELIVERY_MESSAGE, compactOrDash } from "@/components/reports/format"
 const PAGE_SIZE = 15
 const n = (value: unknown) => Number(value ?? 0).toLocaleString("en-KE")
 
-const LOG_COLUMNS: LedgerColumn<DailyPoint>[] = [
+export const LOG_COLUMNS: LedgerColumn<DailyPoint>[] = [
   { key: "day", header: "Day", render: (r) => r.day },
   { key: "scheduled", header: "Scheduled", align: "right", render: (r) => n(r.scheduled) },
   { key: "delivered", header: "Delivered", align: "right", render: (r) => n(r.delivered) },
@@ -23,7 +23,7 @@ const LOG_COLUMNS: LedgerColumn<DailyPoint>[] = [
   { key: "over", header: "Over-delivered", align: "right", render: (r) => n(r.over) },
 ]
 
-const CREATIVE_COLUMNS: LedgerColumn<CreativeRotationRowDto>[] = [
+export const CREATIVE_COLUMNS: LedgerColumn<CreativeRotationRowDto>[] = [
   { key: "name", header: "Creative", render: (r) => <span className="font-medium">{r.name}</span> },
   { key: "plays", header: "Plays", align: "right", render: (r) => n(r.plays) },
   { key: "share", header: "Share", align: "right", render: (r) => (r.share === null ? "—" : `${Math.round(r.share * 100)}%`) },

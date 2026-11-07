@@ -14,12 +14,16 @@ const DEFAULT_RANGE = "30d"
  * sync, and nothing re-fetches on the server. Tab changes push (Back returns to the last tab);
  * range and filter changes replace.
  */
-export function useDashboardParams(defaultTab: string, filterKeys: readonly string[] = []) {
+export function useDashboardParams(
+  defaultTab: string,
+  filterKeys: readonly string[] = [],
+  defaultRange: string = DEFAULT_RANGE
+) {
   const searchParams = useSearchParams()
 
   const from = searchParams.get("from")
   const to = searchParams.get("to")
-  const range: RangeParams = from && to ? { from, to } : { range: searchParams.get("range") ?? DEFAULT_RANGE }
+  const range: RangeParams = from && to ? { from, to } : { range: searchParams.get("range") ?? defaultRange }
   const filters = Object.fromEntries(
     filterKeys.flatMap((key) => {
       const value = searchParams.get(key)
