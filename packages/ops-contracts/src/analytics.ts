@@ -119,6 +119,29 @@ export function frequency(impressions: number | null, reach: number | null): num
   return impressions / reach
 }
 
+/** Frequency (impressions per person reached) at or above this reads as a small group seeing it often. */
+export const HIGH_FREQUENCY = 5
+/** At or below this it reads as broad, light coverage. */
+export const LOW_FREQUENCY = 2
+
+/**
+ * A plain-language reading of impressions against reach, for one campaign. High impressions with
+ * low reach means the same people saw it again and again; the reverse means many people saw it
+ * once or twice. Null when either number is missing, since there is nothing honest to say.
+ */
+export function reachReading(
+  impressions: number | null,
+  reach: number | null
+): { kind: "concentrated" | "broad" | "balanced"; text: string } | null {
+  const f = frequency(impressions, reach)
+  if (f === null) return null
+  if (f >= HIGH_FREQUENCY)
+    return { kind: "concentrated", text: "A small group saw this often. Widen the markets or times to reach more people." }
+  if (f <= LOW_FREQUENCY)
+    return { kind: "broad", text: "Broad, light coverage. Many people saw this once or twice." }
+  return { kind: "balanced", text: "A balanced mix: good reach with some repeat views." }
+}
+
 /** Null when every value is null, so missing data never reads as zero. */
 export function sumNullable(values: (number | null)[]): number | null {
   let total: number | null = null

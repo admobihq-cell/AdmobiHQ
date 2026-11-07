@@ -7,6 +7,8 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { DashboardTabs } from "@workspace/ui/components/dashboard/dashboard-tabs"
 import { DashboardToolbar } from "@workspace/ui/components/dashboard/dashboard-toolbar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { AudienceTab } from "@/components/reports/audience-tab"
+import { DeliveryTab } from "@/components/reports/delivery-tab"
 import { HowWeEstimateSheet } from "@/components/reports/how-we-estimate-sheet"
 import { MeasurementBadge } from "@/components/reports/measurement-badge"
 import { ReportsOverviewTab } from "@/components/reports/overview-tab"
@@ -15,12 +17,16 @@ import {
   ReportFilterFields,
   showingText,
 } from "@/components/reports/report-filters"
-import { useReportOverview } from "@/lib/use-analytics"
+import { useReportAudience, useReportDelivery, useReportOverview } from "@/lib/use-analytics"
 import { useCampaigns } from "@/lib/use-campaigns"
 import { useDashboardParams } from "@/lib/use-dashboard-params"
 import { useOrgPermissions } from "@/lib/use-org"
 
-const TABS = [{ value: "overview", label: "Overview" }]
+const TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "delivery", label: "Delivery" },
+  { value: "audience", label: "Audience" },
+]
 
 function ReportsSkeleton() {
   return (
@@ -50,8 +56,11 @@ export function ReportsView() {
   const campaigns = useCampaigns().data ?? []
 
   // The overview query also supplies the measurement badge for every tab: same range and filters.
-  const overview = useReportOverview(range, filters, { enabled: canRead })
   const activeTab = TABS.some((t) => t.value === tab) ? tab : "overview"
+  const overview = useReportOverview(range, filters, { enabled: canRead })
+  const delivery = useReportDelivery(range, filters, { enabled: canRead && activeTab === "delivery" })
+  const audience = useReportAudience(range, filters, { enabled: canRead && activeTab === "audience" })
+  const open = activeTab === "delivery" ? delivery : activeTab === "audience" ? audience : overview
   const level = overview.data?.measurementLevel ?? "booked"
 
   return (
@@ -87,15 +96,21 @@ export function ReportsView() {
           />
           <DashboardTabs tabs={TABS} value={activeTab} onChange={setTab} />
 
-          {overview.isError ? (
+          {open.isError ? (
             <ApiErrorBanner
-              message={overview.error instanceof Error ? overview.error.message : "Could not load your reports."}
-              onRetry={() => void overview.refetch()}
+              message={open.error instanceof Error ? open.error.message : "Could not load your reports."}
+              onRetry={() => void open.refetch()}
             />
-          ) : !overview.data ? (
+          ) : !open.data ? (
             <ReportsSkeleton />
-          ) : (
+          ) : activeTab === "delivery" && delivery.data ? (
+            <DeliveryTab report={delivery.data} />
+          ) : activeTab === "audience" && audience.data ? (
+            <AudienceTab report={audience.data} />
+          ) : overview.data ? (
             <ReportsOverviewTab report={overview.data} canSeeMoney={canSeeMoney} />
+          ) : (
+            <ReportsSkeleton />
           )}
         </>
       )}

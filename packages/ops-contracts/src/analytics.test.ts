@@ -13,6 +13,7 @@ import {
   nairobiDay,
   netMargin,
   rate,
+  reachReading,
   resolveReportRange,
   runwayDays,
   sumNullable,
@@ -258,5 +259,24 @@ describe("monthlyStatements", () => {
       { month: "2026-09", kind: "top_up", amountKes: 0.2 },
     ])
     expect(rows[0]?.closing).toBe(0.3)
+  })
+})
+
+describe("reachReading", () => {
+  it("reads high impressions on low reach as a small group seeing it often", () => {
+    expect(reachReading(9000, 1000)?.kind).toBe("concentrated")
+    expect(reachReading(9000, 1000)?.text).toMatch(/small group saw this often/i)
+  })
+  it("reads the reverse as broad, light coverage", () => {
+    expect(reachReading(1500, 1000)?.kind).toBe("broad")
+    expect(reachReading(1500, 1000)?.text).toMatch(/broad, light coverage/i)
+  })
+  it("reads the middle as balanced", () => {
+    expect(reachReading(3500, 1000)?.kind).toBe("balanced")
+  })
+  it("says nothing without both numbers", () => {
+    expect(reachReading(null, 1000)).toBeNull()
+    expect(reachReading(1000, null)).toBeNull()
+    expect(reachReading(1000, 0)).toBeNull()
   })
 })
