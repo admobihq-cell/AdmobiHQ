@@ -1,20 +1,17 @@
 "use client"
 
-import Link from "next/link"
-import { Download, FileText, Headset, Landmark, Lock, PiggyBank, Receipt, Wallet } from "lucide-react"
-import { exportFileName, formatKes, type FinanceSummaryDto } from "@workspace/ops-contracts"
+import { Landmark, Lock, Receipt, Wallet } from "lucide-react"
+import { formatKes, type FinanceSummaryDto } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { MirrorBars } from "@workspace/ui/components/charts/mirror-bars"
 import { ShareBar } from "@workspace/ui/components/charts/share-bar"
-import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card"
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import { AlertStrip } from "@workspace/ui/components/dashboard/notes"
-import { FundingCard } from "@/components/billing/funding-card"
-import { transactionsPath, type RangeParams } from "@/lib/analytics-client"
-import { useDownloadPdf } from "@/lib/use-campaigns"
+import { BillingPanels } from "@/components/billing/billing-panels"
+import type { RangeParams } from "@/lib/analytics-client"
 
 export const NO_LEDGER_MESSAGE = "Your transactions appear here after your first top-up."
 
@@ -37,7 +34,6 @@ export function BillingOverviewTab({
   onTopUp: () => void
   onNavigate: (tab: string) => void
 }) {
-  const download = useDownloadPdf()
   const { hasLedgerRows } = summary
   const spendEmpty = hasLedgerRows ? "No spending in this period." : NO_LEDGER_MESSAGE
   const spendTotal = summary.spendByCategory.reduce((sum, row) => sum + row.value, 0)
@@ -135,93 +131,7 @@ export function BillingOverviewTab({
         </ChartCard>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <FundingCard summary={summary} />
-
-        <DashboardCard
-          title="Upcoming charges"
-          description="Planned spend on scheduled campaigns, not a bill"
-          footer={
-            summary.upcomingCharges.length > 0 ? (
-              <div className="flex w-full items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total planned</span>
-                <span className="font-medium tabular-nums">
-                  {formatKes(summary.upcomingCharges.reduce((sum, c) => sum + c.remainingKes, 0))}
-                </span>
-              </div>
-            ) : undefined
-          }
-        >
-          {summary.upcomingCharges.length === 0 ? (
-            <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-              No scheduled campaigns have budget waiting to start.
-            </p>
-          ) : (
-            <ul className="divide-y rounded-md border">
-              {summary.upcomingCharges.slice(0, 5).map((charge) => (
-                <li key={charge.campaignId} className="flex items-center justify-between gap-3 px-3 py-2">
-                  <div className="min-w-0">
-                    <Link href={`/campaigns/${charge.campaignId}`} className="block truncate text-sm font-medium hover:underline">
-                      {charge.campaignName}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">Starts {charge.startsOn}</p>
-                  </div>
-                  <span className="text-sm tabular-nums">{formatKes(charge.remainingKes)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </DashboardCard>
-
-        <DashboardCard title="Shortcuts" description="Common money tasks">
-          <div className="grid gap-2">
-            <Button variant="outline" className="justify-start" onClick={onTopUp}>
-              <PiggyBank data-icon="inline-start" />
-              Top up
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start"
-              loading={download.isPending}
-              loadingText="Preparing…"
-              onClick={() =>
-                download.mutate({
-                  path: "/v1/customer/campaigns/statement",
-                  filename: exportFileName("campaign budget statement", null, "pdf"),
-                })
-              }
-            >
-              <FileText data-icon="inline-start" />
-              Budget statement
-            </Button>
-            <Button variant="outline" className="justify-start" onClick={() => onNavigate("invoices")}>
-              <Receipt data-icon="inline-start" />
-              Invoices
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start"
-              disabled={!hasLedgerRows}
-              loading={download.isPending}
-              onClick={() =>
-                download.mutate({
-                  path: transactionsPath({ range, sort: "date_desc" }, true),
-                  filename: exportFileName("transactions", null, "csv"),
-                })
-              }
-            >
-              <Download data-icon="inline-start" />
-              Export transactions
-            </Button>
-            <Button variant="outline" className="justify-start" asChild>
-              <Link href="/settings/support">
-                <Headset data-icon="inline-start" />
-                Contact support
-              </Link>
-            </Button>
-          </div>
-        </DashboardCard>
-      </div>
+      <BillingPanels summary={summary} range={range} onTopUp={onTopUp} onNavigate={onNavigate} />
     </div>
   )
 }
