@@ -8,7 +8,8 @@ import {
   Truck,
 } from "lucide-react"
 
-import { OverviewDashboardSkeleton } from "@/components/overview/overview-dashboard-skeleton"
+import { DASHBOARD_COPY } from "@/components/dashboards/dashboard-header"
+import { OverviewSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { OverviewStats } from "@/components/overview/overview-stats"
 import { PageHero } from "@/components/ui/page-hero"
@@ -43,12 +44,12 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
     <div className="flex flex-1 flex-col gap-8">
       <PageHero
         eyebrow="Dashboards"
-        title="Operational overview"
-        description="Operational pulse across leads, fleet, drivers, and signups, and what needs someone."
+        title={DASHBOARD_COPY.overview.title}
+        description={DASHBOARD_COPY.overview.description}
       />
       <DashboardNav range={range} />
 
-      <Suspense fallback={<OverviewDashboardSkeleton />} key={range}>
+      <Suspense fallback={<OverviewSkeleton />} key={range}>
         <OverviewStats range={range} />
       </Suspense>
 

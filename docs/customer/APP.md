@@ -90,6 +90,14 @@ the client one. A route's `loading.tsx` and its view's `isPending` branch must
 therefore render the **same** skeleton component (`components/skeletons/*`), or
 the page shows two differently-shaped skeletons back to back and shifts twice.
 
+The dashboard pages (Overview, Billing, Reports, a campaign report) follow this with
+[`components/skeletons/dashboard-skeletons.tsx`](../../apps/customer-web/components/skeletons/dashboard-skeletons.tsx),
+one skeleton per tab built from the shared primitives in `@workspace/ui`
+(`dashboard/dashboard-skeletons.tsx`). Each mirrors its tab's real card grid, so
+change a tab's layout and its skeleton together. Ledger tabs show a table
+skeleton on first load only; the queries use `keepPreviousData`, so paging or
+filtering keeps the table (and the search box's focus) on screen.
+
 `/campaigns/new` additionally needs its own `loading.tsx`: the wizard is a
 `fixed inset-0` overlay, so inheriting `campaigns/loading.tsx` would flash the
 campaign *list* skeleton inside the app shell before the overlay takes over.

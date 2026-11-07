@@ -1,7 +1,8 @@
 import { Suspense } from "react"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { DashboardHeader } from "@/components/dashboards/dashboard-header"
+import { DeliverySkeleton, InventorySkeleton, PipelineSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { DeliveryTab, InventoryTab, PipelineTab } from "@/components/dashboards/campaigns-dashboard"
 import { dashboardParams, openDashboard } from "@/lib/dashboard-access"
@@ -15,6 +16,12 @@ const TABS = [
   { value: "delivery", label: "Delivery" },
   { value: "inventory", label: "Inventory mix" },
 ]
+
+function TabSkeleton({ tab }: { tab: string }) {
+  if (tab === "delivery") return <DeliverySkeleton />
+  if (tab === "inventory") return <InventorySkeleton />
+  return <PipelineSkeleton />
+}
 
 async function Tab({ tab, range, includeMoney }: { tab: string; range: DateRangeKey; includeMoney: boolean }) {
   try {
@@ -34,15 +41,9 @@ export default async function CampaignsDashboardPage({ searchParams }: { searchP
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Campaigns</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          What is waiting for review, how campaigns are delivering, and what the network has booked.
-        </p>
-      </div>
+      <DashboardHeader page="campaigns" />
       <DashboardNav tabs={TABS} tab={tab} range={range} />
-      <Suspense key={`${tab}-${range}`} fallback={<Skeleton className="h-96 w-full" />}>
+      <Suspense key={`${tab}-${range}`} fallback={<TabSkeleton tab={tab} />}>
         <Tab tab={tab} range={range} includeMoney={includeMoney} />
       </Suspense>
     </div>

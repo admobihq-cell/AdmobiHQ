@@ -2,7 +2,8 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { DATE_RANGE_KEYS, type DateRangeKey } from "@workspace/ops-contracts"
 
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { DashboardHeader } from "@/components/dashboards/dashboard-header"
+import { FinanceSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { FINANCE_TABS, FinanceTab } from "@/components/finances/finance-view"
 import { requireOpsPermission } from "@/lib/auth"
@@ -28,16 +29,10 @@ export default async function FinancesPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Finances</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Money in and out of advertiser wallets, driver payouts and what the platform costs to run.
-        </p>
-      </div>
+      <DashboardHeader page="finances" />
       <DashboardNav tabs={FINANCE_TABS} tab={tab} range={range} showRange={tab !== "wallets" && tab !== "tools"} />
       {/* Keyed on tab and range so a change shows the skeleton instead of the old tab. */}
-      <Suspense key={`${tab}-${range}`} fallback={<Skeleton className="h-96 w-full" />}>
+      <Suspense key={`${tab}-${range}`} fallback={<FinanceSkeleton tab={tab} />}>
         <FinanceTab tab={tab} range={range} />
       </Suspense>
     </div>

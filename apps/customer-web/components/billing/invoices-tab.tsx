@@ -1,5 +1,6 @@
 "use client"
 
+import { LedgerSkeletonShell } from "@/components/skeletons/dashboard-skeletons"
 import { useState } from "react"
 import Link from "next/link"
 import { FileDown } from "lucide-react"
@@ -75,6 +76,8 @@ export function InvoicesTab() {
       />
     )
   }
+
+  if (query.isPending) return <LedgerSkeletonShell label="Loading invoices" columns={5} />
 
   const missingDetails = org && (!org.billingEmail || !org.taxPin)
 

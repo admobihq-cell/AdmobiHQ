@@ -30,7 +30,7 @@ import { LedgerCard } from "@workspace/ui/components/dashboard/ledger-card"
 import { MetricTile } from "@workspace/ui/components/dashboard/metric-tile"
 import { ProgressCard } from "@workspace/ui/components/dashboard/progress-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { CampaignReportBodySkeleton, MapCardSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { DeliveryPacingCard } from "@/components/reports/delivery-pacing-card"
 import { CREATIVE_COLUMNS, LOG_COLUMNS } from "@/components/reports/delivery-tab"
 import { HowWeEstimateSheet } from "@/components/reports/how-we-estimate-sheet"
@@ -52,7 +52,7 @@ import { useOrgPermissions } from "@/lib/use-org"
 
 const MarketMapCard = dynamic(() => import("@/components/reports/market-map-card"), {
   ssr: false,
-  loading: () => <Skeleton className="h-96 w-full" />,
+  loading: () => <MapCardSkeleton />,
 })
 
 const DAYPART_COLUMNS = DAYPARTS.map((d) => DAYPART_LABELS[d])
@@ -70,16 +70,6 @@ function pacingOf(report: CampaignReportDto): ReportOverviewDto["pacing"] {
   }
 }
 
-function ReportSkeleton() {
-  return (
-    <div className="grid gap-4" aria-busy="true">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-80 w-full" />
-    </div>
-  )
-}
-
 /** One campaign's full report: the page an advertiser forwards. Another org's id is a 404. */
 export function CampaignReportView({ id }: { id: number }) {
   const { can, isLoading: orgLoading } = useOrgPermissions()
@@ -95,7 +85,7 @@ export function CampaignReportView({ id }: { id: number }) {
 
   const report = query.data
 
-  if (orgLoading) return <ReportSkeleton />
+  if (orgLoading) return <CampaignReportBodySkeleton />
   if (!canRead) {
     return (
       <Card>
@@ -181,7 +171,7 @@ export function CampaignReportView({ id }: { id: number }) {
           onRetry={() => void query.refetch()}
         />
       ) : !report || !c ? (
-        <ReportSkeleton />
+        <CampaignReportBodySkeleton />
       ) : (
         <>
           <ProgressCard

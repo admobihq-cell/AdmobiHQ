@@ -10,13 +10,13 @@ import { ShareBar } from "@workspace/ui/components/charts/share-bar"
 import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card"
 import { MetricTile } from "@workspace/ui/components/dashboard/metric-tile"
 import { InsightNote } from "@workspace/ui/components/dashboard/notes"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { MapCardSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { NO_DELIVERY_MESSAGE, compactOrDash } from "@/components/reports/format"
 
 // MapLibre and the H3 cell sets are heavy and only this tab needs them.
 const MarketMapCard = dynamic(() => import("@/components/reports/market-map-card"), {
   ssr: false,
-  loading: () => <Skeleton className="h-96 w-full" />,
+  loading: () => <MapCardSkeleton />,
 })
 
 const NO_ESTIMATE_MESSAGE = "Audience estimates appear here once your campaigns have modelled data."

@@ -7,7 +7,8 @@ import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { DashboardTabs } from "@workspace/ui/components/dashboard/dashboard-tabs"
 import { DashboardToolbar } from "@workspace/ui/components/dashboard/dashboard-toolbar"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { ToolbarSkeleton } from "@workspace/ui/components/dashboard/dashboard-skeletons"
+import { ReportsTabSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { AudienceTab } from "@/components/reports/audience-tab"
 import { CampaignsTab } from "@/components/reports/campaigns-tab"
 import { DeliveryTab } from "@/components/reports/delivery-tab"
@@ -39,18 +40,6 @@ const TABS = [
   { value: "spend", label: "Spend" },
   { value: "campaigns", label: "Campaigns" },
 ]
-
-function ReportsSkeleton() {
-  return (
-    <div className="grid gap-4" aria-busy="true">
-      <div className="grid gap-4 xl:grid-cols-3">
-        <Skeleton className="h-56 w-full" />
-        <Skeleton className="h-56 w-full xl:col-span-2" />
-      </div>
-      <Skeleton className="h-80 w-full" />
-    </div>
-  )
-}
 
 /**
  * Reports. Tab, range and filters live in the URL. Without `reports:read` it shows a plain
@@ -109,7 +98,7 @@ export function ReportsView() {
       return <CampaignsTab rows={campaigns.data.items} canSeeMoney={canSeeMoney} />
     if (activeTab === "overview" && overview.data)
       return <ReportsOverviewTab report={overview.data} canSeeMoney={canSeeMoney} />
-    return <ReportsSkeleton />
+    return <ReportsTabSkeleton tab={activeTab} />
   }
 
   return (
@@ -123,7 +112,10 @@ export function ReportsView() {
       </div>
 
       {orgLoading ? (
-        <ReportsSkeleton />
+        <>
+          <ToolbarSkeleton tabs={TABS.length} extras={2} />
+          <ReportsTabSkeleton tab={activeTab} />
+        </>
       ) : !canRead ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
@@ -133,6 +125,7 @@ export function ReportsView() {
       ) : (
         <>
           <DashboardToolbar
+            view={<DashboardTabs tabs={TABS} value={activeTab} onChange={setTab} />}
             range={range}
             onRangeChange={setRange}
             filters={{
@@ -152,7 +145,6 @@ export function ReportsView() {
                 : undefined
             }
           />
-          <DashboardTabs tabs={TABS} value={activeTab} onChange={setTab} />
           {body()}
         </>
       )}

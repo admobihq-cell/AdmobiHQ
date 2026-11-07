@@ -2,8 +2,9 @@ import { Suspense } from "react"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { AdvertisersDashboard } from "@/components/dashboards/advertisers-dashboard"
+import { DashboardHeader } from "@/components/dashboards/dashboard-header"
+import { AdvertisersSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { dashboardParams, openDashboard } from "@/lib/dashboard-access"
 import { getAdvertisers } from "@/lib/queries/advertiser-analytics"
@@ -27,15 +28,9 @@ export default async function AdvertisersDashboardPage({ searchParams }: { searc
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Advertisers</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Who is spending, who is new, and which accounts need a conversation.
-        </p>
-      </div>
+      <DashboardHeader page="advertisers" />
       <DashboardNav range={range} />
-      <Suspense key={range} fallback={<Skeleton className="h-96 w-full" />}>
+      <Suspense key={range} fallback={<AdvertisersSkeleton money={includeMoney} />}>
         <Content range={range} includeMoney={includeMoney} />
       </Suspense>
     </div>

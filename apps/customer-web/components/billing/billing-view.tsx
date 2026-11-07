@@ -15,7 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { ToolbarSkeleton } from "@workspace/ui/components/dashboard/dashboard-skeletons"
+import { BillingTabSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { BillingOverviewTab } from "@/components/billing/billing-overview-tab"
 import { InvoicesTab } from "@/components/billing/invoices-tab"
 import { StatementsTab } from "@/components/billing/statements-tab"
@@ -52,18 +53,6 @@ export function TopUpNoticeDialog({ open, onOpenChange }: { open: boolean; onOpe
   )
 }
 
-function BillingSkeleton() {
-  return (
-    <div className="grid gap-4" aria-busy="true">
-      <Skeleton className="h-32 w-full" />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-72 w-full" />
-        <Skeleton className="h-72 w-full" />
-      </div>
-    </div>
-  )
-}
-
 /**
  * Finance & Billing. Tabs and range live in the URL. Without `billing:read` it shows a plain
  * access message and issues no request, so a Member never meets a 403.
@@ -88,7 +77,10 @@ export function BillingView() {
       </div>
 
       {orgLoading ? (
-        <BillingSkeleton />
+        <>
+          <ToolbarSkeleton tabs={TABS.length} />
+          <BillingTabSkeleton tab={activeTab} />
+        </>
       ) : !canRead ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
@@ -97,8 +89,12 @@ export function BillingView() {
         </Card>
       ) : (
         <>
-          {RANGE_TABS.has(activeTab) ? <DashboardToolbar range={range} onRangeChange={setRange} /> : null}
-          <DashboardTabs tabs={TABS} value={activeTab} onChange={setTab} />
+          <DashboardToolbar
+            view={<DashboardTabs tabs={TABS} value={activeTab} onChange={setTab} />}
+            range={range}
+            onRangeChange={setRange}
+            hideRange={!RANGE_TABS.has(activeTab)}
+          />
 
           {activeTab === "transactions" ? (
             <TransactionsTab range={range} />
@@ -112,7 +108,7 @@ export function BillingView() {
               onRetry={() => void summary.refetch()}
             />
           ) : !summary.data ? (
-            <BillingSkeleton />
+            <BillingTabSkeleton tab="overview" />
           ) : (
             <BillingOverviewTab
               summary={summary.data}
