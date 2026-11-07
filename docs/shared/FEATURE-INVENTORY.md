@@ -276,7 +276,7 @@ Anonymous, email-based access without requiring sign-in. A random 24-byte token 
 
 ### Stack versions confirmed
 
-TanStack Query v5, react-hook-form v7 + `@hookform/resolvers` (Zod bridge), Zod `3.25.76` (pinned via root `package.json` overrides), Prisma Client 7 (`@prisma/adapter-pg` driver-adapter mode — no bundled query-engine binary), Next.js 16.
+TanStack Query v5, react-hook-form v7 + `@hookform/resolvers` (Zod bridge), Zod 4 (set via root `package.json` overrides), Prisma Client 7 (`@prisma/adapter-pg` driver-adapter mode — no bundled query-engine binary), Next.js 16.
 
 ---
 

@@ -68,7 +68,7 @@ export type EntityFormConfig = {
 function validationError(
   result: {
     success: boolean
-    error?: { issues: Array<{ message: string; path: Array<string | number> }> }
+    error?: { issues: Array<{ message: string; path: PropertyKey[] }> }
   },
   fields: FormFieldDef[],
 ): FormValidationResult {

@@ -18,9 +18,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.3",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "@sentry/nextjs": "^10.64.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "@sentry/nextjs": "^10.78.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.1",
     "@vercel/blob": "^2.3.1",
@@ -30,14 +30,14 @@
     "antd": "^6.5.2",
     "cloudinary": "^2.7.0",
     "dotenv": "^16.6.1",
-    "next": "^16.3.8",
+    "next": "^16.4.3",
     "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-email": "^6.3.0",
     "resend": "^6.12.3",
     "takumi-pdf": "^0.14.1",
-    "zod": "3.25.76"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^25.1.0",
@@ -48,7 +48,7 @@
     "@workspace/vitest-config": "*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.39.2",
-    "prisma": "^7.8.0",
+    "prisma": "^7.10.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
