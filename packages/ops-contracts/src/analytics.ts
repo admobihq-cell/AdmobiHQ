@@ -17,6 +17,9 @@ export const DAYPART_LABELS: Record<Daypart, string> = {
 }
 
 /** A proposed split, not yet confirmed commercially. `tax` is never revenue. */
+/** The campaign markets a report can filter on. Mirrors `MARKET_KEYS` in @workspace/geo/markets. */
+export const REPORT_MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
+
 export const SPEND_CATEGORIES = ["screen_time", "production", "service_fee", "tax"] as const
 export type SpendCategory = (typeof SPEND_CATEGORIES)[number]
 

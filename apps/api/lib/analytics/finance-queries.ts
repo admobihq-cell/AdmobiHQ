@@ -35,10 +35,10 @@ import { prisma } from "@/lib/prisma"
  * `occurred_at` is TIMESTAMP(3) without a zone and holds UTC, so a calendar day in Nairobi
  * needs both conversions. A single `AT TIME ZONE 'Africa/Nairobi'` would shift rows by 3 hours.
  */
-const DAY = Prisma.sql`(occurred_at AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi')::date`
+export const LEDGER_DAY = Prisma.sql`(occurred_at AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi')::date`
 
-const inRange = (start: string, end: string) =>
-  Prisma.sql`${DAY} BETWEEN ${start}::date AND ${end}::date`
+export const ledgerInRange = (start: string, end: string) =>
+  Prisma.sql`${LEDGER_DAY} BETWEEN ${start}::date AND ${end}::date`
 
 const THIRTY_DAYS = 30
 const roundKes = (value: number) => Math.round(value * 100) / 100
@@ -53,7 +53,7 @@ async function periodTotals(orgId: number, start: string, end: string): Promise<
       (-COALESCE(SUM(amount_kes) FILTER (WHERE kind IN ('spend', 'refund')), 0))::float8 AS spent,
       COALESCE(SUM(amount_kes) FILTER (WHERE kind = 'top_up'), 0)::float8 AS top_ups
     FROM wallet_transactions
-    WHERE org_id = ${orgId} AND ${inRange(start, end)}`
+    WHERE org_id = ${orgId} AND ${ledgerInRange(start, end)}`
   return { spent: roundKes(num(row?.spent)), topUps: roundKes(num(row?.top_ups)) }
 }
 
@@ -73,7 +73,7 @@ export async function getFinanceSummary(
       prisma.$queryRaw<{ category: string | null; spent: number }[]>`
         SELECT spend_category AS category, (-SUM(amount_kes))::float8 AS spent
         FROM wallet_transactions
-        WHERE org_id = ${orgId} AND kind IN ('spend', 'refund') AND ${inRange(range.start, range.end)}
+        WHERE org_id = ${orgId} AND kind IN ('spend', 'refund') AND ${ledgerInRange(range.start, range.end)}
         GROUP BY spend_category HAVING -SUM(amount_kes) <> 0
         ORDER BY 2 DESC`,
       prisma.$queryRaw<{ name: string | null; spent: number }[]>`
@@ -81,15 +81,15 @@ export async function getFinanceSummary(
         FROM wallet_transactions t
         LEFT JOIN campaigns c ON c.id = t.campaign_id AND c.org_id = t.org_id
         WHERE t.org_id = ${orgId} AND t.kind IN ('spend', 'refund')
-          AND ${inRange(range.start, range.end)}
+          AND ${ledgerInRange(range.start, range.end)}
         GROUP BY c.name HAVING -SUM(t.amount_kes) <> 0
         ORDER BY 2 DESC`,
       prisma.$queryRaw<{ period: string; in_kes: number; out_kes: number }[]>`
-        SELECT to_char(${DAY}, 'YYYY-MM') AS period,
+        SELECT to_char(${LEDGER_DAY}, 'YYYY-MM') AS period,
           COALESCE(SUM(amount_kes) FILTER (WHERE kind = 'top_up'), 0)::float8 AS in_kes,
           (-COALESCE(SUM(amount_kes) FILTER (WHERE kind IN ('spend', 'refund')), 0))::float8 AS out_kes
         FROM wallet_transactions
-        WHERE org_id = ${orgId} AND ${inRange(range.start, range.end)}
+        WHERE org_id = ${orgId} AND ${ledgerInRange(range.start, range.end)}
         GROUP BY 1 ORDER BY 1`,
       prisma.campaign.findMany({ where: { org_id: orgId } }),
       prisma.$queryRaw<{ campaign_id: number; spent: number }[]>`
@@ -102,7 +102,7 @@ export async function getFinanceSummary(
         SELECT (-COALESCE(SUM(amount_kes), 0))::float8 AS spent
         FROM wallet_transactions
         WHERE org_id = ${orgId} AND kind IN ('spend', 'refund')
-          AND ${DAY} > ${trailingEnd}::date - ${THIRTY_DAYS}::int`,
+          AND ${LEDGER_DAY} > ${trailingEnd}::date - ${THIRTY_DAYS}::int`,
     ])
 
   const balanceKes = roundKes(num(ledger[0]?.balance))
@@ -227,7 +227,7 @@ export async function listTransactions(
   const pageSize = TRANSACTION_PAGE_SIZE
 
   const conditions: Prisma.Sql[] = []
-  if (query.range) conditions.push(inRange(query.range.start, query.range.end))
+  if (query.range) conditions.push(ledgerInRange(query.range.start, query.range.end))
   if (query.kind) conditions.push(Prisma.sql`kind = ${query.kind}`)
   if (query.q) {
     const pattern = `%${escapeLike(query.q)}%`
@@ -351,7 +351,7 @@ export async function getInvoice(orgId: number, id: number): Promise<InvoiceDto 
 /** Oldest month first. Each closing is the next month's opening; the last closing is the balance. */
 export async function listStatements(orgId: number): Promise<StatementRowDto[]> {
   const rows = await prisma.$queryRaw<{ month: string; kind: string; amount: number }[]>`
-    SELECT to_char(${DAY}, 'YYYY-MM') AS month, kind, SUM(amount_kes)::float8 AS amount
+    SELECT to_char(${LEDGER_DAY}, 'YYYY-MM') AS month, kind, SUM(amount_kes)::float8 AS amount
     FROM wallet_transactions WHERE org_id = ${orgId}
     GROUP BY 1, 2`
   return monthlyStatements(rows.map((r) => ({ month: r.month, kind: r.kind, amountKes: num(r.amount) })))
