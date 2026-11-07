@@ -99,6 +99,23 @@ takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
 
+### Finance (advertiser)
+
+Read-only money views for the caller's org, behind `billing:read`. They read the wallet ledger (`wallet_transactions`, append-only; the balance is derived, never stored) and `invoices`. Every query filters on the caller's org. A ledger row that points at another org's campaign still counts for this org, but the campaign name is never returned. Days are Africa/Nairobi calendar days.
+
+Range parameters, shared with the report routes: `range` (`7d` | `30d` | `90d` | `all`, default `30d`) or `from` + `to` (`YYYY-MM-DD`, at most 366 days). A bad range answers `400`. Deltas compare with the same-length period before; `all` has no comparison, so its delta is `null`.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/customer/finance/summary` | Balance (all-time), committed, available, spend and top-ups with deltas, spend by category and campaign, money in/out by month, funding status, upcoming charges |
+| `GET` | `/v1/customer/finance/transactions` | Ledger, 25 per page. Filters `kind`, `q`, range; `sort` = `date_desc` (default), `date_asc`, `amount_desc`, `amount_asc`; `page`. `format=csv` returns every filtered row, not one page |
+| `GET` | `/v1/customer/finance/invoices` | Invoices, newest first |
+| `GET` | `/v1/customer/finance/invoices/[id]/pdf` | One invoice as a PDF; another org's id is `404` |
+| `GET` | `/v1/customer/finance/statements` | One row per month with ledger rows, oldest first. Each closing equals the next opening; the last closing equals the balance |
+| `GET` | `/v1/customer/finance/statements/[month]/pdf` | One month (`YYYY-MM`) as a PDF; a month with no rows is `404` |
+
+Funding is `untracked` until the org's first ledger row, so an org with real budgets and no wallet history never sees a "short of funds" alert. `committed` is the unspent part of each active (live or scheduled) campaign's budget, floored at 0 per campaign. Both PDFs go through the shared `CampaignStatementPdf` template and carry a "not a tax invoice" footnote; text is passed through `lib/pdf/latin1.ts` because the PDF font covers Latin-1 only.
+
 ### Media Manager (advertiser)
 
 The Media Library's product name. Files are owned by the advertiser org, not by a campaign: one file can be attached to many campaigns. Every route checks the file's org and answers `404` (never `403`) for another org's file. Bytes are private Cloudinary assets streamed only through the `…/file` proxy.
