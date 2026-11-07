@@ -50,10 +50,10 @@ export const appNavItems: AppNavItem[] = [
     description: "Plan campaign flights on a shared month calendar.",
   },
   {
-    href: "/settings/billing",
-    label: "Wallet",
+    href: "/billing",
+    label: "Finance & Billing",
     icon: Wallet,
-    description: "Fund your campaigns and track spend.",
+    description: "Your funds, spending, invoices and statements.",
   },
   {
     href: "/map",
