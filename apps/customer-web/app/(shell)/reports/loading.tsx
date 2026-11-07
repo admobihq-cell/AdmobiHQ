@@ -1,11 +1,19 @@
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-/** Reports is a static "coming soon" stub — a light placeholder is enough, no data to skeletonize. */
 export default function ReportsLoading() {
   return (
-    <div className="flex flex-1 flex-col gap-3 rounded-xl border bg-muted/20 p-12 text-center">
-      <Skeleton className="mx-auto h-3 w-20" />
-      <Skeleton className="mx-auto h-6 w-40" />
+    <div className="flex flex-1 flex-col gap-6" aria-busy="true">
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-4 w-full max-w-md" />
+      </div>
+      <Skeleton className="h-8 w-full max-w-sm" />
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Skeleton className="h-56 w-full" />
+        <Skeleton className="h-56 w-full xl:col-span-2" />
+      </div>
+      <Skeleton className="h-80 w-full" />
     </div>
   )
 }

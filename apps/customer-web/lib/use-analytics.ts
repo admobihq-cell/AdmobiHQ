@@ -3,13 +3,26 @@
 import { useAuth } from "@clerk/nextjs"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
+import type {
+  CampaignReportDto,
+  ReportAudienceDto,
+  ReportCampaignRowDto,
+  ReportDeliveryDto,
+  ReportOverviewDto,
+  ReportSpendDto,
+} from "@workspace/ops-contracts"
+
 import {
   ANALYTICS_QUERY_KEY,
   getFinanceSummary,
   getInvoices,
+  getReport,
   getStatements,
   getTransactions,
+  reportPath,
   type RangeParams,
+  type ReportFilterParams,
+  type ReportRoute,
   type TransactionParams,
 } from "@/lib/analytics-client"
 
@@ -63,3 +76,37 @@ export function useStatements({ enabled = true }: Options = {}) {
     staleTime: STALE_MS,
   })
 }
+
+// ---------------------------------------------------------------------------
+// Reports
+// ---------------------------------------------------------------------------
+
+function useReport<T>(
+  route: ReportRoute,
+  range: RangeParams,
+  filters: ReportFilterParams,
+  { enabled = true }: Options = {}
+) {
+  const { getToken, isLoaded } = useAuth()
+  return useQuery({
+    queryKey: [...ANALYTICS_QUERY_KEY, "report", route, range, filters],
+    queryFn: () => getReport<T>(getToken, reportPath(route, range, filters)),
+    enabled: enabled && isLoaded,
+    staleTime: STALE_MS,
+    // Keeps the page on screen while a filter or range change loads.
+    placeholderData: keepPreviousData,
+  })
+}
+
+export const useReportOverview = (r: RangeParams, f: ReportFilterParams, o?: Options) =>
+  useReport<ReportOverviewDto>("overview", r, f, o)
+export const useReportDelivery = (r: RangeParams, f: ReportFilterParams, o?: Options) =>
+  useReport<ReportDeliveryDto>("delivery", r, f, o)
+export const useReportAudience = (r: RangeParams, f: ReportFilterParams, o?: Options) =>
+  useReport<ReportAudienceDto>("audience", r, f, o)
+export const useReportSpend = (r: RangeParams, f: ReportFilterParams, o?: Options) =>
+  useReport<ReportSpendDto>("spend", r, f, o)
+export const useReportCampaigns = (r: RangeParams, f: ReportFilterParams, o?: Options) =>
+  useReport<{ items: ReportCampaignRowDto[] }>("campaigns", r, f, o)
+export const useCampaignReport = (id: number, r: RangeParams, o?: Options) =>
+  useReport<CampaignReportDto>(`campaigns/${id}`, r, {}, o)

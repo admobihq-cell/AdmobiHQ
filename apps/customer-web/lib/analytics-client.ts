@@ -68,3 +68,35 @@ export async function getStatements(getToken: GetToken): Promise<StatementRowDto
   const res = await authedFetch(getToken, "/v1/customer/finance/statements")
   return (await res.json()).items
 }
+
+// ---------------------------------------------------------------------------
+// Reports
+// ---------------------------------------------------------------------------
+
+/** Report filters as they travel in the URL: strings, each optional. */
+export type ReportFilterParams = {
+  campaign?: string
+  market?: string
+  format?: string
+  daypart?: string
+}
+
+export type ReportRoute = "overview" | "delivery" | "audience" | "spend" | "campaigns" | `campaigns/${number}`
+
+/** `csv` swaps the JSON body for a download; the API uses `export=csv` because `format` is a filter. */
+export function reportPath(
+  route: ReportRoute,
+  range: RangeParams,
+  filters: ReportFilterParams = {},
+  csv = false
+): string {
+  const query = rangeQuery(range)
+  for (const [key, value] of Object.entries(filters)) if (value) query.set(key, value)
+  if (csv) query.set("export", "csv")
+  return `/v1/customer/reports/${route}?${query}`
+}
+
+export async function getReport<T>(getToken: GetToken, path: string): Promise<T> {
+  const res = await authedFetch(getToken, path)
+  return res.json()
+}
