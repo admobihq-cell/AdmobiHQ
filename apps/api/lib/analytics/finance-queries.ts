@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 
 import {
+  ALL_TIME_START,
   campaignFlightPhase,
   committedKes,
   delta,
@@ -57,13 +58,26 @@ async function periodTotals(orgId: number, start: string, end: string): Promise<
   return { spent: roundKes(num(row?.spent)), topUps: roundKes(num(row?.top_ups)) }
 }
 
+/** One point per day, zero where nothing was charged. "All" starts at the first day with spend. */
+function spendTrend(range: ReportRange, rows: { day: string; spent: number }[]): FinanceSummaryDto["spendTrend"] {
+  const byDay = new Map(rows.map((r) => [r.day, roundKes(num(r.spent))]))
+  const first = rows.map((r) => r.day).sort()[0]
+  const start = range.start === ALL_TIME_START ? (first ?? range.end) : range.start
+  const points: FinanceSummaryDto["spendTrend"] = []
+  for (let ms = Date.parse(start); ms <= Date.parse(range.end); ms += 86_400_000) {
+    const day = new Date(ms).toISOString().slice(0, 10)
+    points.push({ day, spent: byDay.get(day) ?? 0 })
+  }
+  return points
+}
+
 export async function getFinanceSummary(
   orgId: number,
   range: ReportRange,
   today = new Date()
 ): Promise<FinanceSummaryDto> {
   const trailingEnd = range.end
-  const [ledger, current, previous, byCategory, byCampaign, inOut, campaigns, spentByCampaign, trailing] =
+  const [ledger, current, previous, byCategory, byCampaign, inOut, campaigns, spentByCampaign, trailing, byDay] =
     await Promise.all([
       prisma.$queryRaw<{ balance: number | null; rows: number }[]>`
         SELECT COALESCE(SUM(amount_kes), 0)::float8 AS balance, COUNT(*)::int AS rows
@@ -103,6 +117,11 @@ export async function getFinanceSummary(
         FROM wallet_transactions
         WHERE org_id = ${orgId} AND kind IN ('spend', 'refund')
           AND ${LEDGER_DAY} > ${trailingEnd}::date - ${THIRTY_DAYS}::int`,
+      prisma.$queryRaw<{ day: string; spent: number }[]>`
+        SELECT ${LEDGER_DAY}::text AS day, (-SUM(amount_kes))::float8 AS spent
+        FROM wallet_transactions
+        WHERE org_id = ${orgId} AND kind IN ('spend', 'refund') AND ${ledgerInRange(range.start, range.end)}
+        GROUP BY 1`,
     ])
 
   const balanceKes = roundKes(num(ledger[0]?.balance))
@@ -159,6 +178,7 @@ export async function getFinanceSummary(
     spendByCampaign: foldOther(
       byCampaign.map((r) => ({ name: r.name ?? "Unassigned", value: roundKes(num(r.spent)) }))
     ),
+    spendTrend: spendTrend(range, byDay),
     moneyInOut: inOut.map((r) => ({
       period: r.period,
       inKes: roundKes(num(r.in_kes)),

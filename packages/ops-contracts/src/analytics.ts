@@ -356,6 +356,8 @@ export type FinanceSummaryDto = {
   topUpsKes: Delta
   spendByCategory: NamedValue[]
   spendByCampaign: NamedValue[]
+  /** Net spend per Nairobi day over the range (`day`, `spent`). "All" starts at the first spend. */
+  spendTrend: DailyPoint[]
   moneyInOut: { period: string; inKes: number; outKes: number }[]
   funding: {
     level: FundingLevel

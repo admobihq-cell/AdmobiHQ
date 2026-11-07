@@ -209,6 +209,20 @@ describe.skipIf(!databaseUrl)("customer finance routes", () => {
     expect(wide.topUpsKes.current).toBe(10000)
   })
 
+  it("spend trend has one point per day and adds up to the period's spend", async () => {
+    as(orgA)
+    const body = await (await summary()).json()
+    expect(body.spendTrend).toHaveLength(59) // 1 Jan to 28 Feb 2026
+    expect(body.spendTrend[0]).toEqual({ day: "2026-01-01", spent: 0 })
+    expect(body.spendTrend.find((p: { day: string }) => p.day === "2026-01-20").spent).toBe(3000)
+    const total = body.spendTrend.reduce((sum: number, p: { spent: number }) => sum + p.spent, 0)
+    expect(total).toBe(body.spentKes.current)
+    const all = await (await summary("?range=all")).json()
+    expect(all.spendTrend[0].day).toBe("2026-01-20") // starts at the first spend, not 2020
+    const empty = (as(orgEmpty), await (await summary("?range=all")).json())
+    expect(empty.spendTrend).toHaveLength(1)
+  })
+
   it("deltas compare to the previous period; 'all' has none", async () => {
     as(orgA)
     // 2026-02-01..2026-02-28 against 2026-01-04..2026-01-31.

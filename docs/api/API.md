@@ -107,7 +107,7 @@ Range parameters, shared with the report routes: `range` (`7d` | `30d` | `90d` |
 
 | Method | Path | Notes |
 |--------|------|-------|
-| `GET` | `/v1/customer/finance/summary` | Balance (all-time), committed, available, spend and top-ups with deltas, spend by category and campaign, money in/out by month, funding status, upcoming charges |
+| `GET` | `/v1/customer/finance/summary` | Balance (all-time), committed, available, spend and top-ups with deltas, spend by category and campaign, daily `spendTrend` ("all" starts at the first spend), money in/out by month, funding status, upcoming charges |
 | `GET` | `/v1/customer/finance/transactions` | Ledger, 25 per page. Filters `kind`, `q`, range; `sort` = `date_desc` (default), `date_asc`, `amount_desc`, `amount_asc`; `page`. `format=csv` returns every filtered row, not one page |
 | `GET` | `/v1/customer/finance/invoices` | Invoices, newest first |
 | `GET` | `/v1/customer/finance/invoices/[id]/pdf` | One invoice as a PDF; another org's id is `404` |
