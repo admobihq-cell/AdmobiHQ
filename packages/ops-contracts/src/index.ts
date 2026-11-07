@@ -1,4 +1,5 @@
 export * from "./advertiser-activity"
+export * from "./advertiser-dashboard"
 export * from "./advertiser-org"
 export * from "./allowed-email"
 export * from "./analytics"
