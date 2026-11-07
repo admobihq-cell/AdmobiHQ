@@ -19,7 +19,8 @@ export function DashboardTabs({
 }) {
   return (
     <Tabs value={value} onValueChange={onChange} className="max-w-full gap-0">
-      <div className="overflow-x-auto pb-1">
+      {/* No bottom padding: it pushed the pills above the centre line of a toolbar row they share with the range. */}
+      <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <TabsList>
           {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>

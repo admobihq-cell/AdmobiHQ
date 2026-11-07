@@ -105,8 +105,10 @@ export function DashboardToolbar({
   onExport,
   badge,
   allowCustom = true,
+  hideRange = false,
   className,
 }: {
+  /** Left slot: a view dropdown, or the page's `DashboardTabs` so tabs and range share one row. */
   view?: React.ReactNode
   filters?: { count: number; content: React.ReactNode; onClear?: () => void }
   /** e.g. "CBD · Evening". Shown after the filters button when anything is filtered. */
@@ -118,6 +120,8 @@ export function DashboardToolbar({
   badge?: React.ReactNode
   /** False when the data source only takes the presets (ops dashboards). */
   allowCustom?: boolean
+  /** For a tab the range does not apply to; the rest of the row stays put. */
+  hideRange?: boolean
   className?: string
 }) {
   const custom = Boolean(range.from && range.to)
@@ -157,23 +161,25 @@ export function DashboardToolbar({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {badge}
-        <div role="group" aria-label="Date range" className="flex items-center gap-0.5 rounded-lg border bg-background p-0.5">
-          {PRESETS.map((preset) => {
-            const active = !custom && (range.range ?? "30d") === preset.value
-            return (
-              <Button
-                key={preset.value}
-                variant={active ? "secondary" : "ghost"}
-                size="xs"
-                aria-pressed={active}
-                onClick={() => onRangeChange({ range: preset.value })}
-              >
-                {preset.label}
-              </Button>
-            )
-          })}
-          {allowCustom ? <CustomRange range={range} onApply={onRangeChange} /> : null}
-        </div>
+        {hideRange ? null : (
+          <div role="group" aria-label="Date range" className="flex items-center gap-0.5 rounded-lg border bg-background p-0.5">
+            {PRESETS.map((preset) => {
+              const active = !custom && (range.range ?? "30d") === preset.value
+              return (
+                <Button
+                  key={preset.value}
+                  variant={active ? "secondary" : "ghost"}
+                  size="xs"
+                  aria-pressed={active}
+                  onClick={() => onRangeChange({ range: preset.value })}
+                >
+                  {preset.label}
+                </Button>
+              )
+            })}
+            {allowCustom ? <CustomRange range={range} onApply={onRangeChange} /> : null}
+          </div>
+        )}
         {onExport ? (
           <Button variant="outline" size="sm" onClick={onExport}>
             <Download aria-hidden />

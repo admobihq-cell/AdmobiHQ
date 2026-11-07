@@ -37,16 +37,19 @@ export function DashboardNav({
     startTransition(() => router.push(`${pathname}?${next}`, { scroll: false }))
   }
 
+  const hasTabs = Boolean(tabs && tab)
+  if (!hasTabs && !showRange) return null
+
+  // One row: tabs on the left, range on the right.
   return (
-    <div className="flex flex-col gap-4" aria-busy={pending}>
-      {showRange ? (
-        <DashboardToolbar
-          allowCustom={false}
-          range={{ range }}
-          onRangeChange={(next) => go({ range: next.range ?? null })}
-        />
-      ) : null}
-      {tabs && tab ? <DashboardTabs tabs={tabs} value={tab} onChange={(value) => go({ tab: value })} /> : null}
+    <div aria-busy={pending}>
+      <DashboardToolbar
+        view={hasTabs ? <DashboardTabs tabs={tabs!} value={tab!} onChange={(value) => go({ tab: value })} /> : undefined}
+        allowCustom={false}
+        hideRange={!showRange}
+        range={{ range }}
+        onRangeChange={(next) => go({ range: next.range ?? null })}
+      />
     </div>
   )
 }
