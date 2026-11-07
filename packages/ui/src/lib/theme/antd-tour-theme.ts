@@ -38,7 +38,14 @@ function readCssVar(name: string): string {
 export function buildAdmobiAntdTheme(
   resolvedTheme: "light" | "dark" | undefined
 ): ThemeConfig {
-  const isDark = resolvedTheme === "dark"
+  // Read the class the CSS variables are actually resolved against, not the
+  // requested theme: ThemeProvider swaps the root class in an effect, so during
+  // the render where `resolvedTheme` flips the variables still hold the old
+  // palette. Pairing a new algorithm with old colors painted a mismatched card.
+  const isDark =
+    typeof document !== "undefined"
+      ? document.documentElement.classList.contains("dark")
+      : resolvedTheme === "dark"
   const algorithm = isDark
     ? antdTheme.darkAlgorithm
     : antdTheme.defaultAlgorithm
@@ -48,6 +55,7 @@ export function buildAdmobiAntdTheme(
       algorithm,
       token: {
         ...FALLBACK_TOKENS,
+        colorBgElevated: FALLBACK_TOKENS.colorBgContainer,
         borderRadius: 10,
         fontFamily: "var(--font-sans)",
       },
@@ -70,6 +78,8 @@ export function buildAdmobiAntdTheme(
     token: {
       colorPrimary,
       colorBgContainer,
+      // The Tour card paints with colorBgElevated, not colorBgContainer.
+      colorBgElevated: colorBgContainer,
       colorText,
       colorBorderSecondary,
       borderRadius: 10,
