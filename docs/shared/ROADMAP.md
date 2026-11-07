@@ -80,7 +80,8 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 
 - `Device` — one row per physical screen unit: hardware key hash, `driver_id`, `fleet_partner_id` (nullable — preserves the fleet-partner/driver separation), status.
 - `EarningsLedger` — append-only: `driver_id`, period, amount, source (`screen_hours | route_bonus | delivery`), derived from telemetry aggregates by a scheduled job.
-- `Payout` — `driver_id`, amount, status, M-Pesa transaction ref.
+- `Payout` — `driver_id`, amount, status, M-Pesa transaction ref. **Exists** (since the dashboards build, Nov 2026): ops reads it for the Finances and Fleet dashboards, and only the dev demo seed writes it for now.
+- **Tables telemetry and Pesapal write to** (all shipped, empty on prod): `campaign_daily_stats` (plays, vehicle hours, distance, active vehicles and impressions per campaign, day, market, daypart and format, with a `source` of `schedule`, `logged`, `modelled` or `calibrated`), `campaign_creative_daily_stats`, `campaign_reach_stats`, `wallet_transactions` (the append-only ledger; Pesapal writes `provider = 'pesapal'`) and `invoices`. The advertiser and ops dashboards already read them, so neither needs rebuilding when real writers arrive — see [DATA-LAYER.md](./DATA-LAYER.md).
 - `Driver.delivers` boolean — the delivery opt-in flag (ops-editable now, driver-editable later).
 
 **App:** `apps/driver-web` and `apps/driver-mobile` (Expo, EAS builds, OTA updates, push tokens — all documented in [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)) exist with working sign-in against their own driver Clerk instance (email + Google). Profile-setup writes `DriverProfile` + `DriverDocument`; ops reviews via `/v1/driver-applications`. Still open: linking that profile to the CRM `Driver` record (the marketing table has no `clerk_user_id`).

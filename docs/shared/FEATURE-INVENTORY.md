@@ -81,11 +81,11 @@ Collections (`apps/web/collections/`, Postgres schema `cms`): **BlogPosts**, **H
 
 ### 1.3 `apps/ops` — internal operations console
 
-**35 pages.** Sign-in/sign-up (Clerk), then a dashboard shell: Home, Overview (stats + quick links), Map (simulated demo fleet with H3 markets — see [OPS-ADMIN.md](../ops/OPS-ADMIN.md#network-map-demo-fleet)), Leads, Fleet, Drivers, Waitlist, Media Kit, Driver Applications (+ detail/review), **Campaigns** (+ detail/review), **Advertiser orgs** (+ detail), **SOS** (+ incident), Announcements, Support (+ thread detail), Finances, Activity (audit feed), Content (links to Payload admin), Team, Team Roles, Users (+ Customers, Admins), Settings (+ Flags, **Integrations** ledger, Tour).
+**39 pages.** Sign-in/sign-up (Clerk), then a dashboard shell: Home, Overview (stats, action queue, quick links), four more **Dashboards** (Campaigns, Advertisers, Fleet, Support & safety), Map (simulated demo fleet with H3 markets — see [OPS-ADMIN.md](../ops/OPS-ADMIN.md#network-map-demo-fleet)), Leads, Fleet, Drivers, Waitlist, Media Kit, Driver Applications (+ detail/review), **Campaigns** (+ detail/review), **Advertiser orgs** (+ detail), **SOS** (+ incident), Announcements, Support (+ thread detail), Finances (five tabs, with manual ledger entry), Activity (audit feed), Content (links to Payload admin), Team, Team Roles, Users (+ Customers, Admins), Settings (+ Flags, **Integrations** ledger, Tour).
 
 **Notifications** is a permission-filtered "attention queue" that aggregates open review work (submitted driver applications, live support cases) and new public-form submissions client-side from existing ops-API endpoints, with a per-browser "triaged" flag. The header bell shares it, and it is not linked in the sidebar.
 
-Status: 34 real, 1 **sample data** (Finances — payout/transfer actions open "coming soon" dialogs). List pages export selected rows as CSV, XLSX, or PDF.
+Status: all real. Finances reads the wallet ledger, payouts and the integrations list (payout and transfer actions still open "coming soon" dialogs). The dashboards read the same tables the advertiser app does; with no data they show honest empty states, and the dev database is filled with clearly marked demo rows by `npm run seed:demo -w api` (never prod). List pages export selected rows as CSV, XLSX, or PDF.
 
 Per the team's own docs, this app is **UI-only by design** for business CRUD; every entity action calls `apps/api`. The exceptions are server-rendered stats (read-only Prisma) and the admin-only integrations ledger (Prisma server actions).
 
@@ -104,10 +104,10 @@ Per the team's own docs, this app is **UI-only by design** for business CRUD; ev
 | `/settings/support`, `/settings/support/new`, `/settings/support/[id]` | **Real** — support case list + new + thread |
 | `/auth/login`, `/auth/login/advertiser`, `/auth/signup`, `/auth/signup/advertiser`, `/auth/sso-callback/advertiser` | Clerk auth flow (own instance), company name captured at sign-up |
 | `/deliveries`, `/deliveries/[id]` | **Feature-flag gated** — redirects to `/` unless the `deliveries` platform flag is on; booking and messaging are "coming soon" |
-| `/settings/billing` | **Sample data** — wallet UI renders fixtures; no payment provider yet (Pesapal planned) |
-| `/reports` | **Placeholder** — generic `ComingSoon` |
+| `/billing` (sidebar **Finance & Billing**; `/settings/billing` redirects here) | **Real** — overview, transactions, invoices and monthly statements from `/v1/customer/finance/*`, gated on `billing:read`. Top up is a notice: no payment provider yet (Pesapal planned), so funds are added by hand |
+| `/reports`, `/reports/campaigns/[id]` | **Real** — overview, delivery, audience, spend and campaigns tabs, plus a per-campaign report with PDFs, from `/v1/customer/reports/*`, gated on `reports:read`. Impressions are estimates and say so; delivery numbers are empty until measurement ships |
 
-Totals: 23 real, 2 flag-gated, 2 sample data or placeholder. `/notifications` is reachable but deliberately not a sidebar link; `/calendar` is in the sidebar. Org permission handling in the UI is described in [APP.md](../customer/APP.md).
+Totals: 26 real, 2 flag-gated. The overview (`/`) is rebuilt on the dashboard kit with spend, delivery and a needs-attention list, each block gated on `billing:read` or `reports:read`. `/notifications` is reachable but deliberately not a sidebar link; `/calendar` is in the sidebar. Org permission handling in the UI is described in [APP.md](../customer/APP.md).
 
 ### 1.5 `apps/driver-web` — driver web console
 
@@ -320,7 +320,6 @@ TanStack Query v5, react-hook-form v7 + `@hookform/resolvers` (Zod bridge), Zod 
 - **Telemetry is the deliberate missing layer.** The following are all designed around a vehicle-telemetry pipeline that doesn't exist yet:
   - proof-of-play (schedule-only by design);
   - driver earnings, routes, and payouts (sample data);
-  - campaign Reports (placeholder);
   - the ops map (simulated).
 - **Location is minimized on purpose.** SOS location is foreground-only, latest position only, and cut off server-side. This avoids the background-location store-review burden and Neon compute cost.
 - **Rate limiting fails open.** Missing Upstash credentials silently disable throttling rather than erroring. That is correct for local dev, and a real production risk if forgotten during a Vercel env migration. It is configured in production today.
@@ -383,7 +382,7 @@ A third-party agency quoted a phased build of a comparable taxi-top/OOH advertis
 |---|---|
 | Client notifications | ✅✅ Far exceeded — Expo push, per-user and per-surface inboxes, templated broadcasts with images, receipt reconciliation cron |
 | Route history | ⚠️ Partial — driver route-history map screens exist on web and mobile but render fixtures (earlier editions said "Built") |
-| Analytics dashboard | ⚠️ Partial — ops stats/overview with charts and a live advertiser overview; customer Reports page is still a placeholder |
+| Analytics dashboard | ⚠️ Partial — ops stats/overview with charts and a live advertiser overview; customer Reports is built, but its delivery numbers stay empty until measurement ships |
 | Live campaign map | ⚠️ Partial — interactive coverage and H3 market maps; the ops fleet view is simulated |
 | GPS tracking (live) | ⚠️ Partial — live driver location during open SOS incidents only; no fleet-wide vehicle tracking |
 | Proof of campaign delivery | ⚠️ Partial — proof-of-play PDF of the booked schedule; no measured plays or photo verification |
