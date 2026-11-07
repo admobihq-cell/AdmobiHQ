@@ -36,6 +36,7 @@ import {
   VEHICLES_ACTIVE,
   WAITLIST_PERSONA,
 } from "./enums"
+import { SPEND_CATEGORIES, WALLET_TRANSACTION_KINDS } from "./analytics"
 import { CREATIVE_SLOTS } from "./creative-specs"
 
 export const leadCreateSchema = z.object({
@@ -394,3 +395,33 @@ export type SafetyIncidentDriverUpdateInput = z.infer<typeof safetyIncidentDrive
 export type SafetyIncidentOpsUpdateInput = z.infer<typeof safetyIncidentOpsUpdateSchema>
 export type SafetyIncidentLocationInput = z.infer<typeof safetyIncidentLocationSchema>
 export type SafetyIncidentMessageCreateInput = z.infer<typeof safetyIncidentMessageCreateSchema>
+
+/**
+ * Ops records a ledger row by hand (Finance > Record transaction). For a top-up, spend or
+ * refund the amount is a positive magnitude and the server applies the sign; an adjustment
+ * is entered signed. Spend and refund rows say which category they belong to.
+ */
+export const recordTransactionSchema = z
+  .object({
+    orgId: z.number().int().positive(),
+    kind: z.enum(WALLET_TRANSACTION_KINDS),
+    amountKes: z
+      .number()
+      .finite()
+      .refine((v) => v !== 0, "The amount can't be zero")
+      .refine((v) => Math.abs(v) <= 100_000_000, "That amount is too large"),
+    campaignId: z.number().int().positive().optional(),
+    spendCategory: z.enum(SPEND_CATEGORIES).optional(),
+    reference: z.string().trim().min(1).max(100).optional(),
+    reason: z.string().trim().min(3, "Say why in a few words").max(500),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind !== "adjustment" && v.amountKes < 0) {
+      ctx.addIssue({ code: "custom", path: ["amountKes"], message: "Enter a positive amount; the type sets the sign" })
+    }
+    if ((v.kind === "spend" || v.kind === "refund") && !v.spendCategory) {
+      ctx.addIssue({ code: "custom", path: ["spendCategory"], message: "Choose a category for spend and refunds" })
+    }
+  })
+
+export type RecordTransactionInput = z.infer<typeof recordTransactionSchema>

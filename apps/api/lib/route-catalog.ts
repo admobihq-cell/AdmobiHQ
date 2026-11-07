@@ -161,6 +161,7 @@ const NOTES: Record<string, string> = {
   "/v1/flags": "Read and set platform flags",
   "/v1/audit": "Paginated audit events",
   "/v1/ops/documents/export": "Render a table export as PDF",
+  "/v1/ops/finance/transactions": "Record a wallet ledger entry by hand",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
