@@ -1,5 +1,6 @@
 "use client"
 
+import { LedgerSkeletonShell } from "@/components/skeletons/dashboard-skeletons"
 import { useEffect, useState } from "react"
 import { Download, Search } from "lucide-react"
 import {
@@ -105,6 +106,8 @@ export function TransactionsTab({ range }: { range: RangeParams }) {
       />
     )
   }
+
+  if (query.isPending) return <LedgerSkeletonShell label="Loading transactions" columns={6} filters />
 
   return (
     <>

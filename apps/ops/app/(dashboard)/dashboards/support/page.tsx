@@ -2,7 +2,8 @@ import { Suspense } from "react"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { DashboardHeader } from "@/components/dashboards/dashboard-header"
+import { SupportSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { SupportDashboard } from "@/components/dashboards/support-dashboard"
 import { dashboardParams, openDashboard } from "@/lib/dashboard-access"
@@ -26,15 +27,9 @@ export default async function SupportDashboardPage({ searchParams }: { searchPar
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Support &amp; safety</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          What people are asking for help with, what has been waiting longest, and open driver safety reports.
-        </p>
-      </div>
+      <DashboardHeader page="support" />
       <DashboardNav range={range} />
-      <Suspense key={range} fallback={<Skeleton className="h-96 w-full" />}>
+      <Suspense key={range} fallback={<SupportSkeleton safety={includeSafety} />}>
         <Content range={range} includeSafety={includeSafety} />
       </Suspense>
     </div>

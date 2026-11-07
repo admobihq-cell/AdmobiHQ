@@ -2,7 +2,8 @@ import { Suspense } from "react"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { DashboardHeader } from "@/components/dashboards/dashboard-header"
+import { FleetSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { FleetDashboard } from "@/components/dashboards/fleet-dashboard"
 import { dashboardParams, openDashboard } from "@/lib/dashboard-access"
@@ -26,15 +27,9 @@ export default async function FleetDashboardPage({ searchParams }: { searchParam
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Fleet</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Drivers, applications waiting for a decision, and how many vehicles are on the road.
-        </p>
-      </div>
+      <DashboardHeader page="fleet" />
       <DashboardNav range={range} />
-      <Suspense key={range} fallback={<Skeleton className="h-96 w-full" />}>
+      <Suspense key={range} fallback={<FleetSkeleton money={includeMoney} />}>
         <Content range={range} includeMoney={includeMoney} />
       </Suspense>
     </div>

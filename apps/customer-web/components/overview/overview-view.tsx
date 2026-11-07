@@ -17,7 +17,7 @@ import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card
 import { DashboardToolbar } from "@workspace/ui/components/dashboard/dashboard-toolbar"
 import { KpiStrip, type KpiItem } from "@workspace/ui/components/dashboard/kpi-strip"
 import { Separator } from "@workspace/ui/components/separator"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { ActiveCampaignsSkeleton, OverviewChartSkeleton, OverviewKpiSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { ActiveCampaigns } from "@/components/overview/active-campaigns"
 import { Greeting } from "@/components/overview/greeting"
 import { NeedsAttentionCard, buildAttentionItems } from "@/components/overview/needs-attention-card"
@@ -195,7 +195,7 @@ export function OverviewView() {
       {canBilling || canReports ? <DashboardToolbar range={range} onRangeChange={setRange} /> : null}
 
       {campaignsQuery.isPending ? (
-        <Skeleton className="h-28 w-full" />
+        <OverviewKpiSkeleton />
       ) : (
         <KpiStrip items={kpis} columns={Math.min(5, Math.max(2, kpis.length)) as 2 | 3 | 4 | 5} />
       )}
@@ -205,7 +205,7 @@ export function OverviewView() {
           {sources.length > 0 ? (
             <SpendDeliveryCard key={sources.map((s) => s.key).join()} sources={sources} />
           ) : canBilling || canReports ? (
-            <Skeleton className="h-80 w-full" />
+            <OverviewChartSkeleton />
           ) : (
             <DashboardCard title="Spend and delivery" description="Charts for your campaigns">
               <p className="rounded-md border border-dashed px-3 py-10 text-center text-sm text-muted-foreground">
@@ -220,7 +220,7 @@ export function OverviewView() {
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active campaigns</p>
         {campaignsQuery.isPending ? (
-          <Skeleton className="h-28 w-full" />
+          <ActiveCampaignsSkeleton />
         ) : (
           <ActiveCampaigns campaigns={campaigns} rows={canReports ? r?.ledger.rows : undefined} />
         )}

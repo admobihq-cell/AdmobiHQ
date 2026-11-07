@@ -1,5 +1,6 @@
 "use client"
 
+import { LedgerSkeletonShell } from "@/components/skeletons/dashboard-skeletons"
 import { FileDown } from "lucide-react"
 import { exportFileName, formatKes, type StatementRowDto } from "@workspace/ops-contracts"
 
@@ -52,6 +53,8 @@ export function StatementsTab() {
       />
     )
   }
+
+  if (query.isPending) return <LedgerSkeletonShell label="Loading statements" columns={4} />
 
   return (
     <LedgerCard
