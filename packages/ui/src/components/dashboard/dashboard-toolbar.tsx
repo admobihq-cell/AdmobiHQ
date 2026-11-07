@@ -104,6 +104,7 @@ export function DashboardToolbar({
   onRangeChange,
   onExport,
   badge,
+  allowCustom = true,
   className,
 }: {
   view?: React.ReactNode
@@ -115,6 +116,8 @@ export function DashboardToolbar({
   onExport?: () => void
   /** A measurement badge or similar, shown beside the range. */
   badge?: React.ReactNode
+  /** False when the data source only takes the presets (ops dashboards). */
+  allowCustom?: boolean
   className?: string
 }) {
   const custom = Boolean(range.from && range.to)
@@ -169,7 +172,7 @@ export function DashboardToolbar({
               </Button>
             )
           })}
-          <CustomRange range={range} onApply={onRangeChange} />
+          {allowCustom ? <CustomRange range={range} onApply={onRangeChange} /> : null}
         </div>
         {onExport ? (
           <Button variant="outline" size="sm" onClick={onExport}>
