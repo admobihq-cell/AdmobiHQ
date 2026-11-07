@@ -17,11 +17,22 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { BillingOverviewTab } from "@/components/billing/billing-overview-tab"
+import { InvoicesTab } from "@/components/billing/invoices-tab"
+import { StatementsTab } from "@/components/billing/statements-tab"
+import { TransactionsTab } from "@/components/billing/transactions-tab"
 import { useFinanceSummary } from "@/lib/use-analytics"
 import { useDashboardParams } from "@/lib/use-dashboard-params"
 import { useOrgPermissions } from "@/lib/use-org"
 
-const TABS = [{ value: "overview", label: "Overview" }]
+const TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "transactions", label: "Transactions" },
+  { value: "invoices", label: "Invoices" },
+  { value: "statements", label: "Statements" },
+]
+
+/** Invoices and statements list everything, so the date range only applies to these tabs. */
+const RANGE_TABS = new Set(["overview", "transactions"])
 
 export function TopUpNoticeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
@@ -63,8 +74,8 @@ export function BillingView() {
   const { tab, setTab, range, setRange } = useDashboardParams("overview")
   const [topUpOpen, setTopUpOpen] = useState(false)
 
-  const summary = useFinanceSummary(range, { enabled: canRead })
   const activeTab = TABS.some((t) => t.value === tab) ? tab : "overview"
+  const summary = useFinanceSummary(range, { enabled: canRead && activeTab === "overview" })
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -86,10 +97,16 @@ export function BillingView() {
         </Card>
       ) : (
         <>
-          <DashboardToolbar range={range} onRangeChange={setRange} />
+          {RANGE_TABS.has(activeTab) ? <DashboardToolbar range={range} onRangeChange={setRange} /> : null}
           <DashboardTabs tabs={TABS} value={activeTab} onChange={setTab} />
 
-          {summary.isError ? (
+          {activeTab === "transactions" ? (
+            <TransactionsTab range={range} />
+          ) : activeTab === "invoices" ? (
+            <InvoicesTab />
+          ) : activeTab === "statements" ? (
+            <StatementsTab />
+          ) : summary.isError ? (
             <ApiErrorBanner
               message={summary.error instanceof Error ? summary.error.message : "Could not load your finances."}
               onRetry={() => void summary.refetch()}
