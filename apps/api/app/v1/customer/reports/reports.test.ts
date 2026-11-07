@@ -6,7 +6,9 @@ import { nairobiDay } from "@workspace/ops-contracts"
 
 import { GET as audienceRoute } from "./audience/route"
 import { GET as campaignRoute } from "./campaigns/[id]/route"
+import { GET as campaignPdfRoute } from "./campaigns/[id]/pdf/route"
 import { GET as campaignsRoute } from "./campaigns/route"
+import { GET as proofOfPlayRoute } from "../campaigns/[id]/proof-of-play/route"
 import { GET as deliveryRoute } from "./delivery/route"
 import { GET as overviewRoute } from "./overview/route"
 import { GET as spendRoute } from "./spend/route"
@@ -427,4 +429,26 @@ describe.skipIf(!databaseUrl)("customer report routes", () => {
     expect(body.trend.length).toBeLessThan(400)
     expect(body.totals.scheduled).toBe(290)
   })
+  it("campaign report PDF downloads for the owner and for a member, and not for another org", async () => {
+    const id = String(cid("A1"))
+    for (const [owner, perms] of [[true, ["reports:read", "billing:read"]], [false, MEMBER]] as const) {
+      as(orgs.A, owner, [...perms])
+      const res = await campaignPdfRoute(call(`campaigns/${id}/pdf`, RANGE), { params: Promise.resolve({ id }) })
+      expect(res.status).toBe(200)
+      expect(res.headers.get("content-type")).toBe("application/pdf")
+      expect((await res.arrayBuffer()).byteLength).toBeGreaterThan(1000)
+    }
+    as(orgs.A)
+    const foreign = String(cid("B1"))
+    const res = await campaignPdfRoute(call(`campaigns/${foreign}/pdf`, RANGE), { params: Promise.resolve({ id: foreign }) })
+    expect(res.status).toBe(404)
+  }, 60_000)
+
+  it("proof of play PDF still renders with delivery stats behind it", async () => {
+    as(orgs.A)
+    const id = String(cid("A1"))
+    const res = await proofOfPlayRoute(new Request("http://localhost/proof-of-play"), { params: Promise.resolve({ id }) })
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-type")).toBe("application/pdf")
+  }, 60_000)
 })

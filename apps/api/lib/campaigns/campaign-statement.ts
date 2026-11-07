@@ -128,22 +128,73 @@ export function buildBudgetStatement(
 
 export const PROOF_OF_PLAY_HEADERS = ["Date", "Day", "Market", "Panels", "Schedule status"]
 
+/** One row of delivery stats for a campaign, as the proof of play needs it. */
+export type ProofOfPlayStat = {
+  /** YYYY-MM-DD. */
+  day: string
+  market: string
+  playsDelivered: number
+  impressionsLow: number | null
+  impressionsLikely: number | null
+  impressionsHigh: number | null
+  /** schedule, logged, modelled or calibrated. */
+  source: string
+}
+
+const PLAYS_FOOTNOTE =
+  "Plays come from the vehicle play records. They count plays, not people, so no audience estimate is shown."
+const IMPRESSIONS_FOOTNOTE =
+  "Plays come from the vehicle play records. Impressions are estimates, shown as a likely figure with a low to high range, modelled from traffic data. They are not counted."
+
+const count = (n: number) => n.toLocaleString("en-KE")
+
+/** "1,200 (900 to 1,500)": likely first, so the headline is the best estimate. */
+function impressionsText(low: number, likely: number, high: number): string {
+  return `${count(likely)} (${count(low)} to ${count(high)})`
+}
+
 /**
  * Day-by-day delivery record for one campaign.
  *
- * Deliberately reports the *schedule*, not measured plays: nothing in the
- * system logs a play yet (there is no telemetry model), so claiming a play
- * count here would be inventing one. The footnote says so out loud rather
- * than letting the title imply a measurement, and the per-day status is only
- * ever "Delivered" for a day the flight has actually passed.
+ * With no stats it reports the *schedule*, not measured plays, and the footnote says so out
+ * loud rather than letting the title imply a measurement. Given stats it adds only what the
+ * rows support: a Plays column once any row is measured (logged, modelled or calibrated),
+ * and an impressions column only for modelled or calibrated rows that carry an estimate.
+ * Schedule-only rows add nothing. A day with no measured row reads "-", not 0.
  */
 export function buildProofOfPlay(
   campaign: Campaign,
-  options: { generatedAt: string; creativeCount: number; today?: Date },
+  options: { generatedAt: string; creativeCount: number; today?: Date; stats?: ProofOfPlayStat[] },
 ): StatementTable {
   const totalDays = flightDayCount(campaign.starts_on, campaign.ends_on)
   const todayIso = toDayIso(options.today ?? new Date())
   const panels = FORMAT_LABELS[campaign.format] ?? campaign.format
+
+  const measured = (options.stats ?? []).filter((s) => s.source !== "schedule")
+  const estimated = measured.filter(
+    (s) =>
+      (s.source === "modelled" || s.source === "calibrated") &&
+      s.impressionsLow !== null &&
+      s.impressionsLikely !== null &&
+      s.impressionsHigh !== null,
+  )
+  const hasPlays = measured.length > 0
+  const hasImpressions = estimated.length > 0
+
+  const playsByDay = new Map<string, number>()
+  const playsByMarket = new Map<string, number>()
+  for (const s of measured) {
+    playsByDay.set(s.day, (playsByDay.get(s.day) ?? 0) + s.playsDelivered)
+    playsByMarket.set(s.market, (playsByMarket.get(s.market) ?? 0) + s.playsDelivered)
+  }
+  const sum = (rows: ProofOfPlayStat[], pick: (s: ProofOfPlayStat) => number | null) =>
+    rows.reduce((total, s) => total + (pick(s) ?? 0), 0)
+  const estimateOf = (rows: ProofOfPlayStat[]) =>
+    impressionsText(
+      sum(rows, (s) => s.impressionsLow),
+      sum(rows, (s) => s.impressionsLikely),
+      sum(rows, (s) => s.impressionsHigh),
+    )
 
   const rows: string[][] = []
   let delivered = 0
@@ -152,35 +203,63 @@ export function buildProofOfPlay(
     const iso = toDayIso(day)
     const status = iso < todayIso ? "Delivered" : iso === todayIso ? "In flight" : "Scheduled"
     if (status === "Delivered") delivered += 1
-    rows.push([iso, WEEKDAYS[day.getUTCDay()]!, campaign.market ?? "", panels, status])
+    const row = [iso, WEEKDAYS[day.getUTCDay()]!, campaign.market ?? "", panels, status]
+    if (hasPlays) row.push(playsByDay.has(iso) ? count(playsByDay.get(iso)!) : "-")
+    if (hasImpressions) {
+      const dayRows = estimated.filter((s) => s.day === iso)
+      row.push(dayRows.length ? estimateOf(dayRows) : "-")
+    }
+    rows.push(row)
+  }
+
+  const totalsRow = [
+    "Delivered to date",
+    `${delivered} of ${totalDays} day${totalDays === 1 ? "" : "s"}`,
+    "",
+    "",
+    totalDays === 0 ? "—" : `${Math.round((delivered / totalDays) * 100)}%`,
+  ]
+  if (hasPlays) totalsRow.push(count([...playsByDay.values()].reduce((a, b) => a + b, 0)))
+  if (hasImpressions) totalsRow.push(estimateOf(estimated))
+
+  const summary = [
+    { label: "Campaign", value: `#${campaign.id} ${campaign.name}` },
+    { label: "Flight", value: flightLabel(campaign) },
+    { label: "Panels", value: panels },
+    { label: "Market", value: campaign.market ?? "" },
+    {
+      label: "Creative on rotation",
+      value: `${options.creativeCount} file${options.creativeCount === 1 ? "" : "s"}`,
+    },
+    {
+      label: "Budget",
+      value: campaign.budget_kes == null ? "" : formatKes(budgetOf(campaign)),
+    },
+  ]
+  if (hasPlays) {
+    summary.push({
+      label: "Plays by market",
+      value: [...playsByMarket]
+        .sort((a, b) => b[1] - a[1])
+        .map(([market, plays]) => `${market} ${plays}`)
+        .join(", "),
+    })
   }
 
   return {
     subtitle: `${campaign.name} · generated ${options.generatedAt}`,
-    summary: [
-      { label: "Campaign", value: `#${campaign.id} ${campaign.name}` },
-      { label: "Flight", value: flightLabel(campaign) },
-      { label: "Panels", value: panels },
-      { label: "Market", value: campaign.market ?? "" },
-      {
-        label: "Creative on rotation",
-        value: `${options.creativeCount} file${options.creativeCount === 1 ? "" : "s"}`,
-      },
-      {
-        label: "Budget",
-        value: campaign.budget_kes == null ? "" : formatKes(budgetOf(campaign)),
-      },
+    summary,
+    headers: [
+      ...PROOF_OF_PLAY_HEADERS,
+      ...(hasPlays ? ["Plays"] : []),
+      ...(hasImpressions ? ["Est. impressions"] : []),
     ],
-    headers: PROOF_OF_PLAY_HEADERS,
     rows,
-    totalsRow: [
-      "Delivered to date",
-      `${delivered} of ${totalDays} day${totalDays === 1 ? "" : "s"}`,
-      "",
-      "",
-      totalDays === 0 ? "—" : `${Math.round((delivered / totalDays) * 100)}%`,
-    ],
-    footnote:
-      "Records the booked delivery schedule for this campaign. Per-play counts from the vehicle players are not yet reported into the platform, so no play volume is claimed here.",
+    totalsRow,
+    footnote: hasImpressions
+      ? IMPRESSIONS_FOOTNOTE
+      : hasPlays
+        ? PLAYS_FOOTNOTE
+        : "Records the booked delivery schedule for this campaign. Per-play counts from the vehicle players are not yet reported into the platform, so no play volume is claimed here.",
   }
 }

@@ -90,7 +90,7 @@ Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/
 | `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Detach the creative while editable. The file stays in the Media Library |
 | `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
 | `GET` | `/v1/customer/campaigns/statement` | Customer | Budget statement PDF — every own campaign, its budget, an active subtotal and an all-campaigns total |
-| `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated |
+| `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated. When the campaign has delivery stats it adds a Plays column and plays by market (logged, modelled or calibrated rows) and an Est. impressions column (modelled or calibrated rows only, as a likely figure with a low to high range). With no stats the output is the schedule only, and the footnote says no play volume is claimed |
 
 Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
 `CampaignStatementPdf` template, and return `application/pdf` with a
@@ -128,6 +128,7 @@ Delivery reports for the caller's org, behind `reports:read`. They read the deli
 | `GET` | `/v1/customer/reports/spend` | Needs `billing:read` as well, otherwise `403`. Spend, cost per 1,000, budget used and unspent, spend by campaign / objective / format, budget burn against flight elapsed |
 | `GET` | `/v1/customer/reports/campaigns` | One row per campaign with health. `export=csv` downloads the table |
 | `GET` | `/v1/customer/reports/campaigns/[id]` | The full report for one campaign; another org's id is `404` |
+| `GET` | `/v1/customer/reports/campaigns/[id]/pdf` | The same report as a PDF. Money lines are left out without `billing:read` |
 
 Filters: `campaign` (an id), `market`, `format` (`taxi_top` / `delivery_bike`), `daypart`. An unknown value is `400`; another org's campaign is `404`. CSV uses `export=csv` rather than `format=csv`, because `format` is a filter here.
 

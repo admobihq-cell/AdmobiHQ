@@ -183,6 +183,7 @@ const NOTES: Record<string, string> = {
   "/v1/customer/reports/spend": "Spend, cost per 1,000 and budget burn",
   "/v1/customer/reports/campaigns": "Campaign report rows with health, with CSV export",
   "/v1/customer/reports/campaigns/[id]": "Full report for one campaign",
+  "/v1/customer/reports/campaigns/[id]/pdf": "Campaign report PDF",
   "/v1/customer/media": "List Media Manager files and upload one",
   "/v1/customer/media/[id]": "Rename, move or delete a Media Manager file",
   "/v1/customer/media/[id]/file": "Stream a Media Manager file",

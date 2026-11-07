@@ -29,6 +29,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { LEDGER_DAY, ledgerInRange } from "@/lib/analytics/finance-queries"
+import type { ProofOfPlayStat } from "@/lib/campaigns/campaign-statement"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -738,4 +739,24 @@ export async function getCampaignReport(scope: ReportScope): Promise<CampaignRep
         row.budgetKes === null ? null : permissionGated(scope, roundTo(Math.max(0, row.budgetKes - spentLifetime))),
     },
   }
+}
+
+/**
+ * Stats rows for a proof-of-play PDF. The caller has already checked the campaign belongs to
+ * the org; the org filter is repeated here so this can't be called with a foreign id.
+ */
+export async function getProofOfPlayStats(orgId: number, campaignId: number): Promise<ProofOfPlayStat[]> {
+  const rows = await prisma.campaignDailyStat.findMany({
+    where: { campaign_id: campaignId, campaign: { org_id: orgId } },
+    orderBy: { day: "asc" },
+  })
+  return rows.map((r) => ({
+    day: r.day.toISOString().slice(0, 10),
+    market: r.market,
+    playsDelivered: r.plays_delivered,
+    impressionsLow: r.impressions_low,
+    impressionsLikely: r.impressions_likely,
+    impressionsHigh: r.impressions_high,
+    source: r.source,
+  }))
 }
