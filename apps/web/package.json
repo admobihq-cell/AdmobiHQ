@@ -79,7 +79,7 @@
     "@prisma/client": "^7.10.1",
     "@sentry/nextjs": "^10.78.0",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/functions": "^3.7.5",
+    "@vercel/functions": "^3.11.0",
     "@workspace/ops-api-client": "*",
     "@workspace/ops-contracts": "*",
     "@workspace/sentry-config": "^0.0.0",

@@ -23,7 +23,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.1",
     "@vercel/blob": "^2.3.1",
-    "@vercel/functions": "^3.7.5",
+    "@vercel/functions": "^3.11.0",
     "@workspace/ops-contracts": "*",
     "@workspace/sentry-config": "^0.0.0",
     "antd": "^6.5.2",
