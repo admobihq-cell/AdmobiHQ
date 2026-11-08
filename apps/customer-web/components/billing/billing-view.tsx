@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Plus } from "lucide-react"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Button } from "@workspace/ui/components/button"
@@ -185,12 +186,20 @@ export function BillingView() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Workspace</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Finance &amp; Billing</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Your funds, spending, invoices and statements.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Workspace</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Finance &amp; Billing</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Your funds, spending, invoices and statements.
+          </p>
+        </div>
+        {!orgLoading && canRead && canWrite ? (
+          <Button className="self-start sm:self-auto" onClick={() => setTopUpOpen(true)}>
+            <Plus aria-hidden />
+            Top up
+          </Button>
+        ) : null}
       </div>
 
       {orgLoading ? (
