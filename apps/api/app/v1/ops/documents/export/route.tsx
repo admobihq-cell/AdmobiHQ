@@ -6,6 +6,7 @@ import {
   requireOpsAdminAccess,
   requireOpsPermissionAccess,
 } from "@/lib/api-utils"
+import { latin1 } from "@/lib/pdf/latin1"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 import { EntityExportPdf } from "@/lib/pdf/templates/entity-export-pdf"
 import { documentExportRequestSchema } from "@/lib/validation/schemas"
@@ -25,7 +26,11 @@ export async function POST(req: Request) {
       : await requireOpsPermissionAccess(entity)
   if (auth.error) return auth.error
 
-  const { title, headers, rows } = parsed.data
+  // Rows are whatever the list page shows (names, "—" placeholders, "→"
+  // flight ranges), and the PDF font throws on anything outside Latin-1.
+  const title = latin1(parsed.data.title)
+  const headers = parsed.data.headers.map(latin1)
+  const rows = parsed.data.rows.map((row) => row.map(latin1))
 
   try {
     const bytes = await renderPdf(

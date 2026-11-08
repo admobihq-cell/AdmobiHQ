@@ -76,4 +76,20 @@ describe("POST /v1/ops/documents/export", () => {
     const res = await POST(adminExport())
     expect(res.status).toBe(403)
   })
+
+  it("renders rows with characters outside the PDF font (dashes, arrows, emoji)", async () => {
+    const { POST } = await import("./route")
+    const req = new Request("http://localhost/v1/ops/documents/export", {
+      method: "POST",
+      body: JSON.stringify({
+        entity: "campaigns",
+        title: "Campaigns — Nairobi",
+        headers: ["Flight", "Budget", "Name"],
+        rows: [["2026-11-01 → 2026-11-30", "—", "Launch 🚀 “Q4”"]],
+      }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("application/pdf")
+  }, 15000)
 })
