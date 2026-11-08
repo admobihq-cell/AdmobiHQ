@@ -24,7 +24,7 @@ import {
   type WalletTransactionKind,
 } from "@workspace/ops-contracts"
 
-import { isActive } from "@/lib/campaigns/campaign-statement"
+import { holdsFunds } from "@/lib/payments/funding"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -132,7 +132,7 @@ export async function getFinanceSummary(
 
   const committed = committedKes(
     campaigns
-      .filter((c) => isActive(c, today))
+      .filter((c) => holdsFunds(c, today))
       .map((c) => ({ budgetKes: num(c.budget_kes), spentKes: spentMap.get(c.id) ?? 0 }))
   )
 

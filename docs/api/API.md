@@ -114,7 +114,7 @@ Range parameters, shared with the report routes: `range` (`7d` | `30d` | `90d` |
 | `GET` | `/v1/customer/finance/statements` | One row per month with ledger rows, oldest first. Each closing equals the next opening; the last closing equals the balance |
 | `GET` | `/v1/customer/finance/statements/[month]/pdf` | One month (`YYYY-MM`) as a PDF; a month with no rows is `404` |
 
-Funding is `untracked` until the org's first ledger row, so an org with real budgets and no wallet history never sees a "short of funds" alert. `committed` is the unspent part of each active (live or scheduled) campaign's budget, floored at 0 per campaign. Both PDFs go through the shared `CampaignStatementPdf` template and carry a "not a tax invoice" footnote; text is passed through `lib/pdf/latin1.ts` because the PDF font covers Latin-1 only.
+Funding is `untracked` until the org's first ledger row, so an org with real budgets and no wallet history never sees a "short of funds" alert. `committed` is the unspent part of each campaign that holds funds (`holdsFunds` in `lib/payments/funding.ts`: `funded_at` set, status `submitted`, `approved` or `changes_requested`, and the flight's last Nairobi day not yet past), floored at 0 per campaign. Unfunded campaigns commit nothing. Both PDFs go through the shared `CampaignStatementPdf` template and carry a "not a tax invoice" footnote; text is passed through `lib/pdf/latin1.ts` because the PDF font covers Latin-1 only.
 
 ### Reports (advertiser)
 

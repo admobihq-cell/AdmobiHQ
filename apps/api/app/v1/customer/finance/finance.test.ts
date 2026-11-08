@@ -73,6 +73,8 @@ describe.skipIf(!databaseUrl)("customer finance routes", () => {
         org_id: orgId,
         name: over.name ?? `${tag} ${key}`,
         status: over.status ?? "approved",
+        // Only funded campaigns hold money (a draft is a plan, not a commitment).
+        funded_at: (over.status ?? "approved") === "draft" ? null : new Date(),
         budget_kes: over.budget,
         starts_on: at(over.starts),
         ends_on: at(over.ends),
@@ -235,7 +237,7 @@ describe.skipIf(!databaseUrl)("customer finance routes", () => {
     expect(all.spentKes.change).toBeNull()
   })
 
-  it("committed uses isActive and floors at 0 per campaign", async () => {
+  it("committed uses holdsFunds and floors at 0 per campaign", async () => {
     as(orgA)
     const body = await (await summary()).json()
     // A1 4000-3800=200, A2 1000, A3 floors at 0 (spent 300 of 100), A4 scheduled 700, A5 draft excluded.
