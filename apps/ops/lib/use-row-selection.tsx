@@ -9,40 +9,44 @@ import type { ColumnDef } from "@/components/ui/data-table"
 /** Row checkboxes for a DataTable. Selection clears whenever `resetKey`
  * changes (page, page size, search, filters) so hidden rows can never be
  * exported or acted on. */
-export function useRowSelection<T extends { id: number }>(
+type RowId = string | number
+const defaultGetId = (row: unknown) => (row as { id: RowId }).id
+
+export function useRowSelection<T>(
   rows: T[],
-  resetKey: unknown
+  resetKey: unknown,
+  getId: (row: T) => RowId = defaultGetId
 ) {
   // Selection is stored against the resetKey it was made under; a different
   // key reads as empty, so no effect is needed to clear it.
   const resetToken = JSON.stringify(resetKey)
   const [selection, setSelection] = useState<{
     token: string
-    ids: Set<number>
+    ids: Set<RowId>
   }>({
     token: resetToken,
     ids: new Set(),
   })
   const selectedIds = useMemo(
-    () => (selection.token === resetToken ? selection.ids : new Set<number>()),
+    () => (selection.token === resetToken ? selection.ids : new Set<RowId>()),
     [selection, resetToken]
   )
-  const setSelectedIds = (update: (current: Set<number>) => Set<number>) =>
+  const setSelectedIds = (update: (current: Set<RowId>) => Set<RowId>) =>
     setSelection((prev) => ({
       token: resetToken,
       ids: update(prev.token === resetToken ? prev.ids : new Set()),
     }))
 
-  const pageIds = useMemo(() => rows.map((row) => row.id), [rows])
+  const pageIds = useMemo(() => rows.map(getId), [rows, getId])
   const allPageSelected =
     pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id))
   const somePageSelected = pageIds.some((id) => selectedIds.has(id))
   const selectedRows = useMemo(
-    () => rows.filter((row) => selectedIds.has(row.id)),
-    [rows, selectedIds]
+    () => rows.filter((row) => selectedIds.has(getId(row))),
+    [rows, selectedIds, getId]
   )
 
-  const toggleRow = (id: number, checked: boolean) =>
+  const toggleRow = (id: RowId, checked: boolean) =>
     setSelectedIds((current) => {
       const next = new Set(current)
       if (checked) next.add(id)
@@ -76,11 +80,11 @@ export function useRowSelection<T extends { id: number }>(
     cell: ({ row }) => (
       <div onClick={(e) => e.stopPropagation()}>
         <Checkbox
-          checked={selectedIds.has(row.original.id)}
+          checked={selectedIds.has(getId(row.original))}
           onCheckedChange={(checked) =>
-            toggleRow(row.original.id, checked === true)
+            toggleRow(getId(row.original), checked === true)
           }
-          aria-label={`Select record #${row.original.id}`}
+          aria-label={`Select record #${getId(row.original)}`}
         />
       </div>
     ),

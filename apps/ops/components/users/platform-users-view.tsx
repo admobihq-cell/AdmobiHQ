@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { Search } from "lucide-react"
 import type { PlatformUserDto, PlatformUserType } from "@workspace/ops-contracts"
 
 import { formatApiError } from "@workspace/ops-api-client"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent } from "@workspace/ui/components/card"
-import { Input } from "@workspace/ui/components/input"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Table,
@@ -25,8 +23,11 @@ import {
   type SortingState,
 } from "@/components/ui/data-table"
 import { TablePagination } from "@/components/ui/table-pagination"
+import { BulkBar, TableToolbar } from "@/components/ui/table-toolbar"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -140,6 +141,19 @@ function columnsFor(type: PlatformUserType): ColumnDef<PlatformUserDto, any>[] {
   return [nameColumn!, companyColumn, ...rest]
 }
 
+function exportColumnsFor(type: PlatformUserType): ExportColumn<PlatformUserDto>[] {
+  return [
+    { key: "name", header: "Name", value: (u) => u.name },
+    ...(type === "customers"
+      ? [{ key: "company", header: "Company", value: (u: PlatformUserDto) => u.company ?? null }]
+      : []),
+    { key: "email", header: "Email", value: (u) => u.email },
+    { key: "phone", header: "Phone", value: (u) => u.phone },
+    { key: "joined", header: "Joined", value: (u) => formatDateTime(u.createdAt) },
+    { key: "status", header: "Status", value: (u) => u.status },
+  ]
+}
+
 export function PlatformUsersView({ type }: { type: PlatformUserType }) {
   const client = useOpsClient()
   const columns = useMemo(() => columnsFor(type), [type])
@@ -177,17 +191,32 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
+  const selection = useRowSelection(users, [type, page, pageSize, sortBy, sortDir, search])
+  const title = type === "customers" ? "Customers" : "Drivers"
+  const exportRows = (format: ExportFormat, rows: PlatformUserDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: `${title} (users)`,
+      scope,
+      columns: exportColumnsFor(type),
+      rows,
+      entity: "admin",
+      client,
+    })
+
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <div className="relative max-w-sm">
-        <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name or email…"
-          className="pl-8"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <TableToolbar
+        search={{ value: search, onChange: setSearch, placeholder: "Search by name or email…" }}
+        onExport={(format) => exportRows(format, users, null)}
+        exportDisabled={!users.length}
+      />
+
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
 
       <Card className="overflow-hidden p-0 shadow-none">
         <CardContent className="p-0">
@@ -199,7 +228,7 @@ export function PlatformUsersView({ type }: { type: PlatformUserType }) {
             <div className="p-6 text-sm text-muted-foreground">No users found.</div>
           ) : (
             <DataTable
-              columns={columns}
+              columns={[selection.selectColumn, ...columns]}
               data={users}
               sorting={sorting}
               onSortingChange={setSorting}

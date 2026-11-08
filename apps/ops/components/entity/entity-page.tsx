@@ -246,7 +246,7 @@ export function EntityPage<T extends { id: number }>({
   const runBulkAction = (action: () => Promise<void>) => bulkMutation.mutate(action)
 
   const handleBulkDelete = () => {
-    const ids = Array.from(selectedIds)
+    const ids = selectedRows.map((row) => row.id)
     setBulkConfirm({
       title: `Delete ${ids.length} record${ids.length === 1 ? "" : "s"}?`,
       description: `This action cannot be undone. ${ids.length} record${ids.length === 1 ? "" : "s"} will be permanently removed.`,
@@ -260,7 +260,7 @@ export function EntityPage<T extends { id: number }>({
   }
 
   const handleBulkStatus = (status: string, label: string) => {
-    const ids = Array.from(selectedIds)
+    const ids = selectedRows.map((row) => row.id)
     void runBulkAction(async () => {
       const result = await postBulk({ action: "updateStatus", ids, status })
       toast.success(
@@ -443,7 +443,7 @@ export function EntityPage<T extends { id: number }>({
             size="sm"
             disabled={bulkMutation.isPending}
             onClick={() => {
-              const ids = Array.from(selectedIds)
+              const ids = selectedRows.map((row) => row.id)
               if (action.confirm) {
                 setBulkConfirm({
                   title: action.confirm.title,

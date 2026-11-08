@@ -7,12 +7,16 @@ import { toast } from "sonner"
 import type { OpsAdvertiserOrgListItemDto, PaginatedResponse } from "@workspace/ops-contracts"
 import { formatApiError } from "@workspace/ops-api-client"
 
-import { Input } from "@workspace/ui/components/input"
+import { cn } from "@workspace/ui/lib/utils"
 import { DataTable, type ColumnDef } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
+import { BulkBar, TableToolbar } from "@/components/ui/table-toolbar"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useDebouncedValue } from "@/lib/use-debounced-value"
+import { useRowSelection } from "@/lib/use-row-selection"
 import { ADVERTISER_ORGS_PAGE } from "@/lib/entity-pages"
 
 function OrgLink({
@@ -74,6 +78,13 @@ const columns: ColumnDef<OpsAdvertiserOrgListItemDto, unknown>[] = [
   },
 ]
 
+const exportColumns: ExportColumn<OpsAdvertiserOrgListItemDto>[] = [
+  { key: "name", header: "Name", value: (r) => r.name },
+  { key: "members", header: "Members", value: (r) => r.memberCount },
+  { key: "campaigns", header: "Campaigns", value: (r) => r.campaignCount },
+  { key: "created", header: "Created", value: (r) => formatDateTime(r.createdAt) },
+]
+
 const EMPTY: PaginatedResponse<OpsAdvertiserOrgListItemDto> = {
   items: [],
   total: 0,
@@ -85,17 +96,9 @@ const EMPTY: PaginatedResponse<OpsAdvertiserOrgListItemDto> = {
 export function AdvertiserOrgsView() {
   const client = useOpsClient()
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search.trim())
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search.trim())
-      setPage(1)
-    }, 250)
-    return () => clearTimeout(t)
-  }, [search])
 
   const orgsQuery = useQuery({
     queryKey: ["ops-advertiser-orgs", { page, pageSize, search: debouncedSearch }],
@@ -114,15 +117,44 @@ export function AdvertiserOrgsView() {
     if (orgsQuery.isError) toast.error(formatApiError(orgsQuery.error))
   }, [orgsQuery.isError, orgsQuery.error])
 
+  const selection = useRowSelection(data.items, [page, pageSize, debouncedSearch])
+  const exportRows = (
+    format: ExportFormat,
+    rows: OpsAdvertiserOrgListItemDto[],
+    scope: "selected" | null,
+  ) =>
+    void exportTableRows({
+      format,
+      title: ADVERTISER_ORGS_PAGE.title,
+      scope,
+      columns: exportColumns,
+      rows,
+      // The list route itself requires the campaigns permission.
+      entity: "campaigns",
+      client,
+    })
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHero title={ADVERTISER_ORGS_PAGE.title} description={ADVERTISER_ORGS_PAGE.description} />
 
-      <Input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search by organization name…"
-        className="max-w-sm"
+      <TableToolbar
+        search={{
+          value: search,
+          onChange: (next) => {
+            setSearch(next)
+            setPage(1)
+          },
+          placeholder: "Search by organization name…",
+        }}
+        onExport={(format) => exportRows(format, data.items, null)}
+        exportDisabled={!data.items.length}
+      />
+
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
       />
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
@@ -131,7 +163,12 @@ export function AdvertiserOrgsView() {
             {loading ? "Loading…" : "No advertiser organizations found."}
           </div>
         ) : (
-          <DataTable columns={columns} data={data.items} getRowId={(row) => String(row.id)} />
+          <DataTable
+            columns={[selection.selectColumn, ...columns]}
+            data={data.items}
+            getRowId={(row) => String(row.id)}
+            rowClassName={(row) => cn(selection.selectedIds.has(row.id) && "bg-muted/50")}
+          />
         )}
       </div>
 

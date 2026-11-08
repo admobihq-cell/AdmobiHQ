@@ -153,7 +153,7 @@ export function DriverApplicationsView({
       client,
     })
 
-  const ids = () => Array.from(selection.selectedIds)
+  const ids = () => selection.selectedRows.map((row) => row.id)
 
   return (
     <div className="flex flex-1 flex-col gap-6">
