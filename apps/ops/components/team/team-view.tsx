@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -60,8 +60,24 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@/components/ui/data-table"
-import { formatDateTime } from "@/lib/format"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
+import { formatDateTime, matchesSearch } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
+
+const getMemberId = (m: TeamMemberDto) => m.userId
+
+const ROLE_OPTIONS = [
+  { value: "admin", label: "Admin" },
+  { value: "member", label: "Member" },
+]
+
+const memberExportColumns: ExportColumn<TeamMemberDto>[] = [
+  { key: "email", header: "Email", value: (m) => m.email },
+  { key: "role", header: "Role", value: (m) => (m.role === "admin" ? "Admin" : (m.roleName ?? "Member")) },
+  { key: "joined", header: "Joined", value: (m) => formatDateTime(m.joinedAt) },
+]
 
 function sortHeader(label: string) {
   return function Header({ column }: { column: { getIsSorted: () => false | "asc" | "desc"; toggleSorting: (desc: boolean) => void } }) {
@@ -416,82 +432,125 @@ export function TeamView() {
     },
   ]
 
+  const [memberSearch, setMemberSearch] = useState("")
+  const [memberRole, setMemberRole] = useState("")
+  const memberRows = useMemo(
+    () =>
+      (team?.members ?? []).filter(
+        (m) =>
+          (!memberRole || m.role === memberRole) &&
+          matchesSearch(memberSearch, m.email, m.roleName),
+      ),
+    [team, memberRole, memberSearch],
+  )
+  const selection = useRowSelection(memberRows, [memberRole, memberSearch], getMemberId)
+  const exportMembers = (format: ExportFormat, rows: TeamMemberDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Team",
+      scope,
+      columns: memberExportColumns,
+      rows,
+      entity: "admin",
+      client,
+    })
+
   return (
     <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-3">
+        <TableToolbar
+          search={{ value: memberSearch, onChange: setMemberSearch, placeholder: "Search by email or role…" }}
+          filters={
+            <FilterSelect
+              value={memberRole}
+              onChange={setMemberRole}
+              options={ROLE_OPTIONS}
+              allLabel="All roles"
+            />
+          }
+          onExport={(format) => exportMembers(format, memberRows, null)}
+          exportDisabled={!memberRows.length}
+          actions={
+            <Dialog
+              open={inviteOpen}
+              onOpenChange={(open) => {
+                setInviteOpen(open)
+                if (!open) setInviteEmail("")
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button type="button" size="sm">
+                  <UserPlus aria-hidden />
+                  Invite someone
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite someone</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={inviteEmailId}>Email</Label>
+                    <Input
+                      id={inviteEmailId}
+                      type="email"
+                      placeholder="name@admobihq.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      disabled={inviteMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Role</Label>
+                    <TierSelect
+                      value={
+                        inviteTier.tier === "admin"
+                          ? ADMIN_VALUE
+                          : memberValue(inviteTier.roleId)
+                      }
+                      roles={roles}
+                      disabled={inviteMutation.isPending}
+                      onChange={setInviteTier}
+                      triggerClassName="w-full"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    onClick={handleInvite}
+                    loading={inviteMutation.isPending}
+                    loadingText="Inviting…"
+                    disabled={!inviteEmail.trim()}
+                  >
+                    <UserPlus aria-hidden />
+                    Invite
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          }
+        />
+
+        <BulkBar
+          count={selection.count}
+          onExport={(format) => exportMembers(format, selection.selectedRows, "selected")}
+          onClear={selection.clear}
+        />
+
         <Card className="overflow-hidden p-0 shadow-none">
           <CardContent className="p-0">
-            <div className="flex items-center justify-end gap-2 border-b p-3">
-              <Dialog
-                open={inviteOpen}
-                onOpenChange={(open) => {
-                  setInviteOpen(open)
-                  if (!open) setInviteEmail("")
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button type="button" size="sm">
-                    <UserPlus aria-hidden />
-                    Invite someone
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Invite someone</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor={inviteEmailId}>Email</Label>
-                      <Input
-                        id={inviteEmailId}
-                        type="email"
-                        placeholder="name@admobihq.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        disabled={inviteMutation.isPending}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Role</Label>
-                      <TierSelect
-                        value={
-                          inviteTier.tier === "admin"
-                            ? ADMIN_VALUE
-                            : memberValue(inviteTier.roleId)
-                        }
-                        roles={roles}
-                        disabled={inviteMutation.isPending}
-                        onChange={setInviteTier}
-                        triggerClassName="w-full"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      onClick={handleInvite}
-                      loading={inviteMutation.isPending}
-                      loadingText="Inviting…"
-                      disabled={!inviteEmail.trim()}
-                    >
-                      <UserPlus aria-hidden />
-                      Invite
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
 
             {team === null ? (
               <MembersTableSkeleton />
             ) : (
               <DataTable
-                columns={memberColumns}
-                data={team.members}
+                columns={[selection.selectColumn, ...memberColumns]}
+                data={memberRows}
                 manualSorting={false}
                 sorting={membersSorting}
                 onSortingChange={setMembersSorting}
-                getRowId={(member) => member.userId}
+                getRowId={getMemberId}
               />
             )}
           </CardContent>
