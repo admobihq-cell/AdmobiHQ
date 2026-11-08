@@ -97,7 +97,7 @@ Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET
 
 ### List page toolbar
 
-Every ops list page uses the same toolbar, from `components/ui/table-toolbar.tsx`: a search box, the page's filters, an **Export** menu, and page actions (e.g. **Add**). Ticking rows (`lib/use-row-selection.tsx`) shows a bar with the count, the page's bulk actions, **Export selected**, and clear. Changing the page, page size, search or any filter clears the selection, so rows you can't see are never exported or acted on.
+Every ops list page uses the same toolbar, from `components/ui/table-toolbar.tsx`: a search box, the page's filters, an **Export** menu, and page actions (e.g. **Add**). Ticking rows (`lib/use-row-selection.tsx`) shows a bar with the count, the page's bulk actions, **Export selected**, and clear. Changing the page, page size, search or any filter clears the selection, so rows you can't see are never exported or acted on. **Team → Roles** is the exception: it's an editable permission matrix (rows are permissions, cells are per-role checkboxes), so it has search and export but no row selection. **Notifications** is a feed, not a table, and has neither.
 
 ### Exports
 
