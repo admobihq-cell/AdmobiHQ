@@ -230,6 +230,7 @@ export type OpsClient = {
     ) => Promise<PaginatedResponse<DriverApplicationListItemDto>>
     get: (id: number) => Promise<DriverProfileDto>
     review: (id: number, body: DriverProfileReviewInput) => Promise<DriverProfileDto>
+    bulkReview: (body: BulkReviewInput) => Promise<BulkReviewResult>
     /** No JSON endpoint for this — the file route streams raw bytes, so the
      * caller fetches it directly (with the same bearer token) rather than
      * going through request<T>()'s JSON parsing. */
@@ -662,6 +663,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         const query = buildListQueryParams({
           page: params.page,
           pageSize: params.pageSize,
+          search: params.search,
           status: "status" in params ? params.status : undefined,
         })
         const qs = query.toString()
@@ -673,6 +675,11 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       review: (id, body) =>
         request<DriverProfileDto>(`${apiPrefix}/driver-applications/${id}/review`, {
           method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      bulkReview: (body) =>
+        request<BulkReviewResult>(`${apiPrefix}/driver-applications/bulk-review`, {
+          method: "POST",
           body: JSON.stringify(body),
         }),
       documentFileUrl: (applicationId, documentId) =>

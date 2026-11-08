@@ -36,7 +36,7 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `POST /v1/public/push-tokens`, `/v1/public/driver-push-tokens` | None | Expo push-token registration |
 | `POST /v1/public/support`, `/v1/public/support/[id]/messages` | Identity token (see below) | Customer/driver support cases |
 | `/v1/leads`, `/v1/fleet`, `/v1/drivers`, `/v1/waitlist`, `/v1/media-kit` | Ops Clerk JWT | Ops admin CRUD (+ `[id]`, `bulk`) |
-| `/v1/driver-applications` | Ops Clerk JWT | Onboarding review (documents via driver instance) |
+| `/v1/driver-applications` (+ `bulk-review`) | Ops Clerk JWT | Onboarding review (documents via driver instance). List takes `status` and `search` (name, phone, city). `POST …/bulk-review` works like the campaigns one: `{ ids (1–100), decision: "approved" \| "rejected", reason? }`, only `submitted` rows change, returns `{ updated, skipped }` |
 | `GET /v1/stats`, `GET /v1/audit`, `GET /v1/me` | Ops Clerk JWT | Dashboard stats, activity trail, current user |
 | `GET/PATCH /v1/flags` | Ops Clerk JWT | Platform flags (write); public read is `/v1/public/config` |
 | `/v1/users` | Ops Clerk JWT, **admin role** | Platform user search (ops Users page) |

@@ -21,8 +21,20 @@ export async function GET(req: Request) {
     pageSize: searchParams.get("pageSize") ?? 20,
   })
   const status = searchParams.get("status") ?? undefined
+  const search = searchParams.get("search")?.trim() || undefined
 
-  const where = status ? { status } : { status: { in: DEFAULT_LIST_STATUSES } }
+  const where = {
+    ...(status ? { status } : { status: { in: DEFAULT_LIST_STATUSES } }),
+    ...(search
+      ? {
+          OR: [
+            { full_name: { contains: search, mode: "insensitive" as const } },
+            { phone: { contains: search, mode: "insensitive" as const } },
+            { city: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  }
 
   const [rows, total] = await Promise.all([
     prisma.driverProfile.findMany({
