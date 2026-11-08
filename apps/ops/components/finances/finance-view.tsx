@@ -1,6 +1,7 @@
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
+import { getOpsAccess } from "@/lib/auth"
 import { LedgerTab } from "@/components/finances/ledger-tab"
 import { OverviewTab } from "@/components/finances/overview-tab"
 import { PayoutsTab } from "@/components/finances/payouts-tab"
@@ -37,8 +38,11 @@ export async function FinanceTab({ tab, range }: { tab: string; range: DateRange
       }
       case "wallets":
         return <WalletsTab wallets={await getFinanceWallets()} />
-      case "payouts":
-        return <PayoutsTab data={await getFinancePayouts(range)} />
+      case "payouts": {
+        const [data, access] = await Promise.all([getFinancePayouts(range), getOpsAccess()])
+        const canDisburse = access.status === "authorized" && access.permissions.includes("payouts")
+        return <PayoutsTab data={data} canDisburse={canDisburse} />
+      }
       case "tools":
         return <ToolCostsTab data={await getToolCosts()} />
       default: {

@@ -259,7 +259,34 @@ export type OpsClient = {
     /** Live Paystack KES balance. Needs `finances`. */
     paystackBalance: () => Promise<{ balanceKes: number }>
   }
+  payouts: {
+    /** A month's payout run: eligible drivers and any saved payout. Needs `finances`. */
+    getRun: (month: string) => Promise<PayoutRunDto>
+    /** Save typed amounts as pending payouts. Needs `finances`. */
+    saveRun: (body: { periodMonth: string; items: { driverProfileId: number; amountKes: number }[] }) => Promise<{
+      saved: number
+      skipped: { driverProfileId: number; reason: string }[]
+    }>
+    /** Send payouts through Paystack Transfers. Needs `payouts`. */
+    disburse: (payoutIds: number[]) => Promise<PayoutDisburseResult>
+    /** Resend a failed payout with the same reference. Needs `payouts`. */
+    retry: (id: number) => Promise<PayoutDisburseResult>
+  }
 }
+
+export type PayoutRunDto = {
+  month: string
+  drivers: {
+    driverProfileId: number
+    name: string
+    method: "mpesa" | "bank"
+    destinationMasked: string | null
+    bankName: string | null
+    payout: { id: number; amountKes: number; status: string; failureReason: string | null; estimatedFeeKes: number } | null
+  }[]
+}
+
+export type PayoutDisburseResult = { queued: number; skipped: { id: number; reason: string }[] }
 
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/$/, "")
@@ -696,6 +723,17 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
       paystackBalance: () => request<{ balanceKes: number }>(`${apiPrefix}/ops/payments/balance`),
+    },
+    payouts: {
+      getRun: (month) => request<PayoutRunDto>(`${apiPrefix}/ops/payouts?month=${encodeURIComponent(month)}`),
+      saveRun: (body) =>
+        request(`${apiPrefix}/ops/payouts`, { method: "POST", body: JSON.stringify(body) }),
+      disburse: (payoutIds) =>
+        request<PayoutDisburseResult>(`${apiPrefix}/ops/payouts/disburse`, {
+          method: "POST",
+          body: JSON.stringify({ payoutIds }),
+        }),
+      retry: (id) => request<PayoutDisburseResult>(`${apiPrefix}/ops/payouts/${id}/retry`, { method: "POST" }),
     },
   }
 }
