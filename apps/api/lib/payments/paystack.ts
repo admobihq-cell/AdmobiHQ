@@ -18,8 +18,10 @@ export class PaystackError extends Error {
 }
 
 export function verifyWebhookSignature(rawBody: string, header: string | null, secret: string): boolean {
-  if (!header) return false
-  const given = Buffer.from(header, "hex") // invalid hex yields a short/empty buffer, caught by the length check
+  // Strict format check first: Buffer.from(.., "hex") truncates at the first bad pair and drops a trailing odd nibble,
+  // so a valid signature plus junk would otherwise decode to the same bytes and pass.
+  if (!header || !/^[0-9a-f]{128}$/i.test(header)) return false
+  const given = Buffer.from(header, "hex")
   const expected = createHmac("sha512", secret).update(rawBody).digest()
   return given.length === expected.length && timingSafeEqual(given, expected)
 }

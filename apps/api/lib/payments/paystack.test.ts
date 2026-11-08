@@ -37,6 +37,10 @@ describe("verifyWebhookSignature", () => {
     expect(verifyWebhookSignature(body, null, "sk_test_x")).toBe(false)
     expect(verifyWebhookSignature(body, sig.slice(2), "sk_test_x")).toBe(false)
     expect(verifyWebhookSignature(body, "zz-not-hex", "sk_test_x")).toBe(false)
+    // Buffer.from(.., "hex") silently drops trailing junk, so these would pass without a strict format check
+    expect(verifyWebhookSignature(body, sig + "zz", "sk_test_x")).toBe(false)
+    expect(verifyWebhookSignature(body, sig + "a", "sk_test_x")).toBe(false)
+    expect(verifyWebhookSignature(body, sig.toUpperCase(), "sk_test_x")).toBe(true)
   })
 })
 
