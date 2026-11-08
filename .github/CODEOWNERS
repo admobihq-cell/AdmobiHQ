@@ -1,0 +1,8 @@
+# Changes here need a code owner's review (audit L9). Either owner can approve,
+# so each of us can review the other's PRs.
+
+/.github/                          @VictorNzai @burntspear
+/apps/api/middleware.ts            @VictorNzai @burntspear
+/apps/api/lib/**/*auth*            @VictorNzai @burntspear
+/apps/api/lib/**/*clerk*           @VictorNzai @burntspear
+/apps/*/android/app/build.gradle   @VictorNzai @burntspear

@@ -25,9 +25,9 @@
 | L5 | ⏳ Open | Needs a new env var provisioned for the release notifier |
 | L6 | ⏳ Open | Needs every client origin (incl. native) enumerated first |
 | L7 | 🟡 Partial | Guard wrappers log `[authz] 403 forbidden`; alerting still to configure in Vercel/Sentry |
-| L8 | ⏳ Open | Move case tokens to SecureStore |
-| L9 | 🟡 Partial | Third-party actions SHA-pinned; CODEOWNERS still to add |
-| I1 | 🟡 Partial | `poweredByHeader: false` everywhere; API route catalogue page left as is |
+| L8 | ✅ Fixed | Case and identity tokens in SecureStore (one key per case) in customer- and driver-mobile; old AsyncStorage copies migrated and deleted on first use. JS-only, ships by OTA |
+| L9 | 🟡 Partial | Third-party actions SHA-pinned; `.github/CODEOWNERS` covers `.github/`, API auth/Clerk code and the Android `build.gradle` files. Still to do: turn on "Require review from Code Owners" for `master` |
+| I1 | ✅ Fixed | `poweredByHeader: false` everywhere; the API root route catalogue 404s when `VERCEL_ENV=production` |
 
 Found while verifying M5, fixed on the same branch: `addRandomSuffix: true` on Vercel Blob made every resized Media size 404 for uploads after 2026-08-15 (not caused by the upgrade — the adapter is identical in 3.90.2 and 3.91.0). Removed; verified by uploading twice with the same filename on dev, all 8 files served. Production had no affected uploads.
 
