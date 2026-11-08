@@ -235,6 +235,27 @@ export const campaignReviewSchema = z.object({
   reason: z.string().trim().min(1).max(2000).optional(),
 })
 
+/** Bulk approve/reject from a review queue (campaigns, driver applications).
+ * Capped at 100 ids — the largest page size — since every row sends an email.
+ * Only approve/reject: request-changes and walk-backs stay one at a time. */
+export const bulkReviewSchema = z
+  .object({
+    ids: z.array(z.number().int().positive()).min(1).max(100),
+    decision: z.enum(["approved", "rejected"]),
+    reason: z.string().trim().min(1).max(2000).optional(),
+  })
+  .refine((b) => b.decision === "approved" || !!b.reason, {
+    message: "A reason is required to reject",
+    path: ["reason"],
+  })
+
+export type BulkReviewInput = z.infer<typeof bulkReviewSchema>
+
+export type BulkReviewResult = {
+  updated: number[]
+  skipped: { id: number; error: string }[]
+}
+
 export const campaignCreativeSlotSchema = z.enum(CREATIVE_SLOTS)
 
 /** Attaches a file already in the Media Library to a campaign. */

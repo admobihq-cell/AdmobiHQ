@@ -8,6 +8,8 @@ import {
   type BulkResponse,
   type CampaignDto,
   type CampaignListItemDto,
+  type BulkReviewInput,
+  type BulkReviewResult,
   type CampaignReviewInput,
   type RecordTransactionInput,
   type DateRangeKey,
@@ -239,6 +241,7 @@ export type OpsClient = {
     ) => Promise<PaginatedResponse<CampaignListItemDto>>
     get: (id: number) => Promise<CampaignDto>
     review: (id: number, body: CampaignReviewInput) => Promise<CampaignDto>
+    bulkReview: (body: BulkReviewInput) => Promise<BulkReviewResult>
     /** No JSON endpoint — the file route streams raw bytes, so the caller
      * fetches it directly (with the same bearer token) rather than going
      * through request<T>()'s JSON parsing. Same shape as
@@ -692,6 +695,11 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       review: (id, body) =>
         request<CampaignDto>(`${apiPrefix}/campaigns/${id}/review`, {
           method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      bulkReview: (body) =>
+        request<BulkReviewResult>(`${apiPrefix}/campaigns/bulk-review`, {
+          method: "POST",
           body: JSON.stringify(body),
         }),
       creativeFileUrl: (campaignId, creativeId) =>
