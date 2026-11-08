@@ -68,7 +68,11 @@ A campaign whose `org_id` is null was detached when its org was deleted (or aban
 
 ### Announcements
 
-Compose supports merge tags `{{first_name}}` (Clerk) and `{{org_name}}` (active `AdvertiserOrg` membership). Org name is filled for customer recipients only; drivers and anonymous tokens get the tag stripped. Preview in the composer uses sample values “Jordan” / “Acme Ads”.
+Compose supports merge tags `{{first_name}}` (Clerk) and `{{org_name}}` (active `AdvertiserOrg` membership). Org name is filled for customer recipients only; drivers and anonymous tokens get the tag stripped. **Personalise** buttons under the message insert a tag at the cursor of the last-focused field (title or message).
+
+The composer ([`announcement-form-dialog.tsx`](../../apps/ops/app/(dashboard)/announcements/announcement-form-dialog.tsx)) has the form on the left and a live phone preview on the right ([`announcement-preview.tsx`](../../apps/ops/app/(dashboard)/announcements/announcement-preview.tsx)). The preview runs the same `renderAnnouncementTemplate` the API uses (now in `@workspace/ops-contracts`) with sample values “Jordan” / “Acme Ads”, and has a Customer / Driver switch when both audiences are targeted, since drivers lose `{{org_name}}`. Title and message show live counts against the push limits (65 / 178). Images can be dropped or browsed; they're cropped to 1200×600. **Review & send** opens the confirmation on top of the composer, so Cancel returns to the draft.
+
+Clicking a row's message or the eye icon opens the detail view ([`announcement-detail-dialog.tsx`](../../apps/ops/app/(dashboard)/announcements/announcement-detail-dialog.tsx)): the same preview at the sent time, the raw template when it used merge tags, a delivery bar (reached / device no longer registered / awaiting a receipt, out of `target_count`), status, type, audience, and Delete / Resend.
 
 ### Network map (demo fleet)
 

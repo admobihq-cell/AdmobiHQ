@@ -21,14 +21,6 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -49,6 +41,7 @@ import { useRowSelection } from "@/lib/use-row-selection"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
+import { AnnouncementDetailDialog } from "./announcement-detail-dialog"
 import {
   AnnouncementFormDialog,
   type AnnouncementFormValues,
@@ -192,8 +185,9 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     sendMutation.mutate(pending)
   }
 
+  // The confirm stacks over the composer, so Cancel returns to the draft;
+  // a successful send closes both.
   const queueNewAnnouncement = (values: AnnouncementFormValues) => {
-    setFormOpen(false)
     setPending({
       title: values.title,
       body: values.body,
@@ -203,6 +197,16 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
       imageBlob: values.imageBlob,
     })
   }
+
+  const queueResend = (announcement: AnnouncementDto) =>
+    setPending({
+      title: announcement.title,
+      body: announcement.body,
+      category: announcement.category ?? "announcement",
+      targetApps: announcement.target_apps,
+      mode: "resend",
+      image_url: announcement.image_url,
+    })
 
   const columns: ColumnDef<AnnouncementDto, any>[] = [
     {
@@ -317,16 +321,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                   size="icon-sm"
                   aria-label="Resend announcement"
                   disabled={saving}
-                  onClick={() =>
-                    setPending({
-                      title: announcement.title,
-                      body: announcement.body,
-                      category: announcement.category ?? "announcement",
-                      targetApps: announcement.target_apps,
-                      mode: "resend",
-                      image_url: announcement.image_url,
-                    })
-                  }
+                  onClick={() => queueResend(announcement)}
                 >
                   <RotateCcw />
                 </Button>
@@ -429,88 +424,20 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         onSubmit={queueNewAnnouncement}
       />
 
-      <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          {viewing ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{viewing.title}</DialogTitle>
-                <DialogDescription>
-                  Sent {formatDateTime(viewing.created_at)}
-                  {viewing.sent_by_email ? ` · ${viewing.sent_by_email}` : ""}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{viewing.category ?? "announcement"}</Badge>
-                <Badge variant="outline">{describeAnnouncementTargets(viewing.target_apps)}</Badge>
-                {viewing.deleted_at ? (
-                  <Badge variant="destructive">Deleted</Badge>
-                ) : (
-                  <Badge variant={viewing.status === "failed" ? "destructive" : "secondary"}>
-                    {viewing.status}
-                  </Badge>
-                )}
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {viewing.delivered_count}/{viewing.target_count} delivered
-                  {viewing.invalid_count > 0 ? ` · ${viewing.invalid_count} invalid` : ""}
-                </span>
-              </div>
-
-              {viewing.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL; Next Image not needed here
-                <img
-                  src={viewing.image_url}
-                  alt=""
-                  className="max-h-64 w-full rounded-lg border object-cover"
-                />
-              ) : null}
-
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                {viewing.body}
-              </p>
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={() => setViewing(null)}>
-                  Close
-                </Button>
-                <Button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => {
-                    setPending({
-                      title: viewing.title,
-                      body: viewing.body,
-                      category: viewing.category ?? "announcement",
-                      targetApps: viewing.target_apps,
-                      mode: "resend",
-                      image_url: viewing.image_url,
-                    })
-                    setViewing(null)
-                  }}
-                >
-                  <RotateCcw data-icon="inline-start" />
-                  Resend
-                </Button>
-                {viewing.deleted_at ? null : (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={deleting}
-                    onClick={() => {
-                      setPendingDelete(viewing)
-                      setViewing(null)
-                    }}
-                  >
-                    <Trash2 data-icon="inline-start" />
-                    Delete
-                  </Button>
-                )}
-              </DialogFooter>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <AnnouncementDetailDialog
+        announcement={viewing}
+        onClose={() => setViewing(null)}
+        saving={saving}
+        deleting={deleting}
+        onResend={(announcement) => {
+          queueResend(announcement)
+          setViewing(null)
+        }}
+        onDelete={(announcement) => {
+          setPendingDelete(announcement)
+          setViewing(null)
+        }}
+      />
 
       <AlertDialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
         <AlertDialogContent>
