@@ -48,6 +48,8 @@ Hiding is a UX affordance — the server check stays authoritative. Any mutation
 
 Campaign create/submit, creative upload (PNG/JPG/GIF/MP4 via Cloudinary private delivery), and the merged notification inbox all hit `/v1/customer/*` when auth is on. Creative thumbnails load through the authenticated file proxy (blob URL), never a Cloudinary URL.
 
+**Funding (pay at submission).** A campaign must be funded to be submitted. Submitting funds it from the available balance in the same transaction; if the balance is short the API answers `402` with `dueKes` and the advertiser pays that amount through Paystack (`checkout`), after which the server funds and submits it with no second click. Once funded, the **budget is locked** (`PATCH` with a different `budget_kes` is `409`); dates, market, format and creative stay editable. `changes_requested` keeps the campaign funded. A rejection clears `funded_at` and the unspent budget returns to available credit (the advertiser gets a "back in your balance" notice). Each night the cron writes straight-line `screen_time` spend for approved, funded campaigns from the approval day on; budget for days before approval becomes credit when the flight ends.
+
 The wizard's budget step is `CampaignBudgetEstimator` — not the marketing
 page's simulator re-skinned. What is shared is the **mechanism**: the rate
 card and `calculateCampaignEstimate()` live in `@workspace/ops-contracts`

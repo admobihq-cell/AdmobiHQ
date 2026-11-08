@@ -225,6 +225,8 @@ export type CampaignDto = {
   flight_phase: CampaignFlightPhase
   submitted_at: string | null
   reviewed_at: string | null
+  /** Set when the budget was paid for and held. The budget is locked while set. */
+  funded_at: string | null
   /** Advertiser-visible review note, shown verbatim. */
   review_reason: string | null
   contact_name: string | null

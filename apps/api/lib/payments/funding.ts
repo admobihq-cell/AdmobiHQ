@@ -2,6 +2,8 @@ import type { Campaign, Prisma } from "@prisma/client"
 
 import { nairobiDay, toDayIso } from "@workspace/ops-contracts"
 
+import { prisma } from "@/lib/prisma"
+
 /** Statuses in which a funded campaign's unspent budget is held (spec §5.4). */
 export const HOLDING_STATUSES: ReadonlySet<string> = new Set(["submitted", "approved", "changes_requested"])
 
@@ -53,4 +55,13 @@ export async function availableKes(tx: Prisma.TransactionClient, orgId: number, 
     .filter((c) => holdsFunds(c, today))
     .reduce((sum, c) => sum + Math.max(0, Number(c.budget_kes ?? 0) - (spent.get(c.id) ?? 0)), 0)
   return roundKes(Number(ledger?.balance ?? 0) - held)
+}
+
+/** Budget minus spend net of refunds for one campaign, cents-rounded; what a release hands back. */
+export async function unspentBudgetKes(campaignId: number, budgetKes: number): Promise<number> {
+  const spent = await prisma.walletTransaction.aggregate({
+    where: { campaign_id: campaignId, kind: { in: ["spend", "refund"] } },
+    _sum: { amount_kes: true },
+  })
+  return roundKes(budgetKes + Number(spent._sum.amount_kes ?? 0))
 }

@@ -1,3 +1,4 @@
+import { unspentBudgetKes } from "@/lib/payments/funding"
 import { alertOpsFinance, notifyCreditReleased } from "@/lib/payments/money-notify"
 import { nairobiYesterday, writeDailySpend } from "@/lib/payments/daily-spend"
 import { settlePayment, type SettleResult } from "@/lib/payments/settle-payment"
@@ -44,11 +45,7 @@ export async function releaseCompletedCredit(today: Date = new Date()): Promise<
   })
   let notified = 0
   for (const c of ended) {
-    const spent = await prisma.walletTransaction.aggregate({
-      where: { campaign_id: c.id, kind: { in: ["spend", "refund"] } },
-      _sum: { amount_kes: true },
-    })
-    const unspent = Math.round((Number(c.budget_kes) + Number(spent._sum.amount_kes ?? 0)) * 100) / 100
+    const unspent = await unspentBudgetKes(c.id, Number(c.budget_kes))
     if (unspent <= 0) continue
     await notifyCreditReleased({ orgId: c.org_id!, amountKes: unspent, campaign: { id: c.id, name: c.name }, reason: "completed" })
     notified += 1

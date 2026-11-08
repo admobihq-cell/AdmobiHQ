@@ -15,6 +15,8 @@ import {
   CampaignDecision,
   type CampaignDecisionKind,
 } from "@/lib/email/templates/CampaignDecision"
+import { unspentBudgetKes } from "@/lib/payments/funding"
+import { notifyCreditReleased } from "@/lib/payments/money-notify"
 import { prisma } from "@/lib/prisma"
 
 const NOTIFICATION_COPY: Record<
@@ -74,6 +76,9 @@ export async function PATCH(req: Request, { params }: Params) {
       reviewed_at: new Date(),
       reviewed_by_email: access.email,
       review_reason: decision === "approved" ? null : (reason ?? null),
+      // Rejection releases the hold into available credit (spec §5.4);
+      // changes_requested keeps the campaign funded.
+      ...(decision === "rejected" ? { funded_at: null } : {}),
     },
     include: CREATIVES_INCLUDE,
   })
@@ -116,6 +121,18 @@ export async function PATCH(req: Request, { params }: Params) {
     }
   } catch (error) {
     console.error("[campaigns/review] Failed to send notifications:", error)
+  }
+
+  if (decision === "rejected" && existing.funded_at && updated.org_id != null) {
+    const released = await unspentBudgetKes(updated.id, Number(updated.budget_kes ?? 0))
+    if (released > 0) {
+      await notifyCreditReleased({
+        orgId: updated.org_id,
+        amountKes: released,
+        campaign: { id: updated.id, name: updated.name },
+        reason: "rejected",
+      })
+    }
   }
 
   return NextResponse.json(
