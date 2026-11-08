@@ -32,9 +32,12 @@ export async function authedFetch(getToken: GetToken, path: string, init?: Reque
     const error = new Error(body?.error ?? `Request failed (${res.status})`) as Error & {
       issues?: unknown
       status?: number
+      body?: unknown
     }
     error.issues = body?.issues
     error.status = res.status
+    // Whole body too: a 402/409 from submit or checkout carries `dueKes` at the top level.
+    error.body = body
     throw error
   }
   return res
@@ -88,6 +91,20 @@ export async function submitCampaign(getToken: GetToken, id: number): Promise<Ca
     method: "POST",
   })
   return res.json()
+}
+
+export type CheckoutStart = { authorizationUrl: string; reference: string; amountKes: number }
+
+/** Opens a Paystack checkout for what the balance doesn't cover. */
+export async function checkoutCampaign(getToken: GetToken, id: number): Promise<CheckoutStart> {
+  const res = await authedFetch(getToken, `/v1/customer/campaigns/${id}/checkout`, { method: "POST" })
+  return res.json()
+}
+
+/** `dueKes` from a 402 (submit) or 409 (checkout) response, if the error carries one. */
+export function dueKesOf(error: unknown): number | null {
+  const due = (error as { body?: { dueKes?: unknown } } | null)?.body?.dueKes
+  return typeof due === "number" ? due : null
 }
 
 /** Attaches a file already in the Media Library. Same response as an upload,

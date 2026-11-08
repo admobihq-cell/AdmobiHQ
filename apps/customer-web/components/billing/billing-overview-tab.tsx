@@ -27,11 +27,15 @@ export function BillingOverviewTab({
   summary,
   range,
   onTopUp,
+  onRequestRefund,
   onNavigate,
 }: {
   summary: FinanceSummaryDto
   range: RangeParams
-  onTopUp: () => void
+  /** Absent without billing:write. */
+  onTopUp?: () => void
+  /** Absent without billing:write or with nothing available to refund. */
+  onRequestRefund?: () => void
   onNavigate: (tab: string) => void
 }) {
   const { hasLedgerRows } = summary
@@ -92,9 +96,11 @@ export function BillingOverviewTab({
               title="Your funds are short"
               body={`Your active budgets are ${formatKes(-(summary.availableKes ?? 0))} more than your balance.`}
               action={
-                <Button size="sm" onClick={onTopUp}>
-                  Top up
-                </Button>
+                onTopUp ? (
+                  <Button size="sm" onClick={onTopUp}>
+                    Top up
+                  </Button>
+                ) : undefined
               }
             />
           ) : null}
@@ -104,7 +110,7 @@ export function BillingOverviewTab({
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard
           title="Money in vs out"
-          description="Top-ups against spend, by month"
+          description="Top-ups against spend and refunds to you, by month"
           isEmpty={flow.length === 0}
           emptyMessage={spendEmpty}
           table={{ columns: ["Month", "Money in (KES)", "Money out (KES)"], rows: flow.map((r) => [r.period, r.in, r.out]) }}
@@ -112,7 +118,7 @@ export function BillingOverviewTab({
           <MirrorBars
             data={flow}
             up={{ key: "in", label: "Top-ups" }}
-            down={{ key: "out", label: "Spend" }}
+            down={{ key: "out", label: "Spend and refunds" }}
             valueFormatter={formatKes}
           />
         </ChartCard>
@@ -131,7 +137,13 @@ export function BillingOverviewTab({
         </ChartCard>
       </div>
 
-      <BillingPanels summary={summary} range={range} onTopUp={onTopUp} onNavigate={onNavigate} />
+      <BillingPanels
+        summary={summary}
+        range={range}
+        onTopUp={onTopUp}
+        onRequestRefund={onRequestRefund}
+        onNavigate={onNavigate}
+      />
     </div>
   )
 }
