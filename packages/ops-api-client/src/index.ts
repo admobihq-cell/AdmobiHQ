@@ -163,6 +163,7 @@ export type OpsClient = {
       page?: number
       pageSize?: number
       sortDir?: "asc" | "desc"
+      search?: string
     }) => Promise<PaginatedResponse<AnnouncementDto>>
     delete: (id: number) => Promise<SuccessResponse>
     /**
@@ -503,6 +504,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           page: params?.page,
           pageSize: params?.pageSize,
           sortDir: params?.sortDir,
+          search: params?.search,
         })
         const qs = query.toString()
         return request<PaginatedResponse<AnnouncementDto>>(
