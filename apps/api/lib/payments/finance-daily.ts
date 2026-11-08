@@ -2,6 +2,7 @@ import { unspentBudgetKes } from "@/lib/payments/funding"
 import { alertOpsFinance, notifyCreditReleased } from "@/lib/payments/money-notify"
 import { nairobiYesterday, writeDailySpend } from "@/lib/payments/daily-spend"
 import { settlePayment, type SettleResult } from "@/lib/payments/settle-payment"
+import { reconcileProcessingTransfers } from "@/lib/payments/payouts"
 import { prisma } from "@/lib/prisma"
 
 const STALE_MINUTES = 60
@@ -78,11 +79,12 @@ export async function sendFinanceDigest(): Promise<{ items: number }> {
   return { items: c.total }
 }
 
-/** Optional steps plugged in by later phases (driver transfers). */
+/** The nightly run, in order (spec §5.3, §5.4, §8.3). */
 export async function runFinanceDaily(today: Date = new Date()) {
   const payments = await reconcileStalePayments()
   const spend = await writeDailySpend(today)
   const credit = await releaseCompletedCredit(today)
+  const transfers = await reconcileProcessingTransfers()
   const digest = await sendFinanceDigest()
-  return { payments, spend, credit, digest }
+  return { payments, spend, credit, transfers, digest }
 }

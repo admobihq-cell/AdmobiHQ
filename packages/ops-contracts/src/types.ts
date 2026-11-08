@@ -108,6 +108,8 @@ export type DriverProfileDto = {
   payout_method: string | null
   payout_mpesa_msisdn: string | null
   payout_bank_name: string | null
+  /** Paystack bank code; set by the bank picker alongside the name. */
+  payout_bank_code: string | null
   payout_bank_account: string | null
   status: string
   submitted_at: string | null

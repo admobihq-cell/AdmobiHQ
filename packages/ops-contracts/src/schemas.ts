@@ -170,6 +170,8 @@ export const driverProfileUpdateSchema = z.object({
   payout_mpesa_msisdn: z.string().trim().min(1).optional(),
   payout_bank_name: z.string().trim().min(1).optional(),
   payout_bank_account: z.string().trim().min(1).optional(),
+  /** Paystack bank code, picked from GET /v1/driver/payout-banks with the bank name. */
+  payout_bank_code: z.string().trim().min(1).max(20).optional(),
 })
 
 export const driverDocumentTypeSchema = z.enum(DRIVER_DOCUMENT_TYPES)

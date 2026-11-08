@@ -1,14 +1,14 @@
 import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
-import { ActivityIndicator, View } from "react-native"
+import { ActivityIndicator, Pressable, Text, View } from "react-native"
 import type { DriverPayoutMethod } from "@workspace/ops-contracts"
 
 import { DocumentUploadField } from "@/components/profile-setup/DocumentUploadField"
 import { FormInput } from "@/components/profile-setup/FormInput"
 import { StepScreen } from "@/components/profile-setup/StepScreen"
 import { FilterChips } from "@/components/ui/filter-chips"
-import { patchDriverProfile, useDriverProfile } from "@/lib/driver-profile"
-import { spacing, useThemedStyles } from "@/lib/theme"
+import { fetchPayoutBanks, patchDriverProfile, useDriverProfile } from "@/lib/driver-profile"
+import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
 const PAYOUT_METHOD_OPTIONS = [
   { key: "mpesa", label: "M-Pesa" },
@@ -23,14 +23,30 @@ export default function TaxPayoutStep() {
   const [mpesaMsisdn, setMpesaMsisdn] = useState("")
   const [bankName, setBankName] = useState("")
   const [bankAccount, setBankAccount] = useState("")
+  const [bankCode, setBankCode] = useState("")
+  const [banks, setBanks] = useState<{ name: string; code: string }[] | null>(null)
   const [hydrated, setHydrated] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const styles = useThemedStyles(() => ({
+  const styles = useThemedStyles((c) => ({
     center: { flex: 1, alignItems: "center" as const, justifyContent: "center" as const },
     gap: { gap: spacing.lg },
     chips: { marginHorizontal: -spacing.lg },
+    suggestion: { paddingVertical: spacing.sm },
+    suggestionText: { ...typography.body, color: c.text },
+    hint: { ...typography.caption, color: c.mutedForeground },
   }))
+
+  useEffect(() => {
+    if (method !== "bank" || banks) return
+    let live = true
+    fetchPayoutBanks(getToken)
+      .then((list) => live && setBanks(list))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [method, banks, getToken])
 
   useEffect(() => {
     if (hydrated || !profile) return
@@ -39,6 +55,7 @@ export default function TaxPayoutStep() {
     setMpesaMsisdn(profile.payout_mpesa_msisdn ?? "")
     setBankName(profile.payout_bank_name ?? "")
     setBankAccount(profile.payout_bank_account ?? "")
+    setBankCode(profile.payout_bank_code ?? "")
     setHydrated(true)
   }, [hydrated, profile])
 
@@ -69,7 +86,11 @@ export default function TaxPayoutStep() {
         payout_method: method,
         ...(method === "mpesa"
           ? { payout_mpesa_msisdn: mpesaMsisdn.trim() }
-          : { payout_bank_name: bankName.trim(), payout_bank_account: bankAccount.trim() }),
+          : {
+              payout_bank_name: bankName.trim(),
+              payout_bank_account: bankAccount.trim(),
+              ...(bankCode ? { payout_bank_code: bankCode } : {}),
+            }),
       })
       router.push("/profile-setup/review")
     } catch (err) {
@@ -127,7 +148,36 @@ export default function TaxPayoutStep() {
 
         {method === "bank" ? (
           <>
-            <FormInput label="Bank name" value={bankName} onChangeText={setBankName} />
+            <FormInput
+              label="Bank"
+              value={bankName}
+              onChangeText={(text) => {
+                setBankName(text)
+                setBankCode("")
+              }}
+              placeholder="Start typing your bank"
+            />
+            {banks && !bankCode && bankName.trim().length >= 2 ? (
+              <View>
+                {banks
+                  .filter((b) => b.name.toLowerCase().includes(bankName.trim().toLowerCase()))
+                  .slice(0, 6)
+                  .map((b) => (
+                    <Pressable
+                      key={b.code}
+                      style={styles.suggestion}
+                      onPress={() => {
+                        setBankName(b.name)
+                        setBankCode(b.code)
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.suggestionText}>{b.name}</Text>
+                    </Pressable>
+                  ))}
+                <Text style={styles.hint}>Pick your bank from the list so payouts reach it.</Text>
+              </View>
+            ) : null}
             <FormInput
               label="Account number"
               value={bankAccount}

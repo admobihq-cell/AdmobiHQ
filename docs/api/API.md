@@ -55,6 +55,8 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `/v1/driver/sos` (+ `[id]`, `messages`, `photos`, `location`) | Driver Clerk JWT | Driver SOS: file, track, reply, add photos, re-ping location |
 | `/v1/safety-incidents` (+ `[id]`, `messages`, photo `file`) | Ops Clerk JWT + `safety` permission | Ops SOS queue, review decisions, photo proxy |
 | `GET/POST /v1/push-receipts/check` | Ops JWT **or** `CRON_SECRET` | Expo receipt reconciliation |
+| `GET/POST /v1/cron/finance-daily` | Ops JWT **or** `CRON_SECRET` | Nightly at 00:30 Nairobi (`30 21 * * *` UTC): verify payments still `initiated` after 1 h, write straight-line `screen_time` spend (`spend-c<id>-<day>`, idempotent), send "finished under budget" notices, verify transfers `processing` after 24 h, then email ops a digest if anything needs attention |
+| `POST /v1/payments/paystack/webhook` | `x-paystack-signature` (HMAC-SHA512 of the raw body, `PAYSTACK_SECRET_KEY`) | `charge.success` → `settlePayment`; `refund.*` → refund status (a failure writes a reversing adjustment); `transfer.*` → payout status. Bad signature `401`; handler error `500` so Paystack retries. Every handler re-reads our rows and re-verifies; nothing in the payload is trusted beyond the reference |
 
 ### Driver SOS (safety incidents)
 
@@ -91,6 +93,13 @@ Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/
 | `GET` | `/v1/customer/payments/[reference]` | Customer (`billing:read` or `campaigns:submit`) | `{ status, amountKes, campaignId, invoiceId }`; `status` is `pending` while `initiated`, else `success`, `failed`, `abandoned` or `amount_mismatch`. After 20 s pending it verifies with Paystack itself. Another org's reference is `404` |
 | `POST` | `/v1/customer/payments/refund-request` | Customer (`billing:write`) | Body `{ amountKes, note? }`, at most the available balance. Opens a `billing` support case "Refund request: KES …" and alerts ops; no money moves until ops refunds |
 | `POST` | `/v1/ops/payments/refunds` | Ops (`finances`) | Body `{ orgId, amountKes, reason }`. Refunds unused credit to the org's newest successful Paystack payments first, never past any one payment's unrefunded amount. Writes a `Refund` row and a `cash_refund` ledger row per payment **before** calling Paystack, under the org lock. `409` when the amount exceeds available or the payments. Paystack `refund.failed` (or a definite 4xx at creation) writes a reversing `adjustment` (`adm-refund-<id>-reversal`); a network error marks the row `needs_attention` |
+| `GET` | `/v1/ops/payments/balance` | Ops (`finances`) | `{ balanceKes }`, the live Paystack KES balance. `502` if Paystack is unreachable |
+| `GET` | `/v1/ops/payouts?month=YYYY-MM` | Ops (`finances`) | Approved drivers with payout details (method, masked destination) and the month's saved payout per driver, with an estimated transfer fee |
+| `POST` | `/v1/ops/payouts` | Ops (`finances`) | Body `{ periodMonth, items: [{ driverProfileId, amountKes }] }`. Saves `pending` payouts; a row already sent is skipped |
+| `POST` | `/v1/ops/payouts/disburse` | Ops (`payouts`) | Body `{ payoutIds }`. Checks the Paystack balance covers amounts plus estimated fees (else `402 { error, balanceKes, requiredKes }`), creates missing transfer recipients, moves rows to `processing`, then sends `POST /transfer/bulk` in chunks of ≤100, ≥5 s apart, reference `adm-payout-<id>-<yyyymm>` |
+| `POST` | `/v1/ops/payouts/[id]/retry` | Ops (`payouts`) | Resends a `failed` payout with the same reference |
+| `POST` | `/v1/payments/paystack/transfer-approval` | Paystack | Answers `200` only for a `processing` payout with that reference and exact amount, else `400` and an emailed ops alert. One indexed lookup, no Paystack call |
+| `GET` | `/v1/driver/payout-banks` | Driver | Kenyan banks from Paystack `{ name, code }`, cached 24 h, for the payout-details picker |
 | `POST` | `/v1/customer/campaigns/[id]/creatives` | Customer | Add creative. **Multipart** `file` uploads a new one (**PNG/JPG/GIF/MP4 only**, ≤50 MB) and also files it in the Media Library; **JSON** `{ mediaAssetId, slot? }` attaches a file already in the library. Either way the file must fit the campaign's panel — `400` with `issues.specs` otherwise; `409` if that file is already attached |
 | `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Detach the creative while editable. The file stays in the Media Library |
 | `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
@@ -239,6 +248,7 @@ Some routes accept `Authorization: Bearer $CRON_SECRET` as an alternative to a l
 | Route | Caller |
 |-------|--------|
 | `GET/POST /v1/push-receipts/check` | Vercel Cron (nightly, `apps/api/vercel.json`) |
+| `GET/POST /v1/cron/finance-daily` | Vercel Cron (nightly, `apps/api/vercel.json`) |
 | `POST /v1/notifications/broadcast` | `scripts/notify-app-update.mjs`, run after `eas update` publishes (see [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md#ota-auto-notify)) |
 
 Comparison is constant-time (`timingSafeEqual` in `lib/api-utils.ts`) — do not swap back to `===` on a new route using this pattern. System-triggered broadcasts are attributed to `release-bot@admobihq.com` in the audit log (`actor_type: "system"`), distinguishing them from staff-sent announcements.
@@ -292,6 +302,9 @@ That token proves only that its holder was the **first** to open a case under th
 | `SENDER_EMAIL`, `ADMIN_EMAIL` | For emails | Form confirmation + alerts |
 | `REDIS_URL` | Optional | Bull **email queue** (not rate limiting) |
 | `CRON_SECRET` | For scheduled/system callers | See [Service-to-service auth](#service-to-service-auth) |
+| `PAYSTACK_SECRET_KEY` | For payments | Paystack secret key (`sk_test_…` in dev/preview, `sk_live_…` in prod). Signs webhooks and authorises every Paystack call; never sent to a client |
+| `PAYSTACK_PUBLIC_KEY` | Not used yet | Kept for a future in-app Paystack SDK |
+| `PAYSTACK_CALLBACK_URL` | For payments | Customer-web return page, e.g. `https://app.admobihq.com/billing/payment-return` |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | For rate limiting | Sliding-window limiter on `/v1/public/*` — see [Rate limiting](#rate-limiting) |
 | `CLOUDINARY_URL` | For private media | Driver documents **and** campaign creatives (`apps/api/lib/storage/private-media.ts`) |
 

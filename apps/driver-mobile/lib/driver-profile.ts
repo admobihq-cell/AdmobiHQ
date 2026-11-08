@@ -43,6 +43,12 @@ export async function patchDriverProfile(
   return res.json()
 }
 
+/** Kenyan banks Paystack can pay into (name + code), for the payout-details picker. */
+export async function fetchPayoutBanks(getToken: GetToken): Promise<{ name: string; code: string }[]> {
+  const res = await authedFetch(getToken, "/v1/driver/payout-banks")
+  return res.json()
+}
+
 export async function submitDriverProfile(getToken: GetToken): Promise<DriverProfileDto> {
   const res = await authedFetch(getToken, "/v1/driver/profile/submit", { method: "POST" })
   return res.json()

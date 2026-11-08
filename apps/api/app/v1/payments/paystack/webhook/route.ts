@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { jsonError } from "@/lib/api-utils"
 import { verifyWebhookSignature } from "@/lib/payments/paystack"
+import { handleTransferEvent } from "@/lib/payments/payouts"
 import { handleRefundEvent } from "@/lib/payments/refunds"
 import { settlePayment } from "@/lib/payments/settle-payment"
 
@@ -40,7 +41,11 @@ export async function POST(req: Request) {
       }
       default:
         if (payload.event?.startsWith("refund.")) {
-          await handleRefundEvent(payload.event, payload.data ?? {})
+          await handleRefundEvent(payload.event, (payload.data ?? {}) as Parameters<typeof handleRefundEvent>[1])
+          return NextResponse.json({ ok: true })
+        }
+        if (payload.event?.startsWith("transfer.")) {
+          await handleTransferEvent(payload.event, (payload.data ?? {}) as Parameters<typeof handleTransferEvent>[1])
           return NextResponse.json({ ok: true })
         }
         return NextResponse.json({ ignored: true })

@@ -67,6 +67,7 @@ const SYSTEM_PATHS = new Set([
   "/v1/push-receipts/check",
   "/v1/cron/finance-daily",
   "/v1/payments/paystack/webhook",
+  "/v1/payments/paystack/transfer-approval",
 ])
 
 /** Section titles by first path segment. Key order is display order; unlisted segments follow, title-cased. */
@@ -251,6 +252,11 @@ const NOTES: Record<string, string> = {
   "/v1/push-receipts/check": "Nightly Expo push receipt reconciliation",
   "/v1/cron/finance-daily": "Nightly payment reconciliation, daily spend and finance digest",
   "/v1/payments/paystack/webhook": "Paystack webhook (signed)",
+  "/v1/payments/paystack/transfer-approval": "Paystack transfer approval: allow only queued payouts",
+  "/v1/ops/payouts": "Driver payout run for a month: list and save amounts",
+  "/v1/ops/payouts/disburse": "Send payouts through Paystack Transfers",
+  "/v1/ops/payouts/[id]/retry": "Resend a failed payout",
+  "/v1/driver/payout-banks": "Kenyan banks for payout details",
 }
 
 function audienceOf(routePath: string): AudienceId {
