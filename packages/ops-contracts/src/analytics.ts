@@ -192,9 +192,11 @@ export function netMargin(input: {
   payoutsKes: number
   toolsMonthlyKes: number
   rangeDays: number
+  /** Paystack collection and transfer fees: absorbed by Admobi, so a cost. */
+  feesKes?: number
 }): number {
   return roundKes(
-    input.revenueKes - input.payoutsKes - (input.toolsMonthlyKes * input.rangeDays) / 30
+    input.revenueKes - input.payoutsKes - (input.feesKes ?? 0) - (input.toolsMonthlyKes * input.rangeDays) / 30
   )
 }
 

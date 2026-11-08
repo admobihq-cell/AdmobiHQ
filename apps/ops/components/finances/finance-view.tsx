@@ -11,6 +11,7 @@ import {
   getFinanceOverview,
   getFinancePayouts,
   getFinanceWallets,
+  getPaymentsNeedingAttention,
   getRecordOptions,
   getToolCosts,
 } from "@/lib/queries/finance"
@@ -40,8 +41,14 @@ export async function FinanceTab({ tab, range }: { tab: string; range: DateRange
         return <PayoutsTab data={await getFinancePayouts(range)} />
       case "tools":
         return <ToolCostsTab data={await getToolCosts()} />
-      default:
-        return <OverviewTab data={await getFinanceOverview(range)} />
+      default: {
+        const [data, attention, options] = await Promise.all([
+          getFinanceOverview(range),
+          getPaymentsNeedingAttention(),
+          getRecordOptions(),
+        ])
+        return <OverviewTab data={data} attention={attention} orgs={options.orgs} />
+      }
     }
   } catch (error: unknown) {
     return (

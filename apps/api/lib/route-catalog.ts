@@ -168,6 +168,7 @@ const NOTES: Record<string, string> = {
   "/v1/ops/documents/export": "Render a table export as PDF",
   "/v1/ops/finance/transactions": "Record a wallet ledger entry by hand",
   "/v1/ops/payments/refunds": "Refund unused credit to the original Paystack payments",
+  "/v1/ops/payments/balance": "Live Paystack balance",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",

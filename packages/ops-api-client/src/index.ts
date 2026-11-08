@@ -254,6 +254,10 @@ export type OpsClient = {
   finance: {
     /** Appends a wallet ledger row. Needs the `finances` permission; the ledger has no edit or delete. */
     recordTransaction: (body: RecordTransactionInput) => Promise<{ id: number; amountKes: number }>
+    /** Refunds unused credit to the org's original Paystack payments. Needs `finances`. */
+    refund: (body: { orgId: number; amountKes: number; reason: string }) => Promise<{ refundIds: number[] }>
+    /** Live Paystack KES balance. Needs `finances`. */
+    paystackBalance: () => Promise<{ balanceKes: number }>
   }
 }
 
@@ -686,6 +690,12 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           method: "POST",
           body: JSON.stringify(body),
         }),
+      refund: (body) =>
+        request<{ refundIds: number[] }>(`${apiPrefix}/ops/payments/refunds`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      paystackBalance: () => request<{ balanceKes: number }>(`${apiPrefix}/ops/payments/balance`),
     },
   }
 }
