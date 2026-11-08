@@ -17,9 +17,10 @@ const FILTERS = [
   { value: "spend", label: "Spend" },
   { value: "refund", label: "Refunds" },
   { value: "adjustment", label: "Adjustments" },
+  { value: "cash_refund", label: "Refunds to payer" },
 ]
 
-const KIND_LABEL: Record<string, string> = { top_up: "Top-up", spend: "Spend", refund: "Refund", adjustment: "Adjustment" }
+const KIND_LABEL: Record<string, string> = { top_up: "Top-up", spend: "Spend", refund: "Refund", adjustment: "Adjustment", cash_refund: "Refund to payer" }
 
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Nairobi" })

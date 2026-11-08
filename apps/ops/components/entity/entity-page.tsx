@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ChevronDown, Download, Loader2, Plus, Search, Trash2, X } from "lucide-react"
+import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
@@ -19,7 +19,6 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -46,20 +45,15 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { exportFileName } from "@workspace/ops-contracts"
-
-import { downloadBlob, downloadCsv, downloadPdf, formatDateTime, toCsv } from "@/lib/format"
-import { buildStyledXlsx } from "@/lib/xlsx"
+import { formatDateTime } from "@/lib/format"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
 import { apiPathToPermission, resolveOpsResource, useOpsClient } from "@/lib/ops-client"
 import { EntityTableSkeleton } from "@/components/entity/entity-table-skeleton"
 import { DataTable, type ColumnDef as TanStackColumnDef } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
-
-// Radix's Select forbids an item value of "" (reserved to mean "no
-// selection"), so "all statuses" needs a sentinel — statusFilter itself
-// stays "" internally, translated only at this component's boundary.
-const ALL_STATUSES = "__all__"
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -119,7 +113,6 @@ type EntityPageProps<T extends { id: number }> = {
     onSubmit: (values: Record<string, unknown>) => Promise<void>
     saving: boolean
   }) => React.ReactNode
-  getCsvRow?: (row: T) => Record<string, unknown>
 }
 
 export function EntityPage<T extends { id: number }>({
@@ -135,7 +128,6 @@ export function EntityPage<T extends { id: number }>({
   statusFilterOptions,
   bulkActions = [],
   renderForm,
-  getCsvRow,
 }: EntityPageProps<T>) {
   const opsClient = useOpsClient()
   const resource = useMemo(
@@ -151,7 +143,6 @@ export function EntityPage<T extends { id: number }>({
   const [editing, setEditing] = useState<T | null>(null)
   const [viewing, setViewing] = useState<T | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkConfirm, setBulkConfirm] = useState<{
     title: string
     description: string
@@ -190,18 +181,27 @@ export function EntityPage<T extends { id: number }>({
       })
     : null
 
-  const pageIds = useMemo(
-    () => data?.items.map((row) => row.id) ?? [],
-    [data?.items],
-  )
-  const allPageSelected =
-    pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id))
-  const somePageSelected = pageIds.some((id) => selectedIds.has(id))
-  const selectedCount = selectedIds.size
-  const selectedRows = useMemo(
-    () => data?.items.filter((row) => selectedIds.has(row.id)) ?? [],
-    [data?.items, selectedIds],
-  )
+  const items = useMemo(() => data?.items ?? [], [data?.items])
+  const {
+    selectedIds,
+    selectedRows,
+    count: selectedCount,
+    clear: clearSelection,
+    selectColumn,
+  } = useRowSelection(items, [page, pageSize, search, statusFilter, apiPath])
+  const exportColumns: ExportColumn<T>[] = columns
+    .filter((c) => c.csv)
+    .map((c) => ({ key: c.key, header: c.header, value: c.csv! }))
+  const exportRows = (format: ExportFormat, rows: T[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title,
+      scope,
+      columns: exportColumns,
+      rows,
+      entity: apiPathToPermission(apiPath),
+      client: opsClient,
+    })
 
   const detailRows =
     detailFields ??
@@ -210,32 +210,6 @@ export function EntityPage<T extends { id: number }>({
       label: column.header,
       render: column.render,
     }))
-
-  useEffect(() => {
-    setSelectedIds(new Set())
-  }, [page, pageSize, search, apiPath])
-
-  const toggleRow = (id: number, checked: boolean) => {
-    setSelectedIds((current) => {
-      const next = new Set(current)
-      if (checked) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }
-
-  const toggleAllOnPage = (checked: boolean) => {
-    setSelectedIds((current) => {
-      const next = new Set(current)
-      for (const id of pageIds) {
-        if (checked) next.add(id)
-        else next.delete(id)
-      }
-      return next
-    })
-  }
-
-  const clearSelection = () => setSelectedIds(new Set())
 
   const postBulk = async (body: Record<string, unknown>) => {
     return resource.bulk(body as never)
@@ -272,7 +246,7 @@ export function EntityPage<T extends { id: number }>({
   const runBulkAction = (action: () => Promise<void>) => bulkMutation.mutate(action)
 
   const handleBulkDelete = () => {
-    const ids = Array.from(selectedIds)
+    const ids = selectedRows.map((row) => row.id)
     setBulkConfirm({
       title: `Delete ${ids.length} record${ids.length === 1 ? "" : "s"}?`,
       description: `This action cannot be undone. ${ids.length} record${ids.length === 1 ? "" : "s"} will be permanently removed.`,
@@ -286,66 +260,13 @@ export function EntityPage<T extends { id: number }>({
   }
 
   const handleBulkStatus = (status: string, label: string) => {
-    const ids = Array.from(selectedIds)
+    const ids = selectedRows.map((row) => row.id)
     void runBulkAction(async () => {
       const result = await postBulk({ action: "updateStatus", ids, status })
       toast.success(
         `Updated ${result.count} record${result.count === 1 ? "" : "s"} to ${label}`,
       )
     })
-  }
-
-  const handleBulkExport = () => {
-    if (!selectedRows.length) return
-    const csvColumns = columns.filter((c) => c.csv).map((c) => c.key)
-    const rows = selectedRows.map((row) => {
-      if (getCsvRow) return getCsvRow(row)
-      return Object.fromEntries(
-        columns
-          .filter((c) => c.csv)
-          .map((c) => [c.key, c.csv!(row)]),
-      )
-    })
-    downloadCsv(
-      exportFileName(title, "selected", "csv"),
-      toCsv(rows, csvColumns),
-    )
-    toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
-  }
-
-  const handleBulkExportPdf = async () => {
-    if (!selectedRows.length) return
-    const pdfColumns = columns.filter((c) => c.csv)
-    const headers = pdfColumns.map((c) => c.header)
-    const rows = selectedRows.map((row) =>
-      pdfColumns.map((c) => String(c.csv!(row) ?? "")),
-    )
-    try {
-      const blob = await opsClient.documents.exportPdf({
-        entity: apiPathToPermission(apiPath),
-        title,
-        headers,
-        rows,
-      })
-      downloadPdf(exportFileName(title, "selected", "pdf"), blob)
-      toast.success(
-        `Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`,
-      )
-    } catch (e) {
-      toast.error(formatApiError(e))
-    }
-  }
-
-  const handleBulkExportExcel = async () => {
-    if (!selectedRows.length) return
-    const excelColumns = columns.filter((c) => c.csv)
-    const headers = excelColumns.map((c) => c.header)
-    const rows = selectedRows.map((row) =>
-      excelColumns.map((c) => String(c.csv!(row) ?? "")),
-    )
-    const blob = await buildStyledXlsx(title, headers, rows)
-    downloadBlob(exportFileName(title, "selected", "xlsx"), blob)
-    toast.success(`Exported ${selectedRows.length} record${selectedRows.length === 1 ? "" : "s"}`)
   }
 
   const saveMutation = useMutation({
@@ -386,51 +307,6 @@ export function EntityPage<T extends { id: number }>({
     deleteMutation.mutate(deleteTarget)
   }
 
-  const handleExport = () => {
-    if (!data?.items.length) return
-    const csvColumns = columns.filter((c) => c.csv).map((c) => c.key)
-    const rows = data.items.map((row) => {
-      if (getCsvRow) return getCsvRow(row)
-      return Object.fromEntries(
-        columns
-          .filter((c) => c.csv)
-          .map((c) => [c.key, c.csv!(row)]),
-      )
-    })
-    downloadCsv(exportFileName(title, null, "csv"), toCsv(rows, csvColumns))
-  }
-
-  const handleExportPdf = async () => {
-    if (!data?.items.length) return
-    const pdfColumns = columns.filter((c) => c.csv)
-    const headers = pdfColumns.map((c) => c.header)
-    const rows = data.items.map((row) =>
-      pdfColumns.map((c) => String(c.csv!(row) ?? "")),
-    )
-    try {
-      const blob = await opsClient.documents.exportPdf({
-        entity: apiPathToPermission(apiPath),
-        title,
-        headers,
-        rows,
-      })
-      downloadPdf(exportFileName(title, null, "pdf"), blob)
-    } catch (e) {
-      toast.error(formatApiError(e))
-    }
-  }
-
-  const handleExportExcel = async () => {
-    if (!data?.items.length) return
-    const excelColumns = columns.filter((c) => c.csv)
-    const headers = excelColumns.map((c) => c.header)
-    const rows = data.items.map((row) =>
-      excelColumns.map((c) => String(c.csv!(row) ?? "")),
-    )
-    const blob = await buildStyledXlsx(title, headers, rows)
-    downloadBlob(exportFileName(title, null, "xlsx"), blob)
-  }
-
   const quickStatusMutation = useMutation({
     mutationFn: (status: string) => {
       if (!viewing) throw new Error("No record selected")
@@ -449,27 +325,7 @@ export function EntityPage<T extends { id: number }>({
   const deleting = deleteMutation.isPending
 
   const tableColumns: TanStackColumnDef<T, any>[] = [
-    {
-      id: "select",
-      meta: { className: "w-10" },
-      header: () => (
-        <Checkbox
-          checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
-          onCheckedChange={(checked) => toggleAllOnPage(checked === true)}
-          aria-label="Select all on page"
-          disabled={loading || !data?.items.length}
-        />
-      ),
-      cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <Checkbox
-            checked={selectedIds.has(row.original.id)}
-            onCheckedChange={(checked) => toggleRow(row.original.id, checked === true)}
-            aria-label={`Select record #${row.original.id}`}
-          />
-        </div>
-      ),
-    },
+    selectColumn,
     ...columns.map(
       (col): TanStackColumnDef<T, any> => ({
         id: col.key,
@@ -510,69 +366,42 @@ export function EntityPage<T extends { id: number }>({
     <div className="flex flex-1 flex-col gap-6">
       <PageHero title={title} description={description} />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search…"
-            className="pl-8"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
-          />
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" disabled={!data?.items.length}>
-              <Download data-icon="inline-start" />
-              Export
-              <ChevronDown data-icon="inline-end" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => void handleExportExcel()}>
-              Export as Excel
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void handleExportPdf()}>
-              Export as PDF
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExport}>Export as CSV</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {statusFilterOptions?.length ? (
-          <Select
-            value={statusFilter || ALL_STATUSES}
-            onValueChange={(value) => {
-              setStatusFilter(value === ALL_STATUSES ? "" : value)
-              setPage(1)
+      <TableToolbar
+        search={{
+          value: search,
+          onChange: (value) => {
+            setSearch(value)
+            setPage(1)
+          },
+        }}
+        onExport={(format) => exportRows(format, items, null)}
+        exportDisabled={!items.length}
+        filters={
+          statusFilterOptions?.length ? (
+            <FilterSelect
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value)
+                setPage(1)
+              }}
+              options={statusFilterOptions}
+              allLabel="All statuses"
+            />
+          ) : null
+        }
+        actions={
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditing(null)
+              setFormOpen(true)
             }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_STATUSES}>All statuses</SelectItem>
-              {statusFilterOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditing(null)
-            setFormOpen(true)
-          }}
-        >
-          <Plus data-icon="inline-start" />
-          Add
-        </Button>
-      </div>
+            <Plus data-icon="inline-start" />
+            Add
+          </Button>
+        }
+      />
 
       {fetchError ? (
         <ApiErrorBanner
@@ -581,94 +410,65 @@ export function EntityPage<T extends { id: number }>({
         />
       ) : null}
 
-      {selectedCount > 0 && (
-        <div className="bg-muted/50 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2">
-          <span className="text-sm font-medium">
-            {selectedCount} selected
-          </span>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {statusBulkOptions && statusBulkOptions.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={bulkMutation.isPending}>
-                    Set status
-                    <ChevronDown data-icon="inline-end" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {statusBulkOptions.map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => handleBulkStatus(option.value, option.label)}
-                    >
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            {bulkActions.map((action) => (
-              <Button
-                key={action.id}
-                variant={action.variant ?? "outline"}
-                size="sm"
-                disabled={bulkMutation.isPending}
-                onClick={() => {
-                  const ids = Array.from(selectedIds)
-                  if (action.confirm) {
-                    setBulkConfirm({
-                      title: action.confirm.title,
-                      description: action.confirm.description(ids.length),
-                      destructive: action.variant === "destructive",
-                      onConfirm: () => action.action(ids, selectedRows),
-                    })
-                    return
-                  }
-                  void runBulkAction(() => action.action(ids, selectedRows))
-                }}
-              >
-                {action.label}
+      <BulkBar
+        count={selectedCount}
+        onExport={(format) => exportRows(format, selectedRows, "selected")}
+        onClear={clearSelection}
+        busy={bulkMutation.isPending}
+      >
+        {statusBulkOptions && statusBulkOptions.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={bulkMutation.isPending}>
+                Set status
+                <ChevronDown data-icon="inline-end" />
               </Button>
-            ))}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={bulkMutation.isPending}>
-                  <Download data-icon="inline-start" />
-                  Export selected
-                  <ChevronDown data-icon="inline-end" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => void handleBulkExportExcel()}>
-                  Export as Excel
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {statusBulkOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => handleBulkStatus(option.value, option.label)}
+                >
+                  {option.label}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleBulkExportPdf()}>
-                  Export as PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleBulkExport}>Export as CSV</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleBulkDelete}
-              disabled={bulkMutation.isPending}
-            >
-              <Trash2 data-icon="inline-start" />
-              Delete
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearSelection}
-              disabled={bulkMutation.isPending}
-              aria-label="Clear selection"
-            >
-              <X />
-            </Button>
-          </div>
-        </div>
-      )}
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {bulkActions.map((action) => (
+          <Button
+            key={action.id}
+            variant={action.variant ?? "outline"}
+            size="sm"
+            disabled={bulkMutation.isPending}
+            onClick={() => {
+              const ids = selectedRows.map((row) => row.id)
+              if (action.confirm) {
+                setBulkConfirm({
+                  title: action.confirm.title,
+                  description: action.confirm.description(ids.length),
+                  destructive: action.variant === "destructive",
+                  onConfirm: () => action.action(ids, selectedRows),
+                })
+                return
+              }
+              void runBulkAction(() => action.action(ids, selectedRows))
+            }}
+          >
+            {action.label}
+          </Button>
+        ))}
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleBulkDelete}
+          disabled={bulkMutation.isPending}
+        >
+          <Trash2 data-icon="inline-start" />
+          Delete
+        </Button>
+      </BulkBar>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
         {loading ? (

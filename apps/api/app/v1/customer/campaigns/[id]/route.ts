@@ -43,6 +43,16 @@ export async function PATCH(req: Request, { params }: Params) {
   if ("error" in parsed) return parsed.error
   const { starts_on, ends_on, ...rest } = parsed.data
 
+  // The charge is the budget (spec §5.4): once paid, it can't move. Dates,
+  // market, format and creative stay editable.
+  if (
+    campaign.funded_at &&
+    rest.budget_kes !== undefined &&
+    Number(rest.budget_kes) !== Number(campaign.budget_kes)
+  ) {
+    return jsonError("Budget is locked once a campaign is funded", 409)
+  }
+
   // A half-open window is only valid across a whole record: the schema can't
   // catch "PATCH ends_on earlier than the starts_on already in the row", so
   // check the merged result here.

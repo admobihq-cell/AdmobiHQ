@@ -2,6 +2,7 @@ import type {
   DriverDocumentDto,
   DriverDocumentType,
   DriverProfileDto,
+  DriverPayoutsDto,
   DriverProfileUpdateInput,
 } from "@workspace/ops-contracts"
 
@@ -36,6 +37,18 @@ export async function patchDriverProfile(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   })
+  return res.json()
+}
+
+/** Kenyan banks Paystack can pay into (name + code), for the payout-details picker. */
+export async function fetchPayoutBanks(getToken: GetToken): Promise<{ name: string; code: string }[]> {
+  const res = await authedFetch(getToken, "/v1/driver/payout-banks")
+  return res.json()
+}
+
+/** The signed-in driver's own payouts and totals. */
+export async function fetchDriverPayouts(getToken: GetToken): Promise<DriverPayoutsDto> {
+  const res = await authedFetch(getToken, "/v1/driver/payouts")
   return res.json()
 }
 

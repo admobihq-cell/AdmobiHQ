@@ -1,7 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { formatCompact, formatKes } from "@workspace/ops-contracts"
+
+import { Button } from "@workspace/ui/components/button"
 
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { SegmentGauge } from "@workspace/ui/components/charts/segment-gauge"
@@ -9,7 +13,10 @@ import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
 import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
+import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { monthLabel } from "@/components/finances/overview-tab"
+import { PayoutRunDialog } from "@/components/finances/payout-run-dialog"
+import { useOpsClient } from "@/lib/ops-client"
 import type { FinancePayoutsDto, PayoutRowDto } from "@/lib/queries/finance"
 
 const NO_PAYOUTS = "Driver payouts appear here once they are recorded."
@@ -17,26 +24,67 @@ const NO_PAYOUTS = "Driver payouts appear here once they are recorded."
 const STATUS: Record<string, { label: string; tone: "good" | "warning" | "serious" | "neutral" }> = {
   settled: { label: "Settled", tone: "good" },
   pending: { label: "Pending", tone: "warning" },
+  processing: { label: "Sending", tone: "neutral" },
   failed: { label: "Failed", tone: "serious" },
+  reversed: { label: "Reversed", tone: "serious" },
 }
 
 const FILTERS = [
   { value: "all", label: "All" },
   { value: "pending", label: "Pending" },
+  { value: "processing", label: "Sending" },
   { value: "settled", label: "Settled" },
   { value: "failed", label: "Failed" },
+  { value: "reversed", label: "Reversed" },
 ]
+
+function RetryButton({ id }: { id: number }) {
+  const client = useOpsClient()
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      loading={pending}
+      loadingText="Retrying…"
+      onClick={() =>
+        startTransition(async () => {
+          try {
+            await client.payouts.retry(id)
+            toast.success("Payout resent to Paystack")
+            await refreshFinance()
+            router.refresh()
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Could not retry the payout")
+          }
+        })
+      }
+    >
+      Retry
+    </Button>
+  )
+}
 
 const COLUMNS: LedgerColumn<PayoutRowDto>[] = [
   { key: "driver", header: "Driver", className: "min-w-40", render: (p) => <span className="font-medium">{p.driverName}</span> },
   { key: "period", header: "Month", render: (p) => monthLabel(p.periodMonth) },
+  {
+    key: "dest",
+    header: "Pays to",
+    render: (p) => (p.method ? `${p.method === "mpesa" ? "M-Pesa" : "Bank"} ${p.destinationMasked ?? ""}` : "Manual"),
+  },
   { key: "amount", header: "Amount", align: "right", render: (p) => formatKes(p.amountKes) },
   {
     key: "status",
     header: "Status",
     render: (p) => {
       const s = STATUS[p.status] ?? { label: p.status, tone: "neutral" as const }
-      return <StatusPill tone={s.tone}>{s.label}</StatusPill>
+      return (
+        <span title={p.failureReason ?? undefined}>
+          <StatusPill tone={s.tone}>{s.label}</StatusPill>
+        </span>
+      )
     },
   },
   {
@@ -47,8 +95,14 @@ const COLUMNS: LedgerColumn<PayoutRowDto>[] = [
   { key: "ref", header: "M-Pesa ref", render: (p) => p.mpesaRef ?? "None" },
 ]
 
+const RETRY_COLUMN: LedgerColumn<PayoutRowDto> = {
+  key: "retry",
+  header: "",
+  render: (p) => (p.status === "failed" && p.provider === "paystack" ? <RetryButton id={p.id} /> : null),
+}
+
 /** Driver payouts: how much has settled, what is stuck, and who is owed. */
-export function PayoutsTab({ data }: { data: FinancePayoutsDto }) {
+export function PayoutsTab({ data, canDisburse }: { data: FinancePayoutsDto; canDisburse: boolean }) {
   const [filter, setFilter] = useState("all")
   const amount = (status: string) => data.byStatus.find((s) => s.status === status)?.amountKes ?? 0
   const count = (status: string) => data.byStatus.find((s) => s.status === status)?.count ?? 0
@@ -58,6 +112,9 @@ export function PayoutsTab({ data }: { data: FinancePayoutsDto }) {
 
   return (
     <div className="grid gap-4">
+      <div className="flex justify-end">
+        <PayoutRunDialog canDisburse={canDisburse} />
+      </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <DashboardCard title="Settled" description="Share of payout value that has been paid">
           {total > 0 ? (
@@ -106,7 +163,7 @@ export function PayoutsTab({ data }: { data: FinancePayoutsDto }) {
           value: filter,
           onChange: setFilter,
         }}
-        columns={COLUMNS}
+        columns={canDisburse ? [...COLUMNS, RETRY_COLUMN] : COLUMNS}
         rows={rows}
         rowKey={(p) => String(p.id)}
         footer={{ viewing: `Viewing ${rows.length} out of ${data.rows.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}

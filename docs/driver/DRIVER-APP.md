@@ -20,10 +20,10 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 
 | Tab | Route | Status |
 |-----|-------|--------|
-| **Dashboard** (home) | `/` | Working shell; earnings numbers illustrative |
-| **Earnings** | `/earnings` | Working UI on demo data — real ledger waits on telemetry |
+| **Dashboard** (home) | `/` | Payout stats are real (`GET /v1/driver/payouts`); routes and recent activity are illustrative |
+| **Earnings** | `/earnings` | **Real payouts**: last payout, paid this year (Nairobi year), pending (saved or being sent), and history by month with status. The old hours / route-bonus / per-day tiles were removed, not zeroed: nothing records them yet |
 | **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
-| **Payouts** | `/payouts` | Coming-soon (ops still settles manually) |
+| **Payouts** | `/payouts` | Redirects to Earnings, where payouts now live |
 | **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
 | **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
@@ -100,7 +100,7 @@ Deliveries ships as **placeholder screens behind one ops-controlled platform fla
 
 ## What is still out of scope
 
-- **Real earnings data** — `Device`, `EarningsLedger`, `Payout` models and the aggregation cron ([ROADMAP.md](../shared/ROADMAP.md) milestones 5–6).
-- **Payouts** — manual M-Pesa by ops remains the operating mode.
+- **Computed earnings** — per-hour / per-km / revenue-share pay needs telemetry (`Device`, `EarningsLedger`); today ops types each driver's monthly amount ([ROADMAP.md](../shared/ROADMAP.md) milestones 5–6).
+- **Payouts** are sent by ops through Paystack Transfers to the M-Pesa number or bank account on the profile. The driver gets a push and inbox notice when a payout is sent or fails, and a notice (plus email) whenever their payout details change. The bank field is a picker fed by `GET /v1/driver/payout-banks` (Paystack's Kenyan bank list), which stores the bank code with the name.
 - **CRM join** — `DriverProfile.clerk_user_id` is not linked to the marketing `Driver` row.
 - **Real deliveries** — dispatch, job assignment, proof-of-delivery, and per-driver `delivers`.

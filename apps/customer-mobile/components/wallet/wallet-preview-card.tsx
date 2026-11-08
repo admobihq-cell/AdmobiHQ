@@ -4,23 +4,19 @@ import { Pressable, Text, View } from "react-native"
 import { ChevronRight, Wallet } from "@/components/icons"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 import { useCampaigns } from "@/lib/use-campaigns"
-import {
-  formatCurrency,
-  PLACEHOLDER_WALLET_BALANCE,
-  useWallet,
-  WALLET_CARD_BG,
-  WALLET_CARD_FG,
-} from "@/lib/wallet"
+import { useOrgPermissions } from "@/lib/use-org"
+import { formatCurrency, useWallet, WALLET_CARD_BG, WALLET_CARD_FG } from "@/lib/wallet"
 
 export function WalletPreviewCard() {
   const router = useRouter()
-  const wallet = useWallet()
+  const { can } = useOrgPermissions()
+  const canRead = can("billing:read")
+  const wallet = useWallet({ enabled: canRead })
   // Same query key the overview screen already uses, so this costs no extra
   // request — react-query serves both from one cache entry.
   const campaignsQuery = useCampaigns()
 
-  const balance = wallet.data?.balance ?? PLACEHOLDER_WALLET_BALANCE
-  const autoReloadOn = wallet.data?.autoReload.enabled ?? false
+  const available = wallet.data?.availableKes
   const liveCount = (campaignsQuery.data ?? []).filter((c) => c.flight_phase === "live").length
 
   const styles = useThemedStyles(() => ({
@@ -71,14 +67,16 @@ export function WalletPreviewCard() {
       <View style={styles.headerRow}>
         <View style={styles.labelRow}>
           <Wallet color={WALLET_CARD_FG} size={16} />
-          <Text style={styles.label}>Wallet balance</Text>
+          <Text style={styles.label}>Available balance</Text>
         </View>
         <ChevronRight color={WALLET_CARD_FG} size={18} />
       </View>
-      <Text style={styles.balance}>{formatCurrency(balance)}</Text>
+      <Text style={styles.balance}>
+        {!canRead ? "—" : available == null ? (wallet.isLoading ? "…" : formatCurrency(0)) : formatCurrency(available)}
+      </Text>
       <Text style={styles.hint}>
-        {liveCount} campaign{liveCount === 1 ? "" : "s"} live · auto-reload{" "}
-        {autoReloadOn ? "on" : "off"}
+        {liveCount} campaign{liveCount === 1 ? "" : "s"} live
+        {canRead ? "" : " · ask your account owner for billing access"}
       </Text>
     </Pressable>
   )

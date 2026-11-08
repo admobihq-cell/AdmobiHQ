@@ -36,12 +36,13 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `POST /v1/public/push-tokens`, `/v1/public/driver-push-tokens` | None | Expo push-token registration |
 | `POST /v1/public/support`, `/v1/public/support/[id]/messages` | Identity token (see below) | Customer/driver support cases |
 | `/v1/leads`, `/v1/fleet`, `/v1/drivers`, `/v1/waitlist`, `/v1/media-kit` | Ops Clerk JWT | Ops admin CRUD (+ `[id]`, `bulk`) |
-| `/v1/driver-applications` | Ops Clerk JWT | Onboarding review (documents via driver instance) |
+| `/v1/driver-applications` (+ `bulk-review`) | Ops Clerk JWT | Onboarding review (documents via driver instance). List takes `status` and `search` (name, phone, city). `POST …/bulk-review` works like the campaigns one: `{ ids (1–100), decision: "approved" \| "rejected", reason? }`, only `submitted` rows change, returns `{ updated, skipped }` |
 | `GET /v1/stats`, `GET /v1/audit`, `GET /v1/me` | Ops Clerk JWT | Dashboard stats, activity trail, current user |
 | `GET/PATCH /v1/flags` | Ops Clerk JWT | Platform flags (write); public read is `/v1/public/config` |
 | `/v1/users` | Ops Clerk JWT, **admin role** | Platform user search (ops Users page) |
 | `/v1/team`, `/v1/roles` | Ops Clerk JWT (admin) | Staff invites + custom RBAC |
 | `GET/POST/PATCH /v1/support` | Ops Clerk JWT | Ops support console |
+| `GET /v1/notifications` | Ops Clerk JWT + `announcements` | Sent-broadcast history for the ops Announcements page (deleted rows included). Takes `page`, `pageSize`, `sortDir`, and `search` (title or body, case-insensitive) |
 | `POST /v1/notifications/broadcast` | Ops Clerk JWT **or** `CRON_SECRET` | Push announcement (optional `image_url`); personalizes `{{first_name}}` and `{{org_name}}` per recipient |
 | `POST /v1/notifications/broadcast-image` | Ops Clerk JWT | Upload announcement image (Vercel Blob) |
 | `/v1/customer/announcements`, `/v1/customer/mobile-announcements` | Customer Clerk JWT | Advertiser announcement inboxes (+ `/read`) |
@@ -55,6 +56,8 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `/v1/driver/sos` (+ `[id]`, `messages`, `photos`, `location`) | Driver Clerk JWT | Driver SOS: file, track, reply, add photos, re-ping location |
 | `/v1/safety-incidents` (+ `[id]`, `messages`, photo `file`) | Ops Clerk JWT + `safety` permission | Ops SOS queue, review decisions, photo proxy |
 | `GET/POST /v1/push-receipts/check` | Ops JWT **or** `CRON_SECRET` | Expo receipt reconciliation |
+| `GET/POST /v1/cron/finance-daily` | Ops JWT **or** `CRON_SECRET` | Nightly at 00:30 Nairobi (`30 21 * * *` UTC): verify payments still `initiated` after 1 h, write straight-line `screen_time` spend (`spend-c<id>-<day>`, idempotent), send "finished under budget" notices, verify transfers `processing` after 24 h, then email ops a digest if anything needs attention |
+| `POST /v1/payments/paystack/webhook` | `x-paystack-signature` (HMAC-SHA512 of the raw body, `PAYSTACK_SECRET_KEY`) | `charge.success` → `settlePayment`; `refund.*` → refund status (a failure writes a reversing adjustment); `transfer.*` → payout status. Bad signature `401`; handler error `500` so Paystack retries. Every handler re-reads our rows and re-verifies; nothing in the payload is trusted beyond the reference |
 
 ### Driver SOS (safety incidents)
 
@@ -85,7 +88,19 @@ Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/
 |--------|------|------|-------|
 | `GET` / `POST` | `/v1/customer/campaigns` | Customer | List own campaigns / create draft |
 | `GET` / `PATCH` / `DELETE` | `/v1/customer/campaigns/[id]` | Customer | Detail / edit while editable / delete draft |
-| `POST` | `/v1/customer/campaigns/[id]/submit` | Customer | Submit for review (fires email + inbox + push + ops alert) |
+| `POST` | `/v1/customer/campaigns/[id]/submit` | Customer | Submit for review (fires email + inbox + push + ops alert). An unfunded campaign is funded from the available balance in the same transaction; if the balance is short it answers `402 { error: "Payment required", dueKes }` and the client calls `checkout`. A funded campaign (resubmit after changes) skips the balance check |
+| `POST` | `/v1/customer/campaigns/[id]/checkout` | Customer (`campaigns:submit`) | Opens a Paystack hosted checkout for `max(0, budget − available)` (min KES 3) and returns `{ authorizationUrl, reference, amountKes }`. `404` other org; `409` not editable or already funded; `400` incomplete (`missingFields`, `missingCreatives`); `409 { dueKes: 0 }` when the balance covers it (call `submit`). An `initiated` payment for the same org, campaign and amount under 30 min old is reused. On a verified payment the server credits the balance, funds and submits the campaign |
+| `POST` | `/v1/customer/payments/top-up` | Customer (`billing:write`) | Body `{ amountKes }`, an integer 100–1,000,000. Same response as `checkout`, with no campaign |
+| `GET` | `/v1/customer/payments/[reference]` | Customer (`billing:read` or `campaigns:submit`) | `{ status, amountKes, campaignId, invoiceId, reference, channel, paidAt, invoiceNumber }` (the last four feed the printed receipt; `channel`, `paidAt` and `invoiceNumber` are `null` until settled); `status` is `pending` while `initiated`, else `success`, `failed`, `abandoned` or `amount_mismatch`. After 20 s pending it verifies with Paystack itself. Another org's reference is `404` |
+| `POST` | `/v1/customer/payments/refund-request` | Customer (`billing:write`) | Body `{ amountKes, note? }`, at most the available balance. Opens a `billing` support case "Refund request: KES …" and alerts ops; no money moves until ops refunds |
+| `POST` | `/v1/ops/payments/refunds` | Ops (`finances`) | Body `{ orgId, amountKes, reason }`. Refunds unused credit to the org's newest successful Paystack payments first, never past any one payment's unrefunded amount. Writes a `Refund` row and a `cash_refund` ledger row per payment **before** calling Paystack, under the org lock. `409` when the amount exceeds available or the payments. Paystack `refund.failed` (or a definite 4xx at creation) writes a reversing `adjustment` (`adm-refund-<id>-reversal`); a network error marks the row `needs_attention` |
+| `GET` | `/v1/ops/payments/balance` | Ops (`finances`) | `{ balanceKes }`, the live Paystack KES balance. `502` if Paystack is unreachable |
+| `GET` | `/v1/ops/payouts?month=YYYY-MM` | Ops (`finances`) | Approved drivers with payout details (method, masked destination) and the month's saved payout per driver, with an estimated transfer fee |
+| `POST` | `/v1/ops/payouts` | Ops (`finances`) | Body `{ periodMonth, items: [{ driverProfileId, amountKes }] }`. Saves `pending` payouts; a row already sent is skipped |
+| `POST` | `/v1/ops/payouts/disburse` | Ops (`payouts`) | Body `{ payoutIds }`. Checks the Paystack balance covers amounts plus estimated fees (else `402 { error, balanceKes, requiredKes }`), creates missing transfer recipients, moves rows to `processing`, then sends `POST /transfer/bulk` in chunks of ≤100, ≥5 s apart, reference `adm-payout-<id>-<yyyymm>` |
+| `POST` | `/v1/ops/payouts/[id]/retry` | Ops (`payouts`) | Resends a `failed` payout with the same reference |
+| `POST` | `/v1/payments/paystack/transfer-approval` | Paystack | Answers `200` only for a `processing` payout with that reference and exact amount, else `400` and an emailed ops alert. One indexed lookup, no Paystack call |
+| `GET` | `/v1/driver/payout-banks` | Driver | Kenyan banks from Paystack `{ name, code }`, cached 24 h, for the payout-details picker |
 | `POST` | `/v1/customer/campaigns/[id]/creatives` | Customer | Add creative. **Multipart** `file` uploads a new one (**PNG/JPG/GIF/MP4 only**, ≤50 MB) and also files it in the Media Library; **JSON** `{ mediaAssetId, slot? }` attaches a file already in the library. Either way the file must fit the campaign's panel — `400` with `issues.specs` otherwise; `409` if that file is already attached |
 | `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Detach the creative while editable. The file stays in the Media Library |
 | `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
@@ -98,6 +113,12 @@ Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
 takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
+
+`POST /v1/ops/documents/export` (ops) renders the list-page **Export as PDF**
+from `{ entity, title, headers, rows }` (max 20 headers, 500 rows). It
+authorises on `entity`, which is the page's ops permission (e.g. `drivers`,
+`campaigns`), or `"admin"` for the admin-only pages (Users, Admins, Team,
+Roles, Integrations), which requires an ops admin.
 
 ### Finance (advertiser)
 
@@ -114,7 +135,7 @@ Range parameters, shared with the report routes: `range` (`7d` | `30d` | `90d` |
 | `GET` | `/v1/customer/finance/statements` | One row per month with ledger rows, oldest first. Each closing equals the next opening; the last closing equals the balance |
 | `GET` | `/v1/customer/finance/statements/[month]/pdf` | One month (`YYYY-MM`) as a PDF; a month with no rows is `404` |
 
-Funding is `untracked` until the org's first ledger row, so an org with real budgets and no wallet history never sees a "short of funds" alert. `committed` is the unspent part of each active (live or scheduled) campaign's budget, floored at 0 per campaign. Both PDFs go through the shared `CampaignStatementPdf` template and carry a "not a tax invoice" footnote; text is passed through `lib/pdf/latin1.ts` because the PDF font covers Latin-1 only.
+Funding is `untracked` until the org's first ledger row, so an org with real budgets and no wallet history never sees a "short of funds" alert. `committed` is the unspent part of each campaign that holds funds (`holdsFunds` in `lib/payments/funding.ts`: `funded_at` set, status `submitted`, `approved` or `changes_requested`, and the flight's last Nairobi day not yet past), floored at 0 per campaign. Unfunded campaigns commit nothing. Both PDFs go through the shared `CampaignStatementPdf` template and carry a "not a tax invoice" footnote; text is passed through `lib/pdf/latin1.ts` because the PDF font covers Latin-1 only.
 
 ### Reports (advertiser)
 
@@ -191,6 +212,7 @@ codepoint rather than substituting one.
 | `GET` | `/v1/campaigns` | Ops `campaigns` | Paginated review queue |
 | `GET` | `/v1/campaigns/[id]` | Ops `campaigns` | Detail + creatives |
 | `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `approve` / `request_changes` / `reject` / `unapprove` — reason required except approve; reason is **advertiser-visible** |
+| `POST` | `/v1/campaigns/bulk-review` | Ops `campaigns` | `{ ids (1–100), decision: "approved" \| "rejected", reason? }` — reason required to reject, one reason for every row. Each id runs the same review as the single route (audit, inbox, email, credit release). Only `submitted` campaigns change; the rest are skipped, never walked back. Returns `{ updated: number[], skipped: { id, error }[] }` |
 | `GET` | `/v1/campaigns/[id]/creatives/[creativeId]/file` | Ops `campaigns` | Stream creative for review |
 | `GET` | `/v1/advertiser-orgs` | Ops `campaigns` | Paginated org directory (search by name) |
 | `GET` | `/v1/advertiser-orgs/[id]` | Ops `campaigns` | Members, pending invites, campaigns, projected activity |
@@ -234,6 +256,7 @@ Some routes accept `Authorization: Bearer $CRON_SECRET` as an alternative to a l
 | Route | Caller |
 |-------|--------|
 | `GET/POST /v1/push-receipts/check` | Vercel Cron (nightly, `apps/api/vercel.json`) |
+| `GET/POST /v1/cron/finance-daily` | Vercel Cron (nightly, `apps/api/vercel.json`) |
 | `POST /v1/notifications/broadcast` | `scripts/notify-app-update.mjs`, run after `eas update` publishes (see [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md#ota-auto-notify)) |
 
 Comparison is constant-time (`timingSafeEqual` in `lib/api-utils.ts`) — do not swap back to `===` on a new route using this pattern. System-triggered broadcasts are attributed to `release-bot@admobihq.com` in the audit log (`actor_type: "system"`), distinguishing them from staff-sent announcements.
@@ -287,6 +310,9 @@ That token proves only that its holder was the **first** to open a case under th
 | `SENDER_EMAIL`, `ADMIN_EMAIL` | For emails | Form confirmation + alerts |
 | `REDIS_URL` | Optional | Bull **email queue** (not rate limiting) |
 | `CRON_SECRET` | For scheduled/system callers | See [Service-to-service auth](#service-to-service-auth) |
+| `PAYSTACK_SECRET_KEY` | For payments | Paystack secret key (`sk_test_…` in dev/preview, `sk_live_…` in prod). Signs webhooks and authorises every Paystack call; never sent to a client. Anything not starting `sk_test_`/`sk_live_` (e.g. the `REPLACE_ME` placeholder in Infisical) counts as unset: payments answer 503 and webhooks 401 |
+| `PAYSTACK_PUBLIC_KEY` | Not used yet | Kept for a future in-app Paystack SDK |
+| `PAYSTACK_CALLBACK_URL` | For payments | Customer-web return page, e.g. `https://app.admobihq.com/billing/payment-return` |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | For rate limiting | Sliding-window limiter on `/v1/public/*` — see [Rate limiting](#rate-limiting) |
 | `CLOUDINARY_URL` | For private media | Driver documents **and** campaign creatives (`apps/api/lib/storage/private-media.ts`) |
 

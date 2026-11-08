@@ -29,3 +29,9 @@ export function downloadBlob(filename: string, blob: Blob) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+/** Case-insensitive "any field contains the query" for client-side list search. */
+export function matchesSearch(query: string, ...fields: (string | null | undefined)[]): boolean {
+  const q = query.trim().toLowerCase()
+  return !q || fields.some((f) => f?.toLowerCase().includes(q))
+}

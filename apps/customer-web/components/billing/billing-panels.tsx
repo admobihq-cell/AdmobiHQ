@@ -232,11 +232,13 @@ function ActionCards({
   range,
   hasLedgerRows,
   onTopUp,
+  onRequestRefund,
   onNavigate,
 }: {
   range: RangeParams
   hasLedgerRows: boolean
-  onTopUp: () => void
+  onTopUp?: () => void
+  onRequestRefund?: () => void
   onNavigate: (tab: string) => void
 }) {
   const download = useDownloadPdf()
@@ -273,18 +275,27 @@ function ActionCards({
 
   return (
     <div className="grid content-start gap-4">
-      <Card className="shadow-xs">
-        <CardContent className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle>Top up</CardTitle>
-            <CardDescription className="mt-1">Your account manager adds funds today</CardDescription>
-          </div>
-          <Button onClick={onTopUp}>
-            <PiggyBank data-icon="inline-start" />
-            Top up
-          </Button>
-        </CardContent>
-      </Card>
+      {onTopUp ? (
+        <Card className="shadow-xs">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle>Top up</CardTitle>
+              <CardDescription className="mt-1">Pay by M-Pesa or card</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              {onRequestRefund ? (
+                <Button variant="outline" onClick={onRequestRefund}>
+                  Request refund
+                </Button>
+              ) : null}
+              <Button onClick={onTopUp}>
+                <PiggyBank data-icon="inline-start" />
+                Top up
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
       <Card className="shadow-xs">
         <CardHeader>
           <CardTitle>Shortcuts</CardTitle>
@@ -306,18 +317,26 @@ export function BillingPanels({
   summary,
   range,
   onTopUp,
+  onRequestRefund,
   onNavigate,
 }: {
   summary: FinanceSummaryDto
   range: RangeParams
-  onTopUp: () => void
+  onTopUp?: () => void
+  onRequestRefund?: () => void
   onNavigate: (tab: string) => void
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <WalletCard summary={summary} />
       <UpcomingChargesCard summary={summary} />
-      <ActionCards range={range} hasLedgerRows={summary.hasLedgerRows} onTopUp={onTopUp} onNavigate={onNavigate} />
+      <ActionCards
+        range={range}
+        hasLedgerRows={summary.hasLedgerRows}
+        onTopUp={onTopUp}
+        onRequestRefund={onRequestRefund}
+        onNavigate={onNavigate}
+      />
     </div>
   )
 }

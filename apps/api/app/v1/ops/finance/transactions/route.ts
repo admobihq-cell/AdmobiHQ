@@ -4,6 +4,7 @@ import { formatKes, recordTransactionSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
+import { notifyManualTopUp } from "@/lib/payments/money-notify"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
 
   const magnitude = Math.round(Math.abs(input.amountKes) * 100) / 100
   const signed =
-    input.kind === "spend" ? -magnitude : input.kind === "adjustment" ? Math.round(input.amountKes * 100) / 100 : magnitude
+    input.kind === "spend" || input.kind === "cash_refund" ? -magnitude : input.kind === "adjustment" ? Math.round(input.amountKes * 100) / 100 : magnitude
 
   if (input.reference) {
     const duplicate = await prisma.walletTransaction.findUnique({ where: { reference: input.reference }, select: { id: true } })
@@ -73,6 +74,9 @@ export async function POST(req: Request) {
     org_id: org.id,
     summary: `Recorded ${input.kind.replace("_", " ")} of ${formatKes(signed)} for "${org.name}" (${input.reason})`,
   })
+
+  // A7: a recorded bank transfer is money the advertiser can use now.
+  if (input.kind === "top_up") await notifyManualTopUp({ orgId: org.id, amountKes: signed })
 
   return NextResponse.json({ id: row.id, amountKes: signed }, { status: 201 })
 }

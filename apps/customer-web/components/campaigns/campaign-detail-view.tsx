@@ -15,6 +15,7 @@ import { exportFileName, type CampaignFormat } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
+import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
 import { CreativeUploadField } from "@/components/campaigns/creative-upload-field"
@@ -95,6 +96,9 @@ export function CampaignDetailView({ id }: { id: number }) {
           <h1 className="text-3xl font-semibold tracking-tight">{campaign.name}</h1>
           <div className="flex items-center gap-2">
             <CampaignStatusBadge status={campaign.status} flightPhase={campaign.flight_phase} />
+            <StatusPill tone={campaign.funded_at ? "good" : "neutral"}>
+              {campaign.funded_at ? "Funded" : "Not funded"}
+            </StatusPill>
             {editable ? (
               <Button size="sm" variant="outline" asChild>
                 <Link href={`/campaigns/new?id=${campaign.id}`}>

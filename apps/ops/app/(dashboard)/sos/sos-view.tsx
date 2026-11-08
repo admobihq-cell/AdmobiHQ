@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-import { Loader2, MapPin, RefreshCw, Search, ShieldCheck, TriangleAlert } from "lucide-react"
+import { Loader2, MapPin, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react"
 
 import {
   ACK_TARGET_SECONDS,
@@ -18,14 +18,6 @@ import { formatApiError } from "@workspace/ops-api-client"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -38,9 +30,23 @@ import { IncidentTypeIcon } from "@/components/sos/incident-type-icon"
 import { PageHero } from "@/components/ui/page-hero"
 import { StatusBadge } from "@/components/entity/status-badge"
 import { TablePagination } from "@/components/ui/table-pagination"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
+import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
-const ALL = "__all__"
+const toOptions = (keys: readonly string[]) => keys.map((value) => ({ value, label: formatLabel(value) }))
+
+const exportColumns: ExportColumn<SafetyIncidentDto>[] = [
+  { key: "reported", header: "Reported", value: (r) => formatDateTime(r.created_at) },
+  { key: "driver", header: "Driver", value: (r) => r.driver_name },
+  { key: "phone", header: "Phone", value: (r) => r.driver_phone },
+  { key: "type", header: "Type", value: (r) => formatLabel(r.type) },
+  { key: "severity", header: "Severity", value: (r) => formatLabel(r.severity) },
+  { key: "status", header: "Status", value: (r) => formatLabel(r.status) },
+  { key: "description", header: "Description", value: (r) => r.description },
+]
 const TERMINAL = new Set<string>(SAFETY_TERMINAL_STATUSES)
 
 /** Unacknowledged and still open — the only rows that matter in the first
@@ -241,8 +247,8 @@ export function SosView() {
   const client = useOpsClient()
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [status, setStatus] = useState<string>(ALL)
-  const [type, setType] = useState<string>(ALL)
+  const [status, setStatus] = useState("")
+  const [type, setType] = useState("")
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
@@ -263,8 +269,8 @@ export function SosView() {
         page,
         pageSize,
         search: debouncedSearch || undefined,
-        status: status === ALL ? undefined : status,
-        type: type === ALL ? undefined : type,
+        status: status || undefined,
+        type: type || undefined,
         sortBy,
         sortDir,
       }),
@@ -302,6 +308,26 @@ export function SosView() {
     setPage(1)
   }, [debouncedSearch, status, type, pageSize, sortBy, sortDir])
 
+  const selection = useRowSelection(rows, [
+    page,
+    pageSize,
+    sortBy,
+    sortDir,
+    status,
+    type,
+    debouncedSearch,
+  ])
+  const exportRows = (format: ExportFormat, list: SafetyIncidentDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "SOS",
+      scope,
+      columns: exportColumns,
+      rows: list,
+      entity: "safety",
+      client,
+    })
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHero
@@ -319,58 +345,50 @@ export function SosView() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search driver, phone, description…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+      <TableToolbar
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: "Search driver, phone, description…",
+        }}
+        filters={
+          <>
+            <FilterSelect
+              value={status}
+              onChange={setStatus}
+              options={toOptions(SAFETY_INCIDENT_STATUSES)}
+              allLabel="All statuses"
+            />
+            <FilterSelect
+              value={type}
+              onChange={setType}
+              options={toOptions(SAFETY_INCIDENT_TYPES)}
+              allLabel="All types"
+            />
+          </>
+        }
+        onExport={(format) => exportRows(format, rows, null)}
+        exportDisabled={!rows.length}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refresh()}
+            disabled={loading}
+            loading={loading}
+            loadingText="Refresh"
+          >
+            <RefreshCw className="size-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All statuses</SelectItem>
-            {SAFETY_INCIDENT_STATUSES.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-[170px]">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All types</SelectItem>
-            {SAFETY_INCIDENT_TYPES.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void refresh()}
-          disabled={loading}
-          loading={loading}
-          loadingText="Refresh"
-          className="ml-auto"
-        >
-          <RefreshCw className="size-4" />
-          Refresh
-        </Button>
-      </div>
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
 
       {fetchError ? <ApiErrorBanner message={fetchError} onRetry={() => void refresh()} /> : null}
 
@@ -389,7 +407,7 @@ export function SosView() {
           </div>
         ) : (
           <DataTable
-            columns={columns}
+            columns={[selection.selectColumn, ...columns]}
             data={rows}
             sorting={sorting}
             onSortingChange={setSorting}
@@ -398,6 +416,7 @@ export function SosView() {
               cn(
                 "cursor-pointer hover:bg-muted/40",
                 isAwaitingAck(row) && "bg-destructive/5",
+                selection.selectedIds.has(row.id) && "bg-muted/50",
               )
             }
           />

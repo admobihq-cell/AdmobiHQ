@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Stack, useFocusEffect } from "expo-router"
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -20,7 +20,6 @@ import {
   Eye,
   EyeOff,
   Receipt,
-  RefreshCcw,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -28,16 +27,16 @@ import {
 } from "@/components/icons"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import { useCampaigns } from "@/lib/use-campaigns"
+import { useTokenGetter } from "@/lib/auth/use-token-getter"
+import { payWithPaystack, startTopUp } from "@/lib/payments"
+import { useOrgPermissions } from "@/lib/use-org"
 import {
   formatCurrency,
-  PLACEHOLDER_WALLET_BALANCE,
-  setAutoReloadSettings,
-  topUpWallet,
+  useRecentTransactions,
   useWallet,
   WALLET_QUERY_KEY,
   WALLET_CARD_BG,
   WALLET_CARD_FG,
-  type AutoReloadSettings,
 } from "@/lib/wallet"
 
 type Transaction = {
@@ -48,31 +47,13 @@ type Transaction = {
   kind: "credit" | "debit"
 }
 
-const TRANSACTIONS: Transaction[] = [
-  { id: "1", label: "Wallet top-up · M-Pesa", meta: "Today, 9:14 AM", amount: 50000, kind: "credit" },
-  { id: "2", label: "Nairobi CBD Summer — daily spend", meta: "Today", amount: 6200, kind: "debit" },
-  { id: "3", label: "Westlands Retail Push — daily spend", meta: "Yesterday", amount: 4800, kind: "debit" },
-  { id: "4", label: "Wallet top-up · Visa •• 4821", meta: "3 days ago", amount: 30000, kind: "credit" },
-  { id: "5", label: "Karen Estate Awareness — daily spend", meta: "4 days ago", amount: 3100, kind: "debit" },
-]
-
-const OLDER_TRANSACTIONS: Transaction[] = [
-  { id: "6", label: "Mombasa Rd Commute — daily spend", meta: "6 days ago", amount: 2100, kind: "debit" },
-  { id: "7", label: "Wallet top-up · M-Pesa", meta: "9 days ago", amount: 25000, kind: "credit" },
-  { id: "8", label: "Nairobi CBD Summer — daily spend", meta: "10 days ago", amount: 5900, kind: "debit" },
-]
-
-const SPEND_BY_CAMPAIGN = [
-  { id: "1", name: "Nairobi CBD Summer", spend: 62400 },
-  { id: "2", name: "Westlands Retail Push", spend: 41200 },
-  { id: "3", name: "Karen Estate Awareness", spend: 12300 },
-]
-
 const TOPUP_PRESETS = [5000, 10000, 20000, 50000]
 
-const LOW_BALANCE_THRESHOLD = 20000
+const TOP_UP_MIN = 100
+const TOP_UP_MAX = 1_000_000
+const RECENT_COUNT = 5
 
-type Panel = "topup" | "autoreload" | null
+type Panel = "topup" | null
 
 export default function BillingSettingsScreen() {
   const colors = useThemeColors()
@@ -81,32 +62,35 @@ export default function BillingSettingsScreen() {
 
   const [panel, setPanel] = useState<Panel>(null)
   const [topUpAmount, setTopUpAmount] = useState("")
-  const [thresholdInput, setThresholdInput] = useState("")
   const [showOlderTransactions, setShowOlderTransactions] = useState(false)
 
   const queryClient = useQueryClient()
 
-  const walletQuery = useWallet()
+  const getToken = useTokenGetter()
+  const { can } = useOrgPermissions()
+  const canRead = can("billing:read")
+  const canWrite = can("billing:write")
+  const walletQuery = useWallet({ enabled: canRead })
+  const txQuery = useRecentTransactions({ enabled: canRead })
   const campaignsQuery = useCampaigns()
   const liveCampaignCount = (campaignsQuery.data ?? []).filter(
     (c) => c.flight_phase === "live",
   ).length
-  const balance = walletQuery.data?.balance ?? PLACEHOLDER_WALLET_BALANCE
-  const autoReload = walletQuery.data?.autoReload ?? null
+  const summary = walletQuery.data
+  const balance = summary?.availableKes ?? 0
   const loading = walletQuery.isLoading
 
-  useEffect(() => {
-    if (walletQuery.data) setThresholdInput(String(walletQuery.data.autoReload.threshold))
-  }, [walletQuery.data])
+  // The refetch functions are stable; the query objects are not (a dep on them would loop).
+  const refetchSummary = walletQuery.refetch
+  const refetchTransactions = txQuery.refetch
+  const refetchWallet = useCallback(() => {
+    if (!canRead) return
+    void refetchSummary()
+    void refetchTransactions()
+  }, [canRead, refetchSummary, refetchTransactions])
+  useFocusEffect(refetchWallet)
 
-  const refetchWallet = walletQuery.refetch
-  useFocusEffect(
-    useCallback(() => {
-      void refetchWallet()
-    }, [refetchWallet]),
-  )
-
-  const isLow = balance < LOW_BALANCE_THRESHOLD
+  const isLow = summary?.funding.level === "short"
 
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
@@ -310,40 +294,45 @@ export default function BillingSettingsScreen() {
     },
   }))
 
-  function openAction(key: "topup" | "auto" | "statement") {
+  function openAction(key: "topup" | "statement") {
     if (key === "topup") setPanel(panel === "topup" ? null : "topup")
-    else if (key === "auto") setPanel(panel === "autoreload" ? null : "autoreload")
     else setShowOlderTransactions(true)
   }
 
+  // Paystack hosted checkout in the in-app browser, then poll until it settles.
   const topUpMutation = useMutation({
-    mutationFn: (amount: number) => topUpWallet(amount),
-    onSuccess: () => {
-      setPanel(null)
-      setTopUpAmount("")
+    mutationFn: async (amount: number) => payWithPaystack(getToken, await startTopUp(getToken, amount)),
+    onSuccess: (status) => {
       void queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY })
+      if (status === "success") {
+        setPanel(null)
+        setTopUpAmount("")
+        Alert.alert("Payment received", "The money is in your balance.")
+      } else if (status === "pending") {
+        Alert.alert("Still confirming", "We'll notify you as soon as your payment lands.")
+      } else if (status === "amount_mismatch") {
+        Alert.alert("We're checking your payment", "We'll update you within one working day.")
+      } else {
+        Alert.alert("Payment didn't go through", "Nothing was charged. You can try again.")
+      }
     },
+    onError: (error) => Alert.alert("Couldn't start the payment", error instanceof Error ? error.message : "Try again."),
   })
-  function handleTopUp(amount: number) {
-    if (!amount || amount <= 0) return
-    topUpMutation.mutate(amount)
+  const topUpValue = Number(topUpAmount.replace(/[^0-9]/g, ""))
+  const topUpValid = Number.isInteger(topUpValue) && topUpValue >= TOP_UP_MIN && topUpValue <= TOP_UP_MAX
+  function handleTopUp() {
+    if (topUpValid && !topUpMutation.isPending) topUpMutation.mutate(topUpValue)
   }
 
-  const saveAutoReloadMutation = useMutation({
-    mutationFn: (next: AutoReloadSettings) => setAutoReloadSettings(next),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY })
-    },
-  })
-  function handleSaveAutoReload(enabled: boolean) {
-    const threshold = Number(thresholdInput.replace(/[^0-9]/g, "")) || 20000
-    const next: AutoReloadSettings = { enabled, threshold, topUpAmount: 30000 }
-    saveAutoReloadMutation.mutate(next)
-  }
-
-  const visibleTransactions = showOlderTransactions
-    ? [...TRANSACTIONS, ...OLDER_TRANSACTIONS]
-    : TRANSACTIONS
+  const allTransactions: Transaction[] = (txQuery.data?.items ?? []).map((t) => ({
+    id: String(t.id),
+    label: t.campaignName ? `${t.description} · ${t.campaignName}` : t.description,
+    meta: new Date(t.occurredAt).toLocaleDateString("en-KE", { dateStyle: "medium" }),
+    amount: Math.abs(t.amountKes),
+    kind: t.amountKes >= 0 ? "credit" : "debit",
+  }))
+  const visibleTransactions = showOlderTransactions ? allTransactions : allTransactions.slice(0, RECENT_COUNT)
+  const spendByCampaign = summary?.spendByCampaign ?? []
 
   return (
     <>
@@ -358,7 +347,7 @@ export default function BillingSettingsScreen() {
         refreshControl={
           <RefreshControl
             refreshing={walletQuery.isRefetching}
-            onRefresh={() => void refetchWallet()}
+            onRefresh={refetchWallet}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
@@ -371,7 +360,7 @@ export default function BillingSettingsScreen() {
           <View style={styles.heroCopy}>
             <Text style={styles.title}>Wallet</Text>
             <Text style={styles.subtitle}>
-              Fund your campaigns and track spend. Top-ups here are saved on this device.
+              Fund your campaigns and track spend. Pay by M-Pesa or card through Paystack.
             </Text>
           </View>
         </View>
@@ -380,7 +369,7 @@ export default function BillingSettingsScreen() {
           <View style={styles.walletHeaderRow}>
             <View style={styles.walletLabelRow}>
               <Wallet color={WALLET_CARD_FG} size={16} />
-              <Text style={styles.walletLabel}>Campaign wallet balance</Text>
+              <Text style={styles.walletLabel}>Available balance</Text>
             </View>
             <Pressable onPress={() => setHidden((v) => !v)} hitSlop={8}>
               {hidden ? (
@@ -394,26 +383,25 @@ export default function BillingSettingsScreen() {
           {loading ? (
             <ActivityIndicator color={WALLET_CARD_FG} />
           ) : (
-            <Text style={styles.balance}>{hidden ? "••••••••" : formatCurrency(balance)}</Text>
+            <Text style={styles.balance}>
+              {!canRead ? "—" : hidden ? "••••••••" : formatCurrency(balance)}
+            </Text>
           )}
           <Text style={styles.walletHint}>
-            Auto-reload is {autoReload?.enabled ? "on" : "off"} · {liveCampaignCount} campaign
-            {liveCampaignCount === 1 ? "" : "s"} live
+            {canRead
+              ? `${formatCurrency(summary?.committedKes ?? 0)} held for campaigns · ${liveCampaignCount} live`
+              : "Ask your account owner for billing access."}
           </Text>
 
           <View style={styles.actionsRow}>
-            <Pressable style={styles.actionItem} onPress={() => openAction("topup")}>
-              <View style={styles.actionCircle}>
-                <Add color={WALLET_CARD_FG} size={20} />
-              </View>
-              <Text style={styles.actionLabel}>Top up</Text>
-            </Pressable>
-            <Pressable style={styles.actionItem} onPress={() => openAction("auto")}>
-              <View style={styles.actionCircle}>
-                <RefreshCcw color={WALLET_CARD_FG} size={20} />
-              </View>
-              <Text style={styles.actionLabel}>Auto reload</Text>
-            </Pressable>
+            {canWrite ? (
+              <Pressable style={styles.actionItem} onPress={() => openAction("topup")}>
+                <View style={styles.actionCircle}>
+                  <Add color={WALLET_CARD_FG} size={20} />
+                </View>
+                <Text style={styles.actionLabel}>Top up</Text>
+              </Pressable>
+            ) : null}
             <Pressable style={styles.actionItem} onPress={() => openAction("statement")}>
               <View style={styles.actionCircle}>
                 <Download color={WALLET_CARD_FG} size={20} />
@@ -425,7 +413,10 @@ export default function BillingSettingsScreen() {
 
         {panel === "topup" ? (
           <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Top up wallet</Text>
+            <Text style={styles.panelTitle}>Top up</Text>
+            <Text style={styles.note}>
+              M-Pesa is limited per transaction by Safaricom; use a card for larger amounts.
+            </Text>
             <View style={styles.chipGrid}>
               {TOPUP_PRESETS.map((amount) => (
                 <Pressable
@@ -448,39 +439,24 @@ export default function BillingSettingsScreen() {
               style={styles.input}
               value={topUpAmount}
               onChangeText={setTopUpAmount}
-              placeholder="Custom amount (KES)"
+              placeholder="Amount (KES 100 – 1,000,000)"
               placeholderTextColor={colors.mutedForeground}
               keyboardType="number-pad"
             />
             <Pressable
-              style={styles.submit}
-              onPress={() => handleTopUp(Number(topUpAmount.replace(/[^0-9]/g, "")))}
+              style={[styles.submit, (!topUpValid || topUpMutation.isPending) && { opacity: 0.5 }]}
+              onPress={handleTopUp}
+              disabled={!topUpValid || topUpMutation.isPending}
+              accessibilityRole="button"
             >
-              <Text style={styles.submitText}>Add funds</Text>
+              {topUpMutation.isPending ? (
+                <ActivityIndicator color={colors.primaryForeground} />
+              ) : (
+                <Text style={styles.submitText}>
+                  {topUpValid ? `Pay ${formatCurrency(topUpValue)}` : "Pay"}
+                </Text>
+              )}
             </Pressable>
-          </View>
-        ) : null}
-
-        {panel === "autoreload" && autoReload ? (
-          <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Auto reload</Text>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Reload automatically</Text>
-              <Switch
-                value={autoReload.enabled}
-                onValueChange={handleSaveAutoReload}
-                trackColor={{ true: colors.primary }}
-              />
-            </View>
-            <TextInput
-              style={styles.input}
-              value={thresholdInput}
-              onChangeText={setThresholdInput}
-              placeholder="Reload when balance drops below (KES)"
-              placeholderTextColor={colors.mutedForeground}
-              keyboardType="number-pad"
-              onBlur={() => handleSaveAutoReload(autoReload.enabled)}
-            />
           </View>
         ) : null}
 
@@ -488,7 +464,7 @@ export default function BillingSettingsScreen() {
           <View style={styles.lowBalanceBanner}>
             <Warning color={colors.destructive} size={18} />
             <Text style={styles.lowBalanceText}>
-              Low balance — top up to keep your campaigns running without
+              Your funds are short — top up to keep your campaigns running without
               interruption.
             </Text>
           </View>
@@ -497,16 +473,19 @@ export default function BillingSettingsScreen() {
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.sectionLabel}>Spend by campaign · 30d</Text>
           <View style={styles.group}>
-            {SPEND_BY_CAMPAIGN.map((campaign, index) => (
-              <View key={campaign.id}>
+            {spendByCampaign.length === 0 ? (
+              <Text style={styles.note}>No spend in the last 30 days.</Text>
+            ) : null}
+            {spendByCampaign.map((campaign, index) => (
+              <View key={campaign.name}>
                 <View style={styles.row}>
                   <View style={[styles.iconWrap, { backgroundColor: colors.secondary }]}>
                     <TrendingDown color={colors.primary} size={18} />
                   </View>
                   <Text style={styles.campaignName}>{campaign.name}</Text>
-                  <Text style={styles.campaignSpend}>{formatCurrency(campaign.spend)}</Text>
+                  <Text style={styles.campaignSpend}>{formatCurrency(campaign.value)}</Text>
                 </View>
-                {index < SPEND_BY_CAMPAIGN.length - 1 ? <View style={styles.divider} /> : null}
+                {index < spendByCampaign.length - 1 ? <View style={styles.divider} /> : null}
               </View>
             ))}
           </View>
@@ -515,13 +494,16 @@ export default function BillingSettingsScreen() {
         <View style={{ gap: spacing.sm }}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>Recent transactions</Text>
-            {!showOlderTransactions ? (
+            {!showOlderTransactions && allTransactions.length > RECENT_COUNT ? (
               <Pressable onPress={() => openAction("statement")}>
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             ) : null}
           </View>
           <View style={styles.group}>
+            {canRead && !txQuery.isLoading && visibleTransactions.length === 0 ? (
+              <Text style={styles.note}>Your transactions appear here after your first top-up.</Text>
+            ) : null}
             {visibleTransactions.map((tx, index) => (
               <View key={tx.id}>
                 <View style={styles.row}>
@@ -556,8 +538,8 @@ export default function BillingSettingsScreen() {
         </View>
 
         <Text style={styles.note}>
-          Placeholder data. Top-ups and auto-reload are saved on this device only — nothing here
-          moves real money.
+          Unused credit can be refunded to the original payment method from Finance & Billing on
+          the web.
         </Text>
       </ScrollView>
     </>

@@ -25,6 +25,7 @@ export function toDriverProfileDto(
     payout_method: profile.payout_method,
     payout_mpesa_msisdn: profile.payout_mpesa_msisdn,
     payout_bank_name: profile.payout_bank_name,
+    payout_bank_code: profile.payout_bank_code,
     payout_bank_account: profile.payout_bank_account,
     status: profile.status,
     submitted_at: profile.submitted_at?.toISOString() ?? null,

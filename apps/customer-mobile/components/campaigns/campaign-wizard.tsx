@@ -1,6 +1,7 @@
 import { useState } from "react"
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -8,6 +9,7 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   CAMPAIGN_FORMATS,
@@ -28,6 +30,8 @@ import {
 } from "@/lib/use-campaigns"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import { useOrgPermissions } from "@/lib/use-org"
+import { useTokenGetter } from "@/lib/auth/use-token-getter"
+import { checkoutCampaign, dueKesOf, payWithPaystack } from "@/lib/payments"
 
 const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
 
@@ -82,6 +86,8 @@ export function CampaignWizard({
   const create = useCreateCampaign()
   const update = useUpdateCampaign()
   const submit = useSubmitCampaign()
+  const getToken = useTokenGetter()
+  const queryClient = useQueryClient()
   // The server enforces campaigns:submit; hiding it here stops a Member from
   // filling in the whole wizard only to be refused at the last step.
   const { can } = useOrgPermissions()
@@ -235,9 +241,49 @@ export function CampaignWizard({
     if (saved) setStepIndex(2)
   }
 
+  const [paying, setPaying] = useState(false)
+
+  /** The balance didn't cover the budget: confirm, pay through Paystack, and the server submits. */
+  function payAndSubmit(campaignId: number, dueKes: number) {
+    Alert.alert(
+      `Pay KES ${dueKes.toLocaleString("en-KE", { maximumFractionDigits: 2 })} and submit?`,
+      "Your balance doesn't cover this budget. Pay the difference by M-Pesa or card through Paystack. M-Pesa is limited per transaction by Safaricom; use a card for larger amounts.",
+      [
+        { text: "Not now", style: "cancel" },
+        {
+          text: "Pay and submit",
+          onPress: () => {
+            setPaying(true)
+            void (async () => {
+              try {
+                const status = await payWithPaystack(getToken, await checkoutCampaign(getToken, campaignId))
+                void queryClient.invalidateQueries()
+                if (status === "success") return router.replace(`/campaigns/${campaignId}`)
+                Alert.alert(
+                  status === "pending" ? "Still confirming your payment" : "Payment didn't go through",
+                  status === "pending"
+                    ? "We'll submit your campaign and notify you as soon as the payment lands."
+                    : "Nothing was charged. You can try again.",
+                )
+              } catch (error) {
+                Alert.alert("Couldn't start the payment", error instanceof Error ? error.message : "Try again.")
+              } finally {
+                setPaying(false)
+              }
+            })()
+          },
+        },
+      ],
+    )
+  }
+
   async function handleSubmit() {
     if (!campaign) return
-    const result = await submit.mutateAsync(campaign.id).catch(() => null)
+    const result = await submit.mutateAsync(campaign.id).catch((error: unknown) => {
+      const due = dueKesOf(error)
+      if (due != null && due > 0) payAndSubmit(campaign.id, due)
+      return null
+    })
     if (result) router.replace(`/campaigns/${campaign.id}`)
   }
 
@@ -487,7 +533,9 @@ export function CampaignWizard({
       {create.error || update.error ? (
         <ApiErrorBanner message={formatCampaignError(create.error ?? update.error)} />
       ) : null}
-      {submit.error ? <ApiErrorBanner message={formatCampaignError(submit.error)} /> : null}
+      {submit.error && dueKesOf(submit.error) == null ? (
+        <ApiErrorBanner message={formatCampaignError(submit.error)} />
+      ) : null}
 
       <View style={styles.actions}>
         {stepIndex > 0 ? (
@@ -551,10 +599,10 @@ export function CampaignWizard({
               (submit.isPending || pressed) && styles.disabled,
             ]}
             onPress={() => void handleSubmit()}
-            disabled={submit.isPending}
+            disabled={submit.isPending || paying}
             accessibilityRole="button"
           >
-            {submit.isPending ? (
+            {submit.isPending || paying ? (
               <ActivityIndicator color={colors.primaryForeground} />
             ) : (
               <Text style={styles.primaryText}>Submit for review</Text>

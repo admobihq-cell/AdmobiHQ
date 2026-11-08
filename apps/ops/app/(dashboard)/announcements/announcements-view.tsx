@@ -42,6 +42,10 @@ import {
 } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
+import { BulkBar, TableToolbar } from "@/components/ui/table-toolbar"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useDebouncedValue } from "@/lib/use-debounced-value"
+import { useRowSelection } from "@/lib/use-row-selection"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
@@ -74,6 +78,16 @@ type AnnouncementsViewProps = {
   initialData: Paginated<AnnouncementDto>
 }
 
+const exportColumns: ExportColumn<AnnouncementDto>[] = [
+  { key: "sent", header: "Sent", value: (r) => formatDateTime(r.created_at) },
+  { key: "title", header: "Title", value: (r) => r.title },
+  { key: "category", header: "Category", value: (r) => r.category },
+  { key: "audience", header: "Audience", value: (r) => describeAnnouncementTargets(r.target_apps) },
+  { key: "delivered", header: "Delivered", value: (r) => `${r.delivered_count}/${r.target_count}` },
+  { key: "status", header: "Status", value: (r) => (r.deleted_at ? "deleted" : r.status) },
+  { key: "sentBy", header: "Sent by", value: (r) => r.sent_by_email },
+]
+
 export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const client = useOpsClient()
   const queryClient = useQueryClient()
@@ -85,17 +99,40 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [viewing, setViewing] = useState<AnnouncementDto | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
   const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search.trim())
 
   const announcementsQuery = useQuery({
-    queryKey: ["ops-announcements", { page, pageSize, sortDir }],
-    queryFn: () => client.notifications.list({ page, pageSize, sortDir }),
+    queryKey: ["ops-announcements", { page, pageSize, sortDir, search: debouncedSearch }],
+    queryFn: () =>
+      client.notifications.list({
+        page,
+        pageSize,
+        sortDir,
+        search: debouncedSearch || undefined,
+      }),
     initialData:
-      page === initialData.page && pageSize === initialData.pageSize && sortDir === "desc"
+      page === initialData.page &&
+      pageSize === initialData.pageSize &&
+      sortDir === "desc" &&
+      !debouncedSearch
         ? initialData
         : undefined,
     placeholderData: keepPreviousData,
   })
   const data = announcementsQuery.data ?? initialData
+
+  const selection = useRowSelection(data.items, [page, pageSize, sortDir, debouncedSearch])
+  const exportRows = (format: ExportFormat, rows: AnnouncementDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Announcements",
+      scope,
+      columns: exportColumns,
+      rows,
+      entity: "announcements",
+      client,
+    })
 
   function changeSort(updater: SortingState | ((old: SortingState) => SortingState)) {
     setSorting(updater)
@@ -332,6 +369,25 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         }
       />
 
+      <TableToolbar
+        search={{
+          value: search,
+          onChange: (next) => {
+            setSearch(next)
+            setPage(1)
+          },
+          placeholder: "Search title or message…",
+        }}
+        onExport={(format) => exportRows(format, data.items, null)}
+        exportDisabled={!data.items.length}
+      />
+
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
+
       <div className="overflow-hidden rounded-xl border bg-card shadow-none [&_[data-slot=table-container]]:overflow-hidden">
         {!data.items.length ? (
           <div className="flex h-32 flex-col items-center justify-center text-center">
@@ -340,11 +396,12 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           </div>
         ) : (
           <DataTable
-            columns={columns}
+            columns={[selection.selectColumn, ...columns]}
             data={data.items}
             sorting={sorting}
             onSortingChange={changeSort}
             getRowId={(row) => String(row.id)}
+            rowClassName={(row) => (selection.selectedIds.has(row.id) ? "bg-muted/50" : undefined)}
             tableClassName="table-fixed w-full"
           />
         )}

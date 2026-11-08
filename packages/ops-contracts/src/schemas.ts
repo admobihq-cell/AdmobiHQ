@@ -170,6 +170,8 @@ export const driverProfileUpdateSchema = z.object({
   payout_mpesa_msisdn: z.string().trim().min(1).optional(),
   payout_bank_name: z.string().trim().min(1).optional(),
   payout_bank_account: z.string().trim().min(1).optional(),
+  /** Paystack bank code, picked from GET /v1/driver/payout-banks with the bank name. */
+  payout_bank_code: z.string().trim().min(1).max(20).optional(),
 })
 
 export const driverDocumentTypeSchema = z.enum(DRIVER_DOCUMENT_TYPES)
@@ -232,6 +234,27 @@ export const campaignReviewSchema = z.object({
   decision: z.enum(["approved", "rejected", "changes_requested"]),
   reason: z.string().trim().min(1).max(2000).optional(),
 })
+
+/** Bulk approve/reject from a review queue (campaigns, driver applications).
+ * Capped at 100 ids — the largest page size — since every row sends an email.
+ * Only approve/reject: request-changes and walk-backs stay one at a time. */
+export const bulkReviewSchema = z
+  .object({
+    ids: z.array(z.number().int().positive()).min(1).max(100),
+    decision: z.enum(["approved", "rejected"]),
+    reason: z.string().trim().min(1).max(2000).optional(),
+  })
+  .refine((b) => b.decision === "approved" || !!b.reason, {
+    message: "A reason is required to reject",
+    path: ["reason"],
+  })
+
+export type BulkReviewInput = z.infer<typeof bulkReviewSchema>
+
+export type BulkReviewResult = {
+  updated: number[]
+  skipped: { id: number; error: string }[]
+}
 
 export const campaignCreativeSlotSchema = z.enum(CREATIVE_SLOTS)
 
@@ -307,7 +330,9 @@ export const broadcastCreateSchema = z.object({
 })
 
 export const documentExportRequestSchema = z.object({
-  entity: z.enum(OPS_PERMISSIONS),
+  // "admin" covers the admin-only list pages (users, team, roles,
+  // integrations) that have no section permission of their own.
+  entity: z.enum([...OPS_PERMISSIONS, "admin"]),
   title: z.string().min(1).max(200),
   headers: z.array(z.string()).min(1).max(20),
   // Matches the current-page/selected-rows scope CSV export already

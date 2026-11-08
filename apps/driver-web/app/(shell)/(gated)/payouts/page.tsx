@@ -1,10 +1,6 @@
-import { ComingSoon } from "@/components/coming-soon"
-import { navItemForPath } from "@/lib/navigation"
+import { redirect } from "next/navigation"
 
-export const metadata = { title: "Payouts" }
-
+/** Payouts are real now and live on Earnings (last payout, pending, history). */
 export default function PayoutsPage() {
-  const { label, description } = navItemForPath("/payouts")
-
-  return <ComingSoon title={label} description={description} />
+  redirect("/earnings")
 }

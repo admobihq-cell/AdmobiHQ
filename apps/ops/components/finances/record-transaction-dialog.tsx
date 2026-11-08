@@ -41,6 +41,7 @@ const KIND_LABEL: Record<WalletTransactionKind, string> = {
   spend: "Spend",
   refund: "Refund",
   adjustment: "Adjustment",
+  cash_refund: "Refund to payer",
 }
 
 const KIND_HELP: Record<WalletTransactionKind, string> = {
@@ -48,6 +49,7 @@ const KIND_HELP: Record<WalletTransactionKind, string> = {
   spend: "A charge against a campaign. Enter a positive amount; it is recorded as a debit.",
   refund: "Money returned to the wallet. Enter a positive amount.",
   adjustment: "A correction. Enter a negative amount to take money out, or a positive one to add it.",
+  cash_refund: "Money sent back to the payer (e.g. a bank refund). Enter a positive amount; it is recorded as a debit.",
 }
 
 const NONE = "none"

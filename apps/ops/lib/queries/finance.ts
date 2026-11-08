@@ -74,6 +74,20 @@ async function settledPayouts(start: string, end: string): Promise<number> {
   return roundKes(num(row?.total))
 }
 
+/** Paystack fees absorbed in the period: collection fees on payments plus transfer fees on payouts. */
+async function providerFees(start: string, end: string): Promise<number> {
+  const [row] = await rows<{ total: number }>(
+    `SELECT (
+       COALESCE((SELECT SUM(provider_fee_kes) FROM payments
+                 WHERE status = 'success' AND (paid_at AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi')::date BETWEEN $1::date AND $2::date), 0)
+     + COALESCE((SELECT SUM(fee_kes) FROM payouts
+                 WHERE status = 'settled' AND (paid_at AT TIME ZONE 'UTC' AT TIME ZONE 'Africa/Nairobi')::date BETWEEN $1::date AND $2::date), 0)
+     )::float8 AS total`,
+    [start, end]
+  )
+  return roundKes(num(row?.total))
+}
+
 /** Monthly run-rate of paid-for tools in KES. Only active and trial lines count. */
 export async function toolMonthlyKes(): Promise<{ monthlyKes: number; activeCount: number; byCategory: NamedValue[] }> {
   const live = (await listIntegrations()).filter((i) => i.status === "active" || i.status === "trial")
@@ -98,6 +112,8 @@ export type FinanceOverviewDto = {
   moneyIn: Delta
   payoutsKes: number
   toolCostsKes: number
+  /** Paystack fees Admobi absorbed in the period. */
+  feesKes: number
   netMarginKes: number
   /** Money owed to advertisers, all-time. Not revenue. */
   fundsHeldKes: number
@@ -109,7 +125,7 @@ export type FinanceOverviewDto = {
 
 export async function queryFinanceOverview(range: DateRangeKey): Promise<FinanceOverviewDto> {
   const w = windows(range)
-  const [cur, prev, payouts, held, byMonth, byCategory, byMarket, tools, first] = await Promise.all([
+  const [cur, prev, payouts, held, byMonth, byCategory, byMarket, tools, first, fees] = await Promise.all([
     periodTotals(w.start, w.end),
     w.previous ? periodTotals(w.previous.start, w.previous.end) : Promise.resolve(null),
     settledPayouts(w.start, w.end),
@@ -120,7 +136,7 @@ export async function queryFinanceOverview(range: DateRangeKey): Promise<Finance
     rows<{ period: string; in_kes: number; out_kes: number }>(
       `SELECT to_char(${DAY}, 'YYYY-MM') AS period,
          COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind = 'top_up'), 0)::float8 AS in_kes,
-         (-COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind IN ('spend', 'refund')), 0))::float8 AS out_kes
+         (-COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind IN ('spend', 'refund', 'cash_refund')), 0))::float8 AS out_kes
        FROM wallet_transactions t WHERE t.org_id IS NOT NULL AND ${IN_RANGE} GROUP BY 1 ORDER BY 1`,
       [w.start, w.end]
     ),
@@ -141,6 +157,7 @@ export async function queryFinanceOverview(range: DateRangeKey): Promise<Finance
     toolMonthlyKes(),
     // The first ledger day, so an "all time" margin scales tool costs over the months that had a ledger.
     rows<{ first: string | null }>(`SELECT MIN(${DAY})::text AS first FROM wallet_transactions t WHERE t.org_id IS NOT NULL`, []),
+    providerFees(w.start, w.end),
   ])
 
   const startDay = w.start === "2020-01-01" ? (first[0]?.first ?? w.end) : w.start
@@ -154,7 +171,8 @@ export async function queryFinanceOverview(range: DateRangeKey): Promise<Finance
     moneyIn: delta(cur.moneyIn, prev ? prev.moneyIn : null),
     payoutsKes: payouts,
     toolCostsKes,
-    netMarginKes: netMargin({ revenueKes: cur.revenue, payoutsKes: payouts, toolsMonthlyKes: tools.monthlyKes, rangeDays }),
+    feesKes: fees,
+    netMarginKes: netMargin({ revenueKes: cur.revenue, payoutsKes: payouts, toolsMonthlyKes: tools.monthlyKes, rangeDays, feesKes: fees }),
     fundsHeldKes: roundKes(num(held[0]?.held)),
     hasLedgerRows: num(held[0]?.n) > 0,
     moneyInOut: byMonth.map((r) => ({ period: r.period, inKes: roundKes(num(r.in_kes)), outKes: roundKes(num(r.out_kes)) })),
@@ -318,12 +336,18 @@ export async function queryFinanceWallets(): Promise<WalletRowDto[]> {
 
 export type PayoutRowDto = {
   id: number
+  driverProfileId: number | null
   driverName: string
   amountKes: number
   status: string
   periodMonth: string
   paidAt: string | null
   mpesaRef: string | null
+  provider: string
+  method: "mpesa" | "bank" | null
+  /** Last 4 digits only: ops never needs the full number on screen. */
+  destinationMasked: string | null
+  failureReason: string | null
 }
 
 export type FinancePayoutsDto = {
@@ -332,6 +356,9 @@ export type FinancePayoutsDto = {
   byMonth: { period: string; settledKes: number; pendingKes: number; failedKes: number }[]
   rows: PayoutRowDto[]
 }
+
+export const maskDestination = (value: string | null) =>
+  value && value.length >= 4 ? `•••• ${value.slice(-4)}` : value ? "••••" : null
 
 export async function queryFinancePayouts(range: DateRangeKey): Promise<FinancePayoutsDto> {
   const w = windows(range)
@@ -351,10 +378,18 @@ export async function queryFinancePayouts(range: DateRangeKey): Promise<FinanceP
        FROM payouts p WHERE ${where} GROUP BY 1 ORDER BY 1`,
       [w.start, w.end]
     ),
-    rows<{ id: number; driver_name: string | null; amount: number; status: string; period: string; paid_at: Date | null; mpesa_ref: string | null }>(
-      `SELECT p.id, d.name AS driver_name, p.amount_kes::float8 AS amount, p.status,
-              to_char(p.period_month, 'YYYY-MM') AS period, p.paid_at, p.mpesa_ref
-       FROM payouts p LEFT JOIN drivers d ON d.id = p.driver_id
+    rows<{
+      id: number; driver_profile_id: number | null; driver_name: string | null; amount: number; status: string; period: string
+      paid_at: Date | null; mpesa_ref: string | null; provider: string; method: string | null; destination: string | null
+      failure_reason: string | null
+    }>(
+      `SELECT p.id, p.driver_profile_id, COALESCE(dp.full_name, d.name) AS driver_name, p.amount_kes::float8 AS amount, p.status,
+              to_char(p.period_month, 'YYYY-MM') AS period, p.paid_at, p.mpesa_ref, p.provider, dp.payout_method AS method,
+              CASE dp.payout_method WHEN 'mpesa' THEN dp.payout_mpesa_msisdn WHEN 'bank' THEN dp.payout_bank_account END AS destination,
+              p.failure_reason
+       FROM payouts p
+       LEFT JOIN driver_profiles dp ON dp.id = p.driver_profile_id
+       LEFT JOIN drivers d ON d.id = p.driver_id
        WHERE ${where} ORDER BY p.period_month DESC, p.id DESC LIMIT ${LEDGER_ROW_LIMIT}`,
       [w.start, w.end]
     ),
@@ -370,14 +405,64 @@ export async function queryFinancePayouts(range: DateRangeKey): Promise<FinanceP
     })),
     rows: list.map((r) => ({
       id: r.id,
+      driverProfileId: r.driver_profile_id,
       driverName: r.driver_name ?? "Removed driver",
       amountKes: roundKes(num(r.amount)),
       status: r.status,
       periodMonth: r.period,
       paidAt: r.paid_at ? new Date(r.paid_at).toISOString() : null,
       mpesaRef: r.mpesa_ref,
+      provider: r.provider,
+      method: r.method === "mpesa" || r.method === "bank" ? r.method : null,
+      destinationMasked: maskDestination(r.destination),
+      failureReason: r.failure_reason,
     })),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Payment health: what finance needs a human for
+// ---------------------------------------------------------------------------
+
+export type AttentionItemDto = {
+  kind: "amount_mismatch" | "stale_payment" | "refund" | "payout"
+  label: string
+  detail: string
+  amountKes: number
+  at: string
+}
+
+/** Same four buckets as the nightly finance digest (apps/api lib/payments/finance-daily.ts). */
+export async function queryPaymentsNeedingAttention(): Promise<AttentionItemDto[]> {
+  const list = await rows<{ kind: AttentionItemDto["kind"]; label: string; detail: string; amount: number; at: Date }>(
+    `SELECT * FROM (
+       SELECT 'amount_mismatch' AS kind, 'Payment amount mismatch' AS label,
+              p.reference || ' · ' || COALESCE(o.name, 'org #' || p.org_id) AS detail, p.amount_kes::float8 AS amount, p.updated_at AS at
+       FROM payments p LEFT JOIN advertiser_orgs o ON o.id = p.org_id WHERE p.status = 'amount_mismatch'
+       UNION ALL
+       SELECT 'stale_payment', 'Payment still pending',
+              p.reference || ' · ' || COALESCE(o.name, 'org #' || p.org_id), p.amount_kes::float8, p.created_at
+       FROM payments p LEFT JOIN advertiser_orgs o ON o.id = p.org_id
+       WHERE p.status = 'initiated' AND p.created_at < now() - interval '1 hour'
+       UNION ALL
+       SELECT 'refund', CASE r.status WHEN 'failed' THEN 'Refund failed' ELSE 'Refund needs attention' END,
+              r.reference || ' · ' || COALESCE(o.name, 'org #' || r.org_id), r.amount_kes::float8, r.updated_at
+       FROM refunds r LEFT JOIN advertiser_orgs o ON o.id = r.org_id WHERE r.status IN ('failed', 'needs_attention')
+       UNION ALL
+       SELECT 'payout', CASE p.status WHEN 'reversed' THEN 'Payout reversed' ELSE 'Payout failed' END,
+              COALESCE(dp.full_name, d.name, 'Driver') || COALESCE(' · ' || p.failure_reason, ''), p.amount_kes::float8, p.updated_at
+       FROM payouts p LEFT JOIN driver_profiles dp ON dp.id = p.driver_profile_id LEFT JOIN drivers d ON d.id = p.driver_id
+       WHERE p.status IN ('failed', 'reversed')
+     ) x ORDER BY at DESC LIMIT 50`,
+    []
+  )
+  return list.map((r) => ({
+    kind: r.kind,
+    label: r.label,
+    detail: r.detail,
+    amountKes: roundKes(num(r.amount)),
+    at: new Date(r.at).toISOString(),
+  }))
 }
 
 // ---------------------------------------------------------------------------
@@ -416,5 +501,7 @@ export const getFinanceLedger = (range: DateRangeKey) =>
 export const getFinanceWallets = () => unstable_cache(() => queryFinanceWallets(), ["ops-finance-wallets"], CACHE)()
 export const getFinancePayouts = (range: DateRangeKey) =>
   unstable_cache(() => queryFinancePayouts(range), ["ops-finance-payouts", range], CACHE)()
+export const getPaymentsNeedingAttention = () =>
+  unstable_cache(() => queryPaymentsNeedingAttention(), ["ops-finance-attention"], CACHE)()
 export const getToolCosts = () => unstable_cache(() => toolMonthlyKes(), ["ops-finance-tools"], CACHE)()
 export const getRecordOptions = () => unstable_cache(() => queryRecordOptions(), ["ops-finance-options"], CACHE)()

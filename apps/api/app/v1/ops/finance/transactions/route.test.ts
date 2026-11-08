@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client"
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { auditFromOpsUser } from "@/lib/audit"
+import { notifyManualTopUp } from "@/lib/payments/money-notify"
 import { testDatabaseUrl } from "@/lib/test-database-url"
 import { POST } from "./route"
 
@@ -23,11 +24,12 @@ vi.mock("@/lib/api-utils", async () => {
 })
 
 vi.mock("@/lib/audit", () => ({ auditFromOpsUser: vi.fn(async () => undefined) }))
+vi.mock("@/lib/payments/money-notify", () => ({ notifyManualTopUp: vi.fn(async () => undefined) }))
 
 const post = (body: unknown) =>
   POST(new Request("http://localhost/v1/ops/finance/transactions", { method: "POST", body: JSON.stringify(body) }))
 
-describe.skipIf(!databaseUrl)("ops record transaction", () => {
+describe.skipIf(!databaseUrl)("ops record transaction", { timeout: 30_000 }, () => {
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
   const tag = `ops-fin-${Date.now()}`
   let orgId = 0
@@ -45,6 +47,7 @@ describe.skipIf(!databaseUrl)("ops record transaction", () => {
   beforeEach(() => {
     allowed = true
     vi.mocked(auditFromOpsUser).mockClear()
+    vi.mocked(notifyManualTopUp).mockClear()
   })
 
   afterAll(async () => {
@@ -85,8 +88,12 @@ describe.skipIf(!databaseUrl)("ops record transaction", () => {
     expect(await sign("top_up", 100)).toBe(100)
     expect(await sign("spend", 40, { spendCategory: "screen_time", campaignId })).toBe(-40)
     expect(await sign("refund", 10, { spendCategory: "screen_time" })).toBe(10)
+    expect(await sign("cash_refund", 15)).toBe(-15)
     expect(await sign("adjustment", -25)).toBe(-25)
     expect(await sign("adjustment", 25)).toBe(25)
+    // A7 fires for the bank-transfer top-up only.
+    expect(vi.mocked(notifyManualTopUp)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(notifyManualTopUp)).toHaveBeenCalledWith({ orgId, amountKes: 100 })
   })
 
   it("rejects a zero amount", async () => {

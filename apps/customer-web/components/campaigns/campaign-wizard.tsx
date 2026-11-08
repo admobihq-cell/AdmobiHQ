@@ -22,9 +22,12 @@ import { CreativeUploadField } from "@/components/campaigns/creative-upload-fiel
 import {
   useCampaign,
   useCreateCampaign,
+  useCheckoutCampaign,
   useSubmitCampaign,
   useUpdateCampaign,
 } from "@/lib/use-campaigns"
+import { dueKesOf } from "@/lib/campaigns-client"
+import { useFinanceSummary } from "@/lib/use-analytics"
 import { useOrgPermissions } from "@/lib/use-org"
 
 const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
@@ -149,10 +152,14 @@ export function CampaignWizard({
   const create = useCreateCampaign()
   const update = useUpdateCampaign()
   const submit = useSubmitCampaign()
+  const checkout = useCheckoutCampaign()
   // The server enforces campaigns:submit; hiding it here stops a Member from
   // filling in the whole wizard only to be refused at the last click.
   const { can } = useOrgPermissions()
   const canSubmit = can("campaigns:submit")
+  // Display only: the server decides (submit 402 / checkout 409 carry the real `dueKes`).
+  const finance = useFinanceSummary({ range: "30d" }, { enabled: can("billing:read") })
+  const [serverDueKes, setServerDueKes] = useState<number | null>(null)
 
   const [campaign, setCampaign] = useState<CampaignDto | null>(initialCampaign)
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStep(initialCampaign))
@@ -334,11 +341,34 @@ export function CampaignWizard({
     if (saved) setStepIndex(2)
   }
 
+  const budgetKesValue = Number(String(budget).replace(/[^0-9.]/g, "") || 0)
+  const availableKes = finance.data?.availableKes
+  // A funded campaign (resubmit after changes) owes nothing. Otherwise the
+  // server's figure wins; without billing access we only learn it on submit.
+  const dueKes = campaign?.funded_at
+    ? 0
+    : serverDueKes ??
+      (availableKes == null ? null : Math.max(0, Math.round((budgetKesValue - Math.max(0, availableKes)) * 100) / 100))
+  const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { maximumFractionDigits: 2 })}`
+  const submitLabel = campaign?.funded_at
+    ? "Submit for review"
+    : dueKes == null
+      ? "Submit for review"
+      : dueKes > 0
+        ? `Pay ${kes(dueKes)} and submit`
+        : `Submit (${kes(budgetKesValue)} from your balance)`
+
   async function handleSubmit() {
     if (!campaign) return
     skipNextAutosave.current = true
     await persist(buildPayload())
-    const result = await submit.mutateAsync(campaign.id).catch(() => null)
+    if (dueKes != null && dueKes > 0) return checkout.mutate(campaign.id)
+    const result = await submit.mutateAsync(campaign.id).catch((error: unknown) => {
+      // The balance didn't cover it after all: show what's due and offer to pay.
+      const due = dueKesOf(error)
+      if (due != null) setServerDueKes(due)
+      return null
+    })
     if (result) router.push(`/campaigns/${campaign.id}`)
   }
 
@@ -593,23 +623,29 @@ export function CampaignWizard({
           </div>
           <DraftActions
             onSaveDraft={() => saveDraft({ exit: true })}
-            saving={saving || submit.isPending}
+            saving={saving || submit.isPending || checkout.isPending}
             draftSaving={draftSaving}
             primary={
               canSubmit ? (
                 <Button
                   type="button"
                   className="sm:flex-1"
-                  loading={submit.isPending}
-                  loadingText="Submitting…"
+                  loading={submit.isPending || checkout.isPending || checkout.isSuccess}
+                  loadingText={dueKes ? "Opening payment…" : "Submitting…"}
                   disabled={campaign.creatives.length === 0}
                   onClick={() => void handleSubmit()}
                 >
-                  Submit for review
+                  {submitLabel}
                 </Button>
               ) : undefined
             }
           />
+          {canSubmit && dueKes != null && dueKes > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Paid by M-Pesa or card through Paystack. M-Pesa is limited per transaction by Safaricom;
+              use a card for larger amounts.
+            </p>
+          ) : null}
           {!canSubmit ? (
             <p className="text-xs text-muted-foreground">
               Your role can draft campaigns but not submit them — submitting commits spend. Save the

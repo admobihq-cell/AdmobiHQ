@@ -84,12 +84,22 @@ the two surfaces can't disagree about what "live" or "committed" means:
   an invented number on a dashboard is worse than a missing one.
 - Pull-to-refresh refetches both feeds.
 
-The **wallet hero** is the one thing on this screen that is not API data: there
-is no balance endpoint until a payment provider is wired up, so it reads the
-on-device AsyncStorage balance through `useWallet()` (`lib/wallet.ts`), the same
-query the billing screen uses — a top-up on billing now shows here instead of
-the card sitting frozen at the seed value. Its "N campaigns live" line *is*
-real, counted off the campaign feed.
+The **wallet hero** shows the org's real available balance from
+`/v1/customer/finance/summary` through `useWallet()` (`lib/wallet.ts`), the
+same query the Wallet screen uses; without `billing:read` it shows a dash. Its
+"N campaigns live" line is counted off the campaign feed.
+
+**Wallet** (`/settings/billing`) is API-backed: available balance, committed
+("held for campaigns"), spend by campaign over 30 days and the latest ledger
+rows (90 days). **Top up** (`billing:write`) opens Paystack hosted checkout in
+the in-app browser (`expo-web-browser`); when the browser closes the app polls
+`GET /v1/customer/payments/:reference` every 3 s for up to 2 minutes. The old
+on-device balance and auto-reload are gone (saved cards are out of scope).
+Refund requests are made from Finance & Billing on the web.
+
+**Pay at submission.** If submitting a campaign returns `402` with `dueKes`, the
+wizard asks to "Pay KES {due} and submit", opens checkout the same way, and on
+success the server has already funded and submitted the campaign.
 
 ---
 

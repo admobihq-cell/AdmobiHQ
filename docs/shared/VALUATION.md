@@ -56,7 +56,7 @@ it answers "what would it cost to rebuild the code," not "what is the company wo
 ### What does NOT exist yet (the value gaps)
 - **No revenue. No paying advertisers. No campaigns run** — campaign and earnings screens
   still render local demo data.
-- **No payments** — Pesapal (API v3) is specified but not integrated; no way to collect money.
+- **Payments** — Paystack is integrated (Nov 2026): M-Pesa and card collection at submission, refunds, and driver payouts; awaiting live keys.
 - **No telemetry / proof-of-play** — the core trust mechanism of GPS-verified OOH is unbuilt.
   The driver earnings app is explicitly blocked on this.
 - **Zero LED taxi-top units.** No hardware spec finalised, no supplier, no `Device` model.
@@ -277,7 +277,7 @@ above is most useful as a *reference point*, not a mechanism. Some practical gui
 
 | Change | Effect on valuation |
 |---|---|
-| First paying campaigns + Pesapal checkout live | **+$100k – 200k** — de-risks the revenue model |
+| First paying campaigns + Paystack checkout live | **+$100k – 200k** — de-risks the revenue model |
 | 20–50 LED units on the road with working proof-of-play telemetry | **+$200k – 400k** — de-risks the hardest, most capital-intensive part |
 | Signed fleet partner(s) and a hardware supplier agreement | **+$50k – 150k** |
 | A second full-time cofounder (commercial or hardware) | **+$100k – 250k** — fixes the team-factor discount |

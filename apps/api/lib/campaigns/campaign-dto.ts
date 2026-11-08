@@ -59,6 +59,7 @@ export function toCampaignDto(
     flight_phase: campaignFlightPhase(campaign.status, campaign.starts_on, campaign.ends_on, today),
     submitted_at: campaign.submitted_at?.toISOString() ?? null,
     reviewed_at: campaign.reviewed_at?.toISOString() ?? null,
+    funded_at: campaign.funded_at?.toISOString() ?? null,
     review_reason: campaign.review_reason,
     contact_name: campaign.contact_name,
     contact_email: campaign.contact_email,

@@ -323,13 +323,22 @@ export async function listAnnouncementBroadcasts(
 
   // Ops sees deleted rows too (shown with a "Deleted" status, not hidden) —
   // only the public customer feed filters them out.
+  const where = parsed.search
+    ? {
+        OR: [
+          { title: { contains: parsed.search, mode: "insensitive" as const } },
+          { body: { contains: parsed.search, mode: "insensitive" as const } },
+        ],
+      }
+    : {}
   const [items, total] = await Promise.all([
     prisma.announcementBroadcast.findMany({
+      where,
       orderBy: { created_at: parsed.sortDir },
       skip: (parsed.page - 1) * parsed.pageSize,
       take: parsed.pageSize,
     }),
-    prisma.announcementBroadcast.count(),
+    prisma.announcementBroadcast.count({ where }),
   ])
 
   return toPaginatedResult(items, total, parsed.page, parsed.pageSize)

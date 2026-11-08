@@ -240,6 +240,7 @@ describe("monthlyStatements", () => {
       { month: "2026-09", kind: "top_up", amountKes: 1000 },
       { month: "2026-10", kind: "adjustment", amountKes: -20 },
       { month: "2026-10", kind: "spend", amountKes: -300 },
+      { month: "2026-10", kind: "cash_refund", amountKes: -100 },
     ])
     expect(rows.map((r) => r.month)).toEqual(["2026-09", "2026-10"])
     expect(rows[1]).toEqual({
@@ -248,8 +249,9 @@ describe("monthlyStatements", () => {
       topUpsKes: 0,
       spendKes: 300,
       refundsKes: 50,
+      cashRefundsKes: -100,
       adjustmentsKes: -20,
-      closing: 730,
+      closing: 630,
     })
   })
 

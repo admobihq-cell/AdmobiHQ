@@ -1,10 +1,3 @@
-export const EARNINGS_STATS = [
-  { label: "This week", value: "KES 8,400", hint: "Illustrative" },
-  { label: "Screen-on hours", value: "38.5 hrs", hint: "Last 7 days" },
-  { label: "Route bonus", value: "KES 1,200", hint: "Top: CBD Loop" },
-  { label: "Payout status", value: "Pending", hint: "Next: Friday" },
-] as const
-
 export type RouteSummary = {
   id: string
   name: string
@@ -52,19 +45,13 @@ export const RECENT_ACTIVITY: RecentActivityItem[] = [
   {
     id: "1",
     title: "Route completed — CBD Loop",
-    detail: "3.2 hrs screen-on · KES 620 earned",
+    detail: "3.2 hrs screen-on",
     time: "Today",
-  },
-  {
-    id: "2",
-    title: "Payout scheduled",
-    detail: "KES 8,400 for last week's earnings",
-    time: "Friday",
   },
   {
     id: "3",
     title: "Route completed — Westlands Run",
-    detail: "2.1 hrs screen-on · KES 410 earned",
+    detail: "2.1 hrs screen-on",
     time: "Yesterday",
   },
 ]

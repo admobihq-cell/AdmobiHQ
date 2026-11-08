@@ -16,13 +16,7 @@ import { formatApiError } from "@workspace/ops-api-client"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   DataTable,
   DataTableSortHeader,
@@ -30,11 +24,28 @@ import {
   type SortingState,
 } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { formatDateTime, truncate } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useDebouncedValue } from "@/lib/use-debounced-value"
+import { useRowSelection } from "@/lib/use-row-selection"
 
-const ALL = "__all__"
+const toOptions = (keys: readonly string[]) => keys.map((value) => ({ value, label: formatLabel(value) }))
+
+const exportColumns: ExportColumn<AuditEventDto>[] = [
+  { key: "when", header: "When", value: (r) => formatDateTime(r.created_at) },
+  { key: "actor", header: "Actor", value: (r) => r.actor_email ?? formatLabel(r.actor_type) },
+  { key: "app", header: "App", value: (r) => r.app },
+  { key: "action", header: "Action", value: (r) => formatLabel(r.action) },
+  {
+    key: "entity",
+    header: "Entity",
+    value: (r) => `${formatLabel(r.entity_type)}${r.entity_id ? ` #${r.entity_id}` : ""}`,
+  },
+  { key: "summary", header: "Summary", value: (r) => r.summary },
+]
 
 const columns: ColumnDef<AuditEventDto, any>[] = [
   {
@@ -95,9 +106,11 @@ const columns: ColumnDef<AuditEventDto, any>[] = [
 
 export function ActivityView() {
   const client = useOpsClient()
-  const [entityType, setEntityType] = useState<string>(ALL)
-  const [action, setAction] = useState<string>(ALL)
-  const [app, setApp] = useState<string>(ALL)
+  const [entityType, setEntityType] = useState("")
+  const [action, setAction] = useState("")
+  const [app, setApp] = useState("")
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search.trim())
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
@@ -105,14 +118,18 @@ export function ActivityView() {
   const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
 
   const activityQuery = useQuery({
-    queryKey: ["ops-activity", { entityType, action, app, page, pageSize, sortDir }],
+    queryKey: [
+      "ops-activity",
+      { entityType, action, app, page, pageSize, sortDir, search: debouncedSearch },
+    ],
     queryFn: () =>
       client.audit.list({
         page,
         pageSize,
-        entity_type: entityType === ALL ? undefined : entityType,
-        action: action === ALL ? undefined : action,
-        app: app === ALL ? undefined : app,
+        search: debouncedSearch || undefined,
+        entity_type: entityType || undefined,
+        action: action || undefined,
+        app: app || undefined,
         sortBy: "created_at",
         sortDir,
       }),
@@ -128,7 +145,28 @@ export function ActivityView() {
 
   useEffect(() => {
     setPage(1)
-  }, [entityType, action, app, pageSize, sortDir])
+  }, [entityType, action, app, pageSize, sortDir, debouncedSearch])
+
+  const items = data?.items ?? []
+  const selection = useRowSelection(items, [
+    page,
+    pageSize,
+    sortDir,
+    entityType,
+    action,
+    app,
+    debouncedSearch,
+  ])
+  const exportRows = (format: ExportFormat, rows: AuditEventDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Activity",
+      scope,
+      columns: exportColumns,
+      rows,
+      entity: "activity",
+      client,
+    })
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -137,62 +175,47 @@ export function ActivityView() {
         description="Who did what across ops, public forms, and future customer apps."
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Select value={entityType} onValueChange={setEntityType}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Entity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All entities</SelectItem>
-            {AUDIT_ENTITY_TYPES.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <TableToolbar
+        search={{ value: search, onChange: setSearch, placeholder: "Search activity…" }}
+        filters={
+          <>
+            <FilterSelect
+              value={entityType}
+              onChange={setEntityType}
+              options={toOptions(AUDIT_ENTITY_TYPES)}
+              allLabel="All entities"
+            />
+            <FilterSelect
+              value={action}
+              onChange={setAction}
+              options={toOptions(AUDIT_ACTIONS)}
+              allLabel="All actions"
+            />
+            <FilterSelect value={app} onChange={setApp} options={toOptions(AUDIT_APPS)} allLabel="All apps" />
+          </>
+        }
+        onExport={(format) => exportRows(format, items, null)}
+        exportDisabled={!items.length}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refresh()}
+            disabled={loading}
+            loading={loading}
+            loadingText="Refresh"
+          >
+            <RefreshCw className="size-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-        <Select value={action} onValueChange={setAction}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Action" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All actions</SelectItem>
-            {AUDIT_ACTIONS.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={app} onValueChange={setApp}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="App" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All apps</SelectItem>
-            {AUDIT_APPS.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void refresh()}
-          disabled={loading}
-          loading={loading}
-          loadingText="Refresh"
-          className="ml-auto"
-        >
-          <RefreshCw className="size-4" />
-          Refresh
-        </Button>
-      </div>
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-none">
         {loading && !data ? (
@@ -209,11 +232,12 @@ export function ActivityView() {
           </div>
         ) : (
           <DataTable
-            columns={columns}
+            columns={[selection.selectColumn, ...columns]}
             data={data.items}
             sorting={sorting}
             onSortingChange={setSorting}
             getRowId={(row) => String(row.id)}
+            rowClassName={(row) => cn(selection.selectedIds.has(row.id) && "bg-muted/50")}
           />
         )}
       </div>

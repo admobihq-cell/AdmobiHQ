@@ -47,6 +47,11 @@ import {
   type SortingState,
 } from "@/components/ui/data-table"
 import { SectionHeading } from "@/components/ui/section-heading"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
+import { formatLabel, matchesSearch } from "@/lib/format"
+import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
 import { StatCard } from "@/components/ui/stat-card"
 import {
   CATEGORY_COLOR,
@@ -92,6 +97,21 @@ function costCell(i: IntegrationDto) {
   return { value: formatUsd(monthlyUsd(i), true), hint: `${cycle}${native}` }
 }
 
+const exportColumns: ExportColumn<IntegrationDto>[] = [
+  { key: "name", header: "Service", value: (i) => i.name },
+  { key: "category", header: "Category", value: (i) => formatLabel(i.category) },
+  { key: "purpose", header: "Purpose", value: (i) => i.purpose },
+  { key: "plan", header: "Plan", value: (i) => i.plan },
+  { key: "cost", header: "Cost", value: (i) => `${i.cost} ${i.currency}` },
+  { key: "cycle", header: "Billing", value: (i) => formatLabel(i.billing_cycle) },
+  { key: "monthlyUsd", header: "Monthly USD", value: (i) => formatUsd(monthlyUsd(i), true) },
+  { key: "status", header: "Status", value: (i) => formatLabel(i.status) },
+  { key: "owner", header: "Owner", value: (i) => i.owner },
+]
+
+const optionsFrom = (values: string[]) =>
+  [...new Set(values)].sort().map((value) => ({ value, label: formatLabel(value) }))
+
 export function IntegrationsView({ integrations }: { integrations: IntegrationDto[] }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -101,6 +121,31 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
   const [sorting, setSorting] = useState<SortingState>([{ id: "cost", desc: true }])
 
   const summary = useMemo(() => totals(integrations), [integrations])
+  const client = useOpsClient()
+  const [search, setSearch] = useState("")
+  const [category, setCategory] = useState("")
+  const [status, setStatus] = useState("")
+  const rows = useMemo(
+    () =>
+      integrations.filter(
+        (i) =>
+          (!category || i.category === category) &&
+          (!status || i.status === status) &&
+          matchesSearch(search, i.name, i.purpose, i.owner, i.plan),
+      ),
+    [integrations, category, status, search],
+  )
+  const selection = useRowSelection(rows, [category, status, search])
+  const exportRows = (format: ExportFormat, list: IntegrationDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Integrations",
+      scope,
+      columns: exportColumns,
+      rows: list,
+      entity: "admin",
+      client,
+    })
 
   const pieData = useMemo(
     () =>
@@ -468,11 +513,37 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
                 </Button>
               }
             />
+            <TableToolbar
+              search={{ value: search, onChange: setSearch, placeholder: "Search service, purpose, owner…" }}
+              filters={
+                <>
+                  <FilterSelect
+                    value={category}
+                    onChange={setCategory}
+                    options={optionsFrom(integrations.map((i) => i.category))}
+                    allLabel="All categories"
+                  />
+                  <FilterSelect
+                    value={status}
+                    onChange={setStatus}
+                    options={optionsFrom(integrations.map((i) => i.status))}
+                    allLabel="All statuses"
+                  />
+                </>
+              }
+              onExport={(format) => exportRows(format, rows, null)}
+              exportDisabled={!rows.length}
+            />
+            <BulkBar
+              count={selection.count}
+              onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+              onClear={selection.clear}
+            />
             <Card className="shadow-none">
               <CardContent className="p-0">
                 <DataTable
-                  columns={columns}
-                  data={integrations}
+                  columns={[selection.selectColumn, ...columns]}
+                  data={rows}
                   manualSorting={false}
                   sorting={sorting}
                   onSortingChange={setSorting}
