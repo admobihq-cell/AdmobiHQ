@@ -487,3 +487,25 @@ export type SafetyListQueryParams = Partial<PaginationParams> & {
   type?: string
   severity?: string
 }
+
+/** GET /v1/driver/payouts — the signed-in driver's own payouts, newest first. */
+export type DriverPayoutDto = {
+  id: number
+  /** `YYYY-MM`: the month the payout covers. */
+  periodMonth: string
+  amountKes: number
+  /** pending | processing | settled | failed | reversed */
+  status: string
+  paidAt: string | null
+}
+
+export type DriverPayoutsDto = {
+  items: DriverPayoutDto[]
+  summary: {
+    lastPayout: { amountKes: number; paidAt: string } | null
+    /** Settled this Nairobi calendar year. */
+    paidThisYearKes: number
+    /** Saved or being sent, not yet settled. */
+    pendingKes: number
+  }
+}

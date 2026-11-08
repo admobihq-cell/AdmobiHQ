@@ -1,42 +1,3 @@
-export const EARNINGS_STATS = [
-  {
-    label: "This week",
-    value: "KES 8,400",
-    hint: "Illustrative — not live data",
-  },
-  {
-    label: "Screen-on hours",
-    value: "38.5 hrs",
-    hint: "Last 7 days",
-  },
-  {
-    label: "Route bonus",
-    value: "KES 1,200",
-    hint: "Top corridor: CBD Loop",
-  },
-  {
-    label: "Payout status",
-    value: "Pending",
-    hint: "Next payout: Friday",
-  },
-] as const
-
-export type DailyEarning = {
-  day: string
-  amount: number
-  hours: number
-}
-
-export const DAILY_EARNINGS: DailyEarning[] = [
-  { day: "Mon", amount: 1100, hours: 5.2 },
-  { day: "Tue", amount: 1350, hours: 6.1 },
-  { day: "Wed", amount: 980, hours: 4.4 },
-  { day: "Thu", amount: 1600, hours: 7.0 },
-  { day: "Fri", amount: 1420, hours: 6.3 },
-  { day: "Sat", amount: 1050, hours: 4.8 },
-  { day: "Sun", amount: 900, hours: 4.2 },
-]
-
 export type RouteSummary = {
   id: string
   name: string
@@ -84,19 +45,13 @@ export const RECENT_ACTIVITY: RecentActivityItem[] = [
   {
     id: "1",
     title: "Route completed — CBD Loop",
-    detail: "3.2 hrs screen-on · KES 620 earned",
+    detail: "3.2 hrs screen-on",
     time: "Today",
-  },
-  {
-    id: "2",
-    title: "Payout scheduled",
-    detail: "KES 8,400 for last week's earnings",
-    time: "Friday",
   },
   {
     id: "3",
     title: "Route completed — Westlands Run",
-    detail: "2.1 hrs screen-on · KES 410 earned",
+    detail: "2.1 hrs screen-on",
     time: "Yesterday",
   },
 ]

@@ -1,15 +1,13 @@
 import Link from "next/link"
-import { Clock, HelpCircle, Package, Route as RouteIcon, TrendingUp, Wallet } from "lucide-react"
+import { HelpCircle, Package, Route as RouteIcon, Wallet } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
 
 import { Greeting } from "@/components/overview/greeting"
-import { StatCard } from "@/components/stat-card"
-import { EARNINGS_STATS, RECENT_ACTIVITY } from "@/lib/placeholder-data"
-
-const STAT_ICONS = [Wallet, Clock, TrendingUp, RouteIcon] as const
+import { PayoutStatCards } from "@/components/overview/payout-stat-cards"
+import { RECENT_ACTIVITY } from "@/lib/placeholder-data"
 
 export function DashboardView({ deliveriesEnabled }: { deliveriesEnabled: boolean }) {
   return (
@@ -20,22 +18,12 @@ export function DashboardView({ deliveriesEnabled }: { deliveriesEnabled: boolea
         </p>
         <h1 className="text-3xl font-semibold tracking-tight">Your day at a glance</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Placeholder dashboard — earnings, routes, and payouts will connect to live
-          telemetry here.
+          Your payouts are live. Routes and activity are illustrative until screen
+          telemetry connects.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {EARNINGS_STATS.map((stat, index) => (
-          <StatCard
-            key={stat.label}
-            icon={STAT_ICONS[index]!}
-            label={stat.label}
-            value={stat.value}
-            hint={stat.hint}
-          />
-        ))}
-      </div>
+      <PayoutStatCards />
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

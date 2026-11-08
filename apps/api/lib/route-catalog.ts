@@ -257,6 +257,7 @@ const NOTES: Record<string, string> = {
   "/v1/ops/payouts/disburse": "Send payouts through Paystack Transfers",
   "/v1/ops/payouts/[id]/retry": "Resend a failed payout",
   "/v1/driver/payout-banks": "Kenyan banks for payout details",
+  "/v1/driver/payouts": "The driver's own payouts and totals",
 }
 
 function audienceOf(routePath: string): AudienceId {

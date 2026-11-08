@@ -3,14 +3,12 @@ import { Link } from "expo-router"
 import { Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { Clock, Deliveries, HelpCircle, Routes, TrendingUp, Wallet } from "@/components/icons"
+import { Deliveries, HelpCircle, Routes, Wallet } from "@/components/icons"
+import { PayoutStats } from "@/components/payout-stats"
 import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
-import { StatCard } from "@/components/ui/stat-card"
 import { usePlatformFlags } from "@/lib/flags"
-import { EARNINGS_STATS, RECENT_ACTIVITY } from "@/lib/placeholder-data"
+import { RECENT_ACTIVITY } from "@/lib/placeholder-data"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
-
-const STAT_ICONS = [Wallet, Clock, TrendingUp, Routes] as const
 
 function getGreeting(hour: number): string {
   if (hour < 12) return "Good morning"
@@ -116,21 +114,13 @@ function DashboardScreen() {
         </Text>
         <Text style={styles.title}>Your day at a glance</Text>
         <Text style={styles.subtitle}>
-          Placeholder dashboard — earnings, routes, and payouts will connect to
-          live telemetry here.
+          Your payouts are live. Routes and activity are illustrative until screen
+          telemetry connects.
         </Text>
       </View>
 
       <View style={styles.statsGrid}>
-        {EARNINGS_STATS.map((stat, index) => (
-          <StatCard
-            key={stat.label}
-            icon={STAT_ICONS[index]!}
-            label={stat.label}
-            value={stat.value}
-            hint={stat.hint}
-          />
-        ))}
+        <PayoutStats />
       </View>
 
       <View style={styles.section}>

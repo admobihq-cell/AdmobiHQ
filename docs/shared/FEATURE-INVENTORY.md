@@ -120,7 +120,8 @@ Totals: 26 real, 2 flag-gated. The overview (`/`) is rebuilt on the dashboard ki
 | `/settings`, `/settings/profile`, `/settings/account`, `/settings/preferences`, `/settings/tour` | **Real** — profile setup and document upload live here |
 | `/settings/support`, `/settings/support/[id]` | **Real** |
 | `/auth/login`, `/auth/signup`, `/auth/sso-callback` | Clerk auth flow (own instance) |
-| `/` (dashboard), `/earnings`, `/routes` | **Sample data** — fixture earnings and route history (needs telemetry) |
+| `/` (dashboard), `/earnings` | **Real** payouts from `GET /v1/driver/payouts` (last payout, paid this year, pending, monthly history). Route and activity tiles on the dashboard are still illustrative |
+| `/routes` | **Sample data** — fixture route history (needs telemetry) |
 | `/deliveries` | **Feature-flag gated** — sample jobs, "Accept" disabled |
 | `/payouts` | **Placeholder** — `ComingSoon`, "ops settles earnings manually" |
 
@@ -132,7 +133,7 @@ Totals: 13 real, 1 flag-gated, 4 sample data or placeholder.
 
 **`apps/customer-mobile`** — 20 screens. Home (live data), Map, Campaigns (list/calendar toggle with pull-to-refresh, detail, full-screen wizard + creative upload), merged Notifications inbox with push deep links, Settings hub (account, team, roles, activity, notifications, support list/new/detail, web-app handoff), invitation acceptance, Clerk auth. Billing is **sample data**. See [APP-MOBILE.md](../customer/APP-MOBILE.md).
 
-**`apps/driver-mobile`** — 18 screens. A 4-step Profile Setup wizard (profile + ID upload → tax/payout details + document upload → review/submit), Settings, Support (list/new/detail), Notifications inbox, **SOS** (report + incident, with 120s foreground location re-ping via `expo-location`), Clerk auth. Home, Earnings, Routes are **sample data**; Deliveries is **flag-gated** sample jobs; **Payouts** is a placeholder. See [DRIVER-APP.md](../driver/DRIVER-APP.md).
+**`apps/driver-mobile`** — 18 screens. A 4-step Profile Setup wizard (profile + ID upload → tax/payout details + document upload → review/submit), Settings, Support (list/new/detail), Notifications inbox, **SOS** (report + incident, with 120s foreground location re-ping via `expo-location`), Clerk auth. Home and Earnings show **real payouts**; Routes are **sample data**; Deliveries is **flag-gated** sample jobs; **Payouts** is a placeholder. See [DRIVER-APP.md](../driver/DRIVER-APP.md).
 
 ### Surface totals
 
