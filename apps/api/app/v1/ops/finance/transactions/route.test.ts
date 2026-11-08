@@ -85,6 +85,7 @@ describe.skipIf(!databaseUrl)("ops record transaction", () => {
     expect(await sign("top_up", 100)).toBe(100)
     expect(await sign("spend", 40, { spendCategory: "screen_time", campaignId })).toBe(-40)
     expect(await sign("refund", 10, { spendCategory: "screen_time" })).toBe(10)
+    expect(await sign("cash_refund", 15)).toBe(-15)
     expect(await sign("adjustment", -25)).toBe(-25)
     expect(await sign("adjustment", 25)).toBe(25)
   })

@@ -6,6 +6,7 @@ export const KIND_LABELS: Record<WalletTransactionKind, string> = {
   spend: "Spend",
   refund: "Refund",
   adjustment: "Adjustment",
+  cash_refund: "Refund to payer",
 }
 
 export const INVOICE_STATUS: Record<InvoiceStatus, { label: string; tone: StatusTone }> = {

@@ -58,6 +58,7 @@ const PERMISSION_LABELS: Record<OpsPermission, string> = {
   driver_applications: "Driver Applications",
   campaigns: "Campaigns",
   safety: "SOS & Safety",
+  payouts: "Driver Payouts",
 }
 
 type RoleEdit = { name: string; permissions: OpsPermission[] }

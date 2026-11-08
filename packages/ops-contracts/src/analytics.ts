@@ -30,7 +30,7 @@ export const SPEND_CATEGORY_LABELS: Record<SpendCategory, string> = {
   tax: "Tax",
 }
 
-export const WALLET_TRANSACTION_KINDS = ["top_up", "spend", "refund", "adjustment"] as const
+export const WALLET_TRANSACTION_KINDS = ["top_up", "spend", "refund", "adjustment", "cash_refund"] as const
 export type WalletTransactionKind = (typeof WALLET_TRANSACTION_KINDS)[number]
 
 export const INVOICE_STATUSES = ["issued", "paid", "overdue", "void"] as const

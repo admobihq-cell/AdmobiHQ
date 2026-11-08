@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
   const magnitude = Math.round(Math.abs(input.amountKes) * 100) / 100
   const signed =
-    input.kind === "spend" ? -magnitude : input.kind === "adjustment" ? Math.round(input.amountKes * 100) / 100 : magnitude
+    input.kind === "spend" || input.kind === "cash_refund" ? -magnitude : input.kind === "adjustment" ? Math.round(input.amountKes * 100) / 100 : magnitude
 
   if (input.reference) {
     const duplicate = await prisma.walletTransaction.findUnique({ where: { reference: input.reference }, select: { id: true } })

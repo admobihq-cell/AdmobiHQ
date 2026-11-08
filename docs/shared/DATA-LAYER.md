@@ -76,7 +76,7 @@ Approved campaigns will eventually dispatch to supplier screen APIs. This does n
 | `modelled` | Logged plays plus an impressions-per-play model. `model_version` names the model, so recalibrating never silently rewrites history |
 | `calibrated` | A modelled estimate tightened by manual counts or telco density data |
 
-Null impressions mean "not estimated", never zero. Reach is campaign-to-date and never summed across days or campaigns. Spend always comes from `wallet_transactions`, never from the stats tables; `tax` rows are not revenue. `wallet_transactions.provider` is `manual` (ops recorded it), `pesapal` (payment webhook) or `seed` (demo data). Every one of these tables has `is_demo` for seed rows.
+Null impressions mean "not estimated", never zero. Reach is campaign-to-date and never summed across days or campaigns. Spend always comes from `wallet_transactions`, never from the stats tables; `tax` rows are not revenue. `wallet_transactions.provider` is `manual` (ops recorded it), `paystack` (payment webhook) or `seed` (demo data). Every one of these tables has `is_demo` for seed rows.
 
 Schema changes here go through `prisma/migrations` and `npm run db:migrate:deploy -w web` (see [DEPLOYMENT.md](./DEPLOYMENT.md)); they were added by `20261102120000_dashboard_ledger`.
 
