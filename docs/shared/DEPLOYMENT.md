@@ -254,6 +254,8 @@ npx vercel env add DATABASE_URL preview --git-branch staging --value "<url>" --p
 3. **Branch-scoped Preview overrides Preview-all.** A bad `Preview (staging)` value wins over a fixed `Preview` value — update both or delete the bad branch-scoped entry.
 4. **After changing `NEXT_PUBLIC_*`, redeploy** or the browser still runs the old inlined values.
 5. **Do not use the “Admobi Staging” Clerk app** for these hostnames.
+6. **Staging `DATABASE_URL` drifting off the dev branch looks like a code bug.** Symptoms: `relation "<table>" does not exist` 500s on routes whose migration *is* applied to dev (`npm run db:migrate:status -w web` says up to date), and a verified driver suddenly shown as unverified — `/v1/driver/profile` upserts a blank `draft` row when it can't find the Clerk id, so a wrong DB silently looks like a new account. Fix: re-set `DATABASE_URL` (Preview @ `staging`) on API, ops and web to the dev Neon URL and redeploy. (Found 2026-11-08: staging had pointed at a non-dev DB since 2026-09-19.)
+7. **The ops “limited to @admobihq.com accounts” screen also means “not in `CLERK_ORG_ID`”.** [`getOpsAccess`](../../apps/ops/lib/auth.ts) returns `forbidden` both for a non-company email *and* when the user has no membership in the org `CLERK_ORG_ID` names (or that Clerk call fails). A correct `@admobihq.com` user hitting it on staging means ops' Preview `CLERK_ORG_ID` isn't the **dev** org id from the AdmobiHQ Development instance.
 
 ### Day-to-day commands
 
