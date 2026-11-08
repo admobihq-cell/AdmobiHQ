@@ -13,6 +13,11 @@ export type PaymentStatusView = {
   amountKes: number
   campaignId: number | null
   invoiceId: number | null
+  /** Receipt fields; null until Paystack confirms. */
+  reference: string
+  channel: string | null
+  paidAt: string | null
+  invoiceNumber: string | null
 }
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong")

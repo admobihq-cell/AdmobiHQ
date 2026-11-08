@@ -21,11 +21,21 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
+import { ReceiptPrinter, useReceiptPrinterStage } from "@workspace/ui/components/receipt-printer"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
 
 const thisMonth = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" }).slice(0, 7)
 const errorText = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)
+
+/** What actually went to Paystack, frozen at send time (the run reloads underneath it). */
+type SentRun = {
+  rows: { id: number; name: string; amountKes: number }[]
+  skipped: { name: string; reason: string }[]
+  totalKes: number
+  feesKes: number
+  at: Date
+}
 
 /**
  * A month's payout run (spec §8.3): ops types each driver's amount and saves the rows as pending,
@@ -43,6 +53,9 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
   const [confirming, setConfirming] = useState<{ balanceKes: number | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState<SentRun | null>(null)
+  const stage = useReceiptPrinterStage(sent !== null)
 
   const load = useCallback(async () => {
     setError(null)
@@ -95,26 +108,42 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
   }
 
   function send() {
+    const batch = chosen.map((d) => ({ id: d.payout!.id, name: d.name, amountKes: d.payout!.amountKes, feeKes: d.payout!.estimatedFeeKes }))
+    setSending(true)
     startTransition(async () => {
       try {
-        const result = await client.payouts.disburse(chosen.map((d) => d.payout!.id))
-        toast.success(`Sent ${result.queued} payout${result.queued === 1 ? "" : "s"} to Paystack`)
+        const result = await client.payouts.disburse(batch.map((b) => b.id))
+        const skippedIds = new Map(result.skipped.map((s) => [s.id, s.reason]))
+        const rows = batch.filter((b) => !skippedIds.has(b.id))
         if (result.skipped.length) toast.warning(`${result.skipped.length} skipped: ${result.skipped[0]!.reason}`)
-        setConfirming(null)
+        setSent({
+          rows,
+          skipped: batch.filter((b) => skippedIds.has(b.id)).map((b) => ({ name: b.name, reason: skippedIds.get(b.id)! })),
+          totalKes: rows.reduce((sum, r) => sum + r.amountKes, 0),
+          feesKes: rows.reduce((sum, r) => sum + r.feeKes, 0),
+          at: new Date(),
+        })
         await refreshFinance()
         await load()
         router.refresh()
       } catch (e) {
+        setSending(false)
         setConfirming(null)
         setError(errorText(e, "Could not send the payouts."))
       }
     })
   }
 
+  function closeReceipt() {
+    setSent(null)
+    setSending(false)
+    setConfirming(null)
+  }
+
   const short = confirming?.balanceKes != null && confirming.balanceKes < totalKes + feesKes
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { setOpen(next); setConfirming(null) }}>
+    <Dialog open={open} onOpenChange={(next) => { setOpen(next); closeReceipt() }}>
       <DialogTrigger asChild>
         <Button size="sm">
           <ArrowDownCircle aria-hidden />
@@ -122,7 +151,9 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-        {confirming ? (
+        {sending || sent ? (
+          <PayoutReceipt stage={stage} sent={sent} count={chosen.length} onDone={closeReceipt} />
+        ) : confirming ? (
           <>
             <DialogHeader>
               <DialogTitle>Send driver payouts</DialogTitle>
@@ -263,5 +294,79 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+/** Sending: the printer works. Sent: it prints what went to Paystack. */
+function PayoutReceipt({
+  stage,
+  sent,
+  count,
+  onDone,
+}: {
+  stage: ReturnType<typeof useReceiptPrinterStage>
+  sent: SentRun | null
+  count: number
+  onDone: () => void
+}) {
+  const n = sent?.rows.length ?? count
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{stage === "complete" ? "Payouts sent" : "Sending payouts"}</DialogTitle>
+        <DialogDescription>
+          Paystack confirms each transfer by webhook; rows move to settled or failed as they land.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex justify-center py-2">
+        <ReceiptPrinter.Root stage={stage} aria-label="Payout confirmation">
+          <ReceiptPrinter.Machine>
+            <ReceiptPrinter.Header>
+              <span className="pt-1 pl-1 text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase">Admobi</span>
+            </ReceiptPrinter.Header>
+            <ReceiptPrinter.Screen>
+              <ReceiptPrinter.Status>
+                {stage === "processing" ? `Sending ${n} payout${n === 1 ? "" : "s"}` : stage === "complete" ? "Sent to Paystack" : undefined}
+              </ReceiptPrinter.Status>
+              <p className="mt-4 font-mono text-2xl tabular-nums">{sent ? formatKes(sent.totalKes) : "KES —"}</p>
+              <p className="mt-1 text-xs text-zinc-500">Driver payouts</p>
+            </ReceiptPrinter.Screen>
+          </ReceiptPrinter.Machine>
+          <ReceiptPrinter.Output>
+            <ReceiptPrinter.Paper>
+              <p className="text-center text-sm font-semibold tracking-[0.2em] uppercase">Admobi</p>
+              <p className="mt-1 text-center text-[11px] text-zinc-500">
+                Payout run · {sent ? sent.at.toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Nairobi" }) : ""}
+              </p>
+              <ReceiptPrinter.Rule />
+              <div className="grid gap-1.5">
+                {sent?.rows.map((r) => <ReceiptPrinter.Row key={r.id} label={r.name} value={formatKes(r.amountKes)} />)}
+              </div>
+              <ReceiptPrinter.Rule />
+              <div className="grid gap-1.5">
+                <ReceiptPrinter.Row label="Drivers" value={String(sent?.rows.length ?? 0)} />
+                <ReceiptPrinter.Row label="Est. Paystack fees" value={sent ? formatKes(sent.feesKes) : "—"} />
+              </div>
+              <ReceiptPrinter.Rule />
+              <ReceiptPrinter.Row label="Total sent" value={sent ? formatKes(sent.totalKes) : "—"} strong />
+              {sent?.skipped.length ? (
+                <>
+                  <ReceiptPrinter.Rule />
+                  <p className="text-[11px] font-semibold">Skipped</p>
+                  <div className="mt-1 grid gap-1">
+                    {sent.skipped.map((s) => <ReceiptPrinter.Row key={s.name} label={s.name} value={s.reason} />)}
+                  </div>
+                </>
+              ) : null}
+            </ReceiptPrinter.Paper>
+          </ReceiptPrinter.Output>
+        </ReceiptPrinter.Root>
+      </div>
+      <DialogFooter>
+        <Button onClick={onDone} disabled={stage !== "complete"}>
+          Done
+        </Button>
+      </DialogFooter>
+    </>
   )
 }

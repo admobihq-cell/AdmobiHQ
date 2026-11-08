@@ -98,6 +98,11 @@ export type PaymentStatusView = {
   amountKes: number
   campaignId: number | null
   invoiceId: number | null
+  /** Receipt fields; null until Paystack confirms. */
+  reference: string
+  channel: string | null
+  paidAt: string | null
+  invoiceNumber: string | null
 }
 
 /** Org-scoped status for the return page. Asks Paystack itself once the webhook is late. */
@@ -119,7 +124,7 @@ export async function refreshPayment(reference: string, orgId: number): Promise<
     payment.status === "success" && payment.paid_at
       ? await prisma.invoice.findUnique({
           where: { number: invoiceNumber(payment.id, payment.paid_at) },
-          select: { id: true },
+          select: { id: true, number: true },
         })
       : null
 
@@ -128,5 +133,9 @@ export async function refreshPayment(reference: string, orgId: number): Promise<
     amountKes: Number(payment.amount_kes),
     campaignId: payment.campaign_id,
     invoiceId: invoice?.id ?? null,
+    reference: payment.reference,
+    channel: payment.channel,
+    paidAt: payment.paid_at?.toISOString() ?? null,
+    invoiceNumber: invoice?.number ?? null,
   }
 }

@@ -187,6 +187,10 @@ describe.skipIf(!databaseUrl)("checkout, top-up and status routes", { timeout: 3
     const settled = await (await getStatus(payment.reference)).json()
     expect(settled).toMatchObject({ status: "success", amountKes: 5000, campaignId: null })
     expect(settled.invoiceId).toEqual(expect.any(Number))
+    // Receipt fields for the return page.
+    expect(settled).toMatchObject({ reference: payment.reference, channel: "card", paidAt: expect.any(String) })
+    expect(settled.invoiceNumber).toEqual(expect.any(String))
+    expect(fresh).toMatchObject({ channel: null, paidAt: null, invoiceNumber: null })
   })
 
   it("status works with campaigns:submit alone", async () => {
