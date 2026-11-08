@@ -1,12 +1,25 @@
 import { describe, expect, it, vi } from "vitest"
 
+let isAdmin = true
+
 vi.mock("@/lib/api-utils", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-utils")>("@/lib/api-utils")
   return {
     ...actual,
     requireOpsPermissionAccess: vi.fn().mockResolvedValue({ access: { userId: "test-user" } }),
+    requireOpsAdminAccess: vi.fn(async () =>
+      isAdmin
+        ? { access: { userId: "admin-user" } }
+        : { error: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 }) },
+    ),
   }
 })
+
+const adminExport = () =>
+  new Request("http://localhost/v1/ops/documents/export", {
+    method: "POST",
+    body: JSON.stringify({ entity: "admin", title: "Team", headers: ["Name"], rows: [["A"]] }),
+  })
 
 describe("POST /v1/ops/documents/export", () => {
   // Cold-start (first Takumi WASM init + the full api-utils/auth/Prisma
@@ -47,5 +60,20 @@ describe("POST /v1/ops/documents/export", () => {
 
     const res = await POST(req)
     expect(res.status).toBe(400)
+  })
+
+  it("lets an ops admin export with entity 'admin'", async () => {
+    isAdmin = true
+    const { POST } = await import("./route")
+    const res = await POST(adminExport())
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("application/pdf")
+  }, 15000)
+
+  it("refuses entity 'admin' to a non-admin", async () => {
+    isAdmin = false
+    const { POST } = await import("./route")
+    const res = await POST(adminExport())
+    expect(res.status).toBe(403)
   })
 })

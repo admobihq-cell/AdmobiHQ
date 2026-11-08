@@ -113,6 +113,12 @@ takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
 
+`POST /v1/ops/documents/export` (ops) renders the list-page **Export as PDF**
+from `{ entity, title, headers, rows }` (max 20 headers, 500 rows). It
+authorises on `entity`, which is the page's ops permission (e.g. `drivers`,
+`campaigns`), or `"admin"` for the admin-only pages (Users, Admins, Team,
+Roles, Integrations), which requires an ops admin.
+
 ### Finance (advertiser)
 
 Read-only money views for the caller's org, behind `billing:read`. They read the wallet ledger (`wallet_transactions`, append-only; the balance is derived, never stored) and `invoices`. Every query filters on the caller's org. A ledger row that points at another org's campaign still counts for this org, but the campaign name is never returned. Days are Africa/Nairobi calendar days.

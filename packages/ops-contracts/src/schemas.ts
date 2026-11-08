@@ -309,7 +309,9 @@ export const broadcastCreateSchema = z.object({
 })
 
 export const documentExportRequestSchema = z.object({
-  entity: z.enum(OPS_PERMISSIONS),
+  // "admin" covers the admin-only list pages (users, team, roles,
+  // integrations) that have no section permission of their own.
+  entity: z.enum([...OPS_PERMISSIONS, "admin"]),
   title: z.string().min(1).max(200),
   headers: z.array(z.string()).min(1).max(20),
   // Matches the current-page/selected-rows scope CSV export already
