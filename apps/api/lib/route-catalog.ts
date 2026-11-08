@@ -62,7 +62,12 @@ const AUDIENCES: Omit<AudienceGroup, "resources" | "count">[] = [
   },
 ]
 
-const SYSTEM_PATHS = new Set(["/v1/health", "/v1/push-receipts/check"])
+const SYSTEM_PATHS = new Set([
+  "/v1/health",
+  "/v1/push-receipts/check",
+  "/v1/cron/finance-daily",
+  "/v1/payments/paystack/webhook",
+])
 
 /** Section titles by first path segment. Key order is display order; unlisted segments follow, title-cased. */
 const RESOURCE_LABELS: Record<string, string> = {
@@ -241,6 +246,8 @@ const NOTES: Record<string, string> = {
   // System
   "/v1/health": "Service status JSON for uptime checks",
   "/v1/push-receipts/check": "Nightly Expo push receipt reconciliation",
+  "/v1/cron/finance-daily": "Nightly payment reconciliation, daily spend and finance digest",
+  "/v1/payments/paystack/webhook": "Paystack webhook (signed)",
 }
 
 function audienceOf(routePath: string): AudienceId {

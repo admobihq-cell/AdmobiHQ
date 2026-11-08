@@ -5,6 +5,10 @@
     {
       "path": "/v1/push-receipts/check",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/v1/cron/finance-daily",
+      "schedule": "30 21 * * *"
     }
   ]
 }
