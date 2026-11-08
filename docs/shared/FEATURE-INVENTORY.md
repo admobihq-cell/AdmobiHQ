@@ -245,7 +245,7 @@ Data model:
 
 Send paths:
 
-- Broadcasts support merge tags (`lib/push/announcement-template.ts`).
+- Broadcasts support merge tags (`renderAnnouncementTemplate` in `packages/ops-contracts/src/announcement-template.ts`, shared by the API and the ops composer preview).
 - `notifyUserPush` (`lib/push/user-push.ts`) sends targeted single-user push, used for campaign decisions and submit confirmations.
 - `notifyOpsStaffAlert` fans alerts out to ops staff. SOS uses a MAX-importance Android channel.
 
