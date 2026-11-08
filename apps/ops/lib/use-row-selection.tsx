@@ -12,11 +12,21 @@ import type { ColumnDef } from "@/components/ui/data-table"
 type RowId = string | number
 const defaultGetId = (row: unknown) => (row as { id: RowId }).id
 
+/** Spelled out so the declaration never has to name @tanstack internals
+ * (TS4058 on Vercel's install layout). */
+export type RowSelection<T> = {
+  selectedIds: Set<RowId>
+  selectedRows: T[]
+  count: number
+  clear: () => void
+  selectColumn: ColumnDef<T, any>
+}
+
 export function useRowSelection<T>(
   rows: T[],
   resetKey: unknown,
   getId: (row: T) => RowId = defaultGetId
-) {
+): RowSelection<T> {
   // Selection is stored against the resetKey it was made under; a different
   // key reads as empty, so no effect is needed to clear it.
   const resetToken = JSON.stringify(resetKey)
