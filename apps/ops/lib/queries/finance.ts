@@ -120,7 +120,7 @@ export async function queryFinanceOverview(range: DateRangeKey): Promise<Finance
     rows<{ period: string; in_kes: number; out_kes: number }>(
       `SELECT to_char(${DAY}, 'YYYY-MM') AS period,
          COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind = 'top_up'), 0)::float8 AS in_kes,
-         (-COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind IN ('spend', 'refund')), 0))::float8 AS out_kes
+         (-COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind IN ('spend', 'refund', 'cash_refund')), 0))::float8 AS out_kes
        FROM wallet_transactions t WHERE t.org_id IS NOT NULL AND ${IN_RANGE} GROUP BY 1 ORDER BY 1`,
       [w.start, w.end]
     ),

@@ -201,7 +201,9 @@ export function netMargin(input: {
 /**
  * Amounts follow the ledger's sign (credit +, debit −), except `spendKes`,
  * which is the positive amount spent. `closing = opening + topUps − spend +
- * refunds + adjustments`, and each closing is the next month's opening.
+ * refunds + cashRefunds + adjustments`, and each closing is the next month's
+ * opening. `cashRefundsKes` (≤ 0) is money returned to the payer, which is not
+ * a spend reversal.
  */
 export type StatementRow = {
   month: string
@@ -209,6 +211,7 @@ export type StatementRow = {
   topUpsKes: number
   spendKes: number
   refundsKes: number
+  cashRefundsKes: number
   adjustmentsKes: number
   closing: number
 }
@@ -224,11 +227,13 @@ export function monthlyStatements(
       topUpsKes: 0,
       spendKes: 0,
       refundsKes: 0,
+      cashRefundsKes: 0,
       adjustmentsKes: 0,
     }
     if (row.kind === "top_up") m.topUpsKes += row.amountKes
     else if (row.kind === "spend") m.spendKes -= row.amountKes
     else if (row.kind === "refund") m.refundsKes += row.amountKes
+    else if (row.kind === "cash_refund") m.cashRefundsKes += row.amountKes
     else m.adjustmentsKes += row.amountKes
     months.set(row.month, m)
   }
@@ -243,8 +248,9 @@ export function monthlyStatements(
         topUpsKes: roundKes(m.topUpsKes),
         spendKes: roundKes(m.spendKes),
         refundsKes: roundKes(m.refundsKes),
+        cashRefundsKes: roundKes(m.cashRefundsKes),
         adjustmentsKes: roundKes(m.adjustmentsKes),
-        closing: roundKes(opening + m.topUpsKes - m.spendKes + m.refundsKes + m.adjustmentsKes),
+        closing: roundKes(opening + m.topUpsKes - m.spendKes + m.refundsKes + m.cashRefundsKes + m.adjustmentsKes),
       }
       opening = row.closing
       return row

@@ -4,6 +4,7 @@ import { formatKes, recordTransactionSchema } from "@workspace/ops-contracts"
 
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
+import { notifyManualTopUp } from "@/lib/payments/money-notify"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -73,6 +74,9 @@ export async function POST(req: Request) {
     org_id: org.id,
     summary: `Recorded ${input.kind.replace("_", " ")} of ${formatKes(signed)} for "${org.name}" (${input.reason})`,
   })
+
+  // A7: a recorded bank transfer is money the advertiser can use now.
+  if (input.kind === "top_up") await notifyManualTopUp({ orgId: org.id, amountKes: signed })
 
   return NextResponse.json({ id: row.id, amountKes: signed }, { status: 201 })
 }

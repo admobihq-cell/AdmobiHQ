@@ -167,6 +167,7 @@ const NOTES: Record<string, string> = {
   "/v1/audit": "Paginated audit events",
   "/v1/ops/documents/export": "Render a table export as PDF",
   "/v1/ops/finance/transactions": "Record a wallet ledger entry by hand",
+  "/v1/ops/payments/refunds": "Refund unused credit to the original Paystack payments",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
@@ -185,6 +186,7 @@ const NOTES: Record<string, string> = {
   "/v1/customer/finance/statements": "Monthly wallet statements",
   "/v1/customer/finance/statements/[month]/pdf": "Monthly wallet statement PDF",
   "/v1/customer/payments/top-up": "Top up the balance through Paystack",
+  "/v1/customer/payments/refund-request": "Ask ops to refund unused credit (opens a billing support case)",
   "/v1/customer/payments/[reference]": "Status of a Paystack payment",
   "/v1/customer/reports/overview": "Delivery headline numbers, pacing and campaign health",
   "/v1/customer/reports/delivery": "Plays scheduled, delivered and missed, with CSV export",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { jsonError } from "@/lib/api-utils"
 import { verifyWebhookSignature } from "@/lib/payments/paystack"
+import { handleRefundEvent } from "@/lib/payments/refunds"
 import { settlePayment } from "@/lib/payments/settle-payment"
 
 export const dynamic = "force-dynamic"
@@ -38,6 +39,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ result: await settlePayment(reference) })
       }
       default:
+        if (payload.event?.startsWith("refund.")) {
+          await handleRefundEvent(payload.event, payload.data ?? {})
+          return NextResponse.json({ ok: true })
+        }
         return NextResponse.json({ ignored: true })
     }
   } catch (error) {
