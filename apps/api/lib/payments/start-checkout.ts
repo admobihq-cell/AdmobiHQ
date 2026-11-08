@@ -37,7 +37,7 @@ export async function startCheckout(input: {
   email: string
 }): Promise<{ authorizationUrl: string; reference: string; amountKes: number }> {
   const callbackUrl = process.env.PAYSTACK_CALLBACK_URL?.trim()
-  if (!callbackUrl) throw new CheckoutConfigError("PAYSTACK_CALLBACK_URL is not set")
+  if (!callbackUrl || !/^https?:\/\//.test(callbackUrl)) throw new CheckoutConfigError("PAYSTACK_CALLBACK_URL is not set")
 
   const amountKes = Math.max(PAYSTACK_MIN_KES, Math.round(input.amountKes * 100) / 100)
 

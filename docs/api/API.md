@@ -302,7 +302,7 @@ That token proves only that its holder was the **first** to open a case under th
 | `SENDER_EMAIL`, `ADMIN_EMAIL` | For emails | Form confirmation + alerts |
 | `REDIS_URL` | Optional | Bull **email queue** (not rate limiting) |
 | `CRON_SECRET` | For scheduled/system callers | See [Service-to-service auth](#service-to-service-auth) |
-| `PAYSTACK_SECRET_KEY` | For payments | Paystack secret key (`sk_test_…` in dev/preview, `sk_live_…` in prod). Signs webhooks and authorises every Paystack call; never sent to a client |
+| `PAYSTACK_SECRET_KEY` | For payments | Paystack secret key (`sk_test_…` in dev/preview, `sk_live_…` in prod). Signs webhooks and authorises every Paystack call; never sent to a client. Anything not starting `sk_test_`/`sk_live_` (e.g. the `REPLACE_ME` placeholder in Infisical) counts as unset: payments answer 503 and webhooks 401 |
 | `PAYSTACK_PUBLIC_KEY` | Not used yet | Kept for a future in-app Paystack SDK |
 | `PAYSTACK_CALLBACK_URL` | For payments | Customer-web return page, e.g. `https://app.admobihq.com/billing/payment-return` |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | For rate limiting | Sliding-window limiter on `/v1/public/*` — see [Rate limiting](#rate-limiting) |

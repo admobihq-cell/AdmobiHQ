@@ -5,6 +5,7 @@ import {
   PaystackError,
   bulkTransfer,
   createRefund,
+  paystackSecretKey,
   getKesBalance,
   initializeTransaction,
   toPaystackMpesaNumber,
@@ -115,6 +116,18 @@ describe("initializeTransaction", () => {
     await expect(
       initializeTransaction({ email: "a@b.co", amountKes: 1, reference: "r", callbackUrl: "u", metadata: {} }),
     ).rejects.toThrow(/PAYSTACK_SECRET_KEY/)
+  })
+
+  it("treats a placeholder secret key as not configured, and never sends it", async () => {
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "REPLACE_ME")
+    const fetchMock = mockFetch({ status: true, data: {} })
+    await expect(
+      initializeTransaction({ email: "a@b.co", amountKes: 1, reference: "r", callbackUrl: "u", metadata: {} }),
+    ).rejects.toThrow(/PAYSTACK_SECRET_KEY/)
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(paystackSecretKey()).toBeNull()
+    vi.stubEnv("PAYSTACK_SECRET_KEY", " sk_live_abc ")
+    expect(paystackSecretKey()).toBe("sk_live_abc")
   })
 })
 

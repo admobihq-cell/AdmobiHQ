@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server"
 
 import { alertOpsFinance } from "@/lib/payments/money-notify"
 import { approveTransfer } from "@/lib/payments/payouts"
-import { verifyWebhookSignature } from "@/lib/payments/paystack"
+import { paystackSecretKey, verifyWebhookSignature } from "@/lib/payments/paystack"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic"
 export async function POST(req: Request) {
   const raw = await req.text()
   const signature = req.headers.get("x-paystack-signature")
-  const secret = process.env.PAYSTACK_SECRET_KEY?.trim() ?? ""
+  const secret = paystackSecretKey() ?? ""
 
   let body: { reference?: unknown; amount?: unknown } = {}
   try {

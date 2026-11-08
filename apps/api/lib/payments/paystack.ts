@@ -36,8 +36,18 @@ export function toPaystackMpesaNumber(phone: string): string {
   return `0${m[1]}`
 }
 
+/**
+ * The secret key, or null when it isn't a real one. Infisical holds a
+ * REPLACE_ME placeholder until the owner pastes the key, and a known
+ * placeholder must never sign or verify anything.
+ */
+export function paystackSecretKey(): string | null {
+  const key = process.env.PAYSTACK_SECRET_KEY?.trim()
+  return key && /^sk_(test|live)_/.test(key) ? key : null
+}
+
 async function paystack<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
-  const key = process.env.PAYSTACK_SECRET_KEY
+  const key = paystackSecretKey()
   if (!key) throw new Error("PAYSTACK_SECRET_KEY is not set")
   const res = await fetch(`${BASE}${path}`, {
     method,

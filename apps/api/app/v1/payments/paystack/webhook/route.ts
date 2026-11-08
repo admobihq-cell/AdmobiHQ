@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { jsonError } from "@/lib/api-utils"
-import { verifyWebhookSignature } from "@/lib/payments/paystack"
+import { paystackSecretKey, verifyWebhookSignature } from "@/lib/payments/paystack"
 import { handleTransferEvent } from "@/lib/payments/payouts"
 import { handleRefundEvent } from "@/lib/payments/refunds"
 import { settlePayment } from "@/lib/payments/settle-payment"
@@ -18,7 +18,7 @@ type PaystackEvent = { event?: string; data?: { reference?: string } & Record<st
  * ponytail: legacy x-paystack-signature; move to Paystack-Signature (whsec_) when the dashboard issues one.
  */
 export async function POST(req: Request) {
-  const secret = process.env.PAYSTACK_SECRET_KEY?.trim()
+  const secret = paystackSecretKey()
   const raw = await req.text()
   if (!secret || !verifyWebhookSignature(raw, req.headers.get("x-paystack-signature"), secret)) {
     console.warn("[paystack/webhook] rejected: bad or missing signature")
