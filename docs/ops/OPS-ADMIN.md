@@ -93,9 +93,13 @@ Ops web **Activity** (`/activity`) and ops-mobile Activity list events from `GET
 - Apply the table with `npm run db:ops-schema -w web` (see [`ops-schema-additive.sql`](../../apps/web/prisma/scripts/ops-schema-additive.sql)).
 - Future customer apps: record from API handlers via `recordAuditEvent` — never from the client. Details in [DATA-LAYER.md](../shared/DATA-LAYER.md).
 
+### List page toolbar
+
+Every ops list page uses the same toolbar, from `components/ui/table-toolbar.tsx`: a search box, the page's filters, an **Export** menu, and page actions (e.g. **Add**). Ticking rows (`lib/use-row-selection.tsx`) shows a bar with the count, the page's bulk actions, **Export selected**, and clear. Changing the page, page size, search or any filter clears the selection, so rows you can't see are never exported or acted on.
+
 ### Exports
 
-Every entity list page (`EntityPage`) exports the **selected rows** in three formats. The columns are those with a `csv` accessor, and filenames come from `exportFileName()`.
+List pages export either the **visible page** (toolbar **Export**) or the **selected rows** (**Export selected**) in three formats, via `exportTableRows()` in `lib/table-export.ts`. The columns are each page's export columns (on `EntityPage`, those with a `csv` accessor), and filenames come from `exportFileName()`. This is never a full-dataset export.
 
 | Format | Built where |
 |--------|-------------|
