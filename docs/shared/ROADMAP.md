@@ -58,7 +58,7 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 | App shell, map, forms | Next.js 16, mapcn/MapLibre, react-hook-form + zod, `@workspace/ui` | — |
 | Auth | Customer Clerk instance, sign-in/session live on web + mobile ([AUTH.md](./AUTH.md)); `/v1/customer/announcements*` verified | `CustomerUser` role model + campaign/zone/stats `/v1/customer/*` routes |
 | Creative upload | Cloudinary | Direct signed-upload flow from browser |
-| Payments/invoicing | Resend (email) | **Pesapal** (API 3.0) for self-serve top-ups — M-Pesa, Airtel Money, and cards through one hosted checkout; manual invoice + bank transfer for corporates first |
+| Payments/invoicing | Resend (email) | **Paystack** (built, Nov 2026): hosted checkout for M-Pesa and cards at campaign submission and for top-ups, signed webhooks, refunds to the original method; bank transfers still recorded by ops |
 | Live map data | `@workspace/geo` fixtures | Telemetry pipeline (§5) — until then, poll the same endpoints backed by fixtures |
 
 ---
@@ -80,13 +80,13 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 
 - `Device` — one row per physical screen unit: hardware key hash, `driver_id`, `fleet_partner_id` (nullable — preserves the fleet-partner/driver separation), status.
 - `EarningsLedger` — append-only: `driver_id`, period, amount, source (`screen_hours | route_bonus | delivery`), derived from telemetry aggregates by a scheduled job.
-- `Payout` — `driver_id`, amount, status, M-Pesa transaction ref. **Exists** (since the dashboards build, Nov 2026): ops reads it for the Finances and Fleet dashboards, and only the dev demo seed writes it for now.
-- **Tables telemetry and Pesapal write to** (all shipped, empty on prod): `campaign_daily_stats` (plays, vehicle hours, distance, active vehicles and impressions per campaign, day, market, daypart and format, with a `source` of `schedule`, `logged`, `modelled` or `calibrated`), `campaign_creative_daily_stats`, `campaign_reach_stats`, `wallet_transactions` (the append-only ledger; Pesapal writes `provider = 'pesapal'`) and `invoices`. The advertiser and ops dashboards already read them, so neither needs rebuilding when real writers arrive — see [DATA-LAYER.md](./DATA-LAYER.md).
+- `Payout` — points at the approved `DriverProfile` (`driver_profile_id`; the legacy CRM `driver_id` stays for old rows), amount, status `pending | processing | settled | failed | reversed`, Paystack transfer reference and fee. Ops writes it through payout runs and Paystack Transfers (Nov 2026).
+- **Tables telemetry and Paystack write to** (all shipped, empty on prod): `campaign_daily_stats` (plays, vehicle hours, distance, active vehicles and impressions per campaign, day, market, daypart and format, with a `source` of `schedule`, `logged`, `modelled` or `calibrated`), `campaign_creative_daily_stats`, `campaign_reach_stats`, `wallet_transactions` (the append-only ledger; Paystack writes `provider = 'paystack'`, and money returned to a payer is kind `cash_refund`) and `invoices`. The advertiser and ops dashboards already read them, so neither needs rebuilding when real writers arrive — see [DATA-LAYER.md](./DATA-LAYER.md).
 - `Driver.delivers` boolean — the delivery opt-in flag (ops-editable now, driver-editable later).
 
 **App:** `apps/driver-web` and `apps/driver-mobile` (Expo, EAS builds, OTA updates, push tokens — all documented in [MOBILE-BUILDS.md](./MOBILE-BUILDS.md)) exist with working sign-in against their own driver Clerk instance (email + Google). Profile-setup writes `DriverProfile` + `DriverDocument`; ops reviews via `/v1/driver-applications`. Still open: linking that profile to the CRM `Driver` record (the marketing table has no `clerk_user_id`).
 
-**API (shipped):** `GET/PATCH /v1/driver/profile`, document upload, notifications, announcements. **API (still open):** `GET /v1/driver/earnings`, `GET /v1/driver/routes`, `GET /v1/driver/payouts` — driver-scoped, blocked on telemetry.
+**API (shipped):** `GET/PATCH /v1/driver/profile`, document upload, notifications, announcements. **API (shipped, Nov 2026):** `GET /v1/driver/payouts` (the driver's own payouts and totals) and `GET /v1/driver/payout-banks`. **Still open:** `GET /v1/driver/earnings`, `GET /v1/driver/routes` — blocked on telemetry.
 
 ### Technology
 
@@ -95,7 +95,7 @@ Delivery riders are **not a fifth actor** — a delivery rider is a `Driver` wit
 | Mobile app | Expo + EAS + OTA pipeline, Sentry, `apps/driver-mobile` | Shared native design system (`packages/mobile-ui` is still empty) |
 | Auth | Driver Clerk instance, sign-in/session live on web + mobile ([AUTH.md](./AUTH.md)); `/v1/driver/profile|documents|notifications|announcements` verified | Join `DriverProfile` → CRM `Driver`; earnings/routes/payouts APIs (telemetry) |
 | Earnings data | — | Telemetry pipeline (§5) + aggregation cron |
-| Payouts | — | Disbursements: manual M-Pesa first; automate via Pesapal's payout product if it fits, else **Daraja B2C** |
+| Payouts | **Paystack Transfers** (built): ops types monthly amounts, presses Disburse; transfer-approval URL blocks anything not queued | Computed pay from telemetry; **Daraja B2C** only as a fallback if Paystack Transfers fall short |
 
 ---
 
@@ -137,11 +137,11 @@ The single biggest unbuilt system, and the honest source behind **two** screens 
 
 **Auth — three Clerk instances, one verifier per protected route.** *(Revised from the original two-instance plan — see [DEPLOYMENT.md § Clerk](./DEPLOYMENT.md#clerk) for why.)* The ops instance stays locked to `@admobihq.com`. Customer and driver each get their **own** Clerk application (not shared) — both email/Google, no SMS OTP. **Sign-in/session is built and live** on all six apps, and **customer/driver JWTs are verified** on the route trees that exist today — see [AUTH.md](./AUTH.md). What's still open: campaign/zone/wallet APIs under `/v1/customer/*`, earnings/payouts under `/v1/driver/*`, device keys for `/v1/telemetry/*`, and the `CustomerUser` / CRM-`Driver` joins. Ops tokens already gate `/v1/*` admin routes, with Clerk-org role (`admin`/`member`) plus a Prisma-backed `OpsRole` table for per-section permissions.
 
-**Payments — Pesapal for collections.** One aggregator covers advertiser payments end to end: Pesapal API 3.0's hosted checkout (redirect or iframe) takes M-Pesa, Airtel Money, and Visa/Mastercard in a single integration, with IPN callbacks confirming payment server-side — so no separate card-processor decision is needed. Implementation shape: `POST /v1/customer/payments` submits a Pesapal order and returns the redirect URL; an IPN handler route verifies the transaction status and credits the customer's wallet/invoice, writing an audit event like every other mutation. Corporate advertisers still get manual invoices (Resend email + bank transfer + ops marks paid) before any of that is automated. **Driver payouts are the one gap Pesapal may not cover** — it is collections-focused, so payouts start manual (ops sends M-Pesa, records the ref on the `Payout` row) and automate later via Pesapal's disbursement product if it fits, otherwise Safaricom Daraja B2C.
+**Payments — Paystack for collections and payouts** (decided 2026-11-07, built Nov 2026; see [the design](../superpowers/specs/2026-11-07-paystack-payments-design.md)). Advertisers pay at submission: the server funds the campaign from the available balance or opens Paystack hosted checkout (M-Pesa STK or card) for the difference, and a verified `charge.success` credits the balance, funds and submits the campaign in one transaction. Money is held as a ledger balance; unused credit is refunded to the original method on request, never cashed out (that would make Admobi a stored-value service under the National Payment System Act). Paystack runs in Manual Payouts mode, so the same balance funds driver payouts through Paystack Transfers. Fees are absorbed. Corporates can still prepay by bank transfer, which ops records. PayHero was rejected (unsigned callbacks, unclear funding, no sandbox); Safaricom Daraja B2C is the fallback for payouts only.
 
 **Pricing model** — decide before the booking flow: flat rate per zone per day is the recommendation (matches "one-day minimums" positioning, trivially explainable, computable without impressions data). CPM pricing needs telemetry-verified impressions and comes later. This is also the moment to simplify the public pricing page.
 
-**No new infrastructure categories.** Everything above lands on the existing stack: Neon Postgres + Prisma, Vercel serverless + Cron, Upstash Redis, Cloudinary, Resend, Clerk, Sentry, Infisical, Expo/EAS. The only genuinely new external integrations are the second Clerk instance and Pesapal (plus Daraja B2C only if needed for automated payouts).
+**No new infrastructure categories.** Everything above lands on the existing stack: Neon Postgres + Prisma, Vercel serverless + Cron, Upstash Redis, Cloudinary, Resend, Clerk, Sentry, Infisical, Expo/EAS. The only genuinely new external integrations are the second Clerk instance and Paystack (Daraja B2C only if Paystack Transfers fall short).
 
 ---
 
@@ -154,7 +154,7 @@ The single biggest unbuilt system, and the honest source behind **two** screens 
 | 3 | **Zone inventory + pricing** — `Zone` table from geo fixtures, flat-rate pricing, ops management UI | Booking | None |
 | 4 | **Booking flow** — request-and-approve (not instant checkout — matches how OOH is bought), creative upload, approval queue | Revenue | Cloudinary signed upload |
 | 5 | **Telemetry ingestion** — device pings, aggregation cron, live map + real spend numbers | Honest advertiser map, driver earnings | Device keys; possibly Android fallback app |
-| 6 | **Driver earnings** — earnings, routes, payouts on top of telemetry | Delivery dispatch | Payout automation (Pesapal disbursements or Daraja B2C) |
+| 6 | **Driver earnings** — earnings, routes, payouts on top of telemetry | Delivery dispatch | Computed driver pay (payout automation itself shipped on Paystack Transfers) |
 | 7 | **Deliveries** — B2B-first (SMEs, pharmacies, e-commerce last-mile), dispatch in ops, jobs tab in driver app, booking tab in customer app | — | Dispatch logic; proof-of-delivery |
 
 The throughline: **advertiser revenue first** because it's what Admobi is and what funds everything downstream; **telemetry is the fulcrum** that turns two placeholder screens (advertiser map, driver earnings) real at once; **deliveries waits** until there's a rider fleet already earning from screens to extend — monetizing an existing network rather than building one from a standing start against better-funded competitors.

@@ -302,3 +302,21 @@ Driver payouts are Admobi's costs, not advertiser money, so they never touch `wa
 - Does hosted checkout offer M-Pesa STK push in Kenya with `channels: ["mobile_money","card"]`? If not, M-Pesa uses `POST /charge` with `mobile_money: { phone, provider: "mpesa" }` from our own phone-number form.
 - The phone format Paystack accepts for `MPESA` transfer recipients (`07…`, `254…` or `+254…`).
 - Whether test-mode transfers fire `transfer.success` webhooks (the docs say test transfers always succeed).
+
+## Addendum 2026-11-08: what shipped differently
+
+Built on branch `feat/paystack-payments` (cut from `feat/dashboards-and-charts`). The Task 0 spike has **not** run, because no Paystack keys existed when the build started. The open questions in §13 are still open, and the defaults below were chosen in their place.
+
+- **Checkout:** hosted checkout with `channels: ["mobile_money","card"]`. There is no `POST /charge` path; add one only if the spike shows no M-Pesa STK on hosted checkout.
+- **M-Pesa recipient format:** one function, `toPaystackMpesaNumber` in `apps/api/lib/payments/paystack.ts`, normalises numbers to local `07…`/`01…`. It is marked `ponytail:` until the spike confirms the format.
+- **Transfer approval:** unsigned requests are accepted, but a signature that is present must be valid. The reference-and-amount match is the control.
+- **Atomic submit:** `funded_at` and `status = submitted` are written in the same transaction, both in `settlePayment` and in the submit route. The split is `markCampaignSubmitted` + `announceCampaignSubmitted` in `lib/campaigns/submit-campaign.ts`. This closes a "funded draft" window where credit could be used twice.
+- **`settlePayment` verifies before locking.** Concurrent callers serialise on the row lock afterwards, and interactive transactions use `maxWait 10 s` because the serverless pg pool has one connection.
+- **`abandoned` waits 30 minutes.** Paystack reports every unpaid checkout as `abandoned` from the start, so a payment is only marked abandoned once it is 30 minutes old. Until then it stays pending. Without this, the 20 s self-verify would tell payers their payment failed while they were still typing their PIN.
+- **Refund creation failures:** a definite Paystack rejection (400/401/403/404/422) fails the refund and writes a reversing adjustment. A network error, 5xx, 408 or 429 marks it `needs_attention` and keeps the debit.
+- **`cash_refund` in reports:** it counts as money out in both money in/out charts and has its own `cashRefundsKes` bucket in monthly statements.
+- **Net margin** subtracts both Paystack collection fees and settled transfer fees.
+- **Bank payouts:** profiles saved before the bank picker resolve their Paystack bank code by name at payout time. Approved drivers can't edit their profile to re-pick.
+- **customer-mobile Wallet** was entirely on-device sample data. It now reads `/finance/summary` and `/finance/transactions`, and the fake auto-reload was removed, since saved cards are a non-goal.
+- **Driver `/payouts`** redirects to Earnings, where real payouts now live.
+- **Not done:** demo `Payment` seed rows (no screen lists payments); manual end-to-end test-mode runs (they need keys).
