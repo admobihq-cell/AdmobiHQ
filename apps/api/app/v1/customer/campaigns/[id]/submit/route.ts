@@ -1,23 +1,17 @@
 import { NextResponse } from "next/server"
 
-import { auditFromCustomerUser } from "@/lib/audit"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
 import {
-  CREATIVES_INCLUDE,
   EDITABLE_STATUSES,
   getOwnedCampaign,
   missingCampaignCreatives,
   missingCampaignFields,
 } from "@/lib/campaigns/campaign-store"
-import { fanOutCustomerCampaignNotice } from "@/lib/advertiser/advertiser-notify"
-import { getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
-import { renderTemplate } from "@/lib/email/render-template"
-import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
-import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
-import { CampaignSubmitted } from "@/lib/email/templates/CampaignSubmitted"
+import { announceCampaignSubmitted, markCampaignSubmitted } from "@/lib/campaigns/submit-campaign"
+import { availableKes, dueNowKes } from "@/lib/payments/funding"
+import { fundFromBalance } from "@/lib/payments/settle-payment"
 import { prisma } from "@/lib/prisma"
-import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -43,67 +37,29 @@ export async function POST(_req: Request, { params }: Params) {
     return jsonError("Campaign is incomplete", 400, { missingFields, missingCreatives })
   }
 
-  const updated = await prisma.campaign.update({
-    where: { id },
-    data: {
-      status: "submitted",
-      submitted_at: new Date(),
-      // Clear the previous decision note: it described the version being
-      // replaced, and leaving it would show a stale rejection reason on a
-      // campaign that is now awaiting review.
-      review_reason: null,
-    },
-    include: CREATIVES_INCLUDE,
-  })
-
-  await auditFromCustomerUser(auth.access.userId, {
-    action: "update",
-    entity_type: "campaign",
-    entity_id: id,
-    summary: `Campaign #${id} "${updated.name}" submitted for review`,
-  })
-
-  // Notify the advertiser + ops (fire-and-forget, never blocks the response).
-  // The write above is already committed; a dead Expo token or a Resend
-  // hiccup must not turn a successful submission into a 500.
-  try {
-    const contactEmail = updated.contact_email ?? (await getCustomerEmail(auth.access.userId))
-    const name = updated.contact_name ?? (await getCustomerName(auth.access.userId)) ?? "there"
-
-    await fanOutCustomerCampaignNotice({
-      orgId: updated.org_id,
-      fallbackUserId: auth.access.userId,
-      type: "campaign_submitted",
-      title: "Campaign submitted",
-      body: `We're reviewing "${updated.name}" — this usually takes a day or two.`,
-      href: `/campaigns/${id}`,
-    })
-
-    if (contactEmail) {
-      const html = await renderTemplate(CampaignSubmitted, { name, campaignName: updated.name })
-      await sendEmail(contactEmail, "We got your Admobi campaign", html)
+  // Pay at submission (spec §5.1): an unfunded campaign is funded from the
+  // balance and submitted in one transaction, or refused with what's due.
+  // An already-funded one (a resubmit after changes) just submits.
+  let updated
+  if (campaign.funded_at) {
+    updated = await markCampaignSubmitted(prisma, id)
+  } else {
+    const funded = await prisma.$transaction(
+      async (tx) => {
+        if (!(await fundFromBalance(tx, campaign))) {
+          return { dueKes: dueNowKes(Number(campaign.budget_kes ?? 0), await availableKes(tx, auth.access.orgId)) }
+        }
+        return { campaign: await markCampaignSubmitted(tx, id) }
+      },
+      { maxWait: 10_000, timeout: 20_000 },
+    )
+    if (!funded.campaign) {
+      return NextResponse.json({ error: "Payment required", dueKes: funded.dueKes }, { status: 402 })
     }
-
-    const adminHtml = await renderTemplate(AdminAlert, {
-      type: "campaign-submission",
-      submitterName: name,
-      submitterEmail: contactEmail || "No email on file",
-      submitterPhone: updated.contact_phone || undefined,
-      submitterCity: updated.market || undefined,
-      additionalInfo: `Campaign #${id} — ${updated.format}, budget KES ${updated.budget_kes?.toString() ?? "—"}`,
-      reviewUrl: reviewUrl(`/campaigns/${id}`),
-    })
-    await sendAdminEmail(`Campaign ready for review: ${updated.name}`, adminHtml)
-
-    await notifyOpsStaffAlert({
-      type: "campaign_submission",
-      entityId: id,
-      submitterName: updated.name,
-      submitterCompany: name,
-    })
-  } catch (error) {
-    console.error("[customer/campaigns/submit] Failed to send notifications:", error)
+    updated = funded.campaign
   }
+
+  await announceCampaignSubmitted(updated, { userId: auth.access.userId })
 
   return NextResponse.json(toCampaignDto(updated))
 }
