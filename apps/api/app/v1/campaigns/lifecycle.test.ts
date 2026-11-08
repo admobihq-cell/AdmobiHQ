@@ -112,6 +112,18 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     otherOrg = await prisma.advertiserOrg.create({ data: { name: "Lifecycle Other Org" } })
     actingOrgId = customerOrg.id
     otherOrgId = otherOrg.id
+    // Submitting funds the campaign from the balance (pay at submission), so
+    // the org starts with enough credit for every submit in this suite.
+    await prisma.walletTransaction.create({
+      data: {
+        org_id: customerOrg.id,
+        kind: "top_up",
+        amount_kes: 1_000_000,
+        provider: "manual",
+        description: "Lifecycle test credit",
+        occurred_at: new Date(),
+      },
+    })
   }, 60_000)
 
   afterAll(async () => {
@@ -125,6 +137,7 @@ describe.skipIf(!databaseUrl)("campaign lifecycle", () => {
     await prisma.customerNotification.deleteMany({
       where: { clerk_user_id: { in: [CUSTOMER, OTHER_CUSTOMER] } },
     })
+    await prisma.walletTransaction.deleteMany({ where: { org_id: { in: [customerOrg.id, otherOrg.id] } } })
     await prisma.advertiserOrg.deleteMany({ where: { id: { in: [customerOrg.id, otherOrg.id] } } })
   })
 
