@@ -1,13 +1,6 @@
-import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
-import { PlaceholderScreen } from "@/components/settings/placeholder-screen"
+import { Redirect } from "expo-router"
 
-function PayoutsScreen() {
-  return (
-    <PlaceholderScreen
-      title="Payouts"
-      body="Pending and settled payouts will be tracked here once earnings are calculated from real telemetry. Until then, ops settles earnings manually."
-    />
-  )
+/** Payouts are real now and live on Earnings (last payout, pending, history). */
+export default function PayoutsScreen() {
+  return <Redirect href="/earnings" />
 }
-
-export default withProfileGate(PayoutsScreen)

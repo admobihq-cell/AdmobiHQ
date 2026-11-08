@@ -85,7 +85,7 @@ Collections (`apps/web/collections/`, Postgres schema `cms`): **BlogPosts**, **H
 
 **Notifications** is a permission-filtered "attention queue" that aggregates open review work (submitted driver applications, live support cases) and new public-form submissions client-side from existing ops-API endpoints, with a per-browser "triaged" flag. The header bell shares it, and it is not linked in the sidebar.
 
-Status: all real. Finances reads the wallet ledger, payouts and the integrations list (payout and transfer actions still open "coming soon" dialogs). The dashboards read the same tables the advertiser app does; with no data they show honest empty states, and the dev database is filled with clearly marked demo rows by `npm run seed:demo -w api` (never prod). List pages export selected rows as CSV, XLSX, or PDF.
+Status: all real. Finances reads the wallet ledger, payouts and the integrations list; Refund, New payout run / Disburse, the live Paystack balance and a needs-attention list are real. The dashboards read the same tables the advertiser app does; with no data they show honest empty states, and the dev database is filled with clearly marked demo rows by `npm run seed:demo -w api` (never prod). List pages export selected rows as CSV, XLSX, or PDF.
 
 Per the team's own docs, this app is **UI-only by design** for business CRUD; every entity action calls `apps/api`. The exceptions are server-rendered stats (read-only Prisma) and the admin-only integrations ledger (Prisma server actions).
 
@@ -104,7 +104,7 @@ Per the team's own docs, this app is **UI-only by design** for business CRUD; ev
 | `/settings/support`, `/settings/support/new`, `/settings/support/[id]` | **Real** — support case list + new + thread |
 | `/auth/login`, `/auth/login/advertiser`, `/auth/signup`, `/auth/signup/advertiser`, `/auth/sso-callback/advertiser` | Clerk auth flow (own instance), company name captured at sign-up |
 | `/deliveries`, `/deliveries/[id]` | **Feature-flag gated** — redirects to `/` unless the `deliveries` platform flag is on; booking and messaging are "coming soon" |
-| `/billing` (sidebar **Finance & Billing**; `/settings/billing` redirects here) | **Real** — overview, transactions, invoices and monthly statements from `/v1/customer/finance/*`, gated on `billing:read`. Top up is a notice: no payment provider yet (Pesapal planned), so funds are added by hand |
+| `/billing` (sidebar **Finance & Billing**; `/settings/billing` redirects here) | **Real** — overview, transactions, invoices and monthly statements from `/v1/customer/finance/*`, gated on `billing:read`. Top up and pay-at-submission go through Paystack (M-Pesa or card); Request refund opens a billing support case; `/billing/payment-return` confirms the payment |
 | `/reports`, `/reports/campaigns/[id]` | **Real** — overview, delivery, audience, spend and campaigns tabs, plus a per-campaign report with PDFs, from `/v1/customer/reports/*`, gated on `reports:read`. Impressions are estimates and say so; delivery numbers are empty until measurement ships |
 
 Totals: 26 real, 2 flag-gated. The overview (`/`) is rebuilt on the dashboard kit with spend, delivery and a needs-attention list, each block gated on `billing:read` or `reports:read`. `/notifications` is reachable but deliberately not a sidebar link; `/calendar` is in the sidebar. Org permission handling in the UI is described in [APP.md](../customer/APP.md).
@@ -123,7 +123,7 @@ Totals: 26 real, 2 flag-gated. The overview (`/`) is rebuilt on the dashboard ki
 | `/` (dashboard), `/earnings` | **Real** payouts from `GET /v1/driver/payouts` (last payout, paid this year, pending, monthly history). Route and activity tiles on the dashboard are still illustrative |
 | `/routes` | **Sample data** — fixture route history (needs telemetry) |
 | `/deliveries` | **Feature-flag gated** — sample jobs, "Accept" disabled |
-| `/payouts` | **Placeholder** — `ComingSoon`, "ops settles earnings manually" |
+| `/payouts` | Redirects to `/earnings` (real payouts) |
 
 Totals: 13 real, 1 flag-gated, 4 sample data or placeholder.
 
@@ -131,9 +131,9 @@ Totals: 13 real, 1 flag-gated, 4 sample data or placeholder.
 
 **`apps/ops-mobile`** — 48 screens. Full CRUD (list/detail/new/edit) for Leads, Fleet, Drivers, Waitlist, Media Kit on the shared `EntityList`/`EntityDetail`/`EntityFormRoute` pattern; Support; Team + Roles (+ new/detail); Driver Applications review; Announcements compose (image upload via `expo-image-picker`); **Campaigns** review; **Advertiser orgs** (+ detail); **SOS** (+ incident); Activity, Content, Map, Dashboard, Profile, Notifications; onboarding replay; a non-staff stub that catches customer accounts. Finances is **sample data**. See [MOBILE-OPS.md](../ops/MOBILE-OPS.md).
 
-**`apps/customer-mobile`** — 20 screens. Home (live data), Map, Campaigns (list/calendar toggle with pull-to-refresh, detail, full-screen wizard + creative upload), merged Notifications inbox with push deep links, Settings hub (account, team, roles, activity, notifications, support list/new/detail, web-app handoff), invitation acceptance, Clerk auth. Billing is **sample data**. See [APP-MOBILE.md](../customer/APP-MOBILE.md).
+**`apps/customer-mobile`** — 20 screens. Home (live data), Map, Campaigns (list/calendar toggle with pull-to-refresh, detail, full-screen wizard + creative upload), merged Notifications inbox with push deep links, Settings hub (account, team, roles, activity, notifications, support list/new/detail, web-app handoff), invitation acceptance, Clerk auth. Wallet is **real** (balance, transactions, Paystack top-up, pay at submission). See [APP-MOBILE.md](../customer/APP-MOBILE.md).
 
-**`apps/driver-mobile`** — 18 screens. A 4-step Profile Setup wizard (profile + ID upload → tax/payout details + document upload → review/submit), Settings, Support (list/new/detail), Notifications inbox, **SOS** (report + incident, with 120s foreground location re-ping via `expo-location`), Clerk auth. Home and Earnings show **real payouts**; Routes are **sample data**; Deliveries is **flag-gated** sample jobs; **Payouts** is a placeholder. See [DRIVER-APP.md](../driver/DRIVER-APP.md).
+**`apps/driver-mobile`** — 18 screens. A 4-step Profile Setup wizard (profile + ID upload → tax/payout details + document upload → review/submit), Settings, Support (list/new/detail), Notifications inbox, **SOS** (report + incident, with 120s foreground location re-ping via `expo-location`), Clerk auth. Home and Earnings show **real payouts**; Routes are **sample data**; Deliveries is **flag-gated** sample jobs; **Payouts** redirects to Earnings. See [DRIVER-APP.md](../driver/DRIVER-APP.md).
 
 ### Surface totals
 
@@ -255,9 +255,9 @@ A daily cron (`apps/api/vercel.json`, `0 3 * * *`) hits `/v1/push-receipts/check
 
 Shared via `packages/sentry-config` (`@sentry/nextjs` for web, api, ops, customer-web, driver-web; `@sentry/react-native` for all three Expo apps — the current native SDK, not the deprecated `sentry-expo`). Authorization failures log `[authz] 403 forbidden` from the guard wrappers.
 
-### Pesapal — chosen, not integrated
+### Paystack — integrated
 
-Pesapal API 3.0 is the planned collections provider: M-Pesa, Airtel Money, and cards through one hosted checkout with IPN confirmation. See [ROADMAP.md](./ROADMAP.md). Billing-detail fields already exist on `AdvertiserOrg` for it to consume, but **no Pesapal API calls exist in the code yet**.
+Paystack handles collections (hosted checkout, M-Pesa and cards), refunds to the original method and driver payouts (Transfers), all on one balance. One money-in function, `settlePayment` in `apps/api/lib/payments/settle-payment.ts`, is called by the signed webhook, the return-page poll and the nightly cron. See [API.md](../api/API.md) and [the design](../superpowers/specs/2026-11-07-paystack-payments-design.md).
 
 ### n8n — self-hosted automation (parked)
 
@@ -364,7 +364,7 @@ A third-party agency quoted a phased build of a comparable taxi-top/OOH advertis
 | Basic client login | ✅✅ Far exceeded — 3 independent Clerk instances plus multi-user advertiser organizations |
 | About page, portfolio/gallery | ❌ **Missing** — no `/about` or gallery/portfolio route in `apps/web/app/` |
 | Google Maps office location | ❌ **Missing** — MapLibre coverage/market maps exist, but no "here's our office" pin |
-| M-Pesa payment integration | ❌ **Missing** — Pesapal chosen and billing fields modeled on `AdvertiserOrg`, but no payment API call anywhere. "M-Pesa" otherwise appears only as a driver payout-method label and in sample wallet fixtures |
+| M-Pesa payment integration | ✅ **Built** — Paystack hosted checkout (M-Pesa STK or card) at submission and for top-ups; refunds and driver payouts through Paystack |
 
 ### Phase 2 — Online Booking System (quoted KES 150,000–300,000)
 
@@ -402,7 +402,7 @@ It is not the same tier of product, and the [reconstructive-cost valuation](./AU
 
 Three gaps remain, ranked:
 
-1. **No payment collection.** Booking now works end to end and stops exactly at payment, so Pesapal is the shortest path to revenue.
+1. ~~**No payment collection.**~~ Built on Paystack (Nov 2026): booking now runs through payment.
 2. **No vehicle telemetry.** SOS proves the location plumbing works, but there is no fleet tracking and no measured plays. Proof-of-play, driver earnings, routes, and payouts all wait on this.
 3. **A few Phase-1 marketing-site basics are missing outright:** the About page, a gallery/portfolio, and an office-location map. These are the cheapest items on either list to close.
 

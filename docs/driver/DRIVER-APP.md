@@ -23,7 +23,7 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 | **Dashboard** (home) | `/` | Payout stats are real (`GET /v1/driver/payouts`); routes and recent activity are illustrative |
 | **Earnings** | `/earnings` | **Real payouts**: last payout, paid this year (Nairobi year), pending (saved or being sent), and history by month with status. The old hours / route-bonus / per-day tiles were removed, not zeroed: nothing records them yet |
 | **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
-| **Payouts** | `/payouts` | Coming-soon (ops still settles manually) |
+| **Payouts** | `/payouts` | Redirects to Earnings, where payouts now live |
 | **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
 | **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
