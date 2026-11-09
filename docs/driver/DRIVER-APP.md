@@ -20,14 +20,16 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 
 | Tab | Route | Status |
 |-----|-------|--------|
-| **Dashboard** (home) | `/` | Payout stats are real (`GET /v1/driver/payouts`); routes and recent activity are illustrative |
-| **Earnings** | `/earnings` | **Real payouts**: last payout, paid this year (Nairobi year), pending (saved or being sent), and history by month with status. The old hours / route-bonus / per-day tiles were removed, not zeroed: nothing records them yet |
-| **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
-| **Payouts** | `/payouts` | Redirects to Earnings, where payouts now live |
+| **Dashboard** (home) | `/` | All real. Greeting, then the **payout hero**: the newest payout (`payoutFocus` in `@workspace/ops-contracts`) as a large amount plus a Saved → Sending → Paid route to the masked destination (`payoutDestinationLabel`, e.g. "M-Pesa ••• 4521"), with paid-this-year / on-its-way / last-paid underneath. A failed or reversed payout stops the route in red and offers "Check payout details" + "Ask support". Below it, **Updates**: the newest 4 notifications (same cache as the bell). No route or screen-hour figures |
+| **Earnings** | `/earnings` | **Real payouts**: the same payout hero, then history by month drawn as a vertical route with a text status badge per payout (failed/reversed in the destructive tone, amount struck through). Load failures show a Try again button. The old hours / route-bonus / per-day tiles were removed, not zeroed: nothing records them yet |
+| **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors; every earnings figure carries a "Sample" tag |
+| **Payouts** | `/payouts` | Redirects to Earnings, where payouts now live. Hidden from the nav |
 | **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
 | **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
 | **Auth** | `/auth/login`, `/auth/signup` | Clerk (email code + Google), always on |
+
+Below `md` the sidebar collapses to its sheet and a **bottom tab bar** (Home, Earnings, Routes, Support) takes over, matching the native app; the SOS FAB sits above it.
 
 Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/driver/*`. Ops reviews at `/driver-applications`. The CRM `Driver` marketing table is a different model and is **not** joined yet.
 
@@ -48,7 +50,7 @@ Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/
 | App name / slug / scheme | `Admobi Driver` / `admobihq-driver` / `admobihq-driver` |
 | EAS | `@admobimedia/admobihq-driver` (`projectId` in `app.json`) |
 
-Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk always mounts (publishable key required). Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
+Home and Earnings mirror driver-web: the same payout hero and route-style history (`components/payout-hero.tsx`), real announcements under **Updates**, pull-to-refresh on both. Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk always mounts (publishable key required). Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
 
 Support has three routes under `app/(tabs)/support/`: `index` (case list), `new` (raise a case), `[id]` (thread). Raising a case is its own screen — it used to sit inline above the list, which pushed "My requests" below the fold.
 

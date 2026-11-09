@@ -120,7 +120,7 @@ Totals: 26 real, 2 flag-gated. The overview (`/`) is rebuilt on the dashboard ki
 | `/settings`, `/settings/profile`, `/settings/account`, `/settings/preferences`, `/settings/tour` | **Real** — profile setup and document upload live here |
 | `/settings/support`, `/settings/support/[id]` | **Real** |
 | `/auth/login`, `/auth/signup`, `/auth/sso-callback` | Clerk auth flow (own instance) |
-| `/` (dashboard), `/earnings` | **Real** payouts from `GET /v1/driver/payouts` (last payout, paid this year, pending, monthly history). Route and activity tiles on the dashboard are still illustrative |
+| `/` (dashboard), `/earnings` | **Real** payouts from `GET /v1/driver/payouts` (payout hero with Saved → Sending → Paid route, paid this year, on its way, monthly history). Dashboard updates are real notifications; no illustrative tiles remain |
 | `/routes` | **Sample data** — fixture route history (needs telemetry) |
 | `/deliveries` | **Feature-flag gated** — sample jobs, "Accept" disabled |
 | `/payouts` | Redirects to `/earnings` (real payouts) |

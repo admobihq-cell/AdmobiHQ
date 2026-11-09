@@ -43,6 +43,17 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 - Optional **sticky mobile bar** with two actions (Start campaign / Fleet manager); no modal-first signup.
 - **Lead forms** (start campaign, partner fleet, drivers): pitch left, form right from `lg` (`formPageGrid` in `apps/web/components/forms/form-section.tsx`), never a lone `max-w-xl` column against an empty right half. Fields group into titled `FormSection`s that pair short fields two-across from `sm`. In DOM order the form follows the intro directly, so phones reach it without scrolling past supporting copy. On submit the form is replaced by `SubmissionSuccess` (`apps/web/components/forms/submission-success.tsx`): a headline plus a short route of what happens next (done node → pulsing next node → later steps, each with an optional "when" promise), not an icon-in-a-circle card. It takes focus on mount.
 
+## Driver surfaces (driver-web, driver-mobile)
+
+**Scene:** a driver on a phone, in a car, often in bright sun, checking between fares whether the money went through. Same palette, type and components as the rest of Admobi. What changes is the emphasis: one answer per screen, read at a glance.
+
+- **Money is the display type.** The newest payout leads home and Earnings as the largest text on the page (`text-5xl`/`6xl` on web, 46pt on mobile), tabular figures, tight tracking. Page headings stay smaller (`text-2xl`/`3xl`). No icon-tile stat cards, and no uppercase eyebrow labels over headings.
+- **The route is the motif.** Payout status is a three-stop route, Saved → Sending → Paid (`PayoutRoute` in `apps/driver-web/components/overview/payout-hero.tsx`, mirrored in `apps/driver-mobile/components/payout-hero.tsx`): done nodes filled terracotta with a check, the current node ringed with the shared `anim-pulse`, a failed/reversed stop filled destructive with an ×. Payout history is the same idea drawn vertically, one node per month. Reuse it for any multi-step driver status instead of a stepper or progress bar.
+- **Status is never colour alone:** every node and history row carries its status in words.
+- **Problems carry their next step:** a failed payout shows "Check payout details" and "Ask support" in the hero itself; load errors get a Try again button.
+- **Thumb first:** below `md` driver-web shows a bottom tab bar (Home, Earnings, Routes, Support) like the native app; tap targets are 44–48px; the SOS FAB sits above the tab bar and `<main>` pads to clear both.
+- **Samples are tagged in place:** an illustrative figure carries its own "Sample" tag, not just a footnote.
+
 ## Motion
 
 - Prefer opacity or transform on decorative elements only; **do not** animate width, height, margin, or top for layout.
