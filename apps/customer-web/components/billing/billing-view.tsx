@@ -194,7 +194,8 @@ export function BillingView() {
             Your funds, spending, invoices and statements.
           </p>
         </div>
-        {!orgLoading && canRead && canWrite ? (
+        {/* The overview carries Top up beside the funding answer; other tabs keep it here. */}
+        {!orgLoading && canRead && canWrite && activeTab !== "overview" ? (
           <Button className="self-start sm:self-auto" onClick={() => setTopUpOpen(true)}>
             <Plus aria-hidden />
             Top up
@@ -243,7 +244,6 @@ export function BillingView() {
               onRequestRefund={
                 canWrite && (summary.data.availableKes ?? 0) > 0 ? () => setRefundOpen(true) : undefined
               }
-              onNavigate={setTab}
             />
           )}
         </>

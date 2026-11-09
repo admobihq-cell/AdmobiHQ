@@ -16,18 +16,11 @@ import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { monthLabel } from "@/components/finances/overview-tab"
 import { PayoutRunDialog } from "@/components/finances/payout-run-dialog"
+import { payoutStatus } from "@/lib/queries/finance-constants"
 import { useOpsClient } from "@/lib/ops-client"
 import type { FinancePayoutsDto, PayoutRowDto } from "@/lib/queries/finance"
 
 const NO_PAYOUTS = "Driver payouts appear here once they are recorded."
-
-const STATUS: Record<string, { label: string; tone: "good" | "warning" | "serious" | "neutral" }> = {
-  settled: { label: "Settled", tone: "good" },
-  pending: { label: "Pending", tone: "warning" },
-  processing: { label: "Sending", tone: "neutral" },
-  failed: { label: "Failed", tone: "serious" },
-  reversed: { label: "Reversed", tone: "serious" },
-}
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -79,11 +72,14 @@ const COLUMNS: LedgerColumn<PayoutRowDto>[] = [
     key: "status",
     header: "Status",
     render: (p) => {
-      const s = STATUS[p.status] ?? { label: p.status, tone: "neutral" as const }
+      const s = payoutStatus(p.status)
       return (
-        <span title={p.failureReason ?? undefined}>
+        <div className="flex max-w-64 flex-col items-start gap-1">
           <StatusPill tone={s.tone}>{s.label}</StatusPill>
-        </span>
+          {p.failureReason && (p.status === "failed" || p.status === "reversed") ? (
+            <span className="text-xs text-destructive">{p.failureReason}</span>
+          ) : null}
+        </div>
       )
     },
   },
@@ -125,7 +121,7 @@ export function PayoutsTab({ data, canDisburse }: { data: FinancePayoutsDto; can
           <dl className="grid gap-1 text-sm">
             {(["pending", "failed"] as const).map((s) => (
               <div key={s} className="flex justify-between">
-                <dt className="text-muted-foreground">{STATUS[s]!.label}</dt>
+                <dt className="text-muted-foreground">{payoutStatus(s).label}</dt>
                 <dd className="tabular-nums">
                   {count(s)} · {formatKes(amount(s))}
                 </dd>

@@ -209,6 +209,7 @@ export async function disburse(
     }]
   })
 
+  let sent = queued.length
   for (let i = 0; i < queued.length; i += BULK_LIMIT) {
     if (i > 0) await timing.wait(BULK_SPACING_MS)
     const chunk = queued.slice(i, i + BULK_LIMIT)
@@ -222,15 +223,19 @@ export async function disburse(
       // A Paystack 4xx means the batch was refused outright; anything else is
       // unknown, so the rows stay processing and the cron verifies them.
       if (error instanceof PaystackError && error.status >= 400 && error.status < 500 && error.status !== 408 && error.status !== 429) {
+        const reason = `Paystack refused the transfer: ${error.message}`.slice(0, 500)
         await prisma.payout.updateMany({
           where: { reference: { in: chunk.map((q) => q.reference) }, status: "processing" },
-          data: { status: "failed", failure_reason: `Paystack refused the transfer: ${error.message}`.slice(0, 500) },
+          data: { status: "failed", failure_reason: reason },
         })
+        // Refused rows were never sent: report them as skipped, not queued.
+        sent -= chunk.length
+        for (const q of chunk) skipped.push({ id: q.id, reason })
       }
     }
   }
 
-  return { queued: queued.length, skipped }
+  return { queued: sent, skipped }
 }
 
 /**

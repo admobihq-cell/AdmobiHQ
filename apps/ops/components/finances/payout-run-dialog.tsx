@@ -24,6 +24,7 @@ import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { ReceiptPrinter, useReceiptPrinterStage } from "@workspace/ui/components/receipt-printer"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
+import { payoutStatus } from "@/lib/queries/finance-constants"
 
 const thisMonth = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" }).slice(0, 7)
 const errorText = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)
@@ -176,6 +177,10 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
               <p role="alert" className="text-sm text-destructive">
                 The Paystack balance doesn&rsquo;t cover the total plus fees. Top up the balance first.
               </p>
+            ) : confirming.balanceKes == null ? (
+              <p role="alert" className="text-sm text-destructive">
+                Couldn&rsquo;t read the Paystack balance, so sending is paused. Go back and press Disburse again.
+              </p>
             ) : null}
             <DialogFooter>
               <Button variant="outline" onClick={() => setConfirming(null)} disabled={pending}>
@@ -247,11 +252,12 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
                           </td>
                           <td className="py-2">
                             {p ? (
-                              <span title={p.failureReason ?? undefined}>
-                                <StatusPill tone={p.status === "settled" ? "good" : p.status === "failed" || p.status === "reversed" ? "serious" : "warning"}>
-                                  {p.status}
-                                </StatusPill>
-                              </span>
+                              <div className="flex max-w-56 flex-col items-start gap-1">
+                                <StatusPill tone={payoutStatus(p.status).tone}>{payoutStatus(p.status).label}</StatusPill>
+                                {p.failureReason && (p.status === "failed" || p.status === "reversed") ? (
+                                  <span className="text-xs text-destructive">{p.failureReason}</span>
+                                ) : null}
+                              </div>
                             ) : (
                               <span className="text-muted-foreground">Not saved</span>
                             )}
@@ -310,12 +316,17 @@ function PayoutReceipt({
   onDone: () => void
 }) {
   const n = sent?.rows.length ?? count
+  const notSent = sent?.skipped.length ?? 0
+  const title =
+    stage !== "complete" ? "Sending payouts" : n === 0 ? "Nothing was sent" : notSent ? "Some payouts weren’t sent" : "Payouts sent"
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{stage === "complete" ? "Payouts sent" : "Sending payouts"}</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          Paystack confirms each transfer by webhook; rows move to settled or failed as they land.
+          {stage === "complete" && n === 0
+            ? "No money left the Paystack balance. The reason is under each driver below."
+            : "Paystack confirms each transfer by webhook; rows move to settled or failed as they land."}
         </DialogDescription>
       </DialogHeader>
       <div className="flex justify-center py-2">
@@ -326,7 +337,13 @@ function PayoutReceipt({
             </ReceiptPrinter.Header>
             <ReceiptPrinter.Screen>
               <ReceiptPrinter.Status>
-                {stage === "processing" ? `Sending ${n} payout${n === 1 ? "" : "s"}` : stage === "complete" ? "Sent to Paystack" : undefined}
+                {stage === "processing"
+                  ? `Sending ${n} payout${n === 1 ? "" : "s"}`
+                  : stage === "complete"
+                    ? n === 0
+                      ? "Not sent"
+                      : "Sent to Paystack"
+                    : undefined}
               </ReceiptPrinter.Status>
               <p className="mt-4 font-mono text-2xl tabular-nums">{sent ? formatKes(sent.totalKes) : "KES —"}</p>
               <p className="mt-1 text-xs text-zinc-500">Driver payouts</p>
@@ -352,10 +369,15 @@ function PayoutReceipt({
               {sent?.skipped.length ? (
                 <>
                   <ReceiptPrinter.Rule />
-                  <p className="text-[11px] font-semibold">Skipped</p>
-                  <div className="mt-1 grid gap-1">
-                    {sent.skipped.map((s) => <ReceiptPrinter.Row key={s.name} label={s.name} value={s.reason} />)}
-                  </div>
+                  <p className="text-[11px] font-semibold">Not sent</p>
+                  <ul className="mt-1 grid gap-1.5">
+                    {sent.skipped.map((s) => (
+                      <li key={s.name} className="text-[11px]">
+                        <span className="font-medium">{s.name}</span>
+                        <span className="block text-zinc-500">{s.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </>
               ) : null}
             </ReceiptPrinter.Paper>
