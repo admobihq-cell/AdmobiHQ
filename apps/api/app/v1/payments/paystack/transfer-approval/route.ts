@@ -19,9 +19,9 @@ export async function POST(req: Request) {
   const signature = req.headers.get("x-paystack-signature")
   const secret = paystackSecretKey() ?? ""
 
-  let body: { reference?: unknown; amount?: unknown } = {}
+  let body: unknown = {}
   try {
-    body = JSON.parse(raw) as typeof body
+    body = JSON.parse(raw)
   } catch {
     // Unparseable: denied below.
   }
@@ -29,7 +29,8 @@ export async function POST(req: Request) {
   const signatureOk = signature == null || (secret !== "" && verifyWebhookSignature(raw, signature, secret))
   if (signatureOk && (await approveTransfer(body))) return new NextResponse(null, { status: 200 })
 
-  const reference = typeof body.reference === "string" ? body.reference : "no reference"
+  const first = (Array.isArray(body) ? body[0] : body) as { reference?: unknown } | null
+  const reference = typeof first?.reference === "string" ? first.reference : "no reference"
   after(() =>
     alertOpsFinance({
       title: `Blocked an unknown Paystack transfer (${reference})`,
