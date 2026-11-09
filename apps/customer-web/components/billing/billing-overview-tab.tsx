@@ -1,16 +1,12 @@
 "use client"
 
-import { Landmark, Lock, Receipt, Wallet } from "lucide-react"
 import { formatKes, type FinanceSummaryDto } from "@workspace/ops-contracts"
 
-import { Button } from "@workspace/ui/components/button"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { MirrorBars } from "@workspace/ui/components/charts/mirror-bars"
 import { ShareBar } from "@workspace/ui/components/charts/share-bar"
-import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
-import { AlertStrip } from "@workspace/ui/components/dashboard/notes"
-import { BillingPanels } from "@/components/billing/billing-panels"
+import { FundingStatement, ShortcutsCard, UpcomingChargesCard } from "@/components/billing/billing-panels"
 import type { RangeParams } from "@/lib/analytics-client"
 
 export const NO_LEDGER_MESSAGE = "Your transactions appear here after your first top-up."
@@ -23,12 +19,12 @@ export function monthLabel(month: string): string {
   return `${MONTHS[Number(m) - 1] ?? month} ${String(year).slice(2)}`
 }
 
+/** Funding first (covered until when, and the money actions), then what's coming, then where it went. */
 export function BillingOverviewTab({
   summary,
   range,
   onTopUp,
   onRequestRefund,
-  onNavigate,
 }: {
   summary: FinanceSummaryDto
   range: RangeParams
@@ -36,7 +32,6 @@ export function BillingOverviewTab({
   onTopUp?: () => void
   /** Absent without billing:write or with nothing available to refund. */
   onRequestRefund?: () => void
-  onNavigate: (tab: string) => void
 }) {
   const { hasLedgerRows } = summary
   const spendEmpty = hasLedgerRows ? "No spending in this period." : NO_LEDGER_MESSAGE
@@ -46,65 +41,23 @@ export function BillingOverviewTab({
 
   return (
     <div className="grid gap-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <KpiStrip
-          columns={2}
-          className="self-start"
-          items={[
-            {
-              label: "Balance",
-              value: formatKes(summary.balanceKes),
-              note: "All time, whatever range is selected",
-              icon: <Wallet />,
-            },
-            {
-              label: "Available",
-              value: summary.availableKes === null ? "—" : formatKes(summary.availableKes),
-              note: summary.availableKes === null ? "Appears after your first top-up" : "Balance minus committed",
-              icon: <Landmark />,
-            },
-            {
-              label: "Spent",
-              value: formatKes(summary.spentKes.current),
-              note: "In the selected period",
-              delta: { delta: summary.spentKes, good: "neutral" },
-              icon: <Receipt />,
-            },
-            {
-              label: "Committed",
-              value: formatKes(summary.committedKes),
-              note: "Left on live and scheduled budgets",
-              icon: <Lock />,
-            },
-          ]}
-        />
-        <div className="grid content-start gap-3">
-          <ChartCard
-            title="Where your money went"
-            description="Share of spend in the selected period"
-            isEmpty={spendTotal <= 0}
-            emptyMessage={spendEmpty}
-            table={{
-              columns: ["Category", "KES"],
-              rows: summary.spendByCategory.map((row) => [row.name, row.value]),
-            }}
-          >
-            <ShareBar data={summary.spendByCategory} valueFormatter={formatKes} />
-          </ChartCard>
-          {summary.funding.level === "short" ? (
-            <AlertStrip
-              title="Your funds are short"
-              body={`Your active budgets are ${formatKes(-(summary.availableKes ?? 0))} more than your balance.`}
-              action={
-                onTopUp ? (
-                  <Button size="sm" onClick={onTopUp}>
-                    Top up
-                  </Button>
-                ) : undefined
-              }
-            />
-          ) : null}
-        </div>
+      <FundingStatement summary={summary} onTopUp={onTopUp} onRequestRefund={onRequestRefund} />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <UpcomingChargesCard summary={summary} />
+        <ChartCard
+          title="Where your money went"
+          description="Share of spend in the selected period"
+          isEmpty={spendTotal <= 0}
+          emptyMessage={spendEmpty}
+          table={{
+            columns: ["Category", "KES"],
+            rows: summary.spendByCategory.map((row) => [row.name, row.value]),
+          }}
+        >
+          <ShareBar data={summary.spendByCategory} valueFormatter={formatKes} />
+        </ChartCard>
+        <ShortcutsCard range={range} hasLedgerRows={hasLedgerRows} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -136,14 +89,6 @@ export function BillingOverviewTab({
           />
         </ChartCard>
       </div>
-
-      <BillingPanels
-        summary={summary}
-        range={range}
-        onTopUp={onTopUp}
-        onRequestRefund={onRequestRefund}
-        onNavigate={onNavigate}
-      />
     </div>
   )
 }

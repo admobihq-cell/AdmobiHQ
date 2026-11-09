@@ -2,6 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { PaystackError } from "@/lib/payments/paystack"
 import { testDatabaseUrl } from "@/lib/test-database-url"
 
 let denied: string[] = []
@@ -204,6 +205,15 @@ describe.skipIf(!databaseUrl)("driver payouts", { timeout: 60_000 }, () => {
     const p = await payout({ status: "settled", reference: `adm-payout-${tag}-s` })
     expect((await disburse([p.id], "ops@x")).skipped[0]).toEqual({ id: p.id, reason: "Already settled" })
     expect(paystack.bulkTransfer).not.toHaveBeenCalled()
+  })
+
+  it("a batch Paystack refuses is reported as skipped with its reason, not queued", async () => {
+    const p = await payout()
+    paystack.bulkTransfer.mockRejectedValue(new PaystackError("You cannot initiate third party payouts as a starter business", 400, null))
+    const result = await disburse([p.id], "ops@x")
+    expect(result.queued).toBe(0)
+    expect(result.skipped).toEqual([{ id: p.id, reason: expect.stringContaining("starter business") }])
+    expect((await prisma.payout.findUniqueOrThrow({ where: { id: p.id } })).status).toBe("failed")
   })
 
   it("a changed payout number clears the recipient and notifies; an identical PATCH doesn't", async () => {

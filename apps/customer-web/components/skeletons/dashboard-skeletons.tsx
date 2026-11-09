@@ -32,17 +32,15 @@ export function PageHeadingSkeleton({ back = false }: { back?: boolean }) {
 export function BillingOverviewSkeleton() {
   return (
     <SkeletonShell label="Loading your finances">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <KpiStripSkeleton cells={4} columns={2} className="self-start" />
-        <ChartSkeleton variant="bars" />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartSkeleton />
-        <ChartSkeleton />
-      </div>
+      <KpiStripSkeleton cells={3} columns={3} />
       <div className="grid gap-4 lg:grid-cols-3">
-        <ListSkeleton className="lg:col-span-2" rows={3} />
         <ListSkeleton rows={3} />
+        <ChartSkeleton variant="bars" />
+        <ListSkeleton rows={1} />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ChartSkeleton />
+        <ChartSkeleton />
       </div>
     </SkeletonShell>
   )
