@@ -25,7 +25,7 @@ export function DriverRoutesView() {
       title="Your routes"
       description="Where you've driven this week, weighted by earnings."
       summary={ROUTE_SUMMARY.map((stat) => ({ ...stat }))}
-      note="Illustrative data — not yet live"
+      note="Sample figures. Real routes appear once your screen reports where it has been."
       loadingLabel="Loading your routes"
     >
       {ROUTE_HISTORY.map((route, index) => (
@@ -36,7 +36,10 @@ export function DriverRoutesView() {
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-baseline justify-between gap-2">
               <p className="truncate text-sm font-semibold">{route.name}</p>
-              <p className="shrink-0 text-sm font-semibold text-primary">
+              <p className="flex shrink-0 items-center gap-1.5 text-sm font-semibold tabular-nums text-muted-foreground">
+                <span className="rounded border border-dashed px-1 text-[10px] font-medium tracking-normal">
+                  Sample
+                </span>
                 {route.earnings}
               </p>
             </div>

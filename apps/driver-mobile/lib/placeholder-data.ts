@@ -34,28 +34,6 @@ export const ROUTE_HISTORY: RouteSummary[] = [
   },
 ]
 
-export type RecentActivityItem = {
-  id: string
-  title: string
-  detail: string
-  time: string
-}
-
-export const RECENT_ACTIVITY: RecentActivityItem[] = [
-  {
-    id: "1",
-    title: "Route completed — CBD Loop",
-    detail: "3.2 hrs screen-on",
-    time: "Today",
-  },
-  {
-    id: "3",
-    title: "Route completed — Westlands Run",
-    detail: "2.1 hrs screen-on",
-    time: "Yesterday",
-  },
-]
-
 export type DeliveryJob = {
   id: string
   pickup: string

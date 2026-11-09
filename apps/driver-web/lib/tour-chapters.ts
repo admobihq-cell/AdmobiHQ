@@ -17,16 +17,16 @@ export const driverTourChapters: TourChapter[] = [
   },
   {
     key: "dashboard",
-    title: "Your day at a glance",
+    title: "Your payout, front and centre",
     description:
-      "Dashboard is home base — today's earnings, active routes, and recent activity all in one place.",
+      "Home shows your latest payout and where it is on its way to you (Saved, Sending, Paid), plus news from Admobi.",
     selector: '[data-tour-id="tour-nav-dashboard"]',
   },
   {
     key: "earnings",
-    title: "Track what you've earned",
+    title: "Every payout, in one place",
     description:
-      "Every payout period, screen-on hour, and route bonus lands here as it's earned.",
+      "Earnings lists each monthly payout with its status, so you can confirm the money landed.",
     selector: '[data-tour-id="tour-nav-earnings"]',
   },
   {
@@ -35,13 +35,6 @@ export const driverTourChapters: TourChapter[] = [
     description:
       "See where you've driven and which routes paid off the most, so you can plan smarter next time.",
     selector: '[data-tour-id="tour-nav-routes"]',
-  },
-  {
-    key: "payouts",
-    title: "Get paid",
-    description:
-      "Pending and settled payouts are tracked here — check back after every cycle to confirm funds landed.",
-    selector: '[data-tour-id="tour-nav-payouts"]',
   },
   {
     key: "deliveries",

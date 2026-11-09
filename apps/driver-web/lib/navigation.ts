@@ -25,13 +25,13 @@ export const driverNavItems: DriverNavItem[] = [
     href: "/",
     label: "Dashboard",
     icon: LayoutDashboard,
-    description: "Your day at a glance — earnings, routes, and payouts in one place.",
+    description: "Your latest payout and what's new from Admobi.",
   },
   {
     href: "/earnings",
     label: "Earnings",
     icon: Wallet,
-    description: "Pay from active screen hours and route bonuses will appear here.",
+    description: "Every payout Admobi has sent you, and what's on its way.",
   },
   {
     href: "/routes",
@@ -42,8 +42,9 @@ export const driverNavItems: DriverNavItem[] = [
   {
     href: "/payouts",
     label: "Payouts",
-    icon: Package,
-    description: "Pending and settled payouts will be tracked here.",
+    icon: Wallet,
+    description: "Payouts live on Earnings now; this route redirects there.",
+    hidden: true,
   },
   {
     href: "/notifications",
