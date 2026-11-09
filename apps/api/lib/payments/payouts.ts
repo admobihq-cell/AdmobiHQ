@@ -233,14 +233,23 @@ export async function disburse(
   return { queued: queued.length, skipped }
 }
 
-/** Transfer-approval URL check (spec §8.4): one indexed lookup, no Paystack call. */
-export async function approveTransfer(body: { reference?: unknown; amount?: unknown }): Promise<boolean> {
-  if (typeof body.reference !== "string" || typeof body.amount !== "number") return false
-  const payout = await prisma.payout.findUnique({
-    where: { reference: body.reference },
-    select: { status: true, amount_kes: true },
-  })
-  return payout?.status === "processing" && toSubunit(Number(payout.amount_kes)) === body.amount
+/**
+ * Transfer-approval URL check (spec §8.4): indexed lookups, no Paystack call.
+ * A bulk transfer may arrive as an array of transfers; the batch is approved
+ * only if every item is a payout we queued, with its exact amount.
+ */
+export async function approveTransfer(body: unknown): Promise<boolean> {
+  const items = (Array.isArray(body) ? body : [body]) as { reference?: unknown; amount?: unknown }[]
+  if (!items.length) return false
+  for (const item of items) {
+    if (typeof item?.reference !== "string" || typeof item.amount !== "number") return false
+    const payout = await prisma.payout.findUnique({
+      where: { reference: item.reference },
+      select: { status: true, amount_kes: true },
+    })
+    if (payout?.status !== "processing" || toSubunit(Number(payout.amount_kes)) !== item.amount) return false
+  }
+  return true
 }
 
 async function notifyDriver(reference: string, stage: "settled" | "failed") {

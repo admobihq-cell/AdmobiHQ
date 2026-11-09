@@ -121,6 +121,11 @@ describe.skipIf(!databaseUrl)("driver payouts", { timeout: 60_000 }, () => {
     const pending = await payout({ status: "pending", reference: `adm-payout-${tag}-b` })
     expect(await approveTransfer({ reference: pending.reference, amount: 100000 })).toBe(false)
     expect(await approveTransfer({})).toBe(false)
+    // Bulk transfers may arrive as an array: approve only if every item is ours.
+    const p2 = await payout({ status: "processing", reference: `adm-payout-${tag}-c` })
+    expect(await approveTransfer([{ reference: p.reference, amount: 100000 }, { reference: p2.reference, amount: 100000 }])).toBe(true)
+    expect(await approveTransfer([{ reference: p.reference, amount: 100000 }, { reference: "adm-payout-unknown", amount: 100000 }])).toBe(false)
+    expect(await approveTransfer([])).toBe(false)
   })
 
   it("the approval route answers 400 for an unknown transfer and alerts ops", async () => {
