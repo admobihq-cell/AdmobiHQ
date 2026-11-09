@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from "next/cache"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 
+import { Clarity } from "@/components/analytics/clarity"
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 import { SiteFooter } from "@/components/landing/site-footer"
 import { SiteHeader } from "@/components/landing/site-header"
@@ -119,6 +120,8 @@ export default async function MarketingLayout({
       <body className="bg-background">
         <JsonLd data={websiteJsonLd} />
         <GoogleAnalytics />
+        {/* Server-side check: VERCEL_ENV isn't inlined into client bundles. */}
+        {process.env.VERCEL_ENV === "production" && <Clarity />}
         <ThemeProvider>
           <SiteHeader recentPosts={recentPosts} />
           <main>{children}</main>

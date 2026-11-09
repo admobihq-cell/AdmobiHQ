@@ -27,7 +27,7 @@ const sections = [
   },
   {
     heading: "Cookies",
-    body: "Our website uses error-tracking (Sentry) to help us find and fix bugs; on admobihq.com we also use Google Analytics to understand site traffic. Both are optional and only run if you accept them in the cookie banner — if you choose \"Essential only,\" neither loads. We also use Vercel Web Analytics, which does not use cookies or store any identifier about you, so it isn't affected by your choice. You can change your choice at any time by clearing your browser's site data and reloading the page.",
+    body: "Our website uses error-tracking (Sentry) to help us find and fix bugs; on admobihq.com we also use Google Analytics and Microsoft Clarity (which records anonymised page interactions such as clicks and scrolling) to understand site traffic. These are optional and only run if you accept them in the cookie banner — if you choose \"Essential only,\" none of them load. We also use Vercel Web Analytics, which does not use cookies or store any identifier about you, so it isn't affected by your choice. You can change your choice at any time by clearing your browser's site data and reloading the page.",
   },
   {
     heading: "Contact",
