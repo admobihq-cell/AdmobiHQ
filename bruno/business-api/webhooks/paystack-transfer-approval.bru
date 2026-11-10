@@ -19,11 +19,12 @@ body:json {
 }
 
 script:pre-request {
-  const crypto = require("crypto");
-  const raw = JSON.stringify(req.getBody());
+  const CryptoJS = require("crypto-js");
+  // Variables are filled in after this script runs, so sign the body as it will be sent.
+  const raw = bru.interpolate(JSON.stringify(req.getBody()));
   req.setBody(raw);
   const secret = bru.getEnvVar("paystack_secret") || "";
-  req.setHeader("x-paystack-signature", crypto.createHmac("sha512", secret).update(raw).digest("hex"));
+  req.setHeader("x-paystack-signature", CryptoJS.HmacSHA512(raw, secret).toString(CryptoJS.enc.Hex));
 }
 
 docs {

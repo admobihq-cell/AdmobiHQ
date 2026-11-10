@@ -18,24 +18,44 @@ If the dropdown is empty: close the collection and reopen `bruno/`, or click **�
 
 ## 2. Set secrets (once per machine)
 
-Environments declare five **secret** vars (values are stored by Bruno locally, not in git). Each app signs in against its own Clerk instance, so a token from one app is rejected by the others' routes:
+Environments declare these **secret** vars (values are stored by Bruno locally, not in git). Each app signs in against its own Clerk instance, so a token from one app is rejected by the others' routes:
 
 | Secret | Required for | How to get it |
 |--------|--------------|---------------|
-| `clerk_jwt` | All **Admin** (ops) requests | Sign in to ops (`localhost:3001` or staging), open DevTools → Network, copy the Clerk session JWT from an API call’s `Authorization: Bearer …` header. Must be an `@admobihq.com` user. |
+| `clerk_jwt` | All **Admin** (ops) requests | Sign in to ops (`localhost:3001` or staging) and copy a session token (see below). Must be an `@admobihq.com` user. |
 | `customer_jwt` | **Customer** requests, and Public → support list/get/reply | Same, from customer-web (`localhost:3002` / `app.staging.admobihq.com`). The org permissions of that user apply (`billing:read`, `reports:read`, `media:write`, …) |
 | `driver_jwt` | **Driver** requests | Same, from driver-web (`driver.staging.admobihq.com`) |
 | `cron_secret` | **Admin → Cron** and push-receipts check | Same value as `CRON_SECRET` in Infisical / `apps/api/.env.local` (`npm run env:pull -w api`) |
 | `paystack_secret` | **Paystack webhooks** (signs the body) | `PAYSTACK_SECRET_KEY` for that environment (test key locally and on staging) |
 
-Clerk session JWTs expire after about a minute; copy a fresh one when you get `401`.
+Quickest way to copy a token: sign in, open the browser console (F12) and run `copy(await window.Clerk.session.getToken())`. Clerk session JWTs expire after **60 seconds**, so a pasted one is good for one quick test. For anything longer, use auto tokens.
+
+### Auto tokens (local and staging)
+
+Set two secrets per app and the collection's pre-request script (`collection.bru`) mints a fresh token before each request, so you never paste a JWT:
+
+| App | Secret key secret | Session secret |
+|-----|-------------------|----------------|
+| ops | `ops_clerk_secret` = the API's `CLERK_SECRET_KEY` | `ops_session` |
+| customer | `customer_clerk_secret` = `CUSTOMER_CLERK_SECRET_KEY` | `customer_session` |
+| driver | `driver_clerk_secret` = `DRIVER_CLERK_SECRET_KEY` | `driver_session` |
+
+- The secret keys are the API's own, in Infisical / `apps/api/.env.local`, for that environment. Staging and local use the dev Clerk instances.
+- For the session, sign in to that app and paste either the `sess_…` id or a whole token (the script reads the session id out of it, so the token having expired doesn't matter).
+- One Clerk call per minute per app; the token is cached between requests.
+- When the session ends (you sign out, or after the session lifetime) the request fails with "Couldn't mint a … token": paste a new session.
+- An app with these unset uses the pasted `clerk_jwt` / `customer_jwt` / `driver_jwt` as before.
+
+These secrets exist only in **local** and **staging**: a Clerk secret key has full admin power over its instance, so production stays on pasted tokens.
 
 ### In Bruno UI
 
-1. Environments dropdown → **Configure** / pencil on **local**
+1. Environments dropdown → **Configure** / pencil on **local** (or **staging**)
 2. Open the **Secrets** tab (Bruno v4+) or find vars marked secret
-3. Paste values for `clerk_jwt` and `cron_secret`
+3. Paste the values you need
 4. Save
+
+The scripts work in both of Bruno's script modes (Safe and Developer).
 
 Public requests (health, marketing forms) need **no secrets**.
 

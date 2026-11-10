@@ -22,5 +22,51 @@ docs {
   - Cron: secret var cron_secret
   - Paystack webhooks: signed with paystack_secret
 
+  Auto tokens: set <app>_clerk_secret and <app>_session (app = ops, customer, driver) and the
+  pre-request script below mints a fresh session token for that app, so you never paste a
+  60-second JWT. Unset, the request uses the pasted clerk_jwt / customer_jwt / driver_jwt.
+
   Sources of truth: docs/api/API.md, packages/ops-contracts, apps/api/app/v1/
+}
+
+script:pre-request {
+  // Swap a 60-second Clerk JWT for a freshly minted one, per app, when that app is configured.
+  const SLOTS = { clerk_jwt: "ops", customer_jwt: "customer", driver_jwt: "driver" };
+  const auth = String(req.getHeader("Authorization") || req.getHeader("authorization") || "");
+  const slot = Object.keys(SLOTS).find((name) => auth.includes(`{{${name}}}`));
+  const app = slot && SLOTS[slot];
+  const secretKey = app && (bru.getEnvVar(`${app}_clerk_secret`) || "").trim();
+  let session = app && (bru.getEnvVar(`${app}_session`) || "").trim();
+
+  const claims = (jwt) => {
+    const part = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(part + "=".repeat((4 - (part.length % 4)) % 4)));
+  };
+
+  if (secretKey && session) {
+    // Accept a pasted token as well as a bare sess_ id: the sid inside it is what lasts.
+    if (session.startsWith("eyJ")) session = claims(session).sid;
+
+    const cacheKey = `__${app}_token`;
+    const now = Math.floor(Date.now() / 1000);
+    let cached = null;
+    try { cached = JSON.parse(bru.getVar(cacheKey) || "null"); } catch (e) {}
+    let jwt = cached && cached.session === session && cached.exp - 10 > now ? cached.jwt : null;
+
+    if (!jwt) {
+      const axios = require("axios");
+      try {
+        const res = await axios.post(`https://api.clerk.com/v1/sessions/${session}/tokens`, {}, {
+          headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+        });
+        jwt = res.data.jwt;
+      } catch (err) {
+        const status = err.response ? err.response.status : "network error";
+        const detail = err.response ? JSON.stringify(err.response.data) : err.message;
+        throw new Error(`Couldn't mint a ${app} token (${status}). Sign in again and paste a new ${app}_session. ${detail}`);
+      }
+      bru.setVar(cacheKey, JSON.stringify({ jwt, session, exp: claims(jwt).exp }));
+    }
+    req.setHeader("Authorization", `Bearer ${jwt}`);
+  }
 }
