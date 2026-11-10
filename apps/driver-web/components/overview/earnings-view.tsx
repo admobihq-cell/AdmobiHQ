@@ -1,106 +1,207 @@
 "use client"
 
+import { useMemo, useState } from "react"
+import Link from "next/link"
+import { Download } from "lucide-react"
+import { exportFileName, formatCompact, payoutFocus, toCsv, type DriverPayoutDto } from "@workspace/ops-contracts"
+
 import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
-import { cn } from "@workspace/ui/lib/utils"
+import { ChartCard } from "@workspace/ui/components/charts/chart-card"
+import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
+import { KpiStrip, type KpiItem } from "@workspace/ui/components/dashboard/kpi-strip"
+import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
+import { AlertStrip } from "@workspace/ui/components/dashboard/notes"
+import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
+import { KpiStripSkeleton, LedgerSkeleton } from "@workspace/ui/components/dashboard/dashboard-skeletons"
 
-import { PayoutHero } from "@/components/overview/payout-hero"
-import {
-  formatKes,
-  formatPayoutDate,
-  monthName,
-  PAYOUT_STATUS_LABEL,
-  useDriverPayouts,
-} from "@/lib/use-driver-payouts"
+import { LatestPayoutCard, PAYOUT_DETAILS_HREF, PAYOUT_TONE, SUPPORT_HREF } from "@/components/overview/latest-payout-card"
+import { formatKes, formatPayoutDate, monthName, PAYOUT_STATUS_LABEL, useDriverPayouts } from "@/lib/use-driver-payouts"
 
-const TONE: Record<string, { node: string; badge: string }> = {
-  settled: { node: "bg-primary border-primary", badge: "bg-primary/10 text-primary" },
-  pending: { node: "bg-background border-primary", badge: "bg-muted text-foreground" },
-  processing: { node: "bg-background border-primary", badge: "bg-muted text-foreground" },
-  failed: { node: "bg-destructive border-destructive", badge: "bg-destructive/10 text-destructive" },
-  reversed: { node: "bg-destructive border-destructive", badge: "bg-destructive/10 text-destructive" },
+const FILTERS = [
+  { value: "all", label: "All" },
+  { value: "paid", label: "Paid" },
+  { value: "on_way", label: "On its way" },
+  { value: "problem", label: "Problems" },
+]
+const GROUP: Record<string, string> = { settled: "paid", pending: "on_way", processing: "on_way" }
+const groupOf = (p: DriverPayoutDto) => GROUP[p.status] ?? "problem"
+const isProblem = (p: DriverPayoutDto) => groupOf(p) === "problem"
+
+/** Last twelve months that have a payout, oldest first, split by where the money is. */
+function byMonth(items: DriverPayoutDto[]) {
+  const months = new Map<string, { period: string; paid: number; onWay: number }>()
+  for (const p of items) {
+    const row = months.get(p.periodMonth) ?? { period: p.periodMonth, paid: 0, onWay: 0 }
+    if (p.status === "settled") row.paid += p.amountKes
+    else if (!isProblem(p)) row.onWay += p.amountKes
+    months.set(p.periodMonth, row)
+  }
+  return [...months.values()]
+    .sort((a, b) => a.period.localeCompare(b.period))
+    .slice(-12)
+    .map((m) => ({ ...m, label: monthName(m.period) }))
 }
-const UNKNOWN_TONE = { node: "bg-background border-border", badge: "bg-muted text-muted-foreground" }
 
-/**
- * Real payouts only. Screen-on hours, distance and per-day earnings are not
- * shown: nothing records them yet, and an invented number is worse than none.
- */
+const columns = (destination: string | null): LedgerColumn<DriverPayoutDto>[] => [
+  { key: "month", header: "Month", render: (p) => <span className="font-medium">{monthName(p.periodMonth)}</span> },
+  {
+    key: "status",
+    header: "Status",
+    render: (p) => <StatusPill tone={PAYOUT_TONE[p.status] ?? "serious"}>{PAYOUT_STATUS_LABEL[p.status] ?? p.status}</StatusPill>,
+  },
+  { key: "paid", header: "Paid on", render: (p) => (p.paidAt ? formatPayoutDate(p.paidAt) : "—") },
+  { key: "to", header: "To", className: "hidden md:table-cell", render: () => destination ?? "—" },
+  {
+    key: "amount",
+    header: "Amount",
+    align: "right",
+    render: (p) => (
+      <span className={isProblem(p) ? "text-muted-foreground line-through" : "font-medium"}>{formatKes(p.amountKes)}</span>
+    ),
+  },
+]
+
+/** Real payouts only. Screen-on hours and distance live on the dashboard as samples. */
 export function EarningsView({ payoutDestination }: { payoutDestination: string | null }) {
   const { data, isError, isFetching, refetch } = useDriverPayouts()
+  const [filter, setFilter] = useState("all")
+  const items = useMemo(() => data?.items ?? [], [data])
+  const rows = useMemo(() => items.filter((p) => filter === "all" || groupOf(p) === filter), [items, filter])
+  const months = useMemo(() => byMonth(items), [items])
+  const focus = data ? payoutFocus(data) : null
+  const year = new Date().getFullYear()
+
+  function download() {
+    const csv = toCsv(
+      rows.map((p) => ({
+        month: p.periodMonth,
+        status: PAYOUT_STATUS_LABEL[p.status] ?? p.status,
+        paid_on: p.paidAt?.slice(0, 10) ?? "",
+        amount_kes: p.amountKes,
+      })),
+      ["month", "status", "paid_on", "amount_kes"],
+    )
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }))
+    const a = document.createElement("a")
+    a.href = url
+    a.download = exportFileName("payouts", null, "csv")
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const kpis: KpiItem[] = data
+    ? [
+        { label: `Paid in ${year}`, value: formatKes(data.summary.paidThisYearKes), note: "Settled to you this calendar year" },
+        { label: "On its way", value: formatKes(data.summary.pendingKes), note: "Saved or sending, not yet landed" },
+        {
+          label: "Last payout",
+          value: data.summary.lastPayout ? formatKes(data.summary.lastPayout.amountKes) : "—",
+          note: data.summary.lastPayout ? `Paid ${formatPayoutDate(data.summary.lastPayout.paidAt)}` : "Nothing paid yet",
+        },
+        {
+          label: "Paid to",
+          value: <span className="text-lg">{payoutDestination ?? "Not set"}</span>,
+          note: (
+            <Link href={PAYOUT_DETAILS_HREF} className="text-primary underline-offset-4 hover:underline">
+              {payoutDestination ? "Change payout details" : "Add payout details"}
+            </Link>
+          ),
+        },
+      ]
+    : []
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10">
-      <div className="space-y-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Earnings</h1>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          What Admobi has paid you and what&apos;s on its way.
-        </p>
+    <div className="flex flex-1 flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-semibold tracking-tight">Earnings</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Every monthly payout Admobi has saved for you, where it is, and where it went.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="h-10">
+          <Link href={SUPPORT_HREF}>Question about a payout?</Link>
+        </Button>
       </div>
 
-      <PayoutHero destination={payoutDestination} />
-
-      <section aria-labelledby="history-heading" className="space-y-4">
-        <h2 id="history-heading" className="text-lg font-semibold tracking-tight">
-          Payout history
-        </h2>
-
-        {isError && !data ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4" aria-live="polite">
-            <p className="text-sm text-muted-foreground">Your history didn&apos;t load.</p>
-            <Button variant="outline" className="h-10" loading={isFetching} onClick={() => void refetch()}>
+      {isError && !data ? (
+        <AlertStrip
+          title="Your payouts didn't load"
+          body="Your money is safe. This is a connection problem on our side or yours."
+          action={
+            <Button size="sm" variant="outline" loading={isFetching} loadingText="Trying again…" onClick={() => void refetch()}>
               Try again
             </Button>
-          </div>
-        ) : !data ? (
-          <div className="space-y-5 pl-8" aria-busy="true" aria-label="Loading payout history">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
-          </div>
-        ) : data.items.length === 0 ? (
-          <p className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
-            Nothing here yet. Each monthly payout is added the moment Admobi saves it.
-          </p>
-        ) : (
-          <ol className="relative">
-            {data.items.map((p, index) => {
-              const tone = TONE[p.status] ?? UNKNOWN_TONE
-              const isLast = index === data.items.length - 1
-              return (
-                <li
-                  key={p.id}
-                  className="animate-in fade-in fill-mode-both motion-reduce:animate-none relative grid grid-cols-[1.25rem_1fr_auto] gap-x-4 pb-6 duration-300 last:pb-0"
-                  style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
-                >
-                  {/* The route: a node per payout, joined by a line to the one before. */}
-                  <span aria-hidden className="relative flex justify-center">
-                    <span className={cn("relative z-10 mt-1 size-3 rounded-full border-2", tone.node)} />
-                    {isLast ? null : <span className="absolute top-4 -bottom-6 w-0.5 bg-border" />}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{monthName(p.periodMonth)}</p>
-                    <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className={cn("rounded-full px-2 py-0.5 font-medium", tone.badge)}>
-                        {PAYOUT_STATUS_LABEL[p.status] ?? p.status}
-                      </span>
-                      {p.paidAt ? formatPayoutDate(p.paidAt) : null}
-                    </p>
-                  </div>
-                  <p
-                    className={cn(
-                      "text-base font-semibold tabular-nums",
-                      (p.status === "failed" || p.status === "reversed") && "text-muted-foreground line-through",
-                    )}
-                  >
-                    {formatKes(p.amountKes)}
-                  </p>
-                </li>
-              )
-            })}
-          </ol>
-        )}
-      </section>
+          }
+        />
+      ) : focus?.kind === "problem" ? (
+        <AlertStrip
+          className="border-destructive/30 bg-destructive/5"
+          title={`Your ${monthName(focus.payout.periodMonth)} payout ${focus.payout.status === "reversed" ? "was reversed" : "didn't go through"}`}
+          body="Check your M-Pesa number or bank account, then we'll resend. Support can tell you exactly what happened."
+          action={
+            <Button asChild size="sm">
+              <Link href={PAYOUT_DETAILS_HREF}>Check payout details</Link>
+            </Button>
+          }
+        />
+      ) : null}
+
+      {data ? <KpiStrip items={kpis} columns={4} /> : isError ? null : <KpiStripSkeleton cells={4} columns={4} />}
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ChartCard
+          className="lg:col-span-2"
+          title="Payouts by month"
+          description="Paid and on its way, for the last twelve months with a payout"
+          isEmpty={months.length === 0}
+          emptyMessage={data ? "Your monthly payouts chart here once the first is saved." : "Loading your payouts…"}
+          table={{ columns: ["Month", "Paid (KES)", "On its way (KES)"], rows: months.map((m) => [m.label, m.paid, m.onWay]) }}
+        >
+          <TrendChart
+            xKey="label"
+            stacked
+            data={months}
+            series={[
+              { key: "paid", label: "Paid" },
+              { key: "onWay", label: "On its way" },
+            ]}
+            valueFormatter={formatCompact}
+          />
+        </ChartCard>
+        <LatestPayoutCard destination={payoutDestination} />
+      </div>
+
+      {data ? (
+        <LedgerCard
+          title="Payout history"
+          description="Newest month first. Amounts struck through didn't reach you."
+          filterTabs={{
+            tabs: FILTERS.map((f) => ({
+              ...f,
+              count: f.value === "all" ? items.length : items.filter((p) => groupOf(p) === f.value).length,
+            })),
+            value: filter,
+            onChange: setFilter,
+          }}
+          toolbar={
+            <Button variant="outline" size="sm" className="gap-2" onClick={download} disabled={rows.length === 0}>
+              <Download className="size-4" aria-hidden />
+              CSV
+            </Button>
+          }
+          columns={columns(payoutDestination)}
+          rows={rows}
+          rowKey={(p) => String(p.id)}
+          empty={
+            items.length === 0
+              ? "Nothing here yet. Each monthly payout is added the moment Admobi saves it."
+              : "No payouts match this filter."
+          }
+        />
+      ) : isError ? null : (
+        <LedgerSkeleton rows={4} columns={5} filters />
+      )}
     </div>
   )
 }

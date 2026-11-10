@@ -17,16 +17,16 @@ export const driverTourChapters: TourChapter[] = [
   },
   {
     key: "dashboard",
-    title: "Your payout, front and centre",
+    title: "Your shift at a glance",
     description:
-      "Home shows your latest payout and where it is on its way to you (Saved, Sending, Paid), plus news from Admobi.",
+      "Screen time, distance, busiest areas and times, your latest payout and news from Admobi, all on one page.",
     selector: '[data-tour-id="tour-nav-dashboard"]',
   },
   {
     key: "earnings",
     title: "Every payout, in one place",
     description:
-      "Earnings lists each monthly payout with its status, so you can confirm the money landed.",
+      "Totals for the year, payouts by month, and every payout with its status. Download it as CSV any time.",
     selector: '[data-tour-id="tour-nav-earnings"]',
   },
   {
