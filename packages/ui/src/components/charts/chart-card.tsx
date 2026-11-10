@@ -39,12 +39,16 @@ export function ChartCard({
   isEmpty,
   emptyMessage,
   table,
+  takeaway,
   className,
   children,
 }: {
   title: React.ReactNode
   description?: React.ReactNode
   action?: React.ReactNode
+  /** The one-sentence answer the chart gives, in plain words ("Most plays ran on Fridays").
+   * Shown above the chart so nobody has to decode the plot to get the point. */
+  takeaway?: React.ReactNode
   isEmpty: boolean
   emptyMessage: React.ReactNode
   table?: ChartTableData
@@ -88,6 +92,7 @@ export function ChartCard({
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {takeaway && !isEmpty ? <p className="text-sm font-medium text-pretty">{takeaway}</p> : null}
         {isEmpty ? (
           <p className="flex min-h-40 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
             {emptyMessage}

@@ -32,6 +32,7 @@ import { ProgressCard } from "@workspace/ui/components/dashboard/progress-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { CampaignReportBodySkeleton, MapCardSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { DeliveryPacingCard } from "@/components/reports/delivery-pacing-card"
+import { topCell } from "@/components/reports/takeaways"
 import { CREATIVE_COLUMNS, LOG_COLUMNS } from "@/components/reports/delivery-tab"
 import { HowWeEstimateSheet } from "@/components/reports/how-we-estimate-sheet"
 import { MeasurementBadge } from "@/components/reports/measurement-badge"
@@ -219,7 +220,11 @@ export function CampaignReportView({ id }: { id: number }) {
 
           <ChartCard
             title="Market × time of day"
-            description="Est. impressions. Darker is more"
+            description="Estimated impressions by area and time of day. Darker means more"
+            takeaway={(() => {
+              const top = topCell(heatCells)
+              return top ? `This campaign was seen most in ${top.row} in the ${top.column.toLowerCase()}.` : undefined
+            })()}
             isEmpty={!hasEstimate}
             emptyMessage={report.hasDeliveryRows ? "Audience estimates appear here once this campaign has modelled data." : NO_DELIVERY_MESSAGE}
             table={{ columns: ["Market", "Time of day", "Est. impressions"], rows: report.marketByDaypart.map((x) => [x.x, x.y, x.value]) }}

@@ -7,6 +7,7 @@ import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { MirrorBars } from "@workspace/ui/components/charts/mirror-bars"
 import { ShareBar } from "@workspace/ui/components/charts/share-bar"
 import { FundingStatement, ShortcutsCard, UpcomingChargesCard } from "@/components/billing/billing-panels"
+import { leader, pct } from "@/components/reports/takeaways"
 import type { RangeParams } from "@/lib/analytics-client"
 
 export const NO_LEDGER_MESSAGE = "Your transactions appear here after your first top-up."
@@ -48,6 +49,10 @@ export function BillingOverviewTab({
         <ChartCard
           title="Where your money went"
           description="Share of spend in the selected period"
+          takeaway={(() => {
+            const top = leader(summary.spendByCategory)
+            return top ? `${pct(top.share)} of your spend went on ${top.name.toLowerCase()}.` : undefined
+          })()}
           isEmpty={spendTotal <= 0}
           emptyMessage={spendEmpty}
           table={{
@@ -64,6 +69,12 @@ export function BillingOverviewTab({
         <ChartCard
           title="Money in vs out"
           description="Top-ups against spend and refunds to you, by month"
+          takeaway={(() => {
+            const paidIn = flow.reduce((s, r) => s + r.in, 0)
+            const paidOut = flow.reduce((s, r) => s + r.out, 0)
+            if (paidIn <= 0 && paidOut <= 0) return undefined
+            return `Over these months you put in ${formatKes(paidIn)} and used ${formatKes(paidOut)}.`
+          })()}
           isEmpty={flow.length === 0}
           emptyMessage={spendEmpty}
           table={{ columns: ["Month", "Money in (KES)", "Money out (KES)"], rows: flow.map((r) => [r.period, r.in, r.out]) }}
@@ -78,6 +89,10 @@ export function BillingOverviewTab({
         <ChartCard
           title="Spend by campaign"
           description="Share of spend in the selected period"
+          takeaway={(() => {
+            const top = leader(summary.spendByCampaign)
+            return top ? `${top.name} took ${pct(top.share)} of your spend.` : undefined
+          })()}
           isEmpty={campaignTotal <= 0}
           emptyMessage={spendEmpty}
           table={{ columns: ["Campaign", "KES"], rows: summary.spendByCampaign.map((r) => [r.name, r.value]) }}

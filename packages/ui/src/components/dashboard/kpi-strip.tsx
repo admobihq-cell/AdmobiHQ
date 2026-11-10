@@ -54,7 +54,12 @@ export function KpiStrip({
               <p className="text-2xl leading-tight font-semibold tabular-nums">
                 {item.value}
               </p>
-              {item.delta ? <DeltaPill {...item.delta} /> : null}
+              {item.delta ? (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <DeltaPill {...item.delta} />
+                  {item.delta.delta.change === null ? null : "vs last period"}
+                </span>
+              ) : null}
             </div>
             {item.note ? (
               <p className="mt-0.5 text-xs text-muted-foreground">{item.note}</p>

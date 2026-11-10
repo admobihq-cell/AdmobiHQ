@@ -6,6 +6,7 @@ import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { PacingBars } from "@workspace/ui/components/charts/pacing-bars"
 import { MetricTile } from "@workspace/ui/components/dashboard/metric-tile"
 import { NO_DELIVERY_MESSAGE, pacingBars, percentOrDash } from "@/components/reports/format"
+import { pct } from "@/components/reports/takeaways"
 
 /** How much of the schedule ran, as percent of schedule, with a 100% target line. */
 export function DeliveryPacingCard({ pacing, hasRows }: { pacing: ReportOverviewDto["pacing"]; hasRows: boolean }) {
@@ -14,6 +15,11 @@ export function DeliveryPacingCard({ pacing, hasRows }: { pacing: ReportOverview
     <ChartCard
       title="Delivery pacing"
       description="Percent of scheduled plays delivered, in the selected period"
+      takeaway={
+        pacing.rate === null
+          ? undefined
+          : `${pct(pacing.rate)} of scheduled plays have run${pacing.remaining > 0 ? `; ${pacing.remaining.toLocaleString("en-KE")} are still to play` : ""}.`
+      }
       isEmpty={!hasRows}
       emptyMessage={NO_DELIVERY_MESSAGE}
       table={{

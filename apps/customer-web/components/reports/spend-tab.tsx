@@ -14,6 +14,7 @@ import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { NO_DELIVERY_MESSAGE, percentOrDash } from "@/components/reports/format"
+import { average, leader, low, pct, shortDay } from "@/components/reports/takeaways"
 
 type Burn = ReportSpendDto["burn"][number]
 
@@ -80,6 +81,13 @@ export function SpendTab({ report }: { report: ReportSpendDto }) {
       <ChartCard
         title="Cost per 1,000"
         description="Spend, tax left out, per 1,000 est. impressions each day"
+        takeaway={(() => {
+          const avg = average(trend, "cost")
+          const cheapest = low(trend, "cost")
+          return avg === undefined || !cheapest
+            ? undefined
+            : `On average you paid ${formatKes(Math.round(avg))} to be seen 1,000 times. Cheapest day: ${shortDay(cheapest.day)} (${formatKes(Math.round(cheapest.value))}).`
+        })()}
         isEmpty={!hasTrend}
         emptyMessage={report.hasDeliveryRows ? "Cost per 1,000 needs spend and an audience estimate." : NO_DELIVERY_MESSAGE}
         table={{ columns: ["Day", "KES per 1,000"], rows: trend.map((p) => [p.day, typeof p.cost === "number" ? Math.round(p.cost) : null]) }}
@@ -91,6 +99,10 @@ export function SpendTab({ report }: { report: ReportSpendDto }) {
         <ChartCard
           title="By campaign"
           description="Share of spend"
+          takeaway={(() => {
+            const top = leader(report.byCampaign ?? [])
+            return top ? `${top.name} took ${pct(top.share)} of your spend.` : undefined
+          })()}
           isEmpty={!report.byCampaign?.length}
           emptyMessage={filtered ? "Clear the filters to see spend." : NO_SPEND_MESSAGE}
           table={{ columns: ["Campaign", "KES"], rows: (report.byCampaign ?? []).map((r) => [r.name, r.value]) }}
@@ -100,6 +112,10 @@ export function SpendTab({ report }: { report: ReportSpendDto }) {
         <ChartCard
           title="By objective"
           description="Share of spend"
+          takeaway={(() => {
+            const top = leader(report.byObjective ?? [])
+            return top ? `${pct(top.share)} of your spend went to ${top.name.toLowerCase()}.` : undefined
+          })()}
           isEmpty={!report.byObjective?.length}
           emptyMessage={filtered ? "Clear the filters to see spend." : NO_SPEND_MESSAGE}
           table={{ columns: ["Objective", "KES"], rows: (report.byObjective ?? []).map((r) => [r.name, r.value]) }}
@@ -109,6 +125,10 @@ export function SpendTab({ report }: { report: ReportSpendDto }) {
         <ChartCard
           title="By format"
           description="Spend by ad format"
+          takeaway={(() => {
+            const top = leader(report.byFormat ?? [])
+            return top ? `Most of your spend went on ${top.name} (${pct(top.share)}).` : undefined
+          })()}
           isEmpty={!report.byFormat?.length}
           emptyMessage={filtered ? "Clear the filters to see spend." : NO_SPEND_MESSAGE}
           table={{ columns: ["Format", "KES"], rows: (report.byFormat ?? []).map((r) => [r.name, r.value]) }}
