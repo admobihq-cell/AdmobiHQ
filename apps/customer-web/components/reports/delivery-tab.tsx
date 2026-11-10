@@ -11,6 +11,7 @@ import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { NO_DELIVERY_MESSAGE, compactOrDash } from "@/components/reports/format"
+import { leader, pct, peak, shortDay } from "@/components/reports/takeaways"
 
 const PAGE_SIZE = 15
 const n = (value: unknown) => Number(value ?? 0).toLocaleString("en-KE")
@@ -60,6 +61,11 @@ export function DeliveryTab({ report }: { report: ReportDeliveryDto }) {
           className="xl:col-span-2"
           title="Scheduled vs delivered"
           description="Plays per day in the selected period"
+          takeaway={
+            totals.scheduled > 0
+              ? `${n(totals.delivered)} of the ${n(totals.scheduled)} plays you booked ran${report.deliveryRate === null ? "" : ` (${pct(report.deliveryRate)})`}.`
+              : undefined
+          }
           isEmpty={empty}
           emptyMessage={NO_DELIVERY_MESSAGE}
           table={{
@@ -75,7 +81,12 @@ export function DeliveryTab({ report }: { report: ReportDeliveryDto }) {
             ]}
           />
         </ChartCard>
-        <DashboardCard title="Delivery rate" description="Delivered ÷ scheduled, over-delivery not counted">
+        <DashboardCard title="Delivery rate" description="How many booked plays actually ran. Extra plays aren't counted">
+          {!empty && report.deliveryRate !== null ? (
+            <p className="text-sm font-medium">
+              About {Math.round(report.deliveryRate * 10)} in every 10 booked plays ran.
+            </p>
+          ) : null}
           {empty ? (
             <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">{NO_DELIVERY_MESSAGE}</p>
           ) : (
@@ -88,6 +99,10 @@ export function DeliveryTab({ report }: { report: ReportDeliveryDto }) {
         <ChartCard
           title="Missed spots by time of day"
           description="Where the schedule fell short"
+          takeaway={(() => {
+            const top = leader(report.missedByDaypart)
+            return top ? `Most missed plays were in the ${top.name.toLowerCase()} (${pct(top.share)} of them).` : undefined
+          })()}
           isEmpty={empty || report.missedByDaypart.every((d) => d.value === 0)}
           emptyMessage={empty ? NO_DELIVERY_MESSAGE : "No missed spots in this period."}
           table={{ columns: ["Time of day", "Missed"], rows: report.missedByDaypart.map((d) => [d.name, d.value]) }}
@@ -96,7 +111,11 @@ export function DeliveryTab({ report }: { report: ReportDeliveryDto }) {
         </ChartCard>
         <ChartCard
           title="Active vehicles"
-          description="The busiest time of day, per campaign, per day"
+          description="How many vehicles carried your ads each day"
+          takeaway={(() => {
+            const top = peak(report.activeVehiclesTrend, "vehicles")
+            return top ? `Busiest day: ${shortDay(top.day)}, with ${n(top.value)} vehicles showing your ads.` : undefined
+          })()}
           isEmpty={empty}
           emptyMessage={NO_DELIVERY_MESSAGE}
           table={{ columns: ["Day", "Vehicles"], rows: report.activeVehiclesTrend.map((p) => [p.day, Number(p.vehicles)]) }}

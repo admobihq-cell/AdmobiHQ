@@ -34,6 +34,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 
 - Buttons: [`@workspace/ui` Button](../packages/ui/src/components/button.tsx) — primary for main CTAs, outline/secondary for alternatives.
 - Inputs: shared `Input` + `Label` in UI package; rounded, bordered, focus ring using `--ring`.
+- Charts: every `ChartCard` that can say its point in one sentence passes `takeaway` (e.g. "Westlands brought the most impressions: 38% of the total"), shown above the plot. A missing takeaway means there was nothing honest to say, never a placeholder. KPI change pills read "vs last period" beside the percentage.
 - FAQs: native `<details>` / `<summary>` for accessibility without custom accordion scripts.
 
 ## Layout
@@ -52,6 +53,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 - **Status is never colour alone:** every pill, segment and row carries its status in words.
 - **Problems carry their next step:** a failed payout or missing payout details raises an `AlertStrip` with the fix ("Check payout details"); load errors get Try again.
 - **Thumb first:** below `md` driver-web shows a bottom tab bar (Home, Earnings, Routes, Support) like the native app; the SOS FAB sits above it and `<main>` pads to clear both.
+- **Plain words first.** Drivers aren't analysts: a chart carries a one-line `takeaway` ("Your longest day was Sat 7 Nov: 9.8 h"), time slots read as people say them ("Friday, 6–9 pm"), and grids of numbers become ranked lists. Labels are everyday words ("Ads shown", "Hours a day"), not "plays" or "per active day".
 - **Samples are tagged in place:** screen time, plays, distance and areas come from `apps/driver-web/lib/sample-data.ts` (seeded per day) and every one carries a dashed "Sample" tag (`SampleTag` / `SampleLabel`), plus a "Sample screen data" pill on the toolbar.
 - **driver-mobile** still uses the earlier payout hero and route-style history (`apps/driver-mobile/components/payout-hero.tsx`) until it is brought onto the same structure.
 

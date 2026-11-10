@@ -1,5 +1,6 @@
 import {
   Bell,
+  FileText,
   HelpCircle,
   LayoutDashboard,
   Package,
@@ -32,6 +33,12 @@ export const driverNavItems: DriverNavItem[] = [
     label: "Earnings",
     icon: Wallet,
     description: "Every payout Admobi has sent you, and what's on its way.",
+  },
+  {
+    href: "/reports",
+    label: "Reports",
+    icon: FileText,
+    description: "Weekly and monthly summaries of your hours, distance and payouts.",
   },
   {
     href: "/routes",

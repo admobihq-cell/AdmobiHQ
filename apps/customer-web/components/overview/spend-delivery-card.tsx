@@ -6,6 +6,7 @@ import type { DailyPoint } from "@workspace/ops-contracts"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
 import { DashboardTabs } from "@workspace/ui/components/dashboard/dashboard-tabs"
+import { sum, versus } from "@/components/reports/takeaways"
 
 export type TrendSource = {
   /** Which series. A tab only shows when its permission is held. */
@@ -43,6 +44,13 @@ export function SpendDeliveryCard({ sources }: { sources: TrendSource[] }) {
     <ChartCard
       title="Spend and delivery"
       description="Day by day in the selected period, compared with the period before"
+      takeaway={(() => {
+        const total = sum(data, "value")
+        if (total <= 0) return undefined
+        const before = hasPrevious ? sum(data, "previous") : undefined
+        const change = versus(total, before)
+        return `${source.label}: ${source.format(total)} in this period${change ? `, ${change}` : ""}.`
+      })()}
       isEmpty={isEmpty}
       emptyMessage={source.empty}
       action={<DashboardTabs tabs={sources.map((s) => ({ value: s.key, label: s.label }))} value={source.key} onChange={(v) => setTab(v as typeof tab)} />}

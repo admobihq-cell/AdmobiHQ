@@ -38,7 +38,7 @@ export function SosFab() {
       title="Report an emergency"
       className={cn(
         // Above the phone tab bar (h-16 + safe area); bottom-right corner from md.
-        "fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 flex size-14 items-center justify-center rounded-full md:right-6 md:bottom-6",
+        "fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 print:hidden flex size-14 items-center justify-center rounded-full md:right-6 md:bottom-6",
         "bg-destructive text-white shadow-lg ring-1 ring-black/5",
         "transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96]",
         // Hover lift only with a real pointer: on touch, hover fires on tap and the button jumps mid-press.
