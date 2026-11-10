@@ -505,3 +505,18 @@ export const getPaymentsNeedingAttention = () =>
   unstable_cache(() => queryPaymentsNeedingAttention(), ["ops-finance-attention"], CACHE)()
 export const getToolCosts = () => unstable_cache(() => toolMonthlyKes(), ["ops-finance-tools"], CACHE)()
 export const getRecordOptions = () => unstable_cache(() => queryRecordOptions(), ["ops-finance-options"], CACHE)()
+
+/** Settled payments nobody in ops has opened the ledger for yet: the Finances nav badge. */
+export const getUnseenPaymentsCount = () =>
+  unstable_cache(
+    async () =>
+      num((await rows<{ n: number }>(`SELECT COUNT(*)::int AS n FROM payments WHERE status = 'success' AND ops_seen_at IS NULL`, []))[0]?.n),
+    ["ops-finance-unseen-payments"],
+    CACHE
+  )()
+
+/** Stamps every unseen settled payment as seen; returns how many it stamped. */
+export async function markPaymentsSeen(): Promise<number> {
+  const res = await getPgPool().query(`UPDATE payments SET ops_seen_at = now() WHERE status = 'success' AND ops_seen_at IS NULL`)
+  return res.rowCount ?? 0
+}

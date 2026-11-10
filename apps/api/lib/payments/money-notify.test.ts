@@ -98,7 +98,20 @@ describe("notifyPaymentReceived", () => {
         orgId: 1, payerUserId: "u", amountKes: 10, channel: null, invoiceNumber: "INV", campaign: null,
       }),
     ).resolves.toBeUndefined()
+    expect(sendAdminEmail).toHaveBeenCalledTimes(1)
     err.mockRestore()
+  })
+
+  it("alerts ops (push + admin email) for every settled payment", async () => {
+    const { notifyPaymentReceived } = await m()
+    await notifyPaymentReceived({
+      orgId: 1, payerUserId: "u", amountKes: 50000, channel: "mobile_money", invoiceNumber: "INV-9",
+      campaign: { id: 7, name: "Launch" },
+    })
+    expect(notifyOpsStaffAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "finance", title: "Payment received: KES 50,000 from Acme" }),
+    )
+    expect(sendAdminEmail).toHaveBeenCalledWith("Payment received: KES 50,000 from Acme", "<html />")
   })
 })
 

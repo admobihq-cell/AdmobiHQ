@@ -915,6 +915,9 @@ model Payment {
   raw_event             Json?
   /// Clerk user id of whoever started the checkout.
   created_by            String
+  /// When someone in ops first opened the ledger after this payment settled.
+  /// Null on a success row = the "unseen payments" badge on Finances.
+  ops_seen_at           DateTime?
   created_at            DateTime           @default(now())
   updated_at            DateTime           @updatedAt
 

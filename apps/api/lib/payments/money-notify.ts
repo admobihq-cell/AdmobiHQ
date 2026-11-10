@@ -90,7 +90,7 @@ export function notifyPaymentReceived(p: {
   invoiceNumber: string
   campaign: CampaignRef | null
 }): Promise<void> {
-  return safely("notifyPaymentReceived", async () => {
+  const payer = safely("notifyPaymentReceived", async () => {
     const to = await receiptAddresses(p.orgId, p.payerUserId)
     if (to.length) {
       const html = await renderTemplate(PaymentReceipt, {
@@ -111,6 +111,17 @@ export function notifyPaymentReceived(p: {
       })
     }
   })
+  // O1: every settled payment reaches the admins too. Separate from the payer
+  // notices so a failed receipt email can't swallow it.
+  const ops = safely("notifyPaymentReceived:ops", async () => {
+    const org = await prisma.advertiserOrg.findUnique({ where: { id: p.orgId }, select: { name: true } })
+    await alertOpsFinance({
+      title: `Payment received: ${kes(p.amountKes)} from ${org?.name ?? `org #${p.orgId}`}`,
+      body: `${channelLabel(p.channel)} payment for ${p.campaign?.name ?? "an account top-up"}. Invoice ${p.invoiceNumber}.`,
+      email: true,
+    })
+  })
+  return Promise.all([payer, ops]).then(() => undefined)
 }
 
 /** A3: paid, but the balance no longer covers the budget. */
