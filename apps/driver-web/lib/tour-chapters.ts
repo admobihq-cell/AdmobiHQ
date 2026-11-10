@@ -30,6 +30,13 @@ export const driverTourChapters: TourChapter[] = [
     selector: '[data-tour-id="tour-nav-earnings"]',
   },
   {
+    key: "reports",
+    title: "Your week or month on one page",
+    description:
+      "Reports adds up your hours logged in, driving and with the screen on, plus distance and pay. Print it or save it as a PDF.",
+    selector: '[data-tour-id="tour-nav-reports"]',
+  },
+  {
     key: "routes",
     title: "Your driving history",
     description:

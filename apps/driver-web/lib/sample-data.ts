@@ -10,13 +10,22 @@ import { delta, resolveReportRange, type Delta, type NamedValue } from "@workspa
 
 export type SampleRange = { range?: string; from?: string; to?: string }
 
-export type SampleDay = { day: string; hours: number; plays: number; km: number; area: string | null }
+/** `logged`: signed in and on shift. `driven`: moving. `hours`: roof screen on. logged >= driven >= hours. */
+export type SampleDay = {
+  day: string
+  logged: number
+  driven: number
+  hours: number
+  plays: number
+  km: number
+  area: string | null
+}
 
 export const SAMPLE_AREAS = ["Nairobi CBD", "Westlands", "Kilimani", "Upper Hill", "Mombasa Rd", "Thika Rd"] as const
 const AREA_WEIGHT = [0.3, 0.22, 0.16, 0.13, 0.11, 0.08]
 
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const
-export const TIME_BANDS = ["6–9", "9–12", "12–15", "15–18", "18–21", "21–24"] as const
+export const TIME_BANDS = ["6–9 am", "9 am–noon", "noon–3 pm", "3–6 pm", "6–9 pm", "9 pm–midnight"] as const
 const BAND_WEIGHT = [1.25, 0.8, 0.7, 0.95, 1.35, 0.6]
 
 /** Longest window the sample draws, so "All" stays a readable chart. */
@@ -51,10 +60,13 @@ export function sampleDay(day: string): SampleDay {
   const weekday = weekdayIndex(day)
   // About one day in eight off, more often on Sundays.
   const off = rand(day, 1) < (weekday === 6 ? 0.45 : 0.1)
-  if (off) return { day, hours: 0, plays: 0, km: 0, area: null }
+  if (off) return { day, logged: 0, driven: 0, hours: 0, plays: 0, km: 0, area: null }
   const hours = round1((weekday === 6 ? 3.5 : 5.5) + rand(day, 2) * 5.5)
+  const driven = round1(hours + 0.2 + rand(day, 7) * 0.8)
   return {
     day,
+    logged: round1(driven + 0.4 + rand(day, 8) * 1.2),
+    driven,
     hours,
     plays: Math.round(hours * (34 + rand(day, 3) * 12)),
     km: Math.round(55 + hours * 11 + rand(day, 5) * 40),
@@ -70,17 +82,19 @@ function daysBetween(start: string, end: string): string[] {
   return out
 }
 
-type Totals = { hours: number; plays: number; km: number; activeDays: number }
+type Totals = { logged: number; driven: number; hours: number; plays: number; km: number; activeDays: number }
 
 function totals(days: SampleDay[]): Totals {
   return days.reduce(
     (t, d) => ({
+      logged: round1(t.logged + d.logged),
+      driven: round1(t.driven + d.driven),
       hours: round1(t.hours + d.hours),
       plays: t.plays + d.plays,
       km: t.km + d.km,
       activeDays: t.activeDays + (d.hours > 0 ? 1 : 0),
     }),
-    { hours: 0, plays: 0, km: 0, activeDays: 0 },
+    { logged: 0, driven: 0, hours: 0, plays: 0, km: 0, activeDays: 0 },
   )
 }
 
@@ -135,3 +149,18 @@ export function sampleTelemetry(range: SampleRange, today = new Date()): SampleT
 
 export const formatHours = (h: number) => `${h.toLocaleString("en-KE", { maximumFractionDigits: 1 })} h`
 export const formatKm = (km: number) => `${km.toLocaleString("en-KE")} km`
+
+/** The busiest weekday × time-band slots, most plays first, in words a driver can act on. */
+export function bestTimes(heat: SampleTelemetry["heat"], count = 3) {
+  return [...heat]
+    .filter((c) => c.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, count)
+    .map((c) => ({ day: c.row, band: c.column, plays: c.value }))
+}
+
+/** "2026-11-07" → "Sat 7 Nov". */
+export const shortDay = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`)
+    .toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
+    .replace(",", "")

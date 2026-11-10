@@ -40,7 +40,7 @@ export function DashboardSkeleton() {
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
           <ChartSkeleton variant="bars" />
-          <ChartSkeleton variant="heatmap" />
+          <ListSkeleton rows={3} />
           <ListSkeleton rows={4} />
         </div>
       </div>
@@ -59,6 +59,23 @@ export function EarningsSkeleton() {
           <ListSkeleton rows={3} />
         </div>
         <LedgerSkeleton rows={4} columns={5} filters />
+      </div>
+    </SkeletonShell>
+  )
+}
+
+export function ReportsSkeleton() {
+  return (
+    <SkeletonShell label="Loading your report" className="flex-1">
+      <div className="flex flex-col gap-6">
+        <HeaderSkeleton actions={2} />
+        <ToolbarSkeleton tabs={4} range={false} />
+        <KpiStripSkeleton cells={6} columns={3} />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <ListSkeleton rows={3} className="lg:col-span-2" />
+          <ListSkeleton rows={2} />
+        </div>
+        <LedgerSkeleton rows={7} columns={7} />
       </div>
     </SkeletonShell>
   )

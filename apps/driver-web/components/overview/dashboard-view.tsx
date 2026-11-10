@@ -8,9 +8,9 @@ import { formatCompact, payoutFocus } from "@workspace/ops-contracts"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
-import { Heatmap } from "@workspace/ui/components/charts/heatmap"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
 import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
+import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card"
 import { AlertStrip } from "@workspace/ui/components/dashboard/notes"
 import { DashboardToolbar, type ToolbarRange } from "@workspace/ui/components/dashboard/dashboard-toolbar"
 import { HeroMetric } from "@workspace/ui/components/dashboard/hero-metric"
@@ -21,7 +21,17 @@ import { Greeting } from "@/components/overview/greeting"
 import { LatestPayoutCard, PAYOUT_DETAILS_HREF, SUPPORT_HREF } from "@/components/overview/latest-payout-card"
 import { RecentUpdates } from "@/components/overview/recent-updates"
 import { SampleLabel } from "@/components/sample-tag"
-import { formatHours, formatKm, sampleTelemetry, TIME_BANDS, WEEKDAYS } from "@/lib/sample-data"
+import { bestTimes, formatHours, formatKm, sampleTelemetry, shortDay } from "@/lib/sample-data"
+
+const DAY_NAME: Record<string, string> = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
+}
 import { monthName, useDriverPayouts } from "@/lib/use-driver-payouts"
 
 /** Plain-language note under the toolbar: screen figures are samples until telemetry exists. */
@@ -40,9 +50,9 @@ export function DashboardView({ payoutDestination }: { payoutDestination: string
   const avgHours = t.totals.activeDays ? t.totals.hours / t.totals.activeDays : 0
   const kpis: KpiItem[] = [
     {
-      label: <SampleLabel>Ad plays</SampleLabel>,
+      label: <SampleLabel>Ads shown</SampleLabel>,
       value: formatCompact(t.totals.plays),
-      note: "Times an ad ran on your screen",
+      note: "Times an ad played on your screen",
       delta: { delta: t.deltas.plays, good: "up" },
     },
     {
@@ -52,16 +62,19 @@ export function DashboardView({ payoutDestination }: { payoutDestination: string
       delta: { delta: t.deltas.km, good: "up" },
     },
     {
-      label: <SampleLabel>Days on the road</SampleLabel>,
+      label: <SampleLabel>Days worked</SampleLabel>,
       value: `${t.totals.activeDays} of ${t.days.length}`,
       note: "Days your screen was on",
     },
     {
-      label: <SampleLabel>Per active day</SampleLabel>,
+      label: <SampleLabel>Hours a day</SampleLabel>,
       value: formatHours(Math.round(avgHours * 10) / 10),
-      note: "Average screen-on time",
+      note: "Average on the days you worked",
     },
   ]
+  const longest = t.days.reduce<(typeof t.days)[number] | undefined>((best, d) => (!best || d.hours > best.hours ? d : best), undefined)
+  const best = bestTimes(t.heat)
+  const topArea = t.areas[0]
 
   const trend = t.days.map((d) => ({ day: d.day, hours: d.hours }))
 
@@ -143,6 +156,7 @@ export function DashboardView({ payoutDestination }: { payoutDestination: string
           className="lg:col-span-2"
           title={<SampleLabel>Screen time by day</SampleLabel>}
           description="Hours the screen was on, per day in the period"
+          takeaway={longest && longest.hours > 0 ? `Your longest day was ${shortDay(longest.day)}: ${formatHours(longest.hours)}.` : undefined}
           isEmpty={t.totals.hours === 0}
           emptyMessage="No screen time in this period."
           table={{ columns: ["Day", "Hours", "Plays", "Km"], rows: t.days.map((d) => [d.day, d.hours, d.plays, d.km]) }}
@@ -156,6 +170,7 @@ export function DashboardView({ payoutDestination }: { payoutDestination: string
         <ChartCard
           title={<SampleLabel>Top areas</SampleLabel>}
           description="Where your screen spent the most time"
+          takeaway={topArea ? `You spent the most time in ${topArea.name}: ${formatHours(topArea.value)}.` : undefined}
           isEmpty={t.areas.length === 0}
           emptyMessage="No driving in this period."
           table={{ columns: ["Area", "Hours"], rows: t.areas.map((a) => [a.name, a.value]) }}
@@ -167,18 +182,33 @@ export function DashboardView({ payoutDestination }: { payoutDestination: string
         >
           <RankBars data={t.areas} valueFormatter={formatHours} />
         </ChartCard>
-        <ChartCard
-          title={<SampleLabel>Busiest times</SampleLabel>}
-          description="Average ad plays per active day, by weekday and hour"
-          isEmpty={t.totals.plays === 0}
-          emptyMessage="No plays in this period."
-          table={{
-            columns: ["Day", ...TIME_BANDS],
-            rows: WEEKDAYS.map((w) => [w, ...TIME_BANDS.map((b) => t.heat.find((c) => c.row === w && c.column === b)?.value ?? 0)]),
-          }}
+        <DashboardCard
+          title={<SampleLabel>Best times to drive</SampleLabel>}
+          description="When your screen shows the most ads"
         >
-          <Heatmap rows={[...WEEKDAYS]} columns={[...TIME_BANDS]} cells={t.heat} />
-        </ChartCard>
+          {best.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No driving in this period.</p>
+          ) : (
+            <>
+              <p className="text-sm font-medium">
+                Your best time is {DAY_NAME[best[0]!.day] ?? best[0]!.day}, {best[0]!.band}.
+              </p>
+              <ol className="divide-y rounded-lg border">
+                {best.map((slot, i) => (
+                  <li key={`${slot.day}-${slot.band}`} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
+                    <span className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-muted-foreground tabular-nums">{i + 1}</span>
+                      <span className="font-medium">
+                        {DAY_NAME[slot.day] ?? slot.day}, {slot.band}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground tabular-nums">~{slot.plays} ads</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+        </DashboardCard>
         <RecentUpdates />
       </div>
 

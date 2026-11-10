@@ -82,7 +82,7 @@ export function AppShell({
       userId={user?.id ?? null}
       chapters={driverTourChapters}
     >
-      <SidebarProvider>
+      <SidebarProvider className="print:[&_[data-slot=sidebar]]:hidden">
         <Sidebar variant="inset" collapsible="icon">
           <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
             <div
@@ -130,7 +130,7 @@ export function AppShell({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 print:hidden">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DriverBreadcrumbs pathname={pathname} />
