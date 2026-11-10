@@ -52,7 +52,7 @@ export function PaymentReturnView() {
           </Button>
         ) : (
           <Button asChild>
-            <Link href="/billing">Try again</Link>
+            <Link href={`/billing?topup=${Math.round(view.amountKes)}`}>Try again</Link>
           </Button>
         )}
       </Notice>

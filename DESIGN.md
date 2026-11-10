@@ -45,14 +45,15 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 
 ## Driver surfaces (driver-web, driver-mobile)
 
-**Scene:** a driver on a phone, in a car, often in bright sun, checking between fares whether the money went through. Same palette, type and components as the rest of Admobi. What changes is the emphasis: one answer per screen, read at a glance.
+**Scene:** a driver checking their shift between fares, on a phone in a car or on a laptop at home: how long the screen ran, where, and whether the money went through. Same palette, type and components as the rest of Admobi.
 
-- **Money is the display type.** The newest payout leads home and Earnings as the largest text on the page (`text-5xl`/`6xl` on web, 46pt on mobile), tabular figures, tight tracking. Page headings stay smaller (`text-2xl`/`3xl`). No icon-tile stat cards, and no uppercase eyebrow labels over headings.
-- **The route is the motif.** Payout status is a three-stop route, Saved → Sending → Paid (`PayoutRoute` in `apps/driver-web/components/overview/payout-hero.tsx`, mirrored in `apps/driver-mobile/components/payout-hero.tsx`): done nodes filled terracotta with a check, the current node ringed with the shared `anim-pulse`, a failed/reversed stop filled destructive with an ×. Payout history is the same idea drawn vertically, one node per month. Reuse it for any multi-step driver status instead of a stepper or progress bar.
-- **Status is never colour alone:** every node and history row carries its status in words.
-- **Problems carry their next step:** a failed payout shows "Check payout details" and "Ask support" in the hero itself; load errors get a Try again button.
-- **Thumb first:** below `md` driver-web shows a bottom tab bar (Home, Earnings, Routes, Support) like the native app; tap targets are 44–48px; the SOS FAB sits above the tab bar and `<main>` pads to clear both.
-- **Samples are tagged in place:** an illustrative figure carries its own "Sample" tag, not just a footnote.
+- **Dashboards, not a column.** driver-web pages use the shared `@workspace/ui` dashboard kit at full width, exactly as customer-web and ops do: header (h1 + subtitle, actions right), `DashboardToolbar` with the date range, then grid rows of `HeroMetric` beside a `KpiStrip`, `ChartCard`s (`TrendChart`, `RankBars`, `Heatmap`), `DashboardCard`s and `LedgerCard` tables. No `mx-auto max-w-*` page columns, no single-number heroes, no uppercase eyebrow labels. Loading states compose the kit skeletons in the same grid (`apps/driver-web/components/skeletons/dashboard-skeletons.tsx`).
+- **Payout status** is a `StatusPill` (Paid good, Sending warning, Saved neutral, Didn't go through / Reversed serious) plus a three-segment Saved / Sending / Paid bar in the Latest payout card (`latest-payout-card.tsx`); a failed stage fills destructive. Struck-through amounts mean the money didn't reach the driver.
+- **Status is never colour alone:** every pill, segment and row carries its status in words.
+- **Problems carry their next step:** a failed payout or missing payout details raises an `AlertStrip` with the fix ("Check payout details"); load errors get Try again.
+- **Thumb first:** below `md` driver-web shows a bottom tab bar (Home, Earnings, Routes, Support) like the native app; the SOS FAB sits above it and `<main>` pads to clear both.
+- **Samples are tagged in place:** screen time, plays, distance and areas come from `apps/driver-web/lib/sample-data.ts` (seeded per day) and every one carries a dashed "Sample" tag (`SampleTag` / `SampleLabel`), plus a "Sample screen data" pill on the toolbar.
+- **driver-mobile** still uses the earlier payout hero and route-style history (`apps/driver-mobile/components/payout-hero.tsx`) until it is brought onto the same structure.
 
 ## Motion
 

@@ -57,7 +57,7 @@ The page at `/` (`apps/api/app/page.tsx`) lists every route, grouped by who may 
 | `/v1/safety-incidents` (+ `[id]`, `messages`, photo `file`) | Ops Clerk JWT + `safety` permission | Ops SOS queue, review decisions, photo proxy |
 | `GET/POST /v1/push-receipts/check` | Ops JWT **or** `CRON_SECRET` | Expo receipt reconciliation |
 | `GET/POST /v1/cron/finance-daily` | Ops JWT **or** `CRON_SECRET` | Nightly at 00:30 Nairobi (`30 21 * * *` UTC): verify payments still `initiated` after 1 h, write straight-line `screen_time` spend (`spend-c<id>-<day>`, idempotent), send "finished under budget" notices, verify transfers `processing` after 24 h, then email ops a digest if anything needs attention |
-| `POST /v1/payments/paystack/webhook` | `x-paystack-signature` (HMAC-SHA512 of the raw body, `PAYSTACK_SECRET_KEY`) | `charge.success` → `settlePayment`; `refund.*` → refund status (a failure writes a reversing adjustment); `transfer.*` → payout status. Bad signature `401`; handler error `500` so Paystack retries. Every handler re-reads our rows and re-verifies; nothing in the payload is trusted beyond the reference |
+| `POST /v1/payments/paystack/webhook` | `x-paystack-signature` (HMAC-SHA512 of the raw body, `PAYSTACK_SECRET_KEY`) | `charge.success` → `settlePayment` (payer receipt, plus an ops push and admin email "Payment received: KES … from {org}"); `refund.*` → refund status (a failure writes a reversing adjustment); `transfer.*` → payout status. Bad signature `401`; handler error `500` so Paystack retries. Every handler re-reads our rows and re-verifies; nothing in the payload is trusted beyond the reference |
 
 ### Driver SOS (safety incidents)
 

@@ -6,6 +6,7 @@ import {
   getPendingCampaignsCount,
   getPendingDriverApplicationsCount,
 } from "@/lib/queries/entities"
+import { getUnseenPaymentsCount } from "@/lib/queries/finance"
 
 export default async function DashboardLayout({
   children,
@@ -20,14 +21,15 @@ export default async function DashboardLayout({
   }
 
   const userName = access.user.fullName ?? access.email
-  const can = (permission: "driver_applications" | "campaigns") =>
+  const can = (permission: "driver_applications" | "campaigns" | "finances") =>
     access.role === "admin" || access.permissions.includes(permission)
 
   // Only count what this user can actually see — a member without the
   // permission shouldn't cost a Neon query for a badge they'll never render.
-  const [driverApplications, campaigns] = await Promise.all([
+  const [driverApplications, campaigns, unseenPayments] = await Promise.all([
     can("driver_applications") ? getPendingDriverApplicationsCount() : 0,
     can("campaigns") ? getPendingCampaignsCount() : 0,
+    can("finances") ? getUnseenPaymentsCount().catch(() => 0) : 0,
   ])
 
   return (
@@ -40,6 +42,7 @@ export default async function DashboardLayout({
       pendingCounts={{
         "/driver-applications": driverApplications,
         "/campaigns": campaigns,
+        "/finances": unseenPayments,
       }}
     >
       {children}

@@ -25,7 +25,7 @@ export const driverNavItems: DriverNavItem[] = [
     href: "/",
     label: "Dashboard",
     icon: LayoutDashboard,
-    description: "Your latest payout and what's new from Admobi.",
+    description: "Screen time, routes, your latest payout and what's new from Admobi.",
   },
   {
     href: "/earnings",
