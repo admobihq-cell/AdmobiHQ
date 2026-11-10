@@ -1,0 +1,15 @@
+meta {
+  name: Get driver application
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/driver-applications/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

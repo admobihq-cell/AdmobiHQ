@@ -1,0 +1,15 @@
+meta {
+  name: Get document file
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{API_URL}}/v1/driver/documents/{{resource_id}}/file
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}

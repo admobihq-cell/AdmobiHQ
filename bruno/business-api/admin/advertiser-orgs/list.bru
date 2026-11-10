@@ -1,0 +1,15 @@
+meta {
+  name: List advertiser orgs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/advertiser-orgs?page=1&pageSize=20&search=
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

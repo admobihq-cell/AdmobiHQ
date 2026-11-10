@@ -1,0 +1,19 @@
+meta {
+  name: Spend
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{API_URL}}/v1/customer/reports/spend?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Also needs `billing:read`, else 403.
+}

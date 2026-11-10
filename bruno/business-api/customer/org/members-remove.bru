@@ -1,0 +1,15 @@
+meta {
+  name: Remove member
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{API_URL}}/v1/customer/org/members/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Mark announcement read
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/announcements/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "read": true
+  }
+}

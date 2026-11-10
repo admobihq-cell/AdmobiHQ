@@ -1,0 +1,15 @@
+meta {
+  name: Monthly statements
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{API_URL}}/v1/customer/finance/statements
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

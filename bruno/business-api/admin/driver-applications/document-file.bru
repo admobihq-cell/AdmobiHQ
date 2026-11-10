@@ -1,0 +1,19 @@
+meta {
+  name: Get application document
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{API_URL}}/v1/driver-applications/{{resource_id}}/documents/{{child_id}}/file
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  resource_id = driver profile, child_id = document.
+}

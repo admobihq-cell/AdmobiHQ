@@ -1,0 +1,36 @@
+meta {
+  name: Export list as PDF
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/v1/ops/documents/export
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "entity": "drivers",
+    "title": "Drivers",
+    "headers": [
+      "Name",
+      "City"
+    ],
+    "rows": [
+      [
+        "Mary Wanjiku",
+        "Nairobi"
+      ]
+    ]
+  }
+}
+
+docs {
+  entity is an ops permission, or "admin" for admin-only pages. Max 20 headers, 500 rows.
+}

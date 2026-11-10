@@ -1,0 +1,22 @@
+meta {
+  name: Update organization
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/org
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "billingEmail": "billing@example.com",
+    "taxPin": "P051234567M"
+  }
+}

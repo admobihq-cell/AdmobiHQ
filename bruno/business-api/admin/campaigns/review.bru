@@ -1,0 +1,26 @@
+meta {
+  name: Review campaign
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/campaigns/{{resource_id}}/review
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "decision": "changes_requested",
+    "reason": "Please send the artwork at 1920x480."
+  }
+}
+
+docs {
+  `decision`: approved | rejected | changes_requested. `reason` is required except for approved and is shown to the advertiser.
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Decline invitation
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/invitations/decline/{{invitation_token}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

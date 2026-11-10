@@ -1,0 +1,23 @@
+meta {
+  name: Add photo
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/driver/sos/{{resource_id}}/photos
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:multipart-form {
+  file: @file(fixtures/sample.png)
+}
+
+docs {
+  One file per call. Max 4 per incident, 8 MB, JPEG/PNG/WebP.
+}

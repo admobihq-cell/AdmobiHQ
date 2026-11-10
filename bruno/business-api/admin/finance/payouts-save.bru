@@ -1,0 +1,31 @@
+meta {
+  name: Save payouts
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/v1/ops/payouts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "periodMonth": "{{period_month}}",
+    "items": [
+      {
+        "driverProfileId": 1,
+        "amountKes": 4500
+      }
+    ]
+  }
+}
+
+docs {
+  Saves `pending` payouts. A row already sent is skipped.
+}

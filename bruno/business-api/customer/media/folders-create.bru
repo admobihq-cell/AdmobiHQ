@@ -1,0 +1,21 @@
+meta {
+  name: Create folder
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{API_URL}}/v1/customer/media/folders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "name": "December"
+  }
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Invite member
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/members
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "email": "teammate@example.com",
+    "roleId": 1
+  }
+}

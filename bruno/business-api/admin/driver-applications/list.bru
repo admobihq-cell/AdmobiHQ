@@ -1,0 +1,15 @@
+meta {
+  name: List driver applications
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/driver-applications?page=1&pageSize=20&status=submitted&search=
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

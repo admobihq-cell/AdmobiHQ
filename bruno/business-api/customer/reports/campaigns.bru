@@ -1,0 +1,19 @@
+meta {
+  name: Campaign table
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{API_URL}}/v1/customer/reports/campaigns?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  `export=csv` downloads the table.
+}

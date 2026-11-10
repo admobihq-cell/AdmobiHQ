@@ -1,0 +1,28 @@
+meta {
+  name: Update profile
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{API_URL}}/v1/driver/profile
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "full_name": "Mary Wanjiku",
+    "city": "Nairobi",
+    "payout_method": "mpesa",
+    "payout_mpesa_msisdn": "254722000000"
+  }
+}
+
+docs {
+  For a bank payout send payout_bank_name, payout_bank_account and payout_bank_code (from Payout banks).
+}

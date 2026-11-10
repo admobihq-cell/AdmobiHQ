@@ -1,0 +1,26 @@
+meta {
+  name: Change staff role
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/team/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "tier": "member",
+    "roleId": 1
+  }
+}
+
+docs {
+  resource_id = Clerk user id.
+}

@@ -1,0 +1,15 @@
+meta {
+  name: List payouts for a month
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{API_URL}}/v1/ops/payouts?month={{period_month}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Review driver application
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/driver-applications/{{resource_id}}/review
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "decision": "changes_requested",
+    "reason": "The ID photo is blurry, please retake it."
+  }
+}
+
+docs {
+  `decision`: approved | rejected | changes_requested.
+}

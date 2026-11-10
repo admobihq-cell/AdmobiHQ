@@ -1,0 +1,27 @@
+meta {
+  name: Refund advertiser credit
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/ops/payments/refunds
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "orgId": 1,
+    "amountKes": 1000,
+    "reason": "Unused credit refund"
+  }
+}
+
+docs {
+  Moves real money: refunds to the org's newest Paystack payments first. 409 if it exceeds the available balance.
+}

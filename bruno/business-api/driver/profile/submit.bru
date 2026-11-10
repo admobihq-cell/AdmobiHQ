@@ -1,0 +1,15 @@
+meta {
+  name: Submit for review
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/driver/profile/submit
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}

@@ -1,0 +1,35 @@
+meta {
+  name: Paystack webhook (charge.success)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/v1/payments/paystack/webhook
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "event": "charge.success",
+    "data": {
+      "reference": "{{payment_reference}}",
+      "amount": 100000,
+      "currency": "KES",
+      "status": "success"
+    }
+  }
+}
+
+script:pre-request {
+  const crypto = require("crypto");
+  const raw = JSON.stringify(req.getBody());
+  req.setBody(raw);
+  const secret = bru.getEnvVar("paystack_secret") || "";
+  req.setHeader("x-paystack-signature", crypto.createHmac("sha512", secret).update(raw).digest("hex"));
+}
+
+docs {
+  Signed in the pre-request script with paystack_secret (HMAC-SHA512 of the raw body). The handler re-verifies with Paystack, so only real references settle. Bad signature 401.
+}

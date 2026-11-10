@@ -1,0 +1,27 @@
+meta {
+  name: Disburse payouts
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/ops/payouts/disburse
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "payoutIds": [
+      1
+    ]
+  }
+}
+
+docs {
+  Moves real money. Needs `payouts`. 402 when the Paystack balance can't cover amounts plus fees.
+}

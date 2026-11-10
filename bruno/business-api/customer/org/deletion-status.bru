@@ -1,0 +1,15 @@
+meta {
+  name: Deletion status
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{API_URL}}/v1/customer/org/deletion-status
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

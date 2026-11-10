@@ -1,0 +1,15 @@
+meta {
+  name: Delete document
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{API_URL}}/v1/driver/documents/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}

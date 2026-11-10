@@ -1,0 +1,22 @@
+meta {
+  name: Reply to support case
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_URL}}/v1/support/{{resource_id}}/messages
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "body": "Thanks, we're looking into it.",
+    "internal_note": false
+  }
+}

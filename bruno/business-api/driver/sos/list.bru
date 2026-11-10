@@ -1,0 +1,15 @@
+meta {
+  name: List my incidents
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/driver/sos
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}

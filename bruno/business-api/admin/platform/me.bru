@@ -1,0 +1,15 @@
+meta {
+  name: Current user
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

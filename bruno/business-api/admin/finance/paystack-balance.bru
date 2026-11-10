@@ -1,0 +1,19 @@
+meta {
+  name: Paystack balance
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/ops/payments/balance
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Live Paystack KES balance. 502 if Paystack is unreachable.
+}

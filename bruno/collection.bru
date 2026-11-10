@@ -16,8 +16,11 @@ docs {
 
   Auth:
   - Public routes: none
-  - Admin routes: Clerk JWT in secret var clerk_jwt (must be @admobihq.com)
-  - Cron: secret var cron_secret for push-receipts check
+  - Admin (ops) routes: Clerk JWT in secret var clerk_jwt (must be @admobihq.com)
+  - Customer routes: customer Clerk JWT in customer_jwt
+  - Driver routes: driver Clerk JWT in driver_jwt
+  - Cron: secret var cron_secret
+  - Paystack webhooks: signed with paystack_secret
 
-  Sources of truth: docs/API.md, packages/ops-contracts, apps/api/app/v1/
+  Sources of truth: docs/api/API.md, packages/ops-contracts, apps/api/app/v1/
 }

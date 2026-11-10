@@ -1,0 +1,29 @@
+meta {
+  name: Record ledger transaction
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/v1/ops/finance/transactions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "orgId": 1,
+    "kind": "top_up",
+    "amountKes": 5000,
+    "reference": "BANK-TRF-001",
+    "reason": "Bank transfer received"
+  }
+}
+
+docs {
+  Needs `finances`. kind: top_up | spend | refund | adjustment | cash_refund. Only adjustment may be negative; spend and refund need `spendCategory`.
+}

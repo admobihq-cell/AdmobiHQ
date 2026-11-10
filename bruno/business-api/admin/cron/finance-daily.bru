@@ -1,0 +1,19 @@
+meta {
+  name: Run finance daily job
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/v1/cron/finance-daily
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{cron_secret}}
+}
+
+docs {
+  Nightly 00:30 Nairobi. Verifies stale payments, writes daily screen_time spend (idempotent), checks stuck transfers, emails ops a digest. Uses cron_secret (an ops JWT also works). GET does the same.
+}

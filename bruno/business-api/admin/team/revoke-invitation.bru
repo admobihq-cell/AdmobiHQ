@@ -1,0 +1,15 @@
+meta {
+  name: Revoke staff invitation
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{API_URL}}/v1/team/invitations/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

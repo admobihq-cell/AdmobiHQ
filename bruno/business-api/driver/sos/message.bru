@@ -1,0 +1,21 @@
+meta {
+  name: Reply to incident
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/v1/driver/sos/{{resource_id}}/messages
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "body": "I'm safe now."
+  }
+}

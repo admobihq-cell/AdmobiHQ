@@ -211,7 +211,7 @@ says so in its footnote. Every string written into a PDF stays inside Latin-1
 codepoint rather than substituting one.
 | `GET` | `/v1/campaigns` | Ops `campaigns` | Paginated review queue |
 | `GET` | `/v1/campaigns/[id]` | Ops `campaigns` | Detail + creatives |
-| `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `approve` / `request_changes` / `reject` / `unapprove` — reason required except approve; reason is **advertiser-visible** |
+| `PATCH` | `/v1/campaigns/[id]/review` | Ops `campaigns` | `{ decision: "approved" | "rejected" | "changes_requested", reason? }`. Reason required except approved; reason is **advertiser-visible** |
 | `POST` | `/v1/campaigns/bulk-review` | Ops `campaigns` | `{ ids (1–100), decision: "approved" \| "rejected", reason? }` — reason required to reject, one reason for every row. Each id runs the same review as the single route (audit, inbox, email, credit release). Only `submitted` campaigns change; the rest are skipped, never walked back. Returns `{ updated: number[], skipped: { id, error }[] }` |
 | `GET` | `/v1/campaigns/[id]/creatives/[creativeId]/file` | Ops `campaigns` | Stream creative for review |
 | `GET` | `/v1/advertiser-orgs` | Ops `campaigns` | Paginated org directory (search by name) |

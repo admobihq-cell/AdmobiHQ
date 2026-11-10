@@ -1,0 +1,19 @@
+meta {
+  name: List media
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/customer/media?page=1&pageSize=24
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Filters: search, type (image | video), usage (used | unused), sort (name | size), folder, starred=true.
+}

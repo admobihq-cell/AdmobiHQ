@@ -1,0 +1,30 @@
+meta {
+  name: Raise SOS
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/driver/sos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "type": "accident",
+    "channel": "driver-web",
+    "description": "Raised from Bruno (test)",
+    "reported_lat": -1.2864,
+    "reported_lng": 36.8172,
+    "reported_accuracy_m": 20
+  }
+}
+
+docs {
+  Alerts ops by push and email. Rate limited 3 per 5 min.
+}

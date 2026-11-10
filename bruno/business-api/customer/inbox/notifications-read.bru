@@ -1,0 +1,21 @@
+meta {
+  name: Mark notification read
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/notifications/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "read": true
+  }
+}

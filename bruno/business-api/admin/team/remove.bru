@@ -1,0 +1,19 @@
+meta {
+  name: Remove staff
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{API_URL}}/v1/team/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  resource_id = Clerk user id.
+}

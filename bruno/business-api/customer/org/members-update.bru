@@ -1,0 +1,21 @@
+meta {
+  name: Update member
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/org/members/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "roleId": 1
+  }
+}

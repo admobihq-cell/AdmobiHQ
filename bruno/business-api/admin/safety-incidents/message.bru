@@ -1,0 +1,22 @@
+meta {
+  name: Reply to incident
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_URL}}/v1/safety-incidents/{{resource_id}}/messages
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "body": "We're calling you now.",
+    "internal_note": false
+  }
+}

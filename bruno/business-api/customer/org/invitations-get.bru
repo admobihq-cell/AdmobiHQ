@@ -1,0 +1,15 @@
+meta {
+  name: Get invitation
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{API_URL}}/v1/customer/org/invitations/accept/{{invitation_token}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

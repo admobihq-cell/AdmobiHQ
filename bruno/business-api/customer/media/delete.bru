@@ -1,0 +1,19 @@
+meta {
+  name: Delete media
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{API_URL}}/v1/customer/media/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  409 naming the campaigns while any campaign uses the file.
+}

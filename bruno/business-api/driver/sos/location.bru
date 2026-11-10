@@ -1,0 +1,27 @@
+meta {
+  name: Update location
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{API_URL}}/v1/driver/sos/{{resource_id}}/location
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "lat": -1.2864,
+    "lng": 36.8172,
+    "accuracy_m": 15
+  }
+}
+
+docs {
+  204 with no write once the incident is closed or older than 6 h.
+}

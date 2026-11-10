@@ -1,0 +1,19 @@
+meta {
+  name: Register driver push token
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{API_URL}}/v1/public/driver-push-tokens
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "expoPushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "platform": "android",
+    "anonymousDeviceId": "bruno-device"
+  }
+}

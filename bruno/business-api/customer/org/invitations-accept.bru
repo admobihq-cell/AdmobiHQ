@@ -1,0 +1,21 @@
+meta {
+  name: Accept invitation
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/invitations/accept/{{invitation_token}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "leaveSoleOrg": false
+  }
+}

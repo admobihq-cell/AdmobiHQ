@@ -1,0 +1,25 @@
+meta {
+  name: Update role
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{API_URL}}/v1/roles/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "permissions": [
+      "fleet",
+      "drivers",
+      "safety"
+    ]
+  }
+}

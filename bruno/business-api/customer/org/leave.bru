@@ -1,0 +1,15 @@
+meta {
+  name: Leave organization
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/leave
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
