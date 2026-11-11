@@ -6,7 +6,7 @@ import { formatKes } from "@workspace/ops-contracts"
 
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
-import type { WalletRowDto, WalletStatus } from "@/lib/queries/finance"
+import type { WalletRowDto, WalletStatus } from "@workspace/ops-contracts"
 
 const STATUS: Record<WalletStatus, { label: string; tone: "serious" | "good" | "neutral" }> = {
   short: { label: "Short of funds", tone: "serious" },

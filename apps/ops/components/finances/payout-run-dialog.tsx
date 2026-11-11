@@ -24,7 +24,7 @@ import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { ReceiptPrinter, useReceiptPrinterStage } from "@workspace/ui/components/receipt-printer"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
-import { payoutStatus } from "@/lib/queries/finance-constants"
+import { payoutStatus } from "@workspace/ops-contracts"
 
 const thisMonth = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" }).slice(0, 7)
 const errorText = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)

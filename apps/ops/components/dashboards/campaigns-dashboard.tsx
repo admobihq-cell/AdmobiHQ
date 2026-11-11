@@ -28,7 +28,7 @@ import {
   rateTone,
   waiting,
 } from "@/components/dashboards/format"
-import type { CampaignHealthRow, DeliveryDto, InventoryDto, PipelineDto } from "@/lib/queries/campaign-analytics"
+import type { CampaignHealthRow, DeliveryDto, InventoryDto, PipelineDto } from "@workspace/ops-contracts"
 
 const PHASE: Record<string, string> = { live: "Live", scheduled: "Scheduled", completed: "Completed", unscheduled: "Not scheduled" }
 

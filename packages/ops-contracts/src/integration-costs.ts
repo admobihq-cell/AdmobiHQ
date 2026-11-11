@@ -1,4 +1,4 @@
-import type { IntegrationDto } from "@/lib/queries/integrations"
+import type { IntegrationDto } from "./ops-dashboards"
 
 /**
  * Exchange rates for rolling every subscription up to a single monthly figure.

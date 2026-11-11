@@ -17,7 +17,7 @@ import { InsightNote } from "@workspace/ui/components/dashboard/notes"
 import { Button } from "@workspace/ui/components/button"
 import { PaystackBalanceTile } from "@/components/finances/paystack-balance-tile"
 import { RefundDialog } from "@/components/finances/refund-dialog"
-import type { AttentionItemDto, FinanceOverviewDto, RecordOptionsDto } from "@/lib/queries/finance"
+import type { AttentionItemDto, FinanceOverviewDto, RecordOptionsDto } from "@workspace/ops-contracts"
 
 export const NO_LEDGER = "Transactions appear here once an advertiser's wallet has activity."
 

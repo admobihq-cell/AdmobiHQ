@@ -26,6 +26,7 @@
     "@vercel/blob": "^2.3.1",
     "@vercel/functions": "^3.7.5",
     "@workspace/ops-contracts": "*",
+    "@workspace/ops-queries": "*",
     "@workspace/sentry-config": "^0.0.0",
     "antd": "^6.5.2",
     "cloudinary": "^2.7.0",

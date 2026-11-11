@@ -10,8 +10,8 @@ import { Button } from "@workspace/ui/components/button"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { seePayments } from "@/app/(dashboard)/finances/actions"
 import { RecordTransactionDialog } from "@/components/finances/record-transaction-dialog"
-import { DELETED_ORG } from "@/lib/queries/finance-constants"
-import type { FinanceLedgerDto, LedgerRowDto, RecordOptionsDto } from "@/lib/queries/finance"
+import { DELETED_ORG } from "@workspace/ops-contracts"
+import type { FinanceLedgerDto, LedgerRowDto, RecordOptionsDto } from "@workspace/ops-contracts"
 
 const FILTERS = [
   { value: "all", label: "All" },

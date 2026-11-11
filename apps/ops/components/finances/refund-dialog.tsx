@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@workspace/ui/components/textarea"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
-import type { RecordOptionsDto } from "@/lib/queries/finance"
+import type { RecordOptionsDto } from "@workspace/ops-contracts"
 
 /**
  * Refund unused credit to the advertiser's original M-Pesa number or card (spec §5.5). The API

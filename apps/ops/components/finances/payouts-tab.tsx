@@ -16,9 +16,9 @@ import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { monthLabel } from "@/components/finances/overview-tab"
 import { PayoutRunDialog } from "@/components/finances/payout-run-dialog"
-import { payoutStatus } from "@/lib/queries/finance-constants"
+import { payoutStatus } from "@workspace/ops-contracts"
 import { useOpsClient } from "@/lib/ops-client"
-import type { FinancePayoutsDto, PayoutRowDto } from "@/lib/queries/finance"
+import type { FinancePayoutsDto, PayoutRowDto } from "@workspace/ops-contracts"
 
 const NO_PAYOUTS = "Driver payouts appear here once they are recorded."
 

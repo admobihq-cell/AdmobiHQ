@@ -1,21 +1,6 @@
-import { prisma } from "@/lib/prisma"
+import type { IntegrationDto } from "@workspace/ops-contracts"
 
-export type IntegrationDto = {
-  id: number
-  name: string
-  category: string
-  purpose: string
-  url: string
-  plan: string
-  cost: number
-  currency: string
-  billing_cycle: string
-  status: string
-  owner: string
-  notes: string
-  updated_at: string
-  updated_by_email: string | null
-}
+import { prisma } from "@/lib/prisma"
 
 export async function listIntegrations(): Promise<IntegrationDto[]> {
   const rows = await prisma.integration.findMany({

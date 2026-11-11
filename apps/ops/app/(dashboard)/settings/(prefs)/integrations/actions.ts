@@ -5,7 +5,7 @@ import { z } from "zod"
 
 import { requireOpsAdmin } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { BILLING_CYCLES, CURRENCIES, SEED_INTEGRATIONS, STATUSES, CATEGORIES } from "@/lib/integration-costs"
+import { BILLING_CYCLES, CURRENCIES, SEED_INTEGRATIONS, STATUSES, CATEGORIES } from "@workspace/ops-contracts/integration-costs"
 
 const ROUTE = "/settings/integrations"
 

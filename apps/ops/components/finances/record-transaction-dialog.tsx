@@ -34,7 +34,7 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
-import type { RecordOptionsDto } from "@/lib/queries/finance"
+import type { RecordOptionsDto } from "@workspace/ops-contracts"
 
 const KIND_LABEL: Record<WalletTransactionKind, string> = {
   top_up: "Top-up",

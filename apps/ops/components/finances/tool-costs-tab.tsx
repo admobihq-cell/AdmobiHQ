@@ -8,7 +8,7 @@ import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import { InsightNote } from "@workspace/ui/components/dashboard/notes"
-import { CATEGORY_LABEL, RATES_AS_OF, USD_KES } from "@/lib/integration-costs"
+import { CATEGORY_LABEL, RATES_AS_OF, USD_KES } from "@workspace/ops-contracts/integration-costs"
 
 /** A run-rate summary of the integrations list. The list itself is edited under Settings. */
 export function ToolCostsTab({

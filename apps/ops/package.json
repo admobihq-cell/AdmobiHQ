@@ -26,6 +26,7 @@
     "@workspace/geo": "*",
     "@workspace/ops-api-client": "*",
     "@workspace/ops-contracts": "*",
+    "@workspace/ops-queries": "*",
     "@workspace/query-client": "*",
     "@workspace/sentry-config": "^0.0.0",
     "@workspace/ui": "*",
