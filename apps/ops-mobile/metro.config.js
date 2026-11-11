@@ -8,6 +8,10 @@ const workspaceRoot = path.resolve(projectRoot, "../..")
 const mobileModules = path.resolve(projectRoot, "node_modules")
 
 const workspacePackages = {
+  "@workspace/mobile-charts": path.resolve(
+    workspaceRoot,
+    "packages/mobile-charts",
+  ),
   "@workspace/geo": path.resolve(workspaceRoot, "packages/geo"),
   "@workspace/ops-api-client": path.resolve(
     workspaceRoot,
@@ -99,6 +103,13 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
         workspacePackages["@workspace/ops-contracts"],
         "src/index.ts",
       ),
+      type: "sourceFile",
+    }
+  }
+
+  if (moduleName === "@workspace/mobile-charts") {
+    return {
+      filePath: path.join(workspacePackages["@workspace/mobile-charts"], "src/index.ts"),
       type: "sourceFile",
     }
   }

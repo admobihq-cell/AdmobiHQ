@@ -11,6 +11,7 @@ const geoPackage = path.resolve(workspaceRoot, "packages/geo")
 // every earlier one was `import type`, which is erased before Metro ever sees
 // it — so the package now needs the same watch/resolve wiring as geo.
 const opsContractsPackage = path.resolve(workspaceRoot, "packages/ops-contracts")
+const mobileChartsPackage = path.resolve(workspaceRoot, "packages/mobile-charts")
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getSentryExpoConfig(projectRoot)
@@ -26,7 +27,7 @@ config.cacheStores = [
 
 // Only watch packages this app imports — not the whole monorepo (avoids
 // ENOENT spam from sibling Next.js apps writing under apps/*/.next).
-config.watchFolders = [geoPackage, opsContractsPackage]
+config.watchFolders = [geoPackage, opsContractsPackage, mobileChartsPackage]
 config.resolver.nodeModulesPaths = [
   mobileModules,
   path.resolve(workspaceRoot, "node_modules"),
@@ -53,6 +54,7 @@ config.resolver.extraNodeModules = {
   "react-dom": path.dirname(resolveFromMobile("react-dom/package.json")),
   "@workspace/geo": geoPackage,
   "@workspace/ops-contracts": opsContractsPackage,
+  "@workspace/mobile-charts": mobileChartsPackage,
 }
 
 const reactAliases = new Set([
@@ -83,6 +85,13 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === "@workspace/ops-contracts") {
     return {
       filePath: path.join(opsContractsPackage, "src/index.ts"),
+      type: "sourceFile",
+    }
+  }
+
+  if (moduleName === "@workspace/mobile-charts") {
+    return {
+      filePath: path.join(mobileChartsPackage, "src/index.ts"),
       type: "sourceFile",
     }
   }

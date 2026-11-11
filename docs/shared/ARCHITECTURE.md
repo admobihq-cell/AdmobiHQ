@@ -38,6 +38,8 @@ Admobi sells **LED taxi-top advertising in Kenya** — geotargeted, schedule-fle
 │   ├── geo/                         Nairobi map fixtures (corridors, coverage, plays)
 │   ├── ops-api-client/              Typed client for /v1 admin + public API
 │   ├── ops-contracts/               Shared Zod schemas and DTOs
+│   ├── ops-queries/                 SQL for ops finance, dashboards and the attention queue (ops web and the API)
+│   ├── mobile-charts/               Charts and dashboard pieces for the Expo apps (react-native-svg)
 │   ├── query-client/               Shared TanStack Query client + provider
 │   ├── sentry-config/               Shared Sentry init helpers
 │   ├── vitest-config/               Shared Vitest config
@@ -218,6 +220,14 @@ export default nextJsConfig
 - `nextjs.json` — extends base, switches to ESNext + Bundler resolution, preserves JSX, `noEmit`, Next.js plugin.
 
 [apps/web/tsconfig.json](../../apps/web/tsconfig.json) extends `nextjs.json` and adds two path aliases — `@/*` for local files and `@workspace/ui/*` for the package source.
+
+### 5.4 `@workspace/ops-queries` — [packages/ops-queries/](../../packages/ops-queries)
+
+The raw SQL behind ops Finances, the four dashboards and the attention queue. Every function takes a `Db` (anything with `query(text, params)`: a `pg` Pool, or a fake in a test) as its first argument, and the package never opens a connection or imports from an app. Ops web wraps the functions in `unstable_cache` (`apps/ops/lib/queries/*`); the API serves the same functions under `/v1/ops/*` for ops-mobile. The response shapes (`FinanceOverviewDto`, `PipelineDto`, …) live in `@workspace/ops-contracts` (`ops-dashboards.ts`) so mobile can type them without importing this package. **Mobile must never import `@workspace/ops-queries`.**
+
+### 5.5 `@workspace/mobile-charts` — [packages/mobile-charts/](../../packages/mobile-charts)
+
+Charts (trend, stacked bars, donut, rank bars, heatmap, share bar, sparkline) and dashboard pieces (chart card, KPI strip, range toolbar, alert strip, ledger list, skeletons) shared by ops-mobile, customer-mobile and driver-mobile. Pure maths (`geometry.ts`, `delta.ts`, `color.ts`) is unit-tested; components draw with `react-native-svg`. **Palette rule:** components never import a theme. Colours arrive through a `ChartPalette` prop, and each app builds it in `lib/chart-palette.ts` (`useChartPalette()`), so a chart can't hardcode a colour and break dark mode. A chart with nothing to show renders nothing; wrap it in `ChartCard`, which then shows the empty message. Apps list the package in `metro.config.js` (watch folder and an explicit resolver entry, like the other workspace packages).
 
 ## 6. Design system
 

@@ -36,6 +36,7 @@
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-persist-client": "^5.102.3",
     "@workspace/geo": "*",
+    "@workspace/mobile-charts": "*",
     "@workspace/ops-contracts": "*",
     "expo": "~54.0.36",
     "expo-constants": "~18.0.13",
