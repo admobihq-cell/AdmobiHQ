@@ -12,6 +12,7 @@ export type ChartPalette = {
   series: readonly string[]
   good: string
   bad: string
+  warning: string
   neutral: string
   /** The dashed "Sample" mark on figures that are illustrative. */
   sample: string
