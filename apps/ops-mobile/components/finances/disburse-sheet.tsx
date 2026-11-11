@@ -58,7 +58,10 @@ export function DisburseSheet({
     retry: false,
   })
   const checking = balance.isFetching
-  const check = disburseBalanceCheck(balance.data?.balanceKes ?? null, totalKes, feesKes)
+  // Only a balance from a fetch that just succeeded counts. After a failed refetch React Query keeps the
+  // last good value in `data`, which would show a stale balance and let Send through.
+  const balanceKes = balance.status === "success" && !balance.isFetching ? balance.data.balanceKes : null
+  const check = disburseBalanceCheck(balanceKes, totalKes, feesKes)
 
   const send = useMutation({
     mutationFn: () => client.payouts.disburse(batch.map((b) => b.id)),
@@ -80,7 +83,7 @@ export function DisburseSheet({
   })
 
   function submit() {
-    if (checking || check.state !== "ok") return
+    if (batch.length === 0 || checking || check.state !== "ok") return
     if (!guard.tryStart()) return
     setError(null)
     send.mutate()
@@ -173,7 +176,7 @@ export function DisburseSheet({
                 <View style={styles.line}>
                   <Text style={styles.label}>Paystack balance</Text>
                   <Text style={styles.value}>
-                    {checking ? "Checking…" : balance.data ? formatKes(balance.data.balanceKes) : "Unavailable"}
+                    {checking ? "Checking…" : balanceKes !== null ? formatKes(balanceKes) : "Unavailable"}
                   </Text>
                 </View>
 
@@ -197,7 +200,7 @@ export function DisburseSheet({
                 <PrimaryButton
                   label={busy ? "Sending…" : `Send ${formatKes(totalKes)} to ${batch.length} driver${batch.length === 1 ? "" : "s"}`}
                   onPress={submit}
-                  disabled={busy || checking || check.state !== "ok"}
+                  disabled={busy || checking || batch.length === 0 || check.state !== "ok"}
                 />
                 <SecondaryButton label="Back" onPress={close} disabled={busy} />
               </>
