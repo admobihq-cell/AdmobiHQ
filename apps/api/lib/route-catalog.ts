@@ -172,6 +172,14 @@ const NOTES: Record<string, string> = {
   "/v1/ops/finance/transactions": "Record a wallet ledger entry by hand",
   "/v1/ops/payments/refunds": "Refund unused credit to the original Paystack payments",
   "/v1/ops/payments/balance": "Live Paystack balance",
+  "/v1/ops/payments/unseen": "Settled payments ops has not looked at yet: count, and mark them seen",
+  "/v1/ops/finance/overview": "Finances overview: revenue, money in, funds held and margin",
+  "/v1/ops/finance/ledger": "Finances ledger rows and totals for a range",
+  "/v1/ops/finance/wallets": "Finances: each organization's balance and committed budget",
+  "/v1/ops/finance/payouts": "Finances: driver payouts by status for a range",
+  "/v1/ops/finance/attention": "Finances: payments and payouts that need a person",
+  "/v1/ops/finance/record-options": "Organizations and campaigns for the record and refund forms",
+  "/v1/ops/finance/tool-costs": "Monthly KES run-rate of paid-for tools",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
