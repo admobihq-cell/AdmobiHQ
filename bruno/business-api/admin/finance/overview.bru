@@ -1,0 +1,19 @@
+meta {
+  name: Finance overview
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{API_URL}}/v1/ops/finance/overview?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Revenue, money in, funds held, margin and the by-month / by-category / by-market splits. Needs `finances`. range: 7d | 30d | 90d | all (default 30d, anything else 400).
+}

@@ -12,6 +12,13 @@ import {
   type BulkReviewResult,
   type CampaignReviewInput,
   type RecordTransactionInput,
+  type AttentionItemDto,
+  type FinanceLedgerDto,
+  type FinanceOverviewDto,
+  type FinancePayoutsDto,
+  type RecordOptionsDto,
+  type ToolCostsDto,
+  type WalletRowDto,
   type DateRangeKey,
   type DocumentExportRequest,
   type DriverApplicationListItemDto,
@@ -263,6 +270,20 @@ export type OpsClient = {
     refund: (body: { orgId: number; amountKes: number; reason: string }) => Promise<{ refundIds: number[] }>
     /** Live Paystack KES balance. Needs `finances`. */
     paystackBalance: () => Promise<{ balanceKes: number }>
+    /** Finances reads, each needing `finances`. `range` is a dashboard range (`7d`, `30d`, `90d`, `all`). */
+    overview: (range: DateRangeKey) => Promise<FinanceOverviewDto>
+    ledger: (range: DateRangeKey) => Promise<FinanceLedgerDto>
+    wallets: () => Promise<WalletRowDto[]>
+    payouts: (range: DateRangeKey) => Promise<FinancePayoutsDto>
+    /** Payments and payouts that need a person, shown first on the Overview. */
+    attention: () => Promise<AttentionItemDto[]>
+    /** Organizations and campaigns offered by the Record transaction and Refund forms. */
+    recordOptions: () => Promise<RecordOptionsDto>
+    toolCosts: () => Promise<ToolCostsDto>
+    /** Settled payments ops hasn't looked at yet (the nav badge). */
+    unseenCount: () => Promise<{ count: number }>
+    /** Stamps every unseen settled payment as seen; call when the Ledger opens. */
+    markSeen: () => Promise<{ marked: number }>
   }
   payouts: {
     /** A month's payout run: eligible drivers and any saved payout. Needs `finances`. */
@@ -740,6 +761,15 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
       paystackBalance: () => request<{ balanceKes: number }>(`${apiPrefix}/ops/payments/balance`),
+      overview: (range) => request<FinanceOverviewDto>(`${apiPrefix}/ops/finance/overview?range=${range}`),
+      ledger: (range) => request<FinanceLedgerDto>(`${apiPrefix}/ops/finance/ledger?range=${range}`),
+      wallets: () => request<WalletRowDto[]>(`${apiPrefix}/ops/finance/wallets`),
+      payouts: (range) => request<FinancePayoutsDto>(`${apiPrefix}/ops/finance/payouts?range=${range}`),
+      attention: () => request<AttentionItemDto[]>(`${apiPrefix}/ops/finance/attention`),
+      recordOptions: () => request<RecordOptionsDto>(`${apiPrefix}/ops/finance/record-options`),
+      toolCosts: () => request<ToolCostsDto>(`${apiPrefix}/ops/finance/tool-costs`),
+      unseenCount: () => request<{ count: number }>(`${apiPrefix}/ops/payments/unseen`),
+      markSeen: () => request<{ marked: number }>(`${apiPrefix}/ops/payments/unseen`, { method: "POST" }),
     },
     payouts: {
       getRun: (month) => request<PayoutRunDto>(`${apiPrefix}/ops/payouts?month=${encodeURIComponent(month)}`),

@@ -20,6 +20,7 @@ import {
   type NamedValue,
   type ReportRange,
   type SpendCategory,
+  type ToolCostsDto,
   type WalletTransactionKind,
 } from "@workspace/ops-contracts"
 import { monthlyUsd, USD_KES } from "@workspace/ops-contracts/integration-costs"
@@ -92,7 +93,7 @@ async function providerFees(db: Db, start: string, end: string): Promise<number>
 }
 
 /** Monthly run-rate of paid-for tools in KES. Only active and trial lines count. */
-export async function toolMonthlyKes(db: Db): Promise<{ monthlyKes: number; activeCount: number; byCategory: NamedValue[] }> {
+export async function toolMonthlyKes(db: Db): Promise<ToolCostsDto> {
   const live = (await queryIntegrations(db)).filter((i) => i.status === "active" || i.status === "trial")
   const byCategory = new Map<string, number>()
   let monthlyUsdTotal = 0

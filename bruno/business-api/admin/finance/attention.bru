@@ -1,0 +1,19 @@
+meta {
+  name: Payments needing attention
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{API_URL}}/v1/ops/finance/attention
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Amount mismatches, payments pending over an hour, failed or needs-attention refunds, failed or reversed payouts.
+}

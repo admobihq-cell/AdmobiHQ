@@ -1,0 +1,19 @@
+meta {
+  name: Unseen payments count
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{API_URL}}/v1/ops/payments/unseen
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Settled Paystack payments ops hasn't looked at yet: the Finances badge.
+}

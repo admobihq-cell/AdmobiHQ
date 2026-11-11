@@ -233,3 +233,5 @@ export type SupportDashboardDto = {
   /** Null unless the viewer also holds `safety`. */
   safety: SafetySummary | null
 }
+
+export type ToolCostsDto = { monthlyKes: number; activeCount: number; byCategory: NamedValue[] }
