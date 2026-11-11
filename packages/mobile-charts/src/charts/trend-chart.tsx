@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Pressable, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import Svg, { G, Line, Path, Text as SvgText } from "react-native-svg"
 import { formatCompact, type DailyPoint } from "@workspace/ops-contracts"
 
-import { linePath, niceMax } from "../geometry"
+import { linePath, niceMax, pointIndexAt } from "../geometry"
 import type { ChartPalette } from "../palette"
 import { Legend, ValueRow, seriesColor } from "./parts"
 import { useWidth } from "./use-width"
@@ -48,8 +48,7 @@ export function TrendChart({
   const min = Math.min(0, ...finite)
   const plotH = height - 18
   const last = points.length - 1
-  const pick = (x: number) =>
-    setSelected(last <= 0 || width <= 0 ? 0 : Math.max(0, Math.min(last, Math.round((x / width) * last))))
+  const pick = (x: number) => setSelected(pointIndexAt(x, width, points.length))
   const sel = selected !== null ? points[selected] : undefined
   const selX = selected !== null && last > 0 ? (selected / last) * width : 0
   const first = points[0]
@@ -67,7 +66,7 @@ export function TrendChart({
           })}
         />
       ) : null}
-      <Pressable onPress={(e) => pick(e.nativeEvent.locationX)} onLayout={onLayout}>
+      <View onLayout={onLayout}>
         <Svg width={width} height={height}>
           {[0, 0.5, 1].map((f) => (
             <Line key={f} x1={0} x2={width} y1={plotH * (1 - f)} y2={plotH * (1 - f)} stroke={palette.grid} strokeWidth={1} />
@@ -111,7 +110,15 @@ export function TrendChart({
             </SvgText>
           ) : null}
         </Svg>
-      </Pressable>
+        {/* A transparent overlay takes the tap, so locationX is measured from the chart and not from
+            whichever SVG child sat under the finger. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={(e) => pick(e.nativeEvent.locationX)}
+          accessibilityRole="button"
+          accessibilityLabel="Tap a day to read its values"
+        />
+      </View>
       {series.length > 1 ? (
         <Legend palette={palette} items={series.map((s, i) => ({ label: s.label, color: seriesColor(palette, i) }))} />
       ) : null}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { barGeometry, donutArcs, linePath, niceMax } from "./geometry"
+import { barGeometry, donutArcs, linePath, niceMax, pointIndexAt, slotIndexAt } from "./geometry"
 
 describe("niceMax", () => {
   it("rounds up to 1, 2, 2.5 or 5 times a power of ten, and is 1 for nothing", () => {
@@ -68,5 +68,39 @@ describe("donutArcs", () => {
     const [only] = donutArcs([7], 40, 8)
     expect(only!.share).toBe(1)
     expect(only!.d).not.toMatch(/NaN/)
+  })
+})
+
+describe("pointIndexAt", () => {
+  it("picks the nearest of evenly spaced points, spanning edge to edge", () => {
+    expect(pointIndexAt(0, 100, 5)).toBe(0)
+    expect(pointIndexAt(100, 100, 5)).toBe(4)
+    expect(pointIndexAt(49, 100, 5)).toBe(2)
+    expect(pointIndexAt(12, 100, 5)).toBe(0)
+    expect(pointIndexAt(13, 100, 5)).toBe(1)
+  })
+
+  it("clamps a tap outside the chart and copes with no width or a single point", () => {
+    expect(pointIndexAt(-20, 100, 5)).toBe(0)
+    expect(pointIndexAt(999, 100, 5)).toBe(4)
+    expect(pointIndexAt(50, 0, 5)).toBe(0)
+    expect(pointIndexAt(50, 100, 1)).toBe(0)
+    expect(pointIndexAt(50, 100, 0)).toBe(0)
+  })
+})
+
+describe("slotIndexAt", () => {
+  it("picks the equal-width slot a tap landed in", () => {
+    expect(slotIndexAt(0, 100, 4)).toBe(0)
+    expect(slotIndexAt(24, 100, 4)).toBe(0)
+    expect(slotIndexAt(25, 100, 4)).toBe(1)
+    expect(slotIndexAt(99, 100, 4)).toBe(3)
+  })
+
+  it("clamps a tap outside the chart and copes with no width", () => {
+    expect(slotIndexAt(-5, 100, 4)).toBe(0)
+    expect(slotIndexAt(500, 100, 4)).toBe(3)
+    expect(slotIndexAt(50, 0, 4)).toBe(0)
+    expect(slotIndexAt(50, 100, 0)).toBe(0)
   })
 })

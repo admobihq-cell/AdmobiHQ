@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Pressable, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import Svg, { G, Line, Rect, Text as SvgText } from "react-native-svg"
 import { formatCompact } from "@workspace/ops-contracts"
 
-import { barGeometry, niceMax } from "../geometry"
+import { barGeometry, niceMax, slotIndexAt } from "../geometry"
 import type { ChartPalette } from "../palette"
 import { Legend, ValueRow, seriesColor } from "./parts"
 import { useWidth } from "./use-width"
@@ -54,7 +54,7 @@ export function StackedBars({
           parts={keys.map((k) => `${k.label} ${format(valueOf(sel, k.key))}`)}
         />
       ) : null}
-      <Pressable onPress={(e) => setSelected(slot > 0 ? Math.min(bars.length - 1, Math.floor(e.nativeEvent.locationX / slot)) : 0)} onLayout={onLayout}>
+      <View onLayout={onLayout}>
         <Svg width={width} height={height}>
           <Line x1={0} x2={width} y1={plotH} y2={plotH} stroke={palette.grid} strokeWidth={1} />
           <SvgText x={0} y={10} fontSize={10} fill={palette.muted}>
@@ -93,7 +93,13 @@ export function StackedBars({
               })
             : null}
         </Svg>
-      </Pressable>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={(e) => setSelected(slotIndexAt(e.nativeEvent.locationX, width, bars.length))}
+          accessibilityRole="button"
+          accessibilityLabel="Tap a bar to read its values"
+        />
+      </View>
       <Legend palette={palette} items={keys.map((k, i) => ({ label: k.label, color: seriesColor(palette, i) }))} />
     </View>
   )

@@ -107,3 +107,20 @@ export function donutArcs(
   })
   return arcs
 }
+
+const clampIndex = (i: number, count: number) => Math.max(0, Math.min(count - 1, i))
+
+/**
+ * Which of `count` evenly spaced points (the first at the left edge, the last at the right edge) a tap
+ * at `x` is nearest to. Clamped, so a tap on the padding still picks the first or last point.
+ */
+export function pointIndexAt(x: number, width: number, count: number): number {
+  if (count <= 1 || !(width > 0)) return 0
+  return clampIndex(Math.round((x / width) * (count - 1)), count)
+}
+
+/** Which of `count` equal-width slots a tap at `x` landed in (bar charts). Clamped. */
+export function slotIndexAt(x: number, width: number, count: number): number {
+  if (count <= 0 || !(width > 0)) return 0
+  return clampIndex(Math.floor((x / width) * count), count)
+}

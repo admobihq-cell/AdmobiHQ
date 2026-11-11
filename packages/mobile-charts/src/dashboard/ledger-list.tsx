@@ -1,5 +1,5 @@
 import type { ReactElement } from "react"
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native"
+import { FlatList, Pressable, StyleSheet, Text, View, type RefreshControlProps } from "react-native"
 
 import { withAlpha } from "../color"
 import type { ChartPalette } from "../palette"
@@ -18,6 +18,8 @@ export function LedgerList<T>({
   onEndReached,
   emptyMessage,
   palette,
+  header,
+  refreshControl,
 }: {
   rows: T[]
   keyOf: (row: T) => string
@@ -28,6 +30,10 @@ export function LedgerList<T>({
   onEndReached?: () => void
   emptyMessage: string
   palette: ChartPalette
+  /** Anything that belongs above the filters (tabs, range toolbar, action buttons). It scrolls with the list. */
+  header?: ReactElement
+  /** Pull to refresh, e.g. `<RefreshControl refreshing={...} onRefresh={...} />`. */
+  refreshControl?: ReactElement<RefreshControlProps>
 }) {
   const accent = palette.series[0] ?? palette.text
   return (
@@ -37,9 +43,12 @@ export function LedgerList<T>({
       renderItem={({ item }) => renderRow(item)}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
+      refreshControl={refreshControl}
       ItemSeparatorComponent={() => <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />}
       ListHeaderComponent={
-        filters && onFilter ? (
+        <View>
+          {header}
+          {filters && onFilter ? (
           <View style={styles.filters}>
             {filters.map((f) => {
               const selected = f.value === filter
@@ -62,7 +71,8 @@ export function LedgerList<T>({
               )
             })}
           </View>
-        ) : null
+          ) : null}
+        </View>
       }
       ListEmptyComponent={
         <View style={styles.empty}>
