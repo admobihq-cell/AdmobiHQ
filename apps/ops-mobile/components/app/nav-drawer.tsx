@@ -30,6 +30,7 @@ import {
 } from "@/components/icons"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useOpsAccess } from "@/lib/ops-client"
+import { useUnseenPayments } from "@/lib/use-finance"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.82, 340)
@@ -166,6 +167,8 @@ export function NavDrawer({
   const insets = useSafeAreaInsets()
   const { user } = useUser()
   const { role, permissions } = useOpsAccess()
+  // Settled payments nobody has looked at yet; opening the Ledger clears it.
+  const unseenPayments = useUnseenPayments().data ?? 0
   const progress = useSharedValue(0)
 
   const visibleLinks = LINKS.filter((link) => {
@@ -292,6 +295,16 @@ export function NavDrawer({
       backgroundColor: c.border,
       marginLeft: 56,
     },
+    badge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      paddingHorizontal: 6,
+      backgroundColor: c.danger,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "700" as const },
   }))
 
   const go = (href: DrawerLink["href"]) => {
@@ -358,6 +371,11 @@ export function NavDrawer({
                         {link.description}
                       </Text>
                     </View>
+                    {link.key === "finances" && unseenPayments > 0 ? (
+                      <View style={styles.badge} accessibilityLabel={`${unseenPayments} new payments`}>
+                        <Text style={styles.badgeText}>{unseenPayments > 99 ? "99+" : unseenPayments}</Text>
+                      </View>
+                    ) : null}
                   </Pressable>
                   {index < visibleLinks.length - 1 ? (
                     <View style={styles.divider} />

@@ -13,6 +13,7 @@ export function DonutChart({
   size = 140,
   format = formatCompact,
   centerLabel,
+  centerValue,
   accessibilityLabel,
 }: {
   data: NamedValue[]
@@ -21,6 +22,8 @@ export function DonutChart({
   format?: (value: number) => string
   /** Small caption under the total in the middle ("total", "spend"). */
   centerLabel?: string
+  /** What to print in the middle. Defaults to the formatted total; pass a compact figure when `format` is long (KES amounts). */
+  centerValue?: string
   accessibilityLabel?: string
 }) {
   const arcs = donutArcs(
@@ -42,7 +45,7 @@ export function DonutChart({
           <Path key={a.index} d={a.d} fill={seriesColor(palette, a.index)} />
         ))}
         <SvgText x={size / 2} y={size / 2 + (centerLabel ? 0 : 5)} fontSize={18} fontWeight="600" fill={palette.text} textAnchor="middle">
-          {format(total)}
+          {centerValue ?? format(total)}
         </SvgText>
         {centerLabel ? (
           <SvgText x={size / 2} y={size / 2 + 16} fontSize={11} fill={palette.muted} textAnchor="middle">

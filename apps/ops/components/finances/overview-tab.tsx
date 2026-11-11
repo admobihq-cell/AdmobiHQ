@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { ArrowDownCircle } from "lucide-react"
-import { formatCompact, formatKes } from "@workspace/ops-contracts"
+import { NO_LEDGER, formatCompact, formatKes, monthLabel, netMarginNote } from "@workspace/ops-contracts"
 
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
@@ -19,11 +19,7 @@ import { PaystackBalanceTile } from "@/components/finances/paystack-balance-tile
 import { RefundDialog } from "@/components/finances/refund-dialog"
 import type { AttentionItemDto, FinanceOverviewDto, RecordOptionsDto } from "@workspace/ops-contracts"
 
-export const NO_LEDGER = "Transactions appear here once an advertiser's wallet has activity."
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-/** "2026-11" → "Nov 26". */
-export const monthLabel = (m: string) => `${MONTHS[Number(m.slice(5)) - 1] ?? m} ${m.slice(2, 4)}`
+export { NO_LEDGER, monthLabel }
 
 export function OverviewTab({
   data,
@@ -35,7 +31,7 @@ export function OverviewTab({
   orgs: RecordOptionsDto["orgs"]
 }) {
   const flow = data.moneyInOut.map((r) => ({ period: monthLabel(r.period), in: r.inKes, out: r.outKes }))
-  const margin = data.revenue.current > 0 ? Math.round((data.netMarginKes / data.revenue.current) * 100) : null
+  
 
   // Broken money comes first when there is any; an empty list sinks to the foot.
   const needsAttention = (
@@ -105,7 +101,7 @@ export function OverviewTab({
               {
                 label: "Net margin",
                 value: formatKes(data.netMarginKes),
-                note: margin === null ? "No revenue yet" : `${margin}% of revenue`,
+                note: netMarginNote(data.netMarginKes, data.revenue.current),
               },
             ]}
           />
