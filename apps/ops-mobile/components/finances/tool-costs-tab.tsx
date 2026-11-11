@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native"
 import { ChartCard, ChartSkeleton, KpiStrip, KpiStripSkeleton, RankBars } from "@workspace/mobile-charts"
-import { CATEGORY_LABEL, RATES_AS_OF, USD_KES, formatKes } from "@workspace/ops-contracts"
+import { formatKes } from "@workspace/ops-contracts"
+import { CATEGORY_LABEL, RATES_AS_OF, USD_KES } from "@workspace/ops-contracts/integration-costs"
 
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { useChartPalette } from "@/lib/chart-palette"

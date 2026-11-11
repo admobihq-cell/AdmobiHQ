@@ -1,8 +1,8 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useMutation } from "@tanstack/react-query"
-import { formatKes, refundFormError, type RecordOptionsDto } from "@workspace/ops-contracts"
+import { createInFlightGuard, formatKes, refundFormError, type RecordOptionsDto } from "@workspace/ops-contracts"
 
 import { Field, Label, PrimaryButton, SecondaryButton } from "@/components/ui"
 import { PickerField } from "@/components/finances/picker-field"
@@ -29,6 +29,8 @@ export function RefundSheet({
   const client = useOpsClient()
   const insets = useSafeAreaInsets()
   const refresh = useRefreshFinance()
+  // Refunds carry no idempotency key, so a second tap must be turned away before the first has rendered.
+  const guard = useMemo(() => createInFlightGuard(), [])
   const [orgId, setOrgId] = useState("")
   const [amount, setAmount] = useState("")
   const [reason, setReason] = useState("")
@@ -53,11 +55,16 @@ export function RefundSheet({
       Alert.alert("Refund sent to Paystack", `${refundIds.length} payment${refundIds.length === 1 ? "" : "s"} refunded.`)
     },
     onError: (e) => setError(formatOpsError(e, API_URL)),
+    onSettled: () => guard.finish(),
   })
 
   function submit() {
+    if (!guard.tryStart()) return
     const problem = refundFormError({ orgId, amount, reason })
-    if (problem) return setError(problem)
+    if (problem) {
+      guard.finish()
+      return setError(problem)
+    }
     setError(null)
     refund.mutate({ orgId: Number(orgId), amountKes: Number(amount), reason: reason.trim() })
   }

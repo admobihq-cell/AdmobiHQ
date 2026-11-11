@@ -8,6 +8,7 @@ import {
   SPEND_CATEGORIES,
   SPEND_CATEGORY_LABELS,
   WALLET_TRANSACTION_KINDS,
+  createInFlightGuard,
   parseRecordTransactionForm,
   type RecordOptionsDto,
   type RecordTransactionInput,
@@ -40,6 +41,8 @@ export function RecordTransactionSheet({
   const client = useOpsClient()
   const insets = useSafeAreaInsets()
   const refresh = useRefreshFinance()
+  // With no reference, a duplicate tap would write two ledger rows; turn it away synchronously.
+  const guard = useMemo(() => createInFlightGuard(), [])
   const [orgId, setOrgId] = useState("")
   const [kind, setKind] = useState<WalletTransactionKind>("top_up")
   const [amount, setAmount] = useState("")
@@ -75,9 +78,11 @@ export function RecordTransactionSheet({
       Alert.alert("Transaction recorded")
     },
     onError: (e) => setError(formatOpsError(e, API_URL)),
+    onSettled: () => guard.finish(),
   })
 
   function submit() {
+    if (!guard.tryStart()) return
     const parsed = parseRecordTransactionForm({
       orgId,
       kind,
@@ -87,7 +92,10 @@ export function RecordTransactionSheet({
       reference,
       reason,
     })
-    if ("error" in parsed) return setError(parsed.error)
+    if ("error" in parsed) {
+      guard.finish()
+      return setError(parsed.error)
+    }
     setError(null)
     record.mutate(parsed.data)
   }
