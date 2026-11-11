@@ -121,3 +121,34 @@ export function useRefreshFinance() {
       queryClient.invalidateQueries({ queryKey: unseenPaymentsKey }),
     ])
 }
+
+/** Whether this person may send payouts to Paystack: an admin, or someone holding `payouts` (separate from `finances`). */
+export function useCanDisburse(): boolean {
+  const { role, permissions } = useOpsAccess()
+  return role === "admin" || permissions.includes("payouts")
+}
+
+/** Driver payouts in the range, by status and month, with the rows. */
+export function useFinancePayouts(range: DateRangeKey) {
+  const client = useOpsClient()
+  return useQuery({
+    queryKey: financeKeys.payouts(range),
+    queryFn: () => client.finance.payouts(range),
+    enabled: useFinanceEnabled(),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** One month's payout run: approved drivers with payout details and any saved payout. Always fresh: money is about to move. */
+export function usePayoutRun(month: string) {
+  const client = useOpsClient()
+  return useQuery({
+    queryKey: ["ops-finance", "payout-run", month] as const,
+    queryFn: () => client.payouts.getRun(month),
+    enabled: useFinanceEnabled(),
+    staleTime: 0,
+    // Amounts the person is typing live in screen state, so a background refetch must not replace them.
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+}

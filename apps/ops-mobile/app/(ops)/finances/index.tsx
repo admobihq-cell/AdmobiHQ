@@ -1,11 +1,13 @@
 import { useState } from "react"
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native"
 import { useIsFetching } from "@tanstack/react-query"
+import { useRouter } from "expo-router"
 import { RangeToolbar, SegmentTabs } from "@workspace/mobile-charts"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { LedgerTab } from "@/components/finances/ledger-tab"
 import { OverviewTab } from "@/components/finances/overview-tab"
+import { PayoutsTab } from "@/components/finances/payouts-tab"
 import { ToolCostsTab } from "@/components/finances/tool-costs-tab"
 import { WalletsTab } from "@/components/finances/wallets-tab"
 import { Wallet } from "@/components/icons"
@@ -30,6 +32,7 @@ export default function FinancesScreen() {
   const palette = useChartPalette()
   const { allowed, loading } = useFinanceAccess()
   const unseen = useUnseenPayments()
+  const router = useRouter()
   const refresh = useRefreshFinance()
   const fetching = useIsFetching({ queryKey: financeKeys.all }) > 0
   const [tab, setTab] = useState<FinanceTab>("overview")
@@ -89,6 +92,13 @@ export default function FinancesScreen() {
       </View>
     )
   }
+  if (tab === "payouts") {
+    return (
+      <View style={[styles.container, stack.listPad]}>
+        <PayoutsTab range={range} header={header} onNewRun={() => router.push("/(ops)/finances/payout-run")} />
+      </View>
+    )
+  }
 
   return (
     <ScrollView
@@ -98,9 +108,6 @@ export default function FinancesScreen() {
     >
       {header}
       {tab === "overview" ? <OverviewTab range={range} onOpenPayouts={() => setTab("payouts")} /> : null}
-      {tab === "payouts" ? (
-        <EmptyState icon={Wallet} title="Driver payouts" description="Payout runs and disbursement arrive in the next step." />
-      ) : null}
       {tab === "tool-costs" ? <ToolCostsTab /> : null}
     </ScrollView>
   )

@@ -329,6 +329,7 @@ async function parseError(res: Response): Promise<OpsApiError> {
     formatApiErrorResponse(body, res.status),
     res.status,
     body?.issues,
+    body,
   )
 }
 
