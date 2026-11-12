@@ -10,6 +10,7 @@ import {
   formatDateTime,
   formatLabel,
   specsForFormat,
+  campaignFundingLabel,
 } from "@workspace/ops-contracts"
 import type {
   CampaignCreativeDto,
@@ -214,6 +215,7 @@ export default function CampaignDetailScreen() {
       data.starts_on && data.ends_on ? `${data.starts_on} → ${data.ends_on}` : "Not scheduled",
     ],
     ["Budget", data.budget_kes ? `KES ${Number(data.budget_kes).toLocaleString("en-KE")}` : "—"],
+    ["Funding", campaignFundingLabel(data.funded_at, data.budget_kes)],
     ["Notes", data.notes ?? "—"],
   ]
 

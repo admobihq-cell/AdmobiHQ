@@ -71,8 +71,11 @@ banner counting them; the list polls every 15s while anything is live and
 every 60s when quiet.
 
 Actions: Acknowledge / In progress / Resolve (resolution note **required** —
-the API returns 400 without one). Only the driver can cancel. Photos are not
-rendered on mobile — the detail screen points to the ops console for those.
+the API returns 400 without one). Only the driver can cancel. Photos the
+driver attached show as a strip of thumbnails on the detail screen (tap for full
+size). The file route is private, so each image loads with the same bearer token
+as the API calls (`client.safety.photoFileUrl`). **Open map** opens Google Maps at
+the last known location, falling back to where it was reported.
 
 Ops push for a new SOS uses alert type `safety`, the **MAX-importance
 `"safety"` Android channel** registered in `lib/push-notifications.ts`, and
@@ -99,6 +102,10 @@ On **Campaigns** and **Driver applications**, long-press a row to start selectin
 ## Exporting lists
 
 Every entity list (Leads, Fleet, Drivers, Waitlist, Media kit), **Campaigns**, **Driver applications**, **Team** and **Roles** has an **Export** button: pick **CSV** or **PDF** and the file opens in the system share sheet. It exports exactly what is on screen: the rows loaded so far, or just the selected rows when a selection is active (the button then reads "Export N selected" and the file name ends in `-selected`). At most 500 rows, the PDF route's limit. Columns match the ops web tables' CSV columns. CSV is built on the phone with `toCsv` and written with `expo-file-system`; PDF comes from `POST /v1/ops/documents/export` and is refused unless it starts with `%PDF` (a proxy error page is never shared as a PDF). File names come from `exportFileName()`, e.g. `drivers-2026-11-12.csv`. The code is `lib/export-list.ts` and `components/app/export-button.tsx`. Team and Roles export under the `admin` permission, like the web.
+
+## Campaign funding
+
+The campaign detail screen's **Funding** row reads **Funded · KES 12,500 held** when the advertiser's budget was paid for and held (`funded_at` is set; the budget is locked and a rejection releases it), or **Not funded**. Same wording as the ops web review panel.
 
 ## Push notifications (ops staff)
 
@@ -127,6 +134,8 @@ So the `delivered_count / target_count` shown in the ops console is **0 right af
 The endpoint accepts either an ops session or `Authorization: Bearer $CRON_SECRET`. Set `CRON_SECRET` in the API environment.
 
 ### Resend
+
+The mobile composer (`/(ops)/announcements/new`) has **Personalise** buttons that insert `{{first_name}}` or `{{org_name}}` at the cursor of whichever of title or message was focused last (refused if it would pass the limit, as on web), live character counts against the push limits (**65** title, **178** message), and a live preview of the notification with sample values (first name "Jordan", organisation "Acme Ads"; drivers have no organisation). When a send reaches both apps the preview has a Customer / Driver switch. Tapping a past broadcast in the list opens a detail sheet with the same preview, the delivery bar (reached / no longer registered / awaiting a receipt) and who sent it. The sample values and limits live in `@workspace/ops-contracts` (`announcement-ui.ts`).
 
 Ops web and ops-mobile list past broadcasts with a **Resend** action. It reuses `POST /v1/notifications/broadcast` with the same title/body, so a resend creates a **new** `announcement_broadcasts` row and a fresh fan-out — it does not mutate the original send.
 
