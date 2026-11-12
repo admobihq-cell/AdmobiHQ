@@ -92,6 +92,10 @@ The bell in the app bar opens `/(ops)/notifications`: the same "needs attention"
 
 `/(ops)/users`, from the drawer's **Users** entry, ops admins only (as on web, where `/users` needs `requireOpsAdmin`; `GET /v1/users` is `requireOpsAdminAccess`). Anyone else gets a no-access screen and no request is made. **Customers** and **Drivers** come from `GET /v1/users?type=` with a debounced search (name, email, phone) and 25-row pages loaded as you scroll; each row shows name, company (customers), email, phone, joined date and status (Active / Banned / Locked). **Admins** is the ops team list (`GET /v1/team`), searched on the phone by email or role. There is no per-user detail screen: the web has no detail page and there is no detail endpoint.
 
+## Bulk approve and reject
+
+On **Campaigns** and **Driver applications**, long-press a row to start selecting; tap more rows to add or remove them (up to 100, the API's batch limit). A bar shows the count with **Approve** and **Reject**. Both ask first and state the count; Reject needs one reason, which is shown to every row it applies to. Only rows still in review change; the rest are skipped, and the result line reads like the web's: "2 approved, 1 skipped (not in review)". Changing the status filter clears the selection. A second tap on Approve/Reject while a batch is in flight is ignored. Calls `POST /v1/campaigns/bulk-review` and `POST /v1/driver-applications/bulk-review`.
+
 ## Push notifications (ops staff)
 
 When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).

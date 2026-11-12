@@ -1,21 +1,24 @@
 import { useMemo, useState } from "react"
-import { FlatList, RefreshControl, View } from "react-native"
+import { FlatList, RefreshControl, Text, View } from "react-native"
 import { useRouter } from "expo-router"
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
 import type { CampaignListItemDto } from "@workspace/ops-contracts"
 
 import { FilterChips } from "@/components/app/filter-chips"
+import { SelectionBar } from "@/components/app/selection-bar"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonTriageRows } from "@/components/app/skeleton"
 import type { StatusChipVariant } from "@/components/app/status-chip"
-import { MonitorPlay } from "@/components/icons"
+import { CheckboxOff, CheckboxOn, MonitorPlay } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
 import { PageHero } from "@/components/ui/page-hero"
+import { useChartPalette } from "@/lib/chart-palette"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
+import { useSelection } from "@/lib/use-selection"
 import { radius, spacing, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const STATUS_FILTERS = [
@@ -49,6 +52,10 @@ export default function CampaignsScreen() {
   const client = useOpsClient()
   const colors = useThemeColors()
   const [status, setStatus] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const palette = useChartPalette()
+  const selection = useSelection(status)
+  const [result, setResult] = useState<{ text: string; ok: boolean } | null>(null)
 
   const query = useInfiniteQuery({
     queryKey: ["campaigns", "list", status],
@@ -96,6 +103,15 @@ export default function CampaignsScreen() {
         description="Review advertiser campaigns and their creative before they run."
       />
       <FilterChips options={STATUS_FILTERS} selected={status} onSelect={setStatus} embedded />
+      {result ? (
+        <Text
+          accessibilityRole="alert"
+          onPress={() => setResult(null)}
+          style={{ color: result.ok ? palette.good : palette.warning, fontSize: 14, fontWeight: "600" }}
+        >
+          {result.text}
+        </Text>
+      ) : null}
       {error ? (
         <ApiErrorBanner message={error} onRetry={() => void query.refetch()} />
       ) : null}
@@ -115,6 +131,20 @@ export default function CampaignsScreen() {
 
   return (
     <View style={styles.container}>
+      {selection.active ? (
+        <SelectionBar
+          count={selection.ids.size}
+          noun="campaigns"
+          onClear={selection.clear}
+          onApprove={() => client.campaigns.bulkReview({ ids: [...selection.ids], decision: "approved" })}
+          onReject={(reason) => client.campaigns.bulkReview({ ids: [...selection.ids], decision: "rejected", reason })}
+          onDone={(text, ok) => {
+            setResult({ text, ok })
+            selection.clear()
+            void queryClient.invalidateQueries({ queryKey: ["campaigns"] })
+          }}
+        />
+      ) : null}
       <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
@@ -155,7 +185,18 @@ export default function CampaignsScreen() {
               initials={item.name}
               statusLabel={formatLabel(item.status)}
               statusVariant={STATUS_VARIANTS[item.status] ?? "muted"}
-              onPress={() => router.push(`/(ops)/campaigns/${item.id}`)}
+              onPress={() => (selection.active ? selection.toggle(item.id) : router.push(`/(ops)/campaigns/${item.id}`))}
+              onLongPress={() => selection.toggle(item.id)}
+              showChevron={!selection.active}
+              rightElement={
+                selection.active ? (
+                  selection.ids.has(item.id) ? (
+                    <CheckboxOn color={palette.good} size={22} />
+                  ) : (
+                    <CheckboxOff color={palette.muted} size={22} />
+                  )
+                ) : undefined
+              }
             />
             {index < items.length - 1 ? <View style={styles.separator} /> : null}
           </View>
