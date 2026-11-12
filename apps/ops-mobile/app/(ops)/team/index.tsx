@@ -10,6 +10,7 @@ import type {
   TeamRoleUpdateInput,
 } from "@workspace/ops-contracts"
 
+import { ListExportButton } from "@/components/app/export-button"
 import { GroupedList } from "@/components/app/grouped-list"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
@@ -185,6 +186,16 @@ export default function TeamMembersScreen() {
           }
         />
         <TeamTabs active="members" />
+        <ListExportButton
+          entity="admin"
+          title="Team"
+          rows={team?.members ?? []}
+          columns={[
+            { header: "Email", value: (m) => m.email },
+            { header: "Role", value: (m) => m.roleName ?? (m.role === "admin" ? "Admin" : "Member") },
+            { header: "Joined", value: (m) => formatDateTime(m.joinedAt) },
+          ]}
+        />
 
         {error ? <ApiErrorBanner message={error} onRetry={() => void teamQuery.refetch()} /> : null}
 

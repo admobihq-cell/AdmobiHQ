@@ -27,12 +27,13 @@ import type {
   FormFieldOption,
   PaginatedResponse,
 } from "@workspace/ops-contracts"
-import { formatLabel, formatRelativeTime } from "@workspace/ops-contracts"
+import { formatLabel, formatRelativeTime, type DocumentExportRequest } from "@workspace/ops-contracts"
 
 import {
   FilterChips,
   type FilterChipOption,
 } from "@/components/app/filter-chips"
+import { ExportButton } from "@/components/app/export-button"
 import { ListRow } from "@/components/app/list-row"
 import type { StatusChipVariant } from "@/components/app/status-chip"
 import { SkeletonListRows, SkeletonTriageRows } from "@/components/app/skeleton"
@@ -42,7 +43,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui"
 import type { EntityKey } from "@/lib/entity-form-config"
 import { formatOpsError } from "@/lib/format-error"
-import { API_URL } from "@/lib/ops-client"
+import { exportRows, tableCells, type ExportColumn } from "@/lib/export-list"
+import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
 import { entityKeys } from "@/lib/query-keys"
 import {
@@ -95,7 +97,11 @@ type EntityListProps<T extends { id: number }> = {
   onBulkStatusChange?: (ids: number[], status: string) => Promise<unknown>
   /** Enables bulk delete from the same long-press selection UI. Independent of statusOptions/onBulkStatusChange — either or both may be provided. */
   onBulkDelete?: (ids: number[]) => Promise<unknown>
+  /** Adds an Export button: CSV or PDF of the selected rows, or else every row loaded so far (at most 500, the PDF route's limit). */
+  exports?: { entity: DocumentExportRequest["entity"]; columns: ExportColumn<T>[] }
 }
+
+const EXPORT_MAX_ROWS = 500
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -117,10 +123,13 @@ export function EntityList<T extends { id: number; created_at?: string }>({
   statusOptions,
   onBulkStatusChange,
   onBulkDelete,
+  exports,
 }: EntityListProps<T>) {
   usePageHeader(title)
   const router = useRouter()
   const queryClient = useQueryClient()
+  const client = useOpsClient()
+  const [exportError, setExportError] = useState<string | null>(null)
   const colors = useThemeColors()
   const resolvedTheme = useResolvedTheme()
   const insets = useSafeAreaInsets()
@@ -446,6 +455,19 @@ export function EntityList<T extends { id: number; created_at?: string }>({
           ) : null}
         </View>
       </View>
+      {exports && items.length > 0 ? (
+        <ExportButton
+          label={selectionMode ? `Export ${selectedIds.size} selected` : "Export"}
+          onError={setExportError}
+          onExport={async (kind) => {
+            setExportError(null)
+            const rows = (selectionMode ? items.filter((i) => selectedIds.has(i.id)) : items).slice(0, EXPORT_MAX_ROWS)
+            const { headers, cells } = tableCells(exports.columns, rows)
+            await exportRows({ client, kind, entity: exports.entity, title, headers, rows: cells, selected: selectionMode })
+          }}
+        />
+      ) : null}
+      {exportError ? <ApiErrorBanner message={exportError} onRetry={() => setExportError(null)} /> : null}
       <View style={styles.searchBox}>
         <Search color={colors.mutedForeground} size={18} strokeWidth={2} />
         <TextInput

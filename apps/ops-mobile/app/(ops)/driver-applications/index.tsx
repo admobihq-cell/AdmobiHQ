@@ -6,6 +6,7 @@ import { formatDateTime, formatLabel } from "@workspace/ops-contracts"
 import type { DriverApplicationListItemDto } from "@workspace/ops-contracts"
 
 import { FilterChips } from "@/components/app/filter-chips"
+import { ExportButton } from "@/components/app/export-button"
 import { SelectionBar } from "@/components/app/selection-bar"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonTriageRows } from "@/components/app/skeleton"
@@ -15,6 +16,7 @@ import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { EmptyState } from "@/components/ui"
 import { PageHero } from "@/components/ui/page-hero"
 import { useChartPalette } from "@/lib/chart-palette"
+import { exportRows, tableCells, type ExportColumn } from "@/lib/export-list"
 import { formatOpsError } from "@/lib/format-error"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
@@ -35,6 +37,14 @@ const STATUS_VARIANTS: Record<string, StatusChipVariant> = {
   changes_requested: "attention",
 }
 
+const EXPORT_COLUMNS: ExportColumn<DriverApplicationListItemDto>[] = [
+  { header: "Submitted", value: (r) => formatDateTime(r.submitted_at ?? r.created_at) },
+  { header: "Name", value: (r) => r.full_name },
+  { header: "Phone", value: (r) => r.phone },
+  { header: "City", value: (r) => r.city },
+  { header: "Status", value: (r) => formatLabel(r.status) },
+]
+
 export default function DriverApplicationsScreen() {
   usePageHeader("Driver applications")
   const router = useRouter()
@@ -44,6 +54,7 @@ export default function DriverApplicationsScreen() {
   const queryClient = useQueryClient()
   const palette = useChartPalette()
   const selection = useSelection(status)
+  const [exportError, setExportError] = useState<string | null>(null)
   const [result, setResult] = useState<{ text: string; ok: boolean } | null>(null)
 
   const query = useInfiniteQuery({
@@ -101,6 +112,19 @@ export default function DriverApplicationsScreen() {
           {result.text}
         </Text>
       ) : null}
+      {items.length > 0 ? (
+        <ExportButton
+          label={selection.active ? `Export ${selection.ids.size} selected` : "Export"}
+          onError={setExportError}
+          onExport={async (kind) => {
+            setExportError(null)
+            const rows = (selection.active ? items.filter((i) => selection.ids.has(i.id)) : items).slice(0, 500)
+            const { headers, cells } = tableCells(EXPORT_COLUMNS, rows)
+            await exportRows({ client, kind, entity: "driver_applications", title: "Driver applications", headers, rows: cells, selected: selection.active })
+          }}
+        />
+      ) : null}
+      {exportError ? <ApiErrorBanner message={exportError} onRetry={() => setExportError(null)} /> : null}
       {error ? (
         <ApiErrorBanner message={error} onRetry={() => void query.refetch()} />
       ) : null}

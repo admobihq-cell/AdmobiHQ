@@ -3,6 +3,7 @@ import {
   LEAD_STATUSES,
   LEAD_STATUS_OPTIONS,
   formatLabel,
+  formatDateTime,
 } from "@workspace/ops-contracts"
 
 import { LeadListRow } from "@/components/app/entity-list-rows"
@@ -52,6 +53,19 @@ export default function LeadsScreen() {
       statusOptions={LEAD_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
       onBulkDelete={onBulkDelete}
+      exports={{
+        entity: "leads",
+        columns: [
+          { header: "Date", value: (r) => formatDateTime(r.created_at) },
+        { header: "Contact", value: (r) => r.contact_name },
+        { header: "Company", value: (r) => r.company_name },
+        { header: "Email", value: (r) => r.email },
+        { header: "Budget", value: (r) => r.budget_range },
+        { header: "Objective", value: (r) => r.objective },
+        { header: "Status", value: (r) => r.status },
+        { header: "Brief", value: (r) => r.additional_info },
+        ],
+      }}
       detailHref={(id) => `/(ops)/leads/${id}`}
       renderRow={(item, { onPress, onLongPress }) => (
         <LeadListRow item={item} onPress={onPress} onLongPress={onLongPress} />

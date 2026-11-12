@@ -1,3 +1,4 @@
+import { formatDateTime } from "@workspace/ops-contracts"
 import { useCallback } from "react"
 
 import { EntityList } from "@/components/entity/EntityList"
@@ -27,6 +28,15 @@ export default function WaitlistScreen() {
       getTitle={(item) => item.email}
       getSubtitle={(item) => item.source ?? "Unknown source"}
       getInitials={(item) => item.email}
+      exports={{
+        entity: "waitlist",
+        columns: [
+          { header: "Joined", value: (r) => formatDateTime(r.created_at) },
+        { header: "Email", value: (r) => r.email },
+        { header: "Source", value: (r) => r.source },
+        { header: "Persona", value: (r) => r.persona },
+        ],
+      }}
       detailHref={(id) => `/(ops)/waitlist/${id}`}
     />
   )

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@workspace/ops-contracts"
 import { useCallback } from "react"
 
 import { EntityList } from "@/components/entity/EntityList"
@@ -27,6 +28,15 @@ export default function MediaKitScreen() {
       getTitle={(item) => item.name}
       getSubtitle={(item) => item.email}
       getInitials={(item) => item.name}
+      exports={{
+        entity: "media_kit",
+        columns: [
+          { header: "Date", value: (r) => formatDateTime(r.created_at) },
+        { header: "Name", value: (r) => r.name },
+        { header: "Email", value: (r) => r.email },
+        { header: "Company", value: (r) => r.company },
+        ],
+      }}
       detailHref={(id) => `/(ops)/media-kit/${id}`}
     />
   )

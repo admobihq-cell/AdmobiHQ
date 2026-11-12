@@ -96,6 +96,10 @@ The bell in the app bar opens `/(ops)/notifications`: the same "needs attention"
 
 On **Campaigns** and **Driver applications**, long-press a row to start selecting; tap more rows to add or remove them (up to 100, the API's batch limit). A bar shows the count with **Approve** and **Reject**. Both ask first and state the count; Reject needs one reason, which is shown to every row it applies to. Only rows still in review change; the rest are skipped, and the result line reads like the web's: "2 approved, 1 skipped (not in review)". Changing the status filter clears the selection. A second tap on Approve/Reject while a batch is in flight is ignored. Calls `POST /v1/campaigns/bulk-review` and `POST /v1/driver-applications/bulk-review`.
 
+## Exporting lists
+
+Every entity list (Leads, Fleet, Drivers, Waitlist, Media kit), **Campaigns**, **Driver applications**, **Team** and **Roles** has an **Export** button: pick **CSV** or **PDF** and the file opens in the system share sheet. It exports exactly what is on screen: the rows loaded so far, or just the selected rows when a selection is active (the button then reads "Export N selected" and the file name ends in `-selected`). At most 500 rows, the PDF route's limit. Columns match the ops web tables' CSV columns. CSV is built on the phone with `toCsv` and written with `expo-file-system`; PDF comes from `POST /v1/ops/documents/export` and is refused unless it starts with `%PDF` (a proxy error page is never shared as a PDF). File names come from `exportFileName()`, e.g. `drivers-2026-11-12.csv`. The code is `lib/export-list.ts` and `components/app/export-button.tsx`. Team and Roles export under the `admin` permission, like the web.
+
 ## Push notifications (ops staff)
 
 When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).
