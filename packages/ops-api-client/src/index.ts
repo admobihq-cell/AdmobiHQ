@@ -12,6 +12,7 @@ import {
   type BulkReviewResult,
   type CampaignReviewInput,
   type RecordTransactionInput,
+  type ActionQueueItem,
   type AdvertiserDashboardDto,
   type AttentionItemDto,
   type DeliveryDto,
@@ -290,6 +291,10 @@ export type OpsClient = {
     unseenCount: () => Promise<{ count: number }>
     /** Stamps every unseen settled payment as seen; call when the Ledger opens. */
     markSeen: () => Promise<{ marked: number }>
+  }
+  actionQueue: {
+    /** The header bell: counts that need someone, filtered to the caller's permissions. Any ops user. `href` is an ops-console path. */
+    list: (range?: DateRangeKey) => Promise<{ items: ActionQueueItem[] }>
   }
   dashboards: {
     /** The Campaigns dashboard, one tab at a time. Needs `campaigns`; money is null without `finances`. */
@@ -789,6 +794,9 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       toolCosts: () => request<ToolCostsDto>(`${apiPrefix}/ops/finance/tool-costs`),
       unseenCount: () => request<{ count: number }>(`${apiPrefix}/ops/payments/unseen`),
       markSeen: () => request<{ marked: number }>(`${apiPrefix}/ops/payments/unseen`, { method: "POST" }),
+    },
+    actionQueue: {
+      list: (range = "30d") => request<{ items: ActionQueueItem[] }>(`${apiPrefix}/ops/action-queue?range=${range}`),
     },
     dashboards: {
       campaignsPipeline: (range) => request<PipelineDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=pipeline&range=${range}`),

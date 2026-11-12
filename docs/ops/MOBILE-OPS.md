@@ -80,6 +80,14 @@ deep-links to `/(ops)/sos/:id`. Without that registered channel Android
 silently downgrades the alert to the default channel and no heads-up banner
 appears. Full design: `docs/shared/SAFETY-SOS.md`.
 
+## Dashboards
+
+The drawer's **Dashboards** group opens `/(ops)/dashboards/{campaigns,fleet,advertisers,support}`, the four ops-console dashboards on `GET /v1/ops/dashboards/*` (same SQL as the web, from `@workspace/ops-queries`). Each entry shows only with the web's permission: Campaigns and Advertisers need `campaigns`, Fleet `drivers`, Support `support`. Money (booked budget, budget by format, payout figures, spend and balances) is **absent from the API response** unless the user also holds `finances`, and the Support safety cards need `safety`; the screens draw only what arrived. Campaigns has the Pipeline / Delivery / Inventory mix tabs and opens on the one named by `?tab=`. Every dashboard has the 7d / 30d / 90d / All range toolbar and pull to refresh. Labels, health tones and wait wording are shared with web through `@workspace/ops-contracts` (`dashboard-format.ts`). Funnels draw as ranked bars on mobile, and the delivery gauge is a percentage.
+
+## Attention queue (header bell)
+
+The bell in the app bar opens `/(ops)/notifications`: the same "needs attention" rows as the ops Overview (reviews waiting, campaigns at risk, driver applications, urgent cases, critical incidents, payouts pending or failed) from `GET /v1/ops/action-queue`. Any ops user can open it; the API drops each row the user has no permission for, and every row with a count of zero. The badge on the bell is the sum of the counts. Rows are grouped by urgency and open the matching dashboard or Finances tab. The screen refetches when you come back to it and on pull to refresh. Activity, which the bell used to open, is now a drawer entry (`activity` permission). The push-style QA preview moved to `/(ops)/notification-preview` (Profile → Developer tools).
+
 ## Push notifications (ops staff)
 
 When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).

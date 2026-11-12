@@ -4,22 +4,19 @@ import { useUser } from "@clerk/clerk-expo"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AvatarInitials } from "@/components/app/list-row"
-import { ActivityBellButton } from "@/components/activity/activity-bell-button"
+import { QueueBellButton } from "@/components/app/queue-bell-button"
 import { ChevronLeft } from "@/components/icons"
 import { ThemeToggleButton } from "@/components/settings/theme-toggle-button"
 import { getPrimaryEmail } from "@/lib/auth"
-import { useOpsAccess } from "@/lib/ops-client"
 import { usePageHeaderState } from "@/lib/page-header"
 import { radius, spacing, useThemeColors } from "@/lib/theme"
 
-/** Persistent top bar shown above every ops screen — brand/back plus the current section or record name, and activity/theme/account access that used to live only on the dashboard and scroll out of view. */
+/** Persistent top bar shown above every ops screen — brand/back plus the current section or record name, and the attention-queue bell, theme and account access that used to live only on the dashboard and scroll out of view. */
 export function AppBar({ onAvatarPress }: { onAvatarPress: () => void }) {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { user } = useUser()
-  const { role, permissions } = useOpsAccess()
-  const canSeeActivity = role === "admin" || permissions.includes("activity")
   const { title, showBack, backHref } = usePageHeaderState()
 
   const email = getPrimaryEmail(
@@ -83,7 +80,7 @@ export function AppBar({ onAvatarPress }: { onAvatarPress: () => void }) {
         </Text>
       </View>
       <View style={styles.actions}>
-        {canSeeActivity ? <ActivityBellButton /> : null}
+        <QueueBellButton />
         <ThemeToggleButton />
         <AvatarInitials
           name={displayName}

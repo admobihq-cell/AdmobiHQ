@@ -223,7 +223,15 @@ export default function OpsLayout() {
           <Tabs.Screen
             name="notifications"
             options={{
-              title: "Notifications",
+              title: "Needs attention",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="notification-preview"
+            options={{
+              title: "Notification style preview",
               headerShown: false,
               href: null,
             }}

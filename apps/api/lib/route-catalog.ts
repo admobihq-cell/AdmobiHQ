@@ -184,6 +184,7 @@ const NOTES: Record<string, string> = {
   "/v1/ops/dashboards/fleet": "Fleet dashboard: drivers, applications and payouts",
   "/v1/ops/dashboards/advertisers": "Advertisers dashboard: new, live and at-risk organizations",
   "/v1/ops/dashboards/support": "Support dashboard: open cases, oldest, and safety incidents",
+  "/v1/ops/action-queue": "The header bell: counts that need someone, per permission",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",

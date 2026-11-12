@@ -1,294 +1,102 @@
-import { useEffect, useState } from "react"
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useCallback } from "react"
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native"
+import { useFocusEffect, useRouter } from "expo-router"
+import { StatusPill } from "@workspace/mobile-charts"
+import type { ActionQueueItem } from "@workspace/ops-contracts"
 
-import {
-  Bell,
-  Car,
-  Mail,
-  Megaphone,
-  Send,
-  Warning,
-  type AppIcon,
-} from "@/components/icons"
-import { IconBox } from "@/components/ui"
+import { ChevronRight, ShieldCheck } from "@/components/icons"
+import { EmptyState } from "@/components/ui"
+import { ApiErrorBanner } from "@/components/ui/api-error-banner"
+import { useChartPalette } from "@/lib/chart-palette"
+import { formatOpsError } from "@/lib/format-error"
+import { API_URL } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
-import {
-  getNotificationPermissionStatus,
-  NOTIFICATION_STYLES,
-  requestTestNotificationPermissions,
-  sendTestNotification,
-  type NotificationStyle,
-} from "@/lib/test-notifications"
-import {
-  radius,
-  spacing,
-  typography,
-  useThemeColors,
-  useThemedStyles,
-} from "@/lib/theme"
+import { spacing, useThemedStyles } from "@/lib/theme"
+import { mobileHref, useActionQueue } from "@/lib/use-action-queue"
 
-const STYLE_ICONS: Record<string, AppIcon> = {
-  new_lead: Megaphone,
-  driver_assigned: Car,
-  fleet_alert: Warning,
-  waitlist: Mail,
-}
+const GROUPS: { tone: ActionQueueItem["tone"]; title: string; pill: string }[] = [
+  { tone: "serious", title: "Act now", pill: "Urgent" },
+  { tone: "warning", title: "Waiting on someone", pill: "Waiting" },
+  { tone: "neutral", title: "Worth a look", pill: "Info" },
+]
 
-export default function NotificationsTestScreen() {
-  usePageHeader("Notification style preview", {
-    showBack: true,
-    backHref: "/(ops)/profile",
-  })
-  const colors = useThemeColors()
-  const insets = useSafeAreaInsets()
-  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(
-    null
+/**
+ * The attention queue the header bell opens: the same rows as the ops Overview, filtered by the API
+ * to this person's permissions. Each opens the dashboard or tab that explains it.
+ */
+export default function AttentionQueueScreen() {
+  usePageHeader("Needs attention", { showBack: true, backHref: "/(ops)/dashboard" })
+  const palette = useChartPalette()
+  const router = useRouter()
+  const queue = useActionQueue()
+  const { refetch } = queue
+
+  // Counts go stale the moment someone acts on one; coming back to the screen re-asks.
+  useFocusEffect(
+    useCallback(() => {
+      void refetch()
+    }, [refetch]),
   )
-  const [status, setStatus] = useState<string | null>(null)
-
-  useEffect(() => {
-    getNotificationPermissionStatus().then((result) =>
-      setPermissionGranted(result === "granted")
-    )
-  }, [])
 
   const styles = useThemedStyles((c) => ({
-    root: {
-      flex: 1,
-      backgroundColor: c.bg,
-    },
-    content: {
-      padding: spacing.lg,
-      gap: spacing.lg,
-      paddingBottom: spacing.xl,
-    },
-    hero: {
-      gap: spacing.xs,
-    },
-    title: {
-      ...typography.title,
-      color: c.text,
-    },
-    body: {
-      ...typography.body,
-      color: c.mutedForeground,
-    },
-    permissionCard: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: spacing.md,
-      padding: spacing.md,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
-    },
-    permissionCopy: {
-      flex: 1,
-      gap: 2,
-    },
-    permissionLabel: {
-      ...typography.section,
-      color: c.text,
-    },
-    permissionHint: {
-      ...typography.caption,
-      color: c.mutedForeground,
-    },
-    grantButton: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: 10,
-      borderRadius: 999,
-      backgroundColor: c.primary,
-    },
-    grantButtonText: {
-      ...typography.label,
-      color: c.primaryForeground,
-      fontWeight: "700" as const,
-    },
-    sectionLabel: {
-      ...typography.caption,
-      color: c.mutedForeground,
-      textTransform: "uppercase" as const,
-      letterSpacing: 0.8,
-      fontWeight: "700" as const,
-      marginLeft: spacing.xs,
-    },
-    group: {
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
-      overflow: "hidden" as const,
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: c.border,
-      marginLeft: 60,
-    },
+    container: { flex: 1, backgroundColor: c.bg },
+    content: { padding: spacing.lg, paddingBottom: spacing.xl, gap: 8, flexGrow: 1 },
+    section: { fontSize: 12, fontWeight: "600" as const, color: c.mutedForeground, textTransform: "uppercase" as const, marginTop: 8 },
     row: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      gap: spacing.md,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.md,
+      gap: 12,
+      padding: spacing.md,
+      minHeight: 56,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      backgroundColor: c.surface,
     },
-    rowPressed: {
-      opacity: 0.7,
-    },
-    copy: {
-      flex: 1,
-      gap: 2,
-    },
-    label: {
-      ...typography.section,
-      color: c.text,
-    },
-    description: {
-      ...typography.caption,
-      color: c.mutedForeground,
-    },
-    sendAll: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      gap: spacing.sm,
-      borderRadius: 14,
-      paddingVertical: 14,
-      backgroundColor: c.primary,
-    },
-    sendAllPressed: {
-      opacity: 0.85,
-    },
-    sendAllText: {
-      ...typography.body,
-      fontWeight: "700" as const,
-      color: c.primaryForeground,
-    },
-    status: {
-      ...typography.caption,
-      color: c.primary,
-      textAlign: "center" as const,
-    },
+    count: { fontSize: 22, fontWeight: "700" as const, color: c.text, minWidth: 36, fontVariant: ["tabular-nums" as const] },
+    copy: { flex: 1, gap: 2 },
+    title: { fontSize: 15, fontWeight: "600" as const, color: c.text },
+    meta: { fontSize: 12, color: c.mutedForeground },
+    action: { fontSize: 12, fontWeight: "600" as const, color: c.primary },
   }))
 
-  const handleSend = async (style: NotificationStyle) => {
-    const sent = await sendTestNotification(style)
-    if (sent) {
-      setPermissionGranted(true)
-      setStatus(`Sent "${style.title}" — check your notification shade.`)
-    } else {
-      setStatus("Notification permission is required to send a preview.")
-    }
-  }
-
-  const handleSendAll = async () => {
-    for (const [index, style] of NOTIFICATION_STYLES.entries()) {
-      setTimeout(() => {
-        void sendTestNotification(style)
-      }, index * 1200)
-    }
-    setPermissionGranted(true)
-    setStatus("Sending all styles — check your notification shade.")
-  }
-
-  const handleGrant = async () => {
-    const granted = await requestTestNotificationPermissions()
-    setPermissionGranted(granted)
-  }
+  const items = queue.data ?? []
+  const sections = GROUPS.map((g) => ({ ...g, data: items.filter((i) => i.tone === g.tone) })).filter((s) => s.data.length > 0)
 
   return (
-    <>
-      <ScrollView
-        style={styles.root}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: insets.top + spacing.md,
-            paddingBottom: insets.bottom + spacing.xl,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.hero}>
-          <Text style={styles.title}>Preview notifications</Text>
-          <Text style={styles.body}>
-            Send yourself a sample notification to preview how each style looks,
-            including in the system notification panel, before shipping this to
-            devices.
-          </Text>
-        </View>
-
-        {permissionGranted === false ? (
-          <View style={styles.permissionCard}>
-            <View style={styles.permissionCopy}>
-              <Text style={styles.permissionLabel}>Notifications disabled</Text>
-              <Text style={styles.permissionHint}>
-                Grant permission to send yourself a preview.
-              </Text>
-            </View>
-            <Pressable
-              style={styles.grantButton}
-              onPress={handleGrant}
-              accessibilityRole="button"
-            >
-              <Text style={styles.grantButtonText}>Grant</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        <View>
-          <Text style={styles.sectionLabel}>Sample styles</Text>
-          <View style={[styles.group, { marginTop: spacing.sm }]}>
-            {NOTIFICATION_STYLES.map((style, index) => {
-              const Icon = STYLE_ICONS[style.key] ?? Bell
-              return (
-                <View key={style.key}>
-                  <Pressable
-                    onPress={() => handleSend(style)}
-                    style={({ pressed }) => [
-                      styles.row,
-                      pressed && styles.rowPressed,
-                    ]}
-                    accessibilityRole="button"
-                  >
-                    <IconBox
-                      icon={Icon}
-                      size={20}
-                      boxSize={36}
-                      cornerRadius={radius.md}
-                      backgroundColor={colors.secondary}
-                      bordered={false}
-                    />
-                    <View style={styles.copy}>
-                      <Text style={styles.label}>{style.label}</Text>
-                      <Text style={styles.description}>{style.title}</Text>
-                    </View>
-                  </Pressable>
-                  {index < NOTIFICATION_STYLES.length - 1 ? (
-                    <View style={styles.divider} />
-                  ) : null}
-                </View>
-              )
-            })}
-          </View>
-        </View>
-
+    <SectionList
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      sections={sections}
+      keyExtractor={(item) => item.title}
+      stickySectionHeadersEnabled={false}
+      refreshControl={<RefreshControl refreshing={queue.isRefetching} onRefresh={() => void refetch()} />}
+      ListHeaderComponent={
+        queue.isError ? <ApiErrorBanner message={formatOpsError(queue.error, API_URL)} onRetry={() => void refetch()} /> : null
+      }
+      ListEmptyComponent={
+        queue.isPending || queue.isError ? null : (
+          <EmptyState icon={ShieldCheck} title="Nothing needs attention" description="Reviews, applications, urgent cases and payouts that need someone show up here." />
+        )
+      }
+      renderSectionHeader={({ section }) => <Text style={styles.section}>{section.title}</Text>}
+      renderItem={({ item, section }) => (
         <Pressable
-          style={({ pressed }) => [
-            styles.sendAll,
-            pressed && styles.sendAllPressed,
-          ]}
-          onPress={handleSendAll}
+          onPress={() => router.push(mobileHref(item.href) as never)}
           accessibilityRole="button"
+          accessibilityLabel={`${item.count} ${item.title}. ${item.action}`}
+          style={({ pressed }) => [styles.row, pressed && { opacity: 0.75 }]}
         >
-          <Send color={colors.primaryForeground} size={18} />
-          <Text style={styles.sendAllText}>Send all styles</Text>
+          <Text style={styles.count}>{item.count}</Text>
+          <View style={styles.copy}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.meta}>{item.meta}</Text>
+            <Text style={styles.action}>{item.action}</Text>
+          </View>
+          <StatusPill label={section.pill} tone={item.tone} palette={palette} />
+          <ChevronRight size={16} color={palette.muted} />
         </Pressable>
-
-        {status ? <Text style={styles.status}>{status}</Text> : null}
-      </ScrollView>
-    </>
+      )}
+    />
   )
 }

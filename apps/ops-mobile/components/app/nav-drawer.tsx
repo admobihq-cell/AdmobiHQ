@@ -15,6 +15,7 @@ import type { OpsPermission } from "@workspace/ops-contracts"
 import {
   BarChart3,
   ClipboardList,
+  Clock,
   FileText,
   LifeBuoy,
   Siren,
@@ -138,6 +139,14 @@ const LINKS: DrawerLink[] = [
     icon: FileText,
     href: "/(ops)/media-kit",
     permission: "media_kit",
+  },
+  {
+    key: "activity",
+    label: "Activity",
+    description: "Who did what, and when",
+    icon: Clock,
+    href: "/(ops)/activity",
+    permission: "activity",
   },
   {
     key: "finances",

@@ -268,7 +268,7 @@ export default function ProfileScreen() {
               icon={Bell}
               label="Notification style preview"
               description="QA tool — not a notification preference"
-              onPress={() => router.push("/(ops)/notifications")}
+              onPress={() => router.push("/(ops)/notification-preview")}
             />
           </View>
         </View>

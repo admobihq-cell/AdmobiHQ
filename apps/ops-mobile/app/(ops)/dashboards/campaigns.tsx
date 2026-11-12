@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useRouter } from "expo-router"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import {
   ChartCard,
   Heatmap,
@@ -26,6 +26,7 @@ import {
 import { DashboardScreen, Note, QueueList } from "@/components/dashboards/dashboard-screen"
 
 type Tab = "pipeline" | "delivery" | "inventory"
+const TABS: readonly string[] = ["pipeline", "delivery", "inventory"]
 
 const PHASE: Record<string, string> = { live: "Live", scheduled: "Scheduled", completed: "Completed", unscheduled: "Not scheduled" }
 const FORMAT_LABEL: Record<string, string> = { taxi_top: "Taxi top", delivery_bike: "Delivery bike", both: "Both" }
@@ -34,7 +35,9 @@ const NO_ESTIMATE = "Audience estimates appear here once campaigns have modelled
 
 /** The Campaigns dashboard, the same three tabs as the ops console. Budget figures arrive only with `finances`. */
 export default function CampaignsDashboardScreen() {
-  const [tab, setTab] = useState<Tab>("pipeline")
+  // `?tab=delivery` opens straight onto a tab (the attention queue links there); anything else is the pipeline.
+  const params = useLocalSearchParams<{ tab?: string }>()
+  const [tab, setTab] = useState<Tab>(TABS.includes(params.tab ?? "") ? (params.tab as Tab) : "pipeline")
   const router = useRouter()
   const open = (id: number) => () => router.push(`/(ops)/campaigns/${id}`)
   const frame = {

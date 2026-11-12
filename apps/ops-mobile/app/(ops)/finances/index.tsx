@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native"
 import { useIsFetching } from "@tanstack/react-query"
-import { useRouter } from "expo-router"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { RangeToolbar, SegmentTabs } from "@workspace/mobile-charts"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
@@ -18,6 +18,7 @@ import { spacing, useThemedStyles } from "@/lib/theme"
 import { financeKeys, useFinanceAccess, useRefreshFinance, useUnseenPayments } from "@/lib/use-finance"
 
 type FinanceTab = "overview" | "ledger" | "wallets" | "payouts" | "tool-costs"
+const FINANCE_TABS: readonly string[] = ["overview", "ledger", "wallets", "payouts", "tool-costs"]
 
 /** Tabs that read a date range. Wallets and Tool costs are all-time or run-rate, so they take none. */
 const RANGED: FinanceTab[] = ["overview", "ledger", "payouts"]
@@ -35,7 +36,9 @@ export default function FinancesScreen() {
   const router = useRouter()
   const refresh = useRefreshFinance()
   const fetching = useIsFetching({ queryKey: financeKeys.all }) > 0
-  const [tab, setTab] = useState<FinanceTab>("overview")
+  // `?tab=payouts` opens straight onto a tab (the attention queue links there); anything else is the overview.
+  const params = useLocalSearchParams<{ tab?: string }>()
+  const [tab, setTab] = useState<FinanceTab>(FINANCE_TABS.includes(params.tab ?? "") ? (params.tab as FinanceTab) : "overview")
   const [range, setRange] = useState<DateRangeKey>("30d")
 
   const styles = useThemedStyles((c) => ({

@@ -95,6 +95,8 @@ describe.skipIf(!testDatabaseUrl())("ops dashboards: against the dev database", 
     const pipeline = await (await campaigns(call("?tab=pipeline"))).json()
     expect(pipeline.includeMoney).toBe(false)
     expect(pipeline.bookedKes).toBeNull()
+    // The review queue rows carry each campaign's budget too: null for every row, not just the total.
+    for (const row of pipeline.queue) expect(row.budgetKes).toBeNull()
     const inventory = await (await campaigns(call("?tab=inventory"))).json()
     expect(inventory.includeMoney).toBe(false)
     expect(inventory.budgetByFormat).toBeNull()
