@@ -13,10 +13,12 @@ import Animated, {
 import type { OpsPermission } from "@workspace/ops-contracts"
 
 import {
+  BarChart3,
   ClipboardList,
   FileText,
   LifeBuoy,
   Siren,
+  Truck,
   Mail,
   Map,
   MonitorPlay,
@@ -147,6 +149,14 @@ const LINKS: DrawerLink[] = [
   },
 ]
 
+/** The four ops dashboards, each behind the same permission as on the web. */
+const DASHBOARD_LINKS: DrawerLink[] = [
+  { key: "dash-campaigns", label: "Campaigns", description: "Pipeline, delivery & inventory", icon: BarChart3, href: "/(ops)/dashboards/campaigns", permission: "campaigns" },
+  { key: "dash-fleet", label: "Fleet", description: "Drivers, applications & payouts", icon: Truck, href: "/(ops)/dashboards/fleet", permission: "drivers" },
+  { key: "dash-advertisers", label: "Advertisers", description: "New, live & at-risk accounts", icon: Users, href: "/(ops)/dashboards/advertisers", permission: "campaigns" },
+  { key: "dash-support", label: "Support", description: "Open cases & safety incidents", icon: LifeBuoy, href: "/(ops)/dashboards/support", permission: "support" },
+]
+
 /**
  * Slide-in menu opened from the app bar's avatar button (see
  * `onAvatarPress` in (ops)/_layout.tsx). Holds destinations that don't have
@@ -171,10 +181,14 @@ export function NavDrawer({
   const unseenPayments = useUnseenPayments().data ?? 0
   const progress = useSharedValue(0)
 
-  const visibleLinks = LINKS.filter((link) => {
+  const canOpen = (link: DrawerLink) => {
     if (link.adminOnly) return role === "admin"
     return !link.permission || role === "admin" || permissions.includes(link.permission)
-  })
+  }
+  const sections = [
+    { label: "Modules", links: LINKS.filter(canOpen) },
+    { label: "Dashboards", links: DASHBOARD_LINKS.filter(canOpen) },
+  ].filter((section) => section.links.length > 0)
 
   useEffect(() => {
     progress.value = withTiming(visible ? 1 : 0, { duration: 220 })
@@ -351,38 +365,42 @@ export function NavDrawer({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.sectionLabel}>Modules</Text>
-            <View style={styles.group}>
-              {visibleLinks.map((link, index) => (
-                <View key={link.key}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.row,
-                      pressed && styles.rowPressed,
-                    ]}
-                    onPress={() => go(link.href)}
-                  >
-                    <View style={styles.iconBox}>
-                      <link.icon color={colors.primary} size={16} />
-                    </View>
-                    <View style={styles.rowCopy}>
-                      <Text style={styles.rowLabel}>{link.label}</Text>
-                      <Text style={styles.rowDescription} numberOfLines={1}>
-                        {link.description}
-                      </Text>
-                    </View>
-                    {link.key === "finances" && unseenPayments > 0 ? (
-                      <View style={styles.badge} accessibilityLabel={`${unseenPayments} new payments`}>
-                        <Text style={styles.badgeText}>{unseenPayments > 99 ? "99+" : unseenPayments}</Text>
+            {sections.map((section) => (
+              <View key={section.label}>
+                <Text style={styles.sectionLabel}>{section.label}</Text>
+                <View style={styles.group}>
+                {section.links.map((link, index) => (
+                  <View key={link.key}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.row,
+                        pressed && styles.rowPressed,
+                      ]}
+                      onPress={() => go(link.href)}
+                    >
+                      <View style={styles.iconBox}>
+                        <link.icon color={colors.primary} size={16} />
                       </View>
+                      <View style={styles.rowCopy}>
+                        <Text style={styles.rowLabel}>{link.label}</Text>
+                        <Text style={styles.rowDescription} numberOfLines={1}>
+                          {link.description}
+                        </Text>
+                      </View>
+                      {link.key === "finances" && unseenPayments > 0 ? (
+                        <View style={styles.badge} accessibilityLabel={`${unseenPayments} new payments`}>
+                          <Text style={styles.badgeText}>{unseenPayments > 99 ? "99+" : unseenPayments}</Text>
+                        </View>
+                      ) : null}
+                    </Pressable>
+                    {index < section.links.length - 1 ? (
+                      <View style={styles.divider} />
                     ) : null}
-                  </Pressable>
-                  {index < visibleLinks.length - 1 ? (
-                    <View style={styles.divider} />
-                  ) : null}
+                  </View>
+                ))}
                 </View>
-              ))}
-            </View>
+              </View>
+            ))}
 
             <Text style={styles.sectionLabel}>Account</Text>
             <View style={styles.group}>

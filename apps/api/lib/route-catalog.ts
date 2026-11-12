@@ -180,6 +180,10 @@ const NOTES: Record<string, string> = {
   "/v1/ops/finance/attention": "Finances: payments and payouts that need a person",
   "/v1/ops/finance/record-options": "Organizations and campaigns for the record and refund forms",
   "/v1/ops/finance/tool-costs": "Monthly KES run-rate of paid-for tools",
+  "/v1/ops/dashboards/campaigns": "Campaigns dashboard: pipeline, delivery and inventory tabs",
+  "/v1/ops/dashboards/fleet": "Fleet dashboard: drivers, applications and payouts",
+  "/v1/ops/dashboards/advertisers": "Advertisers dashboard: new, live and at-risk organizations",
+  "/v1/ops/dashboards/support": "Support dashboard: open cases, oldest, and safety incidents",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",

@@ -1,0 +1,19 @@
+meta {
+  name: Campaigns dashboard: pipeline
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/ops/dashboards/campaigns?tab=pipeline&range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs `campaigns`. Booked value is null unless the caller also holds `finances`. range: 7d | 30d | 90d | all (default 30d, anything else 400).
+}

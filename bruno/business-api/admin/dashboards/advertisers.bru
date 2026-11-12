@@ -1,0 +1,19 @@
+meta {
+  name: Advertisers dashboard
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{API_URL}}/v1/ops/dashboards/advertisers?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs `campaigns`. Spend figures are absent unless the caller also holds `finances`.
+}

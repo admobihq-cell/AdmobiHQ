@@ -1,4 +1,4 @@
-import { DATE_RANGE_KEYS, type DateRangeKey } from "@workspace/ops-contracts"
+import { DATE_RANGE_KEYS, type DateRangeKey, type OpsPermission } from "@workspace/ops-contracts"
 import type { Db } from "@workspace/ops-queries"
 
 import { getPgPool } from "@/lib/pg"
@@ -14,4 +14,9 @@ export function readRange(req: Request): DateRangeKey | null {
   const value = new URL(req.url).searchParams.get("range")
   if (value === null) return "30d"
   return (DATE_RANGE_KEYS as readonly string[]).includes(value) ? (value as DateRangeKey) : null
+}
+
+/** An admin can do everything; anyone else needs the permission by name. Same rule as ops web. */
+export function can(access: { role: string; permissions: readonly string[] }, permission: OpsPermission): boolean {
+  return access.role === "admin" || access.permissions.includes(permission)
 }

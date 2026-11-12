@@ -12,7 +12,13 @@ import {
   type BulkReviewResult,
   type CampaignReviewInput,
   type RecordTransactionInput,
+  type AdvertiserDashboardDto,
   type AttentionItemDto,
+  type DeliveryDto,
+  type FleetDashboardDto,
+  type InventoryDto,
+  type PipelineDto,
+  type SupportDashboardDto,
   type FinanceLedgerDto,
   type FinanceOverviewDto,
   type FinancePayoutsDto,
@@ -284,6 +290,18 @@ export type OpsClient = {
     unseenCount: () => Promise<{ count: number }>
     /** Stamps every unseen settled payment as seen; call when the Ledger opens. */
     markSeen: () => Promise<{ marked: number }>
+  }
+  dashboards: {
+    /** The Campaigns dashboard, one tab at a time. Needs `campaigns`; money is null without `finances`. */
+    campaignsPipeline: (range: DateRangeKey) => Promise<PipelineDto>
+    campaignsDelivery: (range: DateRangeKey) => Promise<DeliveryDto>
+    campaignsInventory: (range: DateRangeKey) => Promise<InventoryDto>
+    /** Needs `drivers`; the `money` block is absent without `finances`. */
+    fleet: (range: DateRangeKey) => Promise<FleetDashboardDto>
+    /** Needs `campaigns`; spend figures are absent without `finances`. */
+    advertisers: (range: DateRangeKey) => Promise<AdvertiserDashboardDto & { window: { start: string; end: string } }>
+    /** Needs `support`; `safety` is null without `safety`. */
+    support: (range: DateRangeKey) => Promise<SupportDashboardDto>
   }
   payouts: {
     /** A month's payout run: eligible drivers and any saved payout. Needs `finances`. */
@@ -771,6 +789,15 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       toolCosts: () => request<ToolCostsDto>(`${apiPrefix}/ops/finance/tool-costs`),
       unseenCount: () => request<{ count: number }>(`${apiPrefix}/ops/payments/unseen`),
       markSeen: () => request<{ marked: number }>(`${apiPrefix}/ops/payments/unseen`, { method: "POST" }),
+    },
+    dashboards: {
+      campaignsPipeline: (range) => request<PipelineDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=pipeline&range=${range}`),
+      campaignsDelivery: (range) => request<DeliveryDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=delivery&range=${range}`),
+      campaignsInventory: (range) => request<InventoryDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=inventory&range=${range}`),
+      fleet: (range) => request<FleetDashboardDto>(`${apiPrefix}/ops/dashboards/fleet?range=${range}`),
+      advertisers: (range) =>
+        request<AdvertiserDashboardDto & { window: { start: string; end: string } }>(`${apiPrefix}/ops/dashboards/advertisers?range=${range}`),
+      support: (range) => request<SupportDashboardDto>(`${apiPrefix}/ops/dashboards/support?range=${range}`),
     },
     payouts: {
       getRun: (month) => request<PayoutRunDto>(`${apiPrefix}/ops/payouts?month=${encodeURIComponent(month)}`),
