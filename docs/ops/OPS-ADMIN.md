@@ -15,7 +15,7 @@ Internal super-admin platform at **`ops.admobihq.com`** for @admobihq.com staff.
 | Marketing site | `https://admobihq.com` |
 | Payload CMS | `https://admobihq.com/admin` |
 
-Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC_API_URL/v1/*` via `@workspace/ops-api-client`. Two exceptions read or write Postgres directly through Prisma in `apps/ops`: server-rendered home/overview stats (read-only), and the integrations ledger (admin-only server actions, see below).
+Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC_API_URL/v1/*` via `@workspace/ops-api-client`. Two exceptions read or write Postgres directly in `apps/ops`: server-rendered home, overview, Finances and dashboard stats (read-only; the SQL lives in `@workspace/ops-queries`, which the API also serves under `/v1/ops/finance/*`, `/v1/ops/dashboards/*` and `/v1/ops/action-queue` for ops-mobile), and the integrations ledger (admin-only server actions, see below; the API has matching routes for mobile).
 
 ### Routes (dashboard)
 
@@ -115,7 +115,7 @@ List pages export either the **visible page** (toolbar **Export**) or the **sele
 
 ### Integrations ledger
 
-**Settings → Integrations** (`/settings/integrations`, ops admins only via `requireOpsAdmin`) tracks every third-party tool and subscription: category, purpose, plan, cost, currency, billing cycle, status and owner. Rows live in the `Integration` table and are written by server actions in `app/(dashboard)/settings/(prefs)/integrations/actions.ts`, not through the API. The view rolls every subscription up to monthly USD and KES totals with a by-category pie chart. Exchange rates are constants in [`lib/integration-costs.ts`](../../apps/ops/lib/integration-costs.ts) (`USD_KES`, `EUR_USD`, `RATES_AS_OF`); bump them when rates move. The same file holds the seed list.
+**Settings → Integrations** (`/settings/integrations`, ops admins only via `requireOpsAdmin`) tracks every third-party tool and subscription: category, purpose, plan, cost, currency, billing cycle, status and owner. Rows live in the `Integration` table. The console writes them with server actions in `app/(dashboard)/settings/(prefs)/integrations/actions.ts`; ops-mobile reads and writes them through `GET/POST /v1/ops/integrations` and `PATCH/DELETE /v1/ops/integrations/[id]` (ops admin; each write is audited). Both paths validate with `integrationInputSchema` from `@workspace/ops-contracts/integration-costs`, and the API's totals are that package's `totals()` over `queryIntegrations` in `@workspace/ops-queries`. The view rolls every subscription up to monthly USD and KES totals with a by-category pie chart. Exchange rates are constants in [`packages/ops-contracts/src/integration-costs.ts`](../../packages/ops-contracts/src/integration-costs.ts) (`USD_KES`, `EUR_USD`, `RATES_AS_OF`); bump them when rates move. The same file holds the seed list (seeding is console-only).
 
 ## Secrets (Infisical)
 
@@ -197,7 +197,7 @@ Full checklist: [DEPLOYMENT.md](../shared/DEPLOYMENT.md).
 |------|--------|-------------------|
 | Campaign leads, fleet, drivers, waitlist, media kit | Prisma via **API** (`/v1/*`) | Full CRUD (client-side) |
 | Home/overview stats | Prisma direct (server components) | Read-only |
-| Integrations ledger | Prisma direct (server actions, admin-only) | Full CRUD |
+| Integrations ledger | Console: Prisma server actions. Mobile: `/v1/ops/integrations` (admin-only) | Full CRUD |
 | Blog, help, media | Payload (Postgres) | Read-only overview; edit at `/admin` |
 
 Public form POSTs go to `api.admobihq.com/v1/public/*`. Ops admin routes require Clerk + `@admobihq.com`.

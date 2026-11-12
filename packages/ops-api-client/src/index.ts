@@ -14,6 +14,7 @@ import {
   type RecordTransactionInput,
   type ActionQueueItem,
   type AdvertiserDashboardDto,
+  type IntegrationDto,
   type AttentionItemDto,
   type DeliveryDto,
   type FleetDashboardDto,
@@ -84,6 +85,8 @@ import {
   type WaitlistEntryDto,
   type WaitlistUpdateInput,
 } from "@workspace/ops-contracts"
+
+import type { IntegrationTotals, IntegrationWrite } from "@workspace/ops-contracts/integration-costs"
 
 import { getApiBaseUrl, publicApiUrl } from "./base-url"
 import { OpsApiError } from "./errors"
@@ -291,6 +294,14 @@ export type OpsClient = {
     unseenCount: () => Promise<{ count: number }>
     /** Stamps every unseen settled payment as seen; call when the Ledger opens. */
     markSeen: () => Promise<{ marked: number }>
+  }
+  integrations: {
+    /** Every tool and subscription plus the monthly USD / KES totals. Ops admin only. */
+    list: () => Promise<{ items: IntegrationDto[]; totals: IntegrationTotals }>
+    create: (body: IntegrationWrite) => Promise<IntegrationDto>
+    /** Replaces the record: send every field, as the form does. */
+    update: (id: number, body: IntegrationWrite) => Promise<IntegrationDto>
+    remove: (id: number) => Promise<{ ok: true }>
   }
   actionQueue: {
     /** The header bell: counts that need someone, filtered to the caller's permissions. Any ops user. `href` is an ops-console path. */
@@ -794,6 +805,12 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       toolCosts: () => request<ToolCostsDto>(`${apiPrefix}/ops/finance/tool-costs`),
       unseenCount: () => request<{ count: number }>(`${apiPrefix}/ops/payments/unseen`),
       markSeen: () => request<{ marked: number }>(`${apiPrefix}/ops/payments/unseen`, { method: "POST" }),
+    },
+    integrations: {
+      list: () => request<{ items: IntegrationDto[]; totals: IntegrationTotals }>(`${apiPrefix}/ops/integrations`),
+      create: (body) => request<IntegrationDto>(`${apiPrefix}/ops/integrations`, { method: "POST", body: JSON.stringify(body) }),
+      update: (id, body) => request<IntegrationDto>(`${apiPrefix}/ops/integrations/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+      remove: (id) => request<{ ok: true }>(`${apiPrefix}/ops/integrations/${id}`, { method: "DELETE" }),
     },
     actionQueue: {
       list: (range = "30d") => request<{ items: ActionQueueItem[] }>(`${apiPrefix}/ops/action-queue?range=${range}`),

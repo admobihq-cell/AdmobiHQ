@@ -185,6 +185,8 @@ const NOTES: Record<string, string> = {
   "/v1/ops/dashboards/advertisers": "Advertisers dashboard: new, live and at-risk organizations",
   "/v1/ops/dashboards/support": "Support dashboard: open cases, oldest, and safety incidents",
   "/v1/ops/action-queue": "The header bell: counts that need someone, per permission",
+  "/v1/ops/integrations": "Integrations ledger: tools and subscriptions with monthly USD/KES totals (ops admin)",
+  "/v1/ops/integrations/[id]": "Edit or remove one integration (ops admin)",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",

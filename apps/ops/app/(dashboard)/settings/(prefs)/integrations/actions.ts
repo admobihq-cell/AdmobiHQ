@@ -1,27 +1,12 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
 
 import { requireOpsAdmin } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { BILLING_CYCLES, CURRENCIES, SEED_INTEGRATIONS, STATUSES, CATEGORIES } from "@workspace/ops-contracts/integration-costs"
+import { SEED_INTEGRATIONS, integrationInputSchema } from "@workspace/ops-contracts/integration-costs"
 
 const ROUTE = "/settings/integrations"
-
-const integrationSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(120),
-  category: z.enum(CATEGORIES.map((c) => c.value) as [string, ...string[]]),
-  purpose: z.string().trim().max(300).default(""),
-  url: z.union([z.string().trim().url(), z.literal("")]).default(""),
-  plan: z.string().trim().max(120).default(""),
-  cost: z.coerce.number().min(0).max(1_000_000).default(0),
-  currency: z.enum(CURRENCIES),
-  billing_cycle: z.enum(BILLING_CYCLES),
-  status: z.enum(STATUSES),
-  owner: z.string().trim().max(120).default(""),
-  notes: z.string().trim().max(500).default(""),
-})
 
 export type IntegrationInput = {
   id?: number
@@ -52,7 +37,7 @@ export async function saveIntegration(input: IntegrationInput): Promise<ActionRe
   const admin = await assertAdmin()
   if (!admin) return { ok: false, error: "Admin access required." }
 
-  const parsed = integrationSchema.safeParse(input)
+  const parsed = integrationInputSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form and try again." }
   }

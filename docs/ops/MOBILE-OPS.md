@@ -107,6 +107,10 @@ Every entity list (Leads, Fleet, Drivers, Waitlist, Media kit), **Campaigns**, *
 
 The campaign detail screen's **Funding** row reads **Funded · KES 12,500 held** when the advertiser's budget was paid for and held (`funded_at` is set; the budget is locked and a rejection releases it), or **Not funded**. Same wording as the ops web review panel.
 
+## Integrations ledger
+
+Profile → **Integrations** (ops admins only) opens `/(ops)/settings/integrations`: every tool and subscription the company pays for, from `GET /v1/ops/integrations`. The header shows the monthly cost in KES and USD, annual cost, active and free counts, and a donut by category; the totals are computed on the server with the ops console's own `totals()`, so the two always agree. Tap a row to edit it, or **Add integration**; **Delete** is inside the edit sheet and asks first. The form validates with `integrationInputSchema` (`@workspace/ops-contracts/integration-costs`), the same schema the console's server actions and the API use. Seeding the starter list stays web-only. Every create, update and delete writes an audit event (entity `integration`).
+
 ## Push notifications (ops staff)
 
 When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).

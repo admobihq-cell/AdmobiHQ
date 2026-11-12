@@ -1,0 +1,30 @@
+meta {
+  name: Update integration
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/ops/integrations/1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "name": "Bruno test tool",
+    "category": "developer",
+    "currency": "USD",
+    "billing_cycle": "monthly",
+    "status": "active",
+    "cost": 12
+  }
+}
+
+docs {
+  Ops admin only. Replaces the whole record. Change the id in the URL to the row you created.
+}
