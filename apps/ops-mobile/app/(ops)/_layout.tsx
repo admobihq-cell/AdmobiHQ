@@ -245,6 +245,14 @@ export default function OpsLayout() {
             }}
           />
           <Tabs.Screen
+            name="users"
+            options={{
+              title: "Users",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
             name="dashboards"
             options={{
               title: "Dashboards",

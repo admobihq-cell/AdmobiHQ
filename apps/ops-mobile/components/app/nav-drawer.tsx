@@ -20,6 +20,7 @@ import {
   LifeBuoy,
   Siren,
   Truck,
+  UserCircle,
   Mail,
   Map,
   MonitorPlay,
@@ -51,6 +52,14 @@ type DrawerLink = {
 }
 
 const LINKS: DrawerLink[] = [
+  {
+    key: "users",
+    label: "Users",
+    description: "Every customer, driver & admin account",
+    icon: UserCircle,
+    href: "/(ops)/users",
+    adminOnly: true,
+  },
   {
     key: "team",
     label: "Team",

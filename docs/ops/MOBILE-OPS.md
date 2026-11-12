@@ -88,6 +88,10 @@ The drawer's **Dashboards** group opens `/(ops)/dashboards/{campaigns,fleet,adve
 
 The bell in the app bar opens `/(ops)/notifications`: the same "needs attention" rows as the ops Overview (reviews waiting, campaigns at risk, driver applications, urgent cases, critical incidents, payouts pending or failed) from `GET /v1/ops/action-queue`. Any ops user can open it; the API drops each row the user has no permission for, and every row with a count of zero. The badge on the bell is the sum of the counts. Rows are grouped by urgency and open the matching dashboard or Finances tab. The screen refetches when you come back to it and on pull to refresh. Activity, which the bell used to open, is now a drawer entry (`activity` permission). The push-style QA preview moved to `/(ops)/notification-preview` (Profile → Developer tools).
 
+## Users
+
+`/(ops)/users`, from the drawer's **Users** entry, ops admins only (as on web, where `/users` needs `requireOpsAdmin`; `GET /v1/users` is `requireOpsAdminAccess`). Anyone else gets a no-access screen and no request is made. **Customers** and **Drivers** come from `GET /v1/users?type=` with a debounced search (name, email, phone) and 25-row pages loaded as you scroll; each row shows name, company (customers), email, phone, joined date and status (Active / Banned / Locked). **Admins** is the ops team list (`GET /v1/team`), searched on the phone by email or role. There is no per-user detail screen: the web has no detail page and there is no detail endpoint.
+
 ## Push notifications (ops staff)
 
 When someone submits a **driver application**, **fleet partnership**, **campaign brief** on the marketing site, or an **advertiser campaign for review**, registered ops devices receive the matching alert (`AdminAlert` / `campaign_submission`).
