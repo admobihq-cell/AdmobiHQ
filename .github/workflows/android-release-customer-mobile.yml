@@ -137,7 +137,7 @@ jobs:
         run: mv dist/app-release.apk dist/admobihq-customer-${{ steps.short-sha.outputs.value }}.apk
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: customer-apk-${{ steps.short-sha.outputs.value }}
           name: "Customer App APK - ${{ steps.short-sha.outputs.value }}"
