@@ -2,6 +2,7 @@ import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { getOpsAccess } from "@/lib/auth"
+import { AttentionTab } from "@/components/finances/attention-tab"
 import { LedgerTab } from "@/components/finances/ledger-tab"
 import { OverviewTab } from "@/components/finances/overview-tab"
 import { PayoutsTab } from "@/components/finances/payouts-tab"
@@ -19,6 +20,7 @@ import {
 
 export const FINANCE_TABS = [
   { value: "overview", label: "Overview" },
+  { value: "attention", label: "Needs attention" },
   { value: "ledger", label: "Ledger" },
   { value: "wallets", label: "Wallets" },
   { value: "payouts", label: "Payouts" },
@@ -43,15 +45,13 @@ export async function FinanceTab({ tab, range }: { tab: string; range: DateRange
         const canDisburse = access.status === "authorized" && access.permissions.includes("payouts")
         return <PayoutsTab data={data} canDisburse={canDisburse} />
       }
+      case "attention":
+        return <AttentionTab attention={await getPaymentsNeedingAttention()} />
       case "tools":
         return <ToolCostsTab data={await getToolCosts()} />
       default: {
-        const [data, attention, options] = await Promise.all([
-          getFinanceOverview(range),
-          getPaymentsNeedingAttention(),
-          getRecordOptions(),
-        ])
-        return <OverviewTab data={data} attention={attention} orgs={options.orgs} />
+        const [data, options] = await Promise.all([getFinanceOverview(range), getRecordOptions()])
+        return <OverviewTab data={data} orgs={options.orgs} />
       }
     }
   } catch (error: unknown) {

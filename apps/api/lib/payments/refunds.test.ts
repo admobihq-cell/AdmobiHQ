@@ -16,9 +16,11 @@ vi.mock("@/lib/api-utils", async () => {
 })
 vi.mock("@/lib/audit", () => ({ auditFromOpsUser: vi.fn() }))
 const createRefund = vi.fn()
+const listRefunds = vi.fn()
 vi.mock("@/lib/payments/paystack", async () => ({
   ...(await vi.importActual<typeof import("@/lib/payments/paystack")>("@/lib/payments/paystack")),
   createRefund: (...a: unknown[]) => createRefund(...a),
+  listRefunds: (...a: unknown[]) => listRefunds(...a),
 }))
 const notifyRefundUpdate = vi.fn()
 vi.mock("@/lib/payments/money-notify", () => ({ notifyRefundUpdate: (...a: unknown[]) => notifyRefundUpdate(...a) }))
@@ -65,8 +67,19 @@ describe.skipIf(!databaseUrl)("refundCredit", { timeout: 60_000 }, () => {
       data: {
         org_id: orgId, reference, amount_kes: amount, status: "success", channel: "mobile_money",
         paid_at: new Date(Date.now() - daysAgo * 86_400_000), created_by: "user_payer", wallet_transaction_id: ledger.id,
+        provider_tx_id: BigInt(Date.now()) * 1000n + BigInt(seq),
       },
     })
+  }
+
+  /** Paystack's List Refunds item for one of our rows (the webhook itself carries no id). */
+  const listed = (r: { provider_refund_id: string | null; reference: string; amount_kes: unknown }, status: string) => ({
+    id: Number(r.provider_refund_id), transaction: 1, amount: Number(r.amount_kes) * 100, currency: "KES", status,
+    merchant_note: `${r.reference}: unused`, refunded_by: null,
+  })
+  const webhook = async (event: string, paymentId: number) => {
+    const p = await prisma.payment.findUniqueOrThrow({ where: { id: paymentId } })
+    await handleRefundEvent(event, { transaction_reference: p.reference })
   }
 
   beforeAll(async () => {
@@ -114,28 +127,66 @@ describe.skipIf(!databaseUrl)("refundCredit", { timeout: 60_000 }, () => {
   })
 
   it("refund.failed restores the balance once, however often it arrives", async () => {
-    await paid(10000, 1)
+    const payment = await paid(10000, 1)
     const { refundIds } = await refundCredit({ orgId, amountKes: 4000, reason: "unused", opsEmail: "o@x" })
     const refund = await prisma.refund.findUniqueOrThrow({ where: { id: refundIds[0]! } })
     expect(await balance()).toBe(6000)
 
-    const event = { id: Number(refund.provider_refund_id), status: "failed" }
-    await handleRefundEvent("refund.failed", event)
-    await handleRefundEvent("refund.failed", event)
+    listRefunds.mockResolvedValue([listed(refund, "failed")])
+    await webhook("refund.failed", payment.id)
+    await webhook("refund.failed", payment.id)
     expect(await balance()).toBe(10000)
     expect((await prisma.refund.findUniqueOrThrow({ where: { id: refund.id } })).status).toBe("failed")
     expect(notifyRefundUpdate.mock.calls.filter((c) => c[0].stage === "delayed")).toHaveLength(1)
   })
 
   it("refund.processed closes the row and notifies once", async () => {
-    await paid(10000, 1)
+    const payment = await paid(10000, 1)
     const { refundIds } = await refundCredit({ orgId, amountKes: 1000, reason: "unused", opsEmail: "o@x" })
     const refund = await prisma.refund.findUniqueOrThrow({ where: { id: refundIds[0]! } })
-    await handleRefundEvent("refund.processed", { id: Number(refund.provider_refund_id) })
-    await handleRefundEvent("refund.processed", { id: Number(refund.provider_refund_id) })
+    listRefunds.mockResolvedValue([listed(refund, "processed")])
+    await webhook("refund.processed", payment.id)
+    await webhook("refund.processed", payment.id)
     expect((await prisma.refund.findUniqueOrThrow({ where: { id: refund.id } })).status).toBe("processed")
     expect(notifyRefundUpdate.mock.calls.filter((c) => c[0].stage === "processed")).toHaveLength(1)
     expect(await balance()).toBe(9000)
+  })
+
+  it("matches by the merchant note when our provider id never got saved", async () => {
+    const payment = await paid(10000, 1)
+    createRefund.mockRejectedValueOnce(new TypeError("fetch failed"))
+    const { refundIds } = await refundCredit({ orgId, amountKes: 2000, reason: "unused", opsEmail: "o@x" })
+    const refund = await prisma.refund.findUniqueOrThrow({ where: { id: refundIds[0]! } })
+    listRefunds.mockResolvedValue([{ ...listed(refund, "processed"), id: 555001 }])
+    await webhook("refund.processed", payment.id)
+    const after = await prisma.refund.findUniqueOrThrow({ where: { id: refund.id } })
+    expect([after.status, after.provider_refund_id]).toEqual(["processed", "555001"])
+    expect(await prisma.refund.count({ where: { org_id: orgId } })).toBe(1)
+    expect(await balance()).toBe(8000)
+  })
+
+  it("imports a refund made in the Paystack dashboard once, and the credit is gone", async () => {
+    const payment = await paid(10000, 1)
+    const dashboard = { id: 990000 + seq, transaction: 1, amount: 300000, currency: "KES", status: "pending", merchant_note: null, refunded_by: "owner@x" }
+    listRefunds.mockResolvedValue([dashboard])
+    await webhook("refund.pending", payment.id)
+    listRefunds.mockResolvedValue([{ ...dashboard, status: "processed" }])
+    await webhook("refund.processed", payment.id)
+    await webhook("refund.processed", payment.id)
+
+    const rows = await prisma.refund.findMany({ where: { org_id: orgId } })
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ reference: `ps-refund-${dashboard.id}`, status: "processed", created_by_email: "owner@x" })
+    expect(await balance()).toBe(7000)
+    expect(notifyRefundUpdate.mock.calls.map((c) => c[0].stage)).toEqual(["sent", "processed"])
+  })
+
+  it("a dashboard refund that failed moves no money and is not imported", async () => {
+    const payment = await paid(10000, 1)
+    listRefunds.mockResolvedValue([{ id: 980000 + seq, transaction: 1, amount: 100000, currency: "KES", status: "failed", merchant_note: null, refunded_by: null }])
+    await webhook("refund.failed", payment.id)
+    expect(await prisma.refund.count({ where: { org_id: orgId } })).toBe(0)
+    expect(await balance()).toBe(10000)
   })
 
   it("a definite Paystack rejection reverses; a network error needs attention and keeps the debit", async () => {

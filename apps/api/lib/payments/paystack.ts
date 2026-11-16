@@ -96,7 +96,7 @@ export async function initializeTransaction(input: {
 export const verifyTransaction = (reference: string) =>
   paystack<PaystackTx>("GET", `/transaction/verify/${encodeURIComponent(reference)}`)
 
-/** Paystack takes no client refund reference, so ours rides in merchant_note as "<reference>: <note>" (Paystack echoes notes back). */
+/** Paystack takes no client refund reference, so ours rides in merchant_note as "<reference>: <note>" (List Refunds echoes it; the webhook does not). */
 export async function createRefund(input: {
   transactionReference: string
   amountKes: number
@@ -110,6 +110,29 @@ export async function createRefund(input: {
     merchant_note: `${input.reference}: ${input.merchantNote}`,
   })
   return { id: d.id, status: d.status }
+}
+
+/** A refund as Paystack lists it. `transaction` is the numeric transaction id; `amount` is in cents. */
+export type PaystackRefund = {
+  id: number
+  transaction: number
+  amount: number
+  currency: string
+  status: string
+  merchant_note: string | null
+  refunded_by: string | null
+}
+
+/** Refunds for one transaction, or every refund since `from` (ISO), newest first. */
+export async function listRefunds(filter: { transactionId: bigint | number } | { from: string }): Promise<PaystackRefund[]> {
+  const all: PaystackRefund[] = []
+  for (let page = 1; page <= 20; page++) {
+    const q = "transactionId" in filter ? `transaction=${filter.transactionId}` : `from=${encodeURIComponent(filter.from)}`
+    const d = await paystack<PaystackRefund[]>("GET", `/refund?${q}&perPage=100&page=${page}`)
+    all.push(...d)
+    if (d.length < 100) break
+  }
+  return all.filter((r) => r.currency === "KES")
 }
 
 export async function createTransferRecipient(input: {
