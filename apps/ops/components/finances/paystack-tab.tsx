@@ -25,6 +25,10 @@ import { useOpsClient } from "@/lib/ops-client"
 
 const PER_PAGE = 25
 const DAYS: Record<DateRangeKey, number | null> = { "7d": 7, "30d": 30, "90d": 90, all: null }
+const fromFor = (range: DateRangeKey) => {
+  const days = DAYS[range]
+  return days == null ? undefined : new Date(Date.now() - days * 86_400_000).toISOString()
+}
 
 const VIEWS: { value: PaystackResource; label: string }[] = [
   { value: "transactions", label: "Transactions" },
@@ -180,8 +184,15 @@ function columns(reload: () => void): { [R in PaystackResource]: LedgerColumn<Pa
         render: (r) =>
           r.recorded ? (
             <StatusPill tone="good">Debited</StatusPill>
+          ) : r.status === "failed" ? (
+            <StatusPill tone="neutral">No money moved</StatusPill>
+          ) : r.orgId == null ? (
+            <StatusPill tone="neutral">Not an Admobi payment</StatusPill>
           ) : (
-            <StatusPill tone="serious">Not recorded: press Sync refunds</StatusPill>
+            <div className="flex flex-col items-start gap-1">
+              <StatusPill tone="serious">Not debited</StatusPill>
+              <span className="text-xs text-muted-foreground">Press Sync refunds. Still here after? See Needs attention</span>
+            </div>
           ),
       },
     ],
@@ -217,48 +228,47 @@ export function PaystackTab({ range }: { range: DateRangeKey }) {
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
   const [reloadKey, setReloadKey] = useState(0)
-  const [summary, setSummary] = useState<PaystackSummaryDto | null | "error">(null)
-  const [data, setData] = useState<PaystackPageDto<PaystackRowDto[PaystackResource]> | null | "error">(null)
+  const [summaryResult, setSummaryResult] = useState<{ key: string; value: PaystackSummaryDto | "error" } | null>(null)
+  const [listResult, setListResult] = useState<{ key: string; value: PaystackPageDto<PaystackRowDto[PaystackResource]> | "error" } | null>(null)
   const [syncing, startSync] = useTransition()
   const [exporting, startExport] = useTransition()
   const reload = () => setReloadKey((k) => k + 1)
 
-  const days = DAYS[range]
-  const from = days == null ? undefined : new Date(Date.now() - days * 86_400_000).toISOString()
+  const summaryKey = `${range}|${reloadKey}`
+  const listKey = JSON.stringify([view, page, statusFilter, search, range, reloadKey])
 
   useEffect(() => {
     let live = true
-    setSummary(null)
     client.finance.paystack
-      .summary({ from })
-      .then((s) => live && setSummary(s))
-      .catch(() => live && setSummary("error"))
+      .summary({ from: fromFor(range) })
+      .then((value) => live && setSummaryResult({ key: summaryKey, value }))
+      .catch(() => live && setSummaryResult({ key: summaryKey, value: "error" }))
     return () => {
       live = false
     }
-    // `from` is derived from range; keying on range keeps it from refetching every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, range, reloadKey])
+  }, [client, range, summaryKey])
 
   useEffect(() => {
     let live = true
-    setData(null)
     const term = view === "transactions" ? search.trim() : ""
     client.finance.paystack
       .list(view, {
         page,
         perPage: PER_PAGE,
-        from: term ? undefined : from,
+        from: term ? undefined : fromFor(range),
         status: statusFilter === "all" ? undefined : statusFilter,
         ...(term.includes("@") ? { email: term } : term ? { reference: term } : {}),
       })
-      .then((d) => live && setData(d))
-      .catch(() => live && setData("error"))
+      .then((value) => live && setListResult({ key: listKey, value }))
+      .catch(() => live && setListResult({ key: listKey, value: "error" }))
     return () => {
       live = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, view, page, statusFilter, search, range, reloadKey])
+  }, [client, view, page, statusFilter, search, range, listKey])
+
+  // Stale results (from a previous filter) count as loading.
+  const summary = summaryResult?.key === summaryKey ? summaryResult.value : null
+  const data = listResult?.key === listKey ? listResult.value : null
 
   const switchView = (v: string) => {
     setView(v as PaystackResource)
@@ -314,16 +324,22 @@ export function PaystackTab({ range }: { range: DateRangeKey }) {
             size="sm"
             loading={exporting}
             loadingText="Preparing…"
-            onClick={() =>
+            onClick={() => {
+              // Open the tab inside the click (a tab opened after an await is popup-blocked), then
+              // point it at Paystack's link, which expires 60 seconds after it is issued.
+              const tab = window.open("", "_blank")
+              if (tab) tab.opener = null
               startExport(async () => {
                 try {
-                  const { url } = await client.finance.paystack.exportCsv({ from, status: view === "transactions" && statusFilter !== "all" ? statusFilter : undefined })
-                  window.open(url, "_blank", "noopener")
+                  const { url } = await client.finance.paystack.exportCsv({ from: fromFor(range), status: view === "transactions" && statusFilter !== "all" ? statusFilter : undefined })
+                  if (tab) tab.location.href = url
+                  else window.location.assign(url)
                 } catch (e) {
+                  tab?.close()
                   toast.error(e instanceof Error ? e.message : "Couldn't export from Paystack")
                 }
               })
-            }
+            }}
           >
             <Download aria-hidden />
             Export transactions
