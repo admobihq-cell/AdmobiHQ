@@ -1,0 +1,25 @@
+meta {
+  name: Create role
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{API_URL}}/v1/roles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "name": "Fleet desk",
+    "permissions": [
+      "fleet",
+      "drivers"
+    ]
+  }
+}

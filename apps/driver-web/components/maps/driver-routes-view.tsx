@@ -1,61 +1,55 @@
 "use client"
 
+import { useMemo } from "react"
+
 import { MapCanvas } from "@workspace/ui/components/map-canvas"
-import { cn } from "@workspace/ui/lib/utils"
-import { ROUTE_HISTORY } from "@/lib/placeholder-data"
 
-const ROUTE_SUMMARY = [
-  { value: "3", label: "Routes driven" },
-  { value: "27.5", label: "Screen-on hrs" },
-  { value: "CBD Loop", label: "Top earner" },
-] as const
+import { SampleTag } from "@/components/sample-tag"
+import { formatHours, formatKm, sampleTelemetry } from "@/lib/sample-data"
 
-const WEIGHT_STYLE: Record<
-  (typeof ROUTE_HISTORY)[number]["weight"],
-  { dot: string; label: string }
-> = {
-  high: { dot: "bg-primary", label: "High earner" },
-  medium: { dot: "bg-primary/45", label: "Medium earner" },
-  low: { dot: "bg-muted-foreground/40", label: "Low earner" },
-}
-
+/** Last seven days, the same sample the dashboard opens on, so the two pages agree. */
 export function DriverRoutesView() {
+  const t = useMemo(() => sampleTelemetry({ range: "7d" }), [])
+  const top = t.areas[0]?.value ?? 0
+
   return (
     <MapCanvas
       title="Your routes"
-      description="Where you've driven this week, weighted by earnings."
-      summary={ROUTE_SUMMARY.map((stat) => ({ ...stat }))}
-      note="Illustrative data — not yet live"
+      description="Where your screen spent its time in the last 7 days."
+      summary={[
+        { value: String(t.areas.length), label: "Areas" },
+        { value: formatHours(t.totals.hours), label: "Screen-on" },
+        { value: formatKm(t.totals.km), label: "Driven" },
+      ]}
+      note="Sample figures. Real routes appear once your screen reports where it has been."
       loadingLabel="Loading your routes"
     >
-      {ROUTE_HISTORY.map((route, index) => (
-        <div key={route.id} className="flex items-start gap-3 px-4 py-3.5">
-          <span className="mt-0.5 shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="truncate text-sm font-semibold">{route.name}</p>
-              <p className="shrink-0 text-sm font-semibold text-primary">
-                {route.earnings}
+      <ol className="divide-y">
+        {t.areas.map((area, index) => {
+          const days = t.days.filter((d) => d.area === area.name)
+          const plays = days.reduce((s, d) => s + d.plays, 0)
+          return (
+            <li key={area.name} className="space-y-2 px-4 py-3.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="truncate text-sm font-semibold">
+                  <span className="mr-2 text-xs font-medium text-muted-foreground tabular-nums">{index + 1}</span>
+                  {area.name}
+                </p>
+                <p className="flex shrink-0 items-center gap-1.5 text-sm font-semibold tabular-nums">
+                  <SampleTag />
+                  {formatHours(area.value)}
+                </p>
+              </div>
+              <div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${top ? (area.value / top) * 100 : 0}%` }} />
+              </div>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {days.length} {days.length === 1 ? "day" : "days"} · {plays.toLocaleString("en-KE")} ad plays
               </p>
-            </div>
-            <p className="text-xs text-muted-foreground">{route.corridor}</p>
-            <div className="flex items-center gap-1.5 pt-0.5">
-              <span
-                className={cn(
-                  "size-1.5 rounded-full",
-                  WEIGHT_STYLE[route.weight].dot,
-                )}
-                aria-hidden
-              />
-              <span className="text-[11px] font-medium text-muted-foreground">
-                {WEIGHT_STYLE[route.weight].label} · {route.hours}
-              </span>
-            </div>
-          </div>
-        </div>
-      ))}
+            </li>
+          )
+        })}
+      </ol>
     </MapCanvas>
   )
 }

@@ -8,6 +8,8 @@ import {
   type BulkResponse,
   type CampaignDto,
   type CampaignListItemDto,
+  type BulkReviewInput,
+  type BulkReviewResult,
   type CampaignReviewInput,
   type RecordTransactionInput,
   type DateRangeKey,
@@ -161,6 +163,7 @@ export type OpsClient = {
       page?: number
       pageSize?: number
       sortDir?: "asc" | "desc"
+      search?: string
     }) => Promise<PaginatedResponse<AnnouncementDto>>
     delete: (id: number) => Promise<SuccessResponse>
     /**
@@ -228,6 +231,7 @@ export type OpsClient = {
     ) => Promise<PaginatedResponse<DriverApplicationListItemDto>>
     get: (id: number) => Promise<DriverProfileDto>
     review: (id: number, body: DriverProfileReviewInput) => Promise<DriverProfileDto>
+    bulkReview: (body: BulkReviewInput) => Promise<BulkReviewResult>
     /** No JSON endpoint for this — the file route streams raw bytes, so the
      * caller fetches it directly (with the same bearer token) rather than
      * going through request<T>()'s JSON parsing. */
@@ -239,6 +243,7 @@ export type OpsClient = {
     ) => Promise<PaginatedResponse<CampaignListItemDto>>
     get: (id: number) => Promise<CampaignDto>
     review: (id: number, body: CampaignReviewInput) => Promise<CampaignDto>
+    bulkReview: (body: BulkReviewInput) => Promise<BulkReviewResult>
     /** No JSON endpoint — the file route streams raw bytes, so the caller
      * fetches it directly (with the same bearer token) rather than going
      * through request<T>()'s JSON parsing. Same shape as
@@ -254,8 +259,39 @@ export type OpsClient = {
   finance: {
     /** Appends a wallet ledger row. Needs the `finances` permission; the ledger has no edit or delete. */
     recordTransaction: (body: RecordTransactionInput) => Promise<{ id: number; amountKes: number }>
+    /** Refunds unused credit to the org's original Paystack payments. Needs `finances`. */
+    refund: (body: { orgId: number; amountKes: number; reason: string }) => Promise<{ refundIds: number[] }>
+    /** Live Paystack KES balance. Needs `finances`. */
+    paystackBalance: () => Promise<{ balanceKes: number }>
+  }
+  payouts: {
+    /** A month's payout run: eligible drivers and any saved payout. Needs `finances`. */
+    getRun: (month: string) => Promise<PayoutRunDto>
+    /** Save typed amounts as pending payouts. Needs `finances`. */
+    saveRun: (body: { periodMonth: string; items: { driverProfileId: number; amountKes: number }[] }) => Promise<{
+      saved: number
+      skipped: { driverProfileId: number; reason: string }[]
+    }>
+    /** Send payouts through Paystack Transfers. Needs `payouts`. */
+    disburse: (payoutIds: number[]) => Promise<PayoutDisburseResult>
+    /** Resend a failed payout with the same reference. Needs `payouts`. */
+    retry: (id: number) => Promise<PayoutDisburseResult>
   }
 }
+
+export type PayoutRunDto = {
+  month: string
+  drivers: {
+    driverProfileId: number
+    name: string
+    method: "mpesa" | "bank"
+    destinationMasked: string | null
+    bankName: string | null
+    payout: { id: number; amountKes: number; status: string; failureReason: string | null; estimatedFeeKes: number } | null
+  }[]
+}
+
+export type PayoutDisburseResult = { queued: number; skipped: { id: number; reason: string }[] }
 
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/$/, "")
@@ -468,6 +504,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           page: params?.page,
           pageSize: params?.pageSize,
           sortDir: params?.sortDir,
+          search: params?.search,
         })
         const qs = query.toString()
         return request<PaginatedResponse<AnnouncementDto>>(
@@ -628,6 +665,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         const query = buildListQueryParams({
           page: params.page,
           pageSize: params.pageSize,
+          search: params.search,
           status: "status" in params ? params.status : undefined,
         })
         const qs = query.toString()
@@ -639,6 +677,11 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       review: (id, body) =>
         request<DriverProfileDto>(`${apiPrefix}/driver-applications/${id}/review`, {
           method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      bulkReview: (body) =>
+        request<BulkReviewResult>(`${apiPrefix}/driver-applications/bulk-review`, {
+          method: "POST",
           body: JSON.stringify(body),
         }),
       documentFileUrl: (applicationId, documentId) =>
@@ -661,6 +704,11 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       review: (id, body) =>
         request<CampaignDto>(`${apiPrefix}/campaigns/${id}/review`, {
           method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      bulkReview: (body) =>
+        request<BulkReviewResult>(`${apiPrefix}/campaigns/bulk-review`, {
+          method: "POST",
           body: JSON.stringify(body),
         }),
       creativeFileUrl: (campaignId, creativeId) =>
@@ -686,6 +734,23 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           method: "POST",
           body: JSON.stringify(body),
         }),
+      refund: (body) =>
+        request<{ refundIds: number[] }>(`${apiPrefix}/ops/payments/refunds`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      paystackBalance: () => request<{ balanceKes: number }>(`${apiPrefix}/ops/payments/balance`),
+    },
+    payouts: {
+      getRun: (month) => request<PayoutRunDto>(`${apiPrefix}/ops/payouts?month=${encodeURIComponent(month)}`),
+      saveRun: (body) =>
+        request(`${apiPrefix}/ops/payouts`, { method: "POST", body: JSON.stringify(body) }),
+      disburse: (payoutIds) =>
+        request<PayoutDisburseResult>(`${apiPrefix}/ops/payouts/disburse`, {
+          method: "POST",
+          body: JSON.stringify({ payoutIds }),
+        }),
+      retry: (id) => request<PayoutDisburseResult>(`${apiPrefix}/ops/payouts/${id}/retry`, { method: "POST" }),
     },
   }
 }

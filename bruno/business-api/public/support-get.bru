@@ -1,0 +1,19 @@
+meta {
+  name: Get support case
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{API_URL}}/v1/public/support/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Bearer: a customer/driver Clerk JWT or the case access token.
+}

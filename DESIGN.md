@@ -34,6 +34,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 
 - Buttons: [`@workspace/ui` Button](../packages/ui/src/components/button.tsx) — primary for main CTAs, outline/secondary for alternatives.
 - Inputs: shared `Input` + `Label` in UI package; rounded, bordered, focus ring using `--ring`.
+- Charts: every `ChartCard` that can say its point in one sentence passes `takeaway` (e.g. "Westlands brought the most impressions: 38% of the total"), shown above the plot. A missing takeaway means there was nothing honest to say, never a placeholder. KPI change pills read "vs last period" beside the percentage.
 - FAQs: native `<details>` / `<summary>` for accessibility without custom accordion scripts.
 
 ## Layout
@@ -42,6 +43,19 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 - **Header** (`site-header.tsx`): from `xl`, three zones on one centre line: the nav links inside a 1.5px foreground-outlined pill (current section in terracotta, dropdowns hang below it), the full logo (mark + wordmark) in the middle, and a matching pill holding both front doors ("Partner your fleet" as text, "Start a campaign" filled terracotta). Below `xl` it's logo + wordmark, a "Start a campaign" pill (from `sm`) and an outlined round menu button; the theme toggle stays in the bar at every width.
 - Optional **sticky mobile bar** with two actions (Start campaign / Fleet manager); no modal-first signup.
 - **Lead forms** (start campaign, partner fleet, drivers): pitch left, form right from `lg` (`formPageGrid` in `apps/web/components/forms/form-section.tsx`), never a lone `max-w-xl` column against an empty right half. Fields group into titled `FormSection`s that pair short fields two-across from `sm`. In DOM order the form follows the intro directly, so phones reach it without scrolling past supporting copy. On submit the form is replaced by `SubmissionSuccess` (`apps/web/components/forms/submission-success.tsx`): a headline plus a short route of what happens next (done node → pulsing next node → later steps, each with an optional "when" promise), not an icon-in-a-circle card. It takes focus on mount.
+
+## Driver surfaces (driver-web, driver-mobile)
+
+**Scene:** a driver checking their shift between fares, on a phone in a car or on a laptop at home: how long the screen ran, where, and whether the money went through. Same palette, type and components as the rest of Admobi.
+
+- **Dashboards, not a column.** driver-web pages use the shared `@workspace/ui` dashboard kit at full width, exactly as customer-web and ops do: header (h1 + subtitle, actions right), `DashboardToolbar` with the date range, then grid rows of `HeroMetric` beside a `KpiStrip`, `ChartCard`s (`TrendChart`, `RankBars`, `Heatmap`), `DashboardCard`s and `LedgerCard` tables. No `mx-auto max-w-*` page columns, no single-number heroes, no uppercase eyebrow labels. Loading states compose the kit skeletons in the same grid (`apps/driver-web/components/skeletons/dashboard-skeletons.tsx`).
+- **Payout status** is a `StatusPill` (Paid good, Sending warning, Saved neutral, Didn't go through / Reversed serious) plus a three-segment Saved / Sending / Paid bar in the Latest payout card (`latest-payout-card.tsx`); a failed stage fills destructive. Struck-through amounts mean the money didn't reach the driver.
+- **Status is never colour alone:** every pill, segment and row carries its status in words.
+- **Problems carry their next step:** a failed payout or missing payout details raises an `AlertStrip` with the fix ("Check payout details"); load errors get Try again.
+- **Thumb first:** below `md` driver-web shows a bottom tab bar (Home, Earnings, Routes, Support) like the native app; the SOS FAB sits above it and `<main>` pads to clear both.
+- **Plain words first.** Drivers aren't analysts: a chart carries a one-line `takeaway` ("Your longest day was Sat 7 Nov: 9.8 h"), time slots read as people say them ("Friday, 6–9 pm"), and grids of numbers become ranked lists. Labels are everyday words ("Ads shown", "Hours a day"), not "plays" or "per active day".
+- **Samples are tagged in place:** screen time, plays, distance and areas come from `apps/driver-web/lib/sample-data.ts` (seeded per day) and every one carries a dashed "Sample" tag (`SampleTag` / `SampleLabel`), plus a "Sample screen data" pill on the toolbar.
+- **driver-mobile** still uses the earlier payout hero and route-style history (`apps/driver-mobile/components/payout-hero.tsx`) until it is brought onto the same structure.
 
 ## Motion
 

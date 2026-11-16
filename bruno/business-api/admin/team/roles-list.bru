@@ -1,0 +1,15 @@
+meta {
+  name: List roles
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{API_URL}}/v1/roles
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}

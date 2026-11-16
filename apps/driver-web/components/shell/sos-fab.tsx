@@ -37,11 +37,14 @@ export function SosFab() {
       aria-label="Report an emergency"
       title="Report an emergency"
       className={cn(
-        "fixed right-6 bottom-6 z-50 flex size-14 items-center justify-center rounded-full",
-        "bg-destructive text-white shadow-lg ring-1 ring-black/5 transition",
-        "hover:scale-105 hover:shadow-xl",
+        // Above the phone tab bar (h-16 + safe area); bottom-right corner from md.
+        "fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 print:hidden flex size-14 items-center justify-center rounded-full md:right-6 md:bottom-6",
+        "bg-destructive text-white shadow-lg ring-1 ring-black/5",
+        "transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96]",
+        // Hover lift only with a real pointer: on touch, hover fires on tap and the button jumps mid-press.
+        "[@media(hover:hover)_and_(pointer:fine)]:hover:scale-105 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-xl",
         "focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-        "motion-reduce:transition-none motion-reduce:hover:scale-100",
+        "motion-reduce:transition-none motion-reduce:active:scale-100 motion-reduce:hover:scale-100",
       )}
     >
       <Siren className="size-6" aria-hidden />

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server"
 
-import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
+import {
+  jsonError,
+  parseJsonBody,
+  requireOpsAdminAccess,
+  requireOpsPermissionAccess,
+} from "@/lib/api-utils"
+import { latin1 } from "@/lib/pdf/latin1"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 import { EntityExportPdf } from "@/lib/pdf/templates/entity-export-pdf"
 import { documentExportRequestSchema } from "@/lib/validation/schemas"
@@ -13,10 +19,18 @@ export async function POST(req: Request) {
   // permission check is on the claimed entity, not on a query result —
   // same trust boundary the existing CSV export already accepts (the
   // client already holds this data before either export path runs).
-  const auth = await requireOpsPermissionAccess(parsed.data.entity)
+  const { entity } = parsed.data
+  const auth =
+    entity === "admin"
+      ? await requireOpsAdminAccess()
+      : await requireOpsPermissionAccess(entity)
   if (auth.error) return auth.error
 
-  const { title, headers, rows } = parsed.data
+  // Rows are whatever the list page shows (names, "—" placeholders, "→"
+  // flight ranges), and the PDF font throws on anything outside Latin-1.
+  const title = latin1(parsed.data.title)
+  const headers = parsed.data.headers.map(latin1)
+  const rows = parsed.data.rows.map((row) => row.map(latin1))
 
   try {
     const bytes = await renderPdf(

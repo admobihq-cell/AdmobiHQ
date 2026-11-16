@@ -1,0 +1,15 @@
+meta {
+  name: List folders
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{API_URL}}/v1/customer/media/folders
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

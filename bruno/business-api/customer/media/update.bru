@@ -1,0 +1,22 @@
+meta {
+  name: Rename or move media
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/media/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "name": "Hero banner",
+    "folderId": null
+  }
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Attach creative from library
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}/creatives
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "mediaAssetId": 1,
+    "slot": "all"
+  }
+}
+
+docs {
+  slot: all | side_a | side_b | left | right | rear. 409 if already attached.
+}

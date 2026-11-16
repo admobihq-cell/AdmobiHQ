@@ -23,6 +23,6 @@ describe("route catalog", () => {
       audience.resources.flatMap((resource) => resource.endpoints)
     )
     expect(listed).toHaveLength(endpoints.length)
-    expect(catalog.find((audience) => audience.id === "system")?.count).toBe(2)
+    expect(catalog.find((audience) => audience.id === "system")?.count).toBe(5)
   })
 })

@@ -1,6 +1,7 @@
 "use client"
 
-import { ArrowDownCircle, ArrowLeftRight } from "lucide-react"
+import Link from "next/link"
+import { ArrowDownCircle } from "lucide-react"
 import { formatCompact, formatKes } from "@workspace/ops-contracts"
 
 import { Card, CardContent } from "@workspace/ui/components/card"
@@ -13,8 +14,10 @@ import { HeroMetric } from "@workspace/ui/components/dashboard/hero-metric"
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import { MetricTile } from "@workspace/ui/components/dashboard/metric-tile"
 import { InsightNote } from "@workspace/ui/components/dashboard/notes"
-import { ComingSoonDialog } from "@/components/shell/coming-soon-dialog"
-import type { FinanceOverviewDto } from "@/lib/queries/finance"
+import { Button } from "@workspace/ui/components/button"
+import { PaystackBalanceTile } from "@/components/finances/paystack-balance-tile"
+import { RefundDialog } from "@/components/finances/refund-dialog"
+import type { AttentionItemDto, FinanceOverviewDto, RecordOptionsDto } from "@/lib/queries/finance"
 
 export const NO_LEDGER = "Transactions appear here once an advertiser's wallet has activity."
 
@@ -22,12 +25,61 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 /** "2026-11" → "Nov 26". */
 export const monthLabel = (m: string) => `${MONTHS[Number(m.slice(5)) - 1] ?? m} ${m.slice(2, 4)}`
 
-export function OverviewTab({ data }: { data: FinanceOverviewDto }) {
+export function OverviewTab({
+  data,
+  attention,
+  orgs,
+}: {
+  data: FinanceOverviewDto
+  attention: AttentionItemDto[]
+  orgs: RecordOptionsDto["orgs"]
+}) {
   const flow = data.moneyInOut.map((r) => ({ period: monthLabel(r.period), in: r.inKes, out: r.outKes }))
   const margin = data.revenue.current > 0 ? Math.round((data.netMarginKes / data.revenue.current) * 100) : null
 
+  // Broken money comes first when there is any; an empty list sinks to the foot.
+  const needsAttention = (
+    <DashboardCard
+      title="Needs attention"
+      description="Payment mismatches, payments pending over an hour, failed refunds and failed driver payouts"
+    >
+      {attention.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing needs attention.</p>
+      ) : (
+        <ul className="divide-y">
+          {attention.map((item, i) => {
+            const body = (
+              <>
+                <div className="min-w-0">
+                  <p className="font-medium">{item.label}</p>
+                  <p className="text-muted-foreground">{item.detail}</p>
+                </div>
+                <span className="shrink-0 tabular-nums">{formatKes(item.amountKes)}</span>
+              </>
+            )
+            return (
+              <li key={`${item.kind}-${i}`}>
+                {item.kind === "payout" ? (
+                  <Link
+                    href="/finances?tab=payouts"
+                    className="-mx-2 flex items-baseline justify-between gap-4 rounded-md px-2 py-2 text-sm hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="flex items-baseline justify-between gap-4 py-2 text-sm">{body}</div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </DashboardCard>
+  )
+
   return (
     <div className="grid gap-4">
+      {attention.length > 0 ? needsAttention : null}
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="shadow-xs">
           <CardContent>
@@ -45,7 +97,11 @@ export function OverviewTab({ data }: { data: FinanceOverviewDto }) {
             items={[
               { label: "Money in", value: formatKes(data.moneyIn.current), note: "Top-ups", delta: { delta: data.moneyIn, good: "up" } },
               { label: "Driver payouts", value: formatKes(data.payoutsKes), note: "Settled in the period" },
-              { label: "Tool costs", value: formatKes(data.toolCostsKes), note: "Run-rate scaled to the period" },
+              {
+                label: "Tool costs and fees",
+                value: formatKes(data.toolCostsKes + data.feesKes),
+                note: `Run-rate tools, plus ${formatKes(data.feesKes)} Paystack fees`,
+              },
               {
                 label: "Net margin",
                 value: formatKes(data.netMarginKes),
@@ -53,11 +109,14 @@ export function OverviewTab({ data }: { data: FinanceOverviewDto }) {
               },
             ]}
           />
-          <MetricTile
-            label="Wallet funds held"
-            value={formatKes(data.fundsHeldKes)}
-            note="Owed to advertisers, all time. This is not revenue"
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MetricTile
+              label="Wallet funds held"
+              value={formatKes(data.fundsHeldKes)}
+              note="Owed to advertisers, all time. This is not revenue"
+            />
+            <PaystackBalanceTile />
+          </div>
         </div>
       </div>
 
@@ -69,7 +128,7 @@ export function OverviewTab({ data }: { data: FinanceOverviewDto }) {
           emptyMessage={NO_LEDGER}
           table={{ columns: ["Month", "Money in (KES)", "Money out (KES)"], rows: flow.map((r) => [r.period, r.in, r.out]) }}
         >
-          <MirrorBars data={flow} up={{ key: "in", label: "Top-ups" }} down={{ key: "out", label: "Spend" }} valueFormatter={formatCompact} />
+          <MirrorBars data={flow} up={{ key: "in", label: "Top-ups" }} down={{ key: "out", label: "Spend and refunds" }} valueFormatter={formatCompact} />
         </ChartCard>
         <ChartCard
           title="Revenue by category"
@@ -99,15 +158,23 @@ export function OverviewTab({ data }: { data: FinanceOverviewDto }) {
         </ChartCard>
         <DashboardCard title="Margin" description="How net margin is worked out">
           <InsightNote>
-            Net margin is revenue, less driver payouts settled in the period, less tool costs. Tool costs are
-            today&rsquo;s monthly run-rate scaled to the period, because the integrations list keeps no history.
+            Net margin is revenue, less driver payouts settled in the period, less Paystack fees (absorbed, never
+            passed on), less tool costs. Tool costs are today&rsquo;s monthly run-rate scaled to the period, because
+            the integrations list keeps no history.
           </InsightNote>
           <div className="grid grid-cols-2 gap-2">
-            <ComingSoonDialog label="Payout" icon={ArrowDownCircle} body="Release a driver payout batch. Coming soon." />
-            <ComingSoonDialog label="Transfer" icon={ArrowLeftRight} body="Move funds between campaign wallets or reverse a payout. Coming soon." />
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/finances?tab=payouts">
+                <ArrowDownCircle aria-hidden />
+                New payout run
+              </Link>
+            </Button>
+            <RefundDialog orgs={orgs} />
           </div>
         </DashboardCard>
       </div>
+
+      {attention.length === 0 ? needsAttention : null}
     </div>
   )
 }

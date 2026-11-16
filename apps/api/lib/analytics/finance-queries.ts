@@ -24,7 +24,7 @@ import {
   type WalletTransactionKind,
 } from "@workspace/ops-contracts"
 
-import { isActive } from "@/lib/campaigns/campaign-statement"
+import { holdsFunds } from "@/lib/payments/funding"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -101,7 +101,7 @@ export async function getFinanceSummary(
       prisma.$queryRaw<{ period: string; in_kes: number; out_kes: number }[]>`
         SELECT to_char(${LEDGER_DAY}, 'YYYY-MM') AS period,
           COALESCE(SUM(amount_kes) FILTER (WHERE kind = 'top_up'), 0)::float8 AS in_kes,
-          (-COALESCE(SUM(amount_kes) FILTER (WHERE kind IN ('spend', 'refund')), 0))::float8 AS out_kes
+          (-COALESCE(SUM(amount_kes) FILTER (WHERE kind IN ('spend', 'refund', 'cash_refund')), 0))::float8 AS out_kes
         FROM wallet_transactions
         WHERE org_id = ${orgId} AND ${ledgerInRange(range.start, range.end)}
         GROUP BY 1 ORDER BY 1`,
@@ -132,7 +132,7 @@ export async function getFinanceSummary(
 
   const committed = committedKes(
     campaigns
-      .filter((c) => isActive(c, today))
+      .filter((c) => holdsFunds(c, today))
       .map((c) => ({ budgetKes: num(c.budget_kes), spentKes: spentMap.get(c.id) ?? 0 }))
   )
 

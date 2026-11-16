@@ -1,0 +1,19 @@
+meta {
+  name: Open Paystack checkout
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}/checkout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Needs `campaigns:submit`. Returns `{ authorizationUrl, reference, amountKes }`. 409 `{ dueKes: 0 }` when the balance covers it.
+}

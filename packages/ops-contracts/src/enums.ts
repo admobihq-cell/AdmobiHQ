@@ -249,6 +249,7 @@ export const OPS_PERMISSIONS = [
   "driver_applications",
   "campaigns",
   "safety",
+  "payouts",
 ] as const
 export type OpsPermission = (typeof OPS_PERMISSIONS)[number]
 

@@ -1,0 +1,19 @@
+meta {
+  name: Activity
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_URL}}/v1/customer/org/activity?limit=20
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Cursor-paginated: pass `cursor` from the previous page.
+}

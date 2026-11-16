@@ -1,0 +1,26 @@
+meta {
+  name: Update incident
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/safety-incidents/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "status": "acknowledged",
+    "severity": "high"
+  }
+}
+
+docs {
+  Resolving needs a `resolution`. Ops can't cancel.
+}

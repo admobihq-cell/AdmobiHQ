@@ -1,0 +1,26 @@
+meta {
+  name: Open support case
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{API_URL}}/v1/public/support
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "contact_name": "Bruno Tester",
+    "contact_email": "bruno@example.com",
+    "channel": "web",
+    "category": "general",
+    "subject": "Test case from Bruno",
+    "message": "Please ignore."
+  }
+}
+
+docs {
+  Returns the case access token, plus `identityToken` the first time an email opens a case. Turnstile fails open when TURNSTILE_SECRET_KEY is unset (local).
+}

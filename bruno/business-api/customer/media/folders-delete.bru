@@ -1,0 +1,19 @@
+meta {
+  name: Delete folder
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{API_URL}}/v1/customer/media/folders/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Keeps the files, out of any folder.
+}

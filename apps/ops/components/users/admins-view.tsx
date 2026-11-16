@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { TeamMemberDto } from "@workspace/ops-contracts"
 
@@ -17,7 +17,10 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import { DataTable, DataTableSortHeader, type ColumnDef, type SortingState } from "@/components/ui/data-table"
-import { formatDateTime } from "@/lib/format"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
+import { formatDateTime, matchesSearch } from "@/lib/format"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
 import { useOpsClient } from "@/lib/ops-client"
 
 function RoleBadge({ role }: { role: "admin" | "member" }) {
@@ -95,6 +98,19 @@ const columns: ColumnDef<TeamMemberDto, any>[] = [
   },
 ]
 
+const getId = (m: TeamMemberDto) => m.userId
+
+const ROLE_OPTIONS = [
+  { value: "admin", label: "Admin" },
+  { value: "member", label: "Member" },
+]
+
+const exportColumns: ExportColumn<TeamMemberDto>[] = [
+  { key: "email", header: "Email", value: (m) => m.email },
+  { key: "role", header: "Role", value: (m) => m.role },
+  { key: "joined", header: "Joined", value: (m) => formatDateTime(m.joinedAt) },
+]
+
 /** Read-only view of the ops org roster — same data as /team (see
  * components/team-view.tsx), without the invite/remove/role-edit controls,
  * which stay exclusive to /team. */
@@ -108,25 +124,63 @@ export function AdminsView() {
   })
   const team = teamQuery.data ?? null
   const error = teamQuery.isError ? formatApiError(teamQuery.error) : null
+  const [search, setSearch] = useState("")
+  const [role, setRole] = useState("")
+
+  const rows = useMemo(
+    () =>
+      (team?.members ?? []).filter(
+        (m) => (!role || m.role === role) && matchesSearch(search, m.email),
+      ),
+    [team, role, search],
+  )
+  const selection = useRowSelection(rows, [role, search], getId)
+  const exportRows = (format: ExportFormat, list: TeamMemberDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Admins",
+      scope,
+      columns: exportColumns,
+      rows: list,
+      entity: "admin",
+      client,
+    })
 
   return (
-    <Card className="overflow-hidden p-0 shadow-none">
-      <CardContent className="p-0">
-        {error ? (
-          <div className="p-6 text-sm text-destructive">{error}</div>
-        ) : team === null ? (
-          <MembersTableSkeleton />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={team.members}
-            manualSorting={false}
-            sorting={sorting}
-            onSortingChange={setSorting}
-            getRowId={(member) => member.userId}
-          />
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-1 flex-col gap-4">
+      <TableToolbar
+        search={{ value: search, onChange: setSearch, placeholder: "Search by email…" }}
+        filters={
+          <FilterSelect value={role} onChange={setRole} options={ROLE_OPTIONS} allLabel="All roles" />
+        }
+        onExport={(format) => exportRows(format, rows, null)}
+        exportDisabled={!rows.length}
+      />
+
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
+
+      <Card className="overflow-hidden p-0 shadow-none">
+        <CardContent className="p-0">
+          {error ? (
+            <div className="p-6 text-sm text-destructive">{error}</div>
+          ) : team === null ? (
+            <MembersTableSkeleton />
+          ) : (
+            <DataTable
+              columns={[selection.selectColumn, ...columns]}
+              data={rows}
+              manualSorting={false}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              getRowId={getId}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

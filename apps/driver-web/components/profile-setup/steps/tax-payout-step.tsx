@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { DriverPayoutMethod, DriverProfileDto } from "@workspace/ops-contracts"
 
 import { Input } from "@workspace/ui/components/input"
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { patchDriverProfile } from "@/lib/driver-profile-client"
+import { fetchPayoutBanks, patchDriverProfile } from "@/lib/driver-profile-client"
 import { DocumentUploadField } from "@/components/profile-setup/document-upload-field"
 import { StepShell } from "@/components/profile-setup/steps/step-shell"
 import type { GetToken } from "@/lib/driver-profile-client"
@@ -37,6 +37,20 @@ export function TaxPayoutStep({
   const [mpesaMsisdn, setMpesaMsisdn] = useState(profile.payout_mpesa_msisdn ?? "")
   const [bankName, setBankName] = useState(profile.payout_bank_name ?? "")
   const [bankAccount, setBankAccount] = useState(profile.payout_bank_account ?? "")
+  const [bankCode, setBankCode] = useState(profile.payout_bank_code ?? "")
+  // Null while loading or if Paystack's list is unavailable: then the typed name is kept.
+  const [banks, setBanks] = useState<{ name: string; code: string }[] | null>(null)
+
+  useEffect(() => {
+    if (method !== "bank" || banks) return
+    let live = true
+    fetchPayoutBanks(getToken)
+      .then((list) => live && setBanks(list))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [method, banks, getToken])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,7 +74,11 @@ export function TaxPayoutStep({
         payout_method: method,
         ...(method === "mpesa"
           ? { payout_mpesa_msisdn: mpesaMsisdn.trim() }
-          : { payout_bank_name: bankName.trim(), payout_bank_account: bankAccount.trim() }),
+          : {
+              payout_bank_name: bankName.trim(),
+              payout_bank_account: bankAccount.trim(),
+              ...(bankCode ? { payout_bank_code: bankCode } : {}),
+            }),
       })
       onStepComplete(updated)
     } catch (err) {
@@ -134,8 +152,29 @@ export function TaxPayoutStep({
       {method === "bank" ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="bank_name">Bank name</Label>
-            <Input id="bank_name" value={bankName} onChange={(e) => setBankName(e.target.value)} />
+            <Label htmlFor="bank_name">Bank</Label>
+            {banks ? (
+              <Select
+                value={bankCode}
+                onValueChange={(code) => {
+                  setBankCode(code)
+                  setBankName(banks.find((b) => b.code === code)?.name ?? "")
+                }}
+              >
+                <SelectTrigger id="bank_name" className="w-full">
+                  <SelectValue placeholder={bankName || "Choose your bank"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {banks.map((b) => (
+                    <SelectItem key={b.code} value={b.code}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input id="bank_name" value={bankName} onChange={(e) => setBankName(e.target.value)} />
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="bank_account">Account number</Label>

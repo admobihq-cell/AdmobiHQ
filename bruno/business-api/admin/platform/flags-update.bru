@@ -1,0 +1,22 @@
+meta {
+  name: Update platform flag
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/v1/flags
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "key": "deliveries",
+    "enabled": false
+  }
+}

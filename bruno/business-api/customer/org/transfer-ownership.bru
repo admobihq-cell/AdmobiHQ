@@ -1,0 +1,21 @@
+meta {
+  name: Transfer ownership
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/transfer-ownership
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "memberId": 1
+  }
+}

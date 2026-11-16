@@ -20,14 +20,17 @@ Vercel project root `apps/driver-web`, include-files-outside-root on. Smoke: `GE
 
 | Tab | Route | Status |
 |-----|-------|--------|
-| **Dashboard** (home) | `/` | Working shell; earnings numbers illustrative |
-| **Earnings** | `/earnings` | Working UI on demo data — real ledger waits on telemetry |
-| **Routes** | `/routes` | mapcn/MapLibre + `@workspace/geo` demo corridors |
-| **Payouts** | `/payouts` | Coming-soon (ops still settles manually) |
-| **Deliveries** | `/deliveries` | Placeholder jobs list; **only when** the `deliveries` platform flag is on |
+| **Dashboard** (home) | `/` | Full-width dashboard built from the shared `@workspace/ui` dashboard kit (same as customer-web and ops). Greeting with **Get help** / **Earnings** buttons, then `DashboardToolbar` (7D/30D/90D/All/custom) with a "Sample screen data" pill. An `AlertStrip` appears for a failed/reversed payout ("Check payout details") or a missing payout destination. Then a hero for **screen-on time** (delta vs previous period, sparkline) beside a 4-cell KPI strip (ads shown, distance, days worked, hours a day); **Screen time by day** chart beside the real **Latest payout** card (`components/overview/latest-payout-card.tsx`: amount, status pill, Saved/Sending/Paid stage bar, masked destination via `payoutDestinationLabel`, paid-this-year / on-its-way); **Top areas**, **Best times to drive** (the top three weekday + time slots in words, e.g. "Friday, 6–9 pm") and real **Updates** (newest 5 notifications, same cache as the bell). Screen, distance, play and area figures come from `lib/sample-data.ts` (seeded by day, so stable) and every one carries a "Sample" tag until telemetry exists |
+| **Earnings** | `/earnings` | **All real.** KPI strip (paid this calendar year, on its way, last payout, paid-to destination with a change link), **Payouts by month** (stacked paid / on its way, last 12 months with a payout) beside the Latest payout card, then a **Payout history** `LedgerCard` with All / Paid / On its way / Problems filters and CSV download; failed/reversed amounts are struck through. Load failures show an `AlertStrip` with Try again |
+| **Reports** | `/reports` | Printable summary for This week / Last week / This month / Last month (Monday-first weeks, Nairobi days): KPI strip of logged-in, driving and screen-on hours, distance, days worked and ads shown; a **Your hours** card comparing the three (logged ≥ driving ≥ screen on); a real **Pay** card (settled payouts paid inside the period, and the month's payout with its status); a **Day by day** table. **Download CSV** and **Print or save PDF** (`window.print()`; the sidebar, header, bottom tabs and SOS button are `print:hidden`). Hours, distance and ads are Sample (`lib/sample-data.ts`) until screen telemetry and shift tracking exist |
+| **Routes** | `/routes` | Full-bleed `MapCanvas` (shared with customer and ops maps); the rail ranks areas by screen-on hours for the last 7 days from the same `lib/sample-data.ts` the dashboard opens on, each row Sample-tagged |
+| **Payouts** | `/payouts` | Redirects to Earnings, where payouts now live. Hidden from the nav |
+| **Deliveries** | `/deliveries` | Preview in the dashboard kit: KPI strip (sample jobs near you and average fee; real zero completed / earned), a Sample-tagged jobs table with disabled Accept, and an empty job history. **Only when** the `deliveries` platform flag is on |
 | **SOS** | `/sos`, `/sos/[id]` | Safety incident report + tracking. Reachable from a red FAB on every page — **not** flag-gated |
 | **Settings** | `/settings/*` | Profile, account, preferences, tour, support |
 | **Auth** | `/auth/login`, `/auth/signup` | Clerk (email code + Google), always on |
+
+Below `md` the sidebar collapses to its sheet and a **bottom tab bar** (Home, Earnings, Routes, Support) takes over, matching the native app; the SOS FAB sits above it.
 
 Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/driver/*`. Ops reviews at `/driver-applications`. The CRM `Driver` marketing table is a different model and is **not** joined yet.
 
@@ -48,7 +51,7 @@ Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/
 | App name / slug / scheme | `Admobi Driver` / `admobihq-driver` / `admobihq-driver` |
 | EAS | `@admobimedia/admobihq-driver` (`projectId` in `app.json`) |
 
-Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk always mounts (publishable key required). Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
+Home and Earnings still use the payout hero and route-style history (`components/payout-hero.tsx`), real announcements under **Updates**, pull-to-refresh on both. driver-web moved to the shared dashboard kit on 2026-11-10; mobile has not followed yet. Tabs: Dashboard, Deliveries (flag-gated), Earnings, Settings. Off the tab bar: Routes, Payouts, Support, SOS. A red **SOS FAB** is mounted once in `app/_layout.tsx` and overlays every screen (hidden on auth, onboarding, profile-setup and the SOS screens); it only navigates, so a pocket-tap never files a report. See `docs/shared/SAFETY-SOS.md`. Profile-setup is a 4-step wizard. Clerk always mounts (publishable key required). Push registration: `DriverPushToken` + `POST /v1/public/driver-push-tokens`.
 
 Support has three routes under `app/(tabs)/support/`: `index` (case list), `new` (raise a case), `[id]` (thread). Raising a case is its own screen — it used to sit inline above the list, which pushed "My requests" below the fold.
 
@@ -100,7 +103,7 @@ Deliveries ships as **placeholder screens behind one ops-controlled platform fla
 
 ## What is still out of scope
 
-- **Real earnings data** — `Device`, `EarningsLedger`, `Payout` models and the aggregation cron ([ROADMAP.md](../shared/ROADMAP.md) milestones 5–6).
-- **Payouts** — manual M-Pesa by ops remains the operating mode.
+- **Computed earnings** — per-hour / per-km / revenue-share pay needs telemetry (`Device`, `EarningsLedger`); today ops types each driver's monthly amount ([ROADMAP.md](../shared/ROADMAP.md) milestones 5–6).
+- **Payouts** are sent by ops through Paystack Transfers to the M-Pesa number or bank account on the profile. The driver gets a push and inbox notice when a payout is sent or fails, and a notice (plus email) whenever their payout details change. The bank field is a picker fed by `GET /v1/driver/payout-banks` (Paystack's Kenyan bank list), which stores the bank code with the name.
 - **CRM join** — `DriverProfile.clerk_user_id` is not linked to the marketing `Driver` row.
 - **Real deliveries** — dispatch, job assignment, proof-of-delivery, and per-driver `delivers`.

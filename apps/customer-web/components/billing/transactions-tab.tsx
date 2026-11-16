@@ -35,6 +35,7 @@ const KIND_TABS = [
   { value: "spend", label: "Spend" },
   { value: "refund", label: "Refunds" },
   { value: "adjustment", label: "Adjustments" },
+  { value: "cash_refund", label: "Refunds to payer" },
 ]
 
 const SORTS = [

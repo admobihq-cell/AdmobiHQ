@@ -34,6 +34,7 @@ export async function GET(_req: Request, { params }: Params) {
           { label: "Top-ups", value: formatKes(statement.topUpsKes) },
           { label: "Spend", value: formatKes(statement.spendKes) },
           { label: "Refunds", value: formatKes(statement.refundsKes) },
+          { label: "Refunds to payer", value: formatKes(statement.cashRefundsKes) },
           { label: "Adjustments", value: formatKes(statement.adjustmentsKes) },
           { label: "Closing balance", value: formatKes(statement.closing) },
         ]}

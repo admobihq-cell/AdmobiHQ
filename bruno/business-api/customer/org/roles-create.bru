@@ -1,0 +1,25 @@
+meta {
+  name: Create role
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/roles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "name": "Reporting",
+    "permissions": [
+      "campaigns:read",
+      "reports:read"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get campaign
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

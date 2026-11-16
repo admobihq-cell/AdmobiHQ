@@ -3,9 +3,19 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { CalendarDays, LayoutGrid, MapPin, Plus, Rows3, UserRound } from "lucide-react"
-import type { CampaignDto } from "@workspace/ops-contracts"
+import type { CampaignDto, ReportCampaignRowDto } from "@workspace/ops-contracts"
 
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
+import {
+  FORMAT_LABELS,
+  flightLabel,
+  flightOf,
+  flightRange,
+  shortTimestamp,
+} from "@/components/campaigns/flight"
+import { FlightTrack } from "@/components/campaigns/flight-track"
+import { HEALTH_LABEL, HEALTH_TONE, percentOrDash, rateTone } from "@/components/reports/format"
+import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
@@ -20,8 +30,9 @@ import {
 } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
 import { CardGridSkeleton } from "@/components/skeletons/card-grid-skeleton"
+import { useReportCampaigns } from "@/lib/use-analytics"
 import { useCampaigns } from "@/lib/use-campaigns"
-import { useOrg } from "@/lib/use-org"
+import { useOrg, useOrgPermissions } from "@/lib/use-org"
 
 /** Filters follow what an advertiser actually asks ("what's running?", "what's
  * waiting on me?"), not the raw status column. */
@@ -44,7 +55,80 @@ function formatBudget(value: string | null): string {
 
 function formatFlight(campaign: CampaignDto): string {
   if (!campaign.starts_on || !campaign.ends_on) return "Not scheduled"
-  return `${campaign.starts_on} → ${campaign.ends_on}`
+  return flightRange(campaign.starts_on, campaign.ends_on)
+}
+
+/** "Day 6 of 14" for a booked flight; dates on a brief still in review are only requested. */
+function flightStatus(campaign: CampaignDto): string | null {
+  const flight = flightOf(campaign.starts_on, campaign.ends_on)
+  if (flight.kind === "unscheduled") return null
+  if (campaign.status !== "approved") return `${flight.totalDays}-day flight requested`
+  return flightLabel(flight)
+}
+
+/** Delivery only means something once plays were scheduled; null keeps "—" from reading as 0%. */
+function deliveryOf(report: ReportCampaignRowDto | undefined): ReportCampaignRowDto | null {
+  return report && report.playsScheduled > 0 ? report : null
+}
+
+/**
+ * The card's third figure is whatever matters most at that stage: delivery once plays were
+ * scheduled, otherwise whether the budget is paid, and for a draft when it was last touched.
+ */
+function CardThirdFigure({
+  campaign,
+  delivery,
+}: {
+  campaign: CampaignDto
+  delivery: ReportCampaignRowDto | null
+}) {
+  if (delivery) {
+    const unhealthy = campaign.flight_phase === "live" && delivery.health.level !== "on_track"
+    return (
+      <div>
+        <p className="text-xs font-medium text-muted-foreground">Delivered</p>
+        <p className="text-sm font-semibold">
+          <DeliveredValue report={delivery} />
+        </p>
+        {unhealthy ? (
+          <StatusPill tone={HEALTH_TONE[delivery.health.level]} className="mt-1">
+            {HEALTH_LABEL[delivery.health.level]}
+          </StatusPill>
+        ) : null}
+      </div>
+    )
+  }
+  if (campaign.status === "draft") {
+    return (
+      <div>
+        <p className="text-xs font-medium text-muted-foreground">Last edited</p>
+        <p className="text-sm font-semibold">{shortTimestamp(campaign.updated_at)}</p>
+      </div>
+    )
+  }
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground">Payment</p>
+      <p className={cn("text-sm font-semibold", !campaign.funded_at && "text-muted-foreground")}>
+        {campaign.funded_at ? "Funded" : "Not funded"}
+      </p>
+    </div>
+  )
+}
+
+const RATE_TEXT = {
+  good: "text-foreground",
+  warning: "text-amber-700 dark:text-amber-300",
+  serious: "text-destructive",
+  neutral: "text-muted-foreground",
+} as const
+
+function DeliveredValue({ report }: { report: ReportCampaignRowDto }) {
+  return (
+    <span className={cn("tabular-nums", RATE_TEXT[rateTone(report.deliveryRate)])}>
+      {percentOrDash(report.deliveryRate)}
+    </span>
+  )
 }
 
 function campaignHref(campaign: CampaignDto): string {
@@ -139,9 +223,12 @@ function CampaignsTableSkeleton({ rows = 5 }: { rows?: number }) {
 function CampaignsTable({
   campaigns,
   showOwner,
+  reports,
 }: {
   campaigns: CampaignDto[]
   showOwner: boolean
+  /** Null when the viewer can't read reports — the column is left out rather than shown empty. */
+  reports: Map<number, ReportCampaignRowDto> | null
 }) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-none">
@@ -154,17 +241,23 @@ function CampaignsTable({
             <TableHead className="w-56">Flight</TableHead>
             {showOwner ? <TableHead className="w-44">Created by</TableHead> : null}
             <TableHead className="w-24 text-right">Creative</TableHead>
+            {reports ? <TableHead className="w-28 text-right">Delivered</TableHead> : null}
             <TableHead className="w-36 text-right">Budget</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {campaigns.map((campaign) => {
             const href = campaignHref(campaign)
+            const status = flightStatus(campaign)
+            const delivery = deliveryOf(reports?.get(campaign.id))
             return (
               <TableRow key={campaign.id}>
                 <TableCell className="p-0">
-                  <Link href={href} className="block px-2 py-2 font-medium">
-                    {campaign.name}
+                  <Link href={href} className="block px-2 py-2">
+                    <span className="block font-medium">{campaign.name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {FORMAT_LABELS[campaign.format] ?? campaign.format}
+                    </span>
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -180,7 +273,17 @@ function CampaignsTable({
                 </TableCell>
                 <TableCell className="p-0">
                   <Link href={href} className="block px-2 py-2 tabular-nums text-muted-foreground">
-                    {formatFlight(campaign)}
+                    <span className="block">{formatFlight(campaign)}</span>
+                    {status ? (
+                      <span
+                        className={cn(
+                          "block text-xs",
+                          campaign.flight_phase === "live" && "font-medium text-primary",
+                        )}
+                      >
+                        {status}
+                      </span>
+                    ) : null}
                   </Link>
                 </TableCell>
                 {showOwner ? (
@@ -195,6 +298,13 @@ function CampaignsTable({
                     {campaign.creatives.length}
                   </Link>
                 </TableCell>
+                {reports ? (
+                  <TableCell className="p-0 text-right">
+                    <Link href={href} className="block px-2 py-2">
+                      {delivery ? <DeliveredValue report={delivery} /> : <span className="text-muted-foreground">—</span>}
+                    </Link>
+                  </TableCell>
+                ) : null}
                 <TableCell className="p-0 text-right">
                   <Link href={href} className="block px-2 py-2 tabular-nums">
                     {formatBudget(campaign.budget_kes)}
@@ -216,6 +326,15 @@ export function CampaignsView() {
   const orgQuery = useOrg()
   const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
   const multiMember = (orgQuery.data?.memberCount ?? 1) > 1
+  const { can } = useOrgPermissions()
+  const canReport = can("reports:read")
+  // Lifetime delivery per campaign. Same query (and cache entry) the reports page and the
+  // campaign page use.
+  const reportQuery = useReportCampaigns({ range: "all" }, {}, { enabled: canReport })
+  const reports = useMemo(
+    () => (canReport ? new Map((reportQuery.data?.items ?? []).map((row) => [row.id, row])) : null),
+    [canReport, reportQuery.data],
+  )
 
   const visible = useMemo(() => {
     const active = FILTERS.find((f) => f.label === filter) ?? FILTERS[0]
@@ -245,6 +364,7 @@ export function CampaignsView() {
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((item) => {
             const active = filter === item.label
+            const count = campaigns.filter(item.match).length
             return (
               <Button
                 key={item.label}
@@ -255,6 +375,16 @@ export function CampaignsView() {
                 onClick={() => setFilter(item.label)}
               >
                 {item.label}
+                {campaignsQuery.isPending ? null : (
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      active ? "text-primary-foreground/75" : "text-muted-foreground/70",
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
               </Button>
             )
           })}
@@ -290,7 +420,7 @@ export function CampaignsView() {
           ) : null}
         </div>
       ) : viewMode === "table" ? (
-        <CampaignsTable campaigns={visible} showOwner={multiMember} />
+        <CampaignsTable campaigns={visible} showOwner={multiMember} reports={reports} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {visible.map((campaign) => {
@@ -310,10 +440,24 @@ export function CampaignsView() {
                     <p className="flex items-center gap-2">
                       <MapPin className="size-3.5 shrink-0" />
                       {campaign.market ?? "Market not set"}
+                      <span aria-hidden>·</span>
+                      {FORMAT_LABELS[campaign.format] ?? campaign.format}
                     </p>
-                    <p className="flex items-center gap-2">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <CalendarDays className="size-3.5 shrink-0" />
-                      {formatFlight(campaign)}
+                      <span className="tabular-nums">{formatFlight(campaign)}</span>
+                      {flightStatus(campaign) ? (
+                        <>
+                          <span aria-hidden>·</span>
+                          <span
+                            className={cn(
+                              campaign.flight_phase === "live" && "font-medium text-primary",
+                            )}
+                          >
+                            {flightStatus(campaign)}
+                          </span>
+                        </>
+                      ) : null}
                     </p>
                     {/* Only meaningful once an org has more than one person. */}
                     {campaign.created_by_name && multiMember ? (
@@ -323,8 +467,17 @@ export function CampaignsView() {
                       </p>
                     ) : null}
                   </div>
+                  {/* Only a booked flight gets the progress line; a requested one isn't on air yet. */}
+                  {campaign.status === "approved" && campaign.starts_on && campaign.ends_on ? (
+                    <FlightTrack flight={flightOf(campaign.starts_on, campaign.ends_on)} active />
+                  ) : null}
+                  {campaign.status === "rejected" || campaign.status === "changes_requested" ? (
+                    <p className="line-clamp-2 text-sm text-destructive">
+                      {campaign.review_reason ?? "Our team asked for changes before this can be approved."}
+                    </p>
+                  ) : null}
                   <Separator />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">Creative</p>
                       <p className="text-sm font-semibold">
@@ -334,8 +487,9 @@ export function CampaignsView() {
                     </div>
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">Budget</p>
-                      <p className="text-sm font-semibold">{formatBudget(campaign.budget_kes)}</p>
+                      <p className="text-sm font-semibold tabular-nums">{formatBudget(campaign.budget_kes)}</p>
                     </div>
+                    <CardThirdFigure campaign={campaign} delivery={deliveryOf(reports?.get(campaign.id))} />
                   </div>
                   {campaign.status === "draft" ? (
                     <p className="text-xs font-medium text-primary">Continue editing →</p>

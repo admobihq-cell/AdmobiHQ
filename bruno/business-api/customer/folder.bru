@@ -1,0 +1,9 @@
+meta {
+  name: Customer
+  seq: 3
+}
+
+docs {
+  Advertiser routes. Bearer customer_jwt: a session JWT from the customer Clerk instance (customer-web or customer-mobile), not the ops one.
+  Most routes also check an org permission (campaigns:*, billing:*, reports:read, media:*).
+}

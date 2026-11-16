@@ -1,0 +1,29 @@
+meta {
+  name: Bulk review driver applications
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_URL}}/v1/driver-applications/bulk-review
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "ids": [
+      1,
+      2
+    ],
+    "decision": "approved"
+  }
+}
+
+docs {
+  ids 1-100. Only `submitted` rows change; returns `{ updated, skipped }`.
+}

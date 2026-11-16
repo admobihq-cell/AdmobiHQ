@@ -1,0 +1,15 @@
+meta {
+  name: Campaign report
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{API_URL}}/v1/customer/reports/campaigns/{{resource_id}}?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

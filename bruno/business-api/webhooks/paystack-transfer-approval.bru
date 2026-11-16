@@ -1,0 +1,32 @@
+meta {
+  name: Paystack transfer approval
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/payments/paystack/transfer-approval
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "reference": "adm-payout-1-202611",
+    "amount": 450000,
+    "currency": "KES"
+  }
+}
+
+script:pre-request {
+  const CryptoJS = require("crypto-js");
+  // Variables are filled in after this script runs, so sign the body as it will be sent.
+  const raw = bru.interpolate(JSON.stringify(req.getBody()));
+  req.setBody(raw);
+  const secret = bru.getEnvVar("paystack_secret") || "";
+  req.setHeader("x-paystack-signature", CryptoJS.HmacSHA512(raw, secret).toString(CryptoJS.enc.Hex));
+}
+
+docs {
+  200 only for a `processing` payout with that reference and exact amount (amount in cents), else 400 plus an ops alert email. The signature is optional here; a wrong one is refused.
+}

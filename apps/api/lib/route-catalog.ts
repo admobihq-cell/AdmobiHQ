@@ -62,7 +62,13 @@ const AUDIENCES: Omit<AudienceGroup, "resources" | "count">[] = [
   },
 ]
 
-const SYSTEM_PATHS = new Set(["/v1/health", "/v1/push-receipts/check"])
+const SYSTEM_PATHS = new Set([
+  "/v1/health",
+  "/v1/push-receipts/check",
+  "/v1/cron/finance-daily",
+  "/v1/payments/paystack/webhook",
+  "/v1/payments/paystack/transfer-approval",
+])
 
 /** Section titles by first path segment. Key order is display order; unlisted segments follow, title-cased. */
 const RESOURCE_LABELS: Record<string, string> = {
@@ -133,11 +139,13 @@ const NOTES: Record<string, string> = {
   "/v1/campaigns": "List advertiser campaigns",
   "/v1/campaigns/[id]": "Read one campaign",
   "/v1/campaigns/[id]/review": "Approve or reject a submitted campaign",
+  "/v1/campaigns/bulk-review": "Approve or reject several submitted campaigns at once",
   "/v1/campaigns/[id]/creatives/[creativeId]/file": "Stream a campaign creative",
   "/v1/advertiser-orgs": "List advertiser organizations",
   "/v1/advertiser-orgs/[id]": "Read one advertiser organization",
   "/v1/driver-applications": "List driver applications",
   "/v1/driver-applications/[id]": "Read one driver application",
+  "/v1/driver-applications/bulk-review": "Approve or reject several driver applications at once",
   "/v1/driver-applications/[id]/review": "Approve or reject a driver application",
   "/v1/driver-applications/[id]/documents/[docId]/file": "Stream an application document",
   "/v1/safety-incidents": "List SOS incidents",
@@ -162,11 +170,14 @@ const NOTES: Record<string, string> = {
   "/v1/audit": "Paginated audit events",
   "/v1/ops/documents/export": "Render a table export as PDF",
   "/v1/ops/finance/transactions": "Record a wallet ledger entry by hand",
+  "/v1/ops/payments/refunds": "Refund unused credit to the original Paystack payments",
+  "/v1/ops/payments/balance": "Live Paystack balance",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
   "/v1/customer/campaigns/[id]": "Read, edit or delete a campaign",
   "/v1/customer/campaigns/[id]/submit": "Submit a campaign for review",
+  "/v1/customer/campaigns/[id]/checkout": "Pay what the balance doesn't cover, then submit",
   "/v1/customer/campaigns/[id]/creatives": "Upload a creative",
   "/v1/customer/campaigns/[id]/creatives/[creativeId]": "Remove a creative",
   "/v1/customer/campaigns/[id]/creatives/[creativeId]/file": "Stream a creative",
@@ -178,6 +189,9 @@ const NOTES: Record<string, string> = {
   "/v1/customer/finance/invoices/[id]/pdf": "Invoice PDF",
   "/v1/customer/finance/statements": "Monthly wallet statements",
   "/v1/customer/finance/statements/[month]/pdf": "Monthly wallet statement PDF",
+  "/v1/customer/payments/top-up": "Top up the balance through Paystack",
+  "/v1/customer/payments/refund-request": "Ask ops to refund unused credit (opens a billing support case)",
+  "/v1/customer/payments/[reference]": "Status of a Paystack payment",
   "/v1/customer/reports/overview": "Delivery headline numbers, pacing and campaign health",
   "/v1/customer/reports/delivery": "Plays scheduled, delivered and missed, with CSV export",
   "/v1/customer/reports/audience": "Market and daypart reach and impressions",
@@ -238,6 +252,14 @@ const NOTES: Record<string, string> = {
   // System
   "/v1/health": "Service status JSON for uptime checks",
   "/v1/push-receipts/check": "Nightly Expo push receipt reconciliation",
+  "/v1/cron/finance-daily": "Nightly payment reconciliation, daily spend and finance digest",
+  "/v1/payments/paystack/webhook": "Paystack webhook (signed)",
+  "/v1/payments/paystack/transfer-approval": "Paystack transfer approval: allow only queued payouts",
+  "/v1/ops/payouts": "Driver payout run for a month: list and save amounts",
+  "/v1/ops/payouts/disburse": "Send payouts through Paystack Transfers",
+  "/v1/ops/payouts/[id]/retry": "Resend a failed payout",
+  "/v1/driver/payout-banks": "Kenyan banks for payout details",
+  "/v1/driver/payouts": "The driver's own payouts and totals",
 }
 
 function audienceOf(routePath: string): AudienceId {

@@ -1,26 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import {
-  BarChart3,
-  CalendarClock,
-  ChevronRight,
-  Download,
-  FileText,
-  Headset,
-  Hourglass,
-  Lock,
-  Megaphone,
-  PiggyBank,
-  Receipt,
-  ScrollText,
-  Zap,
-  type LucideIcon,
-} from "lucide-react"
+import { ChevronRight, Download, FileText, Headset, Megaphone, PiggyBank, Zap, type LucideIcon } from "lucide-react"
 import { exportFileName, formatKes, type FinanceSummaryDto } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { DeltaPill } from "@workspace/ui/components/dashboard/delta-pill"
 import { StatusPill, type StatusTone } from "@workspace/ui/components/dashboard/status-pill"
 import { transactionsPath, type RangeParams } from "@/lib/analytics-client"
 import { useDownloadPdf } from "@/lib/use-campaigns"
@@ -38,7 +24,104 @@ function runOutDate(days: number): string {
   return date.toLocaleDateString("en-KE", { day: "numeric", month: "short", timeZone: "Africa/Nairobi" })
 }
 
-/** The square icon tile that closes every row, so rows across the three cards share one rhythm. */
+/** The headline and its explanation, in the advertiser's terms: covered until when, or short by how much. */
+function fundingCopy(summary: FinanceSummaryDto): { headline: string; detail: string } {
+  const { funding } = summary
+  const available = summary.availableKes ?? 0
+  if (funding.level === "untracked") {
+    return {
+      headline: "Top up to start running campaigns",
+      detail: "Your balance, and how long it lasts at your pace of spend, appear after your first top-up.",
+    }
+  }
+  if (funding.level === "short") {
+    return {
+      headline: `Your active budgets need ${formatKes(-available)} more than you have`,
+      detail: "Top up to keep every live and scheduled campaign running.",
+    }
+  }
+  if (funding.runwayDays === null) {
+    return {
+      headline: `${formatKes(available)} available`,
+      detail: "There is no recent spending to project a run-out date from.",
+    }
+  }
+  const pace = `${formatKes(available)} available, about ${funding.runwayDays} days at your last 30 days of spend.`
+  return funding.level === "low"
+    ? { headline: `Your funds run out around ${runOutDate(funding.runwayDays)}`, detail: `Top up soon to keep campaigns running. ${pace}` }
+    : { headline: `You're covered until about ${runOutDate(funding.runwayDays)}`, detail: pace }
+}
+
+/**
+ * The answer people open billing for: is the account funded, and until when. Leads the overview,
+ * with the figures behind it underneath and the money actions beside it.
+ */
+export function FundingStatement({
+  summary,
+  onTopUp,
+  onRequestRefund,
+}: {
+  summary: FinanceSummaryDto
+  onTopUp?: () => void
+  onRequestRefund?: () => void
+}) {
+  const { headline, detail } = fundingCopy(summary)
+  const level = summary.funding.level === "untracked" ? null : LEVEL[summary.funding.level]
+
+  const facts = [
+    { label: "Balance", value: formatKes(summary.balanceKes), note: "Paid in, less spend and refunds" },
+    { label: "Committed", value: formatKes(summary.committedKes), note: "Left on live and scheduled budgets" },
+    {
+      label: "Spent",
+      value: formatKes(summary.spentKes.current),
+      note: "In the selected period",
+      delta: <DeltaPill delta={summary.spentKes} good="neutral" />,
+    },
+  ]
+
+  return (
+    <Card className="shadow-xs">
+      <CardContent className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-2">
+            {level ? <StatusPill tone={level.tone} className="self-start">{level.label}</StatusPill> : null}
+            <h2 className="text-2xl font-semibold tracking-tight text-balance">{headline}</h2>
+            <p className="max-w-prose text-sm text-muted-foreground">{detail}</p>
+          </div>
+          {onTopUp || onRequestRefund ? (
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {onRequestRefund ? (
+                <Button variant="outline" onClick={onRequestRefund}>
+                  Request refund
+                </Button>
+              ) : null}
+              {onTopUp ? (
+                <Button onClick={onTopUp}>
+                  <PiggyBank data-icon="inline-start" />
+                  Top up
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <dl className="grid gap-4 border-t pt-4 sm:grid-cols-3">
+          {facts.map((fact) => (
+            <div key={fact.label} className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">{fact.label}</dt>
+              <dd className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-lg font-semibold tabular-nums">{fact.value}</span>
+                {fact.delta}
+              </dd>
+              <dd className="text-xs text-muted-foreground">{fact.note}</dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
+  )
+}
+
+/** The square icon tile that leads each upcoming-charge row. */
 function IconTile({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
   return (
     <span
@@ -50,88 +133,8 @@ function IconTile({ icon: Icon, className }: { icon: LucideIcon; className?: str
   )
 }
 
-/** Runway, committed funds and the next charge, with the funding status at the foot. */
-function WalletCard({ summary }: { summary: FinanceSummaryDto }) {
-  const { funding } = summary
-
-  if (funding.level === "untracked") {
-    return (
-      <Card className="shadow-xs">
-        <CardHeader>
-          <CardTitle>Wallet</CardTitle>
-          <CardDescription>Whether your funds cover current spending</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-            Your funding details appear after your first top-up.
-          </p>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const { tone, label } = LEVEL[funding.level]
-  const note =
-    funding.level === "short"
-      ? `Your active budgets are ${formatKes(-(summary.availableKes ?? 0))} more than your balance.`
-      : funding.runwayDays === null
-        ? "There is no recent spending to project from."
-        : `At this pace, funds run out around ${runOutDate(funding.runwayDays)}.`
-
-  const rows: { icon: LucideIcon; title: string; value: string; note: string }[] = [
-    {
-      icon: Hourglass,
-      title: "Runway",
-      value: funding.runwayDays === null ? "—" : `${funding.runwayDays} days`,
-      note: "Available funds ÷ daily spend",
-    },
-    {
-      icon: Lock,
-      title: "Committed",
-      value: formatKes(summary.committedKes),
-      note: "Left on live and scheduled budgets",
-    },
-    {
-      icon: CalendarClock,
-      title: "Next charge",
-      value: funding.nextChargeKes === null ? "—" : formatKes(funding.nextChargeKes),
-      note: funding.nextChargeOn ?? "Nothing scheduled",
-    },
-  ]
-
-  return (
-    <Card className="shadow-xs">
-      <CardHeader>
-        <CardTitle>Wallet</CardTitle>
-        <CardDescription>Based on your balance and the last 30 days of spend</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4">
-        <ul className="flex flex-col gap-4">
-          {rows.map((row) => (
-            <li key={row.title} className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{row.title}</p>
-                <p className="text-lg font-semibold tabular-nums">{row.value}</p>
-                <p className="text-xs text-muted-foreground">{row.note}</p>
-              </div>
-              <IconTile icon={row.icon} />
-            </li>
-          ))}
-        </ul>
-        <div className="mt-auto flex flex-col gap-2 border-t pt-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Funding status</span>
-            <StatusPill tone={tone}>{label}</StatusPill>
-          </div>
-          <p className="text-xs text-muted-foreground">{note}</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 /** Planned spend on campaigns that have not started: a headline total, then one row per campaign. */
-function UpcomingChargesCard({ summary }: { summary: FinanceSummaryDto }) {
+export function UpcomingChargesCard({ summary }: { summary: FinanceSummaryDto }) {
   const charges = summary.upcomingCharges
   const total = charges.reduce((sum, c) => sum + c.remainingKes, 0)
   const { nextChargeKes, nextChargeOn } = summary.funding
@@ -227,18 +230,8 @@ function Shortcut({ icon: Icon, label, href, onClick, disabled }: ShortcutProps)
   )
 }
 
-/** Top up on its own card, then the everyday tasks as an icon grid. */
-function ActionCards({
-  range,
-  hasLedgerRows,
-  onTopUp,
-  onNavigate,
-}: {
-  range: RangeParams
-  hasLedgerRows: boolean
-  onTopUp: () => void
-  onNavigate: (tab: string) => void
-}) {
+/** Only what isn't a tab or a nav item already: the two downloads and a way to ask for help. */
+export function ShortcutsCard({ range, hasLedgerRows }: { range: RangeParams; hasLedgerRows: boolean }) {
   const download = useDownloadPdf()
   const busy = download.isPending
 
@@ -253,9 +246,6 @@ function ActionCards({
           filename: exportFileName("campaign budget statement", null, "pdf"),
         }),
     },
-    { icon: Receipt, label: "Invoices", onClick: () => onNavigate("invoices") },
-    { icon: ScrollText, label: "Transactions", onClick: () => onNavigate("transactions") },
-    { icon: FileText, label: "Statements", onClick: () => onNavigate("statements") },
     {
       icon: Download,
       label: "Export CSV",
@@ -266,58 +256,21 @@ function ActionCards({
           filename: exportFileName("transactions", null, "csv"),
         }),
     },
-    { icon: BarChart3, label: "Reports", href: "/reports" },
-    { icon: Megaphone, label: "Campaigns", href: "/campaigns" },
-    { icon: Headset, label: "Support", href: "/settings/support" },
+    { icon: Headset, label: "Billing help", href: "/settings/support" },
   ]
 
   return (
-    <div className="grid content-start gap-4">
-      <Card className="shadow-xs">
-        <CardContent className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle>Top up</CardTitle>
-            <CardDescription className="mt-1">Your account manager adds funds today</CardDescription>
-          </div>
-          <Button onClick={onTopUp}>
-            <PiggyBank data-icon="inline-start" />
-            Top up
-          </Button>
-        </CardContent>
-      </Card>
-      <Card className="shadow-xs">
-        <CardHeader>
-          <CardTitle>Shortcuts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4">
-            {shortcuts.map((shortcut) => (
-              <Shortcut key={shortcut.label} {...shortcut} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-/** The foot of the overview: wallet, upcoming charges, and the actions column. */
-export function BillingPanels({
-  summary,
-  range,
-  onTopUp,
-  onNavigate,
-}: {
-  summary: FinanceSummaryDto
-  range: RangeParams
-  onTopUp: () => void
-  onNavigate: (tab: string) => void
-}) {
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <WalletCard summary={summary} />
-      <UpcomingChargesCard summary={summary} />
-      <ActionCards range={range} hasLedgerRows={summary.hasLedgerRows} onTopUp={onTopUp} onNavigate={onNavigate} />
-    </div>
+    <Card className="shadow-xs">
+      <CardHeader>
+        <CardTitle>Shortcuts</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-x-2 gap-y-4">
+          {shortcuts.map((shortcut) => (
+            <Shortcut key={shortcut.label} {...shortcut} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   )
 }

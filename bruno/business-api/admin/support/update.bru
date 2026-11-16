@@ -1,0 +1,22 @@
+meta {
+  name: Update support case
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/support/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "status": "pending",
+    "priority": "high"
+  }
+}

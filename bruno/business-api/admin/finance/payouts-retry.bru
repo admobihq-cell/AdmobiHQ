@@ -1,0 +1,19 @@
+meta {
+  name: Retry failed payout
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{API_URL}}/v1/ops/payouts/{{resource_id}}/retry
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Resends a `failed` payout with the same reference.
+}

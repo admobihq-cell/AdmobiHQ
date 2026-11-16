@@ -1,0 +1,24 @@
+meta {
+  name: Upload document
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_URL}}/v1/driver/documents
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:multipart-form {
+  file: @file(fixtures/sample.png)
+  type: national_id
+}
+
+docs {
+  type: national_id | profile_photo | kra_pin_certificate | payout_proof
+}

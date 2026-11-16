@@ -1,0 +1,19 @@
+meta {
+  name: Get payment
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/customer/payments/{{payment_reference}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  status: pending | success | failed | abandoned | amount_mismatch. Verifies with Paystack itself after 20 s pending.
+}

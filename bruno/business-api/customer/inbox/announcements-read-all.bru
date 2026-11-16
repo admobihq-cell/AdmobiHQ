@@ -1,0 +1,15 @@
+meta {
+  name: Mark all announcements read
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/announcements/read
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

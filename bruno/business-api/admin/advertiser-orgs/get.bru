@@ -1,0 +1,19 @@
+meta {
+  name: Get advertiser org
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/advertiser-orgs/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Members, pending invites, campaigns and activity.
+}

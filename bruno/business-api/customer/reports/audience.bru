@@ -1,0 +1,19 @@
+meta {
+  name: Audience
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_URL}}/v1/customer/reports/audience?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Reach is only returned with a single `campaign`.
+}

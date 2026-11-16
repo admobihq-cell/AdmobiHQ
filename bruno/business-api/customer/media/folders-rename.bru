@@ -1,0 +1,21 @@
+meta {
+  name: Rename folder
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/media/folders/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "name": "December launch"
+  }
+}

@@ -8,6 +8,7 @@ import type { CampaignCreateInput, CampaignDto, CampaignUpdateInput } from "@wor
 
 import {
   attachMediaAsset,
+  checkoutCampaign,
   createCampaign,
   deleteCampaign,
   deleteCreative,
@@ -111,6 +112,8 @@ export function useSubmitCampaign() {
       toast.success("Submitted for review")
     },
     onError: (error) => {
+      // 402: the balance doesn't cover the budget; the wizard switches to "Pay and submit".
+      if ((error as { status?: number }).status === 402) return
       // The submit route returns { missingFields, missingCreatives } under
       // `issues`; name what's missing instead of a bare "incomplete".
       const issues = (error as { issues?: { missingFields?: string[]; missingCreatives?: string[] } })
@@ -121,6 +124,16 @@ export function useSubmitCampaign() {
       ]
       toast.error(missing.length > 0 ? `Still needed: ${missing.join(", ")}` : messageOf(error))
     },
+  })
+}
+
+/** Starts a Paystack checkout and leaves the page for it. */
+export function useCheckoutCampaign() {
+  const { getToken } = useAuth()
+  return useMutation({
+    mutationFn: (id: number) => checkoutCampaign(getToken, id),
+    onSuccess: ({ authorizationUrl }) => window.location.assign(authorizationUrl),
+    onError: (error) => toast.error(messageOf(error)),
   })
 }
 

@@ -21,14 +21,6 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -42,9 +34,14 @@ import {
 } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
+import { BulkBar, TableToolbar } from "@/components/ui/table-toolbar"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useDebouncedValue } from "@/lib/use-debounced-value"
+import { useRowSelection } from "@/lib/use-row-selection"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
 
+import { AnnouncementDetailDialog } from "./announcement-detail-dialog"
 import {
   AnnouncementFormDialog,
   type AnnouncementFormValues,
@@ -74,6 +71,16 @@ type AnnouncementsViewProps = {
   initialData: Paginated<AnnouncementDto>
 }
 
+const exportColumns: ExportColumn<AnnouncementDto>[] = [
+  { key: "sent", header: "Sent", value: (r) => formatDateTime(r.created_at) },
+  { key: "title", header: "Title", value: (r) => r.title },
+  { key: "category", header: "Category", value: (r) => r.category },
+  { key: "audience", header: "Audience", value: (r) => describeAnnouncementTargets(r.target_apps) },
+  { key: "delivered", header: "Delivered", value: (r) => `${r.delivered_count}/${r.target_count}` },
+  { key: "status", header: "Status", value: (r) => (r.deleted_at ? "deleted" : r.status) },
+  { key: "sentBy", header: "Sent by", value: (r) => r.sent_by_email },
+]
+
 export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const client = useOpsClient()
   const queryClient = useQueryClient()
@@ -85,17 +92,40 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
   const [viewing, setViewing] = useState<AnnouncementDto | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
   const sortDir = sorting[0]?.desc === false ? "asc" : "desc"
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search.trim())
 
   const announcementsQuery = useQuery({
-    queryKey: ["ops-announcements", { page, pageSize, sortDir }],
-    queryFn: () => client.notifications.list({ page, pageSize, sortDir }),
+    queryKey: ["ops-announcements", { page, pageSize, sortDir, search: debouncedSearch }],
+    queryFn: () =>
+      client.notifications.list({
+        page,
+        pageSize,
+        sortDir,
+        search: debouncedSearch || undefined,
+      }),
     initialData:
-      page === initialData.page && pageSize === initialData.pageSize && sortDir === "desc"
+      page === initialData.page &&
+      pageSize === initialData.pageSize &&
+      sortDir === "desc" &&
+      !debouncedSearch
         ? initialData
         : undefined,
     placeholderData: keepPreviousData,
   })
   const data = announcementsQuery.data ?? initialData
+
+  const selection = useRowSelection(data.items, [page, pageSize, sortDir, debouncedSearch])
+  const exportRows = (format: ExportFormat, rows: AnnouncementDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Announcements",
+      scope,
+      columns: exportColumns,
+      rows,
+      entity: "announcements",
+      client,
+    })
 
   function changeSort(updater: SortingState | ((old: SortingState) => SortingState)) {
     setSorting(updater)
@@ -155,8 +185,9 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
     sendMutation.mutate(pending)
   }
 
+  // The confirm stacks over the composer, so Cancel returns to the draft;
+  // a successful send closes both.
   const queueNewAnnouncement = (values: AnnouncementFormValues) => {
-    setFormOpen(false)
     setPending({
       title: values.title,
       body: values.body,
@@ -166,6 +197,16 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
       imageBlob: values.imageBlob,
     })
   }
+
+  const queueResend = (announcement: AnnouncementDto) =>
+    setPending({
+      title: announcement.title,
+      body: announcement.body,
+      category: announcement.category ?? "announcement",
+      targetApps: announcement.target_apps,
+      mode: "resend",
+      image_url: announcement.image_url,
+    })
 
   const columns: ColumnDef<AnnouncementDto, any>[] = [
     {
@@ -280,16 +321,7 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
                   size="icon-sm"
                   aria-label="Resend announcement"
                   disabled={saving}
-                  onClick={() =>
-                    setPending({
-                      title: announcement.title,
-                      body: announcement.body,
-                      category: announcement.category ?? "announcement",
-                      targetApps: announcement.target_apps,
-                      mode: "resend",
-                      image_url: announcement.image_url,
-                    })
-                  }
+                  onClick={() => queueResend(announcement)}
                 >
                   <RotateCcw />
                 </Button>
@@ -332,6 +364,25 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         }
       />
 
+      <TableToolbar
+        search={{
+          value: search,
+          onChange: (next) => {
+            setSearch(next)
+            setPage(1)
+          },
+          placeholder: "Search title or message…",
+        }}
+        onExport={(format) => exportRows(format, data.items, null)}
+        exportDisabled={!data.items.length}
+      />
+
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
+
       <div className="overflow-hidden rounded-xl border bg-card shadow-none [&_[data-slot=table-container]]:overflow-hidden">
         {!data.items.length ? (
           <div className="flex h-32 flex-col items-center justify-center text-center">
@@ -340,11 +391,12 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
           </div>
         ) : (
           <DataTable
-            columns={columns}
+            columns={[selection.selectColumn, ...columns]}
             data={data.items}
             sorting={sorting}
             onSortingChange={changeSort}
             getRowId={(row) => String(row.id)}
+            rowClassName={(row) => (selection.selectedIds.has(row.id) ? "bg-muted/50" : undefined)}
             tableClassName="table-fixed w-full"
           />
         )}
@@ -372,88 +424,20 @@ export function AnnouncementsView({ initialData }: AnnouncementsViewProps) {
         onSubmit={queueNewAnnouncement}
       />
 
-      <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          {viewing ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{viewing.title}</DialogTitle>
-                <DialogDescription>
-                  Sent {formatDateTime(viewing.created_at)}
-                  {viewing.sent_by_email ? ` · ${viewing.sent_by_email}` : ""}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{viewing.category ?? "announcement"}</Badge>
-                <Badge variant="outline">{describeAnnouncementTargets(viewing.target_apps)}</Badge>
-                {viewing.deleted_at ? (
-                  <Badge variant="destructive">Deleted</Badge>
-                ) : (
-                  <Badge variant={viewing.status === "failed" ? "destructive" : "secondary"}>
-                    {viewing.status}
-                  </Badge>
-                )}
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {viewing.delivered_count}/{viewing.target_count} delivered
-                  {viewing.invalid_count > 0 ? ` · ${viewing.invalid_count} invalid` : ""}
-                </span>
-              </div>
-
-              {viewing.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary URL; Next Image not needed here
-                <img
-                  src={viewing.image_url}
-                  alt=""
-                  className="max-h-64 w-full rounded-lg border object-cover"
-                />
-              ) : null}
-
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                {viewing.body}
-              </p>
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={() => setViewing(null)}>
-                  Close
-                </Button>
-                <Button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => {
-                    setPending({
-                      title: viewing.title,
-                      body: viewing.body,
-                      category: viewing.category ?? "announcement",
-                      targetApps: viewing.target_apps,
-                      mode: "resend",
-                      image_url: viewing.image_url,
-                    })
-                    setViewing(null)
-                  }}
-                >
-                  <RotateCcw data-icon="inline-start" />
-                  Resend
-                </Button>
-                {viewing.deleted_at ? null : (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={deleting}
-                    onClick={() => {
-                      setPendingDelete(viewing)
-                      setViewing(null)
-                    }}
-                  >
-                    <Trash2 data-icon="inline-start" />
-                    Delete
-                  </Button>
-                )}
-              </DialogFooter>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <AnnouncementDetailDialog
+        announcement={viewing}
+        onClose={() => setViewing(null)}
+        saving={saving}
+        deleting={deleting}
+        onResend={(announcement) => {
+          queueResend(announcement)
+          setViewing(null)
+        }}
+        onDelete={(announcement) => {
+          setPendingDelete(announcement)
+          setViewing(null)
+        }}
+      />
 
       <AlertDialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
         <AlertDialogContent>

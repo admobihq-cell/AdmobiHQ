@@ -252,6 +252,20 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
 
   const reviewPanel = (
     <SectionCard title="Review">
+      <p className="mb-3 text-sm">
+        {data.funded_at ? (
+          <>
+            <span className="font-medium text-emerald-700 dark:text-emerald-400">Funded</span>
+            <span className="text-muted-foreground">
+              {" "}
+              · KES {Number(data.budget_kes ?? 0).toLocaleString("en-KE", { maximumFractionDigits: 2 })} held from the
+              advertiser&rsquo;s balance. Rejecting releases it back to them.
+            </span>
+          </>
+        ) : (
+          <span className="text-muted-foreground">Not funded</span>
+        )}
+      </p>
       {deciding ? (
         <div className="space-y-3">
           <Textarea

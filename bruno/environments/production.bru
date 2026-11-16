@@ -4,9 +4,15 @@ vars {
   OPS_URL: https://ops.admobihq.com
   APP_URL: https://app.admobihq.com
   resource_id: 1
+  child_id: 1
+  payment_reference: adm-topup-replace-me
+  invitation_token: replace-me
+  period_month: 2026-11
 }
-
 vars:secret [
-  clerk_jwt
-  cron_secret
+  clerk_jwt,
+  cron_secret,
+  customer_jwt,
+  driver_jwt,
+  paystack_secret
 ]

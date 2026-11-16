@@ -1,0 +1,19 @@
+meta {
+  name: Reports overview
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/customer/reports/overview?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Needs `reports:read`. Filters: campaign, market, format (taxi_top | delivery_bike), daypart.
+}

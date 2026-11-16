@@ -1,10 +1,14 @@
+import { payoutDestinationLabel } from "@workspace/ops-contracts"
+
 import { DashboardView } from "@/components/overview/dashboard-view"
-import { getPlatformFlags } from "@/lib/flags"
+import { fetchDriverProfile } from "@/lib/driver-profile"
 
 export const metadata = { title: "Dashboard" }
 
 export default async function DashboardPage() {
-  const flags = await getPlatformFlags()
+  // Cached per driver (5 min) and already fetched by the (gated) layout.
+  const result = await fetchDriverProfile()
+  const destination = result.status === "ok" ? payoutDestinationLabel(result.profile) : null
 
-  return <DashboardView deliveriesEnabled={flags.has("deliveries")} />
+  return <DashboardView payoutDestination={destination} />
 }

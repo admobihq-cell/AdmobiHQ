@@ -1,0 +1,19 @@
+meta {
+  name: List support cases
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/support?page=1&pageSize=20&status=open
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Filters: status, category, search.
+}

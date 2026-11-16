@@ -12,6 +12,7 @@ import { MetricTile } from "@workspace/ui/components/dashboard/metric-tile"
 import { InsightNote } from "@workspace/ui/components/dashboard/notes"
 import { MapCardSkeleton } from "@/components/skeletons/dashboard-skeletons"
 import { NO_DELIVERY_MESSAGE, compactOrDash } from "@/components/reports/format"
+import { leader, pct, topCell } from "@/components/reports/takeaways"
 
 // MapLibre and the H3 cell sets are heavy and only this tab needs them.
 const MarketMapCard = dynamic(() => import("@/components/reports/market-map-card"), {
@@ -46,7 +47,11 @@ export function AudienceTab({ report }: { report: ReportAudienceDto }) {
     <div className="grid gap-4">
       <ChartCard
         title="Market × time of day"
-        description="Est. impressions. Darker is more"
+        description="Estimated impressions by area and time of day. Darker means more"
+        takeaway={(() => {
+          const top = topCell(cells(report.marketByDaypart))
+          return top ? `Your ad was seen most in ${top.row} in the ${top.column.toLowerCase()}.` : undefined
+        })()}
         isEmpty={!hasEstimate}
         emptyMessage={emptyMessage}
         table={{
@@ -61,6 +66,10 @@ export function AudienceTab({ report }: { report: ReportAudienceDto }) {
         <ChartCard
           title="Markets"
           description="Est. impressions, change on the previous period"
+          takeaway={(() => {
+            const top = leader(report.byMarket)
+            return top ? `${top.name} brought the most impressions: ${pct(top.share)} of the total.` : undefined
+          })()}
           isEmpty={!hasEstimate}
           emptyMessage={emptyMessage}
           table={{ columns: ["Market", "Est. impressions"], rows: report.byMarket.map((m) => [m.name, m.value]) }}
@@ -70,6 +79,10 @@ export function AudienceTab({ report }: { report: ReportAudienceDto }) {
         <ChartCard
           title="Share by time of day"
           description="Where the estimated impressions fell"
+          takeaway={(() => {
+            const top = leader(report.daypartShare)
+            return top ? `The ${top.name.toLowerCase()} brought ${pct(top.share)} of your impressions.` : undefined
+          })()}
           isEmpty={report.daypartShare.length === 0}
           emptyMessage={emptyMessage}
           table={{ columns: ["Time of day", "Est. impressions"], rows: report.daypartShare.map((d) => [d.name, d.value]) }}
@@ -80,7 +93,11 @@ export function AudienceTab({ report }: { report: ReportAudienceDto }) {
 
       <ChartCard
         title="Day of week × time of day"
-        description="Est. impressions"
+        description="Estimated impressions. Darker means more"
+        takeaway={(() => {
+          const top = topCell(cells(report.weekdayByDaypart))
+          return top ? `Your strongest slot: ${top.row} ${top.column.toLowerCase()}.` : undefined
+        })()}
         isEmpty={!hasEstimate}
         emptyMessage={emptyMessage}
         table={{

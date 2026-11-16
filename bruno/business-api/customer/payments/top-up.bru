@@ -1,0 +1,25 @@
+meta {
+  name: Top up
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/v1/customer/payments/top-up
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "amountKes": 1000
+  }
+}
+
+docs {
+  Needs `billing:write`. Whole KES 100-1,000,000. Opens Paystack hosted checkout.
+}

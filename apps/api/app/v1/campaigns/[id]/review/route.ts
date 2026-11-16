@@ -2,123 +2,22 @@ import { NextResponse } from "next/server"
 
 import { campaignReviewSchema } from "@workspace/ops-contracts"
 
-import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
-import { getOrgNameForOrgId } from "@/lib/advertiser/advertiser-org-name"
-import { fanOutCustomerCampaignNotice } from "@/lib/advertiser/advertiser-notify"
-import { toCampaignDto } from "@/lib/campaigns/campaign-dto"
-import { CREATIVES_INCLUDE } from "@/lib/campaigns/campaign-store"
-import { getCustomerEmail, getCustomerName } from "@/lib/customer/customer-clerk"
-import { renderTemplate } from "@/lib/email/render-template"
-import { sendEmail } from "@/lib/email/send-email"
-import {
-  CampaignDecision,
-  type CampaignDecisionKind,
-} from "@/lib/email/templates/CampaignDecision"
-import { prisma } from "@/lib/prisma"
-
-const NOTIFICATION_COPY: Record<
-  CampaignDecisionKind,
-  { type: string; title: string; body: (campaignName: string, reason?: string | null) => string }
-> = {
-  approved: {
-    type: "campaign_approved",
-    title: "Campaign approved",
-    body: (name) => `"${name}" is approved and booked for its flight window.`,
-  },
-  rejected: {
-    type: "campaign_rejected",
-    title: "Campaign not approved",
-    body: (name, reason) => reason || `"${name}" needs changes before it can be approved.`,
-  },
-  changes_requested: {
-    type: "campaign_changes_requested",
-    title: "Changes needed",
-    body: (name, reason) => reason || `We requested changes before "${name}" can be approved.`,
-  },
-}
+import { reviewCampaign } from "@/lib/campaigns/review-campaign"
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function PATCH(req: Request, { params }: Params) {
   const auth = await requireOpsPermissionAccess("campaigns")
   if (auth.error) return auth.error
-  const { access } = auth
 
   const id = parseId((await params).id)
   if (!id) return jsonError("Invalid id", 400)
 
   const parsed = await parseJsonBody(req, campaignReviewSchema)
   if ("error" in parsed) return parsed.error
-  const { decision, reason } = parsed.data
 
-  const existing = await prisma.campaign.findUnique({ where: { id } })
-  if (!existing) return jsonError("Not found", 404)
-
-  // Normal review happens from "submitted". An already-"approved" campaign can
-  // only be walked back ("unapprove") — never re-approved through this same
-  // no-op path — which is why decision must differ from the current status
-  // there. Mirrors the driver-application review route.
-  const isUnapprove = existing.status === "approved" && decision !== "approved"
-  if (existing.status !== "submitted" && !isUnapprove) {
-    return jsonError(`Campaign can't be reviewed while status is "${existing.status}"`, 409)
-  }
-  if (decision !== "approved" && !reason) {
-    return jsonError("A reason is required to reject or request changes", 400)
-  }
-
-  const updated = await prisma.campaign.update({
-    where: { id },
-    data: {
-      status: decision,
-      reviewed_at: new Date(),
-      reviewed_by_email: access.email,
-      review_reason: decision === "approved" ? null : (reason ?? null),
-    },
-    include: CREATIVES_INCLUDE,
-  })
-
-  await auditFromOpsUser(access, {
-    action: "update",
-    entity_type: "campaign",
-    entity_id: id,
-    org_id: existing.org_id,
-    summary: isUnapprove
-      ? `Campaign #${id} "${updated.name}" unapproved (now ${decision.replace(/_/g, " ")})`
-      : `Campaign #${id} "${updated.name}" ${decision.replace(/_/g, " ")}`,
-  })
-
-  // Notify every active org member with campaigns:read (fire-and-forget).
-  try {
-    const copy = NOTIFICATION_COPY[decision]
-    const body = copy.body(updated.name, updated.review_reason)
-
-    await fanOutCustomerCampaignNotice({
-      orgId: updated.org_id,
-      fallbackUserId: updated.clerk_user_id,
-      type: copy.type,
-      title: copy.title,
-      body,
-      href: `/campaigns/${id}`,
-    })
-
-    const contactEmail =
-      updated.contact_email ?? (await getCustomerEmail(updated.clerk_user_id))
-    if (contactEmail) {
-      const html = await renderTemplate(CampaignDecision, {
-        name: updated.contact_name ?? (await getCustomerName(updated.clerk_user_id)) ?? "there",
-        campaignName: updated.name,
-        campaignId: id,
-        decision,
-        reason: updated.review_reason,
-      })
-      await sendEmail(contactEmail, copy.title, html)
-    }
-  } catch (error) {
-    console.error("[campaigns/review] Failed to send notifications:", error)
-  }
-
-  return NextResponse.json(
-    toCampaignDto(updated, undefined, await getOrgNameForOrgId(updated.org_id)),
-  )
+  const result = await reviewCampaign(auth.access, id, parsed.data)
+  if (!result.ok) return jsonError(result.error, result.status)
+  return NextResponse.json(result.value)
 }

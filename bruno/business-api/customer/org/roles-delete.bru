@@ -1,0 +1,15 @@
+meta {
+  name: Delete role
+  type: http
+  seq: 15
+}
+
+delete {
+  url: {{API_URL}}/v1/customer/org/roles/{{resource_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

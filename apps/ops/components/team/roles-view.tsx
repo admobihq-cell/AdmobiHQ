@@ -41,7 +41,10 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import { DataTable, type ColumnDef } from "@/components/ui/data-table"
+import { TableToolbar } from "@/components/ui/table-toolbar"
+import { matchesSearch } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportFormat } from "@/lib/table-export"
 
 const PERMISSION_LABELS: Record<OpsPermission, string> = {
   leads: "Campaign Leads",
@@ -58,6 +61,7 @@ const PERMISSION_LABELS: Record<OpsPermission, string> = {
   driver_applications: "Driver Applications",
   campaigns: "Campaigns",
   safety: "SOS & Safety",
+  payouts: "Driver Payouts",
 }
 
 type RoleEdit = { name: string; permissions: OpsPermission[] }
@@ -333,26 +337,59 @@ export function RolesView() {
       ]
     : []
 
+  const [permissionSearch, setPermissionSearch] = useState("")
+  const permissionRows = OPS_PERMISSIONS.filter((p) =>
+    matchesSearch(permissionSearch, p, PERMISSION_LABELS[p]),
+  )
+  // The matrix itself: one row per permission, a column per role. "Yes", not
+  // a check mark: the PDF font only covers Latin-1.
+  const exportMatrix = (format: ExportFormat) =>
+    void exportTableRows({
+      format,
+      title: "Roles",
+      scope: null,
+      columns: [
+        { key: "permission", header: "Permission", value: (p: OpsPermission) => PERMISSION_LABELS[p] },
+        ...(roles ?? []).map((role) => ({
+          key: `role_${role.id}`,
+          header: role.name,
+          value: (p: OpsPermission) => (role.permissions.includes(p) ? "Yes" : ""),
+        })),
+      ],
+      rows: permissionRows,
+      entity: "admin",
+      client,
+    })
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       {roles === null ? (
         <RolesTableSkeleton />
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Permission matrix
-            </p>
-            <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus aria-hidden />
-              Add role
-            </Button>
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Permission matrix
+          </p>
+          <TableToolbar
+            search={{
+              value: permissionSearch,
+              onChange: setPermissionSearch,
+              placeholder: "Search permissions…",
+            }}
+            onExport={exportMatrix}
+            exportDisabled={!permissionRows.length}
+            actions={
+              <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus aria-hidden />
+                Add role
+              </Button>
+            }
+          />
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
               <DataTable
                 columns={permissionColumns}
-                data={[...OPS_PERMISSIONS]}
+                data={permissionRows}
                 getRowId={(permission) => permission}
                 headerRowClassName="hover:bg-transparent"
               />

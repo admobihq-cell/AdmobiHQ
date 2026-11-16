@@ -16,7 +16,7 @@ import { updateOrg } from "@/lib/org-client"
 /**
  * Invoice recipient and KRA PIN. These belong to the company, not whoever is
  * admin today — Kenyan tax invoices are issued against a company PIN, so the
- * fields exist on the org ahead of the Pesapal work that will consume them.
+ * fields are printed on Paystack receipts and invoices.
  */
 export function OrgBillingCard({ org }: { org: AdvertiserOrgDto | undefined }) {
   const { getToken } = useAuth()

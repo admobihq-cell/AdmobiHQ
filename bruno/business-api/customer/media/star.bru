@@ -1,0 +1,15 @@
+meta {
+  name: Star media
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{API_URL}}/v1/customer/media/{{resource_id}}/star
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

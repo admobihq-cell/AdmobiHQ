@@ -1,0 +1,15 @@
+meta {
+  name: Mark mobile announcements read
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/mobile-announcements/read
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

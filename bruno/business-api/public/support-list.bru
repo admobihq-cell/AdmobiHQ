@@ -1,0 +1,19 @@
+meta {
+  name: List my support cases
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{API_URL}}/v1/public/support
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Bearer: a customer or driver Clerk JWT, or the email's identity token.
+}

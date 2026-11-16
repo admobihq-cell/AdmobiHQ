@@ -1,0 +1,19 @@
+meta {
+  name: Finance summary
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/customer/finance/summary?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Needs `billing:read`. range: 7d | 30d | 90d | all, or from + to (YYYY-MM-DD).
+}

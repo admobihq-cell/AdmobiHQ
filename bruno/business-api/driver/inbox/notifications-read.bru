@@ -1,0 +1,21 @@
+meta {
+  name: Mark notification read
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/v1/driver/notifications/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "read": true
+  }
+}

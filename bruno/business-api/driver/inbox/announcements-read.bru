@@ -1,0 +1,21 @@
+meta {
+  name: Mark announcement read
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{API_URL}}/v1/driver/announcements/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "read": true
+  }
+}

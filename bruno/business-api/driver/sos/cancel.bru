@@ -1,0 +1,25 @@
+meta {
+  name: Cancel incident
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/v1/driver/sos/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}
+
+body:json {
+  {
+    "status": "cancelled"
+  }
+}
+
+docs {
+  Cancel only. 409 if already closed.
+}

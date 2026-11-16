@@ -1,0 +1,25 @@
+meta {
+  name: Reply to support case
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{API_URL}}/v1/public/support/{{resource_id}}/messages
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "body": "Any update?"
+  }
+}
+
+docs {
+  Bearer: a customer/driver Clerk JWT or the case access token.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Update campaign
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "budget_kes": 60000,
+    "notes": "Edited from Bruno"
+  }
+}
+
+docs {
+  Only while the campaign is editable.
+}

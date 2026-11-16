@@ -1,0 +1,19 @@
+meta {
+  name: Delivery
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/customer/reports/delivery?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  `export=csv` downloads the daily log.
+}

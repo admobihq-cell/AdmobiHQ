@@ -14,6 +14,7 @@ export async function GET(req: Request) {
     page: searchParams.get("page") ?? 1,
     pageSize: searchParams.get("pageSize") ?? 20,
     sortDir: searchParams.get("sortDir") ?? "desc",
+    search: searchParams.get("search")?.trim() || undefined,
   })
 
   try {

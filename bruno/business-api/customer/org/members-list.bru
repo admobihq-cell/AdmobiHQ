@@ -1,0 +1,15 @@
+meta {
+  name: List members
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{API_URL}}/v1/customer/org/members
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}

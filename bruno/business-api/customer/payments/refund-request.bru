@@ -1,0 +1,26 @@
+meta {
+  name: Request refund
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/v1/customer/payments/refund-request
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "amountKes": 500,
+    "note": "Campaign ended early"
+  }
+}
+
+docs {
+  Opens a billing support case. No money moves until ops refunds.
+}

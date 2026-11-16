@@ -1,0 +1,19 @@
+meta {
+  name: Detach creative
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}/creatives/{{child_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  The file stays in the Media Library.
+}

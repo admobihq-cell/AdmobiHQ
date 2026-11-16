@@ -1,0 +1,21 @@
+meta {
+  name: Request admin access
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/admin-requests
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "reason": "I manage our billing and need to add teammates."
+  }
+}

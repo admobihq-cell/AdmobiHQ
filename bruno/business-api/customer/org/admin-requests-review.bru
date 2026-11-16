@@ -1,0 +1,25 @@
+meta {
+  name: Review admin request
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{API_URL}}/v1/customer/org/admin-requests/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "decision": "approve"
+  }
+}
+
+docs {
+  decision: approve | deny. A note is required to deny.
+}

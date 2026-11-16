@@ -1,0 +1,24 @@
+meta {
+  name: Upload creative
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}/creatives
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:multipart-form {
+  file: @file(fixtures/sample.png)
+  slot: all
+}
+
+docs {
+  PNG/JPG/GIF/MP4, 50 MB max, and must fit the campaign's panel (the 1x1 sample won't: expect 400 issues.specs). Also files it in the Media Library.
+}

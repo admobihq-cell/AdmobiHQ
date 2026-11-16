@@ -1,0 +1,19 @@
+meta {
+  name: Submit for review
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/customer/campaigns/{{resource_id}}/submit
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  Funds from the available balance. 402 `{ dueKes }` when short: call Checkout.
+}

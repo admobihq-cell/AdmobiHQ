@@ -1,0 +1,15 @@
+meta {
+  name: List payouts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/driver/payouts
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{driver_jwt}}
+}

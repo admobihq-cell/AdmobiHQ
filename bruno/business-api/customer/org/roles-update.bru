@@ -1,0 +1,25 @@
+meta {
+  name: Update role
+  type: http
+  seq: 14
+}
+
+patch {
+  url: {{API_URL}}/v1/customer/org/roles/{{resource_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "permissions": [
+      "campaigns:read",
+      "reports:read",
+      "billing:read"
+    ]
+  }
+}

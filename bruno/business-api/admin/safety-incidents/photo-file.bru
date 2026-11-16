@@ -1,0 +1,19 @@
+meta {
+  name: Get incident photo
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{API_URL}}/v1/safety-incidents/{{resource_id}}/photos/{{child_id}}/file
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  resource_id = incident, child_id = photo.
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Create draft campaign
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/customer/campaigns
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:json {
+  {
+    "name": "Bruno launch",
+    "objective": "awareness",
+    "market": "Nairobi",
+    "format": "taxi_top",
+    "budget_kes": 50000,
+    "starts_on": "2026-12-01",
+    "ends_on": "2026-12-31",
+    "contact_email": "ads@example.com"
+  }
+}

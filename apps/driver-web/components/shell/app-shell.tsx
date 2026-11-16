@@ -19,7 +19,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -34,6 +33,7 @@ import { TourProvider } from "@workspace/ui/components/tour-provider"
 
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { driverTourChapters } from "@/lib/tour-chapters"
+import { BottomTabs } from "@/components/shell/bottom-tabs"
 import { NavUser } from "@/components/shell/nav-user"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { SosFab } from "@/components/shell/sos-fab"
@@ -82,7 +82,7 @@ export function AppShell({
       userId={user?.id ?? null}
       chapters={driverTourChapters}
     >
-      <SidebarProvider>
+      <SidebarProvider className="print:[&_[data-slot=sidebar]]:hidden">
         <Sidebar variant="inset" collapsible="icon">
           <SidebarHeader className="h-12 justify-center border-b border-sidebar-border px-4 group-data-[collapsible=icon]:px-0">
             <div
@@ -100,7 +100,6 @@ export function AppShell({
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Driver</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navItems.map((item) => (
@@ -131,7 +130,7 @@ export function AppShell({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 print:hidden">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DriverBreadcrumbs pathname={pathname} />
@@ -140,10 +139,12 @@ export function AppShell({
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
+          {/* Bottom padding clears the tab bar + SOS button on phones, and the SOS button on desktop. */}
+          <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 pb-40 md:p-6 md:pb-24">
             {children}
           </main>
         </SidebarInset>
+        <BottomTabs items={navItems} currentHref={currentNavHref} />
         {/* Overlays every page under (shell). Mounted once here rather than
             per-page so a page added later gets it for free. Not flag-gated —
             reporting an accident must not depend on a toggle. */}

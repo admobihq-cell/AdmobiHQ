@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-import { Inbox, Loader2, RefreshCw, Search } from "lucide-react"
+import { Inbox, Loader2, RefreshCw } from "lucide-react"
 
 import {
   SUPPORT_CATEGORIES,
@@ -16,14 +16,6 @@ import { formatApiError } from "@workspace/ops-api-client"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -33,13 +25,27 @@ import {
   type SortingState,
 } from "@/components/ui/data-table"
 import { PageHero } from "@/components/ui/page-hero"
+import { BulkBar, FilterSelect, TableToolbar } from "@/components/ui/table-toolbar"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { StatusBadge } from "@/components/entity/status-badge"
 import { SupportCategoryIcon } from "@/components/support/support-category-icon"
 import { formatDateTime } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
+import { exportTableRows, type ExportColumn, type ExportFormat } from "@/lib/table-export"
+import { useRowSelection } from "@/lib/use-row-selection"
 
-const ALL = "__all__"
+const toOptions = (keys: readonly string[]) => keys.map((value) => ({ value, label: formatLabel(value) }))
+
+const exportColumns: ExportColumn<SupportCaseDto>[] = [
+  { key: "opened", header: "Opened", value: (r) => formatDateTime(r.created_at) },
+  { key: "subject", header: "Subject", value: (r) => r.subject },
+  { key: "contact", header: "Contact", value: (r) => r.contact_name },
+  { key: "email", header: "Email", value: (r) => r.contact_email },
+  { key: "category", header: "Category", value: (r) => formatLabel(r.category) },
+  { key: "priority", header: "Priority", value: (r) => formatLabel(r.priority) },
+  { key: "status", header: "Status", value: (r) => formatLabel(r.status) },
+  { key: "assignee", header: "Assignee", value: (r) => r.assigned_to_email },
+]
 
 function initials(name: string) {
   return name
@@ -161,8 +167,8 @@ export function SupportView() {
   const client = useOpsClient()
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [status, setStatus] = useState<string>(ALL)
-  const [category, setCategory] = useState<string>(ALL)
+  const [status, setStatus] = useState("")
+  const [category, setCategory] = useState("")
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [sorting, setSorting] = useState<SortingState>([])
@@ -185,8 +191,8 @@ export function SupportView() {
         page,
         pageSize,
         search: debouncedSearch || undefined,
-        status: status === ALL ? undefined : status,
-        category: category === ALL ? undefined : category,
+        status: status || undefined,
+        category: category || undefined,
         sortBy,
         sortDir,
       }),
@@ -201,6 +207,27 @@ export function SupportView() {
     setPage(1)
   }, [debouncedSearch, status, category, pageSize, sortBy, sortDir])
 
+  const items = data?.items ?? []
+  const selection = useRowSelection(items, [
+    page,
+    pageSize,
+    sortBy,
+    sortDir,
+    status,
+    category,
+    debouncedSearch,
+  ])
+  const exportRows = (format: ExportFormat, rows: SupportCaseDto[], scope: "selected" | null) =>
+    void exportTableRows({
+      format,
+      title: "Support",
+      scope,
+      columns: exportColumns,
+      rows,
+      entity: "support",
+      client,
+    })
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHero
@@ -208,58 +235,46 @@ export function SupportView() {
         description="Cases opened from the landing page, customer web, and customer mobile."
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search subject, name, email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+      <TableToolbar
+        search={{ value: search, onChange: setSearch, placeholder: "Search subject, name, email…" }}
+        filters={
+          <>
+            <FilterSelect
+              value={status}
+              onChange={setStatus}
+              options={toOptions(SUPPORT_STATUSES)}
+              allLabel="All statuses"
+            />
+            <FilterSelect
+              value={category}
+              onChange={setCategory}
+              options={toOptions(SUPPORT_CATEGORIES)}
+              allLabel="All categories"
+            />
+          </>
+        }
+        onExport={(format) => exportRows(format, items, null)}
+        exportDisabled={!items.length}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refresh()}
+            disabled={loading}
+            loading={loading}
+            loadingText="Refresh"
+          >
+            <RefreshCw className="size-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All statuses</SelectItem>
-            {SUPPORT_STATUSES.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All categories</SelectItem>
-            {SUPPORT_CATEGORIES.map((key) => (
-              <SelectItem key={key} value={key}>
-                {formatLabel(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void refresh()}
-          disabled={loading}
-          loading={loading}
-          loadingText="Refresh"
-          className="ml-auto"
-        >
-          <RefreshCw className="size-4" />
-          Refresh
-        </Button>
-      </div>
+      <BulkBar
+        count={selection.count}
+        onExport={(format) => exportRows(format, selection.selectedRows, "selected")}
+        onClear={selection.clear}
+      />
 
       {fetchError ? (
         <ApiErrorBanner
@@ -283,12 +298,17 @@ export function SupportView() {
           </div>
         ) : (
           <DataTable
-            columns={columns}
+            columns={[selection.selectColumn, ...columns]}
             data={data.items}
             sorting={sorting}
             onSortingChange={setSorting}
             getRowId={(row) => String(row.id)}
-            rowClassName={() => "cursor-pointer hover:bg-muted/40"}
+            rowClassName={(row) =>
+              cn(
+                "cursor-pointer hover:bg-muted/40",
+                selection.selectedIds.has(row.id) && "bg-muted/50",
+              )
+            }
           />
         )}
       </div>

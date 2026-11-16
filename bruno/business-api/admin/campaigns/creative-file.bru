@@ -1,0 +1,19 @@
+meta {
+  name: Get creative file
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{API_URL}}/v1/campaigns/{{resource_id}}/creatives/{{child_id}}/file
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Streams creative bytes. resource_id = campaign, child_id = creative.
+}

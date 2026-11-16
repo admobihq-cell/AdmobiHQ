@@ -92,7 +92,7 @@ Distinct from the marketing `Driver` lead table above — this is the authentica
 
 | Model | Table | Purpose |
 |---|---|---|
-| `DriverProfile` | `driver_profiles` | Profile-completion application: personal/vehicle/payout details, `draft → submitted → approved/rejected/changes_requested` |
+| `DriverProfile` | `driver_profiles` | Profile-completion application: personal/vehicle/payout details (`payout_bank_code`, and `paystack_recipient_code`, which is cleared whenever the payout details change), `draft → submitted → approved/rejected/changes_requested` |
 | `DriverDocument` | `driver_documents` | An uploaded file for a profile step (national ID, profile photo, KRA PIN certificate, payout proof) |
 | `DriverNotification` | `driver_notifications` | Per-driver inbox row (application submitted/reviewed) |
 
@@ -102,7 +102,7 @@ The advertiser product surface — briefs, review, and creative assets.
 
 | Model | Table | Purpose |
 |---|---|---|
-| `Campaign` | `campaigns` | One advertiser campaign brief. `status` holds **only** the review lifecycle (`draft → submitted → approved/rejected/changes_requested/cancelled`) — the flight phase (scheduled/live/completed) is derived from `starts_on`/`ends_on`, never stored |
+| `Campaign` | `campaigns` | One advertiser campaign brief. `funded_at` is set, in the same transaction as `status = submitted`, once its budget has been paid for and held. `status` holds **only** the review lifecycle (`draft → submitted → approved/rejected/changes_requested/cancelled`) — the flight phase (scheduled/live/completed) is derived from `starts_on`/`ends_on`, never stored |
 | `MediaAsset` | `media_assets` | A file in an advertiser org's Media Library. Org-owned (`org_id`, null once the org is deleted), reusable across campaigns. Only PNG/JPG/GIF/MP4 accepted — the supplier LED player can't decode anything else. `width`/`height`/`duration_seconds` are captured eagerly at upload, never backfilled |
 | `MediaFolder` | `media_folders` | An org-shared folder in the Media Manager. One level, names unique per org. Deleting one sets its files' `folder_id` to null |
 | `MediaAssetStar` | `media_asset_stars` | One person's star on a file, keyed by asset and Clerk user |
@@ -117,14 +117,28 @@ What the advertiser and ops dashboards read. Every table here has `is_demo` (def
 
 | Model | Table | Purpose |
 |---|---|---|
-| `WalletTransaction` | `wallet_transactions` | An org's money ledger. **Append-only**: corrections are new `adjustment` rows, never edits. Signed `amount_kes` (credit +, debit −); `kind` is `top_up`, `spend`, `refund` or `adjustment`; spend rows carry `spend_category` (`screen_time`, `production`, `service_fee`, `tax`, a proposed split). `provider` says who wrote it (`manual`, `pesapal`, `seed`); `created_by` is the Clerk user id for manual rows. The balance is `SUM(amount_kes)` and is never stored. `org_id` / `campaign_id` are `SetNull` so history outlives a deleted org or campaign |
+| `WalletTransaction` | `wallet_transactions` | An org's money ledger. **Append-only**: corrections are new `adjustment` rows, never edits. Signed `amount_kes` (credit +, debit −); `kind` is `top_up`, `spend`, `refund`, `adjustment` or `cash_refund` (see Ledger kinds below); spend rows carry `spend_category` (`screen_time`, `production`, `service_fee`, `tax`, a proposed split). `provider` says who wrote it (`manual`, `paystack`, `seed`); `created_by` is the Clerk user id for manual rows. The balance is `SUM(amount_kes)` and is never stored. `org_id` / `campaign_id` are `SetNull` so history outlives a deleted org or campaign |
 | `CampaignDailyStat` | `campaign_daily_stats` | Delivery aggregates, one row per campaign, day, market, daypart (`morning`, `midday`, `evening`, `night`) and format: plays scheduled/delivered/missed/over, vehicle hours, km, active vehicles, and low/likely/high impressions. Null impressions mean "not estimated", not zero. `source` and `model_version` record what produced the row — see [DATA-LAYER.md § Delivery stats](./DATA-LAYER.md#delivery-stats-and-the-ledger). Cascades with the campaign |
 | `CampaignCreativeDailyStat` | `campaign_creative_daily_stats` | Plays and likely impressions per creative per day, with a `creative_name` snapshot; `media_asset_id` is `SetNull` |
 | `CampaignReachStat` | `campaign_reach_stats` | Campaign-to-date reach (low/likely/high) as of a day, unique per campaign and day. **Reach is not additive** — never sum it across days or campaigns |
-| `Payout` | `payouts` | A payout to a CRM `Driver` (`drivers` table) for a `period_month`: `pending`, `settled` or `failed`, with the M-Pesa ref once sent |
+| `Payment` | `payments` | One Paystack checkout attempt by an org (optionally for a campaign). `reference` is `adm-pay-<12 hex>` (unique); `amount_kes` always comes from our own rows. `status`: `initiated`, `success`, `failed`, `abandoned`, `amount_mismatch`. On success `wallet_transaction_id` (unique) links the `top_up` ledger row. `raw_event` keeps the provider payload. `org_id` is `Restrict` so payment history is never orphaned |
+| `Refund` | `refunds` | Money returned to the payer through Paystack, against one `Payment`. `reference` is `adm-refund-<id>` (unique). `status`: `pending`, `processing`, `needs_attention`, `processed`, `failed`. When processed, `wallet_transaction_id` (unique) links the `cash_refund` ledger row |
+| `Payout` | `payouts` | A payout to a driver for a `period_month`. `status`: `pending`, `processing`, `settled`, `failed`, `reversed`. `provider` is `manual` (ops records the M-Pesa ref) or `paystack` (a Transfer: `reference` `adm-payout-<id>-<yyyymm>`, `transfer_code`, `fee_kes`, `failure_reason`, `initiated_by_email`). Paystack payouts set `driver_profile_id` (the approved `DriverProfile`); old and demo rows keep `driver_id` (CRM `Driver`), so ops queries join `driver_profiles` first and fall back to `drivers` |
 | `Invoice` | `invoices` | An issued invoice with a unique `number`, period, subtotal/tax/total, status (`issued`, `paid`, `overdue`, `void`) and an immutable `lines` JSON snapshot. Only the demo seed writes these for now. `tax_invoice_ref` is reserved for the eTIMS number |
 
 Monthly statements are derived from `wallet_transactions`, not stored.
+
+### Ledger kinds
+
+| `kind` | Sign | Meaning | Counts as |
+|---|---|---|---|
+| `top_up` | + | Money received (Paystack, or a manual bank transfer) | money in |
+| `spend` | − | Budget consumed by a flight day | revenue (unless `tax`) |
+| `refund` | + | **Spend given back to the balance**, e.g. ops reverses a bad delivery day | negative revenue |
+| `adjustment` | ± | Ops correction | neither |
+| `cash_refund` | − | Money returned to the payer through Paystack, or by bank | money out, **not** revenue |
+
+`cash_refund` is separate from `refund` on purpose: reusing `refund` for money sent back to the payer would cut revenue and inflate "spent". Queries that filter `kind IN ('spend','refund')` stay correct untouched.
 
 ## Payload CMS (separate schema surface)
 

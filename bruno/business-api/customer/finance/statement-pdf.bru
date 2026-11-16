@@ -1,0 +1,19 @@
+meta {
+  name: Monthly statement PDF
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{API_URL}}/v1/customer/finance/statements/{{period_month}}/pdf
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+docs {
+  404 for a month with no ledger rows.
+}

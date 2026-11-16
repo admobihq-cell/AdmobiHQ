@@ -1,0 +1,23 @@
+meta {
+  name: Upload media
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/customer/media
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{customer_jwt}}
+}
+
+body:multipart-form {
+  file: @file(fixtures/sample.png)
+}
+
+docs {
+  PNG/JPG/GIF/MP4, 50 MB max. Optional `folderId`.
+}

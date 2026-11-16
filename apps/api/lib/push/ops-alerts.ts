@@ -11,6 +11,7 @@ export type OpsAlertType =
   | "media-kit"
   | "support"
   | "safety"
+  | "finance"
 
 const TYPE_LABELS: Record<OpsAlertType, string> = {
   campaign: "Campaign brief",
@@ -21,6 +22,7 @@ const TYPE_LABELS: Record<OpsAlertType, string> = {
   "media-kit": "Media kit request",
   support: "Support case",
   safety: "SOS",
+  finance: "Finance",
 }
 
 /** "campaign" is the anonymous marketing-site brief and routes to the leads
@@ -36,6 +38,7 @@ const ROUTE_SEGMENT: Record<OpsAlertType, string> = {
   "media-kit": "media-kit",
   support: "support",
   safety: "sos",
+  finance: "finances",
 }
 
 export type OpsStaffAlertInput = {
@@ -54,6 +57,9 @@ export type OpsStaffAlertInput = {
   body?: string
   channelId?: string
   color?: string
+  /** Overrides the `/(ops)/<segment>/<entityId>` deep link — finance alerts
+   * point at the single ops-mobile finances screen, which has no [id] route. */
+  href?: string
 }
 
 /** Fire-and-forget push to all registered ops staff devices. */
@@ -86,7 +92,7 @@ export async function notifyOpsStaffAlert(input: OpsStaffAlertInput) {
       data: {
         type: input.type,
         id: String(input.entityId),
-        href: `/(ops)/${segment}/${input.entityId}`,
+        href: input.href ?? `/(ops)/${segment}/${input.entityId}`,
       },
     }))
 

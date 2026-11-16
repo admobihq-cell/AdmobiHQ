@@ -326,3 +326,6 @@ export function flightDaysBetween(startsOn: string, endsOn: string): number {
   if (Number.isNaN(ms)) return 0
   return Math.round(ms / 86_400_000) + 1
 }
+
+/** Tax on top of prices. 0 until the accountant confirms; while it is 0 no VAT line is shown anywhere. */
+export const VAT_RATE = 0

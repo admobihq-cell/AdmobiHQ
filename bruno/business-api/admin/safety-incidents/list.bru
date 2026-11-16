@@ -1,0 +1,19 @@
+meta {
+  name: List incidents
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/safety-incidents?page=1&pageSize=20&status=new
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs the `safety` permission. Filters: status, type, severity, search.
+}

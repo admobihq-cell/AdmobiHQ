@@ -1,12 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Download } from "lucide-react"
 import { exportFileName, formatKes, toCsv } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
+import { seePayments } from "@/app/(dashboard)/finances/actions"
 import { RecordTransactionDialog } from "@/components/finances/record-transaction-dialog"
 import { DELETED_ORG } from "@/lib/queries/finance-constants"
 import type { FinanceLedgerDto, LedgerRowDto, RecordOptionsDto } from "@/lib/queries/finance"
@@ -17,9 +19,10 @@ const FILTERS = [
   { value: "spend", label: "Spend" },
   { value: "refund", label: "Refunds" },
   { value: "adjustment", label: "Adjustments" },
+  { value: "cash_refund", label: "Refunds to payer" },
 ]
 
-const KIND_LABEL: Record<string, string> = { top_up: "Top-up", spend: "Spend", refund: "Refund", adjustment: "Adjustment" }
+const KIND_LABEL: Record<string, string> = { top_up: "Top-up", spend: "Spend", refund: "Refund", adjustment: "Adjustment", cash_refund: "Refund to payer" }
 
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Nairobi" })
@@ -65,6 +68,14 @@ const COLUMNS: LedgerColumn<LedgerRowDto>[] = [
 /** The ledger for the period, with CSV and a way to add a row. Shows the latest rows; totals cover them all. */
 export function LedgerTab({ data, options }: { data: FinanceLedgerDto; options: RecordOptionsDto }) {
   const [filter, setFilter] = useState("all")
+  const router = useRouter()
+
+  // Opening the ledger is "laying eyes on" new payments: clear the Finances badge.
+  useEffect(() => {
+    seePayments()
+      .then((changed) => changed && router.refresh())
+      .catch(() => {})
+  }, [router])
   const rows = useMemo(() => data.rows.filter((r) => filter === "all" || r.kind === filter), [data.rows, filter])
 
   function download() {
