@@ -3,6 +3,7 @@ import {
   FLEET_STATUSES,
   FLEET_STATUS_OPTIONS,
   formatLabel,
+  formatDateTime,
 } from "@workspace/ops-contracts"
 
 import { FleetListRow } from "@/components/app/entity-list-rows"
@@ -52,6 +53,18 @@ export default function FleetScreen() {
       statusOptions={FLEET_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
       onBulkDelete={onBulkDelete}
+      exports={{
+        entity: "fleet",
+        columns: [
+          { header: "Date", value: (r) => formatDateTime(r.created_at) },
+        { header: "Company", value: (r) => r.company_name },
+        { header: "Contact", value: (r) => r.primary_contact_name },
+        { header: "City", value: (r) => r.city },
+        { header: "Size", value: (r) => r.fleet_size },
+        { header: "EVs", value: (r) => r.ev_status },
+        { header: "Status", value: (r) => r.status },
+        ],
+      }}
       detailHref={(id) => `/(ops)/fleet/${id}`}
       renderRow={(item, { onPress, onLongPress }) => (
         <FleetListRow item={item} onPress={onPress} onLongPress={onLongPress} />

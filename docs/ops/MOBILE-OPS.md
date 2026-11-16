@@ -71,14 +71,55 @@ banner counting them; the list polls every 15s while anything is live and
 every 60s when quiet.
 
 Actions: Acknowledge / In progress / Resolve (resolution note **required** —
-the API returns 400 without one). Only the driver can cancel. Photos are not
-rendered on mobile — the detail screen points to the ops console for those.
+the API returns 400 without one). Only the driver can cancel. Photos the
+driver attached show as a strip of thumbnails on the detail screen (tap for full
+size). The file route is private, so each image loads with the same bearer token
+as the API calls (`client.safety.photoFileUrl`). **Open map** opens Google Maps at
+the last known location, falling back to where it was reported.
 
 Ops push for a new SOS uses alert type `safety`, the **MAX-importance
 `"safety"` Android channel** registered in `lib/push-notifications.ts`, and
 deep-links to `/(ops)/sos/:id`. Without that registered channel Android
 silently downgrades the alert to the default channel and no heads-up banner
 appears. Full design: `docs/shared/SAFETY-SOS.md`.
+
+## Finances and payouts
+
+`/(ops)/finances`, from the drawer's **Finances** entry (permission `finances`; without it the screen says so and **no request is made**). Five tabs like the ops console, all on `GET /v1/ops/finance/*` (same SQL as the web, from `@workspace/ops-queries`): **Overview** (revenue, money in, driver payouts, tool costs and fees, net margin, wallet funds held, the live Paystack balance, a **Needs attention** list first when it has items, charts, **Refund** and **New payout run**), **Ledger** (rows with filters, **Record transaction**), **Wallets** (per-org balance, committed and a status pill), **Payouts** and **Tool costs** (monthly USD and KES plus a donut by category). The 7d / 30d / 90d / All range applies to Overview, Ledger and Payouts. `?tab=` opens a tab directly (the attention queue uses it). The drawer badge counts settled payments nobody has looked at; opening the Ledger calls `POST /v1/ops/payments/unseen` and the badge drops to 0 without a relaunch.
+
+**Refund** and **Record transaction** are bottom sheets that parse with the web's own functions; a synchronous in-flight latch (`createInFlightGuard`) turns away a second tap before the button re-renders, because neither carries an idempotency key.
+
+**Payouts** tab: the range's payouts by status (Pending / Sending / Settled / Failed / Reversed), Paystack's failure reason under failed rows, and **Retry** on failed rows (permission `payouts`; same reference, so Paystack can't pay twice). **New payout run** (`/(ops)/finances/payout-run`) picks a month, lists approved drivers with method and last 4 digits only, and **Save as pending** (`finances`); rows already sent are read-only. **Disburse** (permission `payouts` only) selects pending or failed rows, shows the count, total, estimated fees and the live Paystack balance, and **blocks Send when the balance is short or can't be read** (it only trusts a balance from a fetch that just succeeded; the API also answers `402 { balanceKes, requiredKes }` and the sheet shows both numbers). **Send KES {total} to {n} drivers** then prints a receipt: one line per driver sent, fees, total, and **Not sent** with each reason. A batch Paystack partly refuses is titled "Some payouts weren't sent" and one it refuses entirely "Nothing was sent", never "Payouts sent". The pure rules (balance check, 402 parsing, receipt title and settlement) are in `@workspace/ops-contracts` (`payout-ui.ts`) and tested there.
+
+**Deploy order:** the `/v1/ops/finance/*`, `/v1/ops/payments/unseen` and `/v1/ops/dashboards/*` routes exist only on a deployed API of this version; ship the API before any ops-mobile OTA that contains these screens. Never call disburse or refund from a script: try them with the Paystack **test** key.
+
+## Dashboards
+
+The drawer's **Dashboards** group opens `/(ops)/dashboards/{campaigns,fleet,advertisers,support}`, the four ops-console dashboards on `GET /v1/ops/dashboards/*` (same SQL as the web, from `@workspace/ops-queries`). Each entry shows only with the web's permission: Campaigns and Advertisers need `campaigns`, Fleet `drivers`, Support `support`. Money (booked budget, budget by format, payout figures, spend and balances) is **absent from the API response** unless the user also holds `finances`, and the Support safety cards need `safety`; the screens draw only what arrived. Campaigns has the Pipeline / Delivery / Inventory mix tabs and opens on the one named by `?tab=`. Every dashboard has the 7d / 30d / 90d / All range toolbar and pull to refresh. Labels, health tones and wait wording are shared with web through `@workspace/ops-contracts` (`dashboard-format.ts`). Funnels draw as ranked bars on mobile, and the delivery gauge is a percentage.
+
+## Attention queue (header bell)
+
+The bell in the app bar opens `/(ops)/notifications`: the same "needs attention" rows as the ops Overview (reviews waiting, campaigns at risk, driver applications, urgent cases, critical incidents, payouts pending or failed) from `GET /v1/ops/action-queue`. Any ops user can open it; the API drops each row the user has no permission for, and every row with a count of zero. The badge on the bell is the sum of the counts. Rows are grouped by urgency and open the matching dashboard or Finances tab. The screen refetches when you come back to it and on pull to refresh. Activity, which the bell used to open, is now a drawer entry (`activity` permission). The push-style QA preview moved to `/(ops)/notification-preview` (Profile → Developer tools).
+
+## Users
+
+`/(ops)/users`, from the drawer's **Users** entry, ops admins only (as on web, where `/users` needs `requireOpsAdmin`; `GET /v1/users` is `requireOpsAdminAccess`). Anyone else gets a no-access screen and no request is made. **Customers** and **Drivers** come from `GET /v1/users?type=` with a debounced search (name, email, phone) and 25-row pages loaded as you scroll; each row shows name, company (customers), email, phone, joined date and status (Active / Banned / Locked). **Admins** is the ops team list (`GET /v1/team`), searched on the phone by email or role. There is no per-user detail screen: the web has no detail page and there is no detail endpoint.
+
+## Bulk approve and reject
+
+On **Campaigns** and **Driver applications**, long-press a row to start selecting; tap more rows to add or remove them (up to 100, the API's batch limit). A bar shows the count with **Approve** and **Reject**. Both ask first and state the count; Reject needs one reason, which is shown to every row it applies to. Only rows still in review change; the rest are skipped, and the result line reads like the web's: "2 approved, 1 skipped (not in review)". Changing the status filter clears the selection. A second tap on Approve/Reject while a batch is in flight is ignored. Calls `POST /v1/campaigns/bulk-review` and `POST /v1/driver-applications/bulk-review`.
+
+## Exporting lists
+
+Every entity list (Leads, Fleet, Drivers, Waitlist, Media kit), **Campaigns**, **Driver applications**, **Team** and **Roles** has an **Export** button: pick **CSV** or **PDF** and the file opens in the system share sheet. It exports exactly what is on screen: the rows loaded so far, or just the selected rows when a selection is active (the button then reads "Export N selected" and the file name ends in `-selected`). At most 500 rows, the PDF route's limit. Columns match the ops web tables' CSV columns. CSV is built on the phone with `toCsv` and written with `expo-file-system`; PDF comes from `POST /v1/ops/documents/export` and is refused unless it starts with `%PDF` (a proxy error page is never shared as a PDF). File names come from `exportFileName()`, e.g. `drivers-2026-11-12.csv`. The code is `lib/export-list.ts` and `components/app/export-button.tsx`. Team and Roles export under the `admin` permission, like the web.
+
+## Campaign funding
+
+The campaign detail screen's **Funding** row reads **Funded · KES 12,500 held** when the advertiser's budget was paid for and held (`funded_at` is set; the budget is locked and a rejection releases it), or **Not funded**. Same wording as the ops web review panel.
+
+## Integrations ledger
+
+Profile → **Integrations** (ops admins only) opens `/(ops)/settings/integrations`: every tool and subscription the company pays for, from `GET /v1/ops/integrations`. The header shows the monthly cost in KES and USD, annual cost, active and free counts, and a donut by category; the totals are computed on the server with the ops console's own `totals()`, so the two always agree. Tap a row to edit it, or **Add integration**; **Delete** is inside the edit sheet and asks first. The form validates with `integrationInputSchema` (`@workspace/ops-contracts/integration-costs`), the same schema the console's server actions and the API use. Seeding the starter list stays web-only. Every create, update and delete writes an audit event (entity `integration`).
 
 ## Push notifications (ops staff)
 
@@ -107,6 +148,8 @@ So the `delivered_count / target_count` shown in the ops console is **0 right af
 The endpoint accepts either an ops session or `Authorization: Bearer $CRON_SECRET`. Set `CRON_SECRET` in the API environment.
 
 ### Resend
+
+The mobile composer (`/(ops)/announcements/new`) has **Personalise** buttons that insert `{{first_name}}` or `{{org_name}}` at the cursor of whichever of title or message was focused last (refused if it would pass the limit, as on web), live character counts against the push limits (**65** title, **178** message), and a live preview of the notification with sample values (first name "Jordan", organisation "Acme Ads"; drivers have no organisation). When a send reaches both apps the preview has a Customer / Driver switch. Tapping a past broadcast in the list opens a detail sheet with the same preview, the delivery bar (reached / no longer registered / awaiting a receipt) and who sent it. The sample values and limits live in `@workspace/ops-contracts` (`announcement-ui.ts`).
 
 Ops web and ops-mobile list past broadcasts with a **Resend** action. It reuses `POST /v1/notifications/broadcast` with the same title/body, so a resend creates a **new** `announcement_broadcasts` row and a fresh fan-out — it does not mutate the original send.
 

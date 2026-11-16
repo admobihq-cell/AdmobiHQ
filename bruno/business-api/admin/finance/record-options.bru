@@ -1,0 +1,19 @@
+meta {
+  name: Record and refund options
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{API_URL}}/v1/ops/finance/record-options
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Organizations and campaigns offered by the Record transaction and Refund forms.
+}

@@ -55,7 +55,7 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 - **Thumb first:** below `md` driver-web shows a bottom tab bar (Home, Earnings, Routes, Support) like the native app; the SOS FAB sits above it and `<main>` pads to clear both.
 - **Plain words first.** Drivers aren't analysts: a chart carries a one-line `takeaway` ("Your longest day was Sat 7 Nov: 9.8 h"), time slots read as people say them ("Friday, 6–9 pm"), and grids of numbers become ranked lists. Labels are everyday words ("Ads shown", "Hours a day"), not "plays" or "per active day".
 - **Samples are tagged in place:** screen time, plays, distance and areas come from `apps/driver-web/lib/sample-data.ts` (seeded per day) and every one carries a dashed "Sample" tag (`SampleTag` / `SampleLabel`), plus a "Sample screen data" pill on the toolbar.
-- **driver-mobile** still uses the earlier payout hero and route-style history (`apps/driver-mobile/components/payout-hero.tsx`) until it is brought onto the same structure.
+- **driver-mobile** keeps a phone-shaped structure of its own (payout hero → quick actions → updates; year-grouped payout history on a route rail; see `docs/driver/DRIVER-APP.md`) with the same rules as driver-web: plain words, status in words, problems carry their next step, samples tagged in place with the dashed `SampleTag` (`apps/driver-mobile/components/app/section.tsx`), sentence-case headings and no uppercase eyebrows. It shows no screen-time figures: nothing records them yet.
 
 ## Motion
 

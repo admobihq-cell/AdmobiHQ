@@ -1,0 +1,19 @@
+meta {
+  name: Campaigns dashboard: inventory
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_URL}}/v1/ops/dashboards/campaigns?tab=inventory&range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs `campaigns`. Budget by format is null unless the caller also holds `finances`.
+}

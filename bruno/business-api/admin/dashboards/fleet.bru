@@ -1,0 +1,19 @@
+meta {
+  name: Fleet dashboard
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{API_URL}}/v1/ops/dashboards/fleet?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs `drivers`. The `money` block (payouts) is absent unless the caller also holds `finances`.
+}

@@ -2,24 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { formatKes } from "@workspace/ops-contracts"
+import { WALLET_FILTERS, WALLET_STATUS_VIEW, formatKes } from "@workspace/ops-contracts"
 
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
-import type { WalletRowDto, WalletStatus } from "@/lib/queries/finance"
-
-const STATUS: Record<WalletStatus, { label: string; tone: "serious" | "good" | "neutral" }> = {
-  short: { label: "Short of funds", tone: "serious" },
-  healthy: { label: "Healthy", tone: "good" },
-  inactive: { label: "Inactive", tone: "neutral" },
-}
-
-const FILTERS: { value: "all" | WalletStatus; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "short", label: "Short of funds" },
-  { value: "healthy", label: "Healthy" },
-  { value: "inactive", label: "Inactive" },
-]
+import type { WalletRowDto, WalletStatus } from "@workspace/ops-contracts"
 
 const COLUMNS: LedgerColumn<WalletRowDto>[] = [
   {
@@ -42,7 +29,7 @@ const COLUMNS: LedgerColumn<WalletRowDto>[] = [
   },
   { key: "runway", header: "Runway", align: "right", render: (w) => (w.runwayDays === null ? "—" : `${w.runwayDays} days`) },
   { key: "last", header: "Last top-up", render: (w) => w.lastTopUpOn ?? "None" },
-  { key: "status", header: "Status", render: (w) => <StatusPill tone={STATUS[w.status].tone}>{STATUS[w.status].label}</StatusPill> },
+  { key: "status", header: "Status", render: (w) => <StatusPill tone={WALLET_STATUS_VIEW[w.status].tone}>{WALLET_STATUS_VIEW[w.status].label}</StatusPill> },
 ]
 
 /** One row per advertiser with a wallet, grouped by whether they can cover what they have booked. */
@@ -65,7 +52,7 @@ export function WalletsTab({ wallets }: { wallets: WalletRowDto[] }) {
         { label: "Inactive", value: count("inactive"), note: "No activity in 60 days" },
       ]}
       filterTabs={{
-        tabs: FILTERS.map((f) => ({ ...f, count: f.value === "all" ? wallets.length : count(f.value) })),
+        tabs: WALLET_FILTERS.map((f) => ({ ...f, count: f.value === "all" ? wallets.length : count(f.value) })),
         value: filter,
         onChange: (v) => setFilter(v as typeof filter),
       }}

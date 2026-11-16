@@ -1,0 +1,19 @@
+meta {
+  name: Mark payments seen
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{API_URL}}/v1/ops/payments/unseen
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Stamps every unseen settled payment as seen (clears the badge). Changes data: use staging or local.
+}

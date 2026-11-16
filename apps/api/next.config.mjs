@@ -24,7 +24,7 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ["@workspace/sentry-config", "@workspace/ops-contracts"],
+  transpilePackages: ["@workspace/sentry-config", "@workspace/ops-contracts", "@workspace/ops-queries"],
   // takumi-pdf loads a WASM asset via a Node-native path; letting webpack
   // bundle/rewrite that reference breaks it ("path argument must be of
   // type string ... Received an instance of URL"). Keeping it external

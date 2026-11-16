@@ -65,8 +65,8 @@ import {
   monthlyUsd,
   toUsd,
   totals,
-} from "@/lib/integration-costs"
-import type { IntegrationDto } from "@/lib/queries/integrations"
+} from "@workspace/ops-contracts/integration-costs"
+import type { IntegrationDto } from "@workspace/ops-contracts"
 
 import { deleteIntegration, saveIntegration, seedIntegrations } from "./actions"
 import {

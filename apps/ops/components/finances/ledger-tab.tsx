@@ -4,25 +4,14 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Download } from "lucide-react"
-import { exportFileName, formatKes, toCsv } from "@workspace/ops-contracts"
+import { LEDGER_FILTERS, LEDGER_KIND_LABEL, exportFileName, formatKes, toCsv } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { seePayments } from "@/app/(dashboard)/finances/actions"
 import { RecordTransactionDialog } from "@/components/finances/record-transaction-dialog"
-import { DELETED_ORG } from "@/lib/queries/finance-constants"
-import type { FinanceLedgerDto, LedgerRowDto, RecordOptionsDto } from "@/lib/queries/finance"
-
-const FILTERS = [
-  { value: "all", label: "All" },
-  { value: "top_up", label: "Top-ups" },
-  { value: "spend", label: "Spend" },
-  { value: "refund", label: "Refunds" },
-  { value: "adjustment", label: "Adjustments" },
-  { value: "cash_refund", label: "Refunds to payer" },
-]
-
-const KIND_LABEL: Record<string, string> = { top_up: "Top-up", spend: "Spend", refund: "Refund", adjustment: "Adjustment", cash_refund: "Refund to payer" }
+import { DELETED_ORG } from "@workspace/ops-contracts"
+import type { FinanceLedgerDto, LedgerRowDto, RecordOptionsDto } from "@workspace/ops-contracts"
 
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Nairobi" })
@@ -43,7 +32,7 @@ const COLUMNS: LedgerColumn<LedgerRowDto>[] = [
       ),
   },
   { key: "campaign", header: "Campaign", render: (r) => r.campaignName },
-  { key: "kind", header: "Type", render: (r) => KIND_LABEL[r.kind] ?? r.kind },
+  { key: "kind", header: "Type", render: (r) => LEDGER_KIND_LABEL[r.kind] ?? r.kind },
   {
     key: "description",
     header: "Description",
@@ -113,7 +102,7 @@ export function LedgerTab({ data, options }: { data: FinanceLedgerDto; options: 
         { label: "Net", value: formatKes(totals.netKes), note: "Change in funds held" },
       ]}
       filterTabs={{
-        tabs: FILTERS.map((f) => ({ ...f, count: f.value === "all" ? data.rows.length : data.rows.filter((r) => r.kind === f.value).length })),
+        tabs: LEDGER_FILTERS.map((f) => ({ ...f, count: f.value === "all" ? data.rows.length : data.rows.filter((r) => r.kind === f.value).length })),
         value: filter,
         onChange: setFilter,
       }}

@@ -1,4 +1,6 @@
-import type { IntegrationDto } from "@/lib/queries/integrations"
+import { z } from "zod"
+
+import type { IntegrationDto } from "./ops-dashboards"
 
 /**
  * Exchange rates for rolling every subscription up to a single monthly figure.
@@ -43,6 +45,22 @@ export const CATEGORY_COLOR: Record<string, string> = Object.fromEntries(
 export const CURRENCIES = ["USD", "EUR", "KES"] as const
 export const BILLING_CYCLES = ["monthly", "annual", "usage", "free"] as const
 export const STATUSES = ["active", "trial", "review", "canceled"] as const
+
+/** What an admin may write to one integration: the one rule for the ops console's server actions and `/v1/ops/integrations`. */
+export const integrationInputSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  category: z.enum(CATEGORIES.map((c) => c.value) as [string, ...string[]]),
+  purpose: z.string().trim().max(300).default(""),
+  url: z.union([z.string().trim().url(), z.literal("")]).default(""),
+  plan: z.string().trim().max(120).default(""),
+  cost: z.coerce.number().min(0).max(1_000_000).default(0),
+  currency: z.enum(CURRENCIES),
+  billing_cycle: z.enum(BILLING_CYCLES),
+  status: z.enum(STATUSES),
+  owner: z.string().trim().max(120).default(""),
+  notes: z.string().trim().max(500).default(""),
+})
+export type IntegrationWrite = z.infer<typeof integrationInputSchema>
 
 export const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -104,6 +122,8 @@ export function totals(integrations: IntegrationDto[]) {
     byCategory,
   }
 }
+
+export type IntegrationTotals = ReturnType<typeof totals>
 
 /** Starter list — best-guess public list prices, Sept 2026. Loaded once from
  * the empty state, then edited in place. */

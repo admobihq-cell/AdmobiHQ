@@ -14,7 +14,7 @@ import { ActionQueue } from "@workspace/ui/components/dashboard/action-queue"
 import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card"
 import { HeroMetric } from "@workspace/ui/components/dashboard/hero-metric"
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
-import type { ActionQueueItem } from "@/lib/queries/action-queue"
+import type { ActionQueueItem } from "@workspace/ops-contracts"
 
 type Named = Array<{ name: string; value: number }>
 

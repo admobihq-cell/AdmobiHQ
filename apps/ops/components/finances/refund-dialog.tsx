@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@workspace/ui/components/textarea"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
-import type { RecordOptionsDto } from "@/lib/queries/finance"
+import { refundFormError, type RecordOptionsDto } from "@workspace/ops-contracts"
 
 /**
  * Refund unused credit to the advertiser's original M-Pesa number or card (spec §5.5). The API
@@ -46,10 +46,9 @@ export function RefundDialog({ orgs }: { orgs: RecordOptionsDto["orgs"] }) {
 
   function submit() {
     setError(null)
+    const problem = refundFormError({ orgId, amount, reason })
+    if (problem) return setError(problem)
     const amountKes = Number(amount)
-    if (!orgId) return setError("Choose an organization.")
-    if (!(amountKes > 0)) return setError("Enter an amount above zero.")
-    if (reason.trim().length < 3) return setError("Say why, for the audit trail (the support case number is enough).")
 
     startTransition(async () => {
       try {

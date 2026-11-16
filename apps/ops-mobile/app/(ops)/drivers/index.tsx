@@ -3,6 +3,7 @@ import {
   DRIVER_STATUSES,
   DRIVER_STATUS_OPTIONS,
   formatLabel,
+  formatDateTime,
 } from "@workspace/ops-contracts"
 
 import { DriverListRow } from "@/components/app/entity-list-rows"
@@ -52,6 +53,19 @@ export default function DriversScreen() {
       statusOptions={DRIVER_STATUS_OPTIONS}
       onBulkStatusChange={onBulkStatusChange}
       onBulkDelete={onBulkDelete}
+      exports={{
+        entity: "drivers",
+        columns: [
+          { header: "Date", value: (r) => formatDateTime(r.created_at) },
+        { header: "Name", value: (r) => r.name },
+        { header: "Phone", value: (r) => r.phone },
+        { header: "City", value: (r) => r.city },
+        { header: "Vehicle", value: (r) => r.vehicle_type },
+        { header: "Source", value: (r) => r.heard_about },
+        { header: "Ownership", value: (r) => r.vehicle_ownership },
+        { header: "Status", value: (r) => r.status },
+        ],
+      }}
       detailHref={(id) => `/(ops)/drivers/${id}`}
       renderRow={(item, { onPress, onLongPress }) => (
         <DriverListRow

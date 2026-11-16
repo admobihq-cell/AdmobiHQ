@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowDownCircle } from "lucide-react"
 import { toast } from "sonner"
-import { formatKes } from "@workspace/ops-contracts"
+import { disburseBalanceCheck, disburseReceiptTitle, formatKes, settleDisburse } from "@workspace/ops-contracts"
 import type { PayoutRunDto } from "@workspace/ops-api-client"
 
 import { Button } from "@workspace/ui/components/button"
@@ -24,7 +24,7 @@ import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { ReceiptPrinter, useReceiptPrinterStage } from "@workspace/ui/components/receipt-printer"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
-import { payoutStatus } from "@/lib/queries/finance-constants"
+import { payoutStatus } from "@workspace/ops-contracts"
 
 const thisMonth = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" }).slice(0, 7)
 const errorText = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)
@@ -114,14 +114,13 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
     startTransition(async () => {
       try {
         const result = await client.payouts.disburse(batch.map((b) => b.id))
-        const skippedIds = new Map(result.skipped.map((s) => [s.id, s.reason]))
-        const rows = batch.filter((b) => !skippedIds.has(b.id))
+        const outcome = settleDisburse(batch, result)
         if (result.skipped.length) toast.warning(`${result.skipped.length} skipped: ${result.skipped[0]!.reason}`)
         setSent({
-          rows,
-          skipped: batch.filter((b) => skippedIds.has(b.id)).map((b) => ({ name: b.name, reason: skippedIds.get(b.id)! })),
-          totalKes: rows.reduce((sum, r) => sum + r.amountKes, 0),
-          feesKes: rows.reduce((sum, r) => sum + r.feeKes, 0),
+          rows: outcome.sent,
+          skipped: outcome.skipped,
+          totalKes: outcome.totalKes,
+          feesKes: outcome.feesKes,
           at: new Date(),
         })
         await refreshFinance()
@@ -141,7 +140,7 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
     setConfirming(null)
   }
 
-  const short = confirming?.balanceKes != null && confirming.balanceKes < totalKes + feesKes
+  const short = confirming !== null && disburseBalanceCheck(confirming.balanceKes, totalKes, feesKes).state === "short"
 
   return (
     <Dialog open={open} onOpenChange={(next) => { setOpen(next); closeReceipt() }}>
@@ -316,9 +315,10 @@ function PayoutReceipt({
   onDone: () => void
 }) {
   const n = sent?.rows.length ?? count
-  const notSent = sent?.skipped.length ?? 0
   const title =
-    stage !== "complete" ? "Sending payouts" : n === 0 ? "Nothing was sent" : notSent ? "Some payouts weren’t sent" : "Payouts sent"
+    stage !== "complete"
+      ? "Sending payouts"
+      : disburseReceiptTitle({ sent: sent?.rows ?? Array.from({ length: n }), skipped: sent?.skipped ?? [] })
   return (
     <>
       <DialogHeader>

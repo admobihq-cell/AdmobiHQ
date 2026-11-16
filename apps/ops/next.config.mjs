@@ -29,6 +29,7 @@ const nextConfig = {
     "@workspace/ui",
     "@workspace/sentry-config",
     "@workspace/ops-contracts",
+    "@workspace/ops-queries",
     "@workspace/ops-api-client",
     "@workspace/geo",
     "@workspace/query-client",

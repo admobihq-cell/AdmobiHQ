@@ -29,8 +29,8 @@ import {
   CURRENCIES,
   STATUSES,
   STATUS_LABEL,
-} from "@/lib/integration-costs"
-import type { IntegrationDto } from "@/lib/queries/integrations"
+} from "@workspace/ops-contracts/integration-costs"
+import type { IntegrationDto } from "@workspace/ops-contracts"
 
 const CYCLE_LABEL: Record<string, string> = {
   monthly: "Monthly",

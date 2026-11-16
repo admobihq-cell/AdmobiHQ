@@ -13,7 +13,7 @@ import { KpiStrip, type KpiItem } from "@workspace/ui/components/dashboard/kpi-s
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { StatusPill, type StatusTone } from "@workspace/ui/components/dashboard/status-pill"
 import { waiting } from "@/components/dashboards/format"
-import type { OldestCaseRow, SupportDashboardDto } from "@/lib/queries/support-analytics"
+import type { OldestCaseRow, SupportDashboardDto } from "@workspace/ops-contracts"
 
 const PRIORITY: Record<string, StatusTone> = { urgent: "serious", high: "warning", normal: "neutral", low: "neutral" }
 

@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import {
+  LEDGER_KIND_HELP,
+  LEDGER_KIND_LABEL,
   SPEND_CATEGORIES,
   SPEND_CATEGORY_LABELS,
   WALLET_TRANSACTION_KINDS,
-  recordTransactionSchema,
+  parseRecordTransactionForm,
   type WalletTransactionKind,
 } from "@workspace/ops-contracts"
 
@@ -34,23 +36,7 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { refreshFinance } from "@/app/(dashboard)/finances/actions"
 import { useOpsClient } from "@/lib/ops-client"
-import type { RecordOptionsDto } from "@/lib/queries/finance"
-
-const KIND_LABEL: Record<WalletTransactionKind, string> = {
-  top_up: "Top-up",
-  spend: "Spend",
-  refund: "Refund",
-  adjustment: "Adjustment",
-  cash_refund: "Refund to payer",
-}
-
-const KIND_HELP: Record<WalletTransactionKind, string> = {
-  top_up: "Money the advertiser paid in. Enter a positive amount.",
-  spend: "A charge against a campaign. Enter a positive amount; it is recorded as a debit.",
-  refund: "Money returned to the wallet. Enter a positive amount.",
-  adjustment: "A correction. Enter a negative amount to take money out, or a positive one to add it.",
-  cash_refund: "Money sent back to the payer (e.g. a bank refund). Enter a positive amount; it is recorded as a debit.",
-}
+import type { RecordOptionsDto } from "@workspace/ops-contracts"
 
 const NONE = "none"
 
@@ -88,19 +74,16 @@ export function RecordTransactionDialog({ options }: { options: RecordOptionsDto
 
   function submit() {
     setError(null)
-    const parsed = recordTransactionSchema.safeParse({
-      orgId: Number(orgId),
+    const parsed = parseRecordTransactionForm({
+      orgId,
       kind,
-      amountKes: Number(amount),
-      campaignId: campaignId === NONE ? undefined : Number(campaignId),
-      spendCategory: category === NONE ? undefined : category,
-      reference: reference.trim() || undefined,
+      amount,
+      campaignId: campaignId === NONE ? null : campaignId,
+      category: category === NONE ? null : category,
+      reference,
       reason,
     })
-    if (!orgId) return setError("Choose an organization.")
-    if (!amount.trim() || Number.isNaN(Number(amount))) return setError("Enter an amount.")
-    if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Check the form.")
-
+    if ("error" in parsed) return setError(parsed.error)
     startTransition(async () => {
       try {
         await client.finance.recordTransaction(parsed.data)
@@ -158,7 +141,7 @@ export function RecordTransactionDialog({ options }: { options: RecordOptionsDto
                 <SelectContent>
                   {WALLET_TRANSACTION_KINDS.map((k) => (
                     <SelectItem key={k} value={k}>
-                      {KIND_LABEL[k]}
+                      {LEDGER_KIND_LABEL[k]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -169,7 +152,7 @@ export function RecordTransactionDialog({ options }: { options: RecordOptionsDto
               <Input id="rt-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
             </div>
           </div>
-          <p className="-mt-2 text-xs text-muted-foreground">{KIND_HELP[kind]}</p>
+          <p className="-mt-2 text-xs text-muted-foreground">{LEDGER_KIND_HELP[kind]}</p>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">

@@ -1,0 +1,19 @@
+meta {
+  name: Attention queue
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/ops/action-queue?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Any ops user. Rows are filtered to the caller's permissions and only appear when their count is above zero.
+}

@@ -212,16 +212,13 @@ export default function SettingsScreen() {
           marginRight: spacing.xs,
         },
         sectionLabel: {
-          ...typography.caption,
-          color: colors.mutedForeground,
-          textTransform: "uppercase",
-          letterSpacing: 0.8,
-          fontWeight: "700",
+          ...typography.section,
+          color: colors.text,
         },
         editToggle: { flexDirection: "row", alignItems: "center", gap: 4 },
         editToggleLabel: { ...typography.label, color: colors.primary, fontWeight: "700" },
         group: {
-          borderRadius: 14,
+          borderRadius: radius["2xl"],
           borderWidth: 1,
           borderColor: colors.border,
           backgroundColor: colors.surface,
@@ -244,8 +241,6 @@ export default function SettingsScreen() {
           ...typography.caption,
           color: colors.mutedForeground,
           fontWeight: "700",
-          textTransform: "uppercase",
-          letterSpacing: 0.6,
         },
         footerValue: { ...typography.caption, color: colors.mutedForeground },
         row: {
@@ -272,8 +267,6 @@ export default function SettingsScreen() {
           ...typography.caption,
           color: colors.primary,
           fontWeight: "700",
-          textTransform: "uppercase",
-          letterSpacing: 0.4,
         },
         signOutSmall: { ...typography.label, color: colors.destructive, fontWeight: "700" },
         skeleton: {

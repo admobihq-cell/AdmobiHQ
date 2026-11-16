@@ -1,46 +1,27 @@
 import { ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { Card, Pill, SampleTag, type PillTone } from "@/components/app/section"
 import { RoutesMap } from "@/components/maps/routes-map"
 import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { ROUTE_HISTORY } from "@/lib/placeholder-data"
 import { spacing, typography, useThemedStyles } from "@/lib/theme"
 
+const WEIGHT_TONE: Record<string, PillTone> = { "High earner": "good", "Medium earner": "warning", "Low earner": "neutral" }
+
+/** The map above, the routes below. The route figures are examples until trips are recorded, so each is tagged. */
 function RoutesScreen() {
   const insets = useSafeAreaInsets()
   const styles = useThemedStyles((c) => ({
     root: { flex: 1, backgroundColor: c.bg },
     mapWrap: { height: 320 },
-    content: {
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.lg,
-      gap: spacing.sm,
-    },
-    sectionLabel: {
-      ...typography.caption,
-      color: c.mutedForeground,
-      textTransform: "uppercase" as const,
-      letterSpacing: 0.8,
-      fontWeight: "700" as const,
-    },
-    card: {
-      padding: spacing.md,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: c.border,
-      backgroundColor: c.surface,
-      gap: 2,
-    },
-    name: { ...typography.section, color: c.text },
-    meta: { ...typography.caption, color: c.mutedForeground },
-    footerRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "space-between" as const,
-      marginTop: 4,
-    },
-    earnings: { ...typography.body, fontWeight: "700" as const, color: c.primary },
-    weight: { ...typography.caption, color: c.mutedForeground, fontWeight: "600" as const },
+    content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md },
+    sectionTitle: { ...typography.headline, fontSize: 18, color: c.text },
+    head: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const, gap: spacing.sm },
+    name: { ...typography.headline, color: c.text, flexShrink: 1 },
+    earnings: { ...typography.title, fontSize: 20, color: c.text, fontVariant: ["tabular-nums" as const] },
+    meta: { ...typography.bodySm, color: c.mutedForeground },
+    footer: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const },
   }))
 
   return (
@@ -49,23 +30,28 @@ function RoutesScreen() {
         <RoutesMap />
       </View>
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: insets.bottom + spacing.lg },
-        ]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.lg }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionLabel}>Route breakdown</Text>
+        <View style={styles.head}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Your routes this week
+          </Text>
+          <SampleTag />
+        </View>
         {ROUTE_HISTORY.map((route) => (
-          <View key={route.id} style={styles.card}>
-            <Text style={styles.name}>{route.name}</Text>
-            <Text style={styles.meta}>{route.corridor}</Text>
-            <Text style={styles.meta}>{route.hours}</Text>
-            <View style={styles.footerRow}>
+          <Card key={route.id} gap={spacing.sm}>
+            <View style={styles.head}>
+              <Text style={styles.name}>{route.name}</Text>
               <Text style={styles.earnings}>{route.earnings}</Text>
-              <Text style={styles.weight}>{route.weight}</Text>
             </View>
-          </View>
+            <Text style={styles.meta}>
+              {route.corridor} · {route.hours}
+            </Text>
+            <View style={styles.footer}>
+              <Pill label={route.weight} tone={WEIGHT_TONE[route.weight] ?? "neutral"} />
+            </View>
+          </Card>
         ))}
       </ScrollView>
     </View>

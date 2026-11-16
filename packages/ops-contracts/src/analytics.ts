@@ -555,3 +555,6 @@ export type CampaignReportDto = {
   dailyLog: DailyPoint[]
   budget: { budgetKes: number | null; spentKes: number | null; remainingKes: number | null }
 }
+
+/** How a status reads: green, amber, red or plain. Shared so web pills and mobile pills agree. */
+export type StatusTone = "good" | "warning" | "serious" | "neutral"

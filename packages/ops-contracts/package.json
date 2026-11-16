@@ -29,6 +29,7 @@
     "./allowed-email": "./src/allowed-email.ts",
     "./format": "./src/format.ts",
     "./form-fields": "./src/form-fields.ts",
-    "./pricing": "./src/pricing.ts"
+    "./pricing": "./src/pricing.ts",
+    "./integration-costs": "./src/integration-costs.ts"
   }
 }

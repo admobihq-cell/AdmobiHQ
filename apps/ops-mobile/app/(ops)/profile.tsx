@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { PlatformFlagDto, PlatformFlagKey } from "@workspace/ops-contracts"
 import {
   Bell,
+  Wallet,
   LogOut,
   Person,
   RefreshCcw,
@@ -21,7 +22,7 @@ import { ThemeSettingsSection } from "@/components/settings/theme-settings-secti
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { getPrimaryEmail } from "@/lib/auth"
 import { checkForUpdateManually } from "@/lib/bootstrap-splash"
-import { API_URL, useOpsClient } from "@/lib/ops-client"
+import { API_URL, useOpsAccess, useOpsClient } from "@/lib/ops-client"
 import { usePageHeader } from "@/lib/page-header"
 import { spacing, typography, useThemeColors } from "@/lib/theme"
 
@@ -60,6 +61,7 @@ export default function ProfileScreen() {
   const version = Constants.expoConfig?.version ?? "0.0.1"
 
   const opsClient = useOpsClient()
+  const { role } = useOpsAccess()
   const queryClient = useQueryClient()
 
   const flagsQuery = useQuery({
@@ -261,6 +263,20 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {role === "admin" ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Admin</Text>
+            <View style={styles.group}>
+              <SettingsRow
+                icon={Wallet}
+                label="Integrations"
+                description="Tools and subscriptions, with monthly cost"
+                onPress={() => router.push("/(ops)/settings/integrations")}
+              />
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Developer tools</Text>
           <View style={styles.group}>
@@ -268,7 +284,7 @@ export default function ProfileScreen() {
               icon={Bell}
               label="Notification style preview"
               description="QA tool — not a notification preference"
-              onPress={() => router.push("/(ops)/notifications")}
+              onPress={() => router.push("/(ops)/notification-preview")}
             />
           </View>
         </View>

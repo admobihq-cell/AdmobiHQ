@@ -1,3 +1,4 @@
+import { donutArcs } from "@workspace/mobile-charts"
 import Svg, { G, Path } from "react-native-svg"
 import { StyleSheet, Text, View } from "react-native"
 
@@ -16,46 +17,6 @@ type PieChartProps = {
   outerRadius?: number
   centerLabel?: string
   centerValue?: string | number
-}
-
-function polarToCartesian(
-  cx: number,
-  cy: number,
-  radius: number,
-  angleDegrees: number,
-) {
-  const angleRadians = ((angleDegrees - 90) * Math.PI) / 180
-  return {
-    x: cx + radius * Math.cos(angleRadians),
-    y: cy + radius * Math.sin(angleRadians),
-  }
-}
-
-function describeDonutSlice(
-  cx: number,
-  cy: number,
-  innerRadius: number,
-  outerRadius: number,
-  startAngle: number,
-  endAngle: number,
-): string {
-  if (endAngle - startAngle >= 359.99) {
-    endAngle = startAngle + 359.99
-  }
-
-  const outerStart = polarToCartesian(cx, cy, outerRadius, startAngle)
-  const outerEnd = polarToCartesian(cx, cy, outerRadius, endAngle)
-  const innerStart = polarToCartesian(cx, cy, innerRadius, endAngle)
-  const innerEnd = polarToCartesian(cx, cy, innerRadius, startAngle)
-  const largeArc = endAngle - startAngle > 180 ? 1 : 0
-
-  return [
-    `M ${outerStart.x} ${outerStart.y}`,
-    `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
-    `L ${innerStart.x} ${innerStart.y}`,
-    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerEnd.x} ${innerEnd.y}`,
-    "Z",
-  ].join(" ")
 }
 
 export function PieChart({
@@ -115,25 +76,19 @@ export function PieChart({
     )
   }
 
-  let cursor = 0
-  const arcs = slices.map((slice) => {
-    const sweep = (slice.value / total) * 360
-    const startAngle = cursor
-    const endAngle = cursor + sweep
-    cursor = endAngle
-
-    return {
-      ...slice,
-      path: describeDonutSlice(cx, cy, innerRadius, outerRadius, startAngle, endAngle),
-    }
-  })
+  // donutArcs centres its ring at (outerRadius, outerRadius); translate it onto this chart's centre.
+  const arcs = donutArcs(
+    slices.map((slice) => slice.value),
+    outerRadius,
+    outerRadius - innerRadius,
+  )
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
       <Svg width={size} height={size}>
-        <G>
+        <G transform={`translate(${cx - outerRadius},${cy - outerRadius})`}>
           {arcs.map((arc) => (
-            <Path key={arc.name} d={arc.path} fill={arc.color} />
+            <Path key={slices[arc.index]!.name} d={arc.d} fill={slices[arc.index]!.color} />
           ))}
         </G>
       </Svg>

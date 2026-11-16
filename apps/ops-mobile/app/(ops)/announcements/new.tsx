@@ -16,13 +16,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import * as ImagePicker from "expo-image-picker"
 import {
+  ANNOUNCEMENT_BODY_MAX,
   ANNOUNCEMENT_FORM_FIELDS,
   ANNOUNCEMENT_TARGET_APP_OPTIONS,
+  ANNOUNCEMENT_TITLE_MAX,
   broadcastCreateSchema,
   describeAnnouncementTargets,
+  insertAtSelection,
   type AnnouncementTargetApp,
 } from "@workspace/ops-contracts"
 
+import { AnnouncementPreview } from "@/components/announcements/announcement-preview"
 import { CheckboxOff, CheckboxOn, ImageIcon, X } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { BottomSheetPicker } from "@/components/ui/bottom-sheet-picker"
@@ -63,6 +67,29 @@ export default function NewAnnouncementScreen() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitAttempted, setSubmitAttempted] = useState(false)
+  // Which field the Personalise buttons write into, and where its cursor is.
+  const [lastField, setLastField] = useState<"title" | "body">("body")
+  const [titleSel, setTitleSel] = useState({ start: 0, end: 0 })
+  const [bodySel, setBodySel] = useState({ start: 0, end: 0 })
+
+  function insertToken(token: string) {
+    const isTitle = lastField === "title"
+    const result = insertAtSelection(
+      isTitle ? title : body,
+      token,
+      isTitle ? titleSel : bodySel,
+      isTitle ? ANNOUNCEMENT_TITLE_MAX : ANNOUNCEMENT_BODY_MAX,
+    )
+    if (!result) return // would pass the limit: the web refuses too
+    const cursor = { start: result.cursor, end: result.cursor }
+    if (isTitle) {
+      setTitle(result.value)
+      setTitleSel(cursor)
+    } else {
+      setBody(result.value)
+      setBodySel(cursor)
+    }
+  }
 
   const styles = useThemedStyles((c) => ({
     container: { flex: 1, backgroundColor: c.bg },
@@ -312,10 +339,17 @@ export default function NewAnnouncementScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Title *</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={styles.label}>Title *</Text>
+            <Text style={styles.label}>{`${title.length}/${ANNOUNCEMENT_TITLE_MAX}`}</Text>
+          </View>
           <TextInput
             value={title}
             onChangeText={setTitle}
+            maxLength={ANNOUNCEMENT_TITLE_MAX}
+            selection={titleSel}
+            onSelectionChange={(e) => setTitleSel(e.nativeEvent.selection)}
+            onFocus={() => setLastField("title")}
             placeholder="e.g. New payout schedule"
             placeholderTextColor={colors.mutedForeground}
             style={[styles.input, missingTitle && styles.inputError]}
@@ -324,16 +358,40 @@ export default function NewAnnouncementScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Message *</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={styles.label}>Message *</Text>
+            <Text style={styles.label}>{`${body.length}/${ANNOUNCEMENT_BODY_MAX}`}</Text>
+          </View>
           <TextInput
             value={body}
             onChangeText={setBody}
+            maxLength={ANNOUNCEMENT_BODY_MAX}
+            selection={bodySel}
+            onSelectionChange={(e) => setBodySel(e.nativeEvent.selection)}
+            onFocus={() => setLastField("body")}
             placeholder="What do customers need to know?"
             placeholderTextColor={colors.mutedForeground}
             multiline
             style={[styles.input, styles.multiline, missingBody && styles.inputError]}
           />
           {missingBody ? <Text style={styles.fieldError}>Message is required.</Text> : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" }}>
+            <Text style={styles.label}>Personalise:</Text>
+            {[
+              { token: "{{first_name}}", label: "First name" },
+              { token: "{{org_name}}", label: "Organisation" },
+            ].map((t) => (
+              <Pressable
+                key={t.token}
+                onPress={() => insertToken(t.token)}
+                accessibilityRole="button"
+                accessibilityLabel={`Insert ${t.label} into the ${lastField === "title" ? "title" : "message"}`}
+                style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.muted }}
+              >
+                <Text style={{ color: colors.text, fontSize: 13, fontWeight: "600" }}>{t.label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -386,6 +444,8 @@ export default function NewAnnouncementScreen() {
             </Pressable>
           )}
         </View>
+
+        <AnnouncementPreview title={title} body={body} imageUri={image?.uri ?? null} targetApps={targetApps} />
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>

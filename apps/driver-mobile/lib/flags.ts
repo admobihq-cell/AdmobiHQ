@@ -2,11 +2,13 @@ import { useEffect, useSyncExternalStore } from "react"
 import { AppState, type AppStateStatus } from "react-native"
 import type { PublicConfigDto } from "@workspace/ops-contracts"
 
+import { DESIGN_PREVIEW, PREVIEW_FLAGS } from "@/lib/design-preview"
 import { EXPO_PUBLIC_API_URL } from "@/lib/env"
 
 const API_URL = EXPO_PUBLIC_API_URL ?? "http://localhost:3003"
 
 async function fetchFlags(): Promise<Record<string, boolean>> {
+  if (DESIGN_PREVIEW) return PREVIEW_FLAGS
   const res = await fetch(`${API_URL}/v1/public/config`)
   if (!res.ok) throw new Error(`Config request failed with status ${res.status}`)
   const data = (await res.json()) as PublicConfigDto

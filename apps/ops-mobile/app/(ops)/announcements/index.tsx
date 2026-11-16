@@ -15,6 +15,7 @@ import { describeAnnouncementTargets, formatLabel, formatRelativeTime } from "@w
 import { Inbox, Plus, Radio, RefreshCcw, Trash } from "@/components/icons"
 import { StatusChip } from "@/components/app/status-chip"
 import { SkeletonListRows } from "@/components/app/skeleton"
+import { AnnouncementDetailSheet } from "@/components/announcements/announcement-detail-sheet"
 import { PageHero } from "@/components/ui/page-hero"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
@@ -138,6 +139,7 @@ export default function AnnouncementsScreen() {
   const queryClient = useQueryClient()
   const [resendTarget, setResendTarget] = useState<AnnouncementDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AnnouncementDto | null>(null)
+  const [detail, setDetail] = useState<AnnouncementDto | null>(null)
   const [errorDismissed, setErrorDismissed] = useState(false)
 
   const query = useInfiniteQuery({
@@ -287,7 +289,12 @@ export default function AnnouncementsScreen() {
             ]}
           >
             <View style={styles.itemRow}>
-              <View style={styles.itemContent}>
+              <Pressable
+                style={styles.itemContent}
+                onPress={() => setDetail(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.title}, view details`}
+              >
                 <Text style={styles.itemTitle} numberOfLines={1}>
                   {item.title}
                 </Text>
@@ -300,7 +307,7 @@ export default function AnnouncementsScreen() {
                     {`${item.category ?? "announcement"} · ${describeAnnouncementTargets(item.target_apps)} · ${item.delivered_count}/${item.target_count} delivered · ${formatRelativeTime(item.created_at)}`}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
               <View style={styles.rowActions}>
                 <Pressable
                   style={({ pressed }) => [
@@ -337,6 +344,7 @@ export default function AnnouncementsScreen() {
         )}
       />
 
+      <AnnouncementDetailSheet announcement={detail} onClose={() => setDetail(null)} />
       <ConfirmDialog
         visible={resendTarget !== null}
         title={

@@ -1,0 +1,19 @@
+meta {
+  name: Tool costs
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{API_URL}}/v1/ops/finance/tool-costs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Monthly KES run-rate of active and trial integrations, with a by-category split.
+}

@@ -13,10 +13,14 @@ import Animated, {
 import type { OpsPermission } from "@workspace/ops-contracts"
 
 import {
+  BarChart3,
   ClipboardList,
+  Clock,
   FileText,
   LifeBuoy,
   Siren,
+  Truck,
+  UserCircle,
   Mail,
   Map,
   MonitorPlay,
@@ -30,6 +34,7 @@ import {
 } from "@/components/icons"
 import { getPrimaryEmail } from "@/lib/auth"
 import { useOpsAccess } from "@/lib/ops-client"
+import { useUnseenPayments } from "@/lib/use-finance"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.82, 340)
@@ -47,6 +52,14 @@ type DrawerLink = {
 }
 
 const LINKS: DrawerLink[] = [
+  {
+    key: "users",
+    label: "Users",
+    description: "Every customer, driver & admin account",
+    icon: UserCircle,
+    href: "/(ops)/users",
+    adminOnly: true,
+  },
   {
     key: "team",
     label: "Team",
@@ -137,6 +150,14 @@ const LINKS: DrawerLink[] = [
     permission: "media_kit",
   },
   {
+    key: "activity",
+    label: "Activity",
+    description: "Who did what, and when",
+    icon: Clock,
+    href: "/(ops)/activity",
+    permission: "activity",
+  },
+  {
     key: "finances",
     label: "Finances",
     description: "Wallet, top-ups & payouts",
@@ -144,6 +165,14 @@ const LINKS: DrawerLink[] = [
     href: "/(ops)/finances",
     permission: "finances",
   },
+]
+
+/** The four ops dashboards, each behind the same permission as on the web. */
+const DASHBOARD_LINKS: DrawerLink[] = [
+  { key: "dash-campaigns", label: "Campaigns", description: "Pipeline, delivery & inventory", icon: BarChart3, href: "/(ops)/dashboards/campaigns", permission: "campaigns" },
+  { key: "dash-fleet", label: "Fleet", description: "Drivers, applications & payouts", icon: Truck, href: "/(ops)/dashboards/fleet", permission: "drivers" },
+  { key: "dash-advertisers", label: "Advertisers", description: "New, live & at-risk accounts", icon: Users, href: "/(ops)/dashboards/advertisers", permission: "campaigns" },
+  { key: "dash-support", label: "Support", description: "Open cases & safety incidents", icon: LifeBuoy, href: "/(ops)/dashboards/support", permission: "support" },
 ]
 
 /**
@@ -166,12 +195,18 @@ export function NavDrawer({
   const insets = useSafeAreaInsets()
   const { user } = useUser()
   const { role, permissions } = useOpsAccess()
+  // Settled payments nobody has looked at yet; opening the Ledger clears it.
+  const unseenPayments = useUnseenPayments().data ?? 0
   const progress = useSharedValue(0)
 
-  const visibleLinks = LINKS.filter((link) => {
+  const canOpen = (link: DrawerLink) => {
     if (link.adminOnly) return role === "admin"
     return !link.permission || role === "admin" || permissions.includes(link.permission)
-  })
+  }
+  const sections = [
+    { label: "Modules", links: LINKS.filter(canOpen) },
+    { label: "Dashboards", links: DASHBOARD_LINKS.filter(canOpen) },
+  ].filter((section) => section.links.length > 0)
 
   useEffect(() => {
     progress.value = withTiming(visible ? 1 : 0, { duration: 220 })
@@ -292,6 +327,16 @@ export function NavDrawer({
       backgroundColor: c.border,
       marginLeft: 56,
     },
+    badge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      paddingHorizontal: 6,
+      backgroundColor: c.danger,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    badgeText: { color: "#ffffff", fontSize: 11, fontWeight: "700" as const },
   }))
 
   const go = (href: DrawerLink["href"]) => {
@@ -338,33 +383,42 @@ export function NavDrawer({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.sectionLabel}>Modules</Text>
-            <View style={styles.group}>
-              {visibleLinks.map((link, index) => (
-                <View key={link.key}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.row,
-                      pressed && styles.rowPressed,
-                    ]}
-                    onPress={() => go(link.href)}
-                  >
-                    <View style={styles.iconBox}>
-                      <link.icon color={colors.primary} size={16} />
-                    </View>
-                    <View style={styles.rowCopy}>
-                      <Text style={styles.rowLabel}>{link.label}</Text>
-                      <Text style={styles.rowDescription} numberOfLines={1}>
-                        {link.description}
-                      </Text>
-                    </View>
-                  </Pressable>
-                  {index < visibleLinks.length - 1 ? (
-                    <View style={styles.divider} />
-                  ) : null}
+            {sections.map((section) => (
+              <View key={section.label}>
+                <Text style={styles.sectionLabel}>{section.label}</Text>
+                <View style={styles.group}>
+                {section.links.map((link, index) => (
+                  <View key={link.key}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.row,
+                        pressed && styles.rowPressed,
+                      ]}
+                      onPress={() => go(link.href)}
+                    >
+                      <View style={styles.iconBox}>
+                        <link.icon color={colors.primary} size={16} />
+                      </View>
+                      <View style={styles.rowCopy}>
+                        <Text style={styles.rowLabel}>{link.label}</Text>
+                        <Text style={styles.rowDescription} numberOfLines={1}>
+                          {link.description}
+                        </Text>
+                      </View>
+                      {link.key === "finances" && unseenPayments > 0 ? (
+                        <View style={styles.badge} accessibilityLabel={`${unseenPayments} new payments`}>
+                          <Text style={styles.badgeText}>{unseenPayments > 99 ? "99+" : unseenPayments}</Text>
+                        </View>
+                      ) : null}
+                    </Pressable>
+                    {index < section.links.length - 1 ? (
+                      <View style={styles.divider} />
+                    ) : null}
+                  </View>
+                ))}
                 </View>
-              ))}
-            </View>
+              </View>
+            ))}
 
             <Text style={styles.sectionLabel}>Account</Text>
             <View style={styles.group}>

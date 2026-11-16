@@ -1,0 +1,19 @@
+meta {
+  name: Finance payouts summary
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{API_URL}}/v1/ops/finance/payouts?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Driver payouts in the range with a by-status breakdown. Not the same as Payouts for a month: that one is GET /v1/ops/payouts?month=.
+}

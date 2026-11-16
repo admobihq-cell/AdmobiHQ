@@ -223,7 +223,15 @@ export default function OpsLayout() {
           <Tabs.Screen
             name="notifications"
             options={{
-              title: "Notifications",
+              title: "Needs attention",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="notification-preview"
+            options={{
+              title: "Notification style preview",
               headerShown: false,
               href: null,
             }}
@@ -232,6 +240,30 @@ export default function OpsLayout() {
             name="finances"
             options={{
               title: "Finances",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="settings"
+            options={{
+              title: "Settings",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="users"
+            options={{
+              title: "Users",
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="dashboards"
+            options={{
+              title: "Dashboards",
               headerShown: false,
               href: null,
             }}

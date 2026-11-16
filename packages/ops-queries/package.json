@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/ops-queries",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@workspace/ops-contracts": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "@types/pg": "^8.15.5",
+    "@workspace/eslint-config": "*",
+    "@workspace/typescript-config": "*",
+    "@workspace/vitest-config": "*",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

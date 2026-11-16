@@ -2,6 +2,7 @@ import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { useRouter } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
 
+import { ListExportButton } from "@/components/app/export-button"
 import { GroupedList } from "@/components/app/grouped-list"
 import { ListRow } from "@/components/app/list-row"
 import { SkeletonListRows } from "@/components/app/skeleton"
@@ -65,6 +66,16 @@ export default function RolesScreen() {
           }
         />
         <TeamTabs active="roles" />
+        <ListExportButton
+          entity="admin"
+          title="Roles"
+          rows={roles}
+          columns={[
+            { header: "Role", value: (r) => r.name },
+            { header: "Members", value: (r) => r.memberCount },
+            { header: "Permissions", value: (r) => r.permissions.join(", ") },
+          ]}
+        />
 
         {error ? (
           <ApiErrorBanner message={error} onRetry={() => void rolesQuery.refetch()} />

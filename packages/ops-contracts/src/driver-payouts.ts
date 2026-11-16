@@ -62,3 +62,48 @@ export function payoutDestinationLabel(
   }
   return null
 }
+
+/**
+ * A driver's payouts grouped by calendar year (newest year first, rows in the order given), with what
+ * actually reached them: only `settled` counts as paid, never pending, failed or reversed.
+ */
+export function groupPayoutsByYear(items: DriverPayoutDto[]): { year: string; paidKes: number; items: DriverPayoutDto[] }[] {
+  const groups = new Map<string, { year: string; paidKes: number; items: DriverPayoutDto[] }>()
+  for (const item of items) {
+    const year = item.periodMonth.slice(0, 4)
+    const group = groups.get(year) ?? { year, paidKes: 0, items: [] }
+    group.items.push(item)
+    if (item.status === "settled") group.paidKes += item.amountKes
+    groups.set(year, group)
+  }
+  return [...groups.values()].sort((a, b) => b.year.localeCompare(a.year))
+}
+
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const monthShort = (periodMonth: string) => MONTH_SHORT[Number(periodMonth.slice(5, 7)) - 1] ?? periodMonth
+
+/**
+ * One bar per payout month, oldest to newest, at most the latest twelve, stacked by where the money is:
+ * `paid` (settled), `onItsWay` (pending or sending) and `failed` (failed or reversed).
+ */
+export function payoutMonthBars(items: DriverPayoutDto[]): { label: string; segments: { key: "paid" | "onItsWay" | "failed"; value: number }[] }[] {
+  return [...items]
+    .sort((a, b) => a.periodMonth.localeCompare(b.periodMonth))
+    .slice(-12)
+    .map((p) => ({
+      label: monthShort(p.periodMonth),
+      segments: [
+        { key: "paid" as const, value: p.status === "settled" ? p.amountKes : 0 },
+        { key: "onItsWay" as const, value: p.status === "pending" || p.status === "processing" ? p.amountKes : 0 },
+        { key: "failed" as const, value: p.status === "failed" || p.status === "reversed" ? p.amountKes : 0 },
+      ],
+    }))
+}
+
+/** The chart's point in one sentence, from money that actually arrived. Nothing to say until two paid months exist. */
+export function payoutTakeaway(items: DriverPayoutDto[]): string | undefined {
+  const paid = items.filter((p) => p.status === "settled")
+  if (paid.length < 2) return undefined
+  const best = paid.reduce((top, p) => (p.amountKes > top.amountKes ? p : top))
+  return `${monthShort(best.periodMonth)} ${best.periodMonth.slice(0, 4)} was your best month so far: KES ${best.amountKes.toLocaleString("en-KE", { maximumFractionDigits: 2 })}.`
+}

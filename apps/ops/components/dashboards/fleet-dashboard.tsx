@@ -14,7 +14,7 @@ import { HeroMetric } from "@workspace/ui/components/dashboard/hero-metric"
 import { KpiStrip, type KpiItem } from "@workspace/ui/components/dashboard/kpi-strip"
 import { percentOrDash, waiting } from "@/components/dashboards/format"
 import { monthLabel } from "@/components/finances/overview-tab"
-import type { FleetDashboardDto } from "@/lib/queries/fleet-analytics"
+import type { FleetDashboardDto } from "@workspace/ops-contracts"
 
 const NO_PAYOUTS = "Payouts appear here once they are recorded."
 

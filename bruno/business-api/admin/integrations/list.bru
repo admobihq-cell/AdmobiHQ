@@ -1,0 +1,19 @@
+meta {
+  name: List integrations
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/v1/ops/integrations
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Ops admin only. `items` plus `totals` (monthly USD/KES) computed with the ops console's own function.
+}

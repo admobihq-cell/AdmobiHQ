@@ -12,6 +12,21 @@ import {
   type BulkReviewResult,
   type CampaignReviewInput,
   type RecordTransactionInput,
+  type ActionQueueItem,
+  type AdvertiserDashboardDto,
+  type IntegrationDto,
+  type AttentionItemDto,
+  type DeliveryDto,
+  type FleetDashboardDto,
+  type InventoryDto,
+  type PipelineDto,
+  type SupportDashboardDto,
+  type FinanceLedgerDto,
+  type FinanceOverviewDto,
+  type FinancePayoutsDto,
+  type RecordOptionsDto,
+  type ToolCostsDto,
+  type WalletRowDto,
   type DateRangeKey,
   type DocumentExportRequest,
   type DriverApplicationListItemDto,
@@ -70,6 +85,8 @@ import {
   type WaitlistEntryDto,
   type WaitlistUpdateInput,
 } from "@workspace/ops-contracts"
+
+import type { IntegrationTotals, IntegrationWrite } from "@workspace/ops-contracts/integration-costs"
 
 import { getApiBaseUrl, publicApiUrl } from "./base-url"
 import { OpsApiError } from "./errors"
@@ -263,6 +280,44 @@ export type OpsClient = {
     refund: (body: { orgId: number; amountKes: number; reason: string }) => Promise<{ refundIds: number[] }>
     /** Live Paystack KES balance. Needs `finances`. */
     paystackBalance: () => Promise<{ balanceKes: number }>
+    /** Finances reads, each needing `finances`. `range` is a dashboard range (`7d`, `30d`, `90d`, `all`). */
+    overview: (range: DateRangeKey) => Promise<FinanceOverviewDto>
+    ledger: (range: DateRangeKey) => Promise<FinanceLedgerDto>
+    wallets: () => Promise<WalletRowDto[]>
+    payouts: (range: DateRangeKey) => Promise<FinancePayoutsDto>
+    /** Payments and payouts that need a person, shown first on the Overview. */
+    attention: () => Promise<AttentionItemDto[]>
+    /** Organizations and campaigns offered by the Record transaction and Refund forms. */
+    recordOptions: () => Promise<RecordOptionsDto>
+    toolCosts: () => Promise<ToolCostsDto>
+    /** Settled payments ops hasn't looked at yet (the nav badge). */
+    unseenCount: () => Promise<{ count: number }>
+    /** Stamps every unseen settled payment as seen; call when the Ledger opens. */
+    markSeen: () => Promise<{ marked: number }>
+  }
+  integrations: {
+    /** Every tool and subscription plus the monthly USD / KES totals. Ops admin only. */
+    list: () => Promise<{ items: IntegrationDto[]; totals: IntegrationTotals }>
+    create: (body: IntegrationWrite) => Promise<IntegrationDto>
+    /** Replaces the record: send every field, as the form does. */
+    update: (id: number, body: IntegrationWrite) => Promise<IntegrationDto>
+    remove: (id: number) => Promise<{ ok: true }>
+  }
+  actionQueue: {
+    /** The header bell: counts that need someone, filtered to the caller's permissions. Any ops user. `href` is an ops-console path. */
+    list: (range?: DateRangeKey) => Promise<{ items: ActionQueueItem[] }>
+  }
+  dashboards: {
+    /** The Campaigns dashboard, one tab at a time. Needs `campaigns`; money is null without `finances`. */
+    campaignsPipeline: (range: DateRangeKey) => Promise<PipelineDto>
+    campaignsDelivery: (range: DateRangeKey) => Promise<DeliveryDto>
+    campaignsInventory: (range: DateRangeKey) => Promise<InventoryDto>
+    /** Needs `drivers`; the `money` block is absent without `finances`. */
+    fleet: (range: DateRangeKey) => Promise<FleetDashboardDto>
+    /** Needs `campaigns`; spend figures are absent without `finances`. */
+    advertisers: (range: DateRangeKey) => Promise<AdvertiserDashboardDto & { window: { start: string; end: string } }>
+    /** Needs `support`; `safety` is null without `safety`. */
+    support: (range: DateRangeKey) => Promise<SupportDashboardDto>
   }
   payouts: {
     /** A month's payout run: eligible drivers and any saved payout. Needs `finances`. */
@@ -308,6 +363,7 @@ async function parseError(res: Response): Promise<OpsApiError> {
     formatApiErrorResponse(body, res.status),
     res.status,
     body?.issues,
+    body,
   )
 }
 
@@ -740,6 +796,33 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
       paystackBalance: () => request<{ balanceKes: number }>(`${apiPrefix}/ops/payments/balance`),
+      overview: (range) => request<FinanceOverviewDto>(`${apiPrefix}/ops/finance/overview?range=${range}`),
+      ledger: (range) => request<FinanceLedgerDto>(`${apiPrefix}/ops/finance/ledger?range=${range}`),
+      wallets: () => request<WalletRowDto[]>(`${apiPrefix}/ops/finance/wallets`),
+      payouts: (range) => request<FinancePayoutsDto>(`${apiPrefix}/ops/finance/payouts?range=${range}`),
+      attention: () => request<AttentionItemDto[]>(`${apiPrefix}/ops/finance/attention`),
+      recordOptions: () => request<RecordOptionsDto>(`${apiPrefix}/ops/finance/record-options`),
+      toolCosts: () => request<ToolCostsDto>(`${apiPrefix}/ops/finance/tool-costs`),
+      unseenCount: () => request<{ count: number }>(`${apiPrefix}/ops/payments/unseen`),
+      markSeen: () => request<{ marked: number }>(`${apiPrefix}/ops/payments/unseen`, { method: "POST" }),
+    },
+    integrations: {
+      list: () => request<{ items: IntegrationDto[]; totals: IntegrationTotals }>(`${apiPrefix}/ops/integrations`),
+      create: (body) => request<IntegrationDto>(`${apiPrefix}/ops/integrations`, { method: "POST", body: JSON.stringify(body) }),
+      update: (id, body) => request<IntegrationDto>(`${apiPrefix}/ops/integrations/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+      remove: (id) => request<{ ok: true }>(`${apiPrefix}/ops/integrations/${id}`, { method: "DELETE" }),
+    },
+    actionQueue: {
+      list: (range = "30d") => request<{ items: ActionQueueItem[] }>(`${apiPrefix}/ops/action-queue?range=${range}`),
+    },
+    dashboards: {
+      campaignsPipeline: (range) => request<PipelineDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=pipeline&range=${range}`),
+      campaignsDelivery: (range) => request<DeliveryDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=delivery&range=${range}`),
+      campaignsInventory: (range) => request<InventoryDto>(`${apiPrefix}/ops/dashboards/campaigns?tab=inventory&range=${range}`),
+      fleet: (range) => request<FleetDashboardDto>(`${apiPrefix}/ops/dashboards/fleet?range=${range}`),
+      advertisers: (range) =>
+        request<AdvertiserDashboardDto & { window: { start: string; end: string } }>(`${apiPrefix}/ops/dashboards/advertisers?range=${range}`),
+      support: (range) => request<SupportDashboardDto>(`${apiPrefix}/ops/dashboards/support?range=${range}`),
     },
     payouts: {
       getRun: (month) => request<PayoutRunDto>(`${apiPrefix}/ops/payouts?month=${encodeURIComponent(month)}`),

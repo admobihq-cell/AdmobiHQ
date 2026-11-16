@@ -1,0 +1,19 @@
+meta {
+  name: Support dashboard
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{API_URL}}/v1/ops/dashboards/support?range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs `support`. `safety` is null unless the caller also holds `safety`.
+}

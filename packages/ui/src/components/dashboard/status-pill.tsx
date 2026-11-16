@@ -1,8 +1,9 @@
 import type * as React from "react"
 
+import type { StatusTone } from "@workspace/ops-contracts"
 import { cn } from "@workspace/ui/lib/utils"
 
-export type StatusTone = "good" | "warning" | "serious" | "neutral"
+export type { StatusTone }
 
 const TONES: Record<StatusTone, string> = {
   good: "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300",

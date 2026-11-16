@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useAuth } from "@clerk/clerk-expo"
 import { useLocalSearchParams } from "expo-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -23,6 +22,7 @@ import {
 
 import { Navigate, PhoneCall, ShieldCheck } from "@/components/icons"
 import { StatusChip } from "@/components/app/status-chip"
+import { IncidentPhotos } from "@/components/safety/incident-photos"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { API_URL, useOpsClient } from "@/lib/ops-client"
 import { formatOpsError } from "@/lib/format-error"
@@ -39,7 +39,6 @@ export default function SosDetailScreen() {
   const colors = useThemeColors()
   const client = useOpsClient()
   const queryClient = useQueryClient()
-  const { getToken } = useAuth()
 
   const [reply, setReply] = useState("")
   const [internalNote, setInternalNote] = useState(false)
@@ -214,9 +213,7 @@ export default function SosDetailScreen() {
           Filed {formatDateTime(incident.created_at)}
           {incident.photo_count > 0 ? ` · ${incident.photo_count} photo(s)` : ""}
         </Text>
-        {incident.photo_count > 0 ? (
-          <Text style={styles.meta}>Open this incident in the ops console to view photos.</Text>
-        ) : null}
+        <IncidentPhotos incidentId={incident.id} photos={incident.photos} />
       </View>
 
       <View style={styles.card}>

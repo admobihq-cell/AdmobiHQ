@@ -1,0 +1,30 @@
+meta {
+  name: Create integration
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/v1/ops/integrations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "name": "Bruno test tool",
+    "category": "developer",
+    "currency": "USD",
+    "billing_cycle": "monthly",
+    "status": "active",
+    "cost": 10
+  }
+}
+
+docs {
+  Ops admin only. Delete the row afterwards (Delete integration) so it doesn't sit in the real ledger.
+}

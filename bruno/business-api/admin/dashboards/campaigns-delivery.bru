@@ -1,0 +1,19 @@
+meta {
+  name: Campaigns dashboard: delivery
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/v1/ops/dashboards/campaigns?tab=delivery&range=30d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Needs `campaigns`. Delivery health per campaign, plus scheduled vs delivered.
+}

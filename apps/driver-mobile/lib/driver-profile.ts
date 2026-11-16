@@ -7,6 +7,7 @@ import type { DriverPayoutsDto,
   DriverProfileUpdateInput,
 } from "@workspace/ops-contracts"
 
+import { DESIGN_PREVIEW, PREVIEW_PROFILE, previewPayouts } from "@/lib/design-preview"
 import { EXPO_PUBLIC_API_URL } from "@/lib/env"
 
 const API_URL = EXPO_PUBLIC_API_URL ?? "http://localhost:3003"
@@ -27,6 +28,7 @@ async function authedFetch(getToken: GetToken, path: string, init?: RequestInit)
 }
 
 export async function fetchDriverProfile(getToken: GetToken): Promise<DriverProfileDto> {
+  if (DESIGN_PREVIEW) return PREVIEW_PROFILE
   const res = await authedFetch(getToken, "/v1/driver/profile")
   return res.json()
 }
@@ -51,6 +53,7 @@ export async function fetchPayoutBanks(getToken: GetToken): Promise<{ name: stri
 
 /** The signed-in driver's own payouts and totals. */
 export async function fetchDriverPayouts(getToken: GetToken): Promise<DriverPayoutsDto> {
+  if (DESIGN_PREVIEW) return previewPayouts(DESIGN_PREVIEW)
   const res = await authedFetch(getToken, "/v1/driver/payouts")
   return res.json()
 }
