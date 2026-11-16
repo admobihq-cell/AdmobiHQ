@@ -1,4 +1,5 @@
 import { getJson, patchJson } from "@/lib/api-client"
+import { DESIGN_PREVIEW, PREVIEW_ANNOUNCEMENTS } from "@/lib/design-preview"
 import type { AnnouncementDeliveryDto } from "@/lib/notifications-data"
 
 type GetToken = () => Promise<string | null>
@@ -11,6 +12,7 @@ async function authedHeaders(getToken: GetToken): Promise<Record<string, string>
 export async function fetchDriverAnnouncements(
   getToken: GetToken,
 ): Promise<AnnouncementDeliveryDto[]> {
+  if (DESIGN_PREVIEW) return PREVIEW_ANNOUNCEMENTS
   return getJson<AnnouncementDeliveryDto[]>(
     "/v1/driver/mobile-announcements",
     await authedHeaders(getToken),

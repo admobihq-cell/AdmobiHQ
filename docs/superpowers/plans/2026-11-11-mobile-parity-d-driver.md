@@ -106,3 +106,15 @@ expect(payoutSentence({ kind: "in_flight", stage: 1 } as PayoutFocus, "M-Pesa �
 ### Task 7: Docs
 
 - [ ] Update `docs/driver/DRIVER-APP.md` § Driver mobile (replace the "Home and Earnings still use the payout hero… mobile has not followed yet" paragraph with the new tab list and screens) and `DESIGN.md` (drop the "driver-mobile still uses the earlier payout hero" line). Commit `docs: driver-mobile parity`.
+
+---
+
+## Addendum 2026-11-16: what shipped instead of Tasks 1–3
+
+driver-mobile did not copy driver-web's dashboard. It kept a phone-shaped structure and shows **no screen-time, distance or ads figures**, because nothing records them yet and an invented headline number is worse than none. Real payouts only on Home and Earnings:
+
+- Home: payout hero → payout KPIs → quick actions (My routes, Payout details, Get help) → newest three Updates.
+- Earnings: payout KPIs → Payouts by month (`payoutMonthBars`, `payoutTakeaway`) → history grouped by year (`groupPayoutsByYear`), failed/reversed struck through.
+- New helpers live in `packages/ops-contracts/src/driver-payouts.ts` (tested); `driver-sample` / `driver-reports` were not moved.
+- Shared phone pieces: `components/app/section.tsx` (`SectionHeader`, `SampleTag`, `Pill`, `Card`); uppercase eyebrows removed from Settings; `lib/design-preview.ts` fakes data in dev builds.
+- Tasks 4 (Reports), 5 (PDF) and 6's settings split are not done.

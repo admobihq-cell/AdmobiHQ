@@ -6,16 +6,25 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { payoutDestinationLabel } from "@workspace/ops-contracts"
 
-import { ChevronRight } from "@/components/icons"
+import { SectionHeader } from "@/components/app/section"
+import { PayoutKpis } from "@/components/payout-summary"
+import { HelpCircle, Routes, Wallet, type AppIcon } from "@/components/icons"
 import { PayoutHero } from "@/components/payout-hero"
 import { withProfileGate } from "@/components/profile-setup/with-profile-gate"
 import { useDriverPayouts } from "@/lib/driver-payouts"
 import { useDriverProfile } from "@/lib/driver-profile"
 import { formatRelativeTime, NOTIFICATION_CATEGORY_LABELS } from "@/lib/notifications-data"
-import { spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
+import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import { useLiveAnnouncements } from "@/lib/use-live-announcements"
 
 const UPDATES_SHOWN = 3
+
+/** The three things a driver reaches for from Home. Each is one tap, sized for a thumb. */
+const QUICK_ACTIONS: { label: string; href: "/routes" | "/settings" | "/support"; icon: AppIcon }[] = [
+  { label: "My routes", href: "/routes", icon: Routes },
+  { label: "Payout details", href: "/settings", icon: Wallet },
+  { label: "Get help", href: "/support", icon: HelpCircle },
+]
 
 function getGreeting(hour: number): string {
   if (hour < 12) return "Good morning"
@@ -43,25 +52,32 @@ function DashboardScreen() {
     scroll: { flex: 1, backgroundColor: c.bg },
     content: { paddingHorizontal: spacing.lg, gap: spacing.xl },
     title: { ...typography.title, fontSize: 26, color: c.text },
-    sectionHeader: {
+    actions: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: spacing.sm },
+    action: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      justifyContent: "space-between" as const,
+      gap: spacing.sm,
+      minHeight: 48,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.card,
     },
-    sectionTitle: { ...typography.headline, fontSize: 18, color: c.text },
-    seeAll: { flexDirection: "row" as const, alignItems: "center" as const, gap: 2, minHeight: 44 },
-    seeAllText: { ...typography.section, color: c.primary },
-    list: { borderRadius: 20, borderWidth: 1, borderColor: c.border, backgroundColor: c.card, overflow: "hidden" as const },
+    actionPressed: { backgroundColor: c.muted, transform: [{ scale: 0.97 }] },
+    actionLabel: { ...typography.section, color: c.text },
+    list: { borderRadius: radius["2xl"], borderWidth: 1, borderColor: c.border, backgroundColor: c.card, overflow: "hidden" as const },
     row: { flexDirection: "row" as const, gap: spacing.md, padding: spacing.md, minHeight: 56 },
     rowPressed: { backgroundColor: c.muted },
     divider: { height: 1, backgroundColor: c.border },
     unreadDot: { marginTop: 7, width: 8, height: 8, borderRadius: 4 },
     rowCopy: { flex: 1, gap: 2 },
     rowTitle: { ...typography.section, fontSize: 14, color: c.text },
+    rowTitleRead: { fontWeight: "400" as const },
     rowMeta: { ...typography.caption, color: c.mutedForeground },
     empty: {
       padding: spacing.lg,
-      borderRadius: 20,
+      borderRadius: radius["2xl"],
       borderWidth: 1,
       borderStyle: "dashed" as const,
       borderColor: c.border,
@@ -88,20 +104,25 @@ function DashboardScreen() {
 
       <PayoutHero destination={profile ? payoutDestinationLabel(profile) : null} showHistoryLink />
 
+      <PayoutKpis />
+
+      <View style={styles.actions}>
+        {QUICK_ACTIONS.map((action) => (
+          <Link key={action.href} href={action.href} asChild>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={action.label}
+              style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+            >
+              <action.icon size={18} color={colors.primary} />
+              <Text style={styles.actionLabel}>{action.label}</Text>
+            </Pressable>
+          </Link>
+        ))}
+      </View>
+
       <View style={{ gap: spacing.sm }}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Updates
-          </Text>
-          {updates.items.length > 0 ? (
-            <Link href="/notifications" asChild>
-              <Pressable accessibilityRole="link" style={styles.seeAll} hitSlop={8}>
-                <Text style={styles.seeAllText}>See all</Text>
-                <ChevronRight size={16} color={colors.primary} />
-              </Pressable>
-            </Link>
-          ) : null}
-        </View>
+        <SectionHeader title="Updates" link={updates.items.length > 0 ? { label: "See all", href: "/notifications" } : undefined} />
 
         {updates.loading ? null : shown.length === 0 ? (
           <View style={styles.empty}>
@@ -122,7 +143,7 @@ function DashboardScreen() {
                   >
                     <View style={[styles.unreadDot, { backgroundColor: item.read ? "transparent" : colors.primary }]} />
                     <View style={styles.rowCopy}>
-                      <Text style={styles.rowTitle} numberOfLines={1}>
+                      <Text style={[styles.rowTitle, item.read && styles.rowTitleRead]} numberOfLines={1}>
                         {item.title}
                       </Text>
                       <Text style={styles.rowMeta}>

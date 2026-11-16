@@ -13,6 +13,8 @@ export const radius = {
   md: 8,
   lg: 10,
   xl: 14,
+  /** Cards and hero surfaces. */
+  "2xl": 20,
   full: 999,
 } as const
 
