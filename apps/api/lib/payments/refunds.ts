@@ -220,6 +220,16 @@ export async function applyPaystackRefunds(payment: PaymentForSync, items: Payst
       const created = await prisma.$transaction(async (tx) => {
         await lockOrg(tx, payment.org_id)
         if (await tx.refund.findUnique({ where: { reference } })) return null
+        // One of our own refunds on this payment has no Paystack id yet (webhook raced the save, or
+        // createRefund timed out). This item may be that refund, so importing it could debit twice.
+        // Leave it: the row stays in Needs attention for a human.
+        const unmatched = await tx.refund.count({
+          where: { payment_id: payment.id, provider_refund_id: null, status: { not: "failed" } },
+        })
+        if (unmatched > 0) {
+          console.warn(`[refunds] not importing Paystack refund ${item.id}: ${payment.reference} has an unmatched refund of ours`)
+          return null
+        }
         const ledger = await tx.walletTransaction.create({
           data: {
             org_id: payment.org_id,
@@ -227,7 +237,7 @@ export async function applyPaystackRefunds(payment: PaymentForSync, items: Payst
             amount_kes: -amountKes,
             provider: "paystack",
             reference,
-            description: `Refund to payer (${payment.reference}) made in the Paystack dashboard`,
+            description: `Refund to your original payment method (${payment.reference})`,
             occurred_at: new Date(),
           },
         })

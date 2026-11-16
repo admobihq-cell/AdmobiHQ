@@ -181,6 +181,17 @@ describe.skipIf(!databaseUrl)("refundCredit", { timeout: 60_000 }, () => {
     expect(notifyRefundUpdate.mock.calls.map((c) => c[0].stage)).toEqual(["sent", "processed"])
   })
 
+  it("won't import while one of our refunds on the payment has no Paystack id (could be the same refund)", async () => {
+    const payment = await paid(10000, 1)
+    createRefund.mockRejectedValueOnce(new TypeError("fetch failed"))
+    await refundCredit({ orgId, amountKes: 2000, reason: "unused", opsEmail: "o@x" })
+    vi.spyOn(console, "warn").mockImplementation(() => {})
+    listRefunds.mockResolvedValue([{ id: 970000 + seq, transaction: 1, amount: 200000, currency: "KES", status: "processed", merchant_note: null, refunded_by: null }])
+    await webhook("refund.processed", payment.id)
+    expect(await prisma.refund.count({ where: { org_id: orgId } })).toBe(1)
+    expect(await balance()).toBe(8000)
+  })
+
   it("a dashboard refund that failed moves no money and is not imported", async () => {
     const payment = await paid(10000, 1)
     listRefunds.mockResolvedValue([{ id: 980000 + seq, transaction: 1, amount: 100000, currency: "KES", status: "failed", merchant_note: null, refunded_by: null }])

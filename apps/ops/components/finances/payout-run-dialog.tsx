@@ -177,7 +177,7 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
               <p role="alert" className="text-sm text-destructive">
                 The Paystack transfer balance doesn&rsquo;t cover the total plus fees. This is the money Paystack holds
                 for transfers, not your collections total: payments that Paystack settles to your bank never reach it.
-                Top it up in the Paystack dashboard (Transfers, then Top up), or set settlement to Manual Payouts so
+                Top it up from the Paystack dashboard, or set settlement to Manual Payouts so
                 collections stay in the balance.
               </p>
             ) : confirming.balanceKes == null ? (
