@@ -1,0 +1,19 @@
+meta {
+  name: Paystack transactions
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{API_URL}}/v1/ops/paystack/transactions?page=1&perPage=25
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+docs {
+  Live Paystack list (also summary, settlements, transfers, refunds, disputes). Each transaction row says whether Admobi credited it. 502 if Paystack is unreachable.
+}

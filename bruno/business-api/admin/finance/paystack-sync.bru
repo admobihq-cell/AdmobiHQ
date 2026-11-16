@@ -1,0 +1,25 @@
+meta {
+  name: Paystack sync
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/v1/ops/paystack/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {
+    "refunds": true
+  }
+}
+
+docs {
+  Body { reference: adm-pay-... } re-checks one payment through settlePayment; { refunds: true } imports the last 30 days of Paystack refunds.
+}

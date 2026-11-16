@@ -69,9 +69,28 @@ import {
   type WaitlistCreateInput,
   type WaitlistEntryDto,
   type WaitlistUpdateInput,
+  type PaystackPageDto,
+  type PaystackResource,
+  type PaystackRowDto,
+  type PaystackSummaryDto,
 } from "@workspace/ops-contracts"
 
 import { getApiBaseUrl, publicApiUrl } from "./base-url"
+
+export type PaystackListParams = {
+  page?: number
+  perPage?: number
+  from?: string
+  to?: string
+  status?: string
+  reference?: string
+  email?: string
+}
+
+const paystackQuery = (q: Record<string, string | number | undefined>) =>
+  new URLSearchParams(
+    Object.entries(q).flatMap(([k, v]) => (v === undefined || v === "" ? [] : [[k, String(v)]])),
+  ).toString()
 import { OpsApiError } from "./errors"
 import { formatApiError, formatApiErrorResponse } from "./format-error"
 import { publicApiFetch, type PublicApiResult } from "./public-fetch"
@@ -263,6 +282,15 @@ export type OpsClient = {
     refund: (body: { orgId: number; amountKes: number; reason: string }) => Promise<{ refundIds: number[] }>
     /** Live Paystack KES balance. Needs `finances`. */
     paystackBalance: () => Promise<{ balanceKes: number }>
+    /** Live Paystack data for the Paystack tab. Needs `finances`. */
+    paystack: {
+      summary: (range?: { from?: string; to?: string }) => Promise<PaystackSummaryDto>
+      list: <R extends PaystackResource>(resource: R, query: PaystackListParams) => Promise<PaystackPageDto<PaystackRowDto[R]>>
+      /** Re-check one payment (`settlePayment`), or import Paystack refunds. */
+      sync: (body: { reference: string } | { refunds: true }) => Promise<{ result?: string; imported?: number }>
+      /** Paystack-hosted CSV of KES transactions. */
+      exportCsv: (body: { from?: string; to?: string; status?: string }) => Promise<{ url: string }>
+    }
   }
   payouts: {
     /** A month's payout run: eligible drivers and any saved payout. Needs `finances`. */
@@ -740,6 +768,13 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
       paystackBalance: () => request<{ balanceKes: number }>(`${apiPrefix}/ops/payments/balance`),
+      paystack: {
+        summary: (range = {}) => request<PaystackSummaryDto>(`${apiPrefix}/ops/paystack/summary?${paystackQuery(range)}`),
+        list: (resource, query) => request(`${apiPrefix}/ops/paystack/${resource}?${paystackQuery(query)}`),
+        sync: (body) => request(`${apiPrefix}/ops/paystack/sync`, { method: "POST", body: JSON.stringify(body) }),
+        exportCsv: (body) =>
+          request<{ url: string }>(`${apiPrefix}/ops/paystack/export`, { method: "POST", body: JSON.stringify(body) }),
+      },
     },
     payouts: {
       getRun: (month) => request<PayoutRunDto>(`${apiPrefix}/ops/payouts?month=${encodeURIComponent(month)}`),

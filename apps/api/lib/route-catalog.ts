@@ -172,6 +172,9 @@ const NOTES: Record<string, string> = {
   "/v1/ops/finance/transactions": "Record a wallet ledger entry by hand",
   "/v1/ops/payments/refunds": "Refund unused credit to the original Paystack payments",
   "/v1/ops/payments/balance": "Live Paystack balance",
+  "/v1/ops/paystack/[resource]": "Live Paystack summary, transactions, settlements, transfers, refunds or disputes, matched to our records",
+  "/v1/ops/paystack/sync": "Re-check one Paystack payment, or import Paystack refunds",
+  "/v1/ops/paystack/export": "Paystack's transaction CSV export link",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
