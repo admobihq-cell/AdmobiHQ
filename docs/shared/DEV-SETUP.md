@@ -378,6 +378,20 @@ Per-app docs: [MOBILE-OPS.md](../ops/MOBILE-OPS.md) · [APP-MOBILE.md](../custom
 
 Requires `DATABASE_URL` + `PAYLOAD_SECRET`.
 
+### Demo dashboard data (dev only)
+
+```bash
+npm run seed:demo -w api                # every org with an active owner
+npm run seed:demo -w api -- --org 24    # one org only
+```
+
+Fills the dashboards (Overview, Finance & Billing, Reports, the ops dashboards) with realistic demo rows: per org, six demo campaigns covering every health state (healthy, under-delivering, changes requested, ending soon, completed, no creative), 180 days of delivery stats across markets and dayparts, creative and reach rows, a wallet ledger that reconciles, and monthly invoices. With two or more orgs, the highest-id org is left short of funds so the alert shows. Then ops-only rows: 40 CRM drivers with monthly payouts, 40 driver profiles, 60 support cases and 12 safety incidents. Writes go straight to the database, so no email or push fires.
+
+- **One run covers local and staging.** Both use the dev Neon branch (see [DEPLOYMENT.md](./DEPLOYMENT.md#database)), so seed once from your machine.
+- **Never prod.** The script refuses to run unless the resolved database URL (`DATABASE_URL`, then `POSTGRES_URL`, then `POSTGRES_PRISMA_URL`) has a host starting `ep-sparkling-waterfall-` on `*.neon.tech`, or is `localhost` / `127.0.0.1`. There is deliberately no `:prod` script. It also refuses to write more than 50,000 rows; a normal run is about 7,000.
+- **Re-running is safe.** Each run deletes every demo row and writes a fresh, deterministic set in one transaction, so counts never double. With `--org`, only that org's demo rows are replaced (the ops-only rows always are). Demo rows are found by marker and nothing else is touched: `is_demo = true` on the ledger, stats, payout and invoice tables, `notes = '[demo-seed]'` on campaigns, emails ending `@demo.admobihq.invalid` on drivers and support cases, and clerk ids starting `demo_` on driver profiles and safety incidents.
+- **After a schema change**, apply the migration to dev first (`npm run db:migrate:deploy -w web`; never `db:push` on the shared branch), update `apps/api/scripts/seed-demo-data.ts` if a demo table gained a required column, then re-run the seed. Dates are relative to today, so re-run it every few weeks to keep "live" campaigns live.
+
 ### Quality checks
 
 | Command | When to run |

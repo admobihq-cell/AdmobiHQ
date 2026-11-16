@@ -1,3 +1,7 @@
+import { formatKes } from "./format"
+
+export { formatKes }
+
 export const PRICING_DISCLAIMER =
   "Indicative pricing only, modelled on Admobi's spot/play rate card. Final rates are confirmed per brief, corridor, and loop capacity when you start a campaign."
 
@@ -216,11 +220,6 @@ export function calculateBikeSimulatorPrice(input: BikeSimulatorInput): BikeSimu
   const total = totalPerDay * input.days
 
   return { pricePerSidePerDay, pricePerBikePerDay, totalPerDay, total, sidesMultiplier, volumeTier }
-}
-
-export function formatKes(amount: number): string {
-  const rounded = Math.round(amount)
-  return `KES ${rounded.toLocaleString("en-KE")}`
 }
 
 export function formatKesPrecise(amount: number, maximumFractionDigits = 2): string {

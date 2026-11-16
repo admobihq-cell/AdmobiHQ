@@ -921,3 +921,14 @@ Also later: port the index to the customer-mobile wizard and map, which renders 
 ## Addendum (2026-10-09)
 
 `h3-js@^4` is already a dependency of `packages/geo` (added for the ops demo-fleet map), so Task 2 Step 1's `npm install` is a no-op — still add the `./audience` subpath. A sibling subpath `@workspace/geo/markets` ([`markets.ts`](../../../packages/geo/src/markets.ts)) now defines the six wizard markets as H3 resolution-8 cell sets (`MARKET_H3_RES = 8`, `MARKET_CELLS`, `marketAt`). The audience index can reuse it to aggregate cell scores per market instead of re-deriving market areas. Like `./audience`, it is not re-exported from the package root.
+
+---
+
+## Addendum (2026-11-07): where roadmap steps 2, 3 and 6 write
+
+The dashboards build ([plan](./2026-11-01-dashboards-and-charts.md)) added the delivery tables that these steps feed. The advertiser Reports and the ops dashboards already read them, so no dashboard code changes when the steps land.
+
+- **Step 2, GPS pings and play log** writes `campaign_daily_stats` with `source = 'logged'`: `plays_scheduled`, `plays_delivered`, `plays_missed`, `plays_over`, `vehicle_hours`, `distance_km` and `active_vehicles`, one row per campaign, day, market, daypart and format (`market` is where the plays happened, which can differ from the campaign's market). Impressions stay `null` at this level, which Reports shows as "Logged plays". It also writes `campaign_creative_daily_stats` for creative rotation.
+- **Step 3, estimated impressions in proof of play** fills `impressions_low`, `impressions_likely` and `impressions_high` on those rows and sets `source = 'modelled'`, with `model_version` so a recalibration can't silently rewrite history. **It must also add reach**: one `campaign_reach_stats` row per campaign per day (campaign-to-date, `source = 'modelled'`). Reach is not additive, so it can't be derived from the daily impressions. Without it the Reports reach and frequency card stays empty. The proof-of-play PDF already prints the low to high range for modelled rows (see `buildProofOfPlay`).
+- **Step 6, telco density** replaces the modelled density, so the same rows are written again with `source = 'calibrated'` and a new `model_version`. Reports then shows "Calibrated estimate".
+

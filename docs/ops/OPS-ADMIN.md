@@ -19,7 +19,9 @@ Ops is **UI-only** for CRUD — entity list/edit/delete calls go to `NEXT_PUBLIC
 
 ### Routes (dashboard)
 
-Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, **Advertiser orgs**, Waitlist, Media Kit, Announcements, **SOS**, Support, **Finances** (sample data — payout/transfer actions open "coming soon" dialogs), **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, **integrations**, tour). **Notifications** (`/notifications`) is reached from the header bell rather than the sidebar: a permission-filtered attention queue of open review work and new public-form submissions.
+Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Applications**, **Campaigns**, **Advertiser orgs**, Waitlist, Media Kit, Announcements, **SOS**, Support, **Finances** (real data from the wallet ledger, payouts and the integrations list, in five tabs: Overview, Ledger, Wallets, Payouts, Tool costs; needs the `finances` permission, and the money stays off the page for anyone without it; payout and transfer actions still open "coming soon" dialogs), **Activity** (audit trail), Content (CMS), **Team**, **Users** (customers / admins), Settings (flags, **integrations**, tour). **Notifications** (`/notifications`) is reached from the header bell rather than the sidebar: a permission-filtered attention queue of open review work and new public-form submissions.
+
+**Dashboard loading states.** Overview, Finances and the four dashboards (`/dashboards/campaigns|fleet|advertisers|support`) each have a `loading.tsx` plus a keyed `<Suspense>` around the open tab. Both use the per-tab shapes in [`components/dashboards/dashboard-skeletons.tsx`](../../apps/ops/components/dashboards/dashboard-skeletons.tsx), built from the shared primitives in [`@workspace/ui` `dashboard/dashboard-skeletons.tsx`](../../packages/ui/src/components/dashboard/dashboard-skeletons.tsx) (hero, KPI strip, chart, list, ledger, toolbar). They mirror each tab's real card grid (hero + KPI strip, chart cards, queue, ledger) so nothing jumps when data lands. Fleet, Advertisers and Support take `money` / `safety` flags because those sections only render for viewers with the permission. Page headings live in [`dashboard-header.tsx`](../../apps/ops/components/dashboards/dashboard-header.tsx) so a page and its `loading.tsx` share one copy. Change a tab's layout and its skeleton together. `Skeleton` only pulses under `prefers-reduced-motion: no-preference`.
 
 ### SOS (driver safety incidents)
 
@@ -97,7 +99,7 @@ Every entity list page (`EntityPage`) exports the **selected rows** in three for
 
 | Format | Built where |
 |--------|-------------|
-| CSV | In the browser (`toCsv` in `lib/format.ts`) |
+| CSV | In the browser (`toCsv` from `@workspace/ops-contracts/format`, re-exported by `lib/format.ts`) |
 | XLSX | In the browser, styled header row (`buildStyledXlsx` in `lib/xlsx.ts`, `exceljs`) |
 | PDF | Rows are posted to `POST /v1/ops/documents/export`, which renders the `EntityExportPdf` template with `takumi-pdf` (logo, footer, page numbers). See [API.md](../api/API.md). |
 
@@ -195,3 +197,13 @@ Public form POSTs go to `api.admobihq.com/v1/public/*`. Ops admin routes require
 ```bash
 npm run env:check -w ops
 ```
+
+### Record transaction (Finances > Ledger)
+
+Ops can add a wallet ledger row by hand: organization, type (top-up, spend, refund or adjustment), amount, optional campaign, category, optional reference and a reason. Nothing else writes the ledger on prod yet, so this is how an account manager adds funds after a payment arrives, which is what the advertiser app tells people to ask for.
+
+- **Sign:** enter a positive amount for a top-up, spend or refund and the type sets the sign. An adjustment is entered signed (negative takes money out).
+- **Rules:** zero is refused, spend and refunds need a category, a reference can only be used once, and a campaign must belong to the chosen organization.
+- **Append-only:** there is no edit or delete. A mistake is corrected with an adjustment, and every entry is audited (Activity) with who recorded it. Rows are marked `provider = manual`.
+- **Numbers:** revenue is spend net of refunds, tax left out. "Wallet funds held" is money owed to advertisers, not revenue. Tool costs are today's monthly run-rate from Integrations, scaled to the period, because that list keeps no history. Pages are cached for five minutes, and recording a transaction refreshes them straight away.
+

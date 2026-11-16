@@ -34,6 +34,10 @@ Tables (see Prisma schema):
 | `media_asset_stars` | `MediaAssetStar` | Per-person stars — `/v1/customer/media/[id]/star` |
 | `campaign_creatives` | `CampaignCreative` | Join row attaching a media asset to a campaign, with its panel `slot` |
 | `customer_notifications` | `CustomerNotification` | Per-advertiser campaign lifecycle inbox rows |
+| `wallet_transactions` | `WalletTransaction` | Append-only org money ledger; balance is derived, never stored |
+| `campaign_daily_stats`, `campaign_creative_daily_stats`, `campaign_reach_stats` | `CampaignDailyStat`, `CampaignCreativeDailyStat`, `CampaignReachStat` | Delivery aggregates for Reports and dashboards — see [Delivery stats and the ledger](#delivery-stats-and-the-ledger) |
+| `payouts` | `Payout` | Driver payouts against CRM `Driver` rows |
+| `invoices` | `Invoice` | Issued invoices with an immutable line snapshot |
 
 Apply campaigns tables with `npm run db:campaigns -w web` (prod: `npm run db:campaigns:prod -w web`) — additive SQL only; **never** `db push` / `migrate` on the shared Neon DB.
 
@@ -58,6 +62,23 @@ Approved campaigns will eventually dispatch to supplier screen APIs. This does n
 1. Creative metadata (mime, bytes, width, height, duration) is captured eagerly at upload on `MediaAsset`, and `slot` on the attachment — never backfill for a supplier.
 2. Private (`authenticated`) Cloudinary storage does **not** block supplier delivery: we hold `public_id`, so a signed URL or token-scoped proxy can be minted at dispatch time with **no re-upload**.
 3. Dispatch state is a separate axis from review status. When the first supplier contract lands, it becomes its own additive table (`campaign_placements`: campaign, supplier, external ref, screen ids, accepted/rejected, playout counts) — do **not** widen `campaigns.status` or add speculative `dispatched_at` columns with no consumer.
+
+### Delivery stats and the ledger
+
+`campaign_daily_stats`, `campaign_creative_daily_stats` and `campaign_reach_stats` are **delivery aggregates**: what played, where, and how many people likely saw it, summed per day. They do not replace `campaign_placements` above, which stays reserved for dispatch state (what was sent to which supplier and whether they accepted it). `Campaign` has no plays or screen count, so `plays_scheduled` only exists on whatever writes these rows.
+
+`source` on a stats row records which step of the measurement ladder produced it:
+
+| `source` | Meaning |
+|---|---|
+| `schedule` | Derived from the booked flight only (budget, dates, format). No device data |
+| `logged` | Counted from GPS pings and the play log: real plays, hours, km and market |
+| `modelled` | Logged plays plus an impressions-per-play model. `model_version` names the model, so recalibrating never silently rewrites history |
+| `calibrated` | A modelled estimate tightened by manual counts or telco density data |
+
+Null impressions mean "not estimated", never zero. Reach is campaign-to-date and never summed across days or campaigns. Spend always comes from `wallet_transactions`, never from the stats tables; `tax` rows are not revenue. `wallet_transactions.provider` is `manual` (ops recorded it), `pesapal` (payment webhook) or `seed` (demo data). Every one of these tables has `is_demo` for seed rows.
+
+Schema changes here go through `prisma/migrations` and `npm run db:migrate:deploy -w web` (see [DEPLOYMENT.md](./DEPLOYMENT.md)); they were added by `20261102120000_dashboard_ledger`.
 
 Implementation pattern (in `apps/api`):
 

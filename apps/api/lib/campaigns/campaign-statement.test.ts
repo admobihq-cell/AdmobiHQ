@@ -2,10 +2,12 @@ import type { Campaign } from "@prisma/client"
 import { describe, expect, it } from "vitest"
 
 import {
+  PROOF_OF_PLAY_HEADERS,
   buildBudgetStatement,
   buildProofOfPlay,
   flightDayCount,
   isActive,
+  type ProofOfPlayStat,
 } from "./campaign-statement"
 
 /** A Prisma `@db.Date` value: UTC midnight of that calendar day. */
@@ -140,5 +142,80 @@ describe("buildProofOfPlay", () => {
     for (const row of [...statement.rows, statement.totalsRow]) {
       expect(row).toHaveLength(statement.headers.length)
     }
+  })
+})
+
+describe("buildProofOfPlay with delivery stats", () => {
+  const options = { generatedAt: "6 Sep 2026", creativeCount: 2, today: at("2026-10-03") }
+  const base = buildProofOfPlay(campaign(), options)
+  const row = (over: Partial<ProofOfPlayStat>): ProofOfPlayStat => ({
+    day: "2026-10-01",
+    market: "Kilimani",
+    playsDelivered: 100,
+    impressionsLow: null,
+    impressionsLikely: null,
+    impressionsHigh: null,
+    source: "logged",
+    ...over,
+  })
+
+  it("is unchanged with no stats, or with schedule-only rows", () => {
+    expect(buildProofOfPlay(campaign(), { ...options, stats: [] })).toEqual(base)
+    expect(buildProofOfPlay(campaign(), { ...options, stats: [row({ source: "schedule" })] })).toEqual(base)
+    expect(base.footnote).toMatch(/not yet reported/)
+  })
+
+  it("adds plays and plays by market for logged rows, and no impressions", () => {
+    const statement = buildProofOfPlay(campaign(), {
+      ...options,
+      stats: [
+        row({ day: "2026-10-01", market: "Kilimani", playsDelivered: 100 }),
+        row({ day: "2026-10-01", market: "CBD", playsDelivered: 40 }),
+        row({ day: "2026-10-02", market: "Kilimani", playsDelivered: 90 }),
+      ],
+    })
+    expect(statement.headers).toEqual([...PROOF_OF_PLAY_HEADERS, "Plays"])
+    expect(statement.rows[0]!.at(-1)).toBe("140")
+    expect(statement.rows[1]!.at(-1)).toBe("90")
+    expect(statement.rows[2]!.at(-1)).toBe("-") // no row for the day: unknown, not zero
+    expect(statement.totalsRow.at(-1)).toBe("230")
+    expect(statement.summary).toContainEqual({ label: "Plays by market", value: "Kilimani 190, CBD 40" })
+    expect(statement.headers.join()).not.toMatch(/impressions/i)
+    expect(statement.footnote).toMatch(/play records/i)
+    expect(statement.footnote).not.toMatch(/impressions are estimates/i)
+  })
+
+  it("adds low, likely and high impressions for modelled rows", () => {
+    const statement = buildProofOfPlay(campaign(), {
+      ...options,
+      stats: [
+        row({ source: "modelled", impressionsLow: 800, impressionsLikely: 1000, impressionsHigh: 1200 }),
+        row({ source: "modelled", market: "CBD", impressionsLow: 100, impressionsLikely: 200, impressionsHigh: 300 }),
+      ],
+    })
+    expect(statement.headers.slice(-2)).toEqual(["Plays", "Est. impressions"])
+    expect(statement.rows[0]!.at(-1)).toBe("1,200 (900 to 1,500)")
+    expect(statement.totalsRow.at(-1)).toBe("1,200 (900 to 1,500)")
+    expect(statement.footnote).toMatch(/estimate/i)
+  })
+
+  it("never shows impressions for logged rows, even if a value is present", () => {
+    const statement = buildProofOfPlay(campaign(), {
+      ...options,
+      stats: [row({ source: "logged", impressionsLow: 1, impressionsLikely: 2, impressionsHigh: 3 })],
+    })
+    expect(statement.headers).toEqual([...PROOF_OF_PLAY_HEADERS, "Plays"])
+  })
+
+  it("keeps every row the same width as the header, and stays inside Latin-1", () => {
+    const statement = buildProofOfPlay(campaign(), {
+      ...options,
+      stats: [row({ source: "modelled", impressionsLow: 1, impressionsLikely: 2, impressionsHigh: 3 })],
+    })
+    for (const cells of [...statement.rows, statement.totalsRow]) {
+      expect(cells).toHaveLength(statement.headers.length)
+    }
+    const text = JSON.stringify(statement)
+    expect(/[^\u0000-ÿ]/.test(text.replace(/\u00b7/g, ""))).toBe(false)
   })
 })

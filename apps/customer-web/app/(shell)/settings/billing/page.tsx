@@ -1,7 +1,6 @@
-import { WalletView } from "@/components/wallet/wallet-view"
+import { redirect } from "next/navigation"
 
-export const metadata = { title: "Wallet" }
-
-export default function BillingSettingsPage() {
-  return <WalletView />
+/** The Wallet page moved to Finance & Billing; keep old links and bookmarks working. */
+export default function LegacyBillingSettingsPage() {
+  redirect("/billing")
 }

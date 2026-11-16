@@ -90,7 +90,7 @@ Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/
 | `DELETE` | `/v1/customer/campaigns/[id]/creatives/[creativeId]` | Customer | Detach the creative while editable. The file stays in the Media Library |
 | `GET` | `/v1/customer/campaigns/[id]/creatives/[creativeId]/file` | Customer | Stream creative bytes (owner only) |
 | `GET` | `/v1/customer/campaigns/statement` | Customer | Budget statement PDF — every own campaign, its budget, an active subtotal and an all-campaigns total |
-| `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated |
+| `GET` | `/v1/customer/campaigns/[id]/proof-of-play` | Customer | Proof-of-play PDF — day-by-day delivery schedule; `409` unless the campaign is `approved` **and** dated. When the campaign has delivery stats it adds a Plays column and plays by market (logged, modelled or calibrated rows) and an Est. impressions column (modelled or calibrated rows only, as a likely figure with a low to high range). With no stats the output is the schedule only, and the footnote says no play volume is claimed |
 
 Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
 `CampaignStatementPdf` template, and return `application/pdf` with a
@@ -98,6 +98,50 @@ Both PDFs render through Takumi (`lib/pdf/render-pdf.tsx`) into the shared
 takes its rows in the request body, these query the caller's own campaigns
 server-side — an advertiser must not be able to put arbitrary rows on Admobi
 letterhead. Row building lives in `lib/campaigns/campaign-statement.ts`.
+
+### Finance (advertiser)
+
+Read-only money views for the caller's org, behind `billing:read`. They read the wallet ledger (`wallet_transactions`, append-only; the balance is derived, never stored) and `invoices`. Every query filters on the caller's org. A ledger row that points at another org's campaign still counts for this org, but the campaign name is never returned. Days are Africa/Nairobi calendar days.
+
+Range parameters, shared with the report routes: `range` (`7d` | `30d` | `90d` | `all`, default `30d`) or `from` + `to` (`YYYY-MM-DD`, at most 366 days). A bad range answers `400`. Deltas compare with the same-length period before; `all` has no comparison, so its delta is `null`.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/customer/finance/summary` | Balance (all-time), committed, available, spend and top-ups with deltas, spend by category and campaign, daily `spendTrend` ("all" starts at the first spend), money in/out by month, funding status, upcoming charges |
+| `GET` | `/v1/customer/finance/transactions` | Ledger, 25 per page. Filters `kind`, `q`, range; `sort` = `date_desc` (default), `date_asc`, `amount_desc`, `amount_asc`; `page`. `format=csv` returns every filtered row, not one page |
+| `GET` | `/v1/customer/finance/invoices` | Invoices, newest first |
+| `GET` | `/v1/customer/finance/invoices/[id]/pdf` | One invoice as a PDF; another org's id is `404` |
+| `GET` | `/v1/customer/finance/statements` | One row per month with ledger rows, oldest first. Each closing equals the next opening; the last closing equals the balance |
+| `GET` | `/v1/customer/finance/statements/[month]/pdf` | One month (`YYYY-MM`) as a PDF; a month with no rows is `404` |
+
+Funding is `untracked` until the org's first ledger row, so an org with real budgets and no wallet history never sees a "short of funds" alert. `committed` is the unspent part of each active (live or scheduled) campaign's budget, floored at 0 per campaign. Both PDFs go through the shared `CampaignStatementPdf` template and carry a "not a tax invoice" footnote; text is passed through `lib/pdf/latin1.ts` because the PDF font covers Latin-1 only.
+
+### Reports (advertiser)
+
+Delivery reports for the caller's org, behind `reports:read`. They read the delivery aggregates in `campaign_daily_stats` (one row per campaign, day, market, daypart and format), `campaign_creative_daily_stats` and `campaign_reach_stats`. Range parameters are the same as Finance.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/customer/reports/overview` | Impressions (with range and trend), plays, delivery rate, pacing, what's working, campaign health ledger |
+| `GET` | `/v1/customer/reports/delivery` | Scheduled / delivered / missed / over-delivered, vehicle hours, distance, active vehicles, creative rotation, daily log. `export=csv` downloads the daily log |
+| `GET` | `/v1/customer/reports/audience` | Market × daypart and weekday × daypart heatmaps, market ranking with change, daypart share, reach and frequency for one campaign |
+| `GET` | `/v1/customer/reports/spend` | Needs `billing:read` as well, otherwise `403`. Spend, cost per 1,000, budget used and unspent, spend by campaign / objective / format, budget burn against flight elapsed |
+| `GET` | `/v1/customer/reports/campaigns` | One row per campaign with health. `export=csv` downloads the table |
+| `GET` | `/v1/customer/reports/campaigns/[id]` | The full report for one campaign; another org's id is `404` |
+| `GET` | `/v1/customer/reports/campaigns/[id]/pdf` | The same report as a PDF. Money lines are left out without `billing:read` |
+
+Filters: `campaign` (an id), `market`, `format` (`taxi_top` / `delivery_bike`), `daypart`. An unknown value is `400`; another org's campaign is `404`. CSV uses `export=csv` rather than `format=csv`, because `format` is a filter here.
+
+How the numbers are built:
+
+- **Measurement level** is the lowest `source` among the rows in view (`schedule` < `logged` < `modelled` < `calibrated`; shown as booked / logged / modelled / calibrated). With no rows it is `booked`. Read it as the honest ceiling on every figure on the page.
+- **Impressions** are `low / likely / high`. A row with no estimate is `null`, and a total of rows that are all `null` is `null`, never 0.
+- **Reach** is campaign-to-date and not additive. It is the latest row up to the end of the range, and only returned when one campaign is selected (otherwise `null`). Frequency is impressions ÷ reach for that campaign.
+- **Delivery rate** is (delivered − over-delivered) ÷ scheduled, so extra plays can't hide missed ones.
+- **Active vehicles** takes the busiest daypart per campaign per day, then sums across campaigns. It can overcount a vehicle that runs two campaigns, until telemetry gives vehicle-level data.
+- **Spend and cost per 1,000** come from the wallet ledger, never the stats tables. Cost per 1,000 leaves `tax` rows out. With a `market`, `daypart` or `format` filter they are `null`, because spend is held per campaign and can't be split that finely.
+- **Money gating:** without `billing:read`, every money field is `null` (budgets, spend, cost per 1,000, unspent budget), including inside campaign rows and CSV.
+- The `all` range starts at the first day with data. Creative rotation ignores market / daypart / format filters, since creative rows don't carry them.
 
 ### Media Manager (advertiser)
 

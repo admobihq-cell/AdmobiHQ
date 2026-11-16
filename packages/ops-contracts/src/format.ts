@@ -67,6 +67,36 @@ export function formatBytes(bytes: number): string {
   return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`
 }
 
+/** Whole shillings: `formatKes(1200)` -> `"KES 1,200"`. */
+export function formatKes(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—"
+  const rounded = Math.round(value)
+  const amount = Math.abs(rounded).toLocaleString("en-KE", { maximumFractionDigits: 0 })
+  return `${rounded < 0 ? "-" : ""}KES ${amount}`
+}
+
+/** `formatCompact(1200000)` -> `"1.2M"`. */
+export function formatCompact(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—"
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value)
+}
+
+export function toCsv(rows: Record<string, unknown>[], columns: string[]): string {
+  const escape = (v: unknown) => {
+    const s = v == null ? "" : String(v)
+    if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+      return `"${s.replace(/"/g, '""')}"`
+    }
+    return s
+  }
+  const header = columns.join(",")
+  const body = rows.map((row) => columns.map((c) => escape(row[c])).join(","))
+  return [header, ...body].join("\n")
+}
+
 export function truncate(str: string | null | undefined, len = 60): string {
   if (!str) return "—"
   return str.length > len ? `${str.slice(0, len)}…` : str

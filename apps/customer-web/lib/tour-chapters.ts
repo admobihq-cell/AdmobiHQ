@@ -37,10 +37,10 @@ export const customerTourChapters: TourChapter[] = [
   },
   {
     key: "wallet",
-    title: "Fund your campaigns",
+    title: "Follow your money",
     description:
-      "Top up your wallet and track spend, so your campaigns never stall for budget.",
-    selector: '[data-tour-id="tour-nav-wallet"]',
+      "See your funds, spending, invoices and statements, so your campaigns never stall for budget.",
+    selector: '[data-tour-id="tour-nav-finance & billing"]',
   },
   {
     key: "map",

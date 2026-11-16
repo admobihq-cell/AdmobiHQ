@@ -9,6 +9,7 @@ import {
   type CampaignDto,
   type CampaignListItemDto,
   type CampaignReviewInput,
+  type RecordTransactionInput,
   type DateRangeKey,
   type DocumentExportRequest,
   type DriverApplicationListItemDto,
@@ -249,6 +250,10 @@ export type OpsClient = {
       params?: Partial<PaginationParams>,
     ) => Promise<PaginatedResponse<OpsAdvertiserOrgListItemDto>>
     get: (id: number) => Promise<OpsAdvertiserOrgDetailDto>
+  }
+  finance: {
+    /** Appends a wallet ledger row. Needs the `finances` permission; the ledger has no edit or delete. */
+    recordTransaction: (body: RecordTransactionInput) => Promise<{ id: number; amountKes: number }>
   }
 }
 
@@ -674,6 +679,13 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         )
       },
       get: (id) => request<OpsAdvertiserOrgDetailDto>(`${apiPrefix}/advertiser-orgs/${id}`),
+    },
+    finance: {
+      recordTransaction: (body) =>
+        request<{ id: number; amountKes: number }>(`${apiPrefix}/ops/finance/transactions`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
     },
   }
 }

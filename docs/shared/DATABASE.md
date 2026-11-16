@@ -111,6 +111,21 @@ The advertiser product surface — briefs, review, and creative assets.
 
 Supplier/screen-API dispatch state is deliberately **not** in this schema yet — see the "Supplier / screen-API seam" note in [DATA-LAYER.md](./DATA-LAYER.md#supplier--screen-api-seam) before adding columns for it.
 
+## Money, delivery and payouts
+
+What the advertiser and ops dashboards read. Every table here has `is_demo` (default `false`) so demo seed rows can be found and removed without touching real ones. Money columns are `Decimal(12, 2)` in KES; `day`, `as_of`, `period_*` and `*_on` are Postgres `date` (Africa/Nairobi calendar days).
+
+| Model | Table | Purpose |
+|---|---|---|
+| `WalletTransaction` | `wallet_transactions` | An org's money ledger. **Append-only**: corrections are new `adjustment` rows, never edits. Signed `amount_kes` (credit +, debit −); `kind` is `top_up`, `spend`, `refund` or `adjustment`; spend rows carry `spend_category` (`screen_time`, `production`, `service_fee`, `tax`, a proposed split). `provider` says who wrote it (`manual`, `pesapal`, `seed`); `created_by` is the Clerk user id for manual rows. The balance is `SUM(amount_kes)` and is never stored. `org_id` / `campaign_id` are `SetNull` so history outlives a deleted org or campaign |
+| `CampaignDailyStat` | `campaign_daily_stats` | Delivery aggregates, one row per campaign, day, market, daypart (`morning`, `midday`, `evening`, `night`) and format: plays scheduled/delivered/missed/over, vehicle hours, km, active vehicles, and low/likely/high impressions. Null impressions mean "not estimated", not zero. `source` and `model_version` record what produced the row — see [DATA-LAYER.md § Delivery stats](./DATA-LAYER.md#delivery-stats-and-the-ledger). Cascades with the campaign |
+| `CampaignCreativeDailyStat` | `campaign_creative_daily_stats` | Plays and likely impressions per creative per day, with a `creative_name` snapshot; `media_asset_id` is `SetNull` |
+| `CampaignReachStat` | `campaign_reach_stats` | Campaign-to-date reach (low/likely/high) as of a day, unique per campaign and day. **Reach is not additive** — never sum it across days or campaigns |
+| `Payout` | `payouts` | A payout to a CRM `Driver` (`drivers` table) for a `period_month`: `pending`, `settled` or `failed`, with the M-Pesa ref once sent |
+| `Invoice` | `invoices` | An issued invoice with a unique `number`, period, subtotal/tax/total, status (`issued`, `paid`, `overdue`, `void`) and an immutable `lines` JSON snapshot. Only the demo seed writes these for now. `tax_invoice_ref` is reserved for the eTIMS number |
+
+Monthly statements are derived from `wallet_transactions`, not stored.
+
 ## Payload CMS (separate schema surface)
 
 Owned by Payload, not hand-edited via Prisma. Collections: [`apps/web/collections/`](../../apps/web/collections):

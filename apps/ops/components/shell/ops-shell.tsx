@@ -59,6 +59,27 @@ import { TourProvider } from "@workspace/ui/components/tour-provider"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { opsTourChapters } from "@/lib/tour-chapters"
 
+type NavItem = {
+  href: string
+  label: string
+  icon: typeof Home
+  permission?: OpsPermission
+}
+
+/**
+ * The Dashboards group. Distinct hrefs from the list pages (`/dashboards/campaigns` vs
+ * `/campaigns`): active matching is by prefix, so they never light up together. Each dashboard
+ * is guarded by the permission of the thing it summarises.
+ */
+const dashboardNavItems: NavItem[] = [
+  { href: "/overview", label: "Overview", icon: BarChart3 },
+  { href: "/finances", label: "Finances", icon: Wallet, permission: "finances" },
+  { href: "/dashboards/campaigns", label: "Campaigns", icon: MonitorPlay, permission: "campaigns" },
+  { href: "/dashboards/advertisers", label: "Advertisers", icon: Building2, permission: "campaigns" },
+  { href: "/dashboards/fleet", label: "Fleet", icon: Truck, permission: "drivers" },
+  { href: "/dashboards/support", label: "Support & safety", icon: LifeBuoy, permission: "support" },
+]
+
 const navItems: Array<{
   href: string
   label: string
@@ -66,7 +87,6 @@ const navItems: Array<{
   permission?: OpsPermission
 }> = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/overview", label: "Overview", icon: BarChart3 },
   { href: "/map", label: "Map", icon: Map },
   {
     href: "/leads",
@@ -93,12 +113,6 @@ const navItems: Array<{
     label: "Advertiser orgs",
     icon: Building2,
     permission: "campaigns",
-  },
-  {
-    href: "/finances",
-    label: "Finances",
-    icon: Wallet,
-    permission: "finances",
   },
   { href: "/waitlist", label: "Waitlist", icon: Mail, permission: "waitlist" },
   {
@@ -158,7 +172,7 @@ const hiddenNavItems: Array<{ href: string; label: string }> = [
   { href: "/notifications", label: "Notifications" },
 ]
 
-const allNavItems = [...navItems, ...secondaryItems, ...hiddenNavItems]
+const allNavItems = [...dashboardNavItems, ...navItems, ...secondaryItems, ...hiddenNavItems]
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
@@ -239,8 +253,43 @@ export function OpsShell({
         "media_kit",
       ] as OpsPermission[]
     ).some((permission) => permissions.includes(permission))
+  const visibleDashboardItems = dashboardNavItems.filter(canSee)
   const visibleNavItems = navItems.filter(canSee)
   const visibleSecondaryItems = secondaryItems.filter(canSee)
+
+  const renderGroup = (label: string, items: NavItem[]) =>
+    items.length === 0 ? null : (
+      <SidebarGroup>
+        <SidebarGroupLabel>{label}</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isNavItemActive(pathname, item.href)}
+                  className={activeSidebarLinkClassName}
+                  tooltip={item.label}
+                >
+                  <Link href={item.href} data-tour-id={`tour-nav-${tourSlug(item.href)}`}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                    {(pendingCounts[item.href] ?? 0) > 0 ? (
+                      <Badge
+                        variant="secondary"
+                        className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
+                      >
+                        {pendingCounts[item.href]}
+                      </Badge>
+                    ) : null}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    )
 
   return (
     <TourProvider app="ops" userId={userId} chapters={opsTourChapters}>
@@ -261,39 +310,8 @@ export function OpsShell({
             </div>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Operations</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {visibleNavItems.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isNavItemActive(pathname, item.href)}
-                        className={activeSidebarLinkClassName}
-                        tooltip={item.label}
-                      >
-                        <Link
-                          href={item.href}
-                          data-tour-id={`tour-nav-${tourSlug(item.href)}`}
-                        >
-                          <item.icon />
-                          <span>{item.label}</span>
-                          {(pendingCounts[item.href] ?? 0) > 0 ? (
-                            <Badge
-                              variant="secondary"
-                              className="ml-auto bg-amber-100 text-amber-800 group-data-[collapsible=icon]:hidden dark:bg-amber-950 dark:text-amber-200"
-                            >
-                              {pendingCounts[item.href]}
-                            </Badge>
-                          ) : null}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {renderGroup("Dashboards", visibleDashboardItems)}
+            {renderGroup("Operations", visibleNavItems)}
             <SidebarGroup>
               <SidebarGroupLabel>Content</SidebarGroupLabel>
               <SidebarGroupContent>

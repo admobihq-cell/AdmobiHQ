@@ -19,7 +19,7 @@ Sidebar app shell. What is real vs placeholder:
 
 | Route | Status |
 |-------|--------|
-| `/` Overview | **API-backed** — live / in-review / needs-you counts and committed budget derived from `/v1/customer/campaigns`; recent activity is the merged notification inbox. No impressions, delivery-rate or spend tiles: nothing serves those yet |
+| `/` Overview | **API-backed.** A KPI strip (live campaigns from `/v1/customer/campaigns`; available funds and spend from `/finance/summary`; est. impressions and delivery from `/reports/overview`), a Spend / Impressions / Plays trend with the previous period dashed beneath, a **Needs attention** list (the org-level funding alert first, then campaigns whose health isn't on track), active campaign progress cards, upcoming flights, and recent activity from the merged notification inbox. Each block follows the viewer's permissions: without `billing:read` the funds and spend figures and the Spend tab are absent, and without `reports:read` the impressions, delivery and health rows are. The range is in the URL (`?range=`). A figure with no data behind it shows a dash, never an invented number |
 | `/campaigns`, `/campaigns/[id]` | **API-backed** — list/detail against `/v1/customer/campaigns`; status + review-reason banner; **Proof of play** PDF download on approved, dated campaigns. The list has a **Cards / Table** layout toggle (persisted per browser under `admobi.campaigns.view`); the table adds a Created-by column once the org has more than one member |
 | `/media` | **API-backed** Media Manager against `/v1/customer/media` — upload, search, a Filter & sort menu (All files / Starred / Images / Videos / Used / Unused, sorted by newest, name or size), and a grid or list view held in `?view=list`. Org-shared folders open in place (`?folder=<id>`, and uploads land in the open folder). Stars are per person. Rename, Move to folder and delete sit in each file's menu. While loading, tiles show the LED panel skeleton (`.led-skeleton`). Files are org-wide and reusable; a file in use by a campaign can't be deleted. Video previews load on click |
 | `/campaigns/new` | **Full-page** four-step wizard (Brief → Flight & budget → Creative → Review; the Creative step uploads a new file or picks one from the Media Manager), not a side sheet; resume via `?id=`; the budget step prices the flight off the shared rate card |
@@ -27,8 +27,8 @@ Sidebar app shell. What is real vs placeholder:
 | `/notifications` | Merged inbox: ops announcements + campaign lifecycle rows from `/v1/customer/notifications` |
 | `/map` | mapcn/MapLibre with `@workspace/geo` Nairobi fixtures |
 | `/deliveries`, `/deliveries/[id]` | Placeholder booking UI, **only when** the `deliveries` platform flag is on |
-| `/reports` | **Coming soon** |
-| `/settings/billing` | Wallet/billing view — balance is on-device (no payment gateway); the "N campaigns live" line is real, off the campaign feed |
+| `/reports` | Real data from `/v1/customer/reports/*`, gated on `reports:read`. Tab, date range and filters (campaign, market, format, time of day) live in the URL. A **Measurement** badge in the toolbar shows the lowest measurement level in view (booked, logged, modelled or calibrated) and opens a plain-language "How we estimate" panel. Impressions are always estimates and show their low-to-high range; reach shows only when one campaign is selected. Money (cost per 1,000, spend, budget) is hidden without `billing:read`, by the API as well as the page. **Overview** tab: headline impressions, delivery summary, pacing, what's working, campaign health ledger. |
+| `/billing` (sidebar **Finance & Billing**) | Real data from `/v1/customer/finance/*`, gated on `billing:read` (without it: "Ask your account owner for billing access.", and no request is made). Overview tab: balance (all-time), available, spent, committed, where the money went, money in vs out, spend by campaign, then a closing row of **Wallet** (runway, committed, next charge, funding status), **Upcoming charges** (planned total and the next three scheduled campaigns) and a **Top up** card above an icon-grid of **Shortcuts**. Tabs and the date range share one row under the title; they live in the URL (`?tab=&range=` or `&from=&to=`). **Top up** only opens a notice, since online payments are not live; funds are added by the account manager. Orgs with no ledger rows see "Your funding details appear after your first top-up" rather than an alert. Replaces the old on-device Wallet. `/settings/billing` redirects here. |
 | `/settings/support`, `/settings/support/new`, `/settings/support/[id]` | Support cases via the business API. Raising a case is its own **full page** at `/settings/support/new` — not a sheet — so it survives a reload and can be linked to directly |
 | `/settings/account`, `/settings/team`, `/settings/team/roles`, `/settings/activity`, `/settings/notifications`, `/settings/tour` | Working UI — Team has Members / Roles tabs (permission matrix), **Billing details** (invoice email + KRA PIN, `billing:read` / `billing:write`), and **admin access requests** (members ask with a reason; the owner or an existing Admin approves or declines with a note, granting the "Admin" role — an org can have any number of Admins). Reviewed requests stay visible via a small note icon on the requester's row, not just while pending |
 | `/invitations/[token]` | Public accept-invitation landing — shows who invited you and what accepting would replace, then **Accept** or **Decline**. Never auto-accepts. Offers **Create an account** first for signed-out visitors, since most invitees have never used Admobi |
@@ -89,6 +89,14 @@ fetches through react-query, so the server render finishes instantly and
 the client one. A route's `loading.tsx` and its view's `isPending` branch must
 therefore render the **same** skeleton component (`components/skeletons/*`), or
 the page shows two differently-shaped skeletons back to back and shifts twice.
+
+The dashboard pages (Overview, Billing, Reports, a campaign report) follow this with
+[`components/skeletons/dashboard-skeletons.tsx`](../../apps/customer-web/components/skeletons/dashboard-skeletons.tsx),
+one skeleton per tab built from the shared primitives in `@workspace/ui`
+(`dashboard/dashboard-skeletons.tsx`). Each mirrors its tab's real card grid, so
+change a tab's layout and its skeleton together. Ledger tabs show a table
+skeleton on first load only; the queries use `keepPreviousData`, so paging or
+filtering keeps the table (and the search box's focus) on screen.
 
 `/campaigns/new` additionally needs its own `loading.tsx`: the wizard is a
 `fixed inset-0` overlay, so inheriting `campaigns/loading.tsx` would flash the

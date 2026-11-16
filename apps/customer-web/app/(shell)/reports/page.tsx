@@ -1,10 +1,16 @@
-import { ComingSoon } from "@/components/coming-soon"
-import { navItemForPath } from "@/lib/navigation"
+import { Suspense } from "react"
+
+import { ReportsView } from "@/components/reports/reports-view"
+
+import ReportsLoading from "./loading"
 
 export const metadata = { title: "Reports" }
 
 export default function ReportsPage() {
-  const { label, description } = navItemForPath("/reports")
-
-  return <ComingSoon title={label} description={description} />
+  return (
+    // The view reads ?tab=, ?range= and the filters with useSearchParams, which needs a boundary here.
+    <Suspense fallback={<ReportsLoading />}>
+      <ReportsView />
+    </Suspense>
+  )
 }

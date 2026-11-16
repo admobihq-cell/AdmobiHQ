@@ -159,9 +159,22 @@ export function TourProvider({
     [activeKeys, chapters]
   )
 
+  // The root class changes after this component renders (ThemeProvider applies
+  // it in an effect), so re-read the palette once it has actually changed.
+  const [paletteVersion, setPaletteVersion] = useState(0)
+  useEffect(() => {
+    const observer = new MutationObserver(() => setPaletteVersion((v) => v + 1))
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    })
+    return () => observer.disconnect()
+  }, [])
+
   const theme = useMemo(
     () => buildAdmobiAntdTheme(mounted ? resolvedTheme : undefined),
-    [mounted, resolvedTheme]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mounted, resolvedTheme, paletteVersion]
   )
 
   return (

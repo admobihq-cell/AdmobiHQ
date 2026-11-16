@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { exportFileName } from "@workspace/ops-contracts"
 
+import { getProofOfPlayStats } from "@/lib/analytics/report-queries"
 import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { buildProofOfPlay } from "@/lib/campaigns/campaign-statement"
 import { getOwnedCampaign } from "@/lib/campaigns/campaign-store"
@@ -37,6 +38,7 @@ export async function GET(_req: Request, { params }: Params) {
       day: "numeric",
     }),
     creativeCount: campaign.creatives.length,
+    stats: await getProofOfPlayStats(auth.access.orgId, campaign.id),
   })
 
   try {
