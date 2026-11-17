@@ -17,7 +17,7 @@ import { InsightNote } from "@workspace/ui/components/dashboard/notes"
 import { Button } from "@workspace/ui/components/button"
 import { PaystackBalanceTile } from "@/components/finances/paystack-balance-tile"
 import { RefundDialog } from "@/components/finances/refund-dialog"
-import type { AttentionItemDto, FinanceOverviewDto, RecordOptionsDto } from "@/lib/queries/finance"
+import type { FinanceOverviewDto, RecordOptionsDto } from "@/lib/queries/finance"
 
 export const NO_LEDGER = "Transactions appear here once an advertiser's wallet has activity."
 
@@ -25,61 +25,12 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 /** "2026-11" → "Nov 26". */
 export const monthLabel = (m: string) => `${MONTHS[Number(m.slice(5)) - 1] ?? m} ${m.slice(2, 4)}`
 
-export function OverviewTab({
-  data,
-  attention,
-  orgs,
-}: {
-  data: FinanceOverviewDto
-  attention: AttentionItemDto[]
-  orgs: RecordOptionsDto["orgs"]
-}) {
+export function OverviewTab({ data, orgs }: { data: FinanceOverviewDto; orgs: RecordOptionsDto["orgs"] }) {
   const flow = data.moneyInOut.map((r) => ({ period: monthLabel(r.period), in: r.inKes, out: r.outKes }))
   const margin = data.revenue.current > 0 ? Math.round((data.netMarginKes / data.revenue.current) * 100) : null
 
-  // Broken money comes first when there is any; an empty list sinks to the foot.
-  const needsAttention = (
-    <DashboardCard
-      title="Needs attention"
-      description="Payment mismatches, payments pending over an hour, failed refunds and failed driver payouts"
-    >
-      {attention.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing needs attention.</p>
-      ) : (
-        <ul className="divide-y">
-          {attention.map((item, i) => {
-            const body = (
-              <>
-                <div className="min-w-0">
-                  <p className="font-medium">{item.label}</p>
-                  <p className="text-muted-foreground">{item.detail}</p>
-                </div>
-                <span className="shrink-0 tabular-nums">{formatKes(item.amountKes)}</span>
-              </>
-            )
-            return (
-              <li key={`${item.kind}-${i}`}>
-                {item.kind === "payout" ? (
-                  <Link
-                    href="/finances?tab=payouts"
-                    className="-mx-2 flex items-baseline justify-between gap-4 rounded-md px-2 py-2 text-sm hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    {body}
-                  </Link>
-                ) : (
-                  <div className="flex items-baseline justify-between gap-4 py-2 text-sm">{body}</div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </DashboardCard>
-  )
-
   return (
     <div className="grid gap-4">
-      {attention.length > 0 ? needsAttention : null}
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="shadow-xs">
           <CardContent>
@@ -174,7 +125,6 @@ export function OverviewTab({
         </DashboardCard>
       </div>
 
-      {attention.length === 0 ? needsAttention : null}
     </div>
   )
 }

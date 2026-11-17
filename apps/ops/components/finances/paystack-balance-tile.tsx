@@ -24,9 +24,9 @@ export function PaystackBalanceTile() {
 
   return (
     <MetricTile
-      label="Paystack balance"
+      label="Paystack transfer balance"
       value={state.balanceKes != null ? formatKes(state.balanceKes) : state.error ? "Unavailable" : "…"}
-      note="Funds driver payouts. Sweep any surplus to the bank"
+      note="Funds driver payouts. Collections Paystack settles to the bank never reach it"
     />
   )
 }

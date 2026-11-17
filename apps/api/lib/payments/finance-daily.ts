@@ -3,6 +3,7 @@ import { alertOpsFinance, notifyCreditReleased } from "@/lib/payments/money-noti
 import { nairobiYesterday, writeDailySpend } from "@/lib/payments/daily-spend"
 import { settlePayment, type SettleResult } from "@/lib/payments/settle-payment"
 import { reconcileProcessingTransfers } from "@/lib/payments/payouts"
+import { reconcileRefunds } from "@/lib/payments/refunds"
 import { prisma } from "@/lib/prisma"
 
 const STALE_MINUTES = 60
@@ -85,6 +86,11 @@ export async function runFinanceDaily(today: Date = new Date()) {
   const spend = await writeDailySpend(today)
   const credit = await releaseCompletedCredit(today)
   const transfers = await reconcileProcessingTransfers()
+  // Refunds made in the Paystack dashboard, or whose webhook never arrived.
+  const refunds = await reconcileRefunds().catch((error) => {
+    console.error("[finance-daily] refund reconcile failed:", error)
+    return { imported: 0 }
+  })
   const digest = await sendFinanceDigest()
-  return { payments, spend, credit, transfers, digest }
+  return { payments, spend, credit, transfers, refunds, digest }
 }

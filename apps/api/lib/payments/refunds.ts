@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto"
 
 import { availableKes, lockOrg } from "@/lib/payments/funding"
 import { notifyRefundUpdate } from "@/lib/payments/money-notify"
-import { createRefund, PaystackError } from "@/lib/payments/paystack"
+import { createRefund, fromSubunit, listRefunds, PaystackError, verifyTransaction, type PaystackRefund } from "@/lib/payments/paystack"
 import { prisma } from "@/lib/prisma"
 
 const roundKes = (value: number) => Math.round(value * 100) / 100
@@ -191,37 +191,130 @@ export async function refundCredit(input: {
   return { refundIds: slices.map((s) => s.id) }
 }
 
-/** refund.* webhooks. Each notice fires only when our row's status actually changed. */
-export async function handleRefundEvent(
-  event: string,
-  data: { id?: number | string; status?: string; transaction_reference?: string; merchant_note?: string },
-): Promise<void> {
-  const byProviderId = data.id != null ? await prisma.refund.findFirst({ where: { provider_refund_id: String(data.id) } }) : null
-  // Webhook can beat our own update of provider_refund_id: fall back to the reference in merchant_note.
-  const noteRef = data.merchant_note?.match(/^(adm-refund-\d+):/)?.[1]
-  const refund = byProviderId ?? (noteRef ? await prisma.refund.findUnique({ where: { reference: noteRef } }) : null)
-  if (!refund) {
-    console.warn(`[refunds] ${event} for an unknown refund (${data.id ?? "no id"})`)
+type PaymentForSync = { id: number; org_id: number; reference: string; provider_tx_id: bigint | null; created_by: string }
+
+/**
+ * Bring our rows for one payment in line with Paystack's refund list. A refund we already
+ * know is matched by Paystack id, or by the `adm-refund-N` reference in its merchant note.
+ * One we don't know was made in the Paystack dashboard: it is imported as a Refund plus a
+ * `cash_refund` debit, so the advertiser can no longer spend money that went back to them.
+ * Idempotent: the `ps-refund-<id>` reference is unique on both tables.
+ */
+export async function applyPaystackRefunds(payment: PaymentForSync, items: PaystackRefund[]): Promise<{ imported: number }> {
+  let imported = 0
+  for (const item of items) {
+    const providerId = String(item.id)
+    const noteRef = item.merchant_note?.match(/^(adm-refund-\d+):/)?.[1]
+    let row =
+      (await prisma.refund.findFirst({ where: { provider_refund_id: providerId } })) ??
+      (noteRef ? await prisma.refund.findUnique({ where: { reference: noteRef } }) : null)
+
+    if (row && !row.provider_refund_id) {
+      row = await prisma.refund.update({ where: { id: row.id }, data: { provider_refund_id: providerId } })
+    }
+    if (!row) {
+      // A refund Paystack never sent moved no money: nothing to import.
+      if (item.status === "failed") continue
+      const reference = `ps-refund-${item.id}`
+      const amountKes = fromSubunit(item.amount)
+      const created = await prisma.$transaction(async (tx) => {
+        await lockOrg(tx, payment.org_id)
+        if (await tx.refund.findUnique({ where: { reference } })) return null
+        // One of our own refunds on this payment has no Paystack id yet (webhook raced the save, or
+        // createRefund timed out). This item may be that refund, so importing it could debit twice.
+        // Leave it: the row stays in Needs attention for a human.
+        const unmatched = await tx.refund.count({
+          where: { payment_id: payment.id, provider_refund_id: null, status: { not: "failed" } },
+        })
+        if (unmatched > 0) {
+          console.warn(`[refunds] not importing Paystack refund ${item.id}: ${payment.reference} has an unmatched refund of ours`)
+          return null
+        }
+        const ledger = await tx.walletTransaction.create({
+          data: {
+            org_id: payment.org_id,
+            kind: "cash_refund",
+            amount_kes: -amountKes,
+            provider: "paystack",
+            reference,
+            description: `Refund to your original payment method (${payment.reference})`,
+            occurred_at: new Date(),
+          },
+        })
+        return tx.refund.create({
+          data: {
+            payment_id: payment.id,
+            org_id: payment.org_id,
+            amount_kes: amountKes,
+            status: "processing",
+            reference,
+            provider_refund_id: providerId,
+            wallet_transaction_id: ledger.id,
+            reason: "Made in the Paystack dashboard",
+            created_by_email: item.refunded_by || "paystack-dashboard",
+          },
+        })
+      })
+      if (!created) continue
+      row = created
+      imported += 1
+      await refundNotice(row.id, "sent")
+    }
+
+    switch (item.status) {
+      case "processed": {
+        const { count } = await prisma.refund.updateMany({
+          where: { id: row.id, status: { in: ["pending", "processing", "needs_attention"] } },
+          data: { status: "processed" },
+        })
+        if (count) await refundNotice(row.id, "processed")
+        break
+      }
+      case "failed":
+        if (await failRefund(row.id, "Paystack reported the refund failed")) await refundNotice(row.id, "delayed")
+        break
+      case "needs-attention":
+        if (await markNeedsAttention(row.id)) await refundNotice(row.id, "delayed")
+        break
+      default:
+        await prisma.refund.updateMany({ where: { id: row.id, status: "pending" }, data: { status: "processing" } })
+    }
+  }
+  return { imported }
+}
+
+/**
+ * refund.* webhooks. The payload carries only the transaction reference, amount and status
+ * (no refund id, no merchant note), so it is a trigger: re-read that payment's refunds from
+ * Paystack and apply them. Each notice fires only when our row's status actually changed.
+ */
+export async function handleRefundEvent(event: string, data: { transaction_reference?: string }): Promise<void> {
+  const payment = data.transaction_reference
+    ? await prisma.payment.findUnique({ where: { reference: data.transaction_reference } })
+    : null
+  if (!payment) {
+    console.warn(`[refunds] ${event} for a payment we don't have (${data.transaction_reference ?? "no reference"})`)
     return
   }
+  const txId = payment.provider_tx_id ?? BigInt((await verifyTransaction(payment.reference)).id)
+  await applyPaystackRefunds(payment, await listRefunds({ transactionId: txId }))
+}
 
-  switch (event) {
-    case "refund.processed": {
-      const { count } = await prisma.refund.updateMany({
-        where: { id: refund.id, status: { in: ["pending", "processing", "needs_attention"] } },
-        data: { status: "processed" },
-      })
-      if (count) await refundNotice(refund.id, "processed")
-      return
+/** Nightly: every Paystack refund of the last `days` days, so a missed webhook still lands. */
+export async function reconcileRefunds(days = 30): Promise<{ imported: number }> {
+  const items = await listRefunds({ from: new Date(Date.now() - days * 86_400_000).toISOString() })
+  const byTx = new Map<string, PaystackRefund[]>()
+  for (const r of items) byTx.set(String(r.transaction), [...(byTx.get(String(r.transaction)) ?? []), r])
+  const payments = await prisma.payment.findMany({
+    where: { provider_tx_id: { in: [...byTx.keys()].map((id) => BigInt(id)) } },
+  })
+  let imported = 0
+  for (const p of payments) {
+    try {
+      imported += (await applyPaystackRefunds(p, byTx.get(String(p.provider_tx_id)) ?? [])).imported
+    } catch (error) {
+      console.error(`[refunds] reconcile ${p.reference} failed:`, error)
     }
-    case "refund.failed":
-      if (await failRefund(refund.id, "Paystack reported the refund failed")) await refundNotice(refund.id, "delayed")
-      return
-    case "refund.needs-attention":
-      if (await markNeedsAttention(refund.id)) await refundNotice(refund.id, "delayed")
-      return
-    default:
-      // refund.pending / refund.processing: accepted, nothing to tell anyone.
-      await prisma.refund.updateMany({ where: { id: refund.id, status: "pending" }, data: { status: "processing" } })
   }
+  return { imported }
 }

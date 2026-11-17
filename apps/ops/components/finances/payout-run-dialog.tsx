@@ -165,7 +165,7 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
                 ["Drivers", String(chosen.length)],
                 ["Total", formatKes(totalKes)],
                 ["Estimated Paystack fees", formatKes(feesKes)],
-                ["Paystack balance", confirming.balanceKes == null ? "Unavailable" : formatKes(confirming.balanceKes)],
+                ["Paystack transfer balance", confirming.balanceKes == null ? "Unavailable" : formatKes(confirming.balanceKes)],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between">
                   <dt className="text-muted-foreground">{label}</dt>
@@ -175,7 +175,10 @@ export function PayoutRunDialog({ canDisburse }: { canDisburse: boolean }) {
             </dl>
             {short ? (
               <p role="alert" className="text-sm text-destructive">
-                The Paystack balance doesn&rsquo;t cover the total plus fees. Top up the balance first.
+                The Paystack transfer balance doesn&rsquo;t cover the total plus fees. This is the money Paystack holds
+                for transfers, not your collections total: payments that Paystack settles to your bank never reach it.
+                Top it up from the Paystack dashboard, or set settlement to Manual Payouts so
+                collections stay in the balance.
               </p>
             ) : confirming.balanceKes == null ? (
               <p role="alert" className="text-sm text-destructive">
