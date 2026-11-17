@@ -135,6 +135,67 @@ export const CAMPAIGN_OBJECTIVES = [
 ] as const
 export type CampaignObjective = (typeof CAMPAIGN_OBJECTIVES)[number]
 
+export const CAMPAIGN_OBJECTIVE_LABELS: Record<CampaignObjective, string> = {
+  awareness: "Awareness",
+  launch: "Launch",
+  promo: "Promotion",
+  footfall: "Footfall",
+  other: "Other",
+}
+
+/** The markets the campaign wizard offers. pricing.ts maps each onto a rate-card zone. */
+export const CAMPAIGN_MARKETS = [
+  "CBD",
+  "Westlands",
+  "Karen",
+  "Kilimani",
+  "Mombasa Rd",
+  "Eastlands",
+] as const
+export type CampaignMarket = (typeof CAMPAIGN_MARKETS)[number]
+
+/*
+ * A campaign can run in several markets and serve several purposes. They are
+ * stored in the existing `market` / `objective` text columns as ", "-joined
+ * lists (first entry = primary), so every place that already shows or searches
+ * those columns keeps working with no migration.
+ *
+ * ponytail: no per-market SQL (a `market = 'CBD'` filter won't match a
+ * multi-market campaign). Move to text[] columns if that's ever needed — this
+ * pair of helpers is the only place that knows the encoding.
+ */
+export function splitCampaignList(value: string | null | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+export function joinCampaignList(values: readonly string[]): string {
+  return values.join(", ")
+}
+
+/** Adds or removes `option`, keeping `order` (the order the chips are shown
+ * in) so the first selected stays the primary one. */
+export function toggleCampaignListItem<T extends string>(
+  order: readonly T[],
+  current: readonly string[],
+  option: T,
+): string[] {
+  const next = current.includes(option)
+    ? current.filter((item) => item !== option)
+    : [...current, option]
+  return order.filter((item) => next.includes(item))
+}
+
+/** "promo, launch" → "Promotion, Launch" — "—" when none. */
+export function describeCampaignObjectives(value: string | null | undefined): string {
+  const labels = splitCampaignList(value).map(
+    (item) => CAMPAIGN_OBJECTIVE_LABELS[item as CampaignObjective] ?? item,
+  )
+  return labels.length > 0 ? labels.join(", ") : "—"
+}
+
 export const CREATIVE_STATUS = ["ready", "needs_design", "not_sure"] as const
 export type CreativeStatus = (typeof CREATIVE_STATUS)[number]
 

@@ -13,10 +13,16 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   CAMPAIGN_FORMATS,
+  CAMPAIGN_MARKETS,
   CAMPAIGN_OBJECTIVES,
+  CAMPAIGN_OBJECTIVE_LABELS,
   creativesForPanel,
+  describeCampaignObjectives,
+  joinCampaignList,
   missingPanels,
   specsForFormat,
+  splitCampaignList,
+  toggleCampaignListItem,
   type CampaignDto,
   type CampaignFormat,
 } from "@workspace/ops-contracts"
@@ -36,20 +42,10 @@ import { useOrgPermissions } from "@/lib/use-org"
 import { useTokenGetter } from "@/lib/auth/use-token-getter"
 import { checkoutCampaign, dueKesOf, payWithPaystack } from "@/lib/payments"
 
-const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
-
 const FORMAT_LABELS: Record<CampaignFormat, string> = {
   taxi_top: "Taxi-top LED",
   delivery_bike: "Delivery bike",
   both: "Both panels",
-}
-
-const OBJECTIVE_LABELS: Record<string, string> = {
-  awareness: "Awareness",
-  launch: "Launch",
-  promo: "Promotion",
-  footfall: "Footfall",
-  other: "Other",
 }
 
 const STEP_LABELS = ["Brief", "Flight & budget", "Creative", "Review"]
@@ -103,11 +99,14 @@ export function CampaignWizard({
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStep(initialCampaign))
 
   const [name, setName] = useState(initialCampaign?.name ?? "")
-  const [market, setMarket] = useState<string | null>(initialCampaign?.market ?? null)
+  const [markets, setMarkets] = useState<string[]>(() => splitCampaignList(initialCampaign?.market))
   const [format, setFormat] = useState<CampaignFormat>(
     (initialCampaign?.format as CampaignFormat) ?? "taxi_top",
   )
-  const [objective, setObjective] = useState<string | null>(initialCampaign?.objective ?? null)
+  const [objectives, setObjectives] = useState<string[]>(() =>
+    splitCampaignList(initialCampaign?.objective),
+  )
+  const market = joinCampaignList(markets)
   const [corridors, setCorridors] = useState(initialCampaign?.corridors ?? "")
   const [budget, setBudget] = useState(initialCampaign?.budget_kes ?? "")
   const [startsOn, setStartsOn] = useState(initialCampaign?.starts_on ?? initialStartsOn ?? "")
@@ -238,13 +237,13 @@ export function CampaignWizard({
 
   async function completeBrief() {
     if (!name.trim()) return setError("Give this campaign a name.")
-    if (!market) return setError("Pick a market.")
+    if (!market) return setError("Pick at least one market.")
     setError(null)
     const saved = await persist({
       name: name.trim(),
       market,
       format,
-      ...(objective ? { objective } : {}),
+      ...(objectives.length ? { objective: joinCampaignList(objectives) } : {}),
       ...(corridors.trim() ? { corridors: corridors.trim() } : {}),
     })
     if (saved) setStepIndex(1)
@@ -362,15 +361,18 @@ export function CampaignWizard({
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Market *</Text>
+              <Text style={styles.label}>Markets *</Text>
+              <Text style={styles.hint}>Pick every market this campaign runs in.</Text>
               <View style={styles.chipGrid}>
-                {MARKETS.map((option) => {
-                  const active = option === market
+                {CAMPAIGN_MARKETS.map((option) => {
+                  const active = markets.includes(option)
                   return (
                     <Pressable
                       key={option}
                       style={[styles.chip, active && styles.chipActive]}
-                      onPress={() => setMarket(option)}
+                      onPress={() =>
+                        setMarkets((prev) => toggleCampaignListItem(CAMPAIGN_MARKETS, prev, option))
+                      }
                       accessibilityRole="button"
                       accessibilityState={{ selected: active }}
                     >
@@ -406,20 +408,24 @@ export function CampaignWizard({
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Objective</Text>
+              <Text style={styles.label}>Objectives</Text>
               <View style={styles.chipGrid}>
                 {CAMPAIGN_OBJECTIVES.map((option) => {
-                  const active = option === objective
+                  const active = objectives.includes(option)
                   return (
                     <Pressable
                       key={option}
                       style={[styles.chip, active && styles.chipActive]}
-                      onPress={() => setObjective(option)}
+                      onPress={() =>
+                        setObjectives((prev) =>
+                          toggleCampaignListItem(CAMPAIGN_OBJECTIVES, prev, option),
+                        )
+                      }
                       accessibilityRole="button"
                       accessibilityState={{ selected: active }}
                     >
                       <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                        {OBJECTIVE_LABELS[option] ?? option}
+                        {CAMPAIGN_OBJECTIVE_LABELS[option]}
                       </Text>
                     </Pressable>
                   )
@@ -496,7 +502,7 @@ export function CampaignWizard({
               </Text>
               <CampaignBudgetEstimator
                 format={format}
-                market={market}
+                market={market || null}
                 startsOn={startsOn}
                 endsOn={endsOn}
                 onApply={(total) => setBudget(String(Math.round(total)))}
@@ -522,14 +528,9 @@ export function CampaignWizard({
               {(
                 [
                   ["Campaign", campaign.name],
-                  ["Market", campaign.market ?? "—"],
+                  ["Markets", campaign.market ?? "—"],
                   ["Format", FORMAT_LABELS[campaign.format as CampaignFormat] ?? campaign.format],
-                  [
-                    "Objective",
-                    campaign.objective
-                      ? (OBJECTIVE_LABELS[campaign.objective] ?? campaign.objective)
-                      : "—",
-                  ],
+                  ["Objectives", describeCampaignObjectives(campaign.objective)],
                   ["Flight", flightLabel],
                   [
                     "Budget",

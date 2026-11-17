@@ -84,6 +84,8 @@ Photo bytes are private Cloudinary assets (`type: "authenticated"`) served only 
 
 Advertisers own campaigns under `/v1/customer/campaigns/*`. Ops reviews under `/v1/campaigns/*` (requires the grantable `campaigns` permission). Creative bytes are private Cloudinary assets (`type: "authenticated"`) streamed only through the authenticated `…/file` proxy routes — never point an `<img>`/`<video>` at Cloudinary directly.
 
+**`market` and `objective` can hold several values.** A campaign may run in more than one market and serve more than one purpose, stored in the same two text columns as `", "`-joined lists (`"CBD, Karen"`, `"awareness, promo"`) — the first entry is the primary one. No migration, so every reader of those columns keeps working. `objective` is validated entry by entry against `CAMPAIGN_OBJECTIVES`; `market` is free text up to 120 chars. Encode/decode only through `joinCampaignList` / `splitCampaignList` in `@workspace/ops-contracts`. Consequences: a per-market SQL filter (`market = 'CBD'`) won't match a multi-market campaign (the search box's `contains` does); the budget estimator prices several markets at the **highest** zone tier (`zoneForMarket`); and `GET /v1/customer/reports/spend` counts a campaign's spend once, under its **primary** objective. If per-market querying is ever needed, move to `text[]` columns — those two helpers are the only code that knows the encoding.
+
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | `GET` / `POST` | `/v1/customer/campaigns` | Customer | List own campaigns / create draft |

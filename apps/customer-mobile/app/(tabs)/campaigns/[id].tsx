@@ -1,7 +1,11 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { exportFileName, type CampaignFormat } from "@workspace/ops-contracts"
+import {
+  describeCampaignObjectives,
+  exportFileName,
+  type CampaignFormat,
+} from "@workspace/ops-contracts"
 
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
@@ -138,7 +142,7 @@ export default function CampaignDetailScreen() {
     ["Market", campaign.market ?? "—"],
     ["Flight", flight],
     ["Format", FORMAT_LABELS[campaign.format] ?? campaign.format],
-    ["Objective", campaign.objective ?? "—"],
+    ["Objective", describeCampaignObjectives(campaign.objective)],
     ["Corridors", campaign.corridors ?? "—"],
   ]
 

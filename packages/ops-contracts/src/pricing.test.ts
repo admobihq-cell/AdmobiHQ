@@ -26,7 +26,7 @@ const base = {
 describe("zoneForMarket", () => {
   it("prices every market the wizard offers", () => {
     for (const market of WIZARD_MARKETS) {
-      expect(marketZoneIds[market], `${market} has no zone`).toBeDefined()
+      expect(marketZoneIds[market as keyof typeof marketZoneIds], `${market} has no zone`).toBeDefined()
     }
     expect(Object.keys(marketZoneIds).sort()).toEqual([...WIZARD_MARKETS].sort())
   })
@@ -35,6 +35,13 @@ describe("zoneForMarket", () => {
     expect(zoneForMarket("CBD").id).toBe("elite")
     expect(zoneForMarket("Kilimani").id).toBe("premium")
     expect(zoneForMarket("Eastlands").id).toBe("community")
+  })
+
+  it("quotes several markets at the highest tier, so adding one can't under-quote", () => {
+    expect(zoneForMarket("Eastlands, Kilimani").id).toBe("premium")
+    expect(zoneForMarket("Eastlands, Kilimani, CBD").id).toBe("elite")
+    expect(zoneForMarket("Eastlands, Nowhere").id).toBe("community")
+    expect(zoneForMarket(" CBD ,Karen ").id).toBe("elite")
   })
 
   it("falls back to the base rate rather than over-quoting an unknown market", () => {

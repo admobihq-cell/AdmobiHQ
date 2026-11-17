@@ -5,10 +5,16 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   CAMPAIGN_FORMATS,
+  CAMPAIGN_MARKETS,
   CAMPAIGN_OBJECTIVES,
+  CAMPAIGN_OBJECTIVE_LABELS,
   creativesForPanel,
+  describeCampaignObjectives,
+  joinCampaignList,
   missingPanels,
   specsForFormat,
+  splitCampaignList,
+  toggleCampaignListItem,
   type CampaignCreativeDto,
   type CampaignDto,
   type CampaignFormat,
@@ -33,20 +39,10 @@ import { dueKesOf } from "@/lib/campaigns-client"
 import { useFinanceSummary } from "@/lib/use-analytics"
 import { useOrgPermissions } from "@/lib/use-org"
 
-const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
-
 const FORMAT_LABELS: Record<CampaignFormat, string> = {
   taxi_top: "Taxi-top LED",
   delivery_bike: "Delivery bike",
   both: "Both panels",
-}
-
-const OBJECTIVE_LABELS: Record<string, string> = {
-  awareness: "Awareness",
-  launch: "Launch",
-  promo: "Promotion",
-  footfall: "Footfall",
-  other: "Other",
 }
 
 const STEP_LABELS = ["Brief", "Flight & budget", "Creative", "Review"]
@@ -95,6 +91,41 @@ function ChoiceRow<T extends string>({
             variant={active ? "default" : "outline"}
             className={cn(!active && "text-muted-foreground")}
             onClick={() => onChange(option)}
+          >
+            {labels?.[option] ?? option}
+          </Button>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Several can be on at once — a campaign can run in more than one market and
+ * serve more than one purpose. aria-pressed tells a screen reader which are on. */
+function MultiChoiceRow<T extends string>({
+  options,
+  values,
+  onToggle,
+  labels,
+}: {
+  options: readonly T[]
+  values: string[]
+  onToggle: (option: T) => void
+  labels?: Record<string, string>
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => {
+        const active = values.includes(option)
+        return (
+          <Button
+            key={option}
+            type="button"
+            size="sm"
+            variant={active ? "default" : "outline"}
+            className={cn(!active && "text-muted-foreground")}
+            aria-pressed={active}
+            onClick={() => onToggle(option)}
           >
             {labels?.[option] ?? option}
           </Button>
@@ -169,11 +200,14 @@ export function CampaignWizard({
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStep(initialCampaign))
 
   const [name, setName] = useState(initialCampaign?.name ?? "")
-  const [market, setMarket] = useState<string | null>(initialCampaign?.market ?? null)
+  const [markets, setMarkets] = useState<string[]>(() => splitCampaignList(initialCampaign?.market))
   const [format, setFormat] = useState<CampaignFormat>(
     (initialCampaign?.format as CampaignFormat) ?? "taxi_top",
   )
-  const [objective, setObjective] = useState<string | null>(initialCampaign?.objective ?? null)
+  const [objectives, setObjectives] = useState<string[]>(() =>
+    splitCampaignList(initialCampaign?.objective),
+  )
+  const market = joinCampaignList(markets)
   const [corridors, setCorridors] = useState(initialCampaign?.corridors ?? "")
   const [budget, setBudget] = useState(initialCampaign?.budget_kes ?? "")
   const [startsOn, setStartsOn] = useState(initialCampaign?.starts_on ?? initialStartsOn ?? "")
@@ -237,7 +271,7 @@ export function CampaignWizard({
       format,
     }
     if (market) payload.market = market
-    if (objective) payload.objective = objective
+    if (objectives.length) payload.objective = joinCampaignList(objectives)
     if (corridors.trim()) payload.corridors = corridors.trim()
 
     const budgetKes = Number(String(budget).replace(/[^0-9.]/g, ""))
@@ -319,18 +353,18 @@ export function CampaignWizard({
     }
     // Intentionally depend on the form fields, not persist/buildPayload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, market, format, objective, corridors, budget, startsOn, endsOn])
+  }, [name, market, format, objectives, corridors, budget, startsOn, endsOn])
 
   async function completeBrief() {
     if (!name.trim()) return setError("Give this campaign a name.")
-    if (!market) return setError("Pick a market.")
+    if (!market) return setError("Pick at least one market.")
     setError(null)
     skipNextAutosave.current = true
     const saved = await persist({
       name: name.trim(),
       market,
       format,
-      ...(objective ? { objective } : {}),
+      ...(objectives.length ? { objective: joinCampaignList(objectives) } : {}),
       ...(corridors.trim() ? { corridors: corridors.trim() } : {}),
     })
     if (saved) setStepIndex(1)
@@ -418,8 +452,13 @@ export function CampaignWizard({
           </div>
 
           <div className="space-y-2">
-            <Label>Market *</Label>
-            <ChoiceRow options={MARKETS} value={market as never} onChange={setMarket} />
+            <Label>Markets *</Label>
+            <MultiChoiceRow
+              options={CAMPAIGN_MARKETS}
+              values={markets}
+              onToggle={(option) => setMarkets((prev) => toggleCampaignListItem(CAMPAIGN_MARKETS, prev, option))}
+            />
+            <p className="text-xs text-muted-foreground">Pick every market this campaign runs in.</p>
           </div>
 
           <div className="space-y-2">
@@ -433,12 +472,14 @@ export function CampaignWizard({
           </div>
 
           <div className="space-y-2">
-            <Label>Objective</Label>
-            <ChoiceRow
+            <Label>Objectives</Label>
+            <MultiChoiceRow
               options={CAMPAIGN_OBJECTIVES}
-              value={objective as never}
-              onChange={setObjective}
-              labels={OBJECTIVE_LABELS}
+              values={objectives}
+              onToggle={(option) =>
+                setObjectives((prev) => toggleCampaignListItem(CAMPAIGN_OBJECTIVES, prev, option))
+              }
+              labels={CAMPAIGN_OBJECTIVE_LABELS}
             />
           </div>
 
@@ -518,7 +559,7 @@ export function CampaignWizard({
             </div>
             <CampaignBudgetEstimator
               format={format}
-              market={market}
+              market={market || null}
               startsOn={startsOn}
               endsOn={endsOn}
               onApply={(total) => setBudget(String(Math.round(total)))}
@@ -594,9 +635,9 @@ export function CampaignWizard({
           <dl className="rounded-xl border bg-card p-4 text-sm">
             {[
               ["Campaign", name.trim() || campaign.name],
-              ["Market", market ?? campaign.market ?? "—"],
+              ["Markets", market || campaign.market || "—"],
               ["Format", FORMAT_LABELS[format] ?? format],
-              ["Objective", objective ? (OBJECTIVE_LABELS[objective] ?? objective) : "—"],
+              ["Objectives", describeCampaignObjectives(joinCampaignList(objectives))],
               [
                 "Flight",
                 startsOn && endsOn ? `${startsOn} → ${endsOn}` : "Not scheduled yet",

@@ -6,6 +6,7 @@ import { useAuth } from "@clerk/clerk-expo"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   checkCreativeForFormat,
+  describeCampaignObjectives,
   formatBytes,
   formatDateTime,
   formatLabel,
@@ -208,7 +209,7 @@ export default function CampaignDetailScreen() {
     ["Market", data.market ?? "—"],
     ["Corridors", data.corridors ?? "—"],
     ["Format", FORMAT_LABELS[data.format] ?? data.format],
-    ["Objective", formatLabel(data.objective)],
+    ["Objective", describeCampaignObjectives(data.objective)],
     [
       "Flight",
       data.starts_on && data.ends_on ? `${data.starts_on} → ${data.ends_on}` : "Not scheduled",

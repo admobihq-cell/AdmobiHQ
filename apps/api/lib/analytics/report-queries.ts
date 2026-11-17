@@ -8,11 +8,13 @@ import {
   campaignHealth,
   costPerThousand,
   delta,
+  describeCampaignObjectives,
   foldOther,
   frequency,
   measurementLevel,
   nairobiDay,
   rate,
+  splitCampaignList,
   type CampaignReportDto,
   type CreativeRotationRowDto,
   type DailyPoint,
@@ -660,7 +662,14 @@ export async function getReportSpend(scope: ReportScope): Promise<ReportSpendDto
       cost: sees ? costPerThousand(spendDays.get(day) ?? 0, byDay.get(day)?.likely ?? null) : null,
     })),
     byCampaign: sees ? groupSpend((s) => s.name) : null,
-    byObjective: sees ? groupSpend((s) => s.objective ?? "Not set") : null,
+    // A campaign can have several objectives; its spend counts once, under the
+    // first (primary) one, so the buckets still add up to total spend.
+    byObjective: sees
+      ? groupSpend((s) => {
+          const [primary] = splitCampaignList(s.objective)
+          return primary ? describeCampaignObjectives(primary) : "Not set"
+        })
+      : null,
     byFormat: sees ? groupSpend((s) => s.format) : null,
     burn: built.rows
       .filter((r) => r.phase === "live" || r.phase === "scheduled" || r.phase === "completed")

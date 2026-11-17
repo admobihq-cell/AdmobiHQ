@@ -35,6 +35,7 @@ import {
   VEHICLE_TYPES,
   VEHICLES_ACTIVE,
   WAITLIST_PERSONA,
+  splitCampaignList,
 } from "./enums"
 import { SPEND_CATEGORIES, WALLET_TRANSACTION_KINDS } from "./analytics"
 import { CREATIVE_SLOTS } from "./creative-specs"
@@ -190,7 +191,21 @@ const dayIsoSchema = z
 
 const campaignFieldsSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  objective: z.enum(CAMPAIGN_OBJECTIVES).optional(),
+  // One or more objectives, ", "-joined (see splitCampaignList). Every entry
+  // must be a known objective so the spend report can't grow junk buckets.
+  objective: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (value) =>
+        splitCampaignList(value).length > 0 &&
+        splitCampaignList(value).every((item) =>
+          (CAMPAIGN_OBJECTIVES as readonly string[]).includes(item),
+        ),
+      "Pick from the listed objectives",
+    )
+    .optional(),
   market: z.string().trim().min(1).max(120).optional(),
   corridors: z.string().trim().max(2000).optional(),
   format: z.enum(CAMPAIGN_FORMATS).optional(),
