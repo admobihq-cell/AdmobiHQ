@@ -6,6 +6,9 @@ import { toast } from "sonner"
 import {
   CAMPAIGN_FORMATS,
   CAMPAIGN_OBJECTIVES,
+  creativesForPanel,
+  missingPanels,
+  specsForFormat,
   type CampaignCreativeDto,
   type CampaignDto,
   type CampaignFormat,
@@ -58,7 +61,8 @@ function stepCompletion(campaign: CampaignDto | null): [boolean, boolean, boolea
   return [
     Boolean(campaign.name && campaign.market && campaign.format),
     Boolean(campaign.budget_kes && campaign.starts_on && campaign.ends_on),
-    campaign.creatives.length > 0,
+    // "Both panels" needs art for each shape, so one file isn't enough.
+    missingPanels(campaign.format as CampaignFormat, campaign.creatives).length === 0,
   ]
 }
 
@@ -221,6 +225,8 @@ export function CampaignWizard({
           : "upcoming",
   }))
   const progressPercent = Math.round((done.filter(Boolean).length / 3) * 100)
+  const missing = campaign ? missingPanels(format, campaign.creatives) : []
+  const missingLabels = missing.map((spec) => spec.label).join(" and ")
   const saving = create.isPending || update.isPending
 
   /** Partial body the API accepts for create/PATCH — only include fields the
@@ -557,7 +563,9 @@ export function CampaignWizard({
             onCreativesChange={setCreatives}
           />
           <p className="text-xs text-muted-foreground">
-            Creative is required before submit, but you can save a draft without it and come back.
+            {missing.length > 0
+              ? `Still needed before you can submit: ${missingLabels}. You can save a draft without it and come back.`
+              : "Artwork is in for every panel."}
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => setStepIndex(1)}>
@@ -574,7 +582,7 @@ export function CampaignWizard({
                 className="sm:flex-1"
                 onClick={() => setStepIndex(3)}
               >
-                {campaign.creatives.length === 0 ? "Skip to review" : "Continue"}
+                {missing.length > 0 ? "Skip to review" : "Continue"}
               </Button>
             }
           />
@@ -601,7 +609,14 @@ export function CampaignWizard({
               ],
               [
                 "Creative",
-                `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
+                specsForFormat(format).length > 1
+                  ? specsForFormat(format)
+                      .map(
+                        (spec) =>
+                          `${spec.label}: ${creativesForPanel(spec.format, campaign.creatives).length}`,
+                      )
+                      .join(" · ")
+                  : `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
               ],
             ].map(([label, value]) => (
               <div
@@ -637,7 +652,7 @@ export function CampaignWizard({
                   className="sm:flex-1"
                   loading={submit.isPending || checkout.isPending || checkout.isSuccess}
                   loadingText={dueKes ? "Opening payment…" : "Submitting…"}
-                  disabled={campaign.creatives.length === 0}
+                  disabled={missing.length > 0}
                   onClick={() => void handleSubmit()}
                 >
                   {submitLabel}
@@ -656,9 +671,9 @@ export function CampaignWizard({
               Your role can draft campaigns but not submit them — submitting commits spend. Save the
               draft and ask an organization admin to send it for review.
             </p>
-          ) : campaign.creatives.length === 0 ? (
+          ) : missing.length > 0 ? (
             <p className="text-xs text-muted-foreground">
-              Add at least one creative before submitting for review.
+              Add artwork for {missingLabels} before submitting for review.
             </p>
           ) : null}
         </StepPanel>

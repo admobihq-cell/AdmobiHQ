@@ -14,6 +14,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   CAMPAIGN_FORMATS,
   CAMPAIGN_OBJECTIVES,
+  creativesForPanel,
+  missingPanels,
+  specsForFormat,
   type CampaignDto,
   type CampaignFormat,
 } from "@workspace/ops-contracts"
@@ -63,7 +66,8 @@ function stepCompletion(campaign: CampaignDto | null): [boolean, boolean, boolea
   return [
     Boolean(campaign.name && campaign.market && campaign.format),
     Boolean(campaign.budget_kes && campaign.starts_on && campaign.ends_on),
-    campaign.creatives.length > 0,
+    // "Both panels" needs art for each shape, so one file isn't enough.
+    missingPanels(campaign.format as CampaignFormat, campaign.creatives).length === 0,
   ]
 }
 
@@ -112,6 +116,8 @@ export function CampaignWizard({
 
   const done = stepCompletion(campaign)
   const progressPercent = Math.round((done.filter(Boolean).length / 3) * 100)
+  const missing = campaign ? missingPanels(format, campaign.creatives) : []
+  const missingLabels = missing.map((spec) => spec.label).join(" and ")
   const saving = create.isPending || update.isPending
 
   const styles = useThemedStyles((c) => ({
@@ -533,7 +539,14 @@ export function CampaignWizard({
                   ],
                   [
                     "Creative",
-                    `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
+                    specsForFormat(format).length > 1
+                      ? specsForFormat(format)
+                          .map(
+                            (spec) =>
+                              `${spec.label}: ${creativesForPanel(spec.format, campaign.creatives).length}`,
+                          )
+                          .join("\n")
+                      : `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
                   ],
                 ] as Array<[string, string]>
               ).map(([label, value], index, rows) => (
@@ -547,6 +560,9 @@ export function CampaignWizard({
               ))}
             </View>
             <Text style={styles.hint}>
+              {missing.length > 0
+                ? `Add artwork for ${missingLabels} before you can submit. `
+                : ""}
               Submitting sends this to our team for review. You&apos;ll get an email and a
               notification when there&apos;s a decision, and you can&apos;t edit while it&apos;s in
               the queue.
@@ -607,13 +623,14 @@ export function CampaignWizard({
             <Pressable
               style={({ pressed }) => [
                 styles.primary,
-                ((campaign?.creatives.length ?? 0) === 0 || pressed) && styles.disabled,
+                pressed && styles.disabled,
               ]}
               onPress={() => setStepIndex(3)}
-              disabled={(campaign?.creatives.length ?? 0) === 0}
               accessibilityRole="button"
             >
-              <Text style={styles.primaryText}>Continue</Text>
+              <Text style={styles.primaryText}>
+                {missing.length > 0 ? "Skip to review" : "Continue"}
+              </Text>
             </Pressable>
           ) : null}
 
@@ -621,10 +638,10 @@ export function CampaignWizard({
             <Pressable
               style={({ pressed }) => [
                 styles.primary,
-                (submit.isPending || pressed) && styles.disabled,
+                (submit.isPending || missing.length > 0 || pressed) && styles.disabled,
               ]}
               onPress={() => void handleSubmit()}
-              disabled={submit.isPending || paying}
+              disabled={submit.isPending || paying || missing.length > 0}
               accessibilityRole="button"
             >
               {submit.isPending || paying ? (

@@ -110,6 +110,7 @@ API-backed against `/v1/customer/campaigns` (same contracts as customer-web):
 - **List / detail / calendar** — real data; status badges include derived flight phase (`scheduled` / `live` / `completed`).
 - **Create / edit** — full-screen four-step wizard at `/campaigns/new` (resume with `id` param). Creative picker uses `expo-image-picker` for images **and** video; formats are PNG/JPG/GIF/MP4 only (from `CREATIVE_SPECS` in `@workspace/ops-contracts`). No toast library — inline banners (`ApiErrorBanner` pattern).
 - **Review banner** — shows ops `review_reason` verbatim when status is `changes_requested` or `rejected`.
+- **Wizard header + creative sections** — the step header (a labelled bar per step and "Step N of 4 · name") is rendered *above* the `ScrollView`, so it stays pinned while a long step scrolls. The creative step mirrors web: one section per panel (taxi top 3:1, bike box 1:1) with its own add button, checked against that panel's spec (`checkCreativeDimensions`), grouped by `creativesForPanel`; unfitting files get a "Doesn't fit this campaign" section. *Skip to review* is allowed without art; *Submit for review* is disabled until `missingPanels` is empty. Thumbnails use `resizeMode="contain"` so a 3:1 banner isn't cropped.
 - **Budget estimator** — the wizard's budget step prices the flight with
   `calculateCampaignEstimate()` from `@workspace/ops-contracts`, the same rate
   card the website and customer-web use. The layout is native (no component
