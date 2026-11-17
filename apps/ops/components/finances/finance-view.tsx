@@ -6,6 +6,7 @@ import { AttentionTab } from "@/components/finances/attention-tab"
 import { LedgerTab } from "@/components/finances/ledger-tab"
 import { OverviewTab } from "@/components/finances/overview-tab"
 import { PayoutsTab } from "@/components/finances/payouts-tab"
+import { PaystackTab } from "@/components/finances/paystack-tab"
 import { ToolCostsTab } from "@/components/finances/tool-costs-tab"
 import { WalletsTab } from "@/components/finances/wallets-tab"
 import {
@@ -24,6 +25,7 @@ export const FINANCE_TABS = [
   { value: "ledger", label: "Ledger" },
   { value: "wallets", label: "Wallets" },
   { value: "payouts", label: "Payouts" },
+  { value: "paystack", label: "Paystack" },
   { value: "tools", label: "Tool costs" },
 ]
 
@@ -47,6 +49,8 @@ export async function FinanceTab({ tab, range }: { tab: string; range: DateRange
       }
       case "attention":
         return <AttentionTab attention={await getPaymentsNeedingAttention()} />
+      case "paystack":
+        return <PaystackTab range={range} />
       case "tools":
         return <ToolCostsTab data={await getToolCosts()} />
       default: {

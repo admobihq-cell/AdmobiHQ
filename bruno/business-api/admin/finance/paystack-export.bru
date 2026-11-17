@@ -1,0 +1,23 @@
+meta {
+  name: Paystack export
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{API_URL}}/v1/ops/paystack/export
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{clerk_jwt}}
+}
+
+body:json {
+  {}
+}
+
+docs {
+  Returns { url }: Paystack's hosted CSV of KES transactions. Optional from, to, status.
+}

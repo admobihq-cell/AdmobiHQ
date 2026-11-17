@@ -46,7 +46,26 @@ export function paystackSecretKey(): string | null {
   return key && /^sk_(test|live)_/.test(key) ? key : null
 }
 
+export type PaystackMeta = { total?: number; page?: number; pageCount?: number; perPage?: number }
+
 async function paystack<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+  return (await paystackEnvelope<T>(method, path, body)).data
+}
+
+/** One page of a Paystack list, with its paging `meta`. */
+export async function paystackPage<T>(path: string): Promise<{ data: T[]; meta: PaystackMeta }> {
+  const json = await paystackEnvelope<T[]>("GET", path)
+  return { data: json.data ?? [], meta: json.meta ?? {} }
+}
+
+export const paystackPost = <T>(path: string, body?: unknown) => paystack<T>("POST", path, body)
+export const paystackGet = <T>(path: string) => paystack<T>("GET", path)
+
+async function paystackEnvelope<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: unknown,
+): Promise<{ data: T; meta?: PaystackMeta }> {
   const key = paystackSecretKey()
   if (!key) throw new Error("PAYSTACK_SECRET_KEY is not set")
   const res = await fetch(`${BASE}${path}`, {
@@ -54,11 +73,11 @@ async function paystack<T>(method: "GET" | "POST", path: string, body?: unknown)
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  const json = (await res.json().catch(() => null)) as { status?: boolean; message?: string; data?: T } | null
+  const json = (await res.json().catch(() => null)) as { status?: boolean; message?: string; data?: T; meta?: PaystackMeta } | null
   if (!res.ok || !json || json.status === false) {
     throw new PaystackError(json?.message ?? `Paystack ${method} ${path} failed (${res.status})`, res.status, json)
   }
-  return json.data as T
+  return { data: json.data as T, meta: json.meta }
 }
 
 export type PaystackTx = {
