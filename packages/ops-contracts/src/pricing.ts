@@ -1,3 +1,4 @@
+import { splitCampaignList, type CampaignMarket } from "./enums"
 import { formatKes } from "./format"
 
 export { formatKes }
@@ -244,7 +245,7 @@ export function formatKesPrecise(amount: number, maximumFractionDigits = 2): str
  * Mombasa Rd sits at premium — a major arterial corridor, but not the CBD /
  * Karen / Gigiri tier the elite multiplier is reserved for.
  */
-export const marketZoneIds: Record<string, ZoneTier["id"]> = {
+export const marketZoneIds: Record<CampaignMarket, ZoneTier["id"]> = {
   CBD: "elite",
   Karen: "elite",
   Westlands: "premium",
@@ -253,11 +254,26 @@ export const marketZoneIds: Record<string, ZoneTier["id"]> = {
   Eastlands: "community",
 }
 
-/** The zone tier a market bills at. Falls back to community — the base rate —
- * so an unmapped or not-yet-picked market never silently over-quotes. */
+/** The zone tier a campaign bills at. A campaign can run in several markets
+ * (a ", "-joined list); it quotes at the HIGHEST tier among them, so picking
+ * more markets can never under-quote — the account manager refines it in
+ * review. Falls back to community — the base rate — when nothing is picked or
+ * a name isn't mapped, so that case never silently over-quotes. */
 export function zoneForMarket(market: string | null | undefined): ZoneTier {
-  const id = market ? marketZoneIds[market] : undefined
-  return zoneTiers.find((zone) => zone.id === id) ?? zoneTiers[0]!
+  const zones = splitCampaignList(market)
+    .map((name) => marketZoneIds[name as CampaignMarket])
+    .map((id) => zoneTiers.find((zone) => zone.id === id))
+    .filter((zone): zone is ZoneTier => zone != null)
+  return zones.reduce((top, zone) => (zone.multiplier > top.multiplier ? zone : top), zoneTiers[0]!)
+}
+
+/** The one-line "why this rate" note under the estimator, for 0, 1 or many markets. */
+export function marketRateNote(market: string | null | undefined): string {
+  const names = splitCampaignList(market)
+  const zone = zoneForMarket(market).name.toLowerCase()
+  if (names.length === 0) return "No market picked yet — quoted at the base rate."
+  if (names.length === 1) return `${names[0]} bills at the ${zone} rate.`
+  return `${names.length} markets picked, so the highest zone rate applies (${zone}). Your account manager prices each market in review.`
 }
 
 export type CampaignEstimateInput = {

@@ -5,7 +5,10 @@ import {
   CREATIVE_SPECS,
   checkCreativeDimensions,
   checkCreativeForFormat,
+  creativesForPanel,
   describeSpec,
+  missingPanels,
+  panelForCreative,
   specsForFormat,
 } from "./creative-specs"
 import { campaignCreateSchema, campaignReviewSchema, campaignUpdateSchema } from "./schemas"
@@ -148,5 +151,29 @@ describe("campaign schemas", () => {
         .success,
     ).toBe(true)
     expect(campaignReviewSchema.safeParse({ decision: "deleted" }).success).toBe(false)
+  })
+})
+
+describe("panels from shape", () => {
+  const taxi = { width: 1920, height: 640 }
+  const bike = { width: 640, height: 640 }
+  const unknown = { width: null, height: null }
+
+  it("tells the panels apart by aspect ratio", () => {
+    expect(panelForCreative(taxi)).toBe("taxi_top")
+    expect(panelForCreative(bike)).toBe("delivery_bike")
+    expect(panelForCreative({ width: 400, height: 300 })).toBeNull()
+    expect(panelForCreative(unknown)).toBeNull()
+  })
+
+  it("sorts a mixed set into one box per panel", () => {
+    expect(creativesForPanel("taxi_top", [taxi, bike, unknown])).toEqual([taxi])
+    expect(creativesForPanel("delivery_bike", [taxi, bike, unknown])).toEqual([bike])
+  })
+
+  it("a both campaign is only ready with art for each panel", () => {
+    expect(missingPanels("both", [taxi]).map((s) => s.format)).toEqual(["delivery_bike"])
+    expect(missingPanels("both", [taxi, bike])).toEqual([])
+    expect(missingPanels("taxi_top", [bike]).map((s) => s.format)).toEqual(["taxi_top"])
   })
 })

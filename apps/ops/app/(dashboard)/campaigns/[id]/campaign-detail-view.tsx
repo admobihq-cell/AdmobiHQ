@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner"
 import {
   checkCreativeForFormat,
+  describeCampaignObjectives,
   specsForFormat,
   type CampaignDto,
   type CampaignFormat,
@@ -397,7 +398,7 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
           icon={Wallet}
           label="Budget"
           value={data.budget_kes ? `KES ${Number(data.budget_kes).toLocaleString("en-KE")}` : "—"}
-          sub={formatLabel(data.objective)}
+          sub={describeCampaignObjectives(data.objective)}
         />
         <Fact
           icon={CalendarDays}
@@ -440,7 +441,7 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
 
           <SectionCard title="Brief" flush>
             <SectionRows>
-              <SectionRow label="Objective" value={formatLabel(data.objective)} />
+              <SectionRow label="Objective" value={describeCampaignObjectives(data.objective)} />
               <SectionRow label="Market" value={data.market ?? "—"} />
               <SectionRow label="Corridors" value={data.corridors ?? "—"} />
               <SectionRow label="Format" value={FORMAT_LABELS[data.format] ?? data.format} />

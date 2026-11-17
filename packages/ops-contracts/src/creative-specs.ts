@@ -172,6 +172,42 @@ export function checkCreativeDimensions(
   return { level: "ok", ok: true }
 }
 
+type Sized = { width: number | null; height: number | null }
+
+/**
+ * Which panel a creative is made for, read from its shape. There is no stored
+ * "panel" on a creative: 3:1 and 1:1 can never both pass the 2% aspect gate, so
+ * the dimensions already say. null = dimensions unknown, or it fits neither
+ * panel (e.g. a leftover after the campaign's format was narrowed).
+ */
+export function panelForCreative(creative: Sized): CreativeSpec["format"] | null {
+  const { width, height } = creative
+  if (width == null || height == null) return null
+  return (
+    Object.values(CREATIVE_SPECS).find((spec) => checkCreativeDimensions(spec, width, height).ok)
+      ?.format ?? null
+  )
+}
+
+/** Creatives that belong in this panel's box. */
+export function creativesForPanel<T extends Sized>(
+  panel: CreativeSpec["format"],
+  creatives: T[],
+): T[] {
+  return creatives.filter((creative) => panelForCreative(creative) === panel)
+}
+
+/**
+ * Specs this campaign still has no artwork for (empty = ready to submit). A
+ * "both" campaign runs on two physically different panels, so one creative
+ * can't satisfy it. The API's submit gate and every wizard share this.
+ */
+export function missingPanels(format: CampaignFormat, creatives: Sized[]): CreativeSpec[] {
+  return specsForFormat(format).filter(
+    (spec) => creativesForPanel(spec.format, creatives).length === 0,
+  )
+}
+
 /**
  * Checks a creative against every spec the campaign's format allows and
  * returns the best outcome — a "both" campaign accepts either panel's

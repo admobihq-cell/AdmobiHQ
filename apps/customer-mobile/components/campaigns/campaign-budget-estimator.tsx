@@ -8,6 +8,7 @@ import {
   formatKes,
   formatKesPrecise,
   slotLengthOptions,
+  marketRateNote,
   zoneForMarket,
 } from "@workspace/ops-contracts"
 
@@ -219,9 +220,7 @@ export function CampaignBudgetEstimator({
           </Text>
         </View>
         <Text style={styles.basisHint}>
-          {market
-            ? `${market} bills at the ${zone.name.toLowerCase()} rate.`
-            : "No market picked yet — quoted at the base rate."}{" "}
+          {marketRateNote(market)}{" "}
           {days} day{days === 1 ? "" : "s"} from your flight dates.
         </Text>
       </View>

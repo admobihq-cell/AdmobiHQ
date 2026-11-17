@@ -12,6 +12,7 @@ import {
   Wallet,
 } from "lucide-react"
 import {
+  describeCampaignObjectives,
   exportFileName,
   formatKes as formatKesNumber,
   type CampaignDto,
@@ -222,7 +223,7 @@ export function CampaignDetailView({ id }: { id: number }) {
           : `${flightRange(campaign.starts_on, campaign.ends_on)} (${flightDays.totalDays} day${flightDays.totalDays === 1 ? "" : "s"})`,
     },
     { label: "Format", value: format },
-    { label: "Objective", value: campaign.objective ?? "—" },
+    { label: "Objective", value: describeCampaignObjectives(campaign.objective) },
     { label: "Corridors", value: campaign.corridors ?? "—" },
     ...(campaign.created_by_name
       ? [{ label: "Created by", value: `${campaign.created_by_name} · ${shortTimestamp(campaign.created_at)}` }]

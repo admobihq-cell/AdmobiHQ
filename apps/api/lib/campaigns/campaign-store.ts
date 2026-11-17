@@ -1,6 +1,6 @@
 import type { Campaign, CampaignCreative, MediaAsset } from "@prisma/client"
 
-import { checkCreativeDimensions, specsForFormat } from "@workspace/ops-contracts"
+import { missingPanels, type CampaignFormat } from "@workspace/ops-contracts"
 
 import { prisma } from "@/lib/prisma"
 
@@ -85,19 +85,7 @@ export function missingCampaignCreatives(
   format: string,
   creatives: Array<{ width: number | null; height: number | null }>,
 ): string[] {
-  const specs = specsForFormat(format as Parameters<typeof specsForFormat>[0])
-
-  return specs
-    .filter(
-      (spec) =>
-        !creatives.some(
-          (creative) =>
-            creative.width != null &&
-            creative.height != null &&
-            // Same checker the upload route gates on, so "accepted at upload"
-            // and "counts toward submit" can never drift apart.
-            checkCreativeDimensions(spec, creative.width, creative.height).ok,
-        ),
-    )
-    .map((spec) => spec.label)
+  // Same checker the upload route gates on, so "accepted at upload" and
+  // "counts toward submit" can never drift apart.
+  return missingPanels(format as CampaignFormat, creatives).map((spec) => spec.label)
 }

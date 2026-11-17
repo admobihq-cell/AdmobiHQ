@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   CAMPAIGN_FORMATS,
+  CAMPAIGN_MARKETS,
   CAMPAIGN_OBJECTIVES,
+  CAMPAIGN_OBJECTIVE_LABELS,
+  creativesForPanel,
+  describeCampaignObjectives,
+  joinCampaignList,
+  missingPanels,
+  specsForFormat,
+  splitCampaignList,
+  toggleCampaignListItem,
   type CampaignCreativeDto,
   type CampaignDto,
   type CampaignFormat,
@@ -30,20 +39,10 @@ import { dueKesOf } from "@/lib/campaigns-client"
 import { useFinanceSummary } from "@/lib/use-analytics"
 import { useOrgPermissions } from "@/lib/use-org"
 
-const MARKETS = ["CBD", "Westlands", "Karen", "Kilimani", "Mombasa Rd", "Eastlands"] as const
-
 const FORMAT_LABELS: Record<CampaignFormat, string> = {
   taxi_top: "Taxi-top LED",
   delivery_bike: "Delivery bike",
   both: "Both panels",
-}
-
-const OBJECTIVE_LABELS: Record<string, string> = {
-  awareness: "Awareness",
-  launch: "Launch",
-  promo: "Promotion",
-  footfall: "Footfall",
-  other: "Other",
 }
 
 const STEP_LABELS = ["Brief", "Flight & budget", "Creative", "Review"]
@@ -58,7 +57,8 @@ function stepCompletion(campaign: CampaignDto | null): [boolean, boolean, boolea
   return [
     Boolean(campaign.name && campaign.market && campaign.format),
     Boolean(campaign.budget_kes && campaign.starts_on && campaign.ends_on),
-    campaign.creatives.length > 0,
+    // "Both panels" needs art for each shape, so one file isn't enough.
+    missingPanels(campaign.format as CampaignFormat, campaign.creatives).length === 0,
   ]
 }
 
@@ -91,6 +91,41 @@ function ChoiceRow<T extends string>({
             variant={active ? "default" : "outline"}
             className={cn(!active && "text-muted-foreground")}
             onClick={() => onChange(option)}
+          >
+            {labels?.[option] ?? option}
+          </Button>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Several can be on at once — a campaign can run in more than one market and
+ * serve more than one purpose. aria-pressed tells a screen reader which are on. */
+function MultiChoiceRow<T extends string>({
+  options,
+  values,
+  onToggle,
+  labels,
+}: {
+  options: readonly T[]
+  values: string[]
+  onToggle: (option: T) => void
+  labels?: Record<string, string>
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => {
+        const active = values.includes(option)
+        return (
+          <Button
+            key={option}
+            type="button"
+            size="sm"
+            variant={active ? "default" : "outline"}
+            className={cn(!active && "text-muted-foreground")}
+            aria-pressed={active}
+            onClick={() => onToggle(option)}
           >
             {labels?.[option] ?? option}
           </Button>
@@ -165,11 +200,14 @@ export function CampaignWizard({
   const [stepIndex, setStepIndex] = useState(() => firstIncompleteStep(initialCampaign))
 
   const [name, setName] = useState(initialCampaign?.name ?? "")
-  const [market, setMarket] = useState<string | null>(initialCampaign?.market ?? null)
+  const [markets, setMarkets] = useState<string[]>(() => splitCampaignList(initialCampaign?.market))
   const [format, setFormat] = useState<CampaignFormat>(
     (initialCampaign?.format as CampaignFormat) ?? "taxi_top",
   )
-  const [objective, setObjective] = useState<string | null>(initialCampaign?.objective ?? null)
+  const [objectives, setObjectives] = useState<string[]>(() =>
+    splitCampaignList(initialCampaign?.objective),
+  )
+  const market = joinCampaignList(markets)
   const [corridors, setCorridors] = useState(initialCampaign?.corridors ?? "")
   const [budget, setBudget] = useState(initialCampaign?.budget_kes ?? "")
   const [startsOn, setStartsOn] = useState(initialCampaign?.starts_on ?? initialStartsOn ?? "")
@@ -221,6 +259,8 @@ export function CampaignWizard({
           : "upcoming",
   }))
   const progressPercent = Math.round((done.filter(Boolean).length / 3) * 100)
+  const missing = campaign ? missingPanels(format, campaign.creatives) : []
+  const missingLabels = missing.map((spec) => spec.label).join(" and ")
   const saving = create.isPending || update.isPending
 
   /** Partial body the API accepts for create/PATCH — only include fields the
@@ -231,7 +271,7 @@ export function CampaignWizard({
       format,
     }
     if (market) payload.market = market
-    if (objective) payload.objective = objective
+    if (objectives.length) payload.objective = joinCampaignList(objectives)
     if (corridors.trim()) payload.corridors = corridors.trim()
 
     const budgetKes = Number(String(budget).replace(/[^0-9.]/g, ""))
@@ -313,18 +353,18 @@ export function CampaignWizard({
     }
     // Intentionally depend on the form fields, not persist/buildPayload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, market, format, objective, corridors, budget, startsOn, endsOn])
+  }, [name, market, format, objectives, corridors, budget, startsOn, endsOn])
 
   async function completeBrief() {
     if (!name.trim()) return setError("Give this campaign a name.")
-    if (!market) return setError("Pick a market.")
+    if (!market) return setError("Pick at least one market.")
     setError(null)
     skipNextAutosave.current = true
     const saved = await persist({
       name: name.trim(),
       market,
       format,
-      ...(objective ? { objective } : {}),
+      ...(objectives.length ? { objective: joinCampaignList(objectives) } : {}),
       ...(corridors.trim() ? { corridors: corridors.trim() } : {}),
     })
     if (saved) setStepIndex(1)
@@ -385,8 +425,13 @@ export function CampaignWizard({
 
   return (
     <div className="w-full space-y-8">
-      <div className="space-y-3">
+      {/* Pinned under FlowChrome's h-14 bar so the step names stay on screen
+          while a long step scrolls. -mx cancels the page gutter so the
+          background covers the content scrolling beneath it. */}
+      <div className="sticky top-14 z-10 -mx-4 -mt-4 border-b border-border bg-background px-4 py-3 sm:-mx-6 sm:px-6">
         <Stepper steps={steps} />
+      </div>
+      <div className="space-y-3">
         <p className="text-center text-xs font-medium text-muted-foreground">
           {progressPercent}% complete
           {progressPercent > 0 && progressPercent < 100 ? " — almost there!" : ""}
@@ -407,8 +452,13 @@ export function CampaignWizard({
           </div>
 
           <div className="space-y-2">
-            <Label>Market *</Label>
-            <ChoiceRow options={MARKETS} value={market as never} onChange={setMarket} />
+            <Label>Markets *</Label>
+            <MultiChoiceRow
+              options={CAMPAIGN_MARKETS}
+              values={markets}
+              onToggle={(option) => setMarkets((prev) => toggleCampaignListItem(CAMPAIGN_MARKETS, prev, option))}
+            />
+            <p className="text-xs text-muted-foreground">Pick every market this campaign runs in.</p>
           </div>
 
           <div className="space-y-2">
@@ -422,12 +472,14 @@ export function CampaignWizard({
           </div>
 
           <div className="space-y-2">
-            <Label>Objective</Label>
-            <ChoiceRow
+            <Label>Objectives</Label>
+            <MultiChoiceRow
               options={CAMPAIGN_OBJECTIVES}
-              value={objective as never}
-              onChange={setObjective}
-              labels={OBJECTIVE_LABELS}
+              values={objectives}
+              onToggle={(option) =>
+                setObjectives((prev) => toggleCampaignListItem(CAMPAIGN_OBJECTIVES, prev, option))
+              }
+              labels={CAMPAIGN_OBJECTIVE_LABELS}
             />
           </div>
 
@@ -507,7 +559,7 @@ export function CampaignWizard({
             </div>
             <CampaignBudgetEstimator
               format={format}
-              market={market}
+              market={market || null}
               startsOn={startsOn}
               endsOn={endsOn}
               onApply={(total) => setBudget(String(Math.round(total)))}
@@ -552,7 +604,9 @@ export function CampaignWizard({
             onCreativesChange={setCreatives}
           />
           <p className="text-xs text-muted-foreground">
-            Creative is required before submit, but you can save a draft without it and come back.
+            {missing.length > 0
+              ? `Still needed before you can submit: ${missingLabels}. You can save a draft without it and come back.`
+              : "Artwork is in for every panel."}
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => setStepIndex(1)}>
@@ -569,7 +623,7 @@ export function CampaignWizard({
                 className="sm:flex-1"
                 onClick={() => setStepIndex(3)}
               >
-                {campaign.creatives.length === 0 ? "Skip to review" : "Continue"}
+                {missing.length > 0 ? "Skip to review" : "Continue"}
               </Button>
             }
           />
@@ -581,9 +635,9 @@ export function CampaignWizard({
           <dl className="rounded-xl border bg-card p-4 text-sm">
             {[
               ["Campaign", name.trim() || campaign.name],
-              ["Market", market ?? campaign.market ?? "—"],
+              ["Markets", market || campaign.market || "—"],
               ["Format", FORMAT_LABELS[format] ?? format],
-              ["Objective", objective ? (OBJECTIVE_LABELS[objective] ?? objective) : "—"],
+              ["Objectives", describeCampaignObjectives(joinCampaignList(objectives))],
               [
                 "Flight",
                 startsOn && endsOn ? `${startsOn} → ${endsOn}` : "Not scheduled yet",
@@ -596,7 +650,14 @@ export function CampaignWizard({
               ],
               [
                 "Creative",
-                `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
+                specsForFormat(format).length > 1
+                  ? specsForFormat(format)
+                      .map(
+                        (spec) =>
+                          `${spec.label}: ${creativesForPanel(spec.format, campaign.creatives).length}`,
+                      )
+                      .join(" · ")
+                  : `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
               ],
             ].map(([label, value]) => (
               <div
@@ -632,7 +693,7 @@ export function CampaignWizard({
                   className="sm:flex-1"
                   loading={submit.isPending || checkout.isPending || checkout.isSuccess}
                   loadingText={dueKes ? "Opening payment…" : "Submitting…"}
-                  disabled={campaign.creatives.length === 0}
+                  disabled={missing.length > 0}
                   onClick={() => void handleSubmit()}
                 >
                   {submitLabel}
@@ -651,9 +712,9 @@ export function CampaignWizard({
               Your role can draft campaigns but not submit them — submitting commits spend. Save the
               draft and ask an organization admin to send it for review.
             </p>
-          ) : campaign.creatives.length === 0 ? (
+          ) : missing.length > 0 ? (
             <p className="text-xs text-muted-foreground">
-              Add at least one creative before submitting for review.
+              Add artwork for {missingLabels} before submitting for review.
             </p>
           ) : null}
         </StepPanel>

@@ -33,7 +33,7 @@ export function FlowChrome({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
       <FlowScrollLock />
       <div className="duration-200 ease-out animate-in fade-in-0 slide-in-from-right-6 motion-reduce:animate-none">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-4 py-3 sm:px-8">
+        <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-background px-4 sm:px-8">
           <Logo markHeight={18} wordmarkClassName="text-sm font-semibold leading-none" />
           <Button variant="ghost" size="icon-sm" asChild aria-label={closeLabel}>
             <Link href={closeHref}>
