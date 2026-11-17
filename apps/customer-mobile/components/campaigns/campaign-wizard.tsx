@@ -50,6 +50,8 @@ const OBJECTIVE_LABELS: Record<string, string> = {
 }
 
 const STEP_LABELS = ["Brief", "Flight & budget", "Creative", "Review"]
+// "Flight & budget" doesn't fit a quarter of a 360dp screen on one line.
+const SHORT_STEP_LABELS = ["Brief", "Flight", "Creative", "Review"]
 
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
@@ -113,11 +115,24 @@ export function CampaignWizard({
   const saving = create.isPending || update.isPending
 
   const styles = useThemedStyles((c) => ({
+    screen: { flex: 1, backgroundColor: c.bg },
+    header: {
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      backgroundColor: c.bg,
+    },
     scroll: { flex: 1, backgroundColor: c.bg },
     container: { padding: spacing.lg, gap: spacing.lg },
     steps: { flexDirection: "row" as const, gap: spacing.xs },
-    stepPip: { flex: 1, height: 4, borderRadius: 2, backgroundColor: c.border },
+    stepCol: { flex: 1, gap: 6 },
+    stepPip: { height: 4, borderRadius: 2, backgroundColor: c.border },
     stepPipDone: { backgroundColor: c.primary },
+    stepPipLabel: { ...typography.caption, color: c.mutedForeground },
+    stepPipLabelCurrent: { color: c.text, fontWeight: "700" as const },
     stepHead: { gap: 2 },
     stepName: { ...typography.section, color: c.text },
     stepProgress: { ...typography.caption, color: c.mutedForeground },
@@ -293,330 +308,341 @@ export function CampaignWizard({
       : "—"
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.steps}>
-        {STEP_LABELS.map((label, index) => (
-          <View
-            key={label}
-            style={[styles.stepPip, index <= stepIndex && styles.stepPipDone]}
-          />
-        ))}
-      </View>
-      <View style={styles.stepHead}>
-        <Text style={styles.stepName}>
-          Step {stepIndex + 1} of {STEP_LABELS.length} · {STEP_LABELS[stepIndex]}
-        </Text>
-        <Text style={styles.stepProgress}>
-          {progressPercent}% complete
-          {progressPercent > 0 && progressPercent < 100 ? " — almost there!" : ""}
-        </Text>
-      </View>
-
-      {stepIndex === 0 ? (
-        <>
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Campaign name *</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Kilimani Launch Week"
-              placeholderTextColor={colors.mutedForeground}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Market *</Text>
-            <View style={styles.chipGrid}>
-              {MARKETS.map((option) => {
-                const active = option === market
-                return (
-                  <Pressable
-                    key={option}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => setMarket(option)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {option}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Format</Text>
-            <View style={styles.chipGrid}>
-              {CAMPAIGN_FORMATS.map((option) => {
-                const active = option === format
-                return (
-                  <Pressable
-                    key={option}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => setFormat(option)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {FORMAT_LABELS[option]}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Objective</Text>
-            <View style={styles.chipGrid}>
-              {CAMPAIGN_OBJECTIVES.map((option) => {
-                const active = option === objective
-                return (
-                  <Pressable
-                    key={option}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => setObjective(option)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {OBJECTIVE_LABELS[option] ?? option}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Corridors or routes</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              value={corridors}
-              onChangeText={setCorridors}
-              placeholder="Anything specific your account manager should know"
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-            />
-          </View>
-        </>
-      ) : null}
-
-      {stepIndex === 1 ? (
-        <>
-          <View style={styles.dateRow}>
-            <View style={styles.dateCol}>
-              <Text style={styles.label}>Start date *</Text>
-              <TextInput
-                style={styles.input}
-                value={startsOn}
-                onChangeText={setStartsOn}
-                placeholder="2026-10-01"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="numbers-and-punctuation"
-                autoCorrect={false}
-              />
-            </View>
-            <View style={styles.dateCol}>
-              <Text style={styles.label}>End date *</Text>
-              <TextInput
-                style={styles.input}
-                value={endsOn}
-                onChangeText={setEndsOn}
-                placeholder="2026-10-31"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="numbers-and-punctuation"
-                autoCorrect={false}
-              />
-            </View>
-          </View>
-          {/* No date-picker dependency: the calendar tab is the visual way to
-              pick a window, and it deep-links here with both dates filled in.
-              These fields speak the YYYY-MM-DD the API already expects. */}
-          <Text style={styles.hint}>
-            Dates are YYYY-MM-DD. Planning from the calendar fills these in for you.
-          </Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Budget (KES) *</Text>
-            <TextInput
-              style={styles.input}
-              value={String(budget)}
-              onChangeText={setBudget}
-              placeholder="e.g. 120000"
-              placeholderTextColor={colors.mutedForeground}
-              keyboardType="number-pad"
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Not sure what to budget?</Text>
-            <Text style={styles.hint}>
-              Priced on the same rate card the website quotes, against the market and format you
-              picked in step one.
-            </Text>
-            <CampaignBudgetEstimator
-              format={format}
-              market={market}
-              startsOn={startsOn}
-              endsOn={endsOn}
-              onApply={(total) => setBudget(String(Math.round(total)))}
-            />
-            <Text style={styles.hint}>
-              Indicative only — your account manager confirms the final rate during review.
-            </Text>
-          </View>
-        </>
-      ) : null}
-
-      {stepIndex === 2 && campaign ? (
-        <CreativePicker
-          campaignId={campaign.id}
-          format={format}
-          creatives={campaign.creatives}
-        />
-      ) : null}
-
-      {stepIndex === 3 && campaign ? (
-        <>
-          <View style={styles.summary}>
-            {(
-              [
-                ["Campaign", campaign.name],
-                ["Market", campaign.market ?? "—"],
-                ["Format", FORMAT_LABELS[campaign.format as CampaignFormat] ?? campaign.format],
-                [
-                  "Objective",
-                  campaign.objective
-                    ? (OBJECTIVE_LABELS[campaign.objective] ?? campaign.objective)
-                    : "—",
-                ],
-                ["Flight", flightLabel],
-                [
-                  "Budget",
-                  campaign.budget_kes
-                    ? `KES ${Number(campaign.budget_kes).toLocaleString("en-KE")}`
-                    : "—",
-                ],
-                [
-                  "Creative",
-                  `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
-                ],
-              ] as Array<[string, string]>
-            ).map(([label, value], index, rows) => (
-              <View
-                key={label}
-                style={[styles.summaryRow, index === rows.length - 1 && styles.summaryRowLast]}
+    <View style={styles.screen}>
+      {/* Outside the ScrollView on purpose: the step names stay pinned while a
+          long step scrolls underneath. */}
+      <View style={styles.header} accessibilityRole="progressbar" accessibilityLabel={`Step ${stepIndex + 1} of ${STEP_LABELS.length}, ${STEP_LABELS[stepIndex]}`}>
+        <View style={styles.steps}>
+          {STEP_LABELS.map((label, index) => (
+            <View key={label} style={styles.stepCol}>
+              <View style={[styles.stepPip, index <= stepIndex && styles.stepPipDone]} />
+              <Text
+                style={[styles.stepPipLabel, index === stepIndex && styles.stepPipLabelCurrent]}
+                numberOfLines={1}
               >
-                <Text style={styles.summaryLabel}>{label}</Text>
-                <Text style={styles.summaryValue}>{value}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={styles.hint}>
-            Submitting sends this to our team for review. You&apos;ll get an email and a
-            notification when there&apos;s a decision, and you can&apos;t edit while it&apos;s in
-            the queue.
+                {SHORT_STEP_LABELS[index]}
+              </Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.stepHead}>
+          <Text style={styles.stepName}>
+            Step {stepIndex + 1} of {STEP_LABELS.length} · {STEP_LABELS[stepIndex]}
           </Text>
-        </>
-      ) : null}
-
-      {error ? <ApiErrorBanner message={error} onDismiss={() => setError(null)} /> : null}
-      {create.error || update.error ? (
-        <ApiErrorBanner message={formatCampaignError(create.error ?? update.error)} />
-      ) : null}
-      {submit.error && dueKesOf(submit.error) == null ? (
-        <ApiErrorBanner message={formatCampaignError(submit.error)} />
-      ) : null}
-
-      <View style={styles.actions}>
-        {stepIndex > 0 ? (
-          <Pressable
-            style={({ pressed }) => [styles.secondary, pressed && styles.disabled]}
-            onPress={() => setStepIndex(stepIndex - 1)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.secondaryText}>Back</Text>
-          </Pressable>
-        ) : null}
+          <Text style={styles.stepProgress}>
+            {progressPercent}% complete
+            {progressPercent > 0 && progressPercent < 100 ? " — almost there!" : ""}
+          </Text>
+        </View>
+      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {stepIndex === 0 ? (
-          <Pressable
-            style={({ pressed }) => [styles.primary, (saving || pressed) && styles.disabled]}
-            onPress={() => void completeBrief()}
-            disabled={saving}
-            accessibilityRole="button"
-          >
-            {saving ? (
-              <ActivityIndicator color={colors.primaryForeground} />
-            ) : (
-              <Text style={styles.primaryText}>Continue</Text>
-            )}
-          </Pressable>
+          <>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Campaign name *</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g. Kilimani Launch Week"
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Market *</Text>
+              <View style={styles.chipGrid}>
+                {MARKETS.map((option) => {
+                  const active = option === market
+                  return (
+                    <Pressable
+                      key={option}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => setMarket(option)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                        {option}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Format</Text>
+              <View style={styles.chipGrid}>
+                {CAMPAIGN_FORMATS.map((option) => {
+                  const active = option === format
+                  return (
+                    <Pressable
+                      key={option}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => setFormat(option)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                        {FORMAT_LABELS[option]}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Objective</Text>
+              <View style={styles.chipGrid}>
+                {CAMPAIGN_OBJECTIVES.map((option) => {
+                  const active = option === objective
+                  return (
+                    <Pressable
+                      key={option}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => setObjective(option)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                        {OBJECTIVE_LABELS[option] ?? option}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Corridors or routes</Text>
+              <TextInput
+                style={[styles.input, styles.inputMultiline]}
+                value={corridors}
+                onChangeText={setCorridors}
+                placeholder="Anything specific your account manager should know"
+                placeholderTextColor={colors.mutedForeground}
+                multiline
+              />
+            </View>
+          </>
         ) : null}
 
         {stepIndex === 1 ? (
-          <Pressable
-            style={({ pressed }) => [styles.primary, (saving || pressed) && styles.disabled]}
-            onPress={() => void completeFlight()}
-            disabled={saving}
-            accessibilityRole="button"
-          >
-            {saving ? (
-              <ActivityIndicator color={colors.primaryForeground} />
-            ) : (
+          <>
+            <View style={styles.dateRow}>
+              <View style={styles.dateCol}>
+                <Text style={styles.label}>Start date *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={startsOn}
+                  onChangeText={setStartsOn}
+                  placeholder="2026-10-01"
+                  placeholderTextColor={colors.mutedForeground}
+                  keyboardType="numbers-and-punctuation"
+                  autoCorrect={false}
+                />
+              </View>
+              <View style={styles.dateCol}>
+                <Text style={styles.label}>End date *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={endsOn}
+                  onChangeText={setEndsOn}
+                  placeholder="2026-10-31"
+                  placeholderTextColor={colors.mutedForeground}
+                  keyboardType="numbers-and-punctuation"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+            {/* No date-picker dependency: the calendar tab is the visual way to
+                pick a window, and it deep-links here with both dates filled in.
+                These fields speak the YYYY-MM-DD the API already expects. */}
+            <Text style={styles.hint}>
+              Dates are YYYY-MM-DD. Planning from the calendar fills these in for you.
+            </Text>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Budget (KES) *</Text>
+              <TextInput
+                style={styles.input}
+                value={String(budget)}
+                onChangeText={setBudget}
+                placeholder="e.g. 120000"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Not sure what to budget?</Text>
+              <Text style={styles.hint}>
+                Priced on the same rate card the website quotes, against the market and format you
+                picked in step one.
+              </Text>
+              <CampaignBudgetEstimator
+                format={format}
+                market={market}
+                startsOn={startsOn}
+                endsOn={endsOn}
+                onApply={(total) => setBudget(String(Math.round(total)))}
+              />
+              <Text style={styles.hint}>
+                Indicative only — your account manager confirms the final rate during review.
+              </Text>
+            </View>
+          </>
+        ) : null}
+
+        {stepIndex === 2 && campaign ? (
+          <CreativePicker
+            campaignId={campaign.id}
+            format={format}
+            creatives={campaign.creatives}
+          />
+        ) : null}
+
+        {stepIndex === 3 && campaign ? (
+          <>
+            <View style={styles.summary}>
+              {(
+                [
+                  ["Campaign", campaign.name],
+                  ["Market", campaign.market ?? "—"],
+                  ["Format", FORMAT_LABELS[campaign.format as CampaignFormat] ?? campaign.format],
+                  [
+                    "Objective",
+                    campaign.objective
+                      ? (OBJECTIVE_LABELS[campaign.objective] ?? campaign.objective)
+                      : "—",
+                  ],
+                  ["Flight", flightLabel],
+                  [
+                    "Budget",
+                    campaign.budget_kes
+                      ? `KES ${Number(campaign.budget_kes).toLocaleString("en-KE")}`
+                      : "—",
+                  ],
+                  [
+                    "Creative",
+                    `${campaign.creatives.length} file${campaign.creatives.length === 1 ? "" : "s"}`,
+                  ],
+                ] as Array<[string, string]>
+              ).map(([label, value], index, rows) => (
+                <View
+                  key={label}
+                  style={[styles.summaryRow, index === rows.length - 1 && styles.summaryRowLast]}
+                >
+                  <Text style={styles.summaryLabel}>{label}</Text>
+                  <Text style={styles.summaryValue}>{value}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.hint}>
+              Submitting sends this to our team for review. You&apos;ll get an email and a
+              notification when there&apos;s a decision, and you can&apos;t edit while it&apos;s in
+              the queue.
+            </Text>
+          </>
+        ) : null}
+
+        {error ? <ApiErrorBanner message={error} onDismiss={() => setError(null)} /> : null}
+        {create.error || update.error ? (
+          <ApiErrorBanner message={formatCampaignError(create.error ?? update.error)} />
+        ) : null}
+        {submit.error && dueKesOf(submit.error) == null ? (
+          <ApiErrorBanner message={formatCampaignError(submit.error)} />
+        ) : null}
+
+        <View style={styles.actions}>
+          {stepIndex > 0 ? (
+            <Pressable
+              style={({ pressed }) => [styles.secondary, pressed && styles.disabled]}
+              onPress={() => setStepIndex(stepIndex - 1)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.secondaryText}>Back</Text>
+            </Pressable>
+          ) : null}
+
+          {stepIndex === 0 ? (
+            <Pressable
+              style={({ pressed }) => [styles.primary, (saving || pressed) && styles.disabled]}
+              onPress={() => void completeBrief()}
+              disabled={saving}
+              accessibilityRole="button"
+            >
+              {saving ? (
+                <ActivityIndicator color={colors.primaryForeground} />
+              ) : (
+                <Text style={styles.primaryText}>Continue</Text>
+              )}
+            </Pressable>
+          ) : null}
+
+          {stepIndex === 1 ? (
+            <Pressable
+              style={({ pressed }) => [styles.primary, (saving || pressed) && styles.disabled]}
+              onPress={() => void completeFlight()}
+              disabled={saving}
+              accessibilityRole="button"
+            >
+              {saving ? (
+                <ActivityIndicator color={colors.primaryForeground} />
+              ) : (
+                <Text style={styles.primaryText}>Continue</Text>
+              )}
+            </Pressable>
+          ) : null}
+
+          {stepIndex === 2 ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.primary,
+                ((campaign?.creatives.length ?? 0) === 0 || pressed) && styles.disabled,
+              ]}
+              onPress={() => setStepIndex(3)}
+              disabled={(campaign?.creatives.length ?? 0) === 0}
+              accessibilityRole="button"
+            >
               <Text style={styles.primaryText}>Continue</Text>
-            )}
-          </Pressable>
-        ) : null}
+            </Pressable>
+          ) : null}
 
-        {stepIndex === 2 ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.primary,
-              ((campaign?.creatives.length ?? 0) === 0 || pressed) && styles.disabled,
-            ]}
-            onPress={() => setStepIndex(3)}
-            disabled={(campaign?.creatives.length ?? 0) === 0}
-            accessibilityRole="button"
-          >
-            <Text style={styles.primaryText}>Continue</Text>
-          </Pressable>
-        ) : null}
+          {stepIndex === 3 && canSubmit ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.primary,
+                (submit.isPending || pressed) && styles.disabled,
+              ]}
+              onPress={() => void handleSubmit()}
+              disabled={submit.isPending || paying}
+              accessibilityRole="button"
+            >
+              {submit.isPending || paying ? (
+                <ActivityIndicator color={colors.primaryForeground} />
+              ) : (
+                <Text style={styles.primaryText}>Submit for review</Text>
+              )}
+            </Pressable>
+          ) : null}
 
-        {stepIndex === 3 && canSubmit ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.primary,
-              (submit.isPending || pressed) && styles.disabled,
-            ]}
-            onPress={() => void handleSubmit()}
-            disabled={submit.isPending || paying}
-            accessibilityRole="button"
-          >
-            {submit.isPending || paying ? (
-              <ActivityIndicator color={colors.primaryForeground} />
-            ) : (
-              <Text style={styles.primaryText}>Submit for review</Text>
-            )}
-          </Pressable>
-        ) : null}
-
-        {stepIndex === 3 && !canSubmit ? (
-          <Text style={styles.submitBlockedHint}>
-            Your role can draft campaigns but not submit them. Save the draft and ask an
-            organization admin to send it for review.
-          </Text>
-        ) : null}
-      </View>
-    </ScrollView>
+          {stepIndex === 3 && !canSubmit ? (
+            <Text style={styles.submitBlockedHint}>
+              Your role can draft campaigns but not submit them. Save the draft and ask an
+              organization admin to send it for review.
+            </Text>
+          ) : null}
+        </View>
+      </ScrollView>
+    </View>
   )
 }

@@ -385,8 +385,13 @@ export function CampaignWizard({
 
   return (
     <div className="w-full space-y-8">
-      <div className="space-y-3">
+      {/* Pinned under FlowChrome's h-14 bar so the step names stay on screen
+          while a long step scrolls. -mx cancels the page gutter so the
+          background covers the content scrolling beneath it. */}
+      <div className="sticky top-14 z-10 -mx-4 -mt-4 border-b border-border bg-background px-4 py-3 sm:-mx-6 sm:px-6">
         <Stepper steps={steps} />
+      </div>
+      <div className="space-y-3">
         <p className="text-center text-xs font-medium text-muted-foreground">
           {progressPercent}% complete
           {progressPercent > 0 && progressPercent < 100 ? " — almost there!" : ""}
