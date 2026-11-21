@@ -303,6 +303,15 @@ describe.skipIf(!databaseUrl)("customer report routes", () => {
     expect(spend.spentKes.current).toBe(2500) // what was actually charged, tax included
   })
 
+  it("daily spend sits beside cost per 1,000, tax left out, and hides behind the same gate", async () => {
+    as(orgs.A)
+    const spend = await (await get("spend")).json()
+    const day = spend.costPerThousandTrend.find((p: { day: string }) => p.day === "2026-03-01")
+    expect(day.spend).toBe(2000)
+    const filtered = await (await get("spend", `${RANGE}&daypart=evening`)).json()
+    expect(filtered.costPerThousandTrend.every((p: { spend: unknown }) => p.spend === null)).toBe(true)
+  })
+
   it("a market filter sets spend and cost per 1,000 to null", async () => {
     as(orgs.A)
     const overview = await (await get("overview", `${RANGE}&market=CBD`)).json()

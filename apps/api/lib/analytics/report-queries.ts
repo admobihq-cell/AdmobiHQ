@@ -660,6 +660,8 @@ export async function getReportSpend(scope: ReportScope): Promise<ReportSpendDto
     costPerThousandTrend: days.map((day) => ({
       day,
       cost: sees ? costPerThousand(spendDays.get(day) ?? 0, byDay.get(day)?.likely ?? null) : null,
+      // Spend that day, tax left out (the same figure cost per 1,000 is built from).
+      spend: sees ? roundTo(spendDays.get(day) ?? 0) : null,
     })),
     byCampaign: sees ? groupSpend((s) => s.name) : null,
     // A campaign can have several objectives; its spend counts once, under the

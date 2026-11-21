@@ -522,6 +522,7 @@ export type ReportSpendDto = ReportBase & {
   budgetKes: number | null
   budgetUsed: number | null
   unspentKes: number | null
+  /** Per day: `cost` (KES per 1,000 est. impressions) and `spend` (KES, tax left out); both null without spend visibility. */
   costPerThousandTrend: DailyPoint[]
   byCampaign: NamedValue[] | null
   byObjective: NamedValue[] | null
