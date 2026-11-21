@@ -31,6 +31,20 @@ Typing an ID jumps straight to it: `#42` or `42` (support case, campaign, SOS, p
 
 Each record group needs the permission of its list screen, and admins see all: SOS (`safety`); support cases (`support`); campaigns and advertiser orgs (`campaigns`); invoices and quotes, statements and payments (`finances`); payouts (`finances` or `payouts`); driver applications (`driver_applications`); drivers (`drivers`); fleet partners (`fleet`); leads (`leads`); waitlist (`waitlist`); media kit (`media_kit`). Results show at most 5 per group. Nothing is fetched until you type, so opening the palette never wakes the database.
 
+### Live toasts
+
+Ops holds a live stream (`GET /v1/ops/live`). Every event refetches the affected queue and re-renders the sidebar counts. A toast appears only for what the role may see:
+
+| Event | Toast | Needs |
+|---|---|---|
+| Driver SOS | "SOS reported" in amber, low tone, **stays until dismissed**, Respond → `/sos/<id>` | `safety` |
+| Campaign submitted | "Campaign submitted for review", Review → `/campaigns/<id>` | `campaigns` |
+| Payment settled | "Payment received", Ledger → `/finances?tab=ledger` | `finances` |
+| Support case opened | "New support case", Open → `/support/<id>` | `support` |
+| Driver application submitted | "New driver application", Review → `/driver-applications/<id>` | `driver_applications` |
+
+The **Alert sound** button on `/notifications` mutes tones on this device.
+
 ### SOS (driver safety incidents)
 
 Sidebar **SOS** (permission: `safety`), placed above Support — an emergency

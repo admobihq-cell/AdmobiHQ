@@ -146,6 +146,8 @@ Clients use [`@workspace/ops-api-client`](../../packages/ops-api-client/src/inde
 
 Email (Resend) runs in the API app after public form POSTs. Full reference: [API.md](../api/API.md).
 
+**Live updates.** The API publishes small "this changed" events (topic and ids only) to Upstash Redis pub/sub, and the advertiser and ops web apps hold an SSE stream (`/v1/customer/live`, `/v1/ops/live`) that triggers a refetch plus a toast. It is deliberately not polling: Neon (free plan) bills compute wake time, and polling more often than every 5 minutes, or holding a LISTEN connection, would keep it awake whenever a tab is open. See [API.md](../api/API.md#live-updates-sse).
+
 ### 4.4 Components
 
 [`apps/web/components/`](../../apps/web/components) contains the app-specific UI. The two important subdirectories:

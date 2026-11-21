@@ -194,6 +194,21 @@ The Media Library's product name. Files are owned by the advertiser org, not by 
 | `GET` / `POST` | `/v1/customer/media/folders` | Customer `media:read` / `media:write` | List folders with `file_count`, `size_bytes`, `updated_at` / create one — `{ name }`, 1–60 characters, `409` if taken |
 | `PATCH` / `DELETE` | `/v1/customer/media/folders/[id]` | Customer `media:write` | Rename (`409` if taken) / delete. Deleting keeps the files, out of any folder |
 
+### Live updates (SSE)
+
+`GET /v1/customer/live` and `GET /v1/ops/live` hold a Server-Sent Events stream (`text/event-stream`). The client reads it with `fetch` plus a bearer token (EventSource can't send headers), via `useLiveEvents` in `@workspace/ui/lib/live-events`.
+
+- **Channels** (Upstash Redis pub/sub, `lib/realtime.ts`): advertisers subscribe to `user:<clerkUserId>` and `org:<orgId>`; ops subscribe to `ops`.
+- **Event shape** (`LiveEvent` in `@workspace/ops-contracts`): `{ topic, id?, type?, actor? }`. Topic and ids only: never names, amounts or text. Clients re-fetch through the normal permission-checked endpoints.
+- **Publishers** (`publishLive`, fire-and-forget, never throws):
+  - Every customer notification insert (the three helpers in `lib/advertiser/advertiser-notify.ts` and `lib/payments/money-notify.ts`) publishes `notification` to each recipient's user channel.
+  - `notifyPaymentReceived` publishes `payment` to the org and to ops.
+  - Sending a billing document, or recording a payment on one, writes a `billing_document_sent` / `billing_document_payment` inbox row for billing readers and publishes `billing-document` to the org.
+  - Campaign submit publishes `review-queue`; public support create publishes `support`; driver SOS publishes `sos` (before the emails); driver profile submit publishes `application`. All of these go to `ops`.
+- **Stream lifecycle:** `: connected` first, `: ping` every 25 s, closed by the server at 280 s (`maxDuration = 300`). The client reconnects at once with a fresh token, or after an error with backoff (1, 2, 5, 10, then 30 s), and refetches what it may have missed.
+- Without `UPSTASH_REDIS_REST_URL` / `_TOKEN` both routes return **204** and the client stays idle.
+- **No Postgres on this path:** a held DB connection or a short poll would keep the Neon compute awake.
+
 ### Command palette search
 
 `GET /v1/ops/search?q=`, `GET /v1/customer/search?q=`, `GET /v1/driver/search?q=` each return `SearchResponseDto` (`@workspace/ops-contracts`):

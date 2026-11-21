@@ -94,6 +94,16 @@ Typing an ID jumps straight to it: `#42` or `42` (support case, campaign, SOS, p
 
 Record groups follow the org permissions: campaigns (`campaigns:read`); invoices and quotes, statements and payments (`billing:read`, sent documents only, never drafts); support cases (`support:read_all`); media (`media:read`). Every query is pinned to the caller's org. Teammates are not searchable (their names live in Clerk); the Team settings page is.
 
+### Live updates and alert sound
+
+The app holds a live stream (`GET /v1/customer/live`) while it's open. When ops approves or rejects a campaign, a payment settles, or ops sends a quote or invoice:
+- The affected screens refetch in place (campaigns, Billing, inbox). Bursts are coalesced into one refetch per query within 300 ms.
+- A toast appears, worded from the new inbox row: approvals and payments in green with a "ping", rejections and changes requested in amber with a lower tone, everything else with a soft "chime".
+- You aren't toasted about your own actions.
+- More than 3 new rows at once become a single "N new updates" toast.
+
+**Settings → Notifications → Play a sound with live alerts** mutes the tone on this device. With several tabs open, only one plays it. Mapping and tone rules are in `packages/ops-contracts/src/live-routing.ts`.
+
 ### Loading skeletons
 
 Every page here is a thin server component wrapping a client component that
