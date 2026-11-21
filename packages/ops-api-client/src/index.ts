@@ -1,5 +1,14 @@
 import {
   buildListQueryParams,
+  type BillingDocumentDto,
+  type BillingDocumentInput,
+  type BillingDocumentKind,
+  type BillingDocumentListItemDto,
+  type BillingDocumentOptionsDto,
+  type BillingDocumentStatus,
+  type BillingSendOutcome,
+  type BillingStatusAction,
+  type RecordBillingPaymentInput,
   type AnnouncementDto,
   type ApiErrorResponse,
   type AuditEventDto,
@@ -269,6 +278,28 @@ export type OpsClient = {
      * driverApplications.documentFileUrl above. */
     creativeFileUrl: (campaignId: number, creativeId: number) => string
   }
+  /** Hand-written quotes and invoices (outside the Paystack wallet). All need `finances`. */
+  billingDocuments: {
+    list: (params?: {
+      kind?: BillingDocumentKind
+      status?: BillingDocumentStatus
+      orgId?: number
+    }) => Promise<{ items: BillingDocumentListItemDto[] }>
+    options: () => Promise<BillingDocumentOptionsDto>
+    get: (id: number) => Promise<BillingDocumentDto>
+    create: (body: BillingDocumentInput) => Promise<BillingDocumentDto>
+    /** Drafts only; a sent document answers 409. */
+    update: (id: number, body: BillingDocumentInput) => Promise<BillingDocumentDto>
+    /** Sending also emails the PDF to the customer; `emailedTo` / `emailError` say how that went. */
+    changeStatus: (id: number, action: BillingStatusAction) => Promise<BillingDocumentDto & BillingSendOutcome>
+    /** Quote → new draft invoice. */
+    convert: (id: number) => Promise<BillingDocumentDto>
+    /** Append-only; never touches the wallet. */
+    recordPayment: (id: number, body: RecordBillingPaymentInput) => Promise<BillingDocumentDto>
+    /** Unsaved editor state → PDF. Pass `id` for a saved document so its real number and pill show. */
+    preview: (body: { id?: number; document: BillingDocumentInput }, signal?: AbortSignal) => Promise<Blob>
+    pdf: (id: number) => Promise<Blob>
+  }
   advertiserOrgs: {
     list: (
       params?: Partial<PaginationParams>,
@@ -402,6 +433,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
   async function requestBlob(
     path: string,
     init: RequestInit = {},
+    timeoutMs: number = requestTimeoutMs,
   ): Promise<Blob> {
     const token = await options.getToken()
     const headers = new Headers(init.headers)
@@ -412,8 +444,15 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       headers.set("Authorization", `Bearer ${token}`)
     }
 
+    // Same caller-signal linking as request(): a superseded preview cancels its render.
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), requestTimeoutMs)
+    const callerSignal = init.signal
+    const onCallerAbort = () => controller.abort()
+    if (callerSignal) {
+      if (callerSignal.aborted) controller.abort()
+      else callerSignal.addEventListener("abort", onCallerAbort)
+    }
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
     let res: Response
     try {
       res = await fetchImpl(`${baseUrl}${path}`, {
@@ -431,6 +470,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
       throw err
     } finally {
       clearTimeout(timer)
+      callerSignal?.removeEventListener("abort", onCallerAbort)
     }
 
     if (!res.ok) {
@@ -741,6 +781,50 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         }),
       creativeFileUrl: (campaignId, creativeId) =>
         `${baseUrl}${apiPrefix}/campaigns/${campaignId}/creatives/${creativeId}/file`,
+    },
+    billingDocuments: {
+      list: (params = {}) => {
+        const query = new URLSearchParams()
+        if (params.kind) query.set("kind", params.kind)
+        if (params.status) query.set("status", params.status)
+        if (params.orgId) query.set("orgId", String(params.orgId))
+        const qs = query.toString()
+        return request<{ items: BillingDocumentListItemDto[] }>(
+          `${apiPrefix}/ops/billing-documents${qs ? `?${qs}` : ""}`,
+        )
+      },
+      options: () => request<BillingDocumentOptionsDto>(`${apiPrefix}/ops/billing-documents/options`),
+      get: (id) => request<BillingDocumentDto>(`${apiPrefix}/ops/billing-documents/${id}`),
+      create: (body) =>
+        request<BillingDocumentDto>(`${apiPrefix}/ops/billing-documents`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      update: (id, body) =>
+        request<BillingDocumentDto>(`${apiPrefix}/ops/billing-documents/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }),
+      changeStatus: (id, action) =>
+        request<BillingDocumentDto & BillingSendOutcome>(`${apiPrefix}/ops/billing-documents/${id}/status`, {
+          method: "POST",
+          body: JSON.stringify({ action }),
+        }),
+      convert: (id) =>
+        request<BillingDocumentDto>(`${apiPrefix}/ops/billing-documents/${id}/convert`, { method: "POST" }),
+      recordPayment: (id, body) =>
+        request<BillingDocumentDto>(`${apiPrefix}/ops/billing-documents/${id}/payments`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      // A PDF render takes longer than a JSON call.
+      preview: (body, signal) =>
+        requestBlob(
+          `${apiPrefix}/ops/billing-documents/preview`,
+          { method: "POST", body: JSON.stringify(body), signal },
+          30_000,
+        ),
+      pdf: (id) => requestBlob(`${apiPrefix}/ops/billing-documents/${id}/pdf`, {}, 30_000),
     },
     advertiserOrgs: {
       list: (params = {}) => {

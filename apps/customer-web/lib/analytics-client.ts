@@ -1,4 +1,5 @@
 import type {
+  CustomerBillingDocumentDto,
   FinanceSummaryDto,
   InvoiceDto,
   StatementRowDto,
@@ -61,6 +62,12 @@ export async function getTransactions(
 
 export async function getInvoices(getToken: GetToken): Promise<InvoiceDto[]> {
   const res = await authedFetch(getToken, "/v1/customer/finance/invoices")
+  return (await res.json()).items
+}
+
+/** Quotes and invoices ops wrote by hand and sent to this org. */
+export async function getBillingDocuments(getToken: GetToken): Promise<CustomerBillingDocumentDto[]> {
+  const res = await authedFetch(getToken, "/v1/customer/finance/documents")
   return (await res.json()).items
 }
 

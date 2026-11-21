@@ -4,10 +4,13 @@ import {
   resolveRecipients,
 } from "@/lib/email/config"
 
+export type EmailAttachment = { filename: string; /** base64 */ content: string }
+
 export async function sendEmail(
   to: string | string[],
   subject: string,
   html: string,
+  options: { attachments?: EmailAttachment[] } = {},
 ) {
   const recipients = resolveRecipients(to)
   if (recipients.length === 0) {
@@ -27,6 +30,7 @@ export async function sendEmail(
         to: recipients.length === 1 ? recipients[0] : recipients,
         subject,
         html,
+        ...(options.attachments?.length ? { attachments: options.attachments } : {}),
       }),
     })
 

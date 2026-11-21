@@ -3,6 +3,7 @@ import type { DateRangeKey } from "@workspace/ops-contracts"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { getOpsAccess } from "@/lib/auth"
 import { AttentionTab } from "@/components/finances/attention-tab"
+import { BillingDocumentsTab } from "@/components/finances/billing-documents-tab"
 import { LedgerTab } from "@/components/finances/ledger-tab"
 import { OverviewTab } from "@/components/finances/overview-tab"
 import { PayoutsTab } from "@/components/finances/payouts-tab"
@@ -23,6 +24,7 @@ export const FINANCE_TABS = [
   { value: "overview", label: "Overview" },
   { value: "attention", label: "Needs attention" },
   { value: "ledger", label: "Ledger" },
+  { value: "documents", label: "Invoices & quotes" },
   { value: "wallets", label: "Wallets" },
   { value: "payouts", label: "Payouts" },
   { value: "paystack", label: "Paystack" },
@@ -40,6 +42,8 @@ export async function FinanceTab({ tab, range }: { tab: string; range: DateRange
         const [data, options] = await Promise.all([getFinanceLedger(range), getRecordOptions()])
         return <LedgerTab data={data} options={options} />
       }
+      case "documents":
+        return <BillingDocumentsTab />
       case "wallets":
         return <WalletsTab wallets={await getFinanceWallets()} />
       case "payouts": {
