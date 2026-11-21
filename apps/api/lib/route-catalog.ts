@@ -270,6 +270,7 @@ const NOTES: Record<string, string> = {
   "/v1/payments/paystack/transfer-approval": "Paystack transfer approval: allow only queued payouts",
   "/v1/ops/payouts": "Driver payout run for a month: list and save amounts",
   "/v1/ops/payouts/disburse": "Send payouts through Paystack Transfers",
+  "/v1/ops/search": "Search records the caller's permissions allow (command palette)",
   "/v1/ops/payouts/[id]/retry": "Resend a failed payout",
   "/v1/driver/payout-banks": "Kenyan banks for payout details",
   "/v1/driver/payouts": "The driver's own payouts and totals",
