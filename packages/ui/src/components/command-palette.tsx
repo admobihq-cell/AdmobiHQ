@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Command } from "cmdk"
+import { Command, defaultFilter } from "cmdk"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { ArrowRight, Clock, CornerDownLeft, Hash, Loader2, Search, type LucideIcon } from "lucide-react"
 
@@ -186,8 +186,17 @@ export function CommandPalette({
     else if (item.href) router.push(item.href)
   }
 
-  const showRecents = query.trim() === "" && recents.length > 0
+  // cmdk's own filter re-sorts items and groups by its score, which would undo the server's
+  // exact-id-first order, so filtering is off and pages/actions are matched here instead.
+  const trimmed = query.trim()
+  const matches = (item: PaletteItem) =>
+    trimmed === "" || defaultFilter(item.label, trimmed, item.keywords ?? []) > 0
+  const visiblePages = pages.filter(matches)
+  const visibleActions = actions.filter(matches)
+  const showRecents = trimmed === "" && recents.length > 0
   const remoteHits = remote.groups.reduce((n, g) => n + g.hits.length, 0)
+  const stale = remote.status === "loading"
+  const nothing = !showRecents && visiblePages.length === 0 && visibleActions.length === 0 && remoteHits === 0
 
   return (
     <>
@@ -221,7 +230,7 @@ export function CommandPalette({
             <DialogPrimitive.Description className="sr-only">
               Search pages, actions and records. Use the arrow keys to move and Enter to open.
             </DialogPrimitive.Description>
-            <Command loop className="flex max-h-[min(32rem,70vh)] flex-col">
+            <Command loop shouldFilter={false} className="flex max-h-[min(32rem,70vh)] flex-col">
               <div className="flex items-center gap-2 border-b border-border/70 px-4">
                 <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 <Command.Input
@@ -236,10 +245,10 @@ export function CommandPalette({
               </div>
 
               <Command.List className="flex-1 overflow-y-auto overscroll-contain p-2 pb-3">
-                {remote.status !== "loading" && remoteHits === 0 ? (
-                  <Command.Empty className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No matches for &ldquo;{query.trim()}&rdquo;
-                  </Command.Empty>
+                {nothing && !stale && remote.status !== "error" ? (
+                  <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    No matches for &ldquo;{trimmed}&rdquo;
+                  </div>
                 ) : null}
 
                 {showRecents ? (
@@ -252,9 +261,9 @@ export function CommandPalette({
                   </Command.Group>
                 ) : null}
 
-                {pages.length > 0 ? (
+                {visiblePages.length > 0 ? (
                   <Command.Group heading="Pages" className={groupClass}>
-                    {pages.map((item) => (
+                    {visiblePages.map((item) => (
                       <Command.Item
                         key={item.id}
                         value={`page ${item.id} ${item.label}`}
@@ -268,9 +277,9 @@ export function CommandPalette({
                   </Command.Group>
                 ) : null}
 
-                {actions.length > 0 ? (
+                {visibleActions.length > 0 ? (
                   <Command.Group heading="Actions" className={groupClass}>
-                    {actions.map((item) => (
+                    {visibleActions.map((item) => (
                       <Command.Item
                         key={item.id}
                         value={`action ${item.id} ${item.label}`}
@@ -290,20 +299,20 @@ export function CommandPalette({
                 ) : null}
 
                 {remote.status === "error" ? (
-                  <Command.Group heading="Records" forceMount className={groupClass}>
-                    <Command.Item forceMount disabled value="search-error" className={cn(itemClass, "cursor-default text-muted-foreground")}>
+                  <Command.Group heading="Records" className={groupClass}>
+                    <Command.Item disabled value="search-error" className={cn(itemClass, "cursor-default text-muted-foreground")}>
                       Search is unavailable right now
                     </Command.Item>
                   </Command.Group>
                 ) : null}
 
-                {/* Server groups are already matched; forceMount keeps cmdk's local filter from hiding them. */}
+                {/* While the next answer loads, the previous one stays visible but can't be opened. */}
                 {remote.groups.map((group) => (
-                  <Command.Group key={group.key} heading={group.label} forceMount className={groupClass}>
+                  <Command.Group key={group.key} heading={group.label} className={cn(groupClass, stale && "opacity-60")}>
                     {group.hits.map((hit) => (
                       <Command.Item
                         key={hit.id}
-                        forceMount
+                        disabled={stale}
                         value={`record ${hit.id} ${hit.title}`}
                         onSelect={() => run({ id: hit.id, label: hit.title, description: hit.subtitle, href: hit.href })}
                         className={itemClass}

@@ -13,7 +13,7 @@ import { searchRecords } from "@/lib/search-client"
 import { settingsNavItems } from "@/lib/settings-navigation"
 
 export function DriverCommandPalette({ enabledFlags }: { enabledFlags: string[] }) {
-  const { getToken } = useAuth()
+  const { getToken, userId } = useAuth()
   const { resolvedTheme, setTheme } = useTheme()
 
   const { pages, actions } = useMemo(() => {
@@ -33,7 +33,7 @@ export function DriverCommandPalette({ enabledFlags }: { enabledFlags: string[] 
     ]
     const actions: PaletteItem[] = [
       { id: "action:sos", label: "Report an emergency (SOS)", icon: Siren, href: "/sos", keywords: ["accident", "help", "danger"] },
-      { id: "action:contact-support", label: "Contact support", icon: LifeBuoy, href: "/settings/support/new", keywords: ["help", "case"] },
+      { id: "action:contact-support", label: "Contact support", icon: LifeBuoy, href: "/settings/support", keywords: ["help", "case"] },
       { id: "action:payouts", label: "View payouts", icon: Wallet, href: "/payouts", keywords: ["money", "earnings", "mpesa"] },
       {
         id: "action:theme",
@@ -52,5 +52,5 @@ export function DriverCommandPalette({ enabledFlags }: { enabledFlags: string[] 
     [getToken]
   )
 
-  return <CommandPalette pages={pages} actions={actions} search={search} storageKey="driver-palette-recent-v1" />
+  return <CommandPalette pages={pages} actions={actions} search={search} storageKey={`driver-palette-recent-v2:${userId ?? "anon"}`} />
 }

@@ -297,14 +297,18 @@ export function BillingView() {
   const { can, isLoading: orgLoading } = useOrgPermissions()
   const canRead = can("billing:read")
   const { tab, setTab, range, setRange } = useDashboardParams("overview")
-  // `?topup=5000` (a failed top-up's Try again) reopens the dialog with that amount.
+  // `?topup=5000` (a failed top-up's Try again) reopens the dialog with that amount; a bare
+  // `?topup` (the command palette's Top up action) opens it empty.
   const searchParams = useSearchParams()
   const [initialTopUp] = useState(() => cleanKes(searchParams.get("topup") ?? "", false))
-  const [topUpOpen, setTopUpOpen] = useState(initialTopUp !== "")
+  const [topUpOpen, setTopUpOpen] = useState(() => searchParams.has("topup"))
   const [refundOpen, setRefundOpen] = useState(false)
   const canWrite = can("billing:write")
   useEffect(() => {
     if (!searchParams.has("topup")) return
+    // Already on /billing there's no remount, so the param has to open the dialog from here too.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTopUpOpen(true)
     const next = new URLSearchParams(searchParams.toString())
     next.delete("topup")
     const query = next.toString()

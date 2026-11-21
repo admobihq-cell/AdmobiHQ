@@ -217,7 +217,7 @@ export function OpsShell({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <OpsBreadcrumbs pathname={pathname} />
             <div className="ml-auto flex items-center gap-1">
-              <OpsCommandPalette role={role} permissions={permissions} />
+              <OpsCommandPalette role={role} permissions={permissions} userId={userId} />
               {canSeeNotifications ? (
                 <NotificationBell role={role} permissions={permissions} />
               ) : null}

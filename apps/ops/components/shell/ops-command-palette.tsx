@@ -23,7 +23,16 @@ const SETTINGS_TABS = [
   { href: "/settings/tour", label: "Settings · Product tour" },
 ]
 
-export function OpsCommandPalette({ role, permissions }: { role: OpsRole; permissions: OpsPermission[] }) {
+export function OpsCommandPalette({
+  role,
+  permissions,
+  userId,
+}: {
+  role: OpsRole
+  permissions: OpsPermission[]
+  /** Scopes recent picks, so a shared browser never shows the last person's records. */
+  userId: string
+}) {
   const client = useOpsClient()
   const { resolvedTheme, setTheme } = useTheme()
 
@@ -62,7 +71,8 @@ export function OpsCommandPalette({ role, permissions }: { role: OpsRole; permis
         href: "/finances/documents/new",
         keywords: ["bill", "quotation"],
       },
-      can({ permission: "payouts" }) && {
+      // The payout run lives on the Finances page, which needs `finances`.
+      can({ permission: "finances" }) && {
         id: "action:payout-run",
         label: "New payout run",
         icon: ArrowDownCircle,
@@ -102,5 +112,5 @@ export function OpsCommandPalette({ role, permissions }: { role: OpsRole; permis
     [client]
   )
 
-  return <CommandPalette pages={pages} actions={actions} search={search} storageKey="ops-palette-recent-v1" />
+  return <CommandPalette pages={pages} actions={actions} search={search} storageKey={`ops-palette-recent-v2:${userId}`} />
 }

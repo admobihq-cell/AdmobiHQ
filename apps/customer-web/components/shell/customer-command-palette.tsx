@@ -29,8 +29,8 @@ const REPORT_TABS = [
 ]
 
 export function CustomerCommandPalette({ enabledFlags }: { enabledFlags: string[] }) {
-  const { getToken } = useAuth()
-  const { can } = useOrgPermissions()
+  const { getToken, userId } = useAuth()
+  const { can, org } = useOrgPermissions()
   const { resolvedTheme, setTheme } = useTheme()
 
   const { pages, actions } = useMemo(() => {
@@ -110,5 +110,5 @@ export function CustomerCommandPalette({ enabledFlags }: { enabledFlags: string[
     [getToken]
   )
 
-  return <CommandPalette pages={pages} actions={actions} search={search} storageKey="customer-palette-recent-v1" />
+  return <CommandPalette pages={pages} actions={actions} search={search} storageKey={`customer-palette-recent-v2:${userId ?? "anon"}:${org?.id ?? "none"}`} />
 }
