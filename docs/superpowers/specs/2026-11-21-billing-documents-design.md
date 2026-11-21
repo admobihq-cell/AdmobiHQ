@@ -1,6 +1,6 @@
 # Billing documents (quotes and invoices): design
 
-Date: 2026-11-21 · Status: approved approach, awaiting doc sign-off
+Date: 2026-11-21 · Status: approved 2026-11-21
 
 ## Intent
 
