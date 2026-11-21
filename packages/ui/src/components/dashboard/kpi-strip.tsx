@@ -7,6 +7,7 @@ import {
   type DeltaGood,
 } from "@workspace/ui/components/dashboard/delta-pill"
 import { cn } from "@workspace/ui/lib/utils"
+import { CountUp } from "@workspace/ui/components/dashboard/count-up"
 
 export type KpiItem = {
   label: React.ReactNode
@@ -52,7 +53,7 @@ export function KpiStrip({
             </div>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <p className="text-2xl leading-tight font-semibold tabular-nums">
-                {item.value}
+                <CountUp value={item.value} />
               </p>
               {item.delta ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">

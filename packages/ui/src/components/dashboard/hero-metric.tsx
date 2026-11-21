@@ -6,6 +6,7 @@ import {
   DeltaPill,
   type DeltaGood,
 } from "@workspace/ui/components/dashboard/delta-pill"
+import { CountUp } from "@workspace/ui/components/dashboard/count-up"
 
 export type HeroDelta = {
   label: string
@@ -33,7 +34,7 @@ export function HeroMetric({
       <div>
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <p className="text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl">
-          {value}
+          <CountUp value={value} />
         </p>
       </div>
       {deltas.length > 0 ? (

@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis, Cell } from "recharts"
 
 import {
   ChartContainer,
@@ -10,9 +10,11 @@ import {
   type ChartConfig,
 } from "@workspace/ui/components/chart"
 import {
-  BAR_FILL_OPACITY,
   BAR_SIZE,
-  BAR_STROKE_OPACITY,
+  DIM_TRANSITION,
+  MARK,
+  dataEndRadius,
+  useActiveMark,
   GRID_STROKE_OPACITY,
   KitTooltip,
   chartColor,
@@ -50,15 +52,26 @@ export function MirrorBars({
   })
   // The tooltip and axis show magnitudes, not signed numbers.
   const magnitude = (value: number) => valueFormatter(Math.abs(value))
+  const { set, opacityOf } = useActiveMark()
+  const cells = rows.map((_, i) => <Cell key={i} fillOpacity={opacityOf(i)} style={DIM_TRANSITION} />)
 
   return (
     <ChartContainer config={config} className={cn("aspect-auto h-64 w-full", className)}>
-      <BarChart data={rows} stackOffset="sign" margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+      <BarChart
+        data={rows}
+        stackOffset="sign"
+        margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+        onMouseMove={(state) => {
+          const index = state?.activeTooltipIndex
+          set(index === undefined || index === null ? null : Number(index))
+        }}
+        onMouseLeave={() => set(null)}
+      >
         <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={GRID_STROKE_OPACITY} />
         <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={8} />
         <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={magnitude} />
         <ChartTooltip
-          cursor={{ fill: "var(--muted)", fillOpacity: 0.5 }}
+          cursor={{ fill: "var(--chart-cursor)", radius: MARK.radius }}
           content={(props) => <KitTooltip {...props} valueFormatter={magnitude} formatLabel={String} />}
         />
         <ChartLegend content={<ChartLegendContent />} />
@@ -68,25 +81,23 @@ export function MirrorBars({
           name={up.label}
           stackId="m"
           barSize={BAR_SIZE}
-          radius={[5, 5, 0, 0]}
+          radius={dataEndRadius("vertical")}
           fill={chartColor(2)}
-          fillOpacity={BAR_FILL_OPACITY}
-          stroke={chartColor(2)}
-          strokeOpacity={BAR_STROKE_OPACITY}
           isAnimationActive={false}
-        />
+        >
+          {cells}
+        </Bar>
         <Bar
           dataKey={down.key}
           name={down.label}
           stackId="m"
           barSize={BAR_SIZE}
-          radius={[0, 0, 5, 5]}
+          radius={dataEndRadius("vertical", true)}
           fill={chartColor(0)}
-          fillOpacity={BAR_FILL_OPACITY}
-          stroke={chartColor(0)}
-          strokeOpacity={BAR_STROKE_OPACITY}
           isAnimationActive={false}
-        />
+        >
+          {cells}
+        </Bar>
       </BarChart>
     </ChartContainer>
   )

@@ -2,7 +2,13 @@
 
 import type { NamedValue } from "@workspace/ops-contracts"
 
-import { HoverTip, chartColor, defaultFormat } from "@workspace/ui/components/charts/shared"
+import {
+  DIM_TRANSITION,
+  HoverTip,
+  chartColor,
+  defaultFormat,
+  useActiveMark,
+} from "@workspace/ui/components/charts/shared"
 import { cn } from "@workspace/ui/lib/utils"
 
 /**
@@ -20,13 +26,15 @@ export function ShareBar({
 }) {
   const total = data.reduce((sum, row) => sum + row.value, 0)
   const share = (value: number) => (total > 0 ? Math.round((value / total) * 100) : 0)
+  // Hovering a segment or its legend row lifts that part and dims the rest, in both places.
+  const { set, opacityOf } = useActiveMark()
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <div
         role="img"
         aria-label={data.map((row) => `${row.name} ${share(row.value)}%`).join(", ")}
-        className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-muted"
+        className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-chart-track"
       >
         {data
           .map((row, i) => ({ row, i }))
@@ -36,14 +44,24 @@ export function ShareBar({
               <div
                 tabIndex={0}
                 className="h-full min-w-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                style={{ width: `${(row.value / total) * 100}%`, background: chartColor(i) }}
+                style={{ width: `${(row.value / total) * 100}%`, background: chartColor(i), opacity: opacityOf(i), ...DIM_TRANSITION }}
+                onMouseEnter={() => set(i)}
+                onMouseLeave={() => set(null)}
+                onFocus={() => set(i)}
+                onBlur={() => set(null)}
               />
             </HoverTip>
           ))}
       </div>
       <ul className="grid gap-1.5 text-sm sm:grid-cols-2">
         {data.map((row, i) => (
-          <li key={row.name} className="flex items-center gap-2">
+          <li
+            key={row.name}
+            className="flex items-center gap-2"
+            style={{ opacity: opacityOf(i), ...DIM_TRANSITION }}
+            onMouseEnter={() => set(i)}
+            onMouseLeave={() => set(null)}
+          >
             <span className="size-2.5 shrink-0 rounded-[2px]" style={{ background: chartColor(i) }} aria-hidden />
             <span className="min-w-0 flex-1 truncate">{row.name}</span>
             <span className="tabular-nums">{valueFormatter(row.value)}</span>

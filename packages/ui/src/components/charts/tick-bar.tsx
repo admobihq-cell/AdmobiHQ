@@ -38,7 +38,7 @@ export function TickBar({
         className="flex h-4 w-20 items-end gap-px"
       >
         {Array.from({ length: TICKS }, (_, i) => (
-          <span key={i} className={cn("h-full flex-1 rounded-[1px]", i < filled ? TONES[tone] : "bg-muted")} />
+          <span key={i} className={cn("h-full flex-1 rounded-[1px]", i < filled ? TONES[tone] : "bg-chart-track")} />
         ))}
       </div>
       <span className="text-xs tabular-nums">{percent === null ? "—" : `${Math.round(percent)}%`}</span>
