@@ -41,6 +41,9 @@ export async function announceCampaignSubmitted(
   actor: { userId: string },
 ): Promise<void> {
   const id = campaign.id
+  // First, and outside the try below: the review queue must hear about it even if the
+  // advertiser notices or emails fail. publishLive never throws.
+  await publishLive([liveChannel.ops], { topic: "review-queue", id, actor: actor.userId })
   try {
     await auditFromCustomerUser(actor.userId, {
       action: "update",
@@ -66,7 +69,6 @@ export async function announceCampaignSubmitted(
       href: `/campaigns/${id}`,
       actorUserId: actor.userId,
     })
-    await publishLive([liveChannel.ops], { topic: "review-queue", id, actor: actor.userId })
 
     if (contactEmail) {
       const html = await renderTemplate(CampaignSubmitted, { name, campaignName: campaign.name })

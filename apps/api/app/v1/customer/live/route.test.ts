@@ -4,11 +4,16 @@ import { parseSseChunk, type LiveEvent } from "@workspace/ops-contracts"
 
 const orgId = 900_000 + (Date.now() % 100_000)
 
+const requireCustomerAccess = vi.fn(async () => ({
+  access: { userId: `live-test-${orgId}`, orgId, isOwner: true, permissions: new Set() },
+}))
 vi.mock("@/lib/api-utils", async () => ({
   ...(await vi.importActual<typeof import("@/lib/api-utils")>("@/lib/api-utils")),
-  requireCustomerAccess: vi.fn(async () => ({
-    access: { userId: `live-test-${orgId}`, orgId, isOwner: true, permissions: new Set() },
-  })),
+  requireCustomerAccess,
+}))
+vi.mock("@/lib/customer/customer-auth", async () => ({
+  ...(await vi.importActual<typeof import("@/lib/customer/customer-auth")>("@/lib/customer/customer-auth")),
+  getCustomerIdentity: vi.fn(async () => `live-test-${orgId}`),
 }))
 
 const env = { url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN }
@@ -63,6 +68,20 @@ describe("GET /v1/customer/live", () => {
     }
     controller.abort()
     await reader.cancel().catch(() => {})
-    expect(received[0]).toEqual({ topic: "payment", id: 1 })
+    expect(received[0]).toMatchObject({ topic: "payment", id: 1 })
+  })
+
+  it.skipIf(!env.url || !env.token)("reconnects without the database once the org is known", { timeout: 20_000 }, async () => {
+    const { GET } = await import("./route")
+    requireCustomerAccess.mockClear()
+    for (let i = 0; i < 2; i++) {
+      const controller = new AbortController()
+      const res = await GET(new Request("http://test/v1/customer/live", { signal: controller.signal }))
+      expect(res.status).toBe(200)
+      controller.abort()
+      await res.body?.cancel().catch(() => {})
+    }
+    // The first connect may resolve the org (and caches it); the second must not touch it again.
+    expect(requireCustomerAccess.mock.calls.length).toBeLessThanOrEqual(1)
   })
 })

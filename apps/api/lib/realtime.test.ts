@@ -38,8 +38,11 @@ describe("publishLive", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {})
     const { publishLive } = await import("./realtime")
     await expect(publishLive(["org:1", "ops"], { topic: "payment", id: 9 })).resolves.toBeUndefined()
-    expect(publish).toHaveBeenCalledWith("org:1", { topic: "payment", id: 9 })
-    expect(publish).toHaveBeenCalledWith("ops", { topic: "payment", id: 9 })
+    const sent = expect.objectContaining({ topic: "payment", id: 9, nonce: expect.any(String) })
+    expect(publish).toHaveBeenCalledWith("org:1", sent)
+    expect(publish).toHaveBeenCalledWith("ops", sent)
+    // Every channel gets the same nonce, so open tabs can recognise one alert.
+    expect(publish.mock.calls[0]![1]).toEqual(publish.mock.calls[1]![1])
     expect(error).toHaveBeenCalledTimes(1)
     error.mockRestore()
   })

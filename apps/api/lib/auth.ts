@@ -179,6 +179,20 @@ export async function getOpsAccess(): Promise<OpsAccess> {
   return { status: "authorized", userId, email: email!, role, permissions, user }
 }
 
+/**
+ * Who may hold the ops live stream: an @admobihq.com member of the ops Clerk org. Clerk lookups
+ * only (cached per instance), no permission rows, so the stream's routine reconnect never wakes
+ * Postgres. The stream carries ids only; what a viewer may see is checked when they refetch.
+ */
+export async function getOpsLiveAccess(): Promise<"ok" | "unauthenticated" | "forbidden"> {
+  const userId = await resolveUserId()
+  if (!userId) return "unauthenticated"
+  const user = await resolveClerkUser(userId)
+  if (!user) return "unauthenticated"
+  if (!isAdmobiEmail(resolvePrimaryEmail(user))) return "forbidden"
+  return (await resolveOpsRole(userId)) ? "ok" : "forbidden"
+}
+
 export async function requireOpsUser() {
   const access = await getOpsAccess()
   if (access.status === "unauthenticated") {
