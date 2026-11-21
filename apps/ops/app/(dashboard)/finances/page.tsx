@@ -30,7 +30,7 @@ export default async function FinancesPage({
   return (
     <div className="flex flex-1 flex-col gap-6">
       <DashboardHeader page="finances" />
-      <DashboardNav tabs={FINANCE_TABS} tab={tab} range={range} showRange={!["wallets", "tools", "attention"].includes(tab)} />
+      <DashboardNav tabs={FINANCE_TABS} tab={tab} range={range} showRange={!["wallets", "tools", "attention", "documents"].includes(tab)} />
       {/* Keyed on tab and range so a change shows the skeleton instead of the old tab. */}
       <Suspense key={`${tab}-${range}`} fallback={<FinanceSkeleton tab={tab} />}>
         <FinanceTab tab={tab} range={range} />

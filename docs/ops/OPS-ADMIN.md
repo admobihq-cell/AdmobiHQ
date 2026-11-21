@@ -208,6 +208,17 @@ Public form POSTs go to `api.admobihq.com/v1/public/*`. Ops admin routes require
 npm run env:check -w ops
 ```
 
+### Invoices & quotes (Finances > Invoices & quotes)
+
+Ops writes quotes and invoices by hand for work billed **outside the Paystack wallet**: bank transfer, M-Pesa paybill, cheque or cash. Open the tab for the list (outstanding and overdue totals, filters, search), then **New** opens the editor at `/finances/documents/new`. The form is on the left, and the live A4 preview on the right is the real PDF the advertiser will download, re-rendered about 0.6 s after you stop typing. Needs the `finances` permission.
+
+- **Customer:** pick an advertiser organization. That fills the name, billing email and KRA PIN, and the campaign picker lists only that org's campaigns. Tick **Not a customer yet** to type a prospect's details instead; those documents are never visible in any advertiser app.
+- **Numbers:** `QT/2026/0001` and `INV/2026/0001`, assigned on first save from a per-kind, per-year counter. They can't be edited, never repeat, and never look like the Paystack receipts (`INV-2026-000123`). A numbered document is never deleted, only voided, so the sequence stays gapless.
+- **Money:** subtotal, then discount %, then tax % on the taxable lines after discount, then the extra fee. The server always recomputes the totals; whatever the browser sends is ignored.
+- **Lifecycle:** a draft is editable. **Mark as sent** locks it, makes it visible to the advertiser in Billing, and emails the PDF to the customer address on the document (the org's billing email, or what you typed for a prospect). If there's no address or the email fails, the send still goes through and the toast says so. A sent quote can be marked accepted or declined, or **converted to invoice**, which creates a new draft invoice with its own `INV/` number. Any document, including a saved draft, can be **voided**, which retires its number without showing it to anyone; to change a sent document, void it and issue a new one. Percentages and amounts take at most 2 decimals.
+- **Payments:** **Record payment** on a sent invoice takes amount, method, reference and date. Payments are append-only and audited, and can't exceed the balance. They **never touch the advertiser's wallet** or the finance revenue figures. Paid, part-paid and overdue are worked out from the payments, never stored. The PDF carries a red **UNPAID** or **OVERDUE** pill, amber **PART-PAID**, green **PAID**, or grey **VOID** / **DRAFT**.
+- **Company details:** Admobi's name, contact lines, KRA PIN and the default note, payment instructions and terms live in `apps/api/lib/billing/company.ts`. The KRA PIN and bank/paybill details are still placeholders (`TODO(user)`).
+
 ### Record transaction (Finances > Ledger)
 
 Ops can add a wallet ledger row by hand: organization, type (top-up, spend, refund or adjustment), amount, optional campaign, category, optional reference and a reason. Nothing else writes the ledger on prod yet, so this is how an account manager adds funds after a payment arrives, which is what the advertiser app tells people to ask for.

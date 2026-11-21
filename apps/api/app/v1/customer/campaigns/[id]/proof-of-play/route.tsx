@@ -7,6 +7,7 @@ import { jsonError, parseId, requireCustomerPermissionAccess } from "@/lib/api-u
 import { buildProofOfPlay } from "@/lib/campaigns/campaign-statement"
 import { getOwnedCampaign } from "@/lib/campaigns/campaign-store"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
+import { CUSTOMER_PDF_FOOTER } from "@/lib/pdf/primitives/brand"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 
 type Params = { params: Promise<{ id: string }> }
@@ -45,6 +46,7 @@ export async function GET(_req: Request, { params }: Params) {
     const bytes = await renderPdf(
       <CampaignStatementPdf title="Proof of play" {...statement} />,
       {
+        footer: CUSTOMER_PDF_FOOTER,
         metadata: {
           title: `Admobi — Proof of play — ${campaign.name}`,
           authors: ["Admobi"],
