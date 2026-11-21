@@ -80,7 +80,7 @@ const ROUTES: Partial<Record<LiveTopic, Route>> = {
  * and toasts only what this role may see. The event carries ids; the toast copy is static.
  */
 export function OpsLiveUpdates({ role, permissions }: { role: OpsRole; permissions: OpsPermission[] }) {
-  const { getToken } = useAuth()
+  const { getToken, isSignedIn } = useAuth()
   const queryClient = useQueryClient()
   const router = useRouter()
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -99,7 +99,8 @@ export function OpsLiveUpdates({ role, permissions }: { role: OpsRole; permissio
       for (const key of route.keys) void queryClient.invalidateQueries({ queryKey: key })
       refreshSidebar()
       if (role !== "admin" && !permissions.includes(route.permission)) return
-      liveToast({ ...route.toast(event.id), key: `${event.topic}:${event.id ?? Date.now()}` })
+      // The publisher's nonce is the same in every open tab, so only one of them plays the sound.
+      liveToast({ ...route.toast(event.id), key: event.nonce ?? `${event.topic}:${event.id}`, overflowHref: "/notifications" })
     },
     [permissions, queryClient, refreshSidebar, role]
   )
@@ -109,7 +110,8 @@ export function OpsLiveUpdates({ role, permissions }: { role: OpsRole; permissio
     refreshSidebar()
   }, [queryClient, refreshSidebar])
 
-  useLiveEvents({ url: `${getApiBaseUrl()}/v1/ops/live`, getToken, onEvent, onReconnect })
+  // Wait for Clerk: a request before sign-in loads would only collect a 401.
+  useLiveEvents({ url: isSignedIn ? `${getApiBaseUrl()}/v1/ops/live` : null, getToken, onEvent, onReconnect })
 
   return null
 }

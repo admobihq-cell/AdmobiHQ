@@ -26,8 +26,16 @@ const played = new Set<string>()
 let channel: BroadcastChannel | null = null
 
 if (typeof window !== "undefined") {
+  // Safari (and Chrome, for a context made outside a gesture) only lets audio start from a user
+  // gesture, so the context is created or resumed here, not when an alert arrives.
   const unlock = () => {
     unlocked = true
+    try {
+      audio ??= new AudioContext()
+      void audio.resume()
+    } catch {
+      // no audio support
+    }
     window.removeEventListener("pointerdown", unlock)
     window.removeEventListener("keydown", unlock)
   }
@@ -50,6 +58,7 @@ function readMuted(): boolean {
 function tone(name: SoundName) {
   try {
     audio ??= new AudioContext()
+    if (audio.state === "suspended") void audio.resume()
     const { type, notes } = TONES[name]
     const start = audio.currentTime + 0.01
     for (const [frequency, offset] of notes) {

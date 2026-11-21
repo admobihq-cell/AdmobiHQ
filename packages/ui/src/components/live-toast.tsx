@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Bell, CircleCheck, TriangleAlert, X, type LucideIcon } from "lucide-react"
+import { Bell, CircleCheck, Layers, TriangleAlert, X, type LucideIcon } from "lucide-react"
+import { createRollingCap } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { formatRelativeTime } from "@workspace/ui/lib/notifications"
@@ -22,8 +23,10 @@ export type LiveToastInput = {
   sound?: SoundName
   /** Identifies the alert so only one open tab plays its sound. */
   key?: string
-  /** Warnings that need a human (SOS) stay until dismissed. */
+  /** Warnings that need a human (SOS) stay until dismissed, and are never folded into a summary. */
   sticky?: boolean
+  /** Where the "N more updates" summary points when a burst is folded. */
+  overflowHref?: string
 }
 
 const TONE_STYLE: Record<Tone, { tile: string; icon: LucideIcon; bar: string }> = {
@@ -50,13 +53,17 @@ function LiveToastCard({ id, input }: { id: string | number; input: LiveToastInp
   const duration = input.sticky ? null : DURATION_MS[tone]
 
   return (
-    <div className="group relative flex w-[min(360px,calc(100vw-2rem))] gap-3 overflow-hidden rounded-xl border border-border/70 bg-popover p-3 pr-9 text-popover-foreground shadow-lg">
+    <div
+      role={input.sticky ? "alert" : "status"}
+      className="group relative flex w-[min(360px,calc(100vw-2rem))] gap-3 overflow-hidden rounded-xl border border-border/70 bg-popover p-3 pr-9 text-popover-foreground shadow-lg">
       <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", style.tile)}>
         <Icon className="size-4.5" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-baseline gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm font-medium">{input.title}</p>
+          <p className="min-w-0 flex-1 truncate text-sm font-medium" title={input.title}>
+            {input.title}
+          </p>
           <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
             {formatRelativeTime(input.at ?? new Date().toISOString())}
           </span>
@@ -100,8 +107,34 @@ function LiveToastCard({ id, input }: { id: string | number; input: LiveToastInp
   )
 }
 
-/** BoardUI-style notification toast on sonner (which keeps stacking, swipe and focus handling). */
+// At most 3 alerts per 10 s on screen; the rest of a burst folds into one summary toast.
+const allow = createRollingCap(3, 10_000)
+let folded = 0
+
+/**
+ * BoardUI-style notification toast on sonner (which keeps stacking, swipe and focus handling).
+ * A burst (a bulk review, form spam) shows 3 toasts, then one "N more updates" toast that keeps
+ * counting under a fixed id, with a single sound.
+ */
 export function liveToast(input: LiveToastInput): void {
+  if (!input.sticky && allow(Date.now()) === "fold") {
+    folded += 1
+    const summary: LiveToastInput = {
+      title: `${folded} more update${folded === 1 ? "" : "s"}`,
+      body: "Open your notifications to see them all.",
+      icon: Layers,
+      action: { label: "Open", href: input.overflowHref ?? "/notifications" },
+    }
+    toast.custom((id) => <LiveToastCard id={id} input={summary} />, {
+      id: "live-burst",
+      duration: DURATION_MS.info,
+      unstyled: true,
+      onDismiss: () => (folded = 0),
+      onAutoClose: () => (folded = 0),
+    })
+    if (folded === 1 && input.sound) playSound(input.sound, input.key)
+    return
+  }
   const tone = input.tone ?? "info"
   toast.custom((id) => <LiveToastCard id={id} input={input} />, {
     duration: input.sticky ? Infinity : DURATION_MS[tone],

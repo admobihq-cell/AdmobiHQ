@@ -11,9 +11,12 @@ import { useLiveEvents } from "@workspace/ui/lib/live-events"
 import { fetchCustomerNotifications } from "@/lib/customer-notifications-client"
 import { apiPublicUrl } from "@/lib/site-urls"
 
-/** A burst (bulk review) collapses into one refetch per key and at most this many toasts. */
-const COALESCE_MS = 300
-const MAX_TOASTS = 3
+/**
+ * A bulk review publishes one event per campaign, each a second or so apart, so events are
+ * coalesced over a quiet period (with a ceiling) into one refetch per key and one toast pass.
+ */
+const QUIET_MS = 1500
+const MAX_WAIT_MS = 4000
 
 /**
  * Keeps the advertiser app live: refreshes whatever an event makes stale, and toasts new inbox
@@ -26,6 +29,7 @@ export function LiveUpdates() {
   const toasted = useRef(new Set<number>())
   const pending = useRef({ keys: new Map<string, unknown[]>(), notify: false })
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const firstPending = useRef(0)
 
   useEffect(() => {
     connectedAt.current = Date.now()
@@ -39,21 +43,9 @@ export function LiveUpdates() {
     const fresh = page.items.filter(
       (row) => !row.read_at && !toasted.current.has(row.id) && Date.parse(row.created_at) >= since
     )
-    for (const row of fresh) toasted.current.add(row.id)
-    if (fresh.length > MAX_TOASTS) {
-      liveToast({
-        title: `${fresh.length} new updates`,
-        body: fresh
-          .slice(0, 2)
-          .map((row) => row.title)
-          .join(" · "),
-        action: { label: "Open inbox", href: "/notifications" },
-        sound: "chime",
-        key: `burst:${fresh[0]!.id}`,
-      })
-      return
-    }
-    for (const row of fresh) {
+    // Oldest first, so a folded burst reads in order; liveToast caps a burst at 3 + a summary.
+    for (const row of fresh.reverse()) {
+      toasted.current.add(row.id)
       const { tone, sound } = customerToastTone(row.type)
       liveToast({
         title: row.title,
@@ -63,11 +55,13 @@ export function LiveUpdates() {
         action: row.href ? { label: "View", href: row.href } : undefined,
         sound,
         key: `notification:${row.id}`,
+        overflowHref: "/notifications",
       })
     }
   }, [getToken])
 
   const flush = useCallback(() => {
+    firstPending.current = 0
     const { keys, notify } = pending.current
     pending.current = { keys: new Map(), notify: false }
     for (const key of keys.values()) void queryClient.invalidateQueries({ queryKey: key })
@@ -79,15 +73,26 @@ export function LiveUpdates() {
       for (const key of customerKeysForEvent(event)) pending.current.keys.set(JSON.stringify(key), key)
       // Your own action still refreshes the screen, it just doesn't toast you about it.
       if (event.topic === "notification" && event.actor !== userId) pending.current.notify = true
+      const now = Date.now()
+      if (!firstPending.current) firstPending.current = now
       clearTimeout(timer.current)
-      timer.current = setTimeout(flush, COALESCE_MS)
+      timer.current = setTimeout(flush, Math.min(QUIET_MS, firstPending.current + MAX_WAIT_MS - now))
     },
     [flush, userId]
   )
 
+  // Only after a real gap (never the routine ~280 s reconnect): refresh everything an event could
+  // have touched while the stream was down.
   const onReconnect = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ["customer-notifications"] })
-    void queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
+    for (const key of [
+      ["customer-notifications"],
+      ["customer-analytics"],
+      ["customer-campaigns"],
+      ["customer-campaign"],
+      ["customer-payment"],
+    ]) {
+      void queryClient.invalidateQueries({ queryKey: key })
+    }
   }, [queryClient])
 
   useLiveEvents({
