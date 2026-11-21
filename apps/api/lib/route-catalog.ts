@@ -175,6 +175,9 @@ const NOTES: Record<string, string> = {
   "/v1/ops/paystack/[resource]": "Live Paystack summary, transactions, settlements, transfers, refunds or disputes, matched to our records",
   "/v1/ops/paystack/sync": "Re-check one Paystack payment, or import Paystack refunds",
   "/v1/ops/paystack/export": "Paystack's transaction CSV export link",
+  "/v1/ops/billing-documents": "List quotes and invoices written by ops, or create one",
+  "/v1/ops/billing-documents/options": "Organizations, campaigns and default copy for the quote/invoice editor",
+  "/v1/ops/billing-documents/[id]": "One quote or invoice; edit while it is a draft",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",

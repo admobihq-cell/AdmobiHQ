@@ -156,7 +156,8 @@ export async function parseJsonBody<T>(
   // Input left as `any` (rather than `z.ZodSchema<T>`, which forces Input===Output===T)
   // so schemas with `.default(...)` — where the parsed Output is narrower/required
   // than the raw Input — can still infer T as the Output type.
-  schema: z.ZodType<T, any>,
+  // (zod 3's ZodType is <Output, Def, Input> — Input is the third parameter.)
+  schema: z.ZodType<T, any, any>,
 ): Promise<{ data: T } | { error: NextResponse }> {
   let body: unknown
   try {
