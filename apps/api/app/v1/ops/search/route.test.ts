@@ -35,6 +35,7 @@ describe.skipIf(!databaseUrl)("GET /v1/ops/search", { timeout: 30_000 }, () => {
   let docId = 0
   let docNumber = ""
   const leadIds: number[] = []
+  const crowdIds: number[] = []
 
   beforeAll(async () => {
     const target = await prisma.supportCase.create({
@@ -46,6 +47,13 @@ describe.skipIf(!databaseUrl)("GET /v1/ops/search", { timeout: 30_000 }, () => {
       data: { contact_name: tag, contact_email: `${tag}@x.test`, channel: "web", subject: `ref ${caseId} follow-up`, access_token_hash: `${tag}-b` },
     })
     echoCaseId = echo.id
+    // More newer text matches than one group holds: the exact id must not fall out of the window.
+    for (let i = 0; i < 7; i++) {
+      const crowd = await prisma.supportCase.create({
+        data: { contact_name: tag, contact_email: `${tag}@x.test`, channel: "web", subject: `crowd ${caseId} #${i}`, access_token_hash: `${tag}-c${i}` },
+      })
+      crowdIds.push(crowd.id)
+    }
     const campaign = await prisma.campaign.create({ data: { clerk_user_id: tag, name: `${tag} campaign` } })
     campaignId = campaign.id
     // A year far from real data so the canonical number can't collide.
@@ -74,7 +82,7 @@ describe.skipIf(!databaseUrl)("GET /v1/ops/search", { timeout: 30_000 }, () => {
   }, 30_000)
 
   afterAll(async () => {
-    await prisma.supportCase.deleteMany({ where: { id: { in: [caseId, echoCaseId] } } })
+    await prisma.supportCase.deleteMany({ where: { id: { in: [caseId, echoCaseId, ...crowdIds] } } })
     await prisma.campaign.deleteMany({ where: { id: campaignId } })
     await prisma.billingDocument.deleteMany({ where: { id: docId } })
     await prisma.lead.deleteMany({ where: { id: { in: leadIds } } })
@@ -88,6 +96,19 @@ describe.skipIf(!databaseUrl)("GET /v1/ops/search", { timeout: 30_000 }, () => {
     expect(support.hits[0]!.href).toBe(`/support/${caseId}`)
     const ids = support.hits.map((h) => h.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it("keeps the exact id first even when newer text matches fill the group", async () => {
+    caller = { userId: `${tag}-admin`, role: "admin", permissions: [] }
+    const support = (await search(String(caseId))).groups.find((g) => g.key === "support")!
+    expect(support.hits[0]!.id).toBe(`support:${caseId}`)
+    expect(support.hits.length).toBeLessThanOrEqual(5)
+  })
+
+  it("shows payouts only to finances, like the payouts screen", async () => {
+    caller = { userId: `${tag}-payouts`, role: "payouts-only", permissions: ["payouts"] }
+    const body = await search("1")
+    expect(body.groups.find((g) => g.key === "payouts")).toBeUndefined()
   })
 
   it("hides groups the role cannot see", async () => {

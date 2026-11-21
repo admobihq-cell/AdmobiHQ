@@ -8,7 +8,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { prisma } from "@/lib/prisma"
-import { ci, idOr, join, ranked, take } from "@/lib/search/shared"
+import { ci, exactFirst, idOr, join, ranked, take } from "@/lib/search/shared"
 
 type GroupDef = {
   key: string
@@ -24,13 +24,12 @@ const GROUPS: GroupDef[] = [
     label: "SOS incidents",
     permissions: ["safety"],
     run: async (q) => {
-      const rows = await prisma.safetyIncident.findMany({
-        where: { OR: [...idOr(q.numericId), { driver_name: ci(q.text) }, { driver_phone: ci(q.text) }] },
-        orderBy: { created_at: "desc" },
-        take: take + 1,
-        select: { id: true, type: true, status: true, driver_name: true },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.safetyIncident.findMany({ where: { ...where }, orderBy: { created_at: "desc" }, take: limit, select: { id: true, type: true, status: true, driver_name: true } }),
+        [{ driver_name: ci(q.text) }, { driver_phone: ci(q.text) }],
+        (r) => ({
         id: `sos:${r.id}`,
         title: `SOS — ${formatLabel(r.type)}`,
         subtitle: join(r.driver_name, formatLabel(r.status)),
@@ -44,13 +43,12 @@ const GROUPS: GroupDef[] = [
     label: "Support cases",
     permissions: ["support"],
     run: async (q) => {
-      const rows = await prisma.supportCase.findMany({
-        where: { OR: [...idOr(q.numericId), { subject: ci(q.text) }, { contact_name: ci(q.text) }, { contact_email: ci(q.text) }] },
-        orderBy: { updated_at: "desc" },
-        take: take + 1,
-        select: { id: true, subject: true, status: true, contact_name: true },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.supportCase.findMany({ where: { ...where }, orderBy: { updated_at: "desc" }, take: limit, select: { id: true, subject: true, status: true, contact_name: true } }),
+        [{ subject: ci(q.text) }, { contact_name: ci(q.text) }, { contact_email: ci(q.text) }],
+        (r) => ({
         id: `support:${r.id}`,
         title: r.subject,
         subtitle: join(r.contact_name, formatLabel(r.status)),
@@ -64,13 +62,12 @@ const GROUPS: GroupDef[] = [
     label: "Campaigns",
     permissions: ["campaigns"],
     run: async (q) => {
-      const rows = await prisma.campaign.findMany({
-        where: { OR: [...idOr(q.numericId), { name: ci(q.text) }, { org: { name: ci(q.text) } }] },
-        orderBy: { updated_at: "desc" },
-        take: take + 1,
-        select: { id: true, name: true, status: true, org: { select: { name: true } } },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.campaign.findMany({ where: { ...where }, orderBy: { updated_at: "desc" }, take: limit, select: { id: true, name: true, status: true, org: { select: { name: true } } } }),
+        [{ name: ci(q.text) }, { org: { name: ci(q.text) } }],
+        (r) => ({
         id: `campaigns:${r.id}`,
         title: r.name,
         subtitle: join(r.org?.name, formatLabel(r.status)),
@@ -163,30 +160,32 @@ const GROUPS: GroupDef[] = [
   {
     key: "payouts",
     label: "Payouts",
-    permissions: ["finances", "payouts"],
-    run: async (q) => {
-      const rows = await prisma.payout.findMany({
-        where: {
-          OR: [
-            ...idOr(q.numericId),
-            ...(q.payoutReference ? [{ reference: q.payoutReference }] : []),
-            { reference: ci(q.text) },
-            { driverProfile: { full_name: ci(q.text) } },
-            { driver: { name: ci(q.text) } },
-          ],
-        },
-        orderBy: { created_at: "desc" },
-        take: take + 1,
-        select: {
-          id: true,
-          status: true,
-          amount_kes: true,
-          period_month: true,
-          driverProfile: { select: { full_name: true } },
-          driver: { select: { name: true } },
-        },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+    // Same gate as GET /v1/ops/payouts and the Finances page; `payouts` alone only disburses.
+    permissions: ["finances"],
+    run: async (q) =>
+      exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.payout.findMany({
+            where,
+            orderBy: { created_at: "desc" },
+            take: limit,
+            select: {
+              id: true,
+              status: true,
+              amount_kes: true,
+              period_month: true,
+              driverProfile: { select: { full_name: true } },
+              driver: { select: { name: true } },
+            },
+          }),
+        [
+          ...(q.payoutReference ? [{ reference: q.payoutReference }] : []),
+          { reference: ci(q.text) },
+          { driverProfile: { full_name: ci(q.text) } },
+          { driver: { name: ci(q.text) } },
+        ],
+        (r) => ({
         id: `payouts:${r.id}`,
         title: `Payout #${r.id}`,
         subtitle: join(
@@ -197,21 +196,20 @@ const GROUPS: GroupDef[] = [
         ),
         href: "/finances?tab=payouts",
         badge: `#${r.id}`,
-      }))
-    },
+      })
+      ),
   },
   {
     key: "orgs",
     label: "Advertiser orgs",
     permissions: ["campaigns"],
     run: async (q) => {
-      const rows = await prisma.advertiserOrg.findMany({
-        where: { OR: [...idOr(q.numericId), { name: ci(q.text) }, { billing_email: ci(q.text) }] },
-        orderBy: { updated_at: "desc" },
-        take: take + 1,
-        select: { id: true, name: true, billing_email: true },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.advertiserOrg.findMany({ where: { ...where }, orderBy: { updated_at: "desc" }, take: limit, select: { id: true, name: true, billing_email: true } }),
+        [{ name: ci(q.text) }, { billing_email: ci(q.text) }],
+        (r) => ({
         id: `orgs:${r.id}`,
         title: r.name,
         subtitle: r.billing_email ?? undefined,
@@ -225,13 +223,12 @@ const GROUPS: GroupDef[] = [
     label: "Driver applications",
     permissions: ["driver_applications"],
     run: async (q) => {
-      const rows = await prisma.driverProfile.findMany({
-        where: { OR: [...idOr(q.numericId), { full_name: ci(q.text) }, { phone: ci(q.text) }] },
-        orderBy: { created_at: "desc" },
-        take: take + 1,
-        select: { id: true, full_name: true, city: true, status: true },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.driverProfile.findMany({ where: { ...where }, orderBy: { created_at: "desc" }, take: limit, select: { id: true, full_name: true, city: true, status: true } }),
+        [{ full_name: ci(q.text) }, { phone: ci(q.text) }],
+        (r) => ({
         id: `applications:${r.id}`,
         title: r.full_name ?? "Driver application",
         subtitle: join(r.city, formatLabel(r.status)),

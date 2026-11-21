@@ -9,15 +9,16 @@ import {
 
 import { customerBillingDocumentWhere } from "@/lib/billing/documents"
 import { prisma } from "@/lib/prisma"
-import { ci, idOr, join, ranked, take } from "@/lib/search/shared"
+import { ci, exactFirst, idOr, join, ranked, take } from "@/lib/search/shared"
 
-type CustomerSearchAccess = { orgId: number; isOwner: boolean; permissions: ReadonlySet<AdvertiserPermission> }
+type CustomerSearchAccess = { userId: string; orgId: number; isOwner: boolean; permissions: ReadonlySet<AdvertiserPermission> }
 
 type GroupDef = {
   key: string
   label: string
-  permission: AdvertiserPermission
-  run: (q: ParsedSearch, orgId: number) => Promise<SearchHit[]>
+  /** null: every member sees the group (it scopes its own rows). */
+  permission: AdvertiserPermission | null
+  run: (q: ParsedSearch, orgId: number, access: CustomerSearchAccess) => Promise<SearchHit[]>
 }
 
 /** Every query is pinned to the caller's org; a group needs the permission its screen needs. */
@@ -27,13 +28,12 @@ const GROUPS: GroupDef[] = [
     label: "Campaigns",
     permission: "campaigns:read",
     run: async (q, orgId) => {
-      const rows = await prisma.campaign.findMany({
-        where: { org_id: orgId, OR: [...idOr(q.numericId), { name: ci(q.text) }] },
-        orderBy: { updated_at: "desc" },
-        take: take + 1,
-        select: { id: true, name: true, status: true, market: true },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.campaign.findMany({ where: { org_id: orgId, ...where }, orderBy: { updated_at: "desc" }, take: limit, select: { id: true, name: true, status: true, market: true } }),
+        [{ name: ci(q.text) }],
+        (r) => ({
         id: `campaigns:${r.id}`,
         title: r.name,
         subtitle: join(r.market, formatLabel(r.status)),
@@ -108,15 +108,19 @@ const GROUPS: GroupDef[] = [
   {
     key: "support",
     label: "Support cases",
-    permission: "support:read_all",
-    run: async (q, orgId) => {
-      const rows = await prisma.supportCase.findMany({
-        where: { org_id: orgId, OR: [...idOr(q.numericId), { subject: ci(q.text) }] },
-        orderBy: { updated_at: "desc" },
-        take: take + 1,
-        select: { id: true, subject: true, status: true },
-      })
-      return ranked(rows, q.numericId, (r) => ({
+    // Same rule as the support list: read_all sees the org's cases, everyone else their own.
+    permission: null,
+    run: async (q, orgId, access) => {
+      const scope =
+        access.isOwner || access.permissions.has("support:read_all")
+          ? { org_id: orgId }
+          : { org_id: orgId, customer: { clerk_user_id: access.userId } }
+      return exactFirst(
+        q.numericId,
+        (where, limit) =>
+          prisma.supportCase.findMany({ where: { ...scope, ...where }, orderBy: { updated_at: "desc" }, take: limit, select: { id: true, subject: true, status: true } }),
+        [{ subject: ci(q.text) }],
+        (r) => ({
         id: `support:${r.id}`,
         title: r.subject,
         subtitle: formatLabel(r.status),
@@ -142,9 +146,9 @@ const GROUPS: GroupDef[] = [
 ]
 
 export async function searchCustomer(q: ParsedSearch, access: CustomerSearchAccess): Promise<SearchGroup[]> {
-  const visible = GROUPS.filter((g) => access.isOwner || access.permissions.has(g.permission))
+  const visible = GROUPS.filter((g) => g.permission === null || access.isOwner || access.permissions.has(g.permission))
   const results = await Promise.all(
-    visible.map(async (g) => ({ key: g.key, label: g.label, hits: await g.run(q, access.orgId) }))
+    visible.map(async (g) => ({ key: g.key, label: g.label, hits: await g.run(q, access.orgId, access) }))
   )
   return results.filter((g) => g.hits.length > 0)
 }

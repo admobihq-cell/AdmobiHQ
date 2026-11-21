@@ -36,6 +36,8 @@ describe.skipIf(!databaseUrl)("GET /v1/customer/search", { timeout: 30_000 }, ()
   const campaignIds: number[] = []
   const docIds: number[] = []
   const numbers: Record<string, string> = {}
+  const customerIds: number[] = []
+  const caseIds: number[] = []
   const seq = Date.now() % 1000
 
   async function doc(orgId: number, status: string, n: number) {
@@ -71,9 +73,28 @@ describe.skipIf(!databaseUrl)("GET /v1/customer/search", { timeout: 30_000 }, ()
     numbers.aSent = await doc(orgIds[0]!, "sent", 1)
     numbers.aDraft = await doc(orgIds[0]!, "draft", 2)
     numbers.bSent = await doc(orgIds[1]!, "sent", 3)
+    // Two members of org A, each with a case: a member without support:read_all sees only their own.
+    for (const who of ["me", "mate"]) {
+      const customer = await prisma.customer.create({ data: { email: `${tag}-${who}@x.test`, clerk_user_id: `${tag}-${who}` } })
+      customerIds.push(customer.id)
+      const supportCase = await prisma.supportCase.create({
+        data: {
+          customer_id: customer.id,
+          org_id: orgIds[0]!,
+          contact_name: tag,
+          contact_email: `${tag}-${who}@x.test`,
+          channel: "customer-web",
+          subject: `${tag} ${who} case`,
+          access_token_hash: `${tag}-${who}`,
+        },
+      })
+      caseIds.push(supportCase.id)
+    }
   }, 30_000)
 
   afterAll(async () => {
+    await prisma.supportCase.deleteMany({ where: { id: { in: caseIds } } })
+    await prisma.customer.deleteMany({ where: { id: { in: customerIds } } })
     await prisma.billingDocument.deleteMany({ where: { id: { in: docIds } } })
     await prisma.campaign.deleteMany({ where: { id: { in: campaignIds } } })
     await prisma.advertiserOrg.deleteMany({ where: { id: { in: orgIds } } })
@@ -99,5 +120,15 @@ describe.skipIf(!databaseUrl)("GET /v1/customer/search", { timeout: 30_000 }, ()
     caller = { userId: tag, orgId: orgIds[0]!, isOwner: true, permissions: new Set() }
     expect((await search(numbers.aSent!)).groups.find((g) => g.key === "documents")!.hits[0]!.title).toBe(numbers.aSent)
     expect((await search(numbers.aDraft!)).groups.find((g) => g.key === "documents")).toBeUndefined()
+  })
+
+  it("shows a member their own support cases without support:read_all", async () => {
+    caller = { userId: `${tag}-me`, orgId: orgIds[0]!, isOwner: false, permissions: new Set(["campaigns:read"]) }
+    const support = (await search(`${tag}`)).groups.find((g) => g.key === "support")!
+    expect(support.hits.map((h) => h.id)).toEqual([`support:${caseIds[0]}`])
+
+    caller = { userId: `${tag}-me`, orgId: orgIds[0]!, isOwner: false, permissions: new Set(["support:read_all"]) }
+    const all = (await search(`${tag}`)).groups.find((g) => g.key === "support")!
+    expect(all.hits.map((h) => h.id).sort()).toEqual(caseIds.map((id) => `support:${id}`).sort())
   })
 })
