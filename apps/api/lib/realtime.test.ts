@@ -10,8 +10,14 @@ vi.mock("@upstash/redis", () => ({
 const env = { url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN }
 
 afterEach(() => {
-  process.env.UPSTASH_REDIS_REST_URL = env.url
-  process.env.UPSTASH_REDIS_REST_TOKEN = env.token
+  // Assigning undefined would store the string "undefined", which looks configured.
+  for (const [key, value] of [
+    ["UPSTASH_REDIS_REST_URL", env.url],
+    ["UPSTASH_REDIS_REST_TOKEN", env.token],
+  ] as const) {
+    if (value === undefined) delete process.env[key]
+    else process.env[key] = value
+  }
   publish.mockReset()
   vi.resetModules()
 })
