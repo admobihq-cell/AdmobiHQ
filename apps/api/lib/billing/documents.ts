@@ -8,6 +8,7 @@ import {
   formatKes,
   nairobiDay,
   type BillingStatusAction,
+  type CustomerBillingDocumentDto,
   type RecordBillingPaymentInput,
   type BillingCustomer,
   type BillingDocumentDto,
@@ -336,6 +337,41 @@ export async function recordBillingPayment(
 
   if (outcome !== "ok") return outcome
   return (await getBillingDocument(id))!
+}
+
+/* ---- Advertiser side: only the caller's org, never drafts (org_id = null never matches) ---- */
+
+const customerWhere = (orgId: number) => ({ org_id: orgId, status: { not: "draft" } })
+
+export async function listCustomerBillingDocuments(orgId: number): Promise<CustomerBillingDocumentDto[]> {
+  const rows = await prisma.billingDocument.findMany({
+    where: customerWhere(orgId),
+    include: DOCUMENT_INCLUDE,
+    orderBy: [{ issue_date: "desc" }, { id: "desc" }],
+    take: 500,
+  })
+  return rows.map((row) => {
+    const doc = toBillingDocumentDto(row, null)
+    return {
+      id: doc.id,
+      kind: doc.kind,
+      number: doc.number,
+      status: doc.status,
+      campaignName: doc.campaignName,
+      issueDate: doc.issueDate,
+      dueDate: doc.dueDate,
+      totalKes: doc.totalKes,
+      paidKes: doc.paidKes,
+      balanceKes: doc.balanceKes,
+      paymentState: doc.paymentState,
+    }
+  })
+}
+
+/** Null for another org's document, a draft, or an unknown id — the route answers 404 for all three. */
+export async function getCustomerBillingDocument(orgId: number, id: number): Promise<BillingDocumentDto | null> {
+  const row = await prisma.billingDocument.findFirst({ where: { id, ...customerWhere(orgId) }, include: DOCUMENT_INCLUDE })
+  return row ? toBillingDocumentDto(row, null) : null
 }
 
 export async function listBillingDocuments(

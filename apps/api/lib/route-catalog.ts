@@ -181,6 +181,8 @@ const NOTES: Record<string, string> = {
   "/v1/ops/billing-documents/[id]/status": "Send, accept, decline or void a quote or invoice",
   "/v1/ops/billing-documents/[id]/convert": "Turn a sent or accepted quote into a draft invoice",
   "/v1/ops/billing-documents/[id]/payments": "Record a manual payment against an invoice (not the wallet)",
+  "/v1/ops/billing-documents/[id]/pdf": "Quote or invoice PDF download",
+  "/v1/ops/billing-documents/preview": "Live PDF preview of unsaved quote/invoice editor state",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
@@ -196,6 +198,8 @@ const NOTES: Record<string, string> = {
   "/v1/customer/finance/transactions": "Wallet ledger with filters, paging and CSV export",
   "/v1/customer/finance/invoices": "List the organization's invoices",
   "/v1/customer/finance/invoices/[id]/pdf": "Invoice PDF",
+  "/v1/customer/finance/documents": "Quotes and invoices ops has sent to the organization",
+  "/v1/customer/finance/documents/[id]/pdf": "Quote or invoice PDF",
   "/v1/customer/finance/statements": "Monthly wallet statements",
   "/v1/customer/finance/statements/[month]/pdf": "Monthly wallet statement PDF",
   "/v1/customer/payments/top-up": "Top up the balance through Paystack",
