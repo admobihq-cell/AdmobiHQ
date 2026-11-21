@@ -42,6 +42,7 @@ export function BillingOverviewSkeleton() {
         <ChartSkeleton />
         <ChartSkeleton />
       </div>
+      <ChartSkeleton variant="sankey" />
     </SkeletonShell>
   )
 }
@@ -100,7 +101,7 @@ export function ReportsTabSkeleton({ tab }: { tab: string }) {
       return (
         <SkeletonShell label="Loading spend report">
           <KpiStripSkeleton cells={4} />
-          <ChartSkeleton />
+          <ChartSkeleton variant="panels" />
           <div className="grid gap-4 lg:grid-cols-3">
             <ChartSkeleton variant="bars" />
             <ChartSkeleton variant="bars" />
