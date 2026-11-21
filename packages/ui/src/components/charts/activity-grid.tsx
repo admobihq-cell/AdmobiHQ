@@ -13,7 +13,8 @@ const LEVELS = [22, 40, 58, 78, 100]
 function levelColor(value: number, max: number): string {
   if (max <= 0 || value <= 0) return "var(--chart-track)"
   const step = LEVELS[Math.min(LEVELS.length - 1, Math.floor((value / max) * LEVELS.length))]!
-  return `color-mix(in oklch, var(--chart-2) ${step}%, var(--chart-track))`
+  // sRGB, not oklch: mixing in oklch drifts the hue toward the track's and reads as several colours.
+  return `color-mix(in srgb, var(--chart-2) ${step}%, var(--chart-track))`
 }
 
 function dayLabel(weekStart: string, index: number): string {
@@ -83,7 +84,7 @@ export function ActivityGrid({
             key={step}
             className="size-3 rounded-[3px]"
             style={{
-              background: step === 0 ? "var(--chart-track)" : `color-mix(in oklch, var(--chart-2) ${step}%, var(--chart-track))`,
+              background: step === 0 ? "var(--chart-track)" : `color-mix(in srgb, var(--chart-2) ${step}%, var(--chart-track))`,
             }}
           />
         ))}

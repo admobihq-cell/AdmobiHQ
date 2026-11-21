@@ -1,10 +1,11 @@
 "use client"
 
-import { formatKes, type FinanceSummaryDto } from "@workspace/ops-contracts"
+import { formatKes, spendFlow, type FinanceSummaryDto } from "@workspace/ops-contracts"
 
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { MirrorBars } from "@workspace/ui/components/charts/mirror-bars"
+import { SankeyChart } from "@workspace/ui/components/charts/sankey-chart"
 import { ShareBar } from "@workspace/ui/components/charts/share-bar"
 import { FundingStatement, ShortcutsCard, UpcomingChargesCard } from "@/components/billing/billing-panels"
 import { leader, pct } from "@/components/reports/takeaways"
@@ -38,6 +39,7 @@ export function BillingOverviewTab({
   const spendEmpty = hasLedgerRows ? "No spending in this period." : NO_LEDGER_MESSAGE
   const spendTotal = summary.spendByCategory.reduce((sum, row) => sum + row.value, 0)
   const campaignTotal = summary.spendByCampaign.reduce((sum, row) => sum + row.value, 0)
+  const moneyFlow = spendFlow({ byCampaign: summary.spendByCampaign, byCategory: summary.spendByCategory })
   const flow = summary.moneyInOut.map((row) => ({ period: monthLabel(row.period), in: row.inKes, out: row.outKes }))
 
   return (
@@ -104,6 +106,19 @@ export function BillingOverviewTab({
           />
         </ChartCard>
       </div>
+
+      <ChartCard
+        title="Where your money went"
+        description="Each campaign's spend, then what it paid for"
+        isEmpty={moneyFlow.links.length === 0}
+        emptyMessage={spendEmpty}
+        table={{
+          columns: ["From", "To", "KES"],
+          rows: moneyFlow.links.map((l) => [moneyFlow.nodes[l.source]!.name, moneyFlow.nodes[l.target]!.name, l.value]),
+        }}
+      >
+        <SankeyChart graph={moneyFlow} valueFormatter={formatKes} />
+      </ChartCard>
     </div>
   )
 }

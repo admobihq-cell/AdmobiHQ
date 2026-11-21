@@ -4,6 +4,7 @@ import Link from "next/link"
 import { formatLabel } from "@workspace/ops-contracts"
 
 import { Card, CardContent } from "@workspace/ui/components/card"
+import { ActivityGrid } from "@workspace/ui/components/charts/activity-grid"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
 import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
@@ -93,6 +94,16 @@ export function SupportDashboard({ data }: { data: SupportDashboardDto }) {
           <RankBars data={data.byCategory.map((c) => ({ ...c, name: formatLabel(c.name) }))} />
         </ChartCard>
       </div>
+
+      <ChartCard
+        title="When cases come in"
+        description="Cases opened per day; darker days were busier"
+        isEmpty={data.casesTrend.every((p) => p.opened === 0)}
+        emptyMessage="No cases were opened in this period."
+        table={{ columns: ["Day", "Opened"], rows: data.casesTrend.map((p) => [p.day, Number(p.opened)]) }}
+      >
+        <ActivityGrid points={data.casesTrend} valueKey="opened" label="Support cases opened per day" />
+      </ChartCard>
 
       {safety ? (
         <div className="grid gap-4 lg:grid-cols-2">

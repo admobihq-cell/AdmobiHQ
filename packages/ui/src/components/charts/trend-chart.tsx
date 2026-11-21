@@ -15,6 +15,8 @@ import {
   KitTooltip,
   MARK,
   WashGradients,
+  axisFormatter,
+  seriesValues,
   chartColor,
   defaultFormat,
   formatDay,
@@ -94,7 +96,12 @@ export function TrendChart({
           minTickGap={32}
           tickFormatter={formatDay}
         />
-        <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={valueFormatter} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickFormatter={axisFormatter(seriesValues(data, series.map((s) => s.key)), valueFormatter)}
+        />
         <ChartTooltip
           cursor={{ stroke: "var(--muted-foreground)", strokeOpacity: 0.35, strokeWidth: 1 }}
           content={(props) => <KitTooltip {...props} valueFormatter={valueFormatter} />}

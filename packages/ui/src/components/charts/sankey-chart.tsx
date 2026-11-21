@@ -75,15 +75,19 @@ export function SankeyChart({
   const Node = ({ x, y, width: w, height, index, payload }: NodeProps) => {
     const column = graph.nodes[index]?.column ?? 0
     const right = column === maxColumn
+    const left = column === 0
     const share = right && hubTotal > 0 ? ` · ${Math.round((payload.value / hubTotal) * 100)}%` : ""
+    // Labels sit outside the ribbons: sources to the left, outputs to the right, the hub above.
+    const labelX = left ? x - 8 : right ? x + w + 8 : x + w / 2
+    const labelY = left || right ? y + height / 2 : y - 8
     return (
       <g>
         <rect x={x} y={y} width={w} height={Math.max(2, height)} rx={MARK.radius} fill={colors[index]} />
         <text
-          x={right ? x - 8 : x + w + 8}
-          y={y + height / 2}
-          textAnchor={right ? "end" : "start"}
-          dominantBaseline="middle"
+          x={labelX}
+          y={labelY}
+          textAnchor={left ? "end" : right ? "start" : "middle"}
+          dominantBaseline={left || right ? "middle" : "auto"}
           className="fill-foreground text-xs"
         >
           <tspan className="font-medium">{payload.name}</tspan>
@@ -125,7 +129,7 @@ export function SankeyChart({
         nodeWidth={10}
         nodePadding={18}
         iterations={32}
-        margin={{ top: 8, right: 170, bottom: 8, left: 150 }}
+        margin={{ top: 28, right: 190, bottom: 8, left: 170 }}
         node={(props: NodeProps) => <Node {...props} />}
         link={(props: LinkProps) => <Link {...props} />}
       >

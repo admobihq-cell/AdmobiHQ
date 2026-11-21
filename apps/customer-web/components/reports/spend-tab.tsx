@@ -4,11 +4,11 @@ import Link from "next/link"
 import { formatKes, type ReportSpendDto } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
+import { SyncedPanels } from "@workspace/ui/components/charts/synced-panels"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
 import { ShareBar } from "@workspace/ui/components/charts/share-bar"
-import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
 import { AlertStrip } from "@workspace/ui/components/dashboard/notes"
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
@@ -79,8 +79,8 @@ export function SpendTab({ report }: { report: ReportSpendDto }) {
       />
 
       <ChartCard
-        title="Cost per 1,000"
-        description="Spend, tax left out, per 1,000 est. impressions each day"
+        title="Spend and cost per 1,000"
+        description="What you spent each day (tax left out), and what that bought per 1,000 est. impressions"
         takeaway={(() => {
           const avg = average(trend, "cost")
           const cheapest = low(trend, "cost")
@@ -90,9 +90,20 @@ export function SpendTab({ report }: { report: ReportSpendDto }) {
         })()}
         isEmpty={!hasTrend}
         emptyMessage={report.hasDeliveryRows ? "Cost per 1,000 needs spend and an audience estimate." : NO_DELIVERY_MESSAGE}
-        table={{ columns: ["Day", "KES per 1,000"], rows: trend.map((p) => [p.day, typeof p.cost === "number" ? Math.round(p.cost) : null]) }}
+        table={{
+          columns: ["Day", "Spend (KES)", "KES per 1,000"],
+          rows: trend.map((p) => [
+            p.day,
+            typeof p.spend === "number" ? Math.round(p.spend) : null,
+            typeof p.cost === "number" ? Math.round(p.cost) : null,
+          ]),
+        }}
       >
-        <TrendChart data={trend} series={[{ key: "cost", label: "Cost per 1,000" }]} valueFormatter={formatKes} />
+        <SyncedPanels
+          data={trend}
+          top={{ kind: "column", label: "Spend", series: [{ key: "spend", label: "Spend" }], valueFormatter: formatKes }}
+          bottom={{ kind: "trend", label: "Cost per 1,000", series: [{ key: "cost", label: "Cost per 1,000" }], valueFormatter: formatKes }}
+        />
       </ChartCard>
 
       <div className="grid gap-4 lg:grid-cols-3">

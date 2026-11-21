@@ -61,6 +61,30 @@ export function useActiveMark() {
   return { active, set, opacityOf }
 }
 
+/**
+ * Y-axis ticks: the chart's own formatter while values stay under 10,000; past that, compact
+ * numbers (10K, 2.5M) so long labels like "KES 10,000" don't wrap. One style per axis.
+ */
+export function axisFormatter(
+  values: number[],
+  valueFormatter: (value: number) => string
+): (value: number) => string {
+  const max = Math.max(0, ...values.map((v) => Math.abs(v)))
+  if (max < 10_000) return valueFormatter
+  return (value) => {
+    const abs = Math.abs(value)
+    const sign = value < 0 ? "-" : ""
+    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+    if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(abs >= 10_000 ? 0 : 1).replace(/\.0$/, "")}K`
+    return `${sign}${abs.toLocaleString("en-KE")}`
+  }
+}
+
+/** Every numeric value under the given keys, for axisFormatter. */
+export function seriesValues(rows: Record<string, unknown>[], keys: string[]): number[] {
+  return rows.flatMap((row) => keys.map((k) => row[k]).filter((v): v is number => typeof v === "number"))
+}
+
 /** CSS for marks whose opacity changes on hover. */
 export const DIM_TRANSITION = { transition: "opacity 120ms ease-out" } as const
 

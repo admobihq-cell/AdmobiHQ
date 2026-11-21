@@ -13,7 +13,9 @@ import {
   BAR_SIZE,
   DIM_TRANSITION,
   MARK,
+  axisFormatter,
   dataEndRadius,
+  seriesValues,
   useActiveMark,
   GRID_STROKE_OPACITY,
   KitTooltip,
@@ -69,7 +71,12 @@ export function MirrorBars({
       >
         <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={GRID_STROKE_OPACITY} />
         <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={8} />
-        <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={magnitude} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickFormatter={(value: number) => axisFormatter(seriesValues(rows, [up.key, down.key]), valueFormatter)(Math.abs(value))}
+        />
         <ChartTooltip
           cursor={{ fill: "var(--chart-cursor)", radius: MARK.radius }}
           content={(props) => <KitTooltip {...props} valueFormatter={magnitude} formatLabel={String} />}

@@ -14,6 +14,7 @@ import {
   GRID_STROKE_OPACITY,
   KitTooltip,
   MARK,
+  axisFormatter,
   chartColor,
   dataEndRadius,
   defaultFormat,
@@ -64,7 +65,16 @@ export function ColumnChart({
       >
         <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={GRID_STROKE_OPACITY} />
         <XAxis dataKey={xKey} tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tickFormatter={formatDay} />
-        <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={valueFormatter} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          // Stacked columns reach the sum of their series, so the axis range is judged on that.
+          tickFormatter={axisFormatter(
+            data.map((row) => series.reduce((sum, s) => sum + (typeof row[s.key] === "number" ? (row[s.key] as number) : 0), 0)),
+            valueFormatter
+          )}
+        />
         <ChartTooltip
           cursor={{ fill: "var(--chart-cursor)", radius: MARK.radius }}
           content={(props) => <KitTooltip {...props} valueFormatter={valueFormatter} />}

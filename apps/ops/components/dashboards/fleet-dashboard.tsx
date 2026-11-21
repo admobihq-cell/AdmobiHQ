@@ -4,6 +4,7 @@ import Link from "next/link"
 import { formatCompact, formatKes } from "@workspace/ops-contracts"
 
 import { Card, CardContent } from "@workspace/ui/components/card"
+import { ColumnChart } from "@workspace/ui/components/charts/column-chart"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { FunnelBars } from "@workspace/ui/components/charts/funnel-bars"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
@@ -99,7 +100,7 @@ export function FleetDashboard({ data }: { data: FleetDashboardDto }) {
             emptyMessage={NO_PAYOUTS}
             table={{ columns: ["Month", "Settled", "Pending", "Failed"], rows: months.map((m) => [m.period, m.settled, m.pending, m.failed]) }}
           >
-            <TrendChart xKey="period" stacked data={months} series={[{ key: "settled", label: "Settled" }, { key: "pending", label: "Pending" }, { key: "failed", label: "Failed" }]} valueFormatter={formatCompact} />
+            <ColumnChart xKey="period" data={months} series={[{ key: "settled", label: "Settled" }, { key: "pending", label: "Pending" }, { key: "failed", label: "Failed" }]} valueFormatter={formatCompact} />
           </ChartCard>
           <ChartCard
             title="Top drivers"
