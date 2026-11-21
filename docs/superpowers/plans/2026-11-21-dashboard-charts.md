@@ -169,11 +169,11 @@ export function SankeyChart(props: { graph: FlowGraph; valueFormatter?: (v: numb
 
 **Interfaces:**
 - Produces `SyncedPanels({ data, top, bottom, xKey?, className? })`. `top` and `bottom` are each `{ kind: "column" | "trend"; series; valueFormatter; label; heightClass? }`. It renders a `ColumnChart` (top) and a `TrendChart` (bottom) with the same `syncId` (`useId`), so the crosshair and tooltip move together. Each panel has its own y-axis and a small label at the top-left in muted text. The x-axis ticks show only on the bottom panel.
-- [ ] **Step 1: Write the failing test:** the spend report's `costPerThousandTrend[i].spend` equals that day's ex-tax spend for a seeded campaign, and is `null` for a caller without spend visibility.
+- [x] **Step 1: Write the failing test:** the spend report's `costPerThousandTrend[i].spend` equals that day's ex-tax spend for a seeded campaign, and is `null` for a caller without spend visibility.
 - [ ] **Step 2:** Run it. Expect FAIL.
-- [ ] **Step 3:** Implement the field and `SyncedPanels`.
+- [x] **Step 3:** Implement the field and `SyncedPanels`.
 - [ ] **Step 4:** The test passes; `tsc` is clean in api and ui.
-- [ ] **Step 5:** Commit `feat: daily spend in the spend report and synced spend/cost panels`.
+- [x] **Step 5:** Commit `feat: daily spend in the spend report and synced spend/cost panels`.
 
 ---
 
