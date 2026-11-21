@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { Controller, useFormContext, useWatch } from "react-hook-form"
 import {
   computeBillingTotals,
@@ -67,10 +69,13 @@ export function BillingDocumentForm({
     setValue("customer.taxPin", picked.taxPin ?? "", { shouldDirty: true })
   }
 
-  const setProspect = (prospect: boolean) => {
-    setValue("orgId", prospect ? null : (options.orgs[0]?.id ?? null), { shouldDirty: true })
+  // "Existing customer" vs "prospect" is its own state: an existing-customer
+  // document with no org picked yet must not silently become someone's.
+  const [prospect, setProspectMode] = useState(orgId === null && kindLocked)
+  const setProspect = (next: boolean) => {
+    setProspectMode(next)
+    setValue("orgId", null, { shouldDirty: true })
     setValue("campaignId", null, { shouldDirty: true })
-    if (!prospect && options.orgs[0]) pickOrg(String(options.orgs[0].id))
   }
 
   return (
@@ -121,14 +126,18 @@ export function BillingDocumentForm({
 
       <FormSection title="Customer">
         <div className="flex items-center gap-2">
-          <Checkbox id="prospect" checked={orgId === null} onCheckedChange={(v) => setProspect(v === true)} />
+          <Checkbox id="prospect" checked={prospect} onCheckedChange={(v) => setProspect(v === true)} />
           <Label htmlFor="prospect" className="font-normal">
             Not a customer yet (type their details)
           </Label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {orgId !== null ? (
-            <Field label="Organization" htmlFor="orgId">
+          {!prospect ? (
+            <Field
+              label="Organization"
+              htmlFor="orgId"
+              hint={orgId === null ? "Pick who this is for. Until you do, no advertiser will see it." : undefined}
+            >
               <Select value={orgId ? String(orgId) : undefined} onValueChange={pickOrg}>
                 <SelectTrigger id="orgId" className="w-full">
                   <SelectValue placeholder="Pick an organization" />
@@ -161,7 +170,7 @@ export function BillingDocumentForm({
           <Field label="Billing address" htmlFor="customer.address" className="sm:col-span-2">
             <Textarea id="customer.address" rows={3} {...register("customer.address")} />
           </Field>
-          {orgId !== null ? (
+          {!prospect ? (
             <Field
               label="Campaign"
               htmlFor="campaignId"
@@ -202,10 +211,10 @@ export function BillingDocumentForm({
       <FormSection title="Adjustments and totals">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Discount (%)" htmlFor="discountPct" error={errors.discountPct?.message}>
-            <Input id="discountPct" type="number" inputMode="decimal" min={0} max={100} step="any" {...register("discountPct", { valueAsNumber: true })} />
+            <Input id="discountPct" type="number" inputMode="decimal" min={0} max={100} step="0.01" {...register("discountPct", { valueAsNumber: true })} />
           </Field>
           <Field label="Tax (%)" htmlFor="taxPct" hint="VAT in Kenya is 16%." error={errors.taxPct?.message}>
-            <Input id="taxPct" type="number" inputMode="decimal" min={0} max={100} step="any" {...register("taxPct", { valueAsNumber: true })} />
+            <Input id="taxPct" type="number" inputMode="decimal" min={0} max={100} step="0.01" {...register("taxPct", { valueAsNumber: true })} />
           </Field>
           <Field label="Additional fee label" htmlFor="feeLabel">
             <Input id="feeLabel" placeholder="Production" {...register("feeLabel")} />

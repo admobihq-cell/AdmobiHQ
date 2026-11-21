@@ -33,22 +33,15 @@ import { useOpsClient } from "@/lib/ops-client"
 const addDays = (isoDay: string, days: number) =>
   new Date(new Date(`${isoDay}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10)
 
+/** A new document starts with no organization. Defaulting to one would attach a
+ * prospect's invoice to whichever org sorts first — and show it to them on send. */
 function blankDocument(options: BillingDocumentOptionsDto): BillingDocumentInput {
   const today = nairobiDay(new Date())
-  const first = options.orgs[0]
   return {
     kind: "invoice",
-    orgId: first?.id ?? null,
+    orgId: null,
     campaignId: null,
-    customer: {
-      name: first?.name ?? "",
-      contact: "",
-      email: first?.billingEmail ?? "",
-      phone: "",
-      address: "",
-      taxPin: first?.taxPin ?? "",
-      reference: "",
-    },
+    customer: { name: "", contact: "", email: "", phone: "", address: "", taxPin: "", reference: "" },
     issueDate: today,
     dueDate: addDays(today, 14),
     reference: "",
@@ -235,7 +228,11 @@ function EditorBody({ options, saved }: { options: BillingDocumentOptionsDto; sa
             </form>
           </div>
           <aside className="rounded-2xl bg-muted/60 p-4 sm:p-6 lg:sticky lg:top-4">
-            <PdfPreview input={values} id={saved?.id} />
+            <PdfPreview
+              input={values}
+              id={saved?.id}
+              version={saved ? `${saved.status}:${saved.paidKes}:${saved.payments.length}` : undefined}
+            />
           </aside>
         </div>
       </div>

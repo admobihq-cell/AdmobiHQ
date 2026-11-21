@@ -90,6 +90,30 @@ export function toBillingPdfProps(doc: PdfSource): BillingDocumentPdfProps {
   }
 }
 
+/**
+ * What the editor's live preview renders. A saved document that is no longer a
+ * draft is fixed, so it renders from the saved copy and the request body is
+ * ignored — otherwise its real number and PAID pill could be printed over
+ * made-up lines. A draft (or unsaved form) renders the body, with the saved
+ * number and payments when there is one.
+ */
+export function previewPdfProps(
+  body: BillingDocumentInput,
+  saved: PdfSource | null,
+  campaignName: string | null
+): BillingDocumentPdfProps {
+  if (saved && saved.status !== "draft") return toBillingPdfProps(saved)
+  return toBillingPdfProps({
+    ...body,
+    kind: saved?.kind ?? body.kind,
+    number: saved?.number ?? null,
+    status: "draft",
+    campaignName,
+    paidKes: saved?.paidKes ?? 0,
+    paymentState: null,
+  })
+}
+
 /** PDF bytes for a document, with the customer-facing footer. */
 export function renderBillingDocumentPdf(props: BillingDocumentPdfProps): Promise<Uint8Array> {
   const label = props.kind === "quote" ? "Quote" : "Invoice"

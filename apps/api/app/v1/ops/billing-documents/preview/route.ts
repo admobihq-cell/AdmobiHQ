@@ -4,7 +4,7 @@ import { billingDocumentInputSchema } from "@workspace/ops-contracts"
 
 import { jsonError, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { getBillingDocument } from "@/lib/billing/documents"
-import { pdfResponse, renderBillingDocumentPdf, toBillingPdfProps } from "@/lib/billing/pdf-props"
+import { pdfResponse, previewPdfProps, renderBillingDocumentPdf } from "@/lib/billing/pdf-props"
 import { prisma } from "@/lib/prisma"
 
 const previewSchema = z.object({
@@ -14,9 +14,8 @@ const previewSchema = z.object({
 
 /**
  * The editor's live preview: unsaved form state → PDF, inline. Writes nothing.
- * With `id`, the saved number, status and payments are used so the preview
- * shows the real pill; without it the document is an unnumbered draft.
- * Needs `finances`.
+ * With `id`, a draft shows its saved number; a sent or void document always
+ * renders its saved copy (see previewPdfProps). Needs `finances`.
  */
 export async function POST(req: Request) {
   const auth = await requireOpsPermissionAccess("finances")
@@ -32,16 +31,7 @@ export async function POST(req: Request) {
   const campaign = document.campaignId
     ? await prisma.campaign.findUnique({ where: { id: document.campaignId }, select: { name: true } })
     : null
-
-  const props = toBillingPdfProps({
-    ...document,
-    kind: saved?.kind ?? document.kind,
-    number: saved?.number ?? null,
-    status: saved?.status ?? "draft",
-    campaignName: campaign?.name ?? null,
-    paidKes: saved?.paidKes ?? 0,
-    paymentState: saved?.paymentState ?? null,
-  })
+  const props = previewPdfProps(document, saved, campaign?.name ?? null)
 
   try {
     return pdfResponse(await renderBillingDocumentPdf(props), props.kind, props.number, "inline")

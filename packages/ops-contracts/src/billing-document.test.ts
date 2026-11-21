@@ -5,6 +5,7 @@ import {
   billingPaymentState,
   computeBillingTotals,
   formatBillingNumber,
+  recordBillingPaymentSchema,
 } from "./billing-document"
 
 const sampleLines = [
@@ -87,6 +88,14 @@ describe("formatBillingNumber", () => {
   })
 })
 
+describe("recordBillingPaymentSchema", () => {
+  it("rejects sub-cent amounts that would round to a KES 0.00 payment", () => {
+    const base = { method: "bank", paidOn: "2026-11-21" }
+    expect(recordBillingPaymentSchema.safeParse({ ...base, amountKes: 0.004 }).success).toBe(false)
+    expect(recordBillingPaymentSchema.safeParse({ ...base, amountKes: 0.01 }).success).toBe(true)
+  })
+})
+
 describe("billingDocumentInputSchema", () => {
   const sample = {
     kind: "quote",
@@ -107,6 +116,12 @@ describe("billingDocumentInputSchema", () => {
   })
   it("rejects a due date before the issue date", () => {
     expect(billingDocumentInputSchema.safeParse({ ...sample, dueDate: "2026-10-01" }).success).toBe(false)
+  })
+  it("rejects percentages finer than the stored 2 decimals", () => {
+    // DECIMAL(5,2) would round 12.345 and the PDF would disagree with the stored total.
+    expect(billingDocumentInputSchema.safeParse({ ...sample, discountPct: 12.345 }).success).toBe(false)
+    expect(billingDocumentInputSchema.safeParse({ ...sample, taxPct: 16.005 }).success).toBe(false)
+    expect(billingDocumentInputSchema.safeParse({ ...sample, discountPct: 12.35 }).success).toBe(true)
   })
   it("rejects a document with no lines", () => {
     expect(billingDocumentInputSchema.safeParse({ ...sample, lines: [] }).success).toBe(false)

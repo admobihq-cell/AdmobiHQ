@@ -13,11 +13,21 @@ import { useOpsClient } from "@/lib/ops-client"
  * bytes an advertiser downloads — re-rendered 600 ms after typing stops. The
  * last good render stays up while a new one loads, so the panel never blanks.
  */
-export function PdfPreview({ input, id }: { input: BillingDocumentInput; id?: number }) {
+export function PdfPreview({
+  input,
+  id,
+  version,
+}: {
+  input: BillingDocumentInput
+  id?: number
+  /** Changes when the saved document's status or payments change, so the pill and
+   * Paid/Balance rows re-render even though the form itself did not change. */
+  version?: string
+}) {
   const client = useOpsClient()
   // Serialised so a new-but-equal object from the form doesn't re-render the PDF.
-  const settled = useDebouncedValue(JSON.stringify(input), 600)
-  const parsed = useMemo(() => billingDocumentInputSchema.safeParse(JSON.parse(settled)), [settled])
+  const settled = useDebouncedValue(JSON.stringify({ input, version }), 600)
+  const parsed = useMemo(() => billingDocumentInputSchema.safeParse(JSON.parse(settled).input), [settled])
   const valid = parsed.success ? parsed.data : null
   const [url, setUrl] = useState<string | null>(null)
   // Which input the in-flight / last request was for, so loading is derived, not set in the effect.

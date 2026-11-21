@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { BillingDocumentInput } from "@workspace/ops-contracts"
 
-import { pillFor, toBillingPdfProps } from "./pdf-props"
+import { pillFor, previewPdfProps, toBillingPdfProps } from "./pdf-props"
 
 describe("pillFor", () => {
   it("maps every kind, status and payment state to the agreed pill", () => {
@@ -50,6 +50,26 @@ describe("toBillingPdfProps", () => {
     expect(props.taxKes).toBe(160)
     expect(props.totalKes).toBe(1160)
     expect(props.pill).toEqual({ label: "UNPAID", tone: "red" })
+  })
+
+  it("previews a sent document from its saved copy, never the request body", () => {
+    const saved = { ...doc, status: "sent" as const }
+    const forged = { ...doc, lines: [{ description: "Made up", unit: "", quantity: 1, unitPriceKes: 1, taxable: false }] }
+    const props = previewPdfProps(forged, saved, null)
+    expect(props.lines).toHaveLength(1)
+    expect(props.lines[0]!.description).toMatch(/^Screen time/)
+    expect(props.totalKes).toBe(1160)
+    expect(props.number).toBe("INV/2026/0001")
+  })
+
+  it("previews a draft from the request body, with its saved number", () => {
+    const saved = { ...doc, status: "draft" as const }
+    const edited = { ...doc, lines: [{ description: "Edited", unit: "", quantity: 1, unitPriceKes: 100, taxable: false }] }
+    const props = previewPdfProps(edited, saved, "Westlands")
+    expect(props.lines[0]!.description).toBe("Edited")
+    expect(props.number).toBe("INV/2026/0001")
+    expect(props.campaignName).toBe("Westlands")
+    expect(previewPdfProps(edited, null, null)).toMatchObject({ number: null, pill: { label: "DRAFT" } })
   })
 
   it("shows paid and balance only once money is in", () => {

@@ -392,3 +392,10 @@ documents in the editor, served through the options endpoint.
 Exact component split, query hooks, the debounce value, and test placement,
 following existing patterns in `apps/ops/components/finances/*` and
 `apps/api/app/v1/ops/finance/*`.
+
+## Addendum (2026-11-21, after final review)
+
+- **Void from draft.** The Status section said only non-drafts can be voided, while the builder-check table said saved drafts are voided, not deleted. Resolved in favour of the table: `void` is allowed from `draft`, so a mistaken draft retires its number without ever being shown to an advertiser.
+- **Preview of a fixed document.** A sent or void document's preview renders the saved copy and ignores the request body, so a real number and PAID pill can never be printed over edited lines.
+- **Two-decimal inputs.** Discount and tax percentages and payment amounts take at most 2 decimals, matching their `DECIMAL(_,2)` columns, so stored and recomputed totals can't disagree.
+- **No default organization.** A new document starts with no org picked; it only becomes visible to an advertiser once ops explicitly chooses their org and sends it.

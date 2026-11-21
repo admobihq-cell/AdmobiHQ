@@ -25,6 +25,10 @@ export const BILLING_PAYMENT_METHOD_LABELS: Record<BillingPaymentMethod, string>
 
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
 const text = (max: number) => z.string().trim().max(max).default("")
+/** At most 2 decimals: the columns are DECIMAL(_,2), and a finer value would be stored
+ * rounded while totals were computed from the raw one — PDF and record would disagree. */
+const twoDecimals = (n: number) => Math.abs(Math.round(n * 100) - n * 100) < 1e-6
+const pct = z.number().min(0).max(100).refine(twoDecimals, "Use at most 2 decimals")
 
 export const billingLineSchema = z.object({
   description: z.string().trim().min(1, "Describe the item").max(300),
@@ -56,8 +60,8 @@ export const billingDocumentInputSchema = z
     dueDate: isoDay,
     reference: text(100),
     lines: z.array(billingLineSchema).min(1, "Add at least one line item").max(100),
-    discountPct: z.number().min(0).max(100).default(0),
-    taxPct: z.number().min(0).max(100).default(0),
+    discountPct: pct.default(0),
+    taxPct: pct.default(0),
     feeLabel: text(60),
     feeKes: z.number().min(0).max(1_000_000_000).default(0),
     note: text(2000),
@@ -74,7 +78,11 @@ export const billingStatusActionSchema = z.object({ action: z.enum(["send", "acc
 export type BillingStatusAction = z.infer<typeof billingStatusActionSchema>["action"]
 
 export const recordBillingPaymentSchema = z.object({
-  amountKes: z.number().gt(0, "Amount must be more than 0").max(1_000_000_000),
+  amountKes: z
+    .number()
+    .gt(0, "Amount must be more than 0")
+    .max(1_000_000_000)
+    .refine(twoDecimals, "Use at most 2 decimals (cents)"),
   method: z.enum(BILLING_PAYMENT_METHODS),
   reference: text(100),
   paidOn: isoDay,

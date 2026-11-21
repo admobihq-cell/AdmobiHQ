@@ -209,14 +209,15 @@ const TRANSITIONS: Record<BillingStatusAction, { from: BillingDocumentStatus[]; 
   send: { from: ["draft"], to: "sent" },
   accept: { from: ["sent"], to: "accepted", kinds: ["quote"] },
   decline: { from: ["sent"], to: "declined", kinds: ["quote"] },
-  void: { from: ["sent", "accepted", "declined"], to: "void" },
+  // A saved draft already holds a number; voiding retires it without showing it to anyone.
+  void: { from: ["draft", "sent", "accepted", "declined"], to: "void" },
 }
 
 const CONFLICT: Record<BillingStatusAction, string> = {
   send: "Only drafts can be sent",
   accept: "Only a sent quote can be accepted",
   decline: "Only a sent quote can be declined",
-  void: "Drafts can't be voided — and void documents stay void",
+  void: "This document is already void",
 }
 
 export async function changeBillingStatus(id: number, action: BillingStatusAction): Promise<ActionResult> {

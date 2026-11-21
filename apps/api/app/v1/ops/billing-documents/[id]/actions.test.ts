@@ -6,6 +6,7 @@ import type { BillingDocumentInput } from "@workspace/ops-contracts"
 
 import { createBillingDocument } from "@/lib/billing/documents"
 import { testDatabaseUrl } from "@/lib/test-database-url"
+import { POST as preview } from "../preview/route"
 import { POST as convert } from "./convert/route"
 import { POST as recordPayment } from "./payments/route"
 import { POST as changeStatus } from "./status/route"
@@ -74,11 +75,14 @@ describe.skipIf(!databaseUrl)("billing document actions", { timeout: 60_000 }, (
     expect((await status(doc.id, "send")).status).toBe(409)
   })
 
-  it("only accepts quotes, and never voids a draft", async () => {
+  it("only accepts quotes; a mistaken draft can be voided without ever being shown", async () => {
     const invoice = await createBillingDocument(input(), tag)
     await status(invoice.id, "send")
     expect((await status(invoice.id, "accept")).status).toBe(409)
     const draft = await createBillingDocument(input(), tag)
+    const voided = await status(draft.id, "void")
+    expect(voided.status).toBe(200)
+    expect(await voided.json()).toMatchObject({ status: "void", sentAt: null })
     expect((await status(draft.id, "void")).status).toBe(409)
   })
 
@@ -122,6 +126,15 @@ describe.skipIf(!databaseUrl)("billing document actions", { timeout: 60_000 }, (
     expect((await pay(voidable.id, 100)).status).toBe(409)
 
     expect(await prisma.walletTransaction.count({ where: { org_id: orgId } })).toBe(walletBefore)
+  })
+
+  it("previews a sent document without error even when the body is edited", async () => {
+    const doc = await createBillingDocument(input(), tag)
+    await status(doc.id, "send")
+    const forged = { ...input(), customer: { ...input().customer, name: "Someone" }, lines: [{ description: "Made up", unit: "", quantity: 1, unitPriceKes: 1, taxable: false }] }
+    const res = await preview(post({ id: doc.id, document: forged }))
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Disposition")).toMatch(/^inline;/)
   })
 
   it("lets only one of two concurrent payments for the full balance through", async () => {

@@ -43,6 +43,9 @@ const sample: BillingDocumentPdfProps = {
 const render = (props: BillingDocumentPdfProps) =>
   renderPdf(<BillingDocumentPdf {...props} />, { footer: BILLING_PDF_FOOTER })
 
+/** Page objects in the file (`/Type /Page`, not the `/Pages` tree node). */
+const pageCount = (bytes: Uint8Array) => (Buffer.from(bytes).toString("latin1").match(/\/Type\s*\/Page(?!s)/g) ?? []).length
+
 const isPdf = (bytes: Uint8Array) => Buffer.from(bytes).subarray(0, 5).toString() === "%PDF-"
 
 describe("BillingDocumentPdf", () => {
@@ -95,6 +98,7 @@ describe("BillingDocumentPdf", () => {
       amountKes: 1000,
     }))
     const long = await render({ ...sample, lines, subtotalKes: 40000, totalKes: 40000 })
-    expect(long.length).toBeGreaterThan(short.length)
+    expect(pageCount(short)).toBe(1)
+    expect(pageCount(long)).toBeGreaterThanOrEqual(2)
   })
 })

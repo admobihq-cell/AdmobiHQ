@@ -80,7 +80,8 @@ export function DocumentActions({
   })
 
   const isQuote = doc.kind === "quote"
-  const canVoid = doc.status !== "draft" && doc.status !== "void"
+  // A saved draft holds a number too; voiding retires it without showing anyone.
+  const canVoid = doc.status !== "void"
   const canConvert = isQuote && (doc.status === "sent" || doc.status === "accepted") && !doc.convertedInvoiceId
   const canPay = !isQuote && doc.status === "sent" && doc.paymentState !== "paid"
   const busy = status.isPending || convert.isPending
