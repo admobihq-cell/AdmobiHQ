@@ -194,6 +194,20 @@ The Media Library's product name. Files are owned by the advertiser org, not by 
 | `GET` / `POST` | `/v1/customer/media/folders` | Customer `media:read` / `media:write` | List folders with `file_count`, `size_bytes`, `updated_at` / create one — `{ name }`, 1–60 characters, `409` if taken |
 | `PATCH` / `DELETE` | `/v1/customer/media/folders/[id]` | Customer `media:write` | Rename (`409` if taken) / delete. Deleting keeps the files, out of any folder |
 
+### Command palette search
+
+`GET /v1/ops/search?q=`, `GET /v1/customer/search?q=`, `GET /v1/driver/search?q=` each return `SearchResponseDto` (`@workspace/ops-contracts`):
+
+```ts
+{ query: string; groups: { key: string; label: string; hits: { id; title; subtitle?; href; badge? }[] }[] }
+```
+
+- One parser (`parseSearchQuery`) reads ids (`#42`), billing document numbers (canonicalised to `INV/2026/0001`), payout references (`adm-payout-…`) and single-token references, so all three endpoints read a query the same way.
+- Groups are gated: ops by the section permission of each list screen (admins see all); customer by org permission and always pinned to the caller's org; driver by the caller's Clerk user id. Hidden groups are left out, not returned empty, and never 403.
+- At most 5 hits per group, exact-id hits first, query capped at 100 characters. A query shorter than 2 characters that isn't an id returns `groups: []`.
+- `contains` input is escaped (`escapeLike`): Prisma passes `%` and `_` straight into `ILIKE`.
+- Rate-limited at 60 requests a minute per user (`search` bucket; fails open without Upstash).
+
 ### Download filenames
 
 Every generated download — these two PDFs plus the ops CSV/PDF/XLSX exports —

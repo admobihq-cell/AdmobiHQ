@@ -86,6 +86,14 @@ bearer token and handed to the browser as a blob, never linked to directly.
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
 - Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
+### Search (⌘K)
+
+The header **Search** button (or ⌘K / Ctrl+K) opens the command palette: recent picks, pages (including billing and report tabs and settings), quick actions (new campaign, top up, upload media, contact support, switch theme), and the organization's own records from `GET /v1/customer/search`.
+
+Typing an ID jumps straight to it: `#42` or `42` (support case, campaign, SOS, payout), `INV/2026/0001`, `inv-2026-1` or `QT 2026 12` (any separator, any case), or a payout reference (`adm-payout-…`). Anything else matches names, subjects, emails and references. `%` and `_` match literally.
+
+Record groups follow the org permissions: campaigns (`campaigns:read`); invoices and quotes, statements and payments (`billing:read`, sent documents only, never drafts); support cases (`support:read_all`); media (`media:read`). Every query is pinned to the caller's org. Teammates are not searchable (their names live in Clerk); the Team settings page is.
+
 ### Loading skeletons
 
 Every page here is a thin server component wrapping a client component that

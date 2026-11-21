@@ -23,6 +23,14 @@ Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Appli
 
 **Dashboard loading states.** Overview, Finances and the four dashboards (`/dashboards/campaigns|fleet|advertisers|support`) each have a `loading.tsx` plus a keyed `<Suspense>` around the open tab. Both use the per-tab shapes in [`components/dashboards/dashboard-skeletons.tsx`](../../apps/ops/components/dashboards/dashboard-skeletons.tsx), built from the shared primitives in [`@workspace/ui` `dashboard/dashboard-skeletons.tsx`](../../packages/ui/src/components/dashboard/dashboard-skeletons.tsx) (hero, KPI strip, chart, list, ledger, toolbar). They mirror each tab's real card grid (hero + KPI strip, chart cards, queue, ledger) so nothing jumps when data lands. Fleet, Advertisers and Support take `money` / `safety` flags because those sections only render for viewers with the permission. Page headings live in [`dashboard-header.tsx`](../../apps/ops/components/dashboards/dashboard-header.tsx) so a page and its `loading.tsx` share one copy. Change a tab's layout and its skeleton together. `Skeleton` only pulses under `prefers-reduced-motion: no-preference`.
 
+### Search (⌘K)
+
+The header **Search** button (or ⌘K / Ctrl+K anywhere) opens the command palette: recent picks, every page the role can open (including the finance and settings tabs), quick actions (new invoice or quote, payout run, record a transaction, new announcement, switch theme), and records from `GET /v1/ops/search`.
+
+Typing an ID jumps straight to it: `#42` or `42` (support case, campaign, SOS, payout), `INV/2026/0001`, `inv-2026-1` or `QT 2026 12` (any separator, any case), or a payout reference (`adm-payout-…`). Anything else matches names, subjects, emails and references. `%` and `_` match literally.
+
+Each record group needs the permission of its list screen, and admins see all: SOS (`safety`); support cases (`support`); campaigns and advertiser orgs (`campaigns`); invoices and quotes, statements and payments (`finances`); payouts (`finances` or `payouts`); driver applications (`driver_applications`); drivers (`drivers`); fleet partners (`fleet`); leads (`leads`); waitlist (`waitlist`); media kit (`media_kit`). Results show at most 5 per group. Nothing is fetched until you type, so opening the palette never wakes the database.
+
 ### SOS (driver safety incidents)
 
 Sidebar **SOS** (permission: `safety`), placed above Support — an emergency
