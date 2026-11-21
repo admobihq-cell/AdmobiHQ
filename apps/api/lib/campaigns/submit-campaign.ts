@@ -9,6 +9,7 @@ import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { CampaignSubmitted } from "@/lib/email/templates/CampaignSubmitted"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 
 type Db = Prisma.TransactionClient | typeof prisma
@@ -40,6 +41,9 @@ export async function announceCampaignSubmitted(
   actor: { userId: string },
 ): Promise<void> {
   const id = campaign.id
+  // First, and outside the try below: the review queue must hear about it even if the
+  // advertiser notices or emails fail. publishLive never throws.
+  await publishLive([liveChannel.ops], { topic: "review-queue", id, actor: actor.userId })
   try {
     await auditFromCustomerUser(actor.userId, {
       action: "update",
@@ -63,6 +67,7 @@ export async function announceCampaignSubmitted(
       title: "Campaign submitted",
       body: `We're reviewing "${campaign.name}" — this usually takes a day or two.`,
       href: `/campaigns/${id}`,
+      actorUserId: actor.userId,
     })
 
     if (contactEmail) {

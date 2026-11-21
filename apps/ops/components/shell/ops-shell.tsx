@@ -2,28 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  BarChart3,
-  Building2,
-  Car,
-  FileCheck2,
-  FileText,
-  Home,
-  History,
-  IdCard,
-  LifeBuoy,
-  Mail,
-  Map,
-  Megaphone,
-  MonitorPlay,
-  Radio,
-  Settings,
-  Siren,
-  Truck,
-  UserCog,
-  Users,
-  Wallet,
-} from "lucide-react"
 import { UserButton } from "@clerk/nextjs"
 import type { OpsPermission, OpsRole } from "@workspace/ops-contracts"
 
@@ -57,130 +35,21 @@ import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 import { TourProvider } from "@workspace/ui/components/tour-provider"
 
 import { NotificationBell } from "@/components/shell/notification-bell"
+import { OpsCommandPalette } from "@/components/shell/ops-command-palette"
+import { OpsLiveUpdates } from "@/components/shell/ops-live-updates"
+import {
+  allNavItems,
+  canSeeNavItem,
+  dashboardNavItems,
+  isNavItemActive,
+  navItems,
+  secondaryItems,
+  type NavItem,
+} from "@/lib/navigation"
 import { opsTourChapters } from "@/lib/tour-chapters"
-
-type NavItem = {
-  href: string
-  label: string
-  icon: typeof Home
-  permission?: OpsPermission
-}
-
-/**
- * The Dashboards group. Distinct hrefs from the list pages (`/dashboards/campaigns` vs
- * `/campaigns`): active matching is by prefix, so they never light up together. Each dashboard
- * is guarded by the permission of the thing it summarises.
- */
-const dashboardNavItems: NavItem[] = [
-  { href: "/overview", label: "Overview", icon: BarChart3 },
-  { href: "/finances", label: "Finances", icon: Wallet, permission: "finances" },
-  { href: "/dashboards/campaigns", label: "Campaigns", icon: MonitorPlay, permission: "campaigns" },
-  { href: "/dashboards/advertisers", label: "Advertisers", icon: Building2, permission: "campaigns" },
-  { href: "/dashboards/fleet", label: "Fleet", icon: Truck, permission: "drivers" },
-  { href: "/dashboards/support", label: "Support & safety", icon: LifeBuoy, permission: "support" },
-]
-
-const navItems: Array<{
-  href: string
-  label: string
-  icon: typeof Home
-  permission?: OpsPermission
-}> = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/map", label: "Map", icon: Map },
-  {
-    href: "/leads",
-    label: "Campaign Leads",
-    icon: Megaphone,
-    permission: "leads",
-  },
-  { href: "/fleet", label: "Fleet Partners", icon: Truck, permission: "fleet" },
-  { href: "/drivers", label: "Drivers", icon: Car, permission: "drivers" },
-  {
-    href: "/driver-applications",
-    label: "Driver Applications",
-    icon: FileCheck2,
-    permission: "driver_applications",
-  },
-  {
-    href: "/campaigns",
-    label: "Campaigns",
-    icon: MonitorPlay,
-    permission: "campaigns",
-  },
-  {
-    href: "/advertiser-orgs",
-    label: "Advertiser orgs",
-    icon: Building2,
-    permission: "campaigns",
-  },
-  { href: "/waitlist", label: "Waitlist", icon: Mail, permission: "waitlist" },
-  {
-    href: "/media-kit",
-    label: "Media Kit",
-    icon: FileText,
-    permission: "media_kit",
-  },
-  {
-    href: "/announcements",
-    label: "Announcements",
-    icon: Radio,
-    permission: "announcements",
-  },
-  // Above Support on purpose: an emergency queue that sorts below the helpdesk
-  // is a queue nobody checks first.
-  { href: "/sos", label: "SOS", icon: Siren, permission: "safety" },
-  { href: "/support", label: "Support", icon: LifeBuoy, permission: "support" },
-  {
-    href: "/activity",
-    label: "Activity",
-    icon: History,
-    permission: "activity",
-  },
-]
-
-const secondaryItems: Array<{
-  href: string
-  /** Where the link actually goes, when it differs from the active-match base
-   * (e.g. Settings highlights on /settings/* but links straight to its first
-   * tab so there's no /settings → /settings/flags redirect hop). */
-  linkHref?: string
-  label: string
-  icon: typeof Users
-  permission?: OpsPermission
-  adminOnly?: boolean
-}> = [
-  {
-    href: "/content",
-    label: "Content (CMS)",
-    icon: Users,
-    permission: "content",
-  },
-  { href: "/team", label: "Team", icon: UserCog, adminOnly: true },
-  { href: "/users", label: "Users", icon: IdCard, adminOnly: true },
-  {
-    href: "/settings",
-    linkHref: "/settings/flags",
-    label: "Settings",
-    icon: Settings,
-    permission: "flags",
-  },
-]
-
-/** Routes that exist and need a breadcrumb label but never render in the sidebar. */
-const hiddenNavItems: Array<{ href: string; label: string }> = [
-  { href: "/notifications", label: "Notifications" },
-]
-
-const allNavItems = [...dashboardNavItems, ...navItems, ...secondaryItems, ...hiddenNavItems]
 
 const activeSidebarLinkClassName =
   "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:hover:bg-primary/15 data-[active=true]:[&>svg]:text-primary"
-
-/** Matches nested routes too (e.g. /support/42 under /support), not just an exact pathname. */
-function isNavItemActive(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`)
-}
 
 function tourSlug(href: string): string {
   return href.replace(/^\//, "").replace(/\//g, "-")
@@ -230,15 +99,8 @@ export function OpsShell({
   pendingCounts?: Partial<Record<string, number>>
 }) {
   const pathname = usePathname()
-  const canSee = (item: {
-    permission?: OpsPermission
-    adminOnly?: boolean
-  }) => {
-    if (item.adminOnly) return role === "admin"
-    if (item.permission)
-      return role === "admin" || permissions.includes(item.permission)
-    return true
-  }
+  const canSee = (item: { permission?: OpsPermission; adminOnly?: boolean }) =>
+    canSeeNavItem(item, role, permissions)
   const canSeeNotifications =
     role === "admin" ||
     (
@@ -356,12 +218,14 @@ export function OpsShell({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <OpsBreadcrumbs pathname={pathname} />
             <div className="ml-auto flex items-center gap-1">
+              <OpsCommandPalette role={role} permissions={permissions} userId={userId} />
               {canSeeNotifications ? (
                 <NotificationBell role={role} permissions={permissions} />
               ) : null}
               <ThemeToggle />
             </div>
           </header>
+          <OpsLiveUpdates role={role} permissions={permissions} />
           <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
             {children}
           </main>

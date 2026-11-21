@@ -22,6 +22,8 @@
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
+    --color-chart-track: var(--chart-track);
+    --color-chart-cursor: var(--chart-cursor);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -77,6 +79,9 @@
     --chart-3: oklch(0.62 0.12 170);
     --chart-4: oklch(0.63 0.12 85);
     --chart-5: oklch(0.5 0.14 320);
+    /* Empty slot behind a bar/column, and the hover band: one step off the card surface. */
+    --chart-track: oklch(0.94 0.006 82);
+    --chart-cursor: oklch(0.9 0.008 82 / 0.6);
     --radius: 0.625rem;
     --sidebar: oklch(0.98 0.01 82);
     --sidebar-foreground: oklch(0.26 0.024 262);
@@ -112,6 +117,8 @@
     --chart-3: oklch(0.66 0.12 170);
     --chart-4: oklch(0.65 0.12 85);
     --chart-5: oklch(0.6 0.14 320);
+    --chart-track: oklch(0.29 0.02 268);
+    --chart-cursor: oklch(0.35 0.02 268 / 0.6);
     --sidebar: oklch(0.22 0.024 268);
     --sidebar-foreground: oklch(0.97 0.012 82);
     --sidebar-primary: oklch(0.7 0.12 52);
@@ -147,6 +154,16 @@
   .maplibregl-ctrl-attrib-button {
     @apply bg-transparent! dark:invert;        
     }
+}
+
+/* Live toast countdown bar (packages/ui live-toast.tsx). Transform only. */
+@keyframes live-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 /* Landing system illustrations: route draw, staggered rise, live-signal pulse.

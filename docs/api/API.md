@@ -194,6 +194,42 @@ The Media Library's product name. Files are owned by the advertiser org, not by 
 | `GET` / `POST` | `/v1/customer/media/folders` | Customer `media:read` / `media:write` | List folders with `file_count`, `size_bytes`, `updated_at` / create one — `{ name }`, 1–60 characters, `409` if taken |
 | `PATCH` / `DELETE` | `/v1/customer/media/folders/[id]` | Customer `media:write` | Rename (`409` if taken) / delete. Deleting keeps the files, out of any folder |
 
+### Live updates (SSE)
+
+`GET /v1/customer/live` and `GET /v1/ops/live` hold a Server-Sent Events stream (`text/event-stream`). The client reads it with `fetch` plus a bearer token (EventSource can't send headers), via `useLiveEvents` in `@workspace/ui/lib/live-events`.
+
+- **Channels** (Upstash Redis pub/sub, `lib/realtime.ts`): advertisers subscribe to `user:<clerkUserId>` and `org:<orgId>`; ops subscribe to `ops`.
+- **Event shape** (`LiveEvent` in `@workspace/ops-contracts`): `{ topic, id?, type?, actor? }`. Topic and ids only: never names, amounts or text. Clients re-fetch through the normal permission-checked endpoints.
+- **Publishers** (`publishLive`, fire-and-forget, never throws):
+  - Every customer notification insert (the three helpers in `lib/advertiser/advertiser-notify.ts` and `lib/payments/money-notify.ts`) publishes `notification` to each recipient's user channel.
+  - `notifyPaymentReceived` publishes `payment` to the org and to ops.
+  - Sending a billing document, or recording a payment on one, writes a `billing_document_sent` / `billing_document_payment` inbox row for billing readers and publishes `billing-document` to the org.
+  - Campaign submit publishes `review-queue`; public support create publishes `support`; driver SOS publishes `sos` (before the emails); driver profile submit publishes `application`. All of these go to `ops`.
+- **Stream lifecycle:** `: connected` first, `: ping` every 25 s, closed by the server at 280 s (`maxDuration = 300`). The client policy is `nextLiveStep` in `@workspace/ops-contracts`:
+  - After the planned close, it reconnects at once with a fresh token and **no refetch**.
+  - After an early end or an error, it backs off (1, 2, 5, 10, then 30 s) and refetches on the next good connect.
+  - It stops on 204 or 403, or after three 401s.
+- **Auth without Postgres on reconnect:**
+  - Ops: `getOpsLiveAccess` checks Clerk identity, email and ops-org role only, with no permission rows.
+  - Advertisers: the token is verified every time, and the org id is cached in Upstash (`live:org:<userId>`, 15 min) after the first full access check. A removed member can keep an ids-only stream for up to 15 minutes; every data read still goes through the permission-checked endpoints.
+- **Bursts:** at most 3 toasts per 10 s; the rest fold into one "N more updates" toast. Every event carries a publisher `nonce`, so only one open tab plays the sound.
+- Without `UPSTASH_REDIS_REST_URL` / `_TOKEN` both routes return **204** and the client stays idle.
+- **No Postgres on this path:** a held DB connection or a short poll would keep the Neon compute awake.
+
+### Command palette search
+
+`GET /v1/ops/search?q=`, `GET /v1/customer/search?q=`, `GET /v1/driver/search?q=` each return `SearchResponseDto` (`@workspace/ops-contracts`):
+
+```ts
+{ query: string; groups: { key: string; label: string; hits: { id; title; subtitle?; href; badge? }[] }[] }
+```
+
+- One parser (`parseSearchQuery`) reads ids (`#42`), billing document numbers (canonicalised to `INV/2026/0001`), payout references (`adm-payout-…`) and single-token references, so all three endpoints read a query the same way.
+- Groups are gated: ops by the section permission of each list screen (admins see all); customer by org permission and always pinned to the caller's org; driver by the caller's Clerk user id. Hidden groups are left out, not returned empty, and never 403.
+- At most 5 hits per group, exact-id hits first, query capped at 100 characters. A query shorter than 2 characters that isn't an id returns `groups: []`.
+- `contains` input is escaped (`escapeLike`): Prisma passes `%` and `_` straight into `ILIKE`.
+- Rate-limited at 60 requests a minute per user (`search` bucket; fails open without Upstash).
+
 ### Download filenames
 
 Every generated download — these two PDFs plus the ops CSV/PDF/XLSX exports —

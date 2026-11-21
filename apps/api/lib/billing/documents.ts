@@ -342,11 +342,11 @@ export async function recordBillingPayment(
 
 /* ---- Advertiser side: only the caller's org, never drafts (org_id = null never matches) ---- */
 
-const customerWhere = (orgId: number) => ({ org_id: orgId, status: { not: "draft" } })
+export const customerBillingDocumentWhere = (orgId: number) => ({ org_id: orgId, status: { not: "draft" } })
 
 export async function listCustomerBillingDocuments(orgId: number): Promise<CustomerBillingDocumentDto[]> {
   const rows = await prisma.billingDocument.findMany({
-    where: customerWhere(orgId),
+    where: customerBillingDocumentWhere(orgId),
     include: DOCUMENT_INCLUDE,
     orderBy: [{ issue_date: "desc" }, { id: "desc" }],
     take: 500,
@@ -371,7 +371,7 @@ export async function listCustomerBillingDocuments(orgId: number): Promise<Custo
 
 /** Null for another org's document, a draft, or an unknown id — the route answers 404 for all three. */
 export async function getCustomerBillingDocument(orgId: number, id: number): Promise<BillingDocumentDto | null> {
-  const row = await prisma.billingDocument.findFirst({ where: { id, ...customerWhere(orgId) }, include: DOCUMENT_INCLUDE })
+  const row = await prisma.billingDocument.findFirst({ where: { id, ...customerBillingDocumentWhere(orgId) }, include: DOCUMENT_INCLUDE })
   return row ? toBillingDocumentDto(row, null) : null
 }
 

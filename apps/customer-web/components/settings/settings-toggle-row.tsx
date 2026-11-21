@@ -9,6 +9,7 @@ type SettingsToggleRowProps = {
   icon: LucideIcon
   checked: boolean
   disabled?: boolean
+  onCheckedChange?: (checked: boolean) => void
 }
 
 export function SettingsToggleRow({
@@ -18,6 +19,7 @@ export function SettingsToggleRow({
   icon: Icon,
   checked,
   disabled,
+  onCheckedChange,
 }: SettingsToggleRowProps) {
   return (
     <label
@@ -33,7 +35,12 @@ export function SettingsToggleRow({
           <p className="truncate text-xs text-muted-foreground">{description}</p>
         ) : null}
       </div>
-      <Checkbox id={id} checked={checked} disabled={disabled} />
+      <Checkbox
+        id={id}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange ? (value) => onCheckedChange(value === true) : undefined}
+      />
     </label>
   )
 }

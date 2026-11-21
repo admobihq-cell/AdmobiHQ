@@ -10,6 +10,7 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getBearerToken, mintIdentityTokenIfAbsent, resolveSupportAuthor, resolveSupportAuthorFromBearer, toPublicCase, verifyIdentityToken } from "@/lib/support/support"
 import { generateAccessToken, hashAccessToken } from "@/lib/support/support-token"
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
         },
       },
     })
+    await publishLive([liveChannel.ops], { topic: "support", id: supportCase.id })
 
     const identityToken = await mintIdentityTokenIfAbsent(
       data.contact_email,

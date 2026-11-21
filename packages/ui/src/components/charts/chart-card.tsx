@@ -59,7 +59,7 @@ export function ChartCard({
   const showTable = view === "table" && table !== undefined && !isEmpty
 
   return (
-    <Card className={cn("shadow-xs", className)}>
+    <Card className={cn("shadow-xs transition-shadow duration-200 hover:shadow-sm", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}

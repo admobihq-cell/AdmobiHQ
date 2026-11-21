@@ -7,6 +7,7 @@ import { formatCompact, payoutFocus } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
+import { ActivityGrid } from "@workspace/ui/components/charts/activity-grid"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
 import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
@@ -165,6 +166,21 @@ export function DashboardView({ payoutDestination }: { payoutDestination: string
         </ChartCard>
         <LatestPayoutCard destination={payoutDestination} showHistoryLink />
       </div>
+
+      <ChartCard
+        title={<SampleLabel>Days on the road</SampleLabel>}
+        description="Each square is a day; darker means more screen time"
+        takeaway={
+          t.days.length > 0
+            ? `You drove ${t.days.filter((d) => d.hours > 0).length} of the last ${t.days.length} days.`
+            : undefined
+        }
+        isEmpty={t.totals.hours === 0}
+        emptyMessage="No screen time in this period."
+        table={{ columns: ["Day", "Hours"], rows: t.days.map((d) => [d.day, d.hours]) }}
+      >
+        <ActivityGrid points={trend} valueKey="hours" valueFormatter={formatHours} label="Screen-on hours per day" />
+      </ChartCard>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <ChartCard

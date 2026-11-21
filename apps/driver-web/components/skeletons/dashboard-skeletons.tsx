@@ -38,6 +38,7 @@ export function DashboardSkeleton() {
           <ChartSkeleton className="lg:col-span-2" />
           <ListSkeleton rows={3} />
         </div>
+        <ChartSkeleton variant="grid" />
         <div className="grid gap-4 lg:grid-cols-3">
           <ChartSkeleton variant="bars" />
           <ListSkeleton rows={3} />
@@ -55,7 +56,7 @@ export function EarningsSkeleton() {
         <HeaderSkeleton />
         <KpiStripSkeleton cells={4} columns={4} />
         <div className="grid gap-4 lg:grid-cols-3">
-          <ChartSkeleton className="lg:col-span-2" />
+          <ChartSkeleton variant="columns" className="lg:col-span-2" />
           <ListSkeleton rows={3} />
         </div>
         <LedgerSkeleton rows={4} columns={5} filters />

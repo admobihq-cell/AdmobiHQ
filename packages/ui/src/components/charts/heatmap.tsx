@@ -56,11 +56,11 @@ export function Heatmap({
                   <span
                     role="cell"
                     tabIndex={0}
-                    className="flex h-9 items-center justify-center rounded-sm border border-transparent tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex h-9 items-center justify-center rounded tabular-nums outline-none transition-shadow hover:ring-2 hover:ring-foreground/60 focus-visible:ring-2 focus-visible:ring-ring"
                     style={{
                       background: intensity
                         ? `color-mix(in oklch, var(--chart-1) ${intensity}%, transparent)`
-                        : "var(--muted)",
+                        : "var(--chart-track)",
                     }}
                   >
                     {value === null ? "—" : valueFormatter(value)}

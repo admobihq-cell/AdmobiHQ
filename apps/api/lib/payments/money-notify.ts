@@ -17,6 +17,7 @@ import { PaymentReceipt, formatKes } from "@/lib/email/templates/PaymentReceipt"
 import { prisma } from "@/lib/prisma"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { notifyUserPush } from "@/lib/push/user-push"
+import { liveChannel, publishLive } from "@/lib/realtime"
 
 type CampaignRef = { id: number; name: string }
 
@@ -77,6 +78,7 @@ async function inboxOnly(
   await prisma.customerNotification.createMany({
     data: unique.map((clerk_user_id) => ({ clerk_user_id, org_id: orgId, ...input })),
   })
+  await publishLive(unique.map(liveChannel.user), { topic: "notification", type: input.type })
 }
 
 // ---------------------------------------------------------------- advertiser
@@ -121,7 +123,40 @@ export function notifyPaymentReceived(p: {
       email: true,
     })
   })
-  return Promise.all([payer, ops]).then(() => undefined)
+  // Open Billing screens (advertiser) and the ops ledger refresh, whether or not a row was written.
+  const live = publishLive([liveChannel.org(p.orgId), liveChannel.ops], { topic: "payment" })
+  return Promise.all([payer, ops, live]).then(() => undefined)
+}
+
+/**
+ * A quote or invoice ops sent, or a payment ops recorded against one. Billing readers get an inbox
+ * row (which also publishes to their live stream) and the org's open Billing screens refresh.
+ */
+export function notifyBillingDocument(
+  doc: { id: number; orgId: number | null; kind: string; number: string },
+  event: "sent" | "payment"
+): Promise<void> {
+  return safely("notifyBillingDocument", async () => {
+    if (doc.orgId == null) return
+    const noun = doc.kind === "quote" ? "quote" : "invoice"
+    await noticeBillingReaders(
+      doc.orgId,
+      event === "sent"
+        ? {
+            type: "billing_document_sent",
+            title: `New ${noun} ${doc.number}`,
+            body: `Admobi sent you ${noun} ${doc.number}. Open Billing to view or download it.`,
+            href: "/billing?tab=invoices",
+          }
+        : {
+            type: "billing_document_payment",
+            title: `Payment recorded on ${doc.number}`,
+            body: `We've recorded a payment against ${noun} ${doc.number}.`,
+            href: "/billing?tab=invoices",
+          }
+    )
+    await publishLive([liveChannel.org(doc.orgId)], { topic: "billing-document", id: doc.id })
+  })
 }
 
 /** A3: paid, but the balance no longer covers the budget. */

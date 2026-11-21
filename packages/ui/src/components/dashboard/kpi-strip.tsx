@@ -7,6 +7,7 @@ import {
   type DeltaGood,
 } from "@workspace/ui/components/dashboard/delta-pill"
 import { cn } from "@workspace/ui/lib/utils"
+import { CountUp } from "@workspace/ui/components/dashboard/count-up"
 
 export type KpiItem = {
   label: React.ReactNode
@@ -41,18 +42,22 @@ export function KpiStrip({
       {/* -m-px hides the outer border of the last row and column. */}
       <div className={cn("-mr-px -mb-px grid grid-cols-1", COLUMNS[cols])}>
         {items.map((item, index) => (
-          <div key={index} className="border-r border-b p-4">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">{item.label}</p>
+          // @container: the value sizes to its own cell, so "KES 3,935,100" never wraps in a narrow one.
+          <div key={index} className="@container border-r border-b p-4 transition-colors hover:bg-muted/30">
+            <div className="flex items-center gap-2.5">
               {item.icon ? (
-                <span className="text-muted-foreground [&>svg]:size-4" aria-hidden>
+                <span
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/80 [&>svg]:size-4"
+                  aria-hidden
+                >
                   {item.icon}
                 </span>
               ) : null}
+              <p className="text-sm text-muted-foreground">{item.label}</p>
             </div>
-            <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <p className="text-2xl leading-tight font-semibold tabular-nums">
-                {item.value}
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <p className="text-xl leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums @[13rem]:text-2xl">
+                <CountUp value={item.value} />
               </p>
               {item.delta ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">

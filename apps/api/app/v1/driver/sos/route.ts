@@ -10,6 +10,7 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail } from "@/lib/email/send-email"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { severityForType, toDriverIncident, toOpsIncident } from "@/lib/safety/safety-incident"
 
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
         reported_accuracy_m: data.reported_accuracy_m ?? null,
       },
     })
+    // Before the emails: an emergency should reach an open ops tab first.
+    await publishLive([liveChannel.ops], { topic: "sos", id: incident.id })
 
     const driverName = incident.driver_name ?? "A driver"
 

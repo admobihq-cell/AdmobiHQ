@@ -75,7 +75,7 @@ export function KpiStripSkeleton({
         {Array.from({ length: cells }, (_, i) => (
           <div key={i} className="border-r border-b p-4">
             <Skeleton className="my-[3px] h-3.5 w-24" />
-            <Skeleton className="mt-1 mb-[3px] h-6 w-20" />
+            <Skeleton className="mt-2 mb-[3px] h-7 w-24" />
             <Skeleton className="mt-0.5 h-3 w-36 max-w-full" />
           </div>
         ))}
@@ -100,7 +100,7 @@ export function ChartSkeleton({
   className,
   toggle = true,
 }: {
-  variant?: "area" | "bars" | "heatmap"
+  variant?: "area" | "bars" | "heatmap" | "columns" | "sankey" | "grid" | "panels"
   className?: string
   /** The chart/table switch in the card corner. */
   toggle?: boolean
@@ -109,7 +109,41 @@ export function ChartSkeleton({
     <Card className={cn("shadow-xs", className)}>
       <CardHead action={toggle} />
       <CardContent>
-        {variant === "area" ? (
+        {variant === "columns" ? (
+          <ColumnsPlot className="h-64" />
+        ) : variant === "sankey" ? (
+          // Sources, the hub, outputs: node bars at the heights a typical cash flow lands on.
+          <div className="flex h-72 items-stretch justify-between px-[18%]">
+            {[[46, 20, 12], [86], [30, 26, 12, 6]].map((column, i) => (
+              <div key={i} className="flex w-2.5 flex-col justify-center gap-3">
+                {column.map((h, j) => (
+                  <Skeleton key={j} className="w-full rounded-sm" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : variant === "grid" ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-[3px] overflow-hidden">
+              {Array.from({ length: 26 }, (_, w) => (
+                <div key={w} className="flex flex-col gap-[3px]">
+                  {Array.from({ length: 7 }, (_, d) => (
+                    <Skeleton key={d} className="size-3 rounded-[3px]" />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <Skeleton className="ml-auto h-3 w-28" />
+          </div>
+        ) : variant === "panels" ? (
+          // SyncedPanels: a columns panel over a line panel, each with its small label.
+          <div className="flex flex-col gap-1">
+            <Skeleton className="my-[2px] h-3 w-12" />
+            <ColumnsPlot className="h-40" />
+            <Skeleton className="mt-2 mb-[2px] h-3 w-24" />
+            <Skeleton className="h-36 rounded-md" />
+          </div>
+        ) : variant === "area" ? (
           <div className="flex h-64 items-end gap-1.5">
             {[38, 52, 44, 66, 58, 74, 62, 80, 70, 56, 64, 48].map((h, i) => (
               <Skeleton key={i} className="flex-1 rounded-sm" style={{ height: `${h}%` }} />
@@ -139,6 +173,40 @@ export function ChartSkeleton({
             ))}
           </div>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Rounded columns on faint full-height tracks, as ColumnChart draws them. */
+function ColumnsPlot({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex items-end gap-2", className)}>
+      {[44, 58, 50, 72, 64, 80, 68, 86, 74, 60, 70, 54].map((h, i) => (
+        <div key={i} className="flex h-full flex-1 items-end rounded-md bg-muted/40">
+          <Skeleton className="w-full rounded-md" style={{ height: `${h}%` }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** A titled card of StatList rows: icon tile, label, value, note. */
+export function StatListSkeleton({ rows = 3, className }: { rows?: number; className?: string }) {
+  return (
+    <Card className={cn("shadow-xs", className)}>
+      <CardHead />
+      <CardContent className="flex flex-col divide-y">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+            <Skeleton className="size-9 shrink-0 rounded-lg" />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-3 w-40 max-w-full" />
+            </div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   )

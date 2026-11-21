@@ -86,6 +86,30 @@ bearer token and handed to the browser as a blob, never linked to directly.
 - `GET /api/health` on this app for deploy smoke tests (separate from `api.admobihq.com/v1/health`)
 - Builds & APKs: [MOBILE-BUILDS.md](../shared/MOBILE-BUILDS.md)
 
+### Search (⌘K)
+
+The header **Search** button (or ⌘K / Ctrl+K) opens the command palette: recent picks, pages (including billing and report tabs and settings), quick actions (new campaign, top up, upload media, contact support, switch theme), and the organization's own records from `GET /v1/customer/search`.
+
+Typing an ID jumps straight to it: `#42` or `42` (support case, campaign, SOS, payout), `INV/2026/0001`, `inv-2026-1` or `QT 2026 12` (any separator, any case), or a payout reference (`adm-payout-…`). Anything else matches names, subjects, emails and references. `%` and `_` match literally.
+
+Record groups follow the org permissions: campaigns (`campaigns:read`); invoices and quotes, statements and payments (`billing:read`, sent documents only, never drafts); support cases (`support:read_all`); media (`media:read`). Every query is pinned to the caller's org. Teammates are not searchable (their names live in Clerk); the Team settings page is.
+
+### Live updates and alert sound
+
+The app holds a live stream (`GET /v1/customer/live`) while it's open. When ops approves or rejects a campaign, a payment settles, or ops sends a quote or invoice:
+- The affected screens refetch in place (campaigns, Billing, inbox). Bursts are coalesced into one refetch per query within 300 ms.
+- A toast appears, worded from the new inbox row: approvals and payments in green with a "ping", rejections and changes requested in amber with a lower tone, everything else with a soft "chime".
+- You aren't toasted about your own actions.
+- More than 3 new rows at once become a single "N new updates" toast.
+
+**Settings → Notifications → Play a sound with live alerts** mutes the tone on this device. With several tabs open, only one plays it. Mapping and tone rules are in `packages/ops-contracts/src/live-routing.ts`.
+
+### Dashboard charts
+
+- **Billing → Overview** ends with **Where your money went**, a Sankey from each campaign's spend to what it paid for. If the two totals differ (rounding, folded campaigns), the short side gets an **Unallocated** node so it still balances (`spendFlow`).
+- **Reports → Spend:** **Spend and cost per 1,000** is two stacked panels: daily spend as columns over cost per 1,000 as a line, on one day axis with one crosshair. It uses `costPerThousandTrend[].spend` from `/v1/customer/reports/spend`, and the table view lists both.
+- **Everywhere:** charts use the shared mark system in `DESIGN.md`.
+
 ### Loading skeletons
 
 Every page here is a thin server component wrapping a client component that

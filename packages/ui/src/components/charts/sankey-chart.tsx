@@ -1,0 +1,167 @@
+"use client"
+
+import * as React from "react"
+import { Sankey, Tooltip } from "recharts"
+import type { FlowGraph } from "@workspace/ops-contracts"
+
+import { DIM_TRANSITION, MARK, chartColor, defaultFormat } from "@workspace/ui/components/charts/shared"
+import { cn } from "@workspace/ui/lib/utils"
+
+/** Fixed meanings keep their colour wherever they appear. */
+const FIXED: Record<string, string> = {
+  "Net margin": "var(--chart-3)",
+  Shortfall: "oklch(0.72 0.16 70)",
+  Refunds: "var(--muted-foreground)",
+  Unallocated: "var(--muted-foreground)",
+}
+
+/** Slots handed to ordinary nodes: every hue except slot 3, which "Net margin" owns. */
+const FREE_SLOTS = [0, 1, 3, 4]
+
+function colorsFor(graph: FlowGraph): string[] {
+  // One sequence across the whole graph (not restarted per column), so no two ordinary nodes
+  // share a hue until the slots run out, and none ever matches Net margin.
+  let next = 0
+  return graph.nodes.map((node, i) => {
+    const fixed = FIXED[node.name]
+    if (fixed) return fixed
+    // The hub (the column every flow passes through) is neutral; other nodes take hues in order.
+    const isHub = graph.links.some((l) => l.target === i) && graph.links.some((l) => l.source === i)
+    if (isHub) return "var(--muted-foreground)"
+    return chartColor(FREE_SLOTS[next++ % FREE_SLOTS.length]!)
+  })
+}
+
+type NodeProps = { x: number; y: number; width: number; height: number; index: number; payload: { name: string; value: number } }
+type LinkProps = {
+  sourceX: number
+  targetX: number
+  sourceY: number
+  targetY: number
+  sourceControlX: number
+  targetControlX: number
+  linkWidth: number
+  index: number
+}
+
+/**
+ * Where money went: sources on the left, a hub, outputs on the right, ribbons sized by amount.
+ * Labels sit beside the nodes in text colours (never the series colour), with the amount and,
+ * on the output side, the share. Hovering a ribbon lifts it and fades the rest.
+ */
+export function SankeyChart({
+  graph,
+  valueFormatter = defaultFormat,
+  className,
+}: {
+  graph: FlowGraph
+  valueFormatter?: (value: number) => string
+  className?: string
+}) {
+  const [activeLink, setActiveLink] = React.useState<number | null>(null)
+  const colors = React.useMemo(() => colorsFor(graph), [graph])
+  const maxColumn = Math.max(0, ...graph.nodes.map((n) => n.column))
+  const hubTotal = graph.links
+    .filter((l) => graph.nodes[l.source]?.column === 0)
+    .reduce((sum, l) => sum + l.value, 0)
+  const ref = React.useRef<HTMLDivElement>(null)
+  const [width, setWidth] = React.useState(640)
+
+  React.useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(280, Math.floor(entry!.contentRect.width))))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Label room scales with the card; on a narrow card the amounts drop out of the labels (they stay
+  // in the tooltip and the table view) so nothing is clipped.
+  const marginLeft = Math.round(Math.min(170, width * 0.24))
+  const marginRight = Math.round(Math.min(190, width * 0.27))
+  const showAmounts = width >= 520
+
+  // Plain render functions, not components: a component defined in render would remount every
+  // node and ribbon on each hover, and the fade would never animate.
+  const renderNode = ({ x, y, width: w, height, index, payload }: NodeProps) => {
+    const column = graph.nodes[index]?.column ?? 0
+    const right = column === maxColumn
+    const left = column === 0
+    const share = right && hubTotal > 0 ? ` · ${Math.round((payload.value / hubTotal) * 100)}%` : ""
+    // Labels sit outside the ribbons: sources to the left, outputs to the right, the hub above.
+    const labelX = left ? x - 8 : right ? x + w + 8 : x + w / 2
+    const labelY = left || right ? y + height / 2 : y - 8
+    return (
+      <g>
+        <rect x={x} y={y} width={w} height={Math.max(2, height)} rx={MARK.radius} fill={colors[index]} />
+        <text
+          x={labelX}
+          y={labelY}
+          textAnchor={left ? "end" : right ? "start" : "middle"}
+          dominantBaseline={left || right ? "middle" : "auto"}
+          className="fill-foreground text-xs"
+        >
+          <tspan className="font-medium">{payload.name}</tspan>
+          {showAmounts ? (
+            <tspan className="fill-muted-foreground" dx={6}>
+              {valueFormatter(payload.value)}
+              {share}
+            </tspan>
+          ) : null}
+        </text>
+      </g>
+    )
+  }
+
+  const renderLink = ({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
+    const link = graph.links[index]
+    const color = link ? colors[link.source] : "var(--muted-foreground)"
+    const opacity = activeLink === null ? 0.28 : activeLink === index ? 0.5 : 0.12
+    return (
+      <path
+        d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
+        fill="none"
+        stroke={color}
+        strokeWidth={Math.max(1, linkWidth)}
+        strokeOpacity={opacity}
+        style={DIM_TRANSITION}
+        onMouseEnter={() => setActiveLink(index)}
+        onMouseLeave={() => setActiveLink(null)}
+      />
+    )
+  }
+
+  const height = Math.max(240, Math.min(420, graph.nodes.length * 44))
+
+  return (
+    <div ref={ref} className={cn("w-full overflow-hidden", className)}>
+      <Sankey
+        width={width}
+        height={height}
+        data={graph}
+        nodeWidth={10}
+        nodePadding={18}
+        iterations={32}
+        margin={{ top: 28, right: marginRight, bottom: 8, left: marginLeft }}
+        node={(props: NodeProps) => renderNode(props)}
+        link={(props: LinkProps) => renderLink(props)}
+      >
+        <Tooltip
+          content={({ payload }) => {
+            const item = payload?.[0]?.payload as
+              | { source?: { name: string }; target?: { name: string }; value?: number; name?: string }
+              | undefined
+            if (!item || item.value === undefined) return null
+            const title = item.source && item.target ? `${item.source.name} → ${item.target.name}` : item.name
+            return (
+              <div className="rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-md">
+                <div className="font-medium">{title}</div>
+                <div className="font-mono tabular-nums">{valueFormatter(item.value)}</div>
+              </div>
+            )
+          }}
+        />
+      </Sankey>
+    </div>
+  )
+}

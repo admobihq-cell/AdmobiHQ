@@ -30,7 +30,7 @@ export function DashboardCard({
   contentClassName?: string
 }) {
   return (
-    <Card className={cn("shadow-xs", className)}>
+    <Card className={cn("shadow-xs transition-shadow duration-200 hover:shadow-sm", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>

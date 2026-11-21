@@ -82,6 +82,7 @@ import {
   type PaystackResource,
   type PaystackRowDto,
   type PaystackSummaryDto,
+  SearchResponseDto,
 } from "@workspace/ops-contracts"
 
 import { getApiBaseUrl, publicApiUrl } from "./base-url"
@@ -277,6 +278,10 @@ export type OpsClient = {
      * through request<T>()'s JSON parsing. Same shape as
      * driverApplications.documentFileUrl above. */
     creativeFileUrl: (campaignId: number, creativeId: number) => string
+  }
+  /** Command palette record search; groups the caller lacks permission for are left out. */
+  search: {
+    query: (q: string, signal?: AbortSignal) => Promise<SearchResponseDto>
   }
   /** Hand-written quotes and invoices (outside the Paystack wallet). All need `finances`. */
   billingDocuments: {
@@ -781,6 +786,10 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
         }),
       creativeFileUrl: (campaignId, creativeId) =>
         `${baseUrl}${apiPrefix}/campaigns/${campaignId}/creatives/${creativeId}/file`,
+    },
+    search: {
+      query: (q, signal) =>
+        request<SearchResponseDto>(`${apiPrefix}/ops/search?q=${encodeURIComponent(q)}`, { signal }),
     },
     billingDocuments: {
       list: (params = {}) => {

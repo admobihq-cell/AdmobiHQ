@@ -14,6 +14,7 @@ import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { DriverApplicationSubmitted } from "@/lib/email/templates/DriverApplicationSubmitted"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 
 export async function POST() {
   const auth = await requireDriverAccess()
@@ -80,5 +81,6 @@ export async function POST() {
     console.error("[driver/profile/submit] Failed to send notifications:", error)
   }
 
+  await publishLive([liveChannel.ops], { topic: "application", id: updated.id })
   return NextResponse.json(toDriverProfileDto(updated))
 }

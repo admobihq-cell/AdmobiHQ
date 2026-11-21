@@ -23,6 +23,44 @@ Home, Overview, **Map**, Campaign Leads, Fleet Partners, Drivers, **Driver Appli
 
 **Dashboard loading states.** Overview, Finances and the four dashboards (`/dashboards/campaigns|fleet|advertisers|support`) each have a `loading.tsx` plus a keyed `<Suspense>` around the open tab. Both use the per-tab shapes in [`components/dashboards/dashboard-skeletons.tsx`](../../apps/ops/components/dashboards/dashboard-skeletons.tsx), built from the shared primitives in [`@workspace/ui` `dashboard/dashboard-skeletons.tsx`](../../packages/ui/src/components/dashboard/dashboard-skeletons.tsx) (hero, KPI strip, chart, list, ledger, toolbar). They mirror each tab's real card grid (hero + KPI strip, chart cards, queue, ledger) so nothing jumps when data lands. Fleet, Advertisers and Support take `money` / `safety` flags because those sections only render for viewers with the permission. Page headings live in [`dashboard-header.tsx`](../../apps/ops/components/dashboards/dashboard-header.tsx) so a page and its `loading.tsx` share one copy. Change a tab's layout and its skeleton together. `Skeleton` only pulses under `prefers-reduced-motion: no-preference`.
 
+### Search (⌘K)
+
+The header **Search** button (or ⌘K / Ctrl+K anywhere) opens the command palette: recent picks, every page the role can open (including the finance and settings tabs), quick actions (new invoice or quote, payout run, record a transaction, new announcement, switch theme), and records from `GET /v1/ops/search`.
+
+Typing an ID jumps straight to it: `#42` or `42` (support case, campaign, SOS, payout), `INV/2026/0001`, `inv-2026-1` or `QT 2026 12` (any separator, any case), or a payout reference (`adm-payout-…`). Anything else matches names, subjects, emails and references. `%` and `_` match literally.
+
+Each record group needs the permission of its list screen, and admins see all: SOS (`safety`); support cases (`support`); campaigns and advertiser orgs (`campaigns`); invoices and quotes, statements and payments (`finances`); payouts (`finances` or `payouts`); driver applications (`driver_applications`); drivers (`drivers`); fleet partners (`fleet`); leads (`leads`); waitlist (`waitlist`); media kit (`media_kit`). Results show at most 5 per group. Nothing is fetched until you type, so opening the palette never wakes the database.
+
+### Live toasts
+
+Ops holds a live stream (`GET /v1/ops/live`). Every event refetches the affected queue and re-renders the sidebar counts. A toast appears only for what the role may see:
+
+| Event | Toast | Needs |
+|---|---|---|
+| Driver SOS | "SOS reported" in amber, low tone, **stays until dismissed**, Respond → `/sos/<id>` | `safety` |
+| Campaign submitted | "Campaign submitted for review", Review → `/campaigns/<id>` | `campaigns` |
+| Payment settled | "Payment received", Ledger → `/finances?tab=ledger` | `finances` |
+| Support case opened | "New support case", Open → `/support/<id>` | `support` |
+| Driver application submitted | "New driver application", Review → `/driver-applications/<id>` | `driver_applications` |
+
+The **Alert sound** button on `/notifications` mutes tones on this device.
+
+### Dashboard charts
+
+**Finances → Overview** opens with two cards:
+- **Revenue** (two columns wide):
+  - The revenue figure with its change and **Net margin** with a % of revenue pill.
+  - A daily revenue column chart (monthly past 120 days; `trend` in `queryFinanceOverview`, filled by `bucketSeries`).
+  - Tiles for Driver payouts, and for Tools and Paystack fees.
+- **Cash position:** Money in with its change and a trend line, Wallet funds held, and the live Paystack transfer balance.
+
+Below them, **Where revenue went** is a cash-flow Sankey (revenue categories → Revenue → driver payouts, Paystack fees, tools, net margin). A loss shows as a **Shortfall** source instead of a negative margin (`financeFlow` in `@workspace/ops-contracts`).
+
+On the other dashboards:
+- **Support & safety:** **When cases come in**, an activity grid of cases opened per day.
+- **Fleet:** **Payouts by month** is stacked columns.
+- **Funnels** use the ribbon style.
+
 ### SOS (driver safety incidents)
 
 Sidebar **SOS** (permission: `safety`), placed above Support — an emergency

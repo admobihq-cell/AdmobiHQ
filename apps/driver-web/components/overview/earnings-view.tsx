@@ -6,8 +6,8 @@ import { Download } from "lucide-react"
 import { exportFileName, formatCompact, payoutFocus, toCsv, type DriverPayoutDto } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
+import { ColumnChart } from "@workspace/ui/components/charts/column-chart"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
-import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
 import { KpiStrip, type KpiItem } from "@workspace/ui/components/dashboard/kpi-strip"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { AlertStrip } from "@workspace/ui/components/dashboard/notes"
@@ -158,9 +158,8 @@ export function EarningsView({ payoutDestination }: { payoutDestination: string 
           emptyMessage={data ? "Your monthly payouts chart here once the first is saved." : "Loading your payouts…"}
           table={{ columns: ["Month", "Paid (KES)", "On its way (KES)"], rows: months.map((m) => [m.label, m.paid, m.onWay]) }}
         >
-          <TrendChart
+          <ColumnChart
             xKey="label"
-            stacked
             data={months}
             series={[
               { key: "paid", label: "Paid" },

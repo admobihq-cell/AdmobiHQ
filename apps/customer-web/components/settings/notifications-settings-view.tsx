@@ -1,8 +1,11 @@
-import { Bell, FileText, Megaphone, Wallet } from "lucide-react"
+"use client"
+
+import { Bell, FileText, Megaphone, Volume2, Wallet } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
+import { useSoundMuted } from "@workspace/ui/lib/sounds"
 
 import { SettingsToggleRow } from "@/components/settings/settings-toggle-row"
 
@@ -38,6 +41,7 @@ const NOTIFICATION_ROWS = [
 ] as const
 
 export function NotificationsSettingsView() {
+  const [muted, setMuted] = useSoundMuted()
   return (
     <div className="flex flex-1 flex-col gap-8">
       <div className="space-y-2">
@@ -55,6 +59,15 @@ export function NotificationsSettingsView() {
 
       <Card className="overflow-hidden p-0 shadow-none">
         <CardContent className="p-0">
+          <SettingsToggleRow
+            id="live-alert-sound"
+            icon={Volume2}
+            label="Play a sound with live alerts"
+            description="A soft tone when a campaign decision, payment or invoice arrives. Saved on this device."
+            checked={!muted}
+            onCheckedChange={(on) => setMuted(!on)}
+          />
+          <Separator />
           {NOTIFICATION_ROWS.map((row, index) => (
             <div key={row.id}>
               {index > 0 ? <Separator /> : null}

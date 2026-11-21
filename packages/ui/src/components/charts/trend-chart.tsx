@@ -1,6 +1,7 @@
 "use client"
 
-import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts"
+import * as React from "react"
+import { Area, Brush, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts"
 
 import {
   ChartContainer,
@@ -10,9 +11,12 @@ import {
   type ChartConfig,
 } from "@workspace/ui/components/chart"
 import {
-  AREA_FILL_OPACITY,
   GRID_STROKE_OPACITY,
   KitTooltip,
+  MARK,
+  WashGradients,
+  axisFormatter,
+  seriesValues,
   chartColor,
   defaultFormat,
   formatDay,
@@ -29,9 +33,15 @@ export type TrendSeries = {
   band?: [low: string, high: string]
 }
 
+/** Long series get a drag-to-zoom strip under the plot. */
+const BRUSH_FROM_POINTS = 60
+const BRUSH_START_WINDOW = 30
+
 /**
- * Area or line over days, one y-axis. Two or more series get a legend; the tooltip is always
- * on. Series colour defaults by position, so keep the series order stable between renders.
+ * Area or line over days, one y-axis. Areas are a soft wash (hue fading to the baseline), the
+ * cursor is a hairline crosshair and the hovered point gets an 8px dot with a surface ring. Two
+ * or more series get a legend; the tooltip is always on. Series colour defaults by position, so
+ * keep the series order stable between renders. `syncId` links the crosshair across charts.
  */
 export function TrendChart({
   data,
@@ -39,6 +49,8 @@ export function TrendChart({
   stacked,
   valueFormatter = defaultFormat,
   xKey = "day",
+  brush,
+  syncId,
   className,
 }: {
   data: Record<string, string | number | null>[]
@@ -46,8 +58,13 @@ export function TrendChart({
   stacked?: boolean
   valueFormatter?: (value: number) => string
   xKey?: string
+  /** Defaults to on at 60+ points. */
+  brush?: boolean
+  syncId?: string
   className?: string
 }) {
+  const gradientPrefix = `wash-${React.useId().replace(/:/g, "")}`
+  const showBrush = brush ?? data.length >= BRUSH_FROM_POINTS
   const colorOf = (s: TrendSeries, index: number) => s.color ?? chartColor(index)
   const config: ChartConfig = Object.fromEntries(
     series.map((s, i) => [s.key, { label: s.label, color: colorOf(s, i) }])
@@ -66,7 +83,14 @@ export function TrendChart({
 
   return (
     <ChartContainer config={config} className={cn("aspect-auto h-64 w-full", className)}>
-      <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+      <ComposedChart data={rows} syncId={syncId} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <WashGradients
+          // Index into the full list, as the Area does: a dashed series ahead must not shift the colour.
+          ids={series
+            .map((s, i) => ({ s, i }))
+            .filter(({ s }) => !s.dashed)
+            .map(({ s, i }) => ({ id: `${gradientPrefix}-${s.key}`, color: colorOf(s, i) }))}
+        />
         <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={GRID_STROKE_OPACITY} />
         <XAxis
           dataKey={xKey}
@@ -76,9 +100,14 @@ export function TrendChart({
           minTickGap={32}
           tickFormatter={formatDay}
         />
-        <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={valueFormatter} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickFormatter={axisFormatter(seriesValues(data, series.map((s) => s.key)), valueFormatter)}
+        />
         <ChartTooltip
-          cursor={{ stroke: "var(--border)" }}
+          cursor={{ stroke: "var(--muted-foreground)", strokeOpacity: 0.35, strokeWidth: 1 }}
           content={(props) => <KitTooltip {...props} valueFormatter={valueFormatter} />}
         />
         {series.length > 1 ? <ChartLegend content={<ChartLegendContent />} /> : null}
@@ -105,9 +134,11 @@ export function TrendChart({
               dataKey={s.key}
               name={s.label}
               stroke={colorOf(s, i)}
-              strokeWidth={2}
+              strokeWidth={MARK.line}
               strokeDasharray="6 5"
+              strokeLinecap="round"
               dot={false}
+              activeDot={{ r: MARK.dot, strokeWidth: MARK.ring, stroke: "var(--card)" }}
               isAnimationActive={false}
             />
           ) : (
@@ -118,14 +149,27 @@ export function TrendChart({
               name={s.label}
               stackId={stacked ? "stack" : undefined}
               stroke={colorOf(s, i)}
-              strokeWidth={2}
-              fill={colorOf(s, i)}
-              fillOpacity={AREA_FILL_OPACITY}
+              strokeWidth={MARK.line}
+              strokeLinecap="round"
+              fill={`url(#${gradientPrefix}-${s.key})`}
+              fillOpacity={1}
               dot={false}
+              activeDot={{ r: MARK.dot, strokeWidth: MARK.ring, stroke: "var(--card)", fill: colorOf(s, i) }}
               isAnimationActive={false}
             />
           )
         )}
+        {showBrush ? (
+          <Brush
+            dataKey={xKey}
+            height={28}
+            travellerWidth={8}
+            stroke="var(--border)"
+            fill="var(--chart-track)"
+            tickFormatter={formatDay}
+            startIndex={Math.max(0, rows.length - BRUSH_START_WINDOW)}
+          />
+        ) : null}
       </ComposedChart>
     </ChartContainer>
   )

@@ -12,12 +12,81 @@ import {
 /** Colour follows the entity, never its rank: callers pass a stable index per entity. */
 export const chartColor = (index: number) => `var(--chart-${(((index % 5) + 5) % 5) + 1})`
 
-/** Bar and area opacities from the design spec (§3.2). One place to tune at the visual pass. */
-export const BAR_FILL_OPACITY = 0.22
-export const BAR_STROKE_OPACITY = 0.35
-export const AREA_FILL_OPACITY = 0.14
+/**
+ * Mark specs, one place for every chart: bars/columns cap at 24px with a 4px rounded data-end
+ * (square at the baseline); 2px lines; 8px dots with a 2px surface ring; area washes fade from
+ * 18% at the top to nothing at the baseline; on hover the active mark keeps full weight and the
+ * rest drop to `dim`.
+ */
+export const MARK = { barMax: 24, radius: 4, line: 2, dot: 4, ring: 2, dim: 0.35, washTop: 0.18 } as const
+
+/** Solid fills: the rounded data-end and the track carry the look, not a tinted outline. */
+export const BAR_FILL_OPACITY = 1
+export const BAR_STROKE_OPACITY = 0
+export const AREA_FILL_OPACITY = 0.1
 export const GRID_STROKE_OPACITY = 0.25
 export const BAR_SIZE = 14
+
+/** Recharts `radius` for a rounded data-end and a square baseline. */
+export function dataEndRadius(
+  orientation: "vertical" | "horizontal",
+  negative = false
+): [number, number, number, number] {
+  const r = MARK.radius
+  if (orientation === "horizontal") return negative ? [r, 0, 0, r] : [0, r, r, 0]
+  return negative ? [0, 0, r, r] : [r, r, 0, 0]
+}
+
+/** One vertical wash per series: the hue at MARK.washTop fading to transparent at the baseline. */
+export function WashGradients({ ids }: { ids: { id: string; color: string }[] }) {
+  return (
+    <defs>
+      {ids.map(({ id, color }) => (
+        <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={MARK.washTop} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      ))}
+    </defs>
+  )
+}
+
+/** Hover state for bar/cell charts: the active mark keeps full weight, the rest dim. */
+export function useActiveMark() {
+  const [active, set] = React.useState<number | null>(null)
+  const opacityOf = React.useCallback(
+    (index: number) => (active === null || active === index ? 1 : MARK.dim),
+    [active]
+  )
+  return { active, set, opacityOf }
+}
+
+/**
+ * Y-axis ticks: the chart's own formatter while values stay under 10,000; past that, compact
+ * numbers (10K, 2.5M) so long labels like "KES 10,000" don't wrap. One style per axis.
+ */
+export function axisFormatter(
+  values: number[],
+  valueFormatter: (value: number) => string
+): (value: number) => string {
+  const max = Math.max(0, ...values.map((v) => Math.abs(v)))
+  if (max < 10_000) return valueFormatter
+  return (value) => {
+    const abs = Math.abs(value)
+    const sign = value < 0 ? "-" : ""
+    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+    if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(abs >= 10_000 ? 0 : 1).replace(/\.0$/, "")}K`
+    return `${sign}${abs.toLocaleString("en-KE")}`
+  }
+}
+
+/** Every numeric value under the given keys, for axisFormatter. */
+export function seriesValues(rows: Record<string, unknown>[], keys: string[]): number[] {
+  return rows.flatMap((row) => keys.map((k) => row[k]).filter((v): v is number => typeof v === "number"))
+}
+
+/** CSS for marks whose opacity changes on hover. */
+export const DIM_TRANSITION = { transition: "opacity 120ms ease-out" } as const
 
 export const defaultFormat = (value: number) => value.toLocaleString("en-KE")
 

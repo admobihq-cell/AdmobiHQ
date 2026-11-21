@@ -1,16 +1,21 @@
 "use client"
 
-import * as React from "react"
 import type { NamedValue } from "@workspace/ops-contracts"
 
-import { HatchPattern } from "@workspace/ui/components/charts/hatch"
-import { HoverTip, chartColor, defaultFormat } from "@workspace/ui/components/charts/shared"
+import {
+  DIM_TRANSITION,
+  HoverTip,
+  chartColor,
+  defaultFormat,
+  useActiveMark,
+} from "@workspace/ui/components/charts/shared"
 import { DeltaPill } from "@workspace/ui/components/dashboard/delta-pill"
 import { cn } from "@workspace/ui/lib/utils"
 
 /**
- * Ranked horizontal bars on a hatched track, value on the right and an optional change
- * column. Bars are one colour (the list is one measure, not a set of entities).
+ * Ranked horizontal bars on a faint track, value on the right and an optional change column.
+ * Bars are one colour (the list is one measure, not a set of entities). Hovering or focusing a
+ * row lifts its bar and dims the others.
  */
 export function RankBars({
   data,
@@ -21,18 +26,24 @@ export function RankBars({
   valueFormatter?: (value: number) => string
   className?: string
 }) {
-  const hatchId = `hatch-${React.useId().replace(/:/g, "")}`
   const max = Math.max(0, ...data.map((row) => row.value))
   const hasChange = data.some((row) => row.change !== undefined)
+  const { set, opacityOf } = useActiveMark()
 
   return (
-    <ul className={cn("flex flex-col gap-3", className)}>
-      {data.map((row) => {
+    <ul className={cn("flex flex-col gap-3", className)} onMouseLeave={() => set(null)}>
+      {data.map((row, i) => {
         const pct = max > 0 ? (row.value / max) * 100 : 0
         return (
           <li key={row.name}>
             <HoverTip tip={`${row.name}: ${valueFormatter(row.value)}`}>
-              <div tabIndex={0} className="flex flex-col gap-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <div
+                tabIndex={0}
+                onMouseEnter={() => set(i)}
+                onFocus={() => set(i)}
+                onBlur={() => set(null)}
+                className="flex flex-col gap-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <div className="flex items-center gap-2 text-sm">
                   <span className="min-w-0 flex-1 truncate">{row.name}</span>
                   <span className="font-medium tabular-nums">{valueFormatter(row.value)}</span>
@@ -42,13 +53,12 @@ export function RankBars({
                     </span>
                   ) : null}
                 </div>
-                <svg className="h-2 w-full" role="presentation">
-                  <defs>
-                    <HatchPattern id={hatchId} />
-                  </defs>
-                  <rect width="100%" height="100%" rx={4} fill={`url(#${hatchId})`} />
-                  <rect width={`${pct}%`} height="100%" rx={4} fill={chartColor(0)} />
-                </svg>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-chart-track" role="presentation">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${pct}%`, background: chartColor(0), opacity: opacityOf(i), ...DIM_TRANSITION }}
+                  />
+                </div>
               </div>
             </HoverTip>
           </li>

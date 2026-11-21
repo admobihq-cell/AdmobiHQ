@@ -13,6 +13,7 @@
     "antd": "^6.5.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "framer-motion": "^12.42.2",
     "input-otp": "^1.5.0",
     "lucide-react": "^1.12.0",

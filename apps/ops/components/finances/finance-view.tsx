@@ -20,16 +20,7 @@ import {
   getToolCosts,
 } from "@/lib/queries/finance"
 
-export const FINANCE_TABS = [
-  { value: "overview", label: "Overview" },
-  { value: "attention", label: "Needs attention" },
-  { value: "ledger", label: "Ledger" },
-  { value: "documents", label: "Invoices & quotes" },
-  { value: "wallets", label: "Wallets" },
-  { value: "payouts", label: "Payouts" },
-  { value: "paystack", label: "Paystack" },
-  { value: "tools", label: "Tool costs" },
-]
+export { FINANCE_TABS } from "@/lib/navigation"
 
 /**
  * Loads only the open tab. The page has already checked the `finances` permission, and every

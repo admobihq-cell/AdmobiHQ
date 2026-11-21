@@ -34,6 +34,15 @@ Below `md` the sidebar collapses to its sheet and a **bottom tab bar** (Home, Ea
 
 Profile-setup (web + mobile) writes `DriverProfile` + `DriverDocument` via `/v1/driver/*`. Ops reviews at `/driver-applications`. The CRM `Driver` marketing table is a different model and is **not** joined yet.
 
+### Search (⌘K)
+
+The header **Search** button (or ⌘K / Ctrl+K) opens the command palette: recent picks, pages, quick actions (SOS, contact support, payouts, switch theme), and the driver's own payouts, support cases, SOS reports, documents and notifications from `GET /v1/driver/search`. `#42` jumps to that payout, case or SOS report; `adm-payout-…` finds a payout by its transfer reference.
+
+### Dashboard charts
+
+- **Dashboard:** has **Days on the road**, an activity grid of screen-on hours per day (darker means more; days with no data stay empty), with the takeaway "You drove N of the last M days".
+- **Earnings:** **Payouts by month** is stacked columns (Paid, On its way).
+
 ### Env (Infisical)
 
 | Variable | Notes |
