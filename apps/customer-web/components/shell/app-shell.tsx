@@ -41,6 +41,7 @@ import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
 import { CustomerCommandPalette } from "@/components/shell/customer-command-palette"
+import { LiveUpdates } from "@/components/shell/live-updates"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { OrgNameNudge } from "@/components/shell/org-name-nudge"
 import { ProfileNameNudge } from "@/components/shell/profile-name-nudge"
@@ -195,6 +196,7 @@ export function AppShell({
               <ThemeToggle />
             </div>
           </header>
+          <LiveUpdates />
           <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
             {children}
           </main>
