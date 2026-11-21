@@ -2,6 +2,7 @@ import type { ReactElement } from "react"
 import { render, type PdfMetadata } from "takumi-pdf"
 import { PageNumber, TotalPages } from "takumi-pdf/primitives"
 import { LOGO_MARK_BYTES } from "./logo-mark"
+import { WORDMARK_BYTES, WORDMARK_SRC } from "./logo-typemark"
 
 /** Approximate sRGB match for this project's --primary token
  * (oklch(0.48 0.14 43)) — PDF rendering needs a literal color, not a CSS
@@ -35,13 +36,18 @@ function DocumentFooter(): ReactElement {
  * optionally, their own document metadata. */
 export async function renderPdf(
   element: ReactElement,
-  options: { metadata?: PdfMetadata } = {},
+  /** `footer` replaces the internal "confidential" footer — customer-facing
+   * documents (quotes, invoices) pass their own. */
+  options: { metadata?: PdfMetadata; footer?: ReactElement } = {},
 ): Promise<Uint8Array> {
   try {
     return await render(element, {
       size: "a4",
-      footer: <DocumentFooter />,
-      images: [{ src: LOGO_SRC, data: LOGO_MARK_BYTES }],
+      footer: options.footer ?? <DocumentFooter />,
+      images: [
+        { src: LOGO_SRC, data: LOGO_MARK_BYTES },
+        { src: WORDMARK_SRC, data: WORDMARK_BYTES },
+      ],
       metadata: options.metadata,
     })
   } catch (error) {
