@@ -5,7 +5,10 @@ import {
   billingPaymentState,
   computeBillingTotals,
   formatBillingNumber,
+  formatKes,
   nairobiDay,
+  type BillingStatusAction,
+  type RecordBillingPaymentInput,
   type BillingCustomer,
   type BillingDocumentDto,
   type BillingDocumentInput,
@@ -16,6 +19,7 @@ import {
   type BillingPaymentMethod,
 } from "@workspace/ops-contracts"
 
+import { ADMOBI_COMPANY } from "@/lib/billing/company"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -194,6 +198,143 @@ export async function updateBillingDocument(
     data: toColumns({ ...input, kind: existing.kind as BillingDocumentKind }, customer),
   })
   if (updated.count === 0) return "locked"
+  return (await getBillingDocument(id))!
+}
+
+type ActionResult = BillingDocumentDto | "not_found" | { conflict: string }
+
+/** Which statuses each action may start from. */
+const TRANSITIONS: Record<BillingStatusAction, { from: BillingDocumentStatus[]; to: BillingDocumentStatus; kinds?: BillingDocumentKind[] }> = {
+  send: { from: ["draft"], to: "sent" },
+  accept: { from: ["sent"], to: "accepted", kinds: ["quote"] },
+  decline: { from: ["sent"], to: "declined", kinds: ["quote"] },
+  void: { from: ["sent", "accepted", "declined"], to: "void" },
+}
+
+const CONFLICT: Record<BillingStatusAction, string> = {
+  send: "Only drafts can be sent",
+  accept: "Only a sent quote can be accepted",
+  decline: "Only a sent quote can be declined",
+  void: "Drafts can't be voided — and void documents stay void",
+}
+
+export async function changeBillingStatus(id: number, action: BillingStatusAction): Promise<ActionResult> {
+  const doc = await prisma.billingDocument.findUnique({
+    where: { id },
+    select: { kind: true, status: true, org_id: true, customer: true },
+  })
+  if (!doc) return "not_found"
+  const rule = TRANSITIONS[action]
+  if (!rule.from.includes(doc.status as BillingDocumentStatus) || (rule.kinds && !rule.kinds.includes(doc.kind as BillingDocumentKind))) {
+    return { conflict: CONFLICT[action] }
+  }
+
+  const data: Prisma.BillingDocumentUpdateManyMutationInput = { status: rule.to }
+  if (action === "send") {
+    data.sent_at = new Date()
+    // Freeze the customer as the org stands today: finance email and KRA PIN.
+    if (doc.org_id) {
+      const org = await prisma.advertiserOrg.findUnique({
+        where: { id: doc.org_id },
+        select: { name: true, billing_email: true, tax_pin: true },
+      })
+      const current = billingCustomerSchema.parse(doc.customer)
+      if (org) {
+        data.customer = {
+          ...current,
+          name: current.name || org.name,
+          email: org.billing_email ?? current.email,
+          taxPin: org.tax_pin ?? current.taxPin,
+        } as Prisma.InputJsonValue
+      }
+    }
+  }
+  if (action === "void") data.voided_at = new Date()
+
+  // The status guard in `where` makes two racing clicks safe: only one updates.
+  const updated = await prisma.billingDocument.updateMany({ where: { id, status: doc.status }, data })
+  if (updated.count === 0) return { conflict: CONFLICT[action] }
+  return (await getBillingDocument(id))!
+}
+
+const addDays = (isoDay: string, days: number) =>
+  new Date(toDate(isoDay).getTime() + days * 86_400_000).toISOString().slice(0, 10)
+
+/** A sent or accepted quote becomes a new draft invoice with its own INV/ number. */
+export async function convertQuoteToInvoice(id: number, createdBy: string): Promise<ActionResult> {
+  const quote = await getBillingDocument(id)
+  if (!quote) return "not_found"
+  if (quote.kind !== "quote" || !["sent", "accepted"].includes(quote.status)) {
+    return { conflict: "Only a sent or accepted quote can be converted" }
+  }
+  if (quote.convertedInvoiceId) return { conflict: "This quote has already been converted" }
+
+  const today = nairobiDay(new Date())
+  const input: BillingDocumentInput = {
+    ...quote,
+    kind: "invoice",
+    issueDate: today,
+    dueDate: addDays(today, 14),
+    terms: ADMOBI_COMPANY.defaults.invoiceTerms,
+  }
+  try {
+    const newId = await prisma.$transaction(async (tx) => {
+      const number = await nextBillingNumber(tx, "invoice", input.issueDate)
+      const row = await tx.billingDocument.create({
+        data: { ...toColumns(input, quote.customer), kind: "invoice", number, source_quote_id: id, created_by: createdBy },
+        select: { id: true },
+      })
+      return row.id
+    }, TX_OPTIONS)
+    return (await getBillingDocument(newId))!
+  } catch (error: unknown) {
+    // Two racing converts: the unique source_quote_id lets only one through.
+    if ((error as { code?: string }).code === "P2002") return { conflict: "This quote has already been converted" }
+    throw error
+  }
+}
+
+/**
+ * Money received against an invoice. Never touches the wallet. The document
+ * row is locked for the check-and-insert, so two payments for the full
+ * balance can't both pass the overpayment guard.
+ */
+export async function recordBillingPayment(
+  id: number,
+  input: RecordBillingPaymentInput,
+  createdBy: string
+): Promise<ActionResult> {
+  const outcome = await prisma.$transaction(async (tx) => {
+    const [doc] = await tx.$queryRaw<{ kind: string; status: string; total_kes: Prisma.Decimal }[]>`
+      SELECT kind, status, total_kes FROM billing_documents WHERE id = ${id} FOR UPDATE`
+    if (!doc) return "not_found" as const
+    if (doc.kind !== "invoice") return { conflict: "Payments can only be recorded against invoices" }
+    if (doc.status === "draft") return { conflict: "Send the invoice before recording a payment" }
+    if (doc.status === "void") return { conflict: "This invoice is void" }
+
+    const paid = await tx.billingDocumentPayment.aggregate({ where: { document_id: id }, _sum: { amount_kes: true } })
+    const paidKes = num(paid._sum.amount_kes ?? 0)
+    const balanceKes = round2(num(doc.total_kes) - paidKes)
+    const amountKes = round2(input.amountKes)
+    if (amountKes > balanceKes + 0.001) {
+      return { conflict: `That's more than the balance of ${formatKes(Math.max(balanceKes, 0))}` }
+    }
+
+    await tx.billingDocumentPayment.create({
+      data: {
+        document_id: id,
+        amount_kes: amountKes,
+        method: input.method,
+        reference: input.reference || null,
+        paid_on: toDate(input.paidOn),
+        note: input.note || null,
+        created_by: createdBy,
+      },
+    })
+    return "ok" as const
+  }, TX_OPTIONS)
+
+  if (outcome !== "ok") return outcome
   return (await getBillingDocument(id))!
 }
 

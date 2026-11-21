@@ -178,6 +178,9 @@ const NOTES: Record<string, string> = {
   "/v1/ops/billing-documents": "List quotes and invoices written by ops, or create one",
   "/v1/ops/billing-documents/options": "Organizations, campaigns and default copy for the quote/invoice editor",
   "/v1/ops/billing-documents/[id]": "One quote or invoice; edit while it is a draft",
+  "/v1/ops/billing-documents/[id]/status": "Send, accept, decline or void a quote or invoice",
+  "/v1/ops/billing-documents/[id]/convert": "Turn a sent or accepted quote into a draft invoice",
+  "/v1/ops/billing-documents/[id]/payments": "Record a manual payment against an invoice (not the wallet)",
 
   // Advertiser app
   "/v1/customer/campaigns": "List and create campaigns",
