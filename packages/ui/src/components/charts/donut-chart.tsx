@@ -76,11 +76,15 @@ export function DonutChart({
           <li
             key={row.name}
             className="flex items-center gap-2"
-            style={{ opacity: opacityOf(i), ...DIM_TRANSITION }}
             onMouseEnter={() => set(i)}
             onMouseLeave={() => set(null)}
           >
-            <span className="size-2.5 shrink-0 rounded-[2px]" style={{ background: chartColor(i) }} aria-hidden />
+            {/* Only the swatch dims: dimmed label text would drop below readable contrast. */}
+            <span
+              className="size-2.5 shrink-0 rounded-[2px]"
+              style={{ background: chartColor(i), opacity: opacityOf(i), ...DIM_TRANSITION }}
+              aria-hidden
+            />
             <span className="min-w-0 flex-1 truncate">{row.name}</span>
             <span className="tabular-nums">{valueFormatter(row.value)}</span>
             <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">

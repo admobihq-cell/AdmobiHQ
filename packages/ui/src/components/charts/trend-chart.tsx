@@ -85,7 +85,11 @@ export function TrendChart({
     <ChartContainer config={config} className={cn("aspect-auto h-64 w-full", className)}>
       <ComposedChart data={rows} syncId={syncId} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <WashGradients
-          ids={series.filter((s) => !s.dashed).map((s, i) => ({ id: `${gradientPrefix}-${s.key}`, color: colorOf(s, i) }))}
+          // Index into the full list, as the Area does: a dashed series ahead must not shift the colour.
+          ids={series
+            .map((s, i) => ({ s, i }))
+            .filter(({ s }) => !s.dashed)
+            .map(({ s, i }) => ({ id: `${gradientPrefix}-${s.key}`, color: colorOf(s, i) }))}
         />
         <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={GRID_STROKE_OPACITY} />
         <XAxis

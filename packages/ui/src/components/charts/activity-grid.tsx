@@ -2,7 +2,7 @@
 
 import { toWeekGrid, type DailyPoint } from "@workspace/ops-contracts"
 
-import { HoverTip, defaultFormat } from "@workspace/ui/components/charts/shared"
+import { defaultFormat } from "@workspace/ui/components/charts/shared"
 import { cn } from "@workspace/ui/lib/utils"
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -42,11 +42,14 @@ export function ActivityGrid({
   className?: string
 }) {
   const { weeks, max } = toWeekGrid(points, valueKey)
+  const active = weeks.flatMap((w) => w.days).filter((d): d is number => d !== null && d > 0).length
+  const summary = `${label}: ${active} active days over ${weeks.length} weeks${max > 0 ? `, busiest ${valueFormatter(max)}` : ""}`
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="overflow-x-auto">
-        <div role="grid" aria-label={label} className="flex min-w-max gap-[3px]">
+        {/* One image with a summary, not hundreds of tab stops: every value is in the card's table view. */}
+        <div role="img" aria-label={summary} className="flex min-w-max gap-[3px]">
           <div className="flex flex-col gap-[3px] pr-1 text-[10px] text-muted-foreground" aria-hidden>
             {WEEKDAYS.map((d, i) => (
               <span key={d} className="flex h-3 items-center leading-none">
@@ -55,22 +58,20 @@ export function ActivityGrid({
             ))}
           </div>
           {weeks.map((week) => (
-            <div key={week.start} role="row" className="flex flex-col gap-[3px]">
+            <div key={week.start} className="flex flex-col gap-[3px]">
               {week.days.map((value, i) => {
                 const tip = `${dayLabel(week.start, i)} · ${value === null ? "no data" : valueFormatter(value)}`
                 return (
-                  <HoverTip key={i} tip={tip}>
-                    <span
-                      role="gridcell"
-                      tabIndex={0}
-                      aria-label={tip}
-                      className={cn(
-                        "size-3 rounded-[3px] outline-none transition-shadow hover:ring-2 hover:ring-foreground/50 focus-visible:ring-2 focus-visible:ring-ring",
-                        value === null && "border border-border/70"
-                      )}
-                      style={{ background: value === null ? "transparent" : levelColor(value, max) }}
-                    />
-                  </HoverTip>
+                  // A native title is the hover tip: one Radix tooltip per cell was hundreds of instances.
+                  <span
+                    key={i}
+                    title={tip}
+                    className={cn(
+                      "size-3 rounded-[3px] transition-shadow hover:ring-2 hover:ring-foreground/50",
+                      value === null && "border border-border/70"
+                    )}
+                    style={{ background: value === null ? "transparent" : levelColor(value, max) }}
+                  />
                 )
               })}
             </div>

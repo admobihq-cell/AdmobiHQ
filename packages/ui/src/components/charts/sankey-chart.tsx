@@ -11,21 +11,24 @@ import { cn } from "@workspace/ui/lib/utils"
 const FIXED: Record<string, string> = {
   "Net margin": "var(--chart-3)",
   Shortfall: "oklch(0.72 0.16 70)",
+  Refunds: "var(--muted-foreground)",
   Unallocated: "var(--muted-foreground)",
 }
 
+/** Slots handed to ordinary nodes: every hue except slot 3, which "Net margin" owns. */
+const FREE_SLOTS = [0, 1, 3, 4]
+
 function colorsFor(graph: FlowGraph): string[] {
-  const used = new Set(Object.keys(FIXED))
-  const perColumn = new Map<number, number>()
+  // One sequence across the whole graph (not restarted per column), so no two ordinary nodes
+  // share a hue until the slots run out, and none ever matches Net margin.
+  let next = 0
   return graph.nodes.map((node, i) => {
     const fixed = FIXED[node.name]
     if (fixed) return fixed
     // The hub (the column every flow passes through) is neutral; other nodes take hues in order.
     const isHub = graph.links.some((l) => l.target === i) && graph.links.some((l) => l.source === i)
     if (isHub) return "var(--muted-foreground)"
-    const n = perColumn.get(node.column) ?? 0
-    perColumn.set(node.column, n + 1)
-    return used.has(node.name) ? "var(--muted-foreground)" : chartColor(n)
+    return chartColor(FREE_SLOTS[next++ % FREE_SLOTS.length]!)
   })
 }
 
@@ -67,12 +70,20 @@ export function SankeyChart({
   React.useEffect(() => {
     const el = ref.current
     if (!el) return
-    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(320, Math.floor(entry!.contentRect.width))))
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(280, Math.floor(entry!.contentRect.width))))
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
 
-  const Node = ({ x, y, width: w, height, index, payload }: NodeProps) => {
+  // Label room scales with the card; on a narrow card the amounts drop out of the labels (they stay
+  // in the tooltip and the table view) so nothing is clipped.
+  const marginLeft = Math.round(Math.min(170, width * 0.24))
+  const marginRight = Math.round(Math.min(190, width * 0.27))
+  const showAmounts = width >= 520
+
+  // Plain render functions, not components: a component defined in render would remount every
+  // node and ribbon on each hover, and the fade would never animate.
+  const renderNode = ({ x, y, width: w, height, index, payload }: NodeProps) => {
     const column = graph.nodes[index]?.column ?? 0
     const right = column === maxColumn
     const left = column === 0
@@ -91,16 +102,18 @@ export function SankeyChart({
           className="fill-foreground text-xs"
         >
           <tspan className="font-medium">{payload.name}</tspan>
-          <tspan className="fill-muted-foreground" dx={6}>
-            {valueFormatter(payload.value)}
-            {share}
-          </tspan>
+          {showAmounts ? (
+            <tspan className="fill-muted-foreground" dx={6}>
+              {valueFormatter(payload.value)}
+              {share}
+            </tspan>
+          ) : null}
         </text>
       </g>
     )
   }
 
-  const Link = ({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
+  const renderLink = ({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index }: LinkProps) => {
     const link = graph.links[index]
     const color = link ? colors[link.source] : "var(--muted-foreground)"
     const opacity = activeLink === null ? 0.28 : activeLink === index ? 0.5 : 0.12
@@ -129,9 +142,9 @@ export function SankeyChart({
         nodeWidth={10}
         nodePadding={18}
         iterations={32}
-        margin={{ top: 28, right: 190, bottom: 8, left: 170 }}
-        node={(props: NodeProps) => <Node {...props} />}
-        link={(props: LinkProps) => <Link {...props} />}
+        margin={{ top: 28, right: marginRight, bottom: 8, left: marginLeft }}
+        node={(props: NodeProps) => renderNode(props)}
+        link={(props: LinkProps) => renderLink(props)}
       >
         <Tooltip
           content={({ payload }) => {

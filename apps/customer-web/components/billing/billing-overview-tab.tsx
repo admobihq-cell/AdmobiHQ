@@ -1,6 +1,6 @@
 "use client"
 
-import { formatKes, spendFlow, type FinanceSummaryDto } from "@workspace/ops-contracts"
+import { formatCompact, formatKes, spendFlow, type FinanceSummaryDto } from "@workspace/ops-contracts"
 
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
 import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
@@ -117,7 +117,7 @@ export function BillingOverviewTab({
           rows: moneyFlow.links.map((l) => [moneyFlow.nodes[l.source]!.name, moneyFlow.nodes[l.target]!.name, l.value]),
         }}
       >
-        <SankeyChart graph={moneyFlow} valueFormatter={formatKes} />
+        <SankeyChart graph={moneyFlow} valueFormatter={formatCompact} />
       </ChartCard>
     </div>
   )

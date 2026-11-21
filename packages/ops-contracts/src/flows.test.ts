@@ -47,6 +47,39 @@ describe("financeFlow", () => {
     const graph = financeFlow({ revenueByCategory: [{ name: "Screen time", value: 50 }], payoutsKes: 20, feesKes: 0, toolCostsKes: 0 })
     expect(graph.nodes.map((n) => n.name)).not.toContain("Paystack fees")
   })
+
+  it("never draws a zero link or an orphan node when revenue and costs only differ by float noise", () => {
+    const graph = financeFlow({
+      revenueByCategory: [
+        { name: "Screen time", value: 70.1 },
+        { name: "Production", value: 29.9 + 1e-9 },
+      ],
+      payoutsKes: 100,
+      feesKes: 0,
+      toolCostsKes: 0,
+    })
+    expect(graph.links.every((l) => l.value > 0)).toBe(true)
+    const linked = new Set(graph.links.flatMap((l) => [l.source, l.target]))
+    expect(graph.nodes.every((_, i) => linked.has(i))).toBe(true)
+    expect(graph.nodes.map((n) => n.name)).not.toContain("Net margin")
+    expect(graph.nodes.map((n) => n.name)).not.toContain("Shortfall")
+  })
+
+  it("shows a net-negative (refund) category as a Refunds output so the hub matches net revenue", () => {
+    const graph = financeFlow({
+      revenueByCategory: [
+        { name: "Screen time", value: 100 },
+        { name: "Production", value: -10 },
+      ],
+      payoutsKes: 30,
+      feesKes: 0,
+      toolCostsKes: 0,
+    })
+    expect(named(graph)).toContainEqual(["Revenue", "Refunds", 10])
+    // Net revenue is 90: costs 30, margin 60, matching the headline figures.
+    expect(named(graph)).toContainEqual(["Revenue", "Net margin", 60])
+    expect(into(graph, "Revenue")).toBe(outOf(graph, "Revenue"))
+  })
 })
 
 describe("spendFlow", () => {
