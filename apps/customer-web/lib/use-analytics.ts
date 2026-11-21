@@ -14,6 +14,7 @@ import type {
 
 import {
   ANALYTICS_QUERY_KEY,
+  getBillingDocuments,
   getFinanceSummary,
   getInvoices,
   getReport,
@@ -62,6 +63,16 @@ export function useInvoices({ enabled = true }: Options = {}) {
   return useQuery({
     queryKey: [...ANALYTICS_QUERY_KEY, "invoices"],
     queryFn: () => getInvoices(getToken),
+    enabled: enabled && isLoaded,
+    staleTime: STALE_MS,
+  })
+}
+
+export function useBillingDocuments({ enabled = true }: Options = {}) {
+  const { getToken, isLoaded } = useAuth()
+  return useQuery({
+    queryKey: [...ANALYTICS_QUERY_KEY, "billing-documents"],
+    queryFn: () => getBillingDocuments(getToken),
     enabled: enabled && isLoaded,
     staleTime: STALE_MS,
   })

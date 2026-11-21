@@ -1,4 +1,4 @@
-import type { InvoiceStatus, WalletTransactionKind } from "@workspace/ops-contracts"
+import type { CustomerBillingDocumentDto, InvoiceStatus, WalletTransactionKind } from "@workspace/ops-contracts"
 import type { StatusTone } from "@workspace/ui/components/dashboard/status-pill"
 
 export const KIND_LABELS: Record<WalletTransactionKind, string> = {
@@ -14,6 +14,26 @@ export const INVOICE_STATUS: Record<InvoiceStatus, { label: string; tone: Status
   paid: { label: "Paid", tone: "good" },
   overdue: { label: "Overdue", tone: "serious" },
   void: { label: "Void", tone: "neutral" },
+}
+
+/** Pill for a quote or invoice ops wrote by hand. Unpaid and overdue read red, as on the PDF. */
+export function billingDocumentStatus(doc: CustomerBillingDocumentDto): { label: string; tone: StatusTone } {
+  if (doc.status === "void") return { label: "Void", tone: "neutral" }
+  if (doc.kind === "quote") {
+    if (doc.status === "accepted") return { label: "Accepted", tone: "good" }
+    if (doc.status === "declined") return { label: "Declined", tone: "neutral" }
+    return { label: "Quote", tone: "neutral" }
+  }
+  switch (doc.paymentState) {
+    case "paid":
+      return { label: "Paid", tone: "good" }
+    case "part_paid":
+      return { label: "Part-paid", tone: "warning" }
+    case "overdue":
+      return { label: "Overdue", tone: "serious" }
+    default:
+      return { label: "Unpaid", tone: "serious" }
+  }
 }
 
 /** "3 Nov 2026", in Nairobi time. Accepts an ISO timestamp or a plain YYYY-MM-DD day. */
