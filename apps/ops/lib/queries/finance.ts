@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache"
 
 import {
   SPEND_CATEGORY_LABELS,
+  bucketSeries,
   delta,
   foldOther,
   fundingStatus,
@@ -121,11 +122,13 @@ export type FinanceOverviewDto = {
   moneyInOut: { period: string; inKes: number; outKes: number }[]
   revenueByCategory: NamedValue[]
   revenueByMarket: NamedValue[]
+  /** Revenue and top-ups per day (per month past 120 days) across the window, gaps filled with 0. */
+  trend: { granularity: "day" | "month"; points: { day: string; revenue: number; moneyIn: number }[] }
 }
 
 export async function queryFinanceOverview(range: DateRangeKey): Promise<FinanceOverviewDto> {
   const w = windows(range)
-  const [cur, prev, payouts, held, byMonth, byCategory, byMarket, tools, first, fees] = await Promise.all([
+  const [cur, prev, payouts, held, byMonth, byCategory, byMarket, tools, first, fees, byDay] = await Promise.all([
     periodTotals(w.start, w.end),
     w.previous ? periodTotals(w.previous.start, w.previous.end) : Promise.resolve(null),
     settledPayouts(w.start, w.end),
@@ -158,6 +161,13 @@ export async function queryFinanceOverview(range: DateRangeKey): Promise<Finance
     // The first ledger day, so an "all time" margin scales tool costs over the months that had a ledger.
     rows<{ first: string | null }>(`SELECT MIN(${DAY})::text AS first FROM wallet_transactions t WHERE t.org_id IS NOT NULL`, []),
     providerFees(w.start, w.end),
+    rows<{ day: string; revenue: number; money_in: number }>(
+      `SELECT ${DAY}::text AS day,
+         (-COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind IN ('spend', 'refund') AND t.spend_category IS DISTINCT FROM 'tax'), 0))::float8 AS revenue,
+         COALESCE(SUM(t.amount_kes) FILTER (WHERE t.kind = 'top_up'), 0)::float8 AS money_in
+       FROM wallet_transactions t WHERE t.org_id IS NOT NULL AND ${IN_RANGE} GROUP BY 1 ORDER BY 1`,
+      [w.start, w.end]
+    ),
   ])
 
   const startDay = w.start === "2020-01-01" ? (first[0]?.first ?? w.end) : w.start
@@ -181,6 +191,18 @@ export async function queryFinanceOverview(range: DateRangeKey): Promise<Finance
       value: roundKes(num(r.value)),
     })),
     revenueByMarket: foldOther(byMarket.map((r) => ({ name: r.market ?? "Not set", value: roundKes(num(r.value)) }))),
+    trend: (() => {
+      const series = bucketSeries(
+        byDay.map((r) => ({ day: r.day, revenue: roundKes(num(r.revenue)), moneyIn: roundKes(num(r.money_in)) })),
+        startDay,
+        w.end,
+        ["revenue", "moneyIn"]
+      )
+      return {
+        granularity: series.granularity,
+        points: series.points.map((p) => ({ day: p.day, revenue: roundKes(Number(p.revenue)), moneyIn: roundKes(Number(p.moneyIn)) })),
+      }
+    })(),
   }
 }
 

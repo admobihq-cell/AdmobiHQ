@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react"
 import { formatKes } from "@workspace/ops-contracts"
 
-import { MetricTile } from "@workspace/ui/components/dashboard/metric-tile"
 import { useOpsClient } from "@/lib/ops-client"
 
-/** Live, never cached: it is what driver payouts are funded from. */
-export function PaystackBalanceTile() {
+/** The live Paystack transfer balance as display text. Never cached: driver payouts are funded from it. */
+export function usePaystackBalance(): string {
   const client = useOpsClient()
   const [state, setState] = useState<{ balanceKes?: number; error?: boolean }>({})
 
@@ -22,11 +21,5 @@ export function PaystackBalanceTile() {
     }
   }, [client])
 
-  return (
-    <MetricTile
-      label="Paystack transfer balance"
-      value={state.balanceKes != null ? formatKes(state.balanceKes) : state.error ? "Unavailable" : "…"}
-      note="Funds driver payouts. Collections Paystack settles to the bank never reach it"
-    />
-  )
+  return state.balanceKes != null ? formatKes(state.balanceKes) : state.error ? "Unavailable" : "…"
 }

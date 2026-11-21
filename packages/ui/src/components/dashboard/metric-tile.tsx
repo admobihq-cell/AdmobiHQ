@@ -18,7 +18,7 @@ export function MetricTile({
   return (
     <div className={cn("rounded-md border bg-muted/35 px-3 py-2.5", className)}>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-lg font-semibold tabular-nums"><CountUp value={value} /></p>
+      <p className="text-lg font-semibold whitespace-nowrap tabular-nums"><CountUp value={value} /></p>
       {note ? <p className="text-xs text-muted-foreground">{note}</p> : null}
     </div>
   )
