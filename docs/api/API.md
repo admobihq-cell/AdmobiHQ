@@ -205,7 +205,14 @@ The Media Library's product name. Files are owned by the advertiser org, not by 
   - `notifyPaymentReceived` publishes `payment` to the org and to ops.
   - Sending a billing document, or recording a payment on one, writes a `billing_document_sent` / `billing_document_payment` inbox row for billing readers and publishes `billing-document` to the org.
   - Campaign submit publishes `review-queue`; public support create publishes `support`; driver SOS publishes `sos` (before the emails); driver profile submit publishes `application`. All of these go to `ops`.
-- **Stream lifecycle:** `: connected` first, `: ping` every 25 s, closed by the server at 280 s (`maxDuration = 300`). The client reconnects at once with a fresh token, or after an error with backoff (1, 2, 5, 10, then 30 s), and refetches what it may have missed.
+- **Stream lifecycle:** `: connected` first, `: ping` every 25 s, closed by the server at 280 s (`maxDuration = 300`). The client policy is `nextLiveStep` in `@workspace/ops-contracts`:
+  - After the planned close, it reconnects at once with a fresh token and **no refetch**.
+  - After an early end or an error, it backs off (1, 2, 5, 10, then 30 s) and refetches on the next good connect.
+  - It stops on 204 or 403, or after three 401s.
+- **Auth without Postgres on reconnect:**
+  - Ops: `getOpsLiveAccess` checks Clerk identity, email and ops-org role only, with no permission rows.
+  - Advertisers: the token is verified every time, and the org id is cached in Upstash (`live:org:<userId>`, 15 min) after the first full access check. A removed member can keep an ids-only stream for up to 15 minutes; every data read still goes through the permission-checked endpoints.
+- **Bursts:** at most 3 toasts per 10 s; the rest fold into one "N more updates" toast. Every event carries a publisher `nonce`, so only one open tab plays the sound.
 - Without `UPSTASH_REDIS_REST_URL` / `_TOKEN` both routes return **204** and the client stays idle.
 - **No Postgres on this path:** a held DB connection or a short poll would keep the Neon compute awake.
 
