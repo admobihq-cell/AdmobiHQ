@@ -12,6 +12,7 @@ import { getCampaignReport } from "@/lib/analytics/report-queries"
 import { reportRequest } from "@/lib/analytics/report-request"
 import { jsonError, parseId } from "@/lib/api-utils"
 import { latin1 } from "@/lib/pdf/latin1"
+import { CUSTOMER_PDF_FOOTER } from "@/lib/pdf/primitives/brand"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
 
@@ -82,6 +83,7 @@ export async function GET(req: Request, { params }: Params) {
         }
       />,
       {
+        footer: CUSTOMER_PDF_FOOTER,
         metadata: {
           title: `Admobi - Campaign report - ${latin1(report.campaign.name)}`,
           authors: ["Admobi"],

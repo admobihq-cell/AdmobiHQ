@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import type { BillingDocumentInput } from "@workspace/ops-contracts"
 
 import { createBillingDocument } from "@/lib/billing/documents"
+import { sendEmail } from "@/lib/email/send-email"
 import { testDatabaseUrl } from "@/lib/test-database-url"
 import { POST as preview } from "../preview/route"
 import { POST as convert } from "./convert/route"
@@ -22,6 +23,7 @@ vi.mock("@/lib/api-utils", async () => {
   }
 })
 vi.mock("@/lib/audit", () => ({ auditFromOpsUser: vi.fn(async () => undefined) }))
+vi.mock("@/lib/email/send-email", () => ({ sendEmail: vi.fn(async () => ({ success: true })) }))
 
 const params = (id: number) => ({ params: Promise.resolve({ id: String(id) }) })
 const post = (body: unknown) => new Request("http://localhost/x", { method: "POST", body: JSON.stringify(body) })
@@ -73,6 +75,36 @@ describe.skipIf(!databaseUrl)("billing document actions", { timeout: 60_000 }, (
     expect(sent.sentAt).not.toBeNull()
     expect(sent.customer).toMatchObject({ email: "finance@a.test", taxPin: "P0001" })
     expect((await status(doc.id, "send")).status).toBe(409)
+  })
+
+  it("emails the PDF to the customer when a document is sent", async () => {
+    vi.mocked(sendEmail).mockClear()
+    const doc = await createBillingDocument(input(), tag)
+    const sent = await (await status(doc.id, "send")).json()
+    expect(sent.emailedTo).toBe("finance@a.test")
+    expect(sendEmail).toHaveBeenCalledTimes(1)
+    const [to, subject, html, options] = vi.mocked(sendEmail).mock.calls[0]!
+    expect(to).toBe("finance@a.test")
+    expect(subject).toContain(sent.number)
+    expect(html).toContain(sent.number)
+    expect(options?.attachments?.[0]?.filename).toMatch(/\.pdf$/)
+    expect(Buffer.from(options!.attachments![0]!.content, "base64").subarray(0, 5).toString()).toBe("%PDF-")
+  })
+
+  it("still sends when the email fails or there is no address, and says so", async () => {
+    vi.mocked(sendEmail).mockClear()
+    vi.mocked(sendEmail).mockRejectedValueOnce(new Error("Resend down"))
+    const failing = await createBillingDocument(input(), tag)
+    const res = await status(failing.id, "send")
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ status: "sent", emailedTo: null, emailError: expect.stringMatching(/couldn't/i) })
+
+    const prospect = await createBillingDocument(
+      input({ orgId: null, customer: { name: "Walk-in", contact: "", email: "", phone: "", address: "", taxPin: "", reference: "" } }),
+      tag
+    )
+    const noAddress = await (await status(prospect.id, "send")).json()
+    expect(noAddress).toMatchObject({ status: "sent", emailedTo: null, emailError: expect.stringMatching(/no email/i) })
   })
 
   it("only accepts quotes; a mistaken draft can be voided without ever being shown", async () => {

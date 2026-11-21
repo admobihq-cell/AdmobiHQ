@@ -63,7 +63,14 @@ export function DocumentActions({
     mutationFn: (action: BillingStatusAction) => client.billingDocuments.changeStatus(doc.id, action),
     onSuccess: async (next, action) => {
       await adopt(next)
-      toast.success(`${DONE[action]}: ${next.number}`)
+      if (action === "send" && next.emailError) {
+        // The send went through; only the email didn't. Say so plainly and keep it on screen.
+        toast.warning(`${DONE.send}: ${next.number}`, { description: next.emailError, duration: 10_000 })
+      } else if (action === "send" && next.emailedTo) {
+        toast.success(`${DONE.send}: ${next.number}`, { description: `Emailed to ${next.emailedTo} with the PDF attached.` })
+      } else {
+        toast.success(`${DONE[action]}: ${next.number}`)
+      }
     },
     onError: (error) => toast.error(formatApiError(error)),
   })
@@ -146,7 +153,11 @@ export function DocumentActions({
             <AlertDialogDescription>
               {confirm === "void"
                 ? "This can't be undone. The number stays used, and the PDF will show VOID."
-                : `The document locks once sent. ${audience} Nothing is emailed.`}
+                : `The document locks once sent. ${audience} ${
+                    doc.customer.email
+                      ? `The PDF will be emailed to ${doc.customer.email}.`
+                      : "There's no email address on it, so nothing will be emailed."
+                  }`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

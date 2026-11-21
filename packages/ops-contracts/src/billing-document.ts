@@ -145,6 +145,9 @@ export function formatBillingNumber(kind: BillingDocumentKind, year: number, seq
 
 /* ---- DTOs ---- */
 
+/** Extra fields on a `send` response: who the PDF was emailed to, or why it wasn't. */
+export type BillingSendOutcome = { emailedTo?: string | null; emailError?: string | null }
+
 export type BillingPaymentDto = {
   id: number
   amountKes: number

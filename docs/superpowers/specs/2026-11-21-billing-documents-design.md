@@ -399,3 +399,8 @@ following existing patterns in `apps/ops/components/finances/*` and
 - **Preview of a fixed document.** A sent or void document's preview renders the saved copy and ignores the request body, so a real number and PAID pill can never be printed over edited lines.
 - **Two-decimal inputs.** Discount and tax percentages and payment amounts take at most 2 decimals, matching their `DECIMAL(_,2)` columns, so stored and recomputed totals can't disagree.
 - **No default organization.** A new document starts with no org picked; it only becomes visible to an advertiser once ops explicitly chooses their org and sends it.
+
+## Addendum (2026-11-21, user follow-ups)
+
+- **Email on send.** Reverses the "no emailing" non-goal. Mark as sent now emails the PDF (attached) to the document's customer address, using `BillingDocumentSent`. A missing address or a mail failure never undoes the send; the response carries `emailedTo` / `emailError` and ops sees it in the toast.
+- **One layout for every customer finance PDF.** Paystack receipts (`/v1/customer/finance/invoices/[id]/pdf`), the campaign budget statement, monthly wallet statements, proof of play and the campaign report now use the invoice look through `lib/pdf/primitives/brand.tsx`, with the customer footer instead of "confidential, internal use only". Ops' internal table exports keep `DocumentShell`.

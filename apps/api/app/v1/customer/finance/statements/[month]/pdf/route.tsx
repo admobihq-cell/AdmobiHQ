@@ -5,6 +5,7 @@ import { exportFileName, formatKes } from "@workspace/ops-contracts"
 import { listStatements, listTransactions, monthBounds } from "@/lib/analytics/finance-queries"
 import { jsonError, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { latin1 } from "@/lib/pdf/latin1"
+import { CUSTOMER_PDF_FOOTER } from "@/lib/pdf/primitives/brand"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
 
@@ -49,6 +50,7 @@ export async function GET(_req: Request, { params }: Params) {
         footnote="This document is a statement of account activity, not a tax invoice."
       />,
       {
+        footer: CUSTOMER_PDF_FOOTER,
         metadata: {
           title: `Admobi - Wallet statement ${month}`,
           authors: ["Admobi"],
