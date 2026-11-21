@@ -36,6 +36,7 @@ import { TourProvider } from "@workspace/ui/components/tour-provider"
 
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { OpsCommandPalette } from "@/components/shell/ops-command-palette"
+import { OpsLiveUpdates } from "@/components/shell/ops-live-updates"
 import {
   allNavItems,
   canSeeNavItem,
@@ -224,6 +225,7 @@ export function OpsShell({
               <ThemeToggle />
             </div>
           </header>
+          <OpsLiveUpdates role={role} permissions={permissions} />
           <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 md:p-6">
             {children}
           </main>
