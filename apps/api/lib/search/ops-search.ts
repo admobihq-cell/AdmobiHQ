@@ -1,6 +1,4 @@
 import {
-  SEARCH_GROUP_LIMIT,
-  escapeLike,
   formatKes,
   formatLabel,
   type OpsPermission,
@@ -10,21 +8,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { prisma } from "@/lib/prisma"
-
-const take = SEARCH_GROUP_LIMIT
-// Prisma's `contains` passes % and _ straight into ILIKE, so escape them or "50%" also matches "500".
-const ci = (value: string) => ({ contains: escapeLike(value), mode: "insensitive" as const })
-const join = (...parts: Array<string | null | undefined>) => parts.filter(Boolean).join(" · ")
-
-/** Exact-id hits first, then the rest, with duplicates (the id hit also matching by text) dropped. */
-function ranked<T extends { id: number }>(rows: T[], exactId: number | null, toHit: (row: T) => SearchHit): SearchHit[] {
-  const sorted = [...rows].sort((a, b) => Number(b.id === exactId) - Number(a.id === exactId))
-  const seen = new Set<number>()
-  return sorted
-    .filter((row) => (seen.has(row.id) ? false : (seen.add(row.id), true)))
-    .slice(0, take)
-    .map(toHit)
-}
+import { ci, idOr, join, ranked, take } from "@/lib/search/shared"
 
 type GroupDef = {
   key: string
@@ -34,8 +18,6 @@ type GroupDef = {
   run: (q: ParsedSearch) => Promise<SearchHit[]>
 }
 
-const idOr = (q: ParsedSearch) => (q.numericId !== null ? [{ id: q.numericId }] : [])
-
 const GROUPS: GroupDef[] = [
   {
     key: "sos",
@@ -43,7 +25,7 @@ const GROUPS: GroupDef[] = [
     permissions: ["safety"],
     run: async (q) => {
       const rows = await prisma.safetyIncident.findMany({
-        where: { OR: [...idOr(q), { driver_name: ci(q.text) }, { driver_phone: ci(q.text) }] },
+        where: { OR: [...idOr(q.numericId), { driver_name: ci(q.text) }, { driver_phone: ci(q.text) }] },
         orderBy: { created_at: "desc" },
         take: take + 1,
         select: { id: true, type: true, status: true, driver_name: true },
@@ -63,7 +45,7 @@ const GROUPS: GroupDef[] = [
     permissions: ["support"],
     run: async (q) => {
       const rows = await prisma.supportCase.findMany({
-        where: { OR: [...idOr(q), { subject: ci(q.text) }, { contact_name: ci(q.text) }, { contact_email: ci(q.text) }] },
+        where: { OR: [...idOr(q.numericId), { subject: ci(q.text) }, { contact_name: ci(q.text) }, { contact_email: ci(q.text) }] },
         orderBy: { updated_at: "desc" },
         take: take + 1,
         select: { id: true, subject: true, status: true, contact_name: true },
@@ -83,7 +65,7 @@ const GROUPS: GroupDef[] = [
     permissions: ["campaigns"],
     run: async (q) => {
       const rows = await prisma.campaign.findMany({
-        where: { OR: [...idOr(q), { name: ci(q.text) }, { org: { name: ci(q.text) } }] },
+        where: { OR: [...idOr(q.numericId), { name: ci(q.text) }, { org: { name: ci(q.text) } }] },
         orderBy: { updated_at: "desc" },
         take: take + 1,
         select: { id: true, name: true, status: true, org: { select: { name: true } } },
@@ -186,7 +168,7 @@ const GROUPS: GroupDef[] = [
       const rows = await prisma.payout.findMany({
         where: {
           OR: [
-            ...idOr(q),
+            ...idOr(q.numericId),
             ...(q.payoutReference ? [{ reference: q.payoutReference }] : []),
             { reference: ci(q.text) },
             { driverProfile: { full_name: ci(q.text) } },
@@ -224,7 +206,7 @@ const GROUPS: GroupDef[] = [
     permissions: ["campaigns"],
     run: async (q) => {
       const rows = await prisma.advertiserOrg.findMany({
-        where: { OR: [...idOr(q), { name: ci(q.text) }, { billing_email: ci(q.text) }] },
+        where: { OR: [...idOr(q.numericId), { name: ci(q.text) }, { billing_email: ci(q.text) }] },
         orderBy: { updated_at: "desc" },
         take: take + 1,
         select: { id: true, name: true, billing_email: true },
@@ -244,7 +226,7 @@ const GROUPS: GroupDef[] = [
     permissions: ["driver_applications"],
     run: async (q) => {
       const rows = await prisma.driverProfile.findMany({
-        where: { OR: [...idOr(q), { full_name: ci(q.text) }, { phone: ci(q.text) }] },
+        where: { OR: [...idOr(q.numericId), { full_name: ci(q.text) }, { phone: ci(q.text) }] },
         orderBy: { created_at: "desc" },
         take: take + 1,
         select: { id: true, full_name: true, city: true, status: true },

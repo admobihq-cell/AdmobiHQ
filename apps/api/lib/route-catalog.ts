@@ -208,6 +208,8 @@ const NOTES: Record<string, string> = {
   "/v1/customer/reports/overview": "Delivery headline numbers, pacing and campaign health",
   "/v1/customer/reports/delivery": "Plays scheduled, delivered and missed, with CSV export",
   "/v1/customer/reports/audience": "Market and daypart reach and impressions",
+  "/v1/customer/search": "Search the organization's own records the caller may see (command palette)",
+  "/v1/driver/search": "Search the driver's own payouts, cases, SOS reports, documents and notifications (command palette)",
   "/v1/customer/reports/spend": "Spend, cost per 1,000 and budget burn",
   "/v1/customer/reports/campaigns": "Campaign report rows with health, with CSV export",
   "/v1/customer/reports/campaigns/[id]": "Full report for one campaign",
