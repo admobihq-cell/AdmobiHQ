@@ -149,6 +149,16 @@
     }
 }
 
+/* Live toast countdown bar (packages/ui live-toast.tsx). Transform only. */
+@keyframes live-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* Landing system illustrations: route draw, staggered rise, live-signal pulse.
    All transform/opacity only. Gated by [data-visible="true"] from <InView>. */
 @keyframes route-draw {
