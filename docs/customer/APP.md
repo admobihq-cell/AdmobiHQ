@@ -104,6 +104,12 @@ The app holds a live stream (`GET /v1/customer/live`) while it's open. When ops 
 
 **Settings → Notifications → Play a sound with live alerts** mutes the tone on this device. With several tabs open, only one plays it. Mapping and tone rules are in `packages/ops-contracts/src/live-routing.ts`.
 
+### Dashboard charts
+
+- **Billing → Overview** ends with **Where your money went**, a Sankey from each campaign's spend to what it paid for. If the two totals differ (rounding, folded campaigns), the short side gets an **Unallocated** node so it still balances (`spendFlow`).
+- **Reports → Spend:** **Spend and cost per 1,000** is two stacked panels: daily spend as columns over cost per 1,000 as a line, on one day axis with one crosshair. It uses `costPerThousandTrend[].spend` from `/v1/customer/reports/spend`, and the table view lists both.
+- **Everywhere:** charts use the shared mark system in `DESIGN.md`.
+
 ### Loading skeletons
 
 Every page here is a thin server component wrapping a client component that

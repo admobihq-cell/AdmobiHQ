@@ -35,6 +35,20 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
 - Buttons: [`@workspace/ui` Button](../packages/ui/src/components/button.tsx) — primary for main CTAs, outline/secondary for alternatives.
 - Inputs: shared `Input` + `Label` in UI package; rounded, bordered, focus ring using `--ring`.
 - Charts: every `ChartCard` that can say its point in one sentence passes `takeaway` (e.g. "Westlands brought the most impressions: 38% of the total"), shown above the plot. A missing takeaway means there was nothing honest to say, never a placeholder. KPI change pills read "vs last period" beside the percentage.
+- Chart marks (the shared kit in `packages/ui/src/components/charts`, constants in `shared.tsx` `MARK`):
+  - **Bars and columns:** at most 24 px thick, with a 4 px rounded end and a square baseline, on a faint full-height `--chart-track`.
+  - **Lines:** 2 px. Hovered points are 8 px dots with a 2 px surface ring.
+  - **Areas:** a wash that fades from 18% at the top to nothing.
+  - **Hover:** the active mark stays full strength and the rest dim to 35% (`useActiveMark`), with a hairline crosshair on time series.
+  - **Y-axes:** compact (10K, 2.5M) once values reach 10,000 (`axisFormatter`), so labels never wrap.
+  - **Headline figures** count up (`CountUp`).
+  - **Forms we use:** cash-flow `SankeyChart`, `SyncedPanels` (two measures of different scale as stacked panels with one crosshair), `ColumnChart`, contributions-style `ActivityGrid` (one hue), and the ribbon `FunnelBars`.
+  - **Forms we don't use, deliberately:**
+    - Dual y-axes, which invite comparisons the data doesn't support (use `SyncedPanels`).
+    - Radial gauges (use a meter).
+    - Treemaps (use `RankBars`).
+    - A per-card period switch (the `DashboardToolbar` range is the only one).
+  - **Palette:** the five `--chart-*` tokens pass the dataviz validator in light and dark (worst adjacent colour-blind ΔE 10.4 / 10.9). Re-run it if you change them.
 - FAQs: native `<details>` / `<summary>` for accessibility without custom accordion scripts.
 
 ## Layout

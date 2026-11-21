@@ -45,6 +45,22 @@ Ops holds a live stream (`GET /v1/ops/live`). Every event refetches the affected
 
 The **Alert sound** button on `/notifications` mutes tones on this device.
 
+### Dashboard charts
+
+**Finances → Overview** opens with two cards:
+- **Revenue** (two columns wide):
+  - The revenue figure with its change and **Net margin** with a % of revenue pill.
+  - A daily revenue column chart (monthly past 120 days; `trend` in `queryFinanceOverview`, filled by `bucketSeries`).
+  - Tiles for Driver payouts, and for Tools and Paystack fees.
+- **Cash position:** Money in with its change and a trend line, Wallet funds held, and the live Paystack transfer balance.
+
+Below them, **Where revenue went** is a cash-flow Sankey (revenue categories → Revenue → driver payouts, Paystack fees, tools, net margin). A loss shows as a **Shortfall** source instead of a negative margin (`financeFlow` in `@workspace/ops-contracts`).
+
+On the other dashboards:
+- **Support & safety:** **When cases come in**, an activity grid of cases opened per day.
+- **Fleet:** **Payouts by month** is stacked columns.
+- **Funnels** use the ribbon style.
+
 ### SOS (driver safety incidents)
 
 Sidebar **SOS** (permission: `safety`), placed above Support — an emergency
