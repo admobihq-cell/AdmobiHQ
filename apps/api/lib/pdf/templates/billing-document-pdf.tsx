@@ -1,8 +1,17 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react"
-import { PageNumber, TotalPages } from "takumi-pdf/primitives"
 
-import { ADMOBI_COMPANY } from "@/lib/billing/company"
-import { WORDMARK_SRC } from "@/lib/pdf/logo-typemark"
+import {
+  BrandHeader,
+  BrandPage,
+  CUSTOMER_PDF_FOOTER,
+  INK,
+  LABEL,
+  MUTED,
+  NUMERIC,
+  TABLE_CELL,
+  TABLE_HEAD_CELL,
+  TotalBar,
+} from "@/lib/pdf/primitives/brand"
 
 export type PdfPill = {
   label: "UNPAID" | "OVERDUE" | "PART-PAID" | "PAID" | "VOID" | "DRAFT"
@@ -34,25 +43,11 @@ export type BillingDocumentPdfProps = {
   terms: string
 }
 
-/* SwiftQuote's look: black and gray type, the brand colour only in the logo. */
-const INK = "#0a0a0a"
-const MUTED = "#6b7280"
-const HAIRLINE = "#e5e7eb"
-
 const PILL_COLORS: Record<PdfPill["tone"], { color: string; backgroundColor: string }> = {
   red: { color: "#b91c1c", backgroundColor: "#fee2e2" },
   amber: { color: "#b45309", backgroundColor: "#fef3c7" },
   green: { color: "#15803d", backgroundColor: "#dcfce7" },
   grey: { color: "#4b5563", backgroundColor: "#f3f4f6" },
-}
-
-/** Letter-spaced uppercase section label ("PREPARED FOR", "NOTE"). */
-const LABEL: CSSProperties = {
-  fontSize: 8.5,
-  fontWeight: 700,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  color: INK,
 }
 
 const kesFormat = new Intl.NumberFormat("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -62,6 +57,9 @@ const pct = (value: number) => `${Number(value.toFixed(2))}%`
 
 /** Splits typed multi-line text (addresses, notes) into lines, dropping blanks. */
 const linesOf = (text: string) => text.split(/\r?\n/).filter((line) => line.trim() !== "")
+
+/** Kept for existing imports; every customer document shares one footer. */
+export const BILLING_PDF_FOOTER = CUSTOMER_PDF_FOOTER
 
 function Paragraphs({ text, style }: { text: string; style?: CSSProperties }): ReactElement {
   return (
@@ -113,38 +111,13 @@ function Section({ label, children }: { label: string; children: ReactNode }): R
   )
 }
 
-const cell: CSSProperties = { padding: "11px 10px", verticalAlign: "top", borderBottom: `1px solid ${HAIRLINE}` }
-const headCell: CSSProperties = { ...LABEL, padding: "0 10px 9px", borderBottom: `1.5px solid ${INK}` }
-const right: CSSProperties = { textAlign: "right", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }
-
-/** Repeating per-page footer for customer documents. */
-export const BILLING_PDF_FOOTER: ReactElement = (
-  // The footer band spans the full page width; 56px lines it up with the body
-  // (48px page margin + the body's 8px inset).
-  <div style={{ display: "flex", justifyContent: "space-between", width: "100%", padding: "0 56px 18px", fontSize: 8.5, color: "#9ca3af" }}>
-    <span>Admobi Media · admobihq.com</span>
-    <span>
-      Page <PageNumber /> of <TotalPages />
-    </span>
-  </div>
-)
-
 /**
  * A quote or invoice, laid out after the SwiftQuote sample the user supplied.
- * Every string must already be latin1()-safe — the caller (pdf-props.ts) does
+ * Every string must already be latin1()-safe — the caller (pdf-props.tsx) does
  * that, so this stays a pure layout.
  */
 export function BillingDocumentPdf(props: BillingDocumentPdfProps): ReactElement {
   const { kind, customer } = props
-  const company = ADMOBI_COMPANY
-  const companyLines = [
-    company.contactPerson,
-    company.city,
-    company.email,
-    company.phone,
-    company.website,
-    company.taxPin ? `KRA PIN ${company.taxPin}` : "",
-  ].filter(Boolean)
   const customerLines = [
     customer.contact,
     ...linesOf(customer.address),
@@ -166,29 +139,12 @@ export function BillingDocumentPdf(props: BillingDocumentPdfProps): ReactElement
   if (props.feeKes > 0) totals.push([props.feeLabel || "Additional fee", ksh(props.feeKes)])
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", fontSize: 10.5, color: INK, padding: "8px 8px 0" }}>
-      {/* Header: logo + sender on the left, title + number + pill on the right */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {/* Source is 201x112 — fixed size keeps the aspect ratio */}
-          <img src={WORDMARK_SRC} alt="Admobi" style={{ width: 92, height: 51.3 }} />
-          <span style={{ fontSize: 19, fontWeight: 700, marginTop: 10 }}>{company.name}</span>
-          <div style={{ display: "flex", flexDirection: "column", color: MUTED, marginTop: 6, lineHeight: 1.55 }}>
-            {companyLines.map((line) => (
-              <span key={line}>{line}</span>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-          <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "0.01em" }}>
-            {kind === "quote" ? "QUOTATION" : "INVOICE"}
-          </span>
-          <span style={{ fontSize: 10.5, fontWeight: 700, marginTop: 6 }}>{props.number ?? "DRAFT"}</span>
-          {props.pill ? <Pill pill={props.pill} /> : null}
-        </div>
-      </div>
-
-      <div style={{ borderTop: `1.5px solid ${INK}`, marginTop: 22, marginBottom: 22 }} />
+    <BrandPage>
+      <BrandHeader
+        title={kind === "quote" ? "Quotation" : "Invoice"}
+        subtitle={props.number ?? "DRAFT"}
+        badge={props.pill ? <Pill pill={props.pill} /> : null}
+      />
 
       {/* Who it's for + dates */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
@@ -208,24 +164,24 @@ export function BillingDocumentPdf(props: BillingDocumentPdfProps): ReactElement
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
-            <th style={{ ...headCell, textAlign: "left" }}>Description</th>
-            <th style={{ ...headCell, ...right, width: 60 }}>Qty</th>
-            <th style={{ ...headCell, ...right, width: 110 }}>Rate</th>
-            <th style={{ ...headCell, ...right, width: 120 }}>Amount</th>
+            <th style={{ ...TABLE_HEAD_CELL, textAlign: "left" }}>Description</th>
+            <th style={{ ...TABLE_HEAD_CELL, ...NUMERIC, width: 60 }}>Qty</th>
+            <th style={{ ...TABLE_HEAD_CELL, ...NUMERIC, width: 110 }}>Rate</th>
+            <th style={{ ...TABLE_HEAD_CELL, ...NUMERIC, width: 120 }}>Amount</th>
           </tr>
         </thead>
         <tbody>
           {props.lines.map((line, i) => (
             <tr key={i} style={{ breakInside: "avoid" }}>
-              <td style={cell}>
+              <td style={TABLE_CELL}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontWeight: 700 }}>{line.description}</span>
                   {line.unit ? <span style={{ color: MUTED, fontSize: 9, marginTop: 3 }}>{line.unit}</span> : null}
                 </div>
               </td>
-              <td style={{ ...cell, ...right }}>{qty(line.quantity)}</td>
-              <td style={{ ...cell, ...right }}>{ksh(line.unitPriceKes)}</td>
-              <td style={{ ...cell, ...right }}>{ksh(line.amountKes)}</td>
+              <td style={{ ...TABLE_CELL, ...NUMERIC }}>{qty(line.quantity)}</td>
+              <td style={{ ...TABLE_CELL, ...NUMERIC }}>{ksh(line.unitPriceKes)}</td>
+              <td style={{ ...TABLE_CELL, ...NUMERIC }}>{ksh(line.amountKes)}</td>
             </tr>
           ))}
         </tbody>
@@ -251,33 +207,21 @@ export function BillingDocumentPdf(props: BillingDocumentPdfProps): ReactElement
           {totals.map(([label, value]) => (
             <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "0 10px 8px" }}>
               <span>{label}</span>
-              <span style={right}>{value}</span>
+              <span style={NUMERIC}>{value}</span>
             </div>
           ))}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: INK,
-              color: "#ffffff",
-              padding: "10px 12px",
-              marginTop: 4,
-              fontWeight: 700,
-            }}
-          >
-            <span style={{ fontSize: 14 }}>Total</span>
-            <span style={{ ...right, fontSize: 14 }}>{ksh(props.totalKes)}</span>
+          <div style={{ display: "flex", flexDirection: "column", marginTop: 4 }}>
+            <TotalBar label="Total" value={ksh(props.totalKes)} />
           </div>
           {props.paidKes !== null && props.balanceKes !== null ? (
             <div style={{ display: "flex", flexDirection: "column", marginTop: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "0 10px 6px" }}>
                 <span>Paid</span>
-                <span style={right}>{ksh(-props.paidKes)}</span>
+                <span style={NUMERIC}>{ksh(-props.paidKes)}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "0 10px", fontWeight: 700 }}>
                 <span>Balance due</span>
-                <span style={right}>{ksh(props.balanceKes)}</span>
+                <span style={NUMERIC}>{ksh(props.balanceKes)}</span>
               </div>
             </div>
           ) : null}
@@ -300,6 +244,6 @@ export function BillingDocumentPdf(props: BillingDocumentPdfProps): ReactElement
           <Paragraphs text={props.terms} />
         </div>
       ) : null}
-    </div>
+    </BrandPage>
   )
 }

@@ -6,6 +6,7 @@ import { jsonError, requireCustomerPermissionAccess } from "@/lib/api-utils"
 import { buildBudgetStatement } from "@/lib/campaigns/campaign-statement"
 import { listOwnedCampaigns } from "@/lib/campaigns/campaign-store"
 import { CampaignStatementPdf } from "@/lib/pdf/templates/campaign-statement-pdf"
+import { CUSTOMER_PDF_FOOTER } from "@/lib/pdf/primitives/brand"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 
 /**
@@ -36,6 +37,7 @@ export async function GET() {
     const bytes = await renderPdf(
       <CampaignStatementPdf title="Campaign budget statement" {...statement} />,
       {
+        footer: CUSTOMER_PDF_FOOTER,
         metadata: {
           title: "Admobi — Campaign budget statement",
           authors: ["Admobi"],

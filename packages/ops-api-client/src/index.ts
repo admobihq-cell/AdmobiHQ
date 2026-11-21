@@ -6,6 +6,7 @@ import {
   type BillingDocumentListItemDto,
   type BillingDocumentOptionsDto,
   type BillingDocumentStatus,
+  type BillingSendOutcome,
   type BillingStatusAction,
   type RecordBillingPaymentInput,
   type AnnouncementDto,
@@ -294,7 +295,8 @@ export type OpsClient = {
     create: (body: BillingDocumentInput) => Promise<BillingDocumentDto>
     /** Drafts only; a sent document answers 409. */
     update: (id: number, body: BillingDocumentInput) => Promise<BillingDocumentDto>
-    changeStatus: (id: number, action: BillingStatusAction) => Promise<BillingDocumentDto>
+    /** Sending also emails the PDF to the customer; `emailedTo` / `emailError` say how that went. */
+    changeStatus: (id: number, action: BillingStatusAction) => Promise<BillingDocumentDto & BillingSendOutcome>
     /** Quote → new draft invoice. */
     convert: (id: number) => Promise<BillingDocumentDto>
     /** Append-only; never touches the wallet. */
@@ -813,7 +815,7 @@ export function createOpsClient(options: OpsClientOptions): OpsClient {
           body: JSON.stringify(body),
         }),
       changeStatus: (id, action) =>
-        request<BillingDocumentDto>(`${apiPrefix}/ops/billing-documents/${id}/status`, {
+        request<BillingDocumentDto & BillingSendOutcome>(`${apiPrefix}/ops/billing-documents/${id}/status`, {
           method: "POST",
           body: JSON.stringify({ action }),
         }),

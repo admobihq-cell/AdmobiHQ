@@ -7,8 +7,10 @@ import {
   type BillingDocumentKind,
   type BillingDocumentStatus,
   type BillingPaymentState,
+  type InvoiceDto,
 } from "@workspace/ops-contracts"
 
+import { ADMOBI_COMPANY } from "@/lib/billing/company"
 import { latin1 } from "@/lib/pdf/latin1"
 import { renderPdf } from "@/lib/pdf/render-pdf"
 import {
@@ -112,6 +114,63 @@ export function previewPdfProps(
     paidKes: saved?.paidKes ?? 0,
     paymentState: null,
   })
+}
+
+const RECEIPT_PILL: Record<InvoiceDto["status"], PdfPill> = {
+  issued: { label: "UNPAID", tone: "red" },
+  overdue: { label: "OVERDUE", tone: "red" },
+  paid: { label: "PAID", tone: "green" },
+  void: { label: "VOID", tone: "grey" },
+}
+
+/**
+ * A Paystack receipt (the `invoices` table) in the same layout as the invoices
+ * ops writes, so every invoice an advertiser downloads looks alike. The row is
+ * an immutable snapshot of what was billed; nothing is recomputed from it.
+ */
+export function receiptPdfProps(
+  invoice: InvoiceDto,
+  org: { name: string; billingEmail: string | null; taxPin: string | null }
+): BillingDocumentPdfProps {
+  const paid = invoice.status === "paid"
+  const taxPct = invoice.subtotalKes > 0 ? Math.round((invoice.taxKes / invoice.subtotalKes) * 10000) / 100 : 0
+  return {
+    kind: "invoice",
+    number: latin1(invoice.number),
+    pill: RECEIPT_PILL[invoice.status],
+    customer: {
+      name: latin1(org.name),
+      contact: "",
+      email: latin1(org.billingEmail),
+      phone: "",
+      address: "",
+      taxPin: latin1(org.taxPin),
+    },
+    issueDate: invoice.issuedOn,
+    dueDate: invoice.dueOn,
+    reference: invoice.periodStart === invoice.periodEnd ? "" : `Period ${invoice.periodStart} to ${invoice.periodEnd}`,
+    campaignName: invoice.campaignName ? latin1(invoice.campaignName) : null,
+    lines: invoice.lines.map((line) => ({
+      description: latin1(line.description),
+      unit: "",
+      quantity: 1,
+      unitPriceKes: line.amountKes,
+      amountKes: line.amountKes,
+    })),
+    subtotalKes: invoice.subtotalKes,
+    discountPct: 0,
+    discountKes: 0,
+    taxPct,
+    taxKes: invoice.taxKes,
+    feeLabel: "",
+    feeKes: 0,
+    totalKes: invoice.totalKes,
+    paidKes: paid ? invoice.totalKes : null,
+    balanceKes: paid ? 0 : null,
+    note: paid && invoice.paidAt ? `Paid online via Paystack on ${invoice.paidAt.slice(0, 10)}. Thank you.` : "",
+    paymentInstructions: paid ? "" : ADMOBI_COMPANY.defaults.paymentInstructions,
+    terms: "",
+  }
 }
 
 /** PDF bytes for a document, with the customer-facing footer. */
