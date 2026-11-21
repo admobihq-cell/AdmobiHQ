@@ -40,6 +40,7 @@ import { getOrg } from "@/lib/org-client"
 import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { customerTourChapters } from "@/lib/tour-chapters"
 import { NavUser } from "@/components/shell/nav-user"
+import { CustomerCommandPalette } from "@/components/shell/customer-command-palette"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { OrgNameNudge } from "@/components/shell/org-name-nudge"
 import { ProfileNameNudge } from "@/components/shell/profile-name-nudge"
@@ -189,6 +190,7 @@ export function AppShell({
                   </Link>
                 </OrgNameNudge>
               ) : null}
+              <CustomerCommandPalette enabledFlags={enabledFlags} />
               <NotificationBell />
               <ThemeToggle />
             </div>

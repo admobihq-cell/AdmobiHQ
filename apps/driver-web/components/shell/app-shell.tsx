@@ -35,6 +35,7 @@ import { navItemForPath, visibleNavItems } from "@/lib/navigation"
 import { driverTourChapters } from "@/lib/tour-chapters"
 import { BottomTabs } from "@/components/shell/bottom-tabs"
 import { NavUser } from "@/components/shell/nav-user"
+import { DriverCommandPalette } from "@/components/shell/driver-command-palette"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { SosFab } from "@/components/shell/sos-fab"
 import { VerificationBadge } from "@/components/shell/verification-badge"
@@ -135,6 +136,7 @@ export function AppShell({
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DriverBreadcrumbs pathname={pathname} />
             <div className="ml-auto flex items-center gap-1">
+              <DriverCommandPalette enabledFlags={enabledFlags} />
               <NotificationBell />
               <ThemeToggle />
             </div>
