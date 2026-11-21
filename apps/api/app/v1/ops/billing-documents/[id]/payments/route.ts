@@ -5,6 +5,7 @@ import { formatKes, recordBillingPaymentSchema } from "@workspace/ops-contracts"
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { recordBillingPayment } from "@/lib/billing/documents"
+import { notifyBillingDocument } from "@/lib/payments/money-notify"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -35,5 +36,6 @@ export async function POST(req: Request, { params }: Params) {
     summary: `Recorded ${formatKes(parsed.data.amountKes)} (${parsed.data.method}) against ${result.number}`,
     metadata: { amountKes: parsed.data.amountKes, method: parsed.data.method, reference: parsed.data.reference },
   })
+  await notifyBillingDocument(result, "payment")
   return NextResponse.json(result, { status: 201 })
 }

@@ -1,6 +1,7 @@
 import { ADVERTISER_PERMISSIONS, type AdvertiserPermission } from "@workspace/ops-contracts"
 
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { notifyUserPush } from "@/lib/push/user-push"
 
 async function memberHoldsPermission(
@@ -44,6 +45,8 @@ export async function fanOutCustomerCampaignNotice(input: {
   title: string
   body: string
   href: string
+  /** Whoever caused it, so their own open tab refreshes without toasting them. */
+  actorUserId?: string
 }): Promise<void> {
   const recipients =
     input.orgId != null
@@ -61,6 +64,12 @@ export async function fanOutCustomerCampaignNotice(input: {
       body: input.body,
       href: input.href,
     })),
+  })
+
+  await publishLive(unique.map(liveChannel.user), {
+    topic: "notification",
+    type: input.type,
+    ...(input.actorUserId ? { actor: input.actorUserId } : {}),
   })
 
   await Promise.all(
@@ -98,6 +107,8 @@ export async function notifyCustomerUsers(
       href: input.href,
     })),
   })
+
+  await publishLive(unique.map(liveChannel.user), { topic: "notification", type: input.type })
 
   await Promise.all(
     unique.map((userId) =>

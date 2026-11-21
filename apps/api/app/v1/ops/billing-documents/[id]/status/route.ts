@@ -5,6 +5,8 @@ import { billingStatusActionSchema } from "@workspace/ops-contracts"
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
 import { changeBillingStatus } from "@/lib/billing/documents"
+import { emailBillingDocument } from "@/lib/billing/send-document-email"
+import { notifyBillingDocument } from "@/lib/payments/money-notify"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -33,5 +35,12 @@ export async function POST(req: Request, { params }: Params) {
     summary: `${PAST[parsed.data.action]} ${result.kind} ${result.number}`,
     metadata: { action: parsed.data.action },
   })
+
+  // Sending emails the PDF to the customer. A mail failure doesn't undo the send;
+  // the response says what happened so ops can follow up by hand.
+  if (parsed.data.action === "send") {
+    await notifyBillingDocument(result, "sent")
+    return NextResponse.json({ ...result, ...(await emailBillingDocument(result)) })
+  }
   return NextResponse.json(result)
 }
