@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import type { BillingDocumentInput } from "@workspace/ops-contracts"
+import type { BillingDocumentInput, InvoiceDto } from "@workspace/ops-contracts"
 
-import { pillFor, previewPdfProps, toBillingPdfProps } from "./pdf-props"
+import { pillFor, previewPdfProps, receiptPdfProps, toBillingPdfProps } from "./pdf-props"
 
 describe("pillFor", () => {
   it("maps every kind, status and payment state to the agreed pill", () => {
@@ -16,6 +16,59 @@ describe("pillFor", () => {
     expect(pillFor("invoice", "sent", "overdue")).toEqual({ label: "OVERDUE", tone: "red" })
     expect(pillFor("invoice", "sent", "part_paid")).toEqual({ label: "PART-PAID", tone: "amber" })
     expect(pillFor("invoice", "sent", "paid")).toEqual({ label: "PAID", tone: "green" })
+  })
+})
+
+describe("receiptPdfProps", () => {
+  const receipt: InvoiceDto = {
+    id: 7,
+    number: "INV-2026-000123",
+    periodStart: "2026-11-02",
+    periodEnd: "2026-11-02",
+    campaignId: 3,
+    campaignName: "Westlands launch",
+    subtotalKes: 50000,
+    taxKes: 0,
+    totalKes: 50000,
+    status: "paid",
+    issuedOn: "2026-11-02",
+    dueOn: "2026-11-02",
+    paidAt: "2026-11-02T09:30:00.000Z",
+    lines: [{ description: "Campaign #3 budget: Westlands launch", amountKes: 50000 }],
+  }
+  const org = { name: "Nairoutes Ltd 🚕", billingEmail: "finance@nairoutes.test", taxPin: "P051234567Z" }
+
+  it("renders a Paystack receipt in the same invoice layout, marked PAID", () => {
+    const props = receiptPdfProps(receipt, org)
+    expect(props).toMatchObject({
+      kind: "invoice",
+      number: "INV-2026-000123",
+      pill: { label: "PAID", tone: "green" },
+      issueDate: "2026-11-02",
+      campaignName: "Westlands launch",
+      totalKes: 50000,
+      paidKes: 50000,
+      balanceKes: 0,
+    })
+    expect(props.customer).toMatchObject({ email: "finance@nairoutes.test", taxPin: "P051234567Z" })
+    expect(props.customer.name).not.toContain("🚕")
+    expect(props.lines).toEqual([
+      { description: "Campaign #3 budget: Westlands launch", unit: "", quantity: 1, unitPriceKes: 50000, amountKes: 50000 },
+    ])
+  })
+
+  it("maps open and overdue receipts to red pills without paid rows", () => {
+    expect(receiptPdfProps({ ...receipt, status: "issued", paidAt: null }, org)).toMatchObject({
+      pill: { label: "UNPAID", tone: "red" },
+      paidKes: null,
+    })
+    expect(receiptPdfProps({ ...receipt, status: "overdue", paidAt: null }, org).pill).toEqual({ label: "OVERDUE", tone: "red" })
+    expect(receiptPdfProps({ ...receipt, status: "void" }, org).pill).toEqual({ label: "VOID", tone: "grey" })
+  })
+
+  it("derives the VAT rate so the tax row reads correctly", () => {
+    const taxed = { ...receipt, subtotalKes: 10000, taxKes: 1600, totalKes: 11600 }
+    expect(receiptPdfProps(taxed, org)).toMatchObject({ taxPct: 16, taxKes: 1600, totalKes: 11600 })
   })
 })
 
