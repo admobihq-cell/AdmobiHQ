@@ -21,8 +21,8 @@ import { formatApiError } from "@workspace/ops-api-client"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
 import { Button } from "@workspace/ui/components/button"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { BillingDocumentForm } from "@/components/billing/billing-document-form"
+import { BillingEditorSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DocumentActions } from "@/components/billing/document-actions"
 import { PaymentsPanel } from "@/components/billing/payments-panel"
 import { PdfPreview } from "@/components/billing/pdf-preview"
@@ -96,12 +96,7 @@ export function BillingDocumentEditor({ id }: { id: number | null }) {
     return <ApiErrorBanner message={formatApiError(options.error ?? doc.error)} />
   }
   if (!options.data || (id !== null && !doc.data)) {
-    return (
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,560px)_1fr]">
-        <Skeleton className="h-[70vh] w-full" />
-        <Skeleton className="hidden h-[70vh] w-full lg:block" />
-      </div>
-    )
+    return <BillingEditorSkeleton />
   }
   return <EditorBody key={doc.data?.id ?? "new"} options={options.data} saved={doc.data ?? null} />
 }

@@ -7,6 +7,7 @@ import { formatApiError } from "@workspace/ops-api-client"
 
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import { useOpsClient } from "@/lib/ops-client"
+import { previewable } from "@/components/billing/preview-input"
 
 /**
  * The right-hand A4 panel. It shows the real PDF the server renders — the same
@@ -27,8 +28,14 @@ export function PdfPreview({
   const client = useOpsClient()
   // Serialised so a new-but-equal object from the form doesn't re-render the PDF.
   const settled = useDebouncedValue(JSON.stringify({ input, version }), 600)
-  const parsed = useMemo(() => billingDocumentInputSchema.safeParse(JSON.parse(settled).input), [settled])
-  const valid = parsed.success ? parsed.data : null
+  const parsed = useMemo(() => {
+    const raw = JSON.parse(settled).input
+    const strict = billingDocumentInputSchema.safeParse(raw)
+    if (strict.success) return { data: strict.data, draft: false }
+    const loose = billingDocumentInputSchema.safeParse(previewable(raw))
+    return { data: loose.success ? loose.data : null, draft: true }
+  }, [settled])
+  const valid = parsed.data
   const [url, setUrl] = useState<string | null>(null)
   // Which input the in-flight / last request was for, so loading is derived, not set in the effect.
   const [rendered, setRendered] = useState<string | null>(null)
@@ -61,6 +68,7 @@ export function PdfPreview({
     : failure?.for === settled
       ? failure.message
       : null
+  const note = !loading && !problem && parsed.draft ? "Placeholders fill unfinished fields" : null
 
   useEffect(() => () => {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current)
@@ -78,7 +86,7 @@ export function PdfPreview({
             </>
           ) : problem ? (
             <span className="text-destructive">{problem}</span>
-          ) : null}
+          ) : note}
         </span>
       </div>
       <div className="mx-auto flex w-full max-w-[720px] flex-1 items-start justify-center">

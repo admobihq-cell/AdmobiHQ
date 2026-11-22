@@ -13,7 +13,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { BillingDocumentsSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { billingPillProps, formatDay } from "@/components/finances/billing-status"
 import { matchesSearch } from "@/lib/format"
 import { useOpsClient } from "@/lib/ops-client"
@@ -102,12 +102,7 @@ export function BillingDocumentsTab() {
   )
 
   if (query.isPending) {
-    return (
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    )
+    return <BillingDocumentsSkeleton />
   }
   if (query.isError) return <ApiErrorBanner message={formatApiError(query.error)} />
 
