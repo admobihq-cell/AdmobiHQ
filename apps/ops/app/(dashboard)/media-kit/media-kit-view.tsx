@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
+import { EntityPage, SimpleFormSheet } from "@/components/entity/entity-page"
 import {
   MEDIA_KIT_FORM_FIELDS,
   mediaKitFormFromRecord,
@@ -58,7 +58,7 @@ export function MediaKitView({ initialData }: MediaKitViewProps) {
         { key: "created_at", label: "Date", render: (r) => formatDateTime(r.created_at) },
       ]}
       renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
-        <SimpleFormDialog
+        <SimpleFormSheet
           open={open}
           onOpenChange={onOpenChange}
           title={initial ? "Edit request" : "Add request"}

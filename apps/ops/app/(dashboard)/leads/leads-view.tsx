@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
+import { EntityPage, SimpleFormSheet } from "@/components/entity/entity-page"
 import { StatusBadge } from "@/components/entity/status-badge"
 import {
   LEAD_FORM_FIELDS,
@@ -165,7 +165,7 @@ export function LeadsView({ initialData }: LeadsViewProps) {
         },
       ]}
       renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
-        <SimpleFormDialog
+        <SimpleFormSheet
           open={open}
           onOpenChange={onOpenChange}
           title={initial ? "Edit lead" : "Add lead"}

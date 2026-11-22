@@ -20,14 +20,6 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -35,6 +27,14 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@workspace/ui/components/sheet"
 import {
   Select,
   SelectContent,
@@ -56,6 +56,11 @@ import { PageHero } from "@/components/ui/page-hero"
 import { TablePagination } from "@/components/ui/table-pagination"
 
 const DEFAULT_PAGE_SIZE = 25
+
+// Floating side-sheet layout: fixed header and footer, the body scrolls.
+export const SHEET_HEADER = "gap-1 border-b px-5 pt-5 pb-4"
+export const SHEET_BODY = "flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
+export const SHEET_FOOTER = "mt-0 flex-row justify-end gap-2 border-t bg-muted/30 px-5 py-3"
 
 export type ColumnDef<T> = {
   key: string
@@ -525,67 +530,70 @@ export function EntityPage<T extends { id: number }>({
         saving,
       })}
 
-      <Dialog open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <Sheet open={viewing !== null} onOpenChange={(open) => !open && setViewing(null)}>
+        <SheetContent floating>
           {viewing && (
             <>
-              <DialogHeader>
-                <DialogTitle>
+              <SheetHeader className={SHEET_HEADER}>
+                <SheetTitle className="pr-8 text-lg font-semibold text-balance">
                   {getRecordTitle?.(viewing) ?? `Record #${viewing.id}`}
-                </DialogTitle>
-                {"created_at" in viewing && (
-                  <DialogDescription>
+                </SheetTitle>
+                {"created_at" in viewing ? (
+                  <SheetDescription>
                     Submitted{" "}
                     {formatDateTime(
                       (viewing as T & { created_at?: string }).created_at,
                     )}
-                  </DialogDescription>
+                  </SheetDescription>
+                ) : (
+                  <SheetDescription className="sr-only">Record details</SheetDescription>
                 )}
-              </DialogHeader>
-              <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(0,7rem)_1fr]">
-                {detailRows.map((field) => (
-                  <div key={field.key} className="contents">
-                    <dt className="text-muted-foreground">{field.label}</dt>
-                    <dd className="min-w-0 break-words font-medium">
-                      {field.render(viewing)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              {statusBulkOptions?.length &&
-              "status" in viewing &&
-              viewing.status != null ? (
-                <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <span className="text-muted-foreground text-sm">Quick status</span>
-                  {statusBulkOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={
-                        (viewing as T & { status?: string }).status === option.value
-                          ? "default"
-                          : "outline"
-                      }
-                      disabled={saving}
-                      onClick={() => void handleQuickStatusChange(option.value)}
+              </SheetHeader>
+              <div className={SHEET_BODY}>
+                {statusBulkOptions?.length &&
+                "status" in viewing &&
+                viewing.status != null ? (
+                  <section className="flex flex-col gap-2 rounded-xl border bg-muted/30 p-3">
+                    <span className="text-xs font-medium text-muted-foreground">Status</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {statusBulkOptions.map((option) => (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          size="sm"
+                          variant={
+                            (viewing as T & { status?: string }).status === option.value
+                              ? "default"
+                              : "outline"
+                          }
+                          disabled={saving}
+                          onClick={() => void handleQuickStatusChange(option.value)}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+                <dl className="divide-y">
+                  {detailRows.map((field) => (
+                    <div
+                      key={field.key}
+                      className="grid grid-cols-[minmax(0,8rem)_1fr] gap-3 py-2.5 first:pt-0 last:pb-0"
                     >
-                      {option.label}
-                    </Button>
+                      <dt className="text-muted-foreground">{field.label}</dt>
+                      <dd className="min-w-0 break-words font-medium">
+                        {field.render(viewing)}
+                      </dd>
+                    </div>
                   ))}
-                </div>
-              ) : null}
-              <DialogFooter className="gap-2 sm:gap-0">
+                </dl>
+              </div>
+              <SheetFooter className={SHEET_FOOTER}>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => setViewing(null)}
-                >
-                  Close
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
+                  variant="ghost"
+                  className="mr-auto text-destructive hover:text-destructive"
                   onClick={() => {
                     setDeleteTarget(viewing)
                     setViewing(null)
@@ -593,6 +601,9 @@ export function EntityPage<T extends { id: number }>({
                 >
                   <Trash2 data-icon="inline-start" />
                   Delete
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setViewing(null)}>
+                  Close
                 </Button>
                 <Button
                   type="button"
@@ -604,11 +615,11 @@ export function EntityPage<T extends { id: number }>({
                 >
                   Edit
                 </Button>
-              </DialogFooter>
+              </SheetFooter>
             </>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
@@ -666,7 +677,7 @@ export function EntityPage<T extends { id: number }>({
   )
 }
 
-export function SimpleFormDialog({
+export function SimpleFormSheet({
   open,
   onOpenChange,
   title,
@@ -703,18 +714,20 @@ export function SimpleFormDialog({
   }, [open, initial, fields])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent floating>
+        <SheetHeader className={SHEET_HEADER}>
+          <SheetTitle className="pr-8 text-lg font-semibold">{title}</SheetTitle>
+          <SheetDescription className="sr-only">{title}</SheetDescription>
+        </SheetHeader>
         <form
-          className="flex flex-col gap-4"
+          className="flex min-h-0 flex-1 flex-col"
           onSubmit={(e) => {
             e.preventDefault()
             void onSubmit(values)
           }}
         >
+          <div className={SHEET_BODY}>
           {fields.map((field) => (
             <div key={field.name} className="flex flex-col gap-1.5">
               <Label htmlFor={field.name}>{field.label}</Label>
@@ -761,16 +774,17 @@ export function SimpleFormDialog({
               )}
             </div>
           ))}
-          <DialogFooter>
+          </div>
+          <SheetFooter className={SHEET_FOOTER}>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={saving} loading={saving}>
               Save
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
+import { EntityPage, SimpleFormSheet } from "@/components/entity/entity-page"
 import {
   WAITLIST_FORM_FIELDS,
   waitlistFormFromRecord,
@@ -61,7 +61,7 @@ export function WaitlistView({ initialData }: WaitlistViewProps) {
         { key: "created_at", label: "Joined", render: (r) => formatDateTime(r.created_at) },
       ]}
       renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
-        <SimpleFormDialog
+        <SimpleFormSheet
           open={open}
           onOpenChange={onOpenChange}
           title={initial ? "Edit waitlist entry" : "Add to waitlist"}

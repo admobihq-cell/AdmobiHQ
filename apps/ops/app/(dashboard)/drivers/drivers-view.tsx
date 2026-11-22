@@ -1,6 +1,6 @@
 "use client"
 
-import { EntityPage, SimpleFormDialog } from "@/components/entity/entity-page"
+import { EntityPage, SimpleFormSheet } from "@/components/entity/entity-page"
 import { StatusBadge } from "@/components/entity/status-badge"
 import {
   DRIVER_FORM_FIELDS,
@@ -148,7 +148,7 @@ export function DriversView({ initialData }: DriversViewProps) {
         },
       ]}
       renderForm={({ open, onOpenChange, initial, onSubmit, saving }) => (
-        <SimpleFormDialog
+        <SimpleFormSheet
           open={open}
           onOpenChange={onOpenChange}
           title={initial ? "Edit driver" : "Add driver"}

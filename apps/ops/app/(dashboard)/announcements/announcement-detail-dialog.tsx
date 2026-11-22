@@ -11,14 +11,15 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@workspace/ui/components/sheet"
 
+import { SHEET_BODY, SHEET_FOOTER, SHEET_HEADER } from "@/components/entity/entity-page"
 import { formatDateTime } from "@/lib/format"
 
 import { AnnouncementPreview, hasTemplateTokens } from "./announcement-preview"
@@ -117,17 +118,19 @@ export function AnnouncementDetailDialog({
   deleting = false,
 }: AnnouncementDetailDialogProps) {
   return (
-    <Dialog open={a !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+    <Sheet open={a !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent floating className="sm:max-w-lg">
         {a ? (
           <>
-            <DialogHeader>
-              <DialogTitle className="pr-8 text-balance">{a.title}</DialogTitle>
-              <DialogDescription>
+            <SheetHeader className={SHEET_HEADER}>
+              <SheetTitle className="pr-8 text-lg font-semibold text-balance">{a.title}</SheetTitle>
+              <SheetDescription>
                 Sent {formatDateTime(a.created_at)}
                 {a.sent_by_email ? ` by ${a.sent_by_email}` : ""}
-              </DialogDescription>
-            </DialogHeader>
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className={SHEET_BODY}>
 
             {a.deleted_at ? (
               <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
@@ -137,7 +140,7 @@ export function AnnouncementDetailDialog({
               </p>
             ) : null}
 
-            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_17rem] md:gap-8">
+            <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-4">
                 <AnnouncementPreview
                   title={a.title}
@@ -176,12 +179,14 @@ export function AnnouncementDetailDialog({
               </div>
             </div>
 
-            <DialogFooter className="gap-2">
+            </div>
+
+            <SheetFooter className={SHEET_FOOTER}>
               {a.deleted_at ? null : (
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-destructive hover:text-destructive sm:mr-auto"
+                  className="text-destructive hover:text-destructive mr-auto"
                   disabled={deleting}
                   onClick={() => onDelete(a)}
                 >
@@ -196,10 +201,10 @@ export function AnnouncementDetailDialog({
                 <RotateCcw data-icon="inline-start" />
                 Resend
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </>
         ) : null}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
