@@ -79,7 +79,6 @@ export function StatementsTab() {
       columns={columns}
       rows={rows}
       rowKey={(r) => r.month}
-      footer={{ viewing: `Viewing ${rows.length} out of ${rows.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}
       empty={query.isPending ? "Loading statements." : NO_LEDGER_MESSAGE}
     />
   )

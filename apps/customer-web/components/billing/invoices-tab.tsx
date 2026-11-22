@@ -196,7 +196,6 @@ export function InvoicesTab() {
         rowKey={rowKey}
         // Receipts open their detail sheet; hand-written documents download straight away.
         onRowClick={(row) => (row.source === "receipt" ? setSelected(row.invoice) : downloadRow(row))}
-        footer={{ viewing: `Viewing ${rows.length} out of ${rows.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}
         empty="Invoices appear here once your account manager issues one."
       />
       <InvoiceSheet

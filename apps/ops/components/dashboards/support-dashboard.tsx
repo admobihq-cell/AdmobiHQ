@@ -137,7 +137,7 @@ export function SupportDashboard({ data }: { data: SupportDashboardDto }) {
         columns={COLUMNS}
         rows={data.oldestOpen}
         rowKey={(r) => String(r.id)}
-        footer={{ viewing: `Viewing ${data.oldestOpen.length} out of ${data.openCases}`, page: 1, pageCount: 1, onPageChange: () => {} }}
+        note={`${data.openCases} open in all`}
         empty="No cases are open."
       />
     </div>

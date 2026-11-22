@@ -6,7 +6,7 @@ export default function FinancesLoading() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <DashboardHeader page="finances" />
-      <ToolbarSkeleton tabs={5} />
+      <ToolbarSkeleton tabs={8} />
       <FinanceSkeleton tab="overview" />
     </div>
   )

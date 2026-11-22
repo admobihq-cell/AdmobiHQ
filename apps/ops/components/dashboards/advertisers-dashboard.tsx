@@ -133,7 +133,6 @@ export function AdvertisersDashboard({ data }: { data: AdvertiserDashboardDto })
         columns={columns}
         rows={data.atRisk}
         rowKey={(r) => String(r.orgId)}
-        footer={{ viewing: `Viewing ${data.atRisk.length} out of ${data.atRisk.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}
         empty="No accounts have a blocker."
       />
     </div>

@@ -10,6 +10,7 @@ import {
   type Row,
   type RowSelectionState,
   type SortingState,
+  getPaginationRowModel,
 } from "@tanstack/react-table"
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 
@@ -23,6 +24,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
+import { TablePagination } from "@/components/ui/table-pagination"
 
 export type { ColumnDef, SortingState, RowSelectionState }
 
@@ -93,6 +95,9 @@ type DataTableProps<TData> = {
   /** Applied to the <table> element itself — e.g. `table-fixed` for tables
    * with percentage-width columns. */
   tableClassName?: string
+  /** Pages `data` client-side, this many rows a page, with controls under the table. For lists
+   * fetched whole; server-paged lists render TablePagination themselves and omit this. */
+  pageSize?: number
 }
 
 export function DataTable<TData>({
@@ -110,12 +115,17 @@ export function DataTable<TData>({
   hideHeader,
   headerRowClassName,
   tableClassName,
+  pageSize,
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
+    getPaginationRowModel: pageSize ? getPaginationRowModel() : undefined,
+    initialState: pageSize
+      ? { pagination: { pageIndex: 0, pageSize } }
+      : undefined,
     getRowId,
     manualSorting,
     state: { sorting, rowSelection },
@@ -124,54 +134,71 @@ export function DataTable<TData>({
     enableRowSelection,
   })
 
+  const pageCount = pageSize ? table.getPageCount() : 1
   return (
-    <Table className={tableClassName}>
-      {hideHeader ? null : (
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className={headerRowClassName}>
-              {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  colSpan={header.colSpan}
+    <>
+      <Table className={tableClassName}>
+        {hideHeader ? null : (
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className={headerRowClassName}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    className={
+                      header.column.columnDef.meta?.headerClassName ??
+                      header.column.columnDef.meta?.className
+                    }
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+        )}
+        <TableBody>
+          {table.getRowModel().rows.map((row) => (
+            <TableRow
+              key={row.id}
+              data-state={row.getIsSelected() ? "selected" : undefined}
+              className={cn(
+                onRowClick && "cursor-pointer",
+                rowClassName?.(row.original)
+              )}
+              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell
+                  key={cell.id}
                   className={
-                    header.column.columnDef.meta?.headerClassName ??
-                    header.column.columnDef.meta?.className
+                    cell.column.columnDef.meta?.cellClassName ??
+                    cell.column.columnDef.meta?.className
                   }
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
               ))}
             </TableRow>
           ))}
-        </TableHeader>
-      )}
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow
-            key={row.id}
-            data-state={row.getIsSelected() ? "selected" : undefined}
-            className={cn(
-              onRowClick && "cursor-pointer",
-              rowClassName?.(row.original),
-            )}
-            onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-          >
-            {row.getVisibleCells().map((cell) => (
-              <TableCell
-                key={cell.id}
-                className={
-                  cell.column.columnDef.meta?.cellClassName ?? cell.column.columnDef.meta?.className
-                }
-              >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableBody>
+      </Table>
+      {pageCount > 1 ? (
+        <div className="border-t px-3 py-2.5">
+          <TablePagination
+            page={table.getState().pagination.pageIndex + 1}
+            totalPages={pageCount}
+            total={data.length}
+            onPageChange={(page) => table.setPageIndex(page - 1)}
+          />
+        </div>
+      ) : null}
+    </>
   )
 }

@@ -81,12 +81,6 @@ export function CampaignHealthLedger({
       columns={campaignColumns(showMoney)}
       rows={ledger.rows}
       rowKey={(r) => String(r.id)}
-      footer={{
-        viewing: `Viewing ${ledger.rows.length} out of ${ledger.rows.length}`,
-        page: 1,
-        pageCount: 1,
-        onPageChange: () => {},
-      }}
       empty="Campaigns appear here once you create one."
     />
   )

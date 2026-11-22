@@ -8,6 +8,7 @@ import {
   ListSkeleton,
   SkeletonShell,
   StatListSkeleton,
+  ToolbarSkeleton,
 } from "@workspace/ui/components/dashboard/dashboard-skeletons"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
@@ -132,10 +133,35 @@ export function OverviewSkeleton() {
 /** Finances tabs: overview, ledger, wallets, payouts, tools. */
 export function FinanceSkeleton({ tab }: { tab: string }) {
   switch (tab) {
+    case "attention":
+      // DashboardCard of divided rows: label + detail on the left, amount on the right.
+      return (
+        <SkeletonShell label="Loading payments that need attention">
+          <Card className="shadow-xs">
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="my-[3px] h-4 w-32" />
+                <Skeleton className="my-[3px] h-3.5 w-96 max-w-full" />
+              </div>
+              <div className="divide-y">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between gap-4 py-2">
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      <Skeleton className="h-4 w-48 max-w-full" />
+                      <Skeleton className="h-3.5 w-72 max-w-full" />
+                    </div>
+                    <Skeleton className="h-4 w-20 shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </SkeletonShell>
+      )
     case "ledger":
       return (
         <SkeletonShell label="Loading ledger">
-          <LedgerSkeleton rows={8} columns={6} filters />
+          <LedgerSkeleton rows={8} columns={6} summary={4} tabs={6} actions={2} />
         </SkeletonShell>
       )
     case "documents":
@@ -143,17 +169,26 @@ export function FinanceSkeleton({ tab }: { tab: string }) {
     case "wallets":
       return (
         <SkeletonShell label="Loading wallets">
-          <LedgerSkeleton rows={8} columns={5} />
+          <LedgerSkeleton rows={8} columns={7} summary={4} tabs={4} />
         </SkeletonShell>
       )
     case "payouts":
       return (
         <SkeletonShell label="Loading payouts">
+          <Skeleton className="ml-auto h-9 w-36" />
           <div className="grid gap-4 lg:grid-cols-3">
             <FigureSkeleton />
             <ChartSkeleton className="lg:col-span-2" />
           </div>
-          <LedgerSkeleton />
+          <LedgerSkeleton rows={8} columns={8} tabs={6} />
+        </SkeletonShell>
+      )
+    case "paystack":
+      return (
+        <SkeletonShell label="Loading Paystack">
+          <KpiStripSkeleton cells={4} />
+          <ToolbarSkeleton tabs={5} range={false} extras={2} />
+          <LedgerSkeleton rows={8} columns={7} tabs={4} search />
         </SkeletonShell>
       )
     case "tools":
@@ -161,6 +196,7 @@ export function FinanceSkeleton({ tab }: { tab: string }) {
         <SkeletonShell label="Loading tool costs">
           <KpiStripSkeleton cells={3} />
           <ChartSkeleton variant="bars" />
+          <Skeleton className="h-14 w-full rounded-lg" />
         </SkeletonShell>
       )
     default:
@@ -224,48 +260,7 @@ export function FinanceSkeleton({ tab }: { tab: string }) {
 export function BillingDocumentsSkeleton() {
   return (
     <SkeletonShell label="Loading invoices and quotes">
-      <Card className="shadow-xs">
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="my-[3px] h-4 w-36" />
-            <Skeleton className="my-[3px] h-3.5 w-96 max-w-full" />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-6 w-28" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <Skeleton className="h-8 w-80 max-w-full" />
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-9 w-56" />
-              <Skeleton className="h-8 w-16" />
-            </div>
-          </div>
-          <div className="overflow-hidden rounded-md border">
-            <div className="flex gap-4 border-b bg-muted/40 px-3 py-2.5">
-              {Array.from({ length: 7 }, (_, c) => (
-                <Skeleton key={c} className="h-3 flex-1 max-sm:nth-[n+4]:hidden" />
-              ))}
-            </div>
-            {Array.from({ length: 6 }, (_, r) => (
-              <div key={r} className="flex items-center gap-4 border-b px-3 py-3 last:border-b-0">
-                {Array.from({ length: 7 }, (_, c) => (
-                  <Skeleton
-                    key={c}
-                    className="h-4 max-sm:nth-[n+4]:hidden"
-                    style={{ flex: c === 0 ? 1.6 : 1, maxWidth: `${100 - ((r * 7 + c * 13) % 30)}%` }}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <LedgerSkeleton rows={8} columns={8} summary={3} tabs={5} search actions={1} />
     </SkeletonShell>
   )
 }

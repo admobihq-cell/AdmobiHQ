@@ -7,6 +7,7 @@ import { Download } from "lucide-react"
 import { exportFileName, formatKes, toCsv } from "@workspace/ops-contracts"
 
 import { Button } from "@workspace/ui/components/button"
+import { CountUp } from "@workspace/ui/components/dashboard/count-up"
 import { LedgerCard, type LedgerColumn } from "@workspace/ui/components/dashboard/ledger-card"
 import { seePayments } from "@/app/(dashboard)/finances/actions"
 import { RecordTransactionDialog } from "@/components/finances/record-transaction-dialog"
@@ -26,6 +27,16 @@ const KIND_LABEL: Record<string, string> = { top_up: "Top-up", spend: "Spend", r
 
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Nairobi" })
+
+/** Money in is green with a "+", money out red; the sign means colour is never the only cue. */
+function SignedKes({ value, animate = false }: { value: number; animate?: boolean }) {
+  const text = `${value > 0 ? "+" : ""}${formatKes(value)}`
+  return (
+    <span className={value > 0 ? "text-green-700 dark:text-green-300" : value < 0 ? "text-destructive" : undefined}>
+      {animate ? <CountUp value={text} /> : text}
+    </span>
+  )
+}
 
 const COLUMNS: LedgerColumn<LedgerRowDto>[] = [
   { key: "date", header: "Date", render: (r) => date(r.occurredAt) },
@@ -61,7 +72,7 @@ const COLUMNS: LedgerColumn<LedgerRowDto>[] = [
     key: "amount",
     header: "Amount",
     align: "right",
-    render: (r) => `${r.amountKes > 0 ? "+" : ""}${formatKes(r.amountKes)}`,
+    render: (r) => <SignedKes value={r.amountKes} />,
   },
 ]
 
@@ -110,7 +121,7 @@ export function LedgerTab({ data, options }: { data: FinanceLedgerDto; options: 
         { label: "Top-ups", value: formatKes(totals.topUpsKes), note: "Money in" },
         { label: "Spend", value: formatKes(totals.spendKes), note: "Charged to campaigns" },
         { label: "Refunds", value: formatKes(totals.refundsKes), note: "Returned to wallets" },
-        { label: "Net", value: formatKes(totals.netKes), note: "Change in funds held" },
+        { label: "Net", value: <SignedKes value={totals.netKes} animate />, note: "Change in funds held" },
       ]}
       filterTabs={{
         tabs: FILTERS.map((f) => ({ ...f, count: f.value === "all" ? data.rows.length : data.rows.filter((r) => r.kind === f.value).length })),
@@ -129,12 +140,7 @@ export function LedgerTab({ data, options }: { data: FinanceLedgerDto; options: 
       columns={COLUMNS}
       rows={rows}
       rowKey={(r) => String(r.id)}
-      footer={{
-        viewing: `Viewing ${rows.length} of the latest ${data.rows.length}, out of ${totals.count} in the period`,
-        page: 1,
-        pageCount: 1,
-        onPageChange: () => {},
-      }}
+      note={`latest ${data.rows.length} of ${totals.count} in the period`}
       empty={data.rows.length === 0 ? "Transactions appear here once an advertiser's wallet has activity." : "Nothing matches this filter."}
     />
   )

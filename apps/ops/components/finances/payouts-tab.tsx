@@ -162,7 +162,6 @@ export function PayoutsTab({ data, canDisburse }: { data: FinancePayoutsDto; can
         columns={canDisburse ? [...COLUMNS, RETRY_COLUMN] : COLUMNS}
         rows={rows}
         rowKey={(p) => String(p.id)}
-        footer={{ viewing: `Viewing ${rows.length} out of ${data.rows.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}
         empty={data.rows.length === 0 ? NO_PAYOUTS : "Nothing matches this filter."}
       />
     </div>

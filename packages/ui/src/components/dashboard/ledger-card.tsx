@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import type * as React from "react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -40,9 +41,14 @@ export type LedgerFooter = {
   onPageChange: (page: number) => void
 }
 
+/** Rows a page when the card pages `rows` itself. */
+export const LEDGER_PAGE_SIZE = 25
+
 /**
  * A summary strip, filter tabs and a rich table with pagination. The table scrolls inside
- * the card at phone width, so the page never scrolls sideways.
+ * the card at phone width, so the page never scrolls sideways. Pass `footer` when the caller
+ * pages (a server-paged list); otherwise the card pages `rows` itself, `pageSize` at a time,
+ * and `note` is added to its "Viewing 1–25 of 80" line.
  */
 export function LedgerCard<T>({
   title,
@@ -55,6 +61,8 @@ export function LedgerCard<T>({
   rowKey,
   onRowClick,
   footer,
+  note,
+  pageSize = LEDGER_PAGE_SIZE,
   empty,
 }: {
   title: React.ReactNode
@@ -67,8 +75,29 @@ export function LedgerCard<T>({
   rowKey: (row: T) => string
   onRowClick?: (row: T) => void
   footer?: LedgerFooter
+  /** Extra context for the self-paged footer, e.g. "latest 500 of 812 in the period". */
+  note?: string
+  pageSize?: number
   empty: React.ReactNode
 }) {
+  const [localPage, setLocalPage] = useState(1)
+  // A new filter or search starts back on page 1.
+  const [seenCount, setSeenCount] = useState(rows.length)
+  if (seenCount !== rows.length) {
+    setSeenCount(rows.length)
+    setLocalPage(1)
+  }
+  const localPages = Math.max(1, Math.ceil(rows.length / pageSize))
+  const current = Math.min(localPage, localPages)
+  const start = (current - 1) * pageSize
+  const visible = footer ? rows : rows.slice(start, start + pageSize)
+  const pager: LedgerFooter = footer ?? {
+    viewing: [`Viewing ${start + 1}–${start + visible.length} of ${rows.length}`, note].filter(Boolean).join(" · "),
+    page: current,
+    pageCount: localPages,
+    onPageChange: setLocalPage,
+  }
+
   return (
     <Card className="shadow-xs">
       <CardHeader>
@@ -113,7 +142,7 @@ export function LedgerCard<T>({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row) => (
+                {visible.map((row) => (
                   <TableRow
                     key={rowKey(row)}
                     className={cn(onRowClick && "cursor-pointer")}
@@ -137,27 +166,27 @@ export function LedgerCard<T>({
             </Table>
           </div>
         )}
-        {footer && rows.length > 0 ? (
+        {rows.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span className="tabular-nums">{footer.viewing}</span>
-            {footer.pageCount > 1 ? (
+            <span className="tabular-nums">{pager.viewing}</span>
+            {pager.pageCount > 1 ? (
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={footer.page <= 1}
-                  onClick={() => footer.onPageChange(footer.page - 1)}
+                  disabled={pager.page <= 1}
+                  onClick={() => pager.onPageChange(pager.page - 1)}
                 >
                   Previous
                 </Button>
                 <span className="tabular-nums">
-                  Page {footer.page} of {footer.pageCount}
+                  Page {pager.page} of {pager.pageCount}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={footer.page >= footer.pageCount}
-                  onClick={() => footer.onPageChange(footer.page + 1)}
+                  disabled={pager.page >= pager.pageCount}
+                  onClick={() => pager.onPageChange(pager.page + 1)}
                 >
                   Next
                 </Button>

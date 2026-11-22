@@ -72,7 +72,6 @@ export function WalletsTab({ wallets }: { wallets: WalletRowDto[] }) {
       columns={COLUMNS}
       rows={rows}
       rowKey={(w) => String(w.orgId)}
-      footer={{ viewing: `Viewing ${rows.length} out of ${wallets.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}
       empty={wallets.length === 0 ? "Wallets appear here once an advertiser has ledger activity." : "Nothing matches this filter."}
     />
   )

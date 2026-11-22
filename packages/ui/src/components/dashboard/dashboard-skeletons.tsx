@@ -253,12 +253,62 @@ export function FigureSkeleton({ className }: { className?: string }) {
   )
 }
 
-/** The LedgerCard table: toolbar, header row, body rows. */
-export function LedgerSkeleton({ rows = 6, columns = 5, filters = false }: { rows?: number; columns?: number; filters?: boolean }) {
+/** The LedgerCard table: summary tiles, filter tabs + toolbar, header row, body rows, pager. */
+export function LedgerSkeleton({
+  rows = 6,
+  columns = 5,
+  filters = false,
+  summary = 0,
+  tabs = 0,
+  actions = 0,
+  search = false,
+}: {
+  rows?: number
+  columns?: number
+  filters?: boolean
+  /** MetricTiles above the table, as LedgerCard's `summary`. */
+  summary?: number
+  /** Filter-tab pills, as LedgerCard's `filterTabs`. */
+  tabs?: number
+  /** Toolbar buttons on the right of the tabs row. */
+  actions?: number
+  /** A search field before those buttons. */
+  search?: boolean
+}) {
   return (
     <Card className="shadow-xs">
       <CardHead />
       <CardContent className="flex flex-col gap-4">
+        {summary > 0 ? (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: summary }, (_, i) => (
+              <div key={i} className="rounded-md border bg-muted/35 px-3 py-2.5">
+                <Skeleton className="my-[2px] h-3 w-20" />
+                <Skeleton className="my-1 h-5 w-28" />
+                <Skeleton className="my-[2px] h-3 w-24" />
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {tabs > 0 || actions > 0 || search ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {tabs > 0 ? (
+              <div className="flex h-9 w-fit max-w-full items-center gap-1 overflow-hidden rounded-lg bg-muted p-[3px]">
+                {Array.from({ length: tabs }, (_, i) => (
+                  <Skeleton key={i} className="h-full w-20 shrink-0 rounded-md bg-background/70" />
+                ))}
+              </div>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-2">
+              {search ? <Skeleton className="h-8 w-56 rounded-md" /> : null}
+              {Array.from({ length: actions }, (_, i) => (
+                <Skeleton key={i} className="h-8 w-20 rounded-md" />
+              ))}
+            </div>
+          </div>
+        ) : null}
         {filters ? (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (

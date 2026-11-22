@@ -146,6 +146,7 @@ export function ContentDraftsTable({ drafts }: { drafts: Draft[] }) {
         />
       </div>
       <DataTable
+        pageSize={25}
         columns={[selection.selectColumn, ...columns]}
         data={rows}
         manualSorting={false}

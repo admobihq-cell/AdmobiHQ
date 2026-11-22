@@ -171,6 +171,7 @@ export function AdminsView() {
             <MembersTableSkeleton />
           ) : (
             <DataTable
+              pageSize={25}
               columns={[selection.selectColumn, ...columns]}
               data={rows}
               manualSorting={false}

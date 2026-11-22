@@ -545,6 +545,7 @@ export function TeamView() {
               <MembersTableSkeleton />
             ) : (
               <DataTable
+                pageSize={25}
                 columns={[selection.selectColumn, ...memberColumns]}
                 data={memberRows}
                 manualSorting={false}
@@ -565,6 +566,7 @@ export function TeamView() {
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
               <DataTable
+                pageSize={25}
                 columns={invitationColumns}
                 data={team.invitations}
                 manualSorting={false}
@@ -589,6 +591,7 @@ export function TeamView() {
           <Card className="overflow-hidden p-0 shadow-none">
             <CardContent className="p-0">
               <DataTable
+                pageSize={25}
                 columns={notYetInvitedColumns}
                 data={team.notYetInvited}
                 hideHeader

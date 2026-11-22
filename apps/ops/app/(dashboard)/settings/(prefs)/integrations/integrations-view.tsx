@@ -542,6 +542,7 @@ export function IntegrationsView({ integrations }: { integrations: IntegrationDt
             <Card className="shadow-none">
               <CardContent className="p-0">
                 <DataTable
+                  pageSize={25}
                   columns={[selection.selectColumn, ...columns]}
                   data={rows}
                   manualSorting={false}

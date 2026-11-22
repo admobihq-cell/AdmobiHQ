@@ -207,7 +207,6 @@ export function DeliveryTab({ data }: { data: DeliveryDto }) {
         columns={HEALTH_COLUMNS}
         rows={rows}
         rowKey={(r) => String(r.id)}
-        footer={{ viewing: `Viewing ${rows.length} out of ${data.rows.length}`, page: 1, pageCount: 1, onPageChange: () => {} }}
         empty="No campaigns match."
       />
     </div>
