@@ -11,7 +11,7 @@ export default async function LeadsPage() {
   try {
     await requireOpsPermission("leads")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

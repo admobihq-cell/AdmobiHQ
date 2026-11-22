@@ -12,7 +12,7 @@ export default function OpsNotFound() {
     <NotFoundPage
       title="Page not found"
       description="This ops route doesn't exist. Return to the console home to continue."
-      homeHref="/home"
+      homeHref="/overview"
       homeLabel="Back to console"
     />
   )

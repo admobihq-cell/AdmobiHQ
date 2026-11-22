@@ -85,10 +85,10 @@ export function AdmobiOtpSignInForm() {
     if (signIn.status === "complete") {
       await signIn.finalize({
         // Hard navigation, not router.push — the App Router's client cache can
-        // otherwise serve a stale pre-auth response for "/" or "/home" after
+        // otherwise serve a stale pre-auth response for "/" or "/overview" after
         // repeated sign-in attempts in the same tab.
         navigate: () => {
-          window.location.href = "/home"
+          window.location.href = "/overview"
         },
       })
       return

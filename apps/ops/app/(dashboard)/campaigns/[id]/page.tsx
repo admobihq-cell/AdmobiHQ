@@ -11,7 +11,7 @@ export default async function CampaignDetailPage({
   try {
     await requireOpsPermission("campaigns")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   const { id } = await params

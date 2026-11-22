@@ -65,7 +65,7 @@ function OpsBreadcrumbs({ pathname }: { pathname: string }) {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/home">Ops</Link>
+            <Link href="/overview">Ops</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />

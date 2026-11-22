@@ -44,6 +44,8 @@ const nextConfig = {
     return [
       // Land straight on the first settings tab — no /settings render + hop.
       { source: "/settings", destination: "/settings/flags", permanent: false },
+      // Home merged into Overview, the landing page; keeps old bookmarks working.
+      { source: "/home", destination: "/overview", permanent: true },
     ]
   },
   async headers() {

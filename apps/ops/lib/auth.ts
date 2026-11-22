@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server"
 import { OPS_PERMISSIONS, type OpsPermission, type OpsRole } from "@workspace/ops-contracts"
 
@@ -118,7 +119,8 @@ async function resolveOpsPermissions(userId: string, role: OpsRole): Promise<Ops
   return permissions
 }
 
-export async function getOpsAccess(): Promise<OpsAccess> {
+/** Memoised per request: Overview alone reads it from the layout and three sections. */
+export const getOpsAccess = cache(async (): Promise<OpsAccess> => {
   const { userId } = await auth()
   if (!userId) {
     return { status: "unauthenticated" }
@@ -143,7 +145,7 @@ export async function getOpsAccess(): Promise<OpsAccess> {
   const orgName = await resolveOpsOrgName()
 
   return { status: "authorized", userId, email: email!, role, permissions, orgName, user }
-}
+})
 
 export async function requireOpsUser() {
   const access = await getOpsAccess()

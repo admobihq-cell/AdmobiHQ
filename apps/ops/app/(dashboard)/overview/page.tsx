@@ -1,29 +1,11 @@
-import Link from "next/link"
 import { Suspense } from "react"
-import {
-  Car,
-  FileText,
-  Mail,
-  Megaphone,
-  Truck,
-} from "lucide-react"
 
-import { DASHBOARD_COPY } from "@/components/dashboards/dashboard-header"
 import { OverviewSkeleton } from "@/components/dashboards/dashboard-skeletons"
 import { DashboardNav } from "@/components/dashboards/dashboard-nav"
+import { OverviewModules } from "@/components/overview/overview-modules"
 import { OverviewStats } from "@/components/overview/overview-stats"
-import { PageHero } from "@/components/ui/page-hero"
-import { SectionHeading } from "@/components/ui/section-heading"
-import { Button } from "@workspace/ui/components/button"
+import { OverviewWelcome, WelcomeSkeleton } from "@/components/overview/overview-welcome"
 import type { DateRangeKey } from "@/lib/queries/stats"
-
-const QUICK_LINKS = [
-  { href: "/leads", label: "Campaign Leads", icon: Megaphone },
-  { href: "/fleet", label: "Fleet Partners", icon: Truck },
-  { href: "/drivers", label: "Drivers", icon: Car },
-  { href: "/waitlist", label: "Waitlist", icon: Mail },
-  { href: "/media-kit", label: "Media Kit", icon: FileText },
-] as const
 
 function parseRange(value: string | undefined): DateRangeKey {
   if (value === "7d" || value === "30d" || value === "90d" || value === "all") {
@@ -36,42 +18,29 @@ type OverviewPageProps = {
   searchParams: Promise<{ range?: string }>
 }
 
+/**
+ * The console's landing page. No permission guard on purpose: every other page redirects here when
+ * the viewer lacks access, so it must always render. Each section is cut to the viewer's permissions
+ * instead (see OverviewStats and OverviewModules).
+ */
 export default async function OverviewPage({ searchParams }: OverviewPageProps) {
   const { range: rawRange } = await searchParams
   const range = parseRange(rawRange)
 
   return (
     <div className="flex flex-1 flex-col gap-8">
-      <PageHero
-        eyebrow="Dashboards"
-        title={DASHBOARD_COPY.overview.title}
-        description={DASHBOARD_COPY.overview.description}
-      />
+      <Suspense fallback={<WelcomeSkeleton />}>
+        <OverviewWelcome />
+      </Suspense>
       <DashboardNav range={range} />
 
       <Suspense fallback={<OverviewSkeleton />} key={range}>
         <OverviewStats range={range} />
       </Suspense>
 
-      <div className="space-y-3">
-        <SectionHeading title="Quick links" />
-        <div className="flex flex-wrap gap-2">
-          {QUICK_LINKS.map((link) => (
-            <Button
-              key={link.href}
-              variant="outline"
-              size="sm"
-              className="h-9 gap-2"
-              asChild
-            >
-              <Link href={link.href}>
-                <link.icon className="size-3.5" />
-                {link.label}
-              </Link>
-            </Button>
-          ))}
-        </div>
-      </div>
+      <Suspense fallback={null}>
+        <OverviewModules />
+      </Suspense>
     </div>
   )
 }

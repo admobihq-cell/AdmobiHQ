@@ -19,10 +19,10 @@ export const opsTourChapters: TourChapter[] = [
     type: "primary",
   },
   {
-    key: "home",
-    title: "Home",
+    key: "overview",
+    title: "Overview",
     description: "Your daily snapshot — what needs attention across drivers, fleet, and campaigns.",
-    selector: '[data-tour-id="tour-nav-home"]',
+    selector: '[data-tour-id="tour-nav-overview"]',
   },
   {
     key: "driver-applications",

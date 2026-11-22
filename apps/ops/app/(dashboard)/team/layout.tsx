@@ -7,7 +7,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
   try {
     await requireOpsAdmin()
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

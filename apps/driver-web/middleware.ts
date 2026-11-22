@@ -14,7 +14,7 @@ async function getAuthMiddleware(): Promise<NextMiddleware> {
 
   cachedMiddleware = clerkMiddleware(
     async (auth, request) => {
-      // Unlike ops (whose "/" is a stub — the real dashboard is at /home), "/"
+      // Unlike ops (whose "/" is a stub — the real dashboard is at /overview), "/"
       // here IS the protected dashboard, so it must NOT be treated as public.
       if (isPublicRoute(request.nextUrl.pathname)) {
         return

@@ -1,11 +1,7 @@
-import Link from "next/link"
-import { BarChart3, LayoutDashboard } from "lucide-react"
-
-import { Button } from "@workspace/ui/components/button"
-
 import { getOpsUser } from "@/lib/auth"
 
-export async function HomeWelcome() {
+/** Photo greeting at the top of Overview, the console's landing page. */
+export async function OverviewWelcome() {
   const user = await getOpsUser()
   const rawName =
     user?.user?.firstName?.trim() || user?.email.split("@")[0] || "there"
@@ -33,30 +29,14 @@ export async function HomeWelcome() {
             <span className="font-medium text-white/90">
               {user?.email ?? "@admobihq.com"}
             </span>
-            . Review operational data, manage submissions, and monitor CMS health
-            from this workspace.
+            . Here&apos;s what needs you across the sections you can open.
           </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button asChild className="h-10 gap-2">
-            <Link href="/overview">
-              <BarChart3 className="size-4" />
-              View analytics
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-10 gap-2 border-white/25 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white dark:bg-white/10 dark:hover:bg-white/20"
-          >
-            <Link href="/leads">
-              <LayoutDashboard className="size-4" />
-              Open leads
-            </Link>
-          </Button>
         </div>
       </div>
     </section>
   )
+}
+
+export function WelcomeSkeleton() {
+  return <div className="min-h-[13rem] animate-pulse rounded-xl border bg-muted md:min-h-[15rem]" />
 }

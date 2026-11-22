@@ -9,7 +9,7 @@ export default async function PlatformFlagsPage() {
   try {
     await requireOpsPermission("flags")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return <PlatformFlagsView />

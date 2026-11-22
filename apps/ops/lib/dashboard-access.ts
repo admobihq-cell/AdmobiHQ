@@ -4,7 +4,7 @@ import { DATE_RANGE_KEYS, type DateRangeKey, type OpsPermission } from "@workspa
 import { requireOpsPermission } from "@/lib/auth"
 
 /**
- * Opens an ops dashboard page: redirects to /home without `permission`, and reports which other
+ * Opens an ops dashboard page: redirects to /overview without `permission`, and reports which other
  * permissions the viewer holds so the page can decide, before it queries, whether money or safety
  * data may load at all. Admins hold everything.
  */
@@ -13,7 +13,7 @@ export async function openDashboard(permission: OpsPermission) {
   try {
     access = await requireOpsPermission(permission)
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
   const has = (p: OpsPermission) => access.role === "admin" || access.permissions.includes(p)
   return { access, has }

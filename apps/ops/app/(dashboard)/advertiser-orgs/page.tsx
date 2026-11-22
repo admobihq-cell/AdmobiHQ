@@ -10,7 +10,7 @@ export default async function AdvertiserOrgsPage() {
   try {
     await requireOpsPermission("campaigns")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

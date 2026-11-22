@@ -11,7 +11,7 @@ export default async function IntegrationsPage() {
   try {
     await requireOpsAdmin()
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   const integrations = await listIntegrations()

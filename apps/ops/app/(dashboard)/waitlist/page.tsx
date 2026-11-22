@@ -11,7 +11,7 @@ export default async function WaitlistPage() {
   try {
     await requireOpsPermission("waitlist")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

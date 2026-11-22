@@ -46,8 +46,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             appearance={{ theme: shadcn }}
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
-            signInFallbackRedirectUrl="/home"
-            signUpFallbackRedirectUrl="/home"
+            signInFallbackRedirectUrl="/overview"
+            signUpFallbackRedirectUrl="/overview"
             afterSignOutUrl="/"
           >
             <TooltipProvider>

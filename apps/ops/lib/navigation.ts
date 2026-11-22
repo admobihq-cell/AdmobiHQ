@@ -51,8 +51,7 @@ export const navItems: Array<{
   icon: typeof Home
   permission?: OpsPermission
 }> = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/map", label: "Map", icon: Map },
+  { href: "/map", label: "Map", icon: Map, permission: "drivers" },
   {
     href: "/leads",
     label: "Campaign Leads",

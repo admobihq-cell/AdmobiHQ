@@ -7,7 +7,7 @@ export default async function NewBillingDocumentPage() {
   try {
     await requireOpsPermission("finances")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return <BillingDocumentEditor id={null} />

@@ -11,7 +11,7 @@ export default async function SosDetailPage({
   try {
     await requireOpsPermission("safety")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   const { id } = await params

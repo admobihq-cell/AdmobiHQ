@@ -7,7 +7,7 @@ export default async function ActivityPage() {
   try {
     await requireOpsPermission("activity")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return <ActivityView />

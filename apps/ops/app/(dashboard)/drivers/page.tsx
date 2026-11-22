@@ -11,7 +11,7 @@ export default async function DriversPage() {
   try {
     await requireOpsPermission("drivers")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

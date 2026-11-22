@@ -11,7 +11,7 @@ export default async function AnnouncementsPage() {
   try {
     await requireOpsPermission("announcements")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

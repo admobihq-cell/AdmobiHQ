@@ -7,7 +7,7 @@ export default async function SosPage() {
   try {
     await requireOpsPermission("safety")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return <SosView />

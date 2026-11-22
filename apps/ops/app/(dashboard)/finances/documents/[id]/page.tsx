@@ -7,7 +7,7 @@ export default async function BillingDocumentPage({ params }: { params: Promise<
   try {
     await requireOpsPermission("finances")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   const { id } = await params

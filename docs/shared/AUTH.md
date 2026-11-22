@@ -165,7 +165,7 @@ Driver sign-up deliberately does not ask for this; drivers sign up as individual
 
 ### Ops (`apps/ops`)
 
-- [app/sign-in/[[...sign-in]]/page.tsx](../../apps/ops/app/sign-in/%5B%5B...sign-in%5D%5D/page.tsx) and the sign-up equivalent call `getOpsAccess()` server-side first — already-authorized users are redirected straight to `/home`; non-`@admobihq.com` emails get `<OpsAccessDenied>` instead of a form.
+- [app/sign-in/[[...sign-in]]/page.tsx](../../apps/ops/app/sign-in/%5B%5B...sign-in%5D%5D/page.tsx) and the sign-up equivalent call `getOpsAccess()` server-side first — already-authorized users are redirected straight to `/overview`; non-`@admobihq.com` emails get `<OpsAccessDenied>` instead of a form.
 - Domain check happens **client-side too**, before the form will even submit (`isAdmobiEmail(email)` in [admobi-otp-sign-in-form.tsx](../../apps/ops/components/auth/admobi-otp-sign-in-form.tsx)) — belt-and-suspenders on top of the server-side gate in §5.
 - Route protection: [apps/ops/proxy.ts](../../apps/ops/proxy.ts) (renamed from `middleware.ts` on purpose) is just `clerkMiddleware()` with no route logic — actual authorization happens per-route via `requireOpsUser()` and in [app/(dashboard)/layout.tsx](../../apps/ops/app/(dashboard)/layout.tsx), which calls `requireOpsUser()` and redirects to `/` on failure.
 
@@ -190,7 +190,7 @@ Driver sign-up deliberately does not ask for this; drivers sign up as individual
   )
   ```
 
-  This protects **every route except** `/auth/*` and `/api/health*` — unlike ops (whose `/` is a stub and the real dashboard lives at `/home`), `/` in customer-web and driver-web **is** the protected dashboard.
+  This protects **every route except** `/auth/*` and `/api/health*` — unlike ops (whose `/` is a stub and the real dashboard lives at `/overview`), `/` in customer-web and driver-web **is** the protected dashboard.
 
 ### Ops-mobile — always-on ClerkProvider
 

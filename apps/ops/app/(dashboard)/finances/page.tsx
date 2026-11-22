@@ -18,7 +18,7 @@ export default async function FinancesPage({
   try {
     await requireOpsPermission("finances")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   const params = await searchParams

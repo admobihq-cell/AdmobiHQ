@@ -11,7 +11,7 @@ export default async function CampaignsPage() {
   try {
     await requireOpsPermission("campaigns")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

@@ -7,7 +7,7 @@ export default async function SupportPage() {
   try {
     await requireOpsPermission("support")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return <SupportView />

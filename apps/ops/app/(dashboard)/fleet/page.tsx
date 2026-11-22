@@ -11,7 +11,7 @@ export default async function FleetPage() {
   try {
     await requireOpsPermission("fleet")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

@@ -11,7 +11,7 @@ export default async function MediaKitPage() {
   try {
     await requireOpsPermission("media_kit")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   return (

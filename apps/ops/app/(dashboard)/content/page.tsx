@@ -16,7 +16,7 @@ export default async function ContentPage() {
   try {
     await requireOpsPermission("content")
   } catch {
-    redirect("/home")
+    redirect("/overview")
   }
 
   const adminUrl = cmsAdminUrl()

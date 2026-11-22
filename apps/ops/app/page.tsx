@@ -9,7 +9,7 @@ export default async function EntrancePage() {
   const access = await getOpsAccess()
 
   if (access.status === "authorized") {
-    redirect("/home")
+    redirect("/overview")
   }
 
   if (access.status === "forbidden") {
