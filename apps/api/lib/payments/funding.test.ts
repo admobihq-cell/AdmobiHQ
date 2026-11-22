@@ -50,10 +50,10 @@ describe("holdsFunds", () => {
 })
 
 describe("dueNowKes", () => {
-  it("is the budget less usable credit, never negative", () => {
+  it("is the budget less available credit, plus anything the org owes, never negative", () => {
     expect(dueNowKes(50000, 12000.5)).toBe(37999.5)
     expect(dueNowKes(50000, 80000)).toBe(0)
-    expect(dueNowKes(50000, -300)).toBe(50000)
+    expect(dueNowKes(50000, -300)).toBe(50300)
   })
 })
 

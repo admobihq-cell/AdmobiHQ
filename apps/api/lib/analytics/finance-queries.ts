@@ -79,8 +79,14 @@ export async function getFinanceSummary(
   const trailingEnd = range.end
   const [ledger, current, previous, byCategory, byCampaign, inOut, campaigns, spentByCampaign, trailing, byDay] =
     await Promise.all([
-      prisma.$queryRaw<{ balance: number | null; rows: number }[]>`
-        SELECT COALESCE(SUM(amount_kes), 0)::float8 AS balance, COUNT(*)::int AS rows
+      prisma.$queryRaw<
+        { balance: number | null; rows: number; paid_in: number; refunded: number; spent: number; adjustments: number }[]
+      >`
+        SELECT COALESCE(SUM(amount_kes), 0)::float8 AS balance, COUNT(*)::int AS rows,
+          COALESCE(SUM(amount_kes) FILTER (WHERE kind = 'top_up'), 0)::float8 AS paid_in,
+          (-COALESCE(SUM(amount_kes) FILTER (WHERE kind = 'cash_refund'), 0))::float8 AS refunded,
+          (-COALESCE(SUM(amount_kes) FILTER (WHERE kind IN ('spend', 'refund')), 0))::float8 AS spent,
+          COALESCE(SUM(amount_kes) FILTER (WHERE kind = 'adjustment'), 0)::float8 AS adjustments
         FROM wallet_transactions WHERE org_id = ${orgId}`,
       periodTotals(orgId, range.start, range.end),
       range.previous ? periodTotals(orgId, range.previous.start, range.previous.end) : null,
@@ -165,6 +171,12 @@ export async function getFinanceSummary(
     range,
     hasLedgerRows,
     balanceKes,
+    lifetime: {
+      paidInKes: roundKes(num(ledger[0]?.paid_in)),
+      refundedKes: roundKes(num(ledger[0]?.refunded)),
+      spentKes: roundKes(num(ledger[0]?.spent)),
+      adjustmentsKes: roundKes(num(ledger[0]?.adjustments)),
+    },
     committedKes: committed,
     availableKes,
     spentKes: delta(current.spent, previous ? previous.spent : null),

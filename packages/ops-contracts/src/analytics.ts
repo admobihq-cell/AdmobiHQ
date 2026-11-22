@@ -345,6 +345,15 @@ export type ImpressionRange = { low: number | null; likely: number | null; high:
 
 // Finance DTOs: plain `number` money, because every finance endpoint sits behind `billing:read`.
 
+/**
+ * What the advertiser still has to pay to fund a budget. A negative available balance (the org
+ * owes money) is added on top, because funding needs available >= budget after the payment.
+ * Shared by the API (checkout, submit 402) and the web wizard so the two can't disagree.
+ */
+export function dueNowKes(budgetKes: number, availableKes: number): number {
+  return Math.round(Math.max(0, budgetKes - availableKes) * 100) / 100
+}
+
 export type UpcomingChargeDto = {
   campaignId: number
   campaignName: string
@@ -357,6 +366,12 @@ export type FinanceSummaryDto = {
   hasLedgerRows: boolean
   /** All-time; ignores the range. */
   balanceKes: number
+  /**
+   * All-time, and adds up exactly: paidIn - refunded - spent + adjustments = balanceKes.
+   * Refunded is money sent back to M-Pesa or card; adjustments are ops corrections and
+   * reversals of failed refunds (either sign).
+   */
+  lifetime: { paidInKes: number; refundedKes: number; spentKes: number; adjustmentsKes: number }
   committedKes: number
   /** Balance minus committed. Null until the first ledger row. */
   availableKes: number | null

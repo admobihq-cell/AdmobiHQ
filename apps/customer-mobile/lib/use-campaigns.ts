@@ -9,6 +9,7 @@ import { useTokenGetter } from "@/lib/auth/use-token-getter"
 import {
   createCampaign,
   deleteCampaign,
+  withdrawCampaign,
   deleteCreative,
   downloadCampaignPdf,
   getCampaign,
@@ -103,6 +104,15 @@ export function useDeleteCampaign() {
   return useMutation({
     mutationFn: (id: number) => deleteCampaign(getToken, id),
     onSuccess: () => invalidate(),
+  })
+}
+
+export function useWithdrawCampaign() {
+  const getToken = useTokenGetter()
+  const invalidate = useInvalidate()
+  return useMutation({
+    mutationFn: (id: number) => withdrawCampaign(getToken, id),
+    onSuccess: (campaign) => invalidate(campaign.id),
   })
 }
 

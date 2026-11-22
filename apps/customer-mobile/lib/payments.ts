@@ -52,3 +52,9 @@ export function dueKesOf(error: unknown): number | null {
   const due = (error as { body?: { dueKes?: unknown } } | null)?.body?.dueKes
   return typeof due === "number" ? due : null
 }
+
+/** `owedKes` from a 402 submit response: how far below zero the balance is (0 when it isn't). */
+export function owedKesOf(error: unknown): number {
+  const owed = (error as { body?: { owedKes?: unknown } } | null)?.body?.owedKes
+  return typeof owed === "number" ? owed : 0
+}

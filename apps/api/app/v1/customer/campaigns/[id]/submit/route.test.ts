@@ -88,6 +88,16 @@ describe.skipIf(!databaseUrl)("submit campaign funding", { timeout: 30_000 }, ()
     expect(after.funded_at).toBeNull()
   })
 
+  it("adds what a below-zero balance owes to dueKes, so paying it funds the campaign", async () => {
+    await prisma.walletTransaction.create({
+      data: { org_id: orgId, kind: "cash_refund", amount_kes: -97, provider: "manual", description: tag, occurred_at: new Date() },
+    })
+    const c = await campaign({ budget_kes: 1 })
+    const res = await submit(c.id)
+    expect(res.status).toBe(402)
+    expect(await res.json()).toMatchObject({ dueKes: 98, owedKes: 97 })
+  })
+
   it("resubmits an already-funded campaign without a balance check", async () => {
     const c = await campaign({ status: "changes_requested", funded_at: new Date() })
     const res = await submit(c.id)

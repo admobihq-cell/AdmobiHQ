@@ -90,8 +90,10 @@ same query the Wallet screen uses; without `billing:read` it shows a dash. Its
 "N campaigns live" line is counted off the campaign feed.
 
 **Wallet** (`/settings/billing`) is API-backed: available balance, committed
-("held for campaigns"), spend by campaign over 30 days and the latest ledger
-rows (90 days). **Top up** (`billing:write`) opens Paystack hosted checkout in
+("held for campaigns"), a **Where your money is** list (the same all-time
+breakdown as web billing: paid in, refunded to you, spent, adjustments, balance,
+held, available), spend by campaign over 30 days and the latest ledger rows
+(90 days). **Top up** (`billing:write`) opens Paystack hosted checkout in
 the in-app browser (`expo-web-browser`); when the browser closes the app polls
 `GET /v1/customer/payments/:reference` every 3 s for up to 2 minutes. The old
 on-device balance and auto-reload are gone (saved cards are out of scope).
@@ -99,7 +101,15 @@ Refund requests are made from Finance & Billing on the web.
 
 **Pay at submission.** If submitting a campaign returns `402` with `dueKes`, the
 wizard asks to "Pay KES {due} and submit", opens checkout the same way, and on
-success the server has already funded and submitted the campaign.
+success the server has already funded and submitted the campaign. When the
+balance is below zero, `dueKes` includes what the account owes and the confirm
+says so (from `owedKes` on the same 402).
+
+**Delete and withdraw.** The campaign screen offers **Delete draft** on drafts
+(`campaigns:write`) and **Withdraw** on a campaign that hasn't run yet
+(`campaigns:submit`; rule `canWithdrawCampaign` in `@workspace/ops-contracts`,
+same as web and the API), each behind a confirm. Withdrawing returns the
+unspent budget to the available balance. Details in [APP.md](APP.md).
 
 ---
 

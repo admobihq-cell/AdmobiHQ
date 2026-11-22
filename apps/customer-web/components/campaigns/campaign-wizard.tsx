@@ -10,6 +10,7 @@ import {
   CAMPAIGN_OBJECTIVE_LABELS,
   creativesForPanel,
   describeCampaignObjectives,
+  dueNowKes,
   joinCampaignList,
   missingPanels,
   specsForFormat,
@@ -35,6 +36,7 @@ import {
   useSubmitCampaign,
   useUpdateCampaign,
 } from "@/lib/use-campaigns"
+import { CampaignActions } from "@/components/campaigns/campaign-actions"
 import { dueKesOf } from "@/lib/campaigns-client"
 import { useFinanceSummary } from "@/lib/use-analytics"
 import { useOrgPermissions } from "@/lib/use-org"
@@ -388,7 +390,9 @@ export function CampaignWizard({
   const dueKes = campaign?.funded_at
     ? 0
     : serverDueKes ??
-      (availableKes == null ? null : Math.max(0, Math.round((budgetKesValue - Math.max(0, availableKes)) * 100) / 100))
+      (availableKes == null ? null : dueNowKes(budgetKesValue, availableKes))
+  // A negative balance is money the org owes; it is part of what's due, so say so.
+  const owedKes = !campaign?.funded_at && availableKes != null && availableKes < 0 ? -availableKes : 0
   const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { maximumFractionDigits: 2 })}`
   const submitLabel = campaign?.funded_at
     ? "Submit for review"
@@ -437,6 +441,12 @@ export function CampaignWizard({
           {progressPercent > 0 && progressPercent < 100 ? " — almost there!" : ""}
         </p>
         {draftHint}
+        {/* Drafts open here rather than on the detail page, so Delete lives here too. */}
+        {campaign?.status === "draft" ? (
+          <div className="flex justify-center">
+            <CampaignActions campaign={campaign} />
+          </div>
+        ) : null}
       </div>
 
       {stepIndex === 0 ? (
@@ -701,6 +711,12 @@ export function CampaignWizard({
               ) : undefined
             }
           />
+          {canSubmit && dueKes != null && dueKes > 0 && owedKes > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Includes {kes(owedKes)} your account owes: your balance is below zero, and a campaign is
+              only funded once the balance covers its budget.
+            </p>
+          ) : null}
           {canSubmit && dueKes != null && dueKes > 0 ? (
             <p className="text-xs text-muted-foreground">
               Paid by M-Pesa or card through Paystack. M-Pesa is limited per transaction by Safaricom;

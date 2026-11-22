@@ -86,6 +86,12 @@ export async function deleteCampaign(getToken: GetToken, id: number): Promise<vo
   await authedFetch(getToken, `/v1/customer/campaigns/${id}`, { method: "DELETE" })
 }
 
+/** Pull a campaign before it runs; its unspent budget goes back to the balance. */
+export async function withdrawCampaign(getToken: GetToken, id: number): Promise<CampaignDto> {
+  const res = await authedFetch(getToken, `/v1/customer/campaigns/${id}/withdraw`, { method: "POST" })
+  return res.json()
+}
+
 export async function submitCampaign(getToken: GetToken, id: number): Promise<CampaignDto> {
   const res = await authedFetch(getToken, `/v1/customer/campaigns/${id}/submit`, {
     method: "POST",

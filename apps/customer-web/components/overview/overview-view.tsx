@@ -18,6 +18,7 @@ import { DashboardToolbar } from "@workspace/ui/components/dashboard/dashboard-t
 import { KpiStrip, type KpiItem } from "@workspace/ui/components/dashboard/kpi-strip"
 import { Separator } from "@workspace/ui/components/separator"
 import { ActiveCampaignsSkeleton, OverviewChartSkeleton, OverviewKpiSkeleton } from "@/components/skeletons/dashboard-skeletons"
+import { MoneyBreakdown } from "@/components/billing/billing-panels"
 import { ActiveCampaigns } from "@/components/overview/active-campaigns"
 import { Greeting } from "@/components/overview/greeting"
 import { NeedsAttentionCard, buildAttentionItems } from "@/components/overview/needs-attention-card"
@@ -100,7 +101,7 @@ export function OverviewView() {
           {
             label: "Available funds",
             value: f?.availableKes == null ? "—" : formatKes(f.availableKes),
-            note: f?.availableKes == null ? "Appears after your first top-up" : "Balance minus committed",
+            note: f?.availableKes == null ? "Appears after your first top-up" : "Balance minus money held for campaigns",
           },
           {
             label: "Spent",
@@ -216,6 +217,22 @@ export function OverviewView() {
         </div>
         <NeedsAttentionCard items={attention} />
       </div>
+
+      {canBilling && f?.hasLedgerRows ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DashboardCard
+            title="Your money"
+            description="Everything paid in and out since you joined, down to what's available"
+            action={
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/billing">Billing</Link>
+              </Button>
+            }
+          >
+            <MoneyBreakdown summary={f} />
+          </DashboardCard>
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active campaigns</p>

@@ -164,12 +164,16 @@ export function notifyPaymentNotApplied(p: {
   orgId: number
   amountKes: number
   campaign: CampaignRef
+  /** Still needed to fund the campaign; null when the campaign is no longer editable. */
+  shortKes?: number | null
 }): Promise<void> {
   return safely("notifyPaymentNotApplied", () =>
     noticeBillingReaders(p.orgId, {
       type: "payment_not_applied",
       title: "Payment received, campaign not submitted",
-      body: `${kes(p.amountKes)} is in your balance. Submit ${p.campaign.name} again to use it.`,
+      body: p.shortKes
+        ? `${kes(p.amountKes)} is in your balance, but ${p.campaign.name} still needs ${kes(p.shortKes)} to be funded. Pay the rest to send it for review.`
+        : `${kes(p.amountKes)} is in your balance. Submit ${p.campaign.name} again to use it.`,
       href: `/campaigns/${p.campaign.id}`,
     }),
   )

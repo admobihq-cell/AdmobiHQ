@@ -47,14 +47,19 @@ export async function POST(_req: Request, { params }: Params) {
     const funded = await prisma.$transaction(
       async (tx) => {
         if (!(await fundFromBalance(tx, campaign))) {
-          return { dueKes: dueNowKes(Number(campaign.budget_kes ?? 0), await availableKes(tx, auth.access.orgId)) }
+          const available = await availableKes(tx, auth.access.orgId)
+          // owedKes: a negative balance is part of what's due, so the client can say why.
+          return { dueKes: dueNowKes(Number(campaign.budget_kes ?? 0), available), owedKes: Math.max(0, -available) }
         }
         return { campaign: await markCampaignSubmitted(tx, id) }
       },
       { maxWait: 10_000, timeout: 20_000 },
     )
     if (!funded.campaign) {
-      return NextResponse.json({ error: "Payment required", dueKes: funded.dueKes }, { status: 402 })
+      return NextResponse.json(
+        { error: "Payment required", dueKes: funded.dueKes, owedKes: funded.owedKes },
+        { status: 402 },
+      )
     }
     updated = funded.campaign
   }

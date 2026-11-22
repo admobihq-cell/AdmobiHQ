@@ -1,19 +1,28 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router"
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
+  canWithdrawCampaign,
   describeCampaignObjectives,
   exportFileName,
+  nairobiDay,
   type CampaignFormat,
 } from "@workspace/ops-contracts"
 
 import { SkeletonCampaignCards } from "@/components/app/skeleton"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
 import { CreativePicker } from "@/components/campaigns/creative-picker"
-import { Calendar, Download, Location, Pencil, Radio } from "@/components/icons"
+import { Calendar, Close, Download, Location, Pencil, Radio, Trash } from "@/components/icons"
 import { ApiErrorBanner } from "@/components/ui/api-error-banner"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { formatCampaignError, useCampaign, useDownloadPdf } from "@/lib/use-campaigns"
+import {
+  formatCampaignError,
+  useCampaign,
+  useDeleteCampaign,
+  useDownloadPdf,
+  useWithdrawCampaign,
+} from "@/lib/use-campaigns"
+import { useOrgPermissions } from "@/lib/use-org"
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -40,6 +49,9 @@ export default function CampaignDetailScreen() {
   const campaignQuery = useCampaign(id)
   const campaign = campaignQuery.data ?? null
   const downloadPdf = useDownloadPdf()
+  const remove = useDeleteCampaign()
+  const withdraw = useWithdrawCampaign()
+  const { can } = useOrgPermissions()
 
   const styles = useThemedStyles((c) => ({
     scroll: { flex: 1, backgroundColor: c.bg },
@@ -133,6 +145,40 @@ export default function CampaignDetailScreen() {
   }
 
   const editable = EDITABLE_STATUSES.has(campaign.status)
+  // Same rules as the API and the web app (canWithdrawCampaign in ops-contracts).
+  const canDelete = campaign.status === "draft" && can("campaigns:write")
+  const canWithdraw = can("campaigns:submit") && canWithdrawCampaign(campaign, nairobiDay(new Date()))
+  const actionError = remove.error ?? withdraw.error
+
+  function confirmDelete() {
+    if (!campaign) return
+    Alert.alert(
+      "Delete this draft?",
+      `"${campaign.name}" will be deleted. Its artwork stays in your Media Library, and any payment you made stays in your balance.`,
+      [
+        { text: "Keep it", style: "cancel" },
+        {
+          text: "Delete draft",
+          style: "destructive",
+          onPress: () => remove.mutate(campaign.id, { onSuccess: () => router.replace("/campaigns") }),
+        },
+      ],
+    )
+  }
+
+  function confirmWithdraw() {
+    if (!campaign) return
+    Alert.alert(
+      "Withdraw this campaign?",
+      campaign.funded_at
+        ? `"${campaign.name}" won't run, and its ${formatKes(campaign.budget_kes)} budget goes back to your available balance. This can't be undone.`
+        : `"${campaign.name}" won't run. This can't be undone.`,
+      [
+        { text: "Keep it", style: "cancel" },
+        { text: "Withdraw", style: "destructive", onPress: () => withdraw.mutate(campaign.id) },
+      ],
+    )
+  }
   const flight =
     campaign.starts_on && campaign.ends_on
       ? `${campaign.starts_on} → ${campaign.ends_on}`
@@ -215,7 +261,32 @@ export default function CampaignDetailScreen() {
               </Text>
             </Pressable>
           ) : null}
+          {canWithdraw ? (
+            <Pressable
+              style={styles.editButton}
+              disabled={withdraw.isPending}
+              onPress={confirmWithdraw}
+              accessibilityRole="button"
+            >
+              <Close color={colors.text} size={14} />
+              <Text style={styles.editText}>{withdraw.isPending ? "Withdrawing…" : "Withdraw"}</Text>
+            </Pressable>
+          ) : null}
+          {canDelete ? (
+            <Pressable
+              style={styles.editButton}
+              disabled={remove.isPending}
+              onPress={confirmDelete}
+              accessibilityRole="button"
+            >
+              <Trash color={colors.danger} size={14} />
+              <Text style={[styles.editText, { color: colors.danger }]}>
+                {remove.isPending ? "Deleting…" : "Delete draft"}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
+        {actionError ? <ApiErrorBanner message={formatCampaignError(actionError)} /> : null}
         {downloadPdf.error ? (
           <ApiErrorBanner message={formatCampaignError(downloadPdf.error)} />
         ) : null}

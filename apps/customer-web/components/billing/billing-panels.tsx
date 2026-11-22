@@ -34,6 +34,12 @@ function fundingCopy(summary: FinanceSummaryDto): { headline: string; detail: st
       detail: "Your balance, and how long it lasts at your pace of spend, appear after your first top-up.",
     }
   }
+  if (available < 0 && summary.committedKes === 0) {
+    return {
+      headline: `Your balance is ${formatKes(-available)} below zero`,
+      detail: "More has gone out than you paid in; the breakdown below shows where. Anything you pay next covers this first.",
+    }
+  }
   if (funding.level === "short") {
     return {
       headline: `Your active budgets need ${formatKes(-available)} more than you have`,
@@ -53,6 +59,42 @@ function fundingCopy(summary: FinanceSummaryDto): { headline: string; detail: st
 }
 
 /**
+ * Every shilling since the account opened, as a running sum: what came in, what went back out,
+ * what campaigns used, then what's held. It adds up exactly to Available, so a surprising
+ * balance (a negative one, say) explains itself.
+ */
+export function MoneyBreakdown({ summary, className }: { summary: FinanceSummaryDto; className?: string }) {
+  const { paidInKes, refundedKes, spentKes, adjustmentsKes } = summary.lifetime
+  const rows: Array<{ label: string; note: string; value: number; total?: boolean }> = [
+    { label: "Paid in", note: "Top-ups and campaign payments", value: paidInKes },
+    ...(refundedKes ? [{ label: "Refunded to you", note: "Sent back to M-Pesa or card", value: -refundedKes }] : []),
+    { label: "Spent on campaigns", note: "Charged as your flights ran", value: -spentKes },
+    ...(adjustmentsKes ? [{ label: "Adjustments", note: "Corrections and failed refunds returned", value: adjustmentsKes }] : []),
+    { label: "Balance", note: "What's in your account", value: summary.balanceKes, total: true },
+    { label: "Held for campaigns", note: "Unspent budget of submitted, approved and live campaigns", value: -summary.committedKes },
+    { label: "Available", note: "Yours to use on a new campaign or refund", value: summary.availableKes ?? summary.balanceKes, total: true },
+  ]
+  return (
+    <dl className={cn("flex min-w-0 flex-col text-sm", className)}>
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className={cn("flex items-baseline justify-between gap-4 py-1.5", row.total && "border-t font-semibold")}
+        >
+          <dt className="min-w-0">
+            {row.label}
+            {row.total ? null : <span className="block text-xs font-normal text-muted-foreground">{row.note}</span>}
+          </dt>
+          <dd className={cn("shrink-0 tabular-nums", row.value < 0 && row.total && "text-destructive")}>
+            {formatKes(row.value)}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+/**
  * The answer people open billing for: is the account funded, and until when. Leads the overview,
  * with the figures behind it underneath and the money actions beside it.
  */
@@ -68,16 +110,6 @@ export function FundingStatement({
   const { headline, detail } = fundingCopy(summary)
   const level = summary.funding.level === "untracked" ? null : LEVEL[summary.funding.level]
 
-  const facts = [
-    { label: "Balance", value: formatKes(summary.balanceKes), note: "Paid in, less spend and refunds" },
-    { label: "Committed", value: formatKes(summary.committedKes), note: "Left on live and scheduled budgets" },
-    {
-      label: "Spent",
-      value: formatKes(summary.spentKes.current),
-      note: "In the selected period",
-      delta: <DeltaPill delta={summary.spentKes} good="neutral" />,
-    },
-  ]
 
   return (
     <Card className="shadow-xs">
@@ -104,18 +136,16 @@ export function FundingStatement({
             </div>
           ) : null}
         </div>
-        <dl className="grid gap-4 border-t pt-4 sm:grid-cols-3">
-          {facts.map((fact) => (
-            <div key={fact.label} className="min-w-0">
-              <dt className="text-xs font-medium text-muted-foreground">{fact.label}</dt>
-              <dd className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="text-lg font-semibold tabular-nums">{fact.value}</span>
-                {fact.delta}
-              </dd>
-              <dd className="text-xs text-muted-foreground">{fact.note}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="grid gap-6 border-t pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">
+          <MoneyBreakdown summary={summary} />
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground">Spent in the selected period</p>
+            <p className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="text-lg font-semibold tabular-nums">{formatKes(summary.spentKes.current)}</span>
+              <DeltaPill delta={summary.spentKes} good="neutral" />
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

@@ -55,3 +55,20 @@ export function campaignFlightPhase(
   if (now > toDayIso(endsOn)) return "completed"
   return "live"
 }
+
+/**
+ * Whether the advertiser can withdraw (cancel) a campaign themselves. Nothing has run yet in
+ * any of these, so the whole unspent budget goes back to their available balance:
+ * - in review (`submitted`) or sent back for changes (`changes_requested`), at any date
+ * - `approved`, until its first flight day (Nairobi calendar, like the spend job)
+ * A live or finished flight can't be withdrawn here; ops handles that.
+ * Drafts are deleted instead, and rejected or cancelled ones hold nothing.
+ */
+export function canWithdrawCampaign(
+  campaign: { status: string; starts_on: string | null },
+  nairobiToday: string,
+): boolean {
+  if (campaign.status === "submitted" || campaign.status === "changes_requested") return true
+  if (campaign.status !== "approved") return false
+  return campaign.starts_on == null || campaign.starts_on > nairobiToday
+}

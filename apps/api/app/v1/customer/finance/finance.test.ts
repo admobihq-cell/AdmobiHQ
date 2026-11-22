@@ -211,6 +211,16 @@ describe.skipIf(!databaseUrl)("customer finance routes", () => {
     expect(wide.topUpsKes.current).toBe(10000)
   })
 
+  it("lifetime totals add up to the balance", async () => {
+    as(orgA)
+    const body = await (await summary("?range=7d")).json()
+    const { paidInKes, refundedKes, spentKes, adjustmentsKes } = body.lifetime
+    expect(paidInKes).toBe(10000)
+    expect(Math.round((paidInKes - refundedKes - spentKes + adjustmentsKes) * 100) / 100).toBe(body.balanceKes)
+    as(orgEmpty)
+    expect((await (await summary()).json()).lifetime).toEqual({ paidInKes: 0, refundedKes: 0, spentKes: 0, adjustmentsKes: 0 })
+  })
+
   it("spend trend has one point per day and adds up to the period's spend", async () => {
     as(orgA)
     const body = await (await summary()).json()

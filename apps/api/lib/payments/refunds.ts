@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto"
 
 import { availableKes, lockOrg } from "@/lib/payments/funding"
-import { notifyRefundUpdate } from "@/lib/payments/money-notify"
+import { alertOpsFinance, notifyRefundUpdate } from "@/lib/payments/money-notify"
 import { createRefund, fromSubunit, listRefunds, PaystackError, verifyTransaction, type PaystackRefund } from "@/lib/payments/paystack"
 import { prisma } from "@/lib/prisma"
 
@@ -241,7 +241,7 @@ export async function applyPaystackRefunds(payment: PaymentForSync, items: Payst
             occurred_at: new Date(),
           },
         })
-        return tx.refund.create({
+        const refund = await tx.refund.create({
           data: {
             payment_id: payment.id,
             org_id: payment.org_id,
@@ -254,9 +254,19 @@ export async function applyPaystackRefunds(payment: PaymentForSync, items: Payst
             created_by_email: item.refunded_by || "paystack-dashboard",
           },
         })
+        // A dashboard refund skips refundCredit's "only what's available" check, so it can hand
+        // back money already held for, or spent on, a campaign. Read it under the same lock.
+        return { refund, availableAfter: await availableKes(tx, payment.org_id) }
       })
       if (!created) continue
-      row = created
+      row = created.refund
+      if (created.availableAfter < 0) {
+        await alertOpsFinance({
+          title: `Paystack dashboard refund overdrew org #${payment.org_id}`,
+          body: `A ${amountKes} KES refund on ${payment.reference} was made in the Paystack dashboard and left the org's available balance at ${created.availableAfter} KES. That money was already held for or spent on campaigns. Refund from Admobi Finances instead, which only refunds what's available.`,
+          email: true,
+        })
+      }
       imported += 1
       await refundNotice(row.id, "sent")
     }

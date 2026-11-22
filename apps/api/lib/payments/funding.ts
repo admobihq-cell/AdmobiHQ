@@ -1,8 +1,10 @@
 import type { Campaign, Prisma } from "@prisma/client"
 
-import { nairobiDay, toDayIso } from "@workspace/ops-contracts"
+import { dueNowKes, nairobiDay, toDayIso } from "@workspace/ops-contracts"
 
 import { prisma } from "@/lib/prisma"
+
+export { dueNowKes }
 
 /** Statuses in which a funded campaign's unspent budget is held (spec §5.4). */
 export const HOLDING_STATUSES: ReadonlySet<string> = new Set(["submitted", "approved", "changes_requested"])
@@ -21,11 +23,6 @@ export function holdsFunds(
   )
 }
 
-/** What the advertiser still has to pay for a budget, after using whatever credit they have. */
-export function dueNowKes(budgetKes: number, availableKes: number): number {
-  return roundKes(Math.max(0, budgetKes - Math.max(0, availableKes)))
-}
-
 /** Serialises money decisions per org. Call first in the transaction, before `availableKes`. */
 export async function lockOrg(tx: Prisma.TransactionClient, orgId: number): Promise<void> {
   await tx.$queryRaw`SELECT id FROM advertiser_orgs WHERE id = ${orgId} FOR UPDATE`
@@ -33,7 +30,7 @@ export async function lockOrg(tx: Prisma.TransactionClient, orgId: number): Prom
 
 /**
  * Ledger balance minus the unspent budget of every campaign that holds funds. Not clamped:
- * a negative result means the org is over-committed (`dueNowKes` clamps). Spent is net of
+ * a negative result means the org owes money, which `dueNowKes` adds to what is due. Spent is net of
  * refunds, the same definition as `spentByCampaign` in finance-queries.ts. The caller must hold `lockOrg`.
  */
 export async function availableKes(tx: Prisma.TransactionClient, orgId: number, today: Date = new Date()): Promise<number> {

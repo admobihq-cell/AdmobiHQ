@@ -40,7 +40,7 @@ import {
 import { radius, spacing, typography, useThemeColors, useThemedStyles } from "@/lib/theme"
 import { useOrgPermissions } from "@/lib/use-org"
 import { useTokenGetter } from "@/lib/auth/use-token-getter"
-import { checkoutCampaign, dueKesOf, payWithPaystack } from "@/lib/payments"
+import { checkoutCampaign, dueKesOf, owedKesOf, payWithPaystack } from "@/lib/payments"
 
 const FORMAT_LABELS: Record<CampaignFormat, string> = {
   taxi_top: "Taxi-top LED",
@@ -264,10 +264,11 @@ export function CampaignWizard({
   const [paying, setPaying] = useState(false)
 
   /** The balance didn't cover the budget: confirm, pay through Paystack, and the server submits. */
-  function payAndSubmit(campaignId: number, dueKes: number) {
+  function payAndSubmit(campaignId: number, dueKes: number, owedKes: number) {
+    const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { maximumFractionDigits: 2 })}`
     Alert.alert(
-      `Pay KES ${dueKes.toLocaleString("en-KE", { maximumFractionDigits: 2 })} and submit?`,
-      "Your balance doesn't cover this budget. Pay the difference by M-Pesa or card through Paystack. M-Pesa is limited per transaction by Safaricom; use a card for larger amounts.",
+      `Pay ${kes(dueKes)} and submit?`,
+      `${owedKes > 0 ? `This includes ${kes(owedKes)} your account owes: your balance is below zero. ` : "Your balance doesn't cover this budget. "}Pay by M-Pesa or card through Paystack. M-Pesa is limited per transaction by Safaricom; use a card for larger amounts.`,
       [
         { text: "Not now", style: "cancel" },
         {
@@ -301,7 +302,7 @@ export function CampaignWizard({
     if (!campaign) return
     const result = await submit.mutateAsync(campaign.id).catch((error: unknown) => {
       const due = dueKesOf(error)
-      if (due != null && due > 0) payAndSubmit(campaign.id, due)
+      if (due != null && due > 0) payAndSubmit(campaign.id, due, owedKesOf(error))
       return null
     })
     if (result) router.replace(`/campaigns/${campaign.id}`)

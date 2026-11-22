@@ -11,6 +11,7 @@ import {
   checkoutCampaign,
   createCampaign,
   deleteCampaign,
+  withdrawCampaign,
   deleteCreative,
   downloadCampaignPdf,
   getCampaign,
@@ -97,6 +98,19 @@ export function useDeleteCampaign() {
     onSuccess: () => {
       invalidate()
       toast.success("Campaign deleted")
+    },
+    onError: (error) => toast.error(messageOf(error)),
+  })
+}
+
+export function useWithdrawCampaign() {
+  const { getToken } = useAuth()
+  const invalidate = useInvalidate()
+  return useMutation({
+    mutationFn: (id: number) => withdrawCampaign(getToken, id),
+    onSuccess: (campaign) => {
+      invalidate(campaign.id)
+      toast.success("Campaign withdrawn. Its budget is back in your balance.")
     },
     onError: (error) => toast.error(messageOf(error)),
   })

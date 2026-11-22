@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import {
   describeCampaignObjectives,
+  dueNowKes,
   exportFileName,
   formatKes as formatKesNumber,
   type CampaignDto,
@@ -24,6 +25,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { StatusPill } from "@workspace/ui/components/dashboard/status-pill"
 import { CampaignStatusBadge } from "@/components/campaign-status-badge"
+import { CampaignActions } from "@/components/campaigns/campaign-actions"
 import { CampaignReviewBanner } from "@/components/campaigns/campaign-review-banner"
 import { CreativeUploadField } from "@/components/campaigns/creative-upload-field"
 import {
@@ -38,7 +40,7 @@ import { FlightTrack } from "@/components/campaigns/flight-track"
 import { HEALTH_LABEL, HEALTH_TONE, compactOrDash, percentOrDash } from "@/components/reports/format"
 import { CampaignDetailSkeleton } from "@/components/skeletons/campaign-detail-skeleton"
 import { StatCard } from "@/components/stat-card"
-import { useReportCampaigns } from "@/lib/use-analytics"
+import { useFinanceSummary, useReportCampaigns } from "@/lib/use-analytics"
 import { useCampaign, useDownloadPdf } from "@/lib/use-campaigns"
 import { useOrgPermissions } from "@/lib/use-org"
 
@@ -179,6 +181,7 @@ export function CampaignDetailView({ id }: { id: number }) {
   const canReport = can("reports:read")
   // Same query (and cache entry) as the campaigns list, so arriving from it costs nothing.
   const reportQuery = useReportCampaigns({ range: "all" }, {}, { enabled: canReport })
+  const finance = useFinanceSummary({ range: "30d" }, { enabled: can("billing:read") })
 
   const backLink = (
     <Link
@@ -208,6 +211,12 @@ export function CampaignDetailView({ id }: { id: number }) {
   }
 
   const editable = EDITABLE_STATUSES.has(campaign.status)
+  // Why an unfunded campaign hasn't gone to review: the balance doesn't cover its budget. When the
+  // balance is below zero, a payment covers that first, so say how much is really due.
+  const availableKes = finance.data?.availableKes
+  const budgetKes = Number(campaign.budget_kes ?? 0)
+  const shortKes =
+    editable && !campaign.funded_at && availableKes != null && budgetKes > 0 ? dueNowKes(budgetKes, availableKes) : 0
   const report = reportQuery.data?.items.find((row) => row.id === campaign.id)
   const format = FORMAT_LABELS[campaign.format] ?? campaign.format
   const flight = flightStat(campaign)
@@ -289,11 +298,29 @@ export function CampaignDetailView({ id }: { id: number }) {
                 Proof of play
               </Button>
             ) : null}
+            <CampaignActions campaign={campaign} />
           </div>
         </div>
       </div>
 
       <CampaignReviewBanner campaign={campaign} />
+
+      {shortKes > 0 ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium">Not sent for review yet: {formatKesNumber(shortKes)} still to pay</p>
+              <p>
+                A campaign goes to our team once your available balance covers its budget.
+                {availableKes != null && availableKes < 0
+                  ? ` Your balance is ${formatKesNumber(-availableKes)} below zero, and any payment covers that first.`
+                  : ` You have ${formatKesNumber(availableKes ?? 0)} available.`}
+              </p>
+            </div>
+            <Button size="sm" className="shrink-0" asChild>
+              <Link href={`/campaigns/new?id=${campaign.id}`}>Pay and submit</Link>
+            </Button>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard

@@ -1,6 +1,6 @@
 import type { Campaign, Prisma } from "@prisma/client"
 
-import { nairobiDay } from "@workspace/ops-contracts"
+import { dueNowKes, nairobiDay } from "@workspace/ops-contracts"
 
 import { EDITABLE_STATUSES } from "@/lib/campaigns/campaign-store"
 import {
@@ -75,6 +75,8 @@ type Outcome =
       changed: true
       invoiceNumber: string
       submitted: SubmittedCampaign | null
+      /** Still owed to fund the campaign when this payment wasn't enough; null otherwise. */
+      shortKes: number | null
       campaign: { id: number; name: string } | null
     }
 
@@ -190,8 +192,16 @@ export async function settlePayment(reference: string): Promise<SettleResult> {
       })
 
       let submitted: SubmittedCampaign | null = null
-      if (campaign && EDITABLE_STATUSES.has(campaign.status) && (await fundFromBalance(tx, campaign))) {
-        submitted = await markCampaignSubmitted(tx, campaign.id)
+      // Still to pay when the payment wasn't enough to fund the campaign (a balance below zero, or a
+      // budget raised after checkout opened). Read under the same lock, so the notice can't disagree.
+      let shortKes: number | null = null
+      if (campaign && EDITABLE_STATUSES.has(campaign.status)) {
+        if (await fundFromBalance(tx, campaign)) {
+          submitted = await markCampaignSubmitted(tx, campaign.id)
+        } else {
+          const { budget_kes } = await tx.campaign.findUniqueOrThrow({ where: { id: campaign.id }, select: { budget_kes: true } })
+          shortKes = dueNowKes(Number(budget_kes ?? 0), await availableKes(tx, payment.org_id))
+        }
       }
 
       return {
@@ -199,6 +209,7 @@ export async function settlePayment(reference: string): Promise<SettleResult> {
         changed: true,
         invoiceNumber: number,
         submitted,
+        shortKes,
         campaign: campaign ? { id: campaign.id, name: campaign.name } : null,
       }
     },
@@ -221,7 +232,7 @@ export async function settlePayment(reference: string): Promise<SettleResult> {
       if (outcome.submitted) {
         await announceCampaignSubmitted(outcome.submitted, { userId: payment.created_by })
       } else if (outcome.campaign) {
-        await notifyPaymentNotApplied({ orgId: payment.org_id, amountKes, campaign: outcome.campaign })
+        await notifyPaymentNotApplied({ orgId: payment.org_id, amountKes, campaign: outcome.campaign, shortKes: outcome.shortKes })
       }
     } else if (outcome.result === "amount_mismatch") {
       await notifyPaymentMismatch({ orgId: payment.org_id, payerUserId: payment.created_by, reference })

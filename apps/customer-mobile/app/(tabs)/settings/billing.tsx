@@ -470,6 +470,37 @@ export default function BillingSettingsScreen() {
           </View>
         ) : null}
 
+        {canRead && summary?.hasLedgerRows ? (
+          // Every shilling since the account opened, adding up to Available, so a surprising
+          // balance (a negative one, say) explains itself. Same rows as the web billing page.
+          <View style={{ gap: spacing.sm }}>
+            <Text style={styles.sectionLabel}>Where your money is</Text>
+            <View style={styles.group}>
+              {[
+                { label: "Paid in", value: summary.lifetime.paidInKes },
+                ...(summary.lifetime.refundedKes
+                  ? [{ label: "Refunded to you", value: -summary.lifetime.refundedKes }]
+                  : []),
+                { label: "Spent on campaigns", value: -summary.lifetime.spentKes },
+                ...(summary.lifetime.adjustmentsKes
+                  ? [{ label: "Adjustments", value: summary.lifetime.adjustmentsKes }]
+                  : []),
+                { label: "Balance", value: summary.balanceKes },
+                { label: "Held for campaigns", value: -summary.committedKes },
+                { label: "Available", value: summary.availableKes ?? summary.balanceKes },
+              ].map((row, index, rows) => (
+                <View key={row.label}>
+                  <View style={styles.row}>
+                    <Text style={styles.campaignName}>{row.label}</Text>
+                    <Text style={styles.campaignSpend}>{formatCurrency(row.value)}</Text>
+                  </View>
+                  {index < rows.length - 1 ? <View style={styles.divider} /> : null}
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.sectionLabel}>Spend by campaign · 30d</Text>
           <View style={styles.group}>
