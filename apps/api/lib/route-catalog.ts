@@ -188,6 +188,7 @@ const NOTES: Record<string, string> = {
   "/v1/customer/campaigns": "List and create campaigns",
   "/v1/customer/campaigns/[id]": "Read, edit or delete a campaign",
   "/v1/customer/campaigns/[id]/submit": "Submit a campaign for review",
+  "/v1/customer/campaigns/[id]/withdraw": "Withdraw a campaign before it starts and release its budget hold",
   "/v1/customer/campaigns/[id]/checkout": "Pay what the balance doesn't cover, then submit",
   "/v1/customer/campaigns/[id]/creatives": "Upload a creative",
   "/v1/customer/campaigns/[id]/creatives/[creativeId]": "Remove a creative",
