@@ -19,7 +19,7 @@
  *   finish review, the verdict, and DESIGN.md.
  */
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ComponentType } from "react"
 
 export type NotificationTone =
   | "neutral"
@@ -40,10 +40,21 @@ export type NotificationFeedItem = {
   /** Internal route this notification points at, if any. */
   href?: string
   imageUrl?: string | null
+  /** Glyph for the kind of notification; falls back to the tone's icon. */
+  icon?: ComponentType<{ className?: string }>
+  /** Up to two inline buttons in the bell peek. The first `primary` one is filled. */
+  actions?: NotificationAction[]
   /** ISO timestamp. */
   createdAt: string
   /** ISO timestamp, or null when unread. */
   readAt: string | null
+}
+
+export type NotificationAction = {
+  label: string
+  /** Internal route, or a `tel:` / `mailto:` link. */
+  href: string
+  primary?: boolean
 }
 
 export type NotificationDateGroup = {

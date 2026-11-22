@@ -27,8 +27,7 @@ export default async function FleetDashboardPage({ searchParams }: { searchParam
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <DashboardHeader page="fleet" />
-      <DashboardNav range={range} />
+      <DashboardHeader page="fleet" actions={<DashboardNav range={range} />} />
       <Suspense key={range} fallback={<FleetSkeleton money={includeMoney} />}>
         <Content range={range} includeMoney={includeMoney} />
       </Suspense>

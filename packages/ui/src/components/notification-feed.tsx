@@ -37,7 +37,7 @@ type ToneStyle = {
   glyph: string
 }
 
-const TONE_STYLES: Record<NotificationTone, ToneStyle> = {
+export const TONE_STYLES: Record<NotificationTone, ToneStyle> = {
   neutral: {
     icon: Bell,
     wrap: "bg-muted text-muted-foreground",
@@ -274,7 +274,7 @@ export function NotificationFeed({
                 <AnimatePresence initial={false}>
                   {group.items.map((item) => {
                     const tone = TONE_STYLES[item.tone] ?? TONE_STYLES.neutral
-                    const ToneIcon = tone.icon
+                    const ToneIcon = item.icon ?? tone.icon
                     const isUnread = !item.readAt
                     return (
                       <motion.div

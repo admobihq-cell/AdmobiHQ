@@ -15,6 +15,7 @@ import {
   KitTooltip,
   MARK,
   WashGradients,
+  allowDecimalsFor,
   axisFormatter,
   seriesValues,
   chartColor,
@@ -104,6 +105,7 @@ export function TrendChart({
           tickLine={false}
           axisLine={false}
           width={48}
+          allowDecimals={allowDecimalsFor(seriesValues(data, series.map((s) => s.key)))}
           tickFormatter={axisFormatter(seriesValues(data, series.map((s) => s.key)), valueFormatter)}
         />
         <ChartTooltip

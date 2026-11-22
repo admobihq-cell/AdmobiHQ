@@ -1,18 +1,15 @@
 "use client"
 
 import Link from "next/link"
+import { foldOther, type Delta } from "@workspace/ops-contracts"
 import { Car, FileText, Mail, Megaphone, Truck } from "lucide-react"
-import { formatKes, type Delta } from "@workspace/ops-contracts"
 
 import { CmsHealthCard } from "@/components/content/cms-health-card"
 import { ApiErrorBanner } from "@workspace/ui/components/api-error-banner"
-import { Card, CardContent } from "@workspace/ui/components/card"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
+import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
 import { TrendChart } from "@workspace/ui/components/charts/trend-chart"
-import { ActionQueue } from "@workspace/ui/components/dashboard/action-queue"
-import { DashboardCard } from "@workspace/ui/components/dashboard/dashboard-card"
-import { HeroMetric } from "@workspace/ui/components/dashboard/hero-metric"
 import { KpiStrip } from "@workspace/ui/components/dashboard/kpi-strip"
 import type { ActionQueueItem } from "@/lib/queries/action-queue"
 
@@ -23,7 +20,7 @@ export type OverviewForm = "leads" | "fleet" | "drivers" | "waitlist" | "mediaKi
 /** Every field is already cut down server-side to the viewer's permissions; null = not theirs to see. */
 type OverviewData = {
   submissions: {
-    forms: Array<{ key: OverviewForm; value: number }>
+    forms: Array<{ key: OverviewForm; value: number; delta: Delta }>
     total: number
     byType: Named
     budgetMix: Named | null
@@ -40,14 +37,16 @@ type OverviewData = {
   actions: ActionQueueItem[]
   /** Budget approved in the period; only for viewers who hold both campaigns and finances. */
   booked: Delta | null
+  /** KES booked per day in the period, for the banner's trend line. */
+  bookedTrend: Array<{ day: string; value: number }> | null
 }
 
-const FORM_TILES: Record<OverviewForm, { label: string; icon: React.ReactNode }> = {
-  leads: { label: "Campaign leads", icon: <Megaphone /> },
-  fleet: { label: "Fleet partners", icon: <Truck /> },
-  drivers: { label: "Drivers", icon: <Car /> },
-  waitlist: { label: "Waitlist", icon: <Mail /> },
-  mediaKit: { label: "Media kit", icon: <FileText /> },
+const FORM_TILES: Record<OverviewForm, { label: string; icon: React.ReactNode; href: string }> = {
+  leads: { label: "Campaign leads", icon: <Megaphone />, href: "/leads" },
+  fleet: { label: "Fleet partners", icon: <Truck />, href: "/fleet" },
+  drivers: { label: "Drivers", icon: <Car />, href: "/drivers" },
+  waitlist: { label: "Waitlist", icon: <Mail />, href: "/waitlist" },
+  mediaKit: { label: "Media kit", icon: <FileText />, href: "/media-kit" },
 }
 
 const NO_DATA = "Nothing was submitted in this period."
@@ -55,22 +54,16 @@ const NO_DATA = "Nothing was submitted in this period."
 export function OverviewDashboard({ data, error }: { data?: OverviewData; error?: string | null }) {
   if (!data) return <ApiErrorBanner message={error ?? "Could not load dashboard data."} />
 
-  const { submissions, timeline, content, actions, booked } = data
-  const hero = booked ? (
-    <HeroMetric
-      label="Booked this period"
-      value={formatKes(booked.current)}
-      deltas={[{ label: "vs previous period", delta: booked, good: "up" }]}
-      note="Budget of campaigns approved in the period"
-    />
-  ) : submissions ? (
-    <HeroMetric label="Total submissions" value={String(submissions.total)} note="Across the public forms you can open, in the period" />
-  ) : null
+  // The headline figure and the action queue live on the banner (overview-welcome.tsx).
+  const { submissions, timeline, content } = data
   const breakdowns = submissions
     ? [
         submissions.byType.length > 1 ? (
           <ChartCard key="type" title="By type" description="Submissions per form" isEmpty={submissions.byType.every((t) => t.value === 0)} emptyMessage={NO_DATA} table={{ columns: ["Form", "Submissions"], rows: submissions.byType.map((t) => [t.name, t.value]) }}>
-            <RankBars data={submissions.byType} />
+            <DonutChart
+              data={submissions.byType.filter((t) => t.value > 0)}
+              centerLabel={{ label: "Submissions", value: String(submissions.total) }}
+            />
           </ChartCard>
         ) : null,
         submissions.budgetMix ? (
@@ -80,34 +73,32 @@ export function OverviewDashboard({ data, error }: { data?: OverviewData; error?
         ) : null,
         submissions.driversByCity ? (
           <ChartCard key="city" title="Drivers by city" description="Driver sign-ups in the period" isEmpty={submissions.driversByCity.length === 0} emptyMessage={NO_DATA} table={{ columns: ["City", "Drivers"], rows: submissions.driversByCity.map((t) => [t.name, t.value]) }}>
-            <RankBars data={submissions.driversByCity} />
+            <DonutChart half data={foldOther([...submissions.driversByCity].sort((a, b) => b.value - a.value), 5)} />
           </ChartCard>
         ) : null,
       ].filter(Boolean)
     : []
 
+  const [firstBreakdown, ...restBreakdowns] = breakdowns
+
   return (
     <div className="flex flex-col gap-4">
-      {hero ? (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <Card className={submissions ? "shadow-xs" : "shadow-xs xl:col-span-3"}>
-            <CardContent>{hero}</CardContent>
-          </Card>
-          {submissions ? (
-            <div className="xl:col-span-2">
-              <KpiStrip
-                className="h-full"
-                items={submissions.forms.map((f) => ({ ...FORM_TILES[f.key], value: String(f.value) }))}
-              />
-            </div>
-          ) : null}
-        </div>
+      {submissions ? (
+        <KpiStrip
+          variant="cards"
+          LinkComponent={Link}
+          items={submissions.forms.map((f) => ({
+            ...FORM_TILES[f.key],
+            value: String(f.value),
+            delta: { delta: f.delta, good: "up" as const },
+          }))}
+        />
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        {timeline ? (
+      {timeline ? (
+        <div className="grid gap-4 xl:grid-cols-3">
           <ChartCard
-            className="xl:col-span-2"
+            className={firstBreakdown ? "xl:col-span-2" : "xl:col-span-3"}
             title="Submissions over time"
             description="All public forms, per day"
             isEmpty={timeline.every((p) => p.count === 0)}
@@ -116,27 +107,15 @@ export function OverviewDashboard({ data, error }: { data?: OverviewData; error?
           >
             <TrendChart data={timeline} series={[{ key: "count", label: "Submissions" }]} />
           </ChartCard>
-        ) : null}
-        <DashboardCard
-          className={timeline ? undefined : "xl:col-span-3"}
-          title="Action queue"
-          description="What needs someone, from the sections you can open"
-        >
-          <ActionQueue
-            empty="Nothing needs attention."
-            LinkComponent={Link}
-            items={actions.map((a) => ({
-              title: `${a.count} ${a.title.toLowerCase()}`,
-              meta: a.meta,
-              action: a.action,
-              tag: { label: a.count > 9 ? "9+" : String(a.count), tone: a.tone },
-              href: a.href,
-            }))}
-          />
-        </DashboardCard>
-      </div>
+          {firstBreakdown}
+        </div>
+      ) : null}
 
-      {breakdowns.length > 0 ? <div className="grid gap-4 lg:grid-cols-3">{breakdowns}</div> : null}
+      {(timeline ? restBreakdowns : breakdowns).length > 0 ? (
+        <div className={timeline ? "grid gap-4 lg:grid-cols-2" : "grid gap-4 lg:grid-cols-3"}>
+          {timeline ? restBreakdowns : breakdowns}
+        </div>
+      ) : null}
 
       {content ? <CmsHealthCard content={content} /> : null}
     </div>

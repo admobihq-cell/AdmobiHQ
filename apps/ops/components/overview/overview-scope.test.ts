@@ -23,7 +23,10 @@ test("a support-only viewer sees no submissions at all", () => {
 
 test("a drivers-only viewer sees only driver numbers", () => {
   const scoped = scopeSubmissions(overview, (p) => p === "drivers")
-  assert.deepEqual(scoped?.forms, [{ key: "drivers", value: 4 }])
+  assert.deepEqual(
+    scoped?.forms.map((f) => ({ key: f.key, value: f.value })),
+    [{ key: "drivers", value: 4 }],
+  )
   assert.equal(scoped?.total, 4)
   assert.deepEqual(scoped?.byType, [{ name: "Drivers", value: 4 }])
   assert.equal(scoped?.budgetMix, null)
@@ -34,4 +37,12 @@ test("a viewer with every form sees everything", () => {
   const scoped = scopeSubmissions(overview, () => true)
   assert.equal(scoped?.total, 31)
   assert.equal(scoped?.byType.length, 5)
+})
+
+test("each form compares against the previous window when there is one", () => {
+  const withPrev = { ...overview, previous: { leads: 2, fleet: 2, drivers: 2, waitlist: 8, mediaKit: 16 } }
+  const scoped = scopeSubmissions(withPrev, () => true)
+  assert.equal(scoped?.forms.find((f) => f.key === "leads")?.delta.change, -50)
+  assert.equal(scoped?.forms.find((f) => f.key === "drivers")?.delta.change, 100)
+  assert.equal(scopeSubmissions(overview, () => true)?.forms[0]?.delta.change, null)
 })

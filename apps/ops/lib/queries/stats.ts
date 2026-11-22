@@ -33,16 +33,28 @@ type OverviewRow = {
   drivers_by_city: NamedCount[] | null
   fleet_by_city: NamedCount[] | null
   drivers_by_heard: NamedCount[] | null
+  prev_leads: string | null
+  prev_fleet: string | null
+  prev_drivers: string | null
+  prev_waitlist: string | null
+  prev_media_kit: string | null
 }
+
+/** Counts per public form in the window just before this one; null for "all". */
+const PREV = (table: string) =>
+  `(SELECT COUNT(*)::text FROM ${table}, bounds
+     WHERE bounds.prev_start IS NOT NULL AND created_at >= bounds.prev_start AND created_at < bounds.start)`
 
 async function queryOverviewStats(range: DateRangeKey) {
   const start = getDateRangeStart(range)
+  // The window of equal length that ends where this one starts.
+  const prevStart = start ? new Date(2 * start.getTime() - Date.now()) : null
   const pool = getPgPool()
 
   const result = await pool.query<OverviewRow>(
     `
     WITH bounds AS (
-      SELECT $1::timestamptz AS start
+      SELECT $1::timestamptz AS start, $2::timestamptz AS prev_start
     ),
     lead_rows AS (
       SELECT budget_range
@@ -83,9 +95,14 @@ async function queryOverviewStats(range: DateRangeKey) {
            WHERE heard_about IS NOT NULL
            GROUP BY heard_about
          ) s
-      ) AS drivers_by_heard
+      ) AS drivers_by_heard,
+      ${PREV("leads")} AS prev_leads,
+      ${PREV("fleet_partners")} AS prev_fleet,
+      ${PREV("drivers")} AS prev_drivers,
+      ${PREV("waitlist_entries")} AS prev_waitlist,
+      ${PREV("media_kit_requests")} AS prev_media_kit
     `,
-    [start],
+    [start, prevStart],
   )
 
   const row = result.rows[0]
@@ -94,6 +111,7 @@ async function queryOverviewStats(range: DateRangeKey) {
   const drivers = Number.parseInt(row?.drivers ?? "0", 10)
   const waitlist = Number.parseInt(row?.waitlist ?? "0", 10)
   const mediaKit = Number.parseInt(row?.media_kit ?? "0", 10)
+  const prev = (value: string | null | undefined) => Number.parseInt(value ?? "0", 10)
 
   return {
     totals: {
@@ -104,6 +122,16 @@ async function queryOverviewStats(range: DateRangeKey) {
       waitlist,
       mediaKit,
     },
+    /** Same counts for the previous window of equal length; null for "all". */
+    previous: prevStart
+      ? {
+          leads: prev(row?.prev_leads),
+          fleet: prev(row?.prev_fleet),
+          drivers: prev(row?.prev_drivers),
+          waitlist: prev(row?.prev_waitlist),
+          mediaKit: prev(row?.prev_media_kit),
+        }
+      : null,
     byType: [
       { name: "Campaign Leads", value: leads },
       { name: "Fleet Partners", value: fleet },
@@ -121,7 +149,7 @@ async function queryOverviewStats(range: DateRangeKey) {
 export function getOverviewStats(range: DateRangeKey = "30d") {
   return unstable_cache(
     () => queryOverviewStats(range),
-    ["ops-overview-stats", range],
+    ["ops-overview-stats-v2", range],
     { revalidate: 300 },
   )()
 }
@@ -132,20 +160,29 @@ async function querySubmissionsOverTime(days: number) {
 
   const result = await pool.query<{ day: string; count: string }>(
     `
-    SELECT day::date::text AS day, COUNT(*)::text AS count
-    FROM (
-      SELECT date_trunc('day', created_at) AS day FROM leads WHERE created_at >= $1
+    WITH combined AS (
+      SELECT (created_at AT TIME ZONE 'Africa/Nairobi')::date AS day FROM leads WHERE created_at >= $1
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM fleet_partners WHERE created_at >= $1
+      SELECT (created_at AT TIME ZONE 'Africa/Nairobi')::date FROM fleet_partners WHERE created_at >= $1
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM drivers WHERE created_at >= $1
+      SELECT (created_at AT TIME ZONE 'Africa/Nairobi')::date FROM drivers WHERE created_at >= $1
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM waitlist_entries WHERE created_at >= $1
+      SELECT (created_at AT TIME ZONE 'Africa/Nairobi')::date FROM waitlist_entries WHERE created_at >= $1
       UNION ALL
-      SELECT date_trunc('day', created_at) FROM media_kit_requests WHERE created_at >= $1
-    ) combined
-    GROUP BY day
-    ORDER BY day ASC
+      SELECT (created_at AT TIME ZONE 'Africa/Nairobi')::date FROM media_kit_requests WHERE created_at >= $1
+    ),
+    -- Every day in the window, so a quiet day plots as 0 instead of the line skipping it.
+    days AS (
+      SELECT generate_series(
+        ($1::timestamptz AT TIME ZONE 'Africa/Nairobi')::date,
+        (now() AT TIME ZONE 'Africa/Nairobi')::date,
+        interval '1 day'
+      )::date AS day
+    )
+    SELECT days.day::text AS day, COUNT(combined.day)::text AS count
+    FROM days LEFT JOIN combined ON combined.day = days.day
+    GROUP BY days.day
+    ORDER BY days.day ASC
     `,
     [start],
   )
@@ -159,7 +196,7 @@ async function querySubmissionsOverTime(days: number) {
 export function getSubmissionsOverTime(days = 30) {
   return unstable_cache(
     () => querySubmissionsOverTime(days),
-    ["ops-submissions-over-time", String(days)],
+    ["ops-submissions-over-time-v2", String(days)],
     { revalidate: 300 },
   )()
 }

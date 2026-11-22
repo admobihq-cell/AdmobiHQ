@@ -14,7 +14,9 @@ import {
   GRID_STROKE_OPACITY,
   KitTooltip,
   MARK,
+  allowDecimalsFor,
   axisFormatter,
+  seriesValues,
   chartColor,
   dataEndRadius,
   defaultFormat,
@@ -69,6 +71,7 @@ export function ColumnChart({
           tickLine={false}
           axisLine={false}
           width={48}
+          allowDecimals={allowDecimalsFor(seriesValues(data, series.map((s) => s.key)))}
           // Stacked columns reach the sum of their series, so the axis range is judged on that.
           tickFormatter={axisFormatter(
             data.map((row) => series.reduce((sum, s) => sum + (typeof row[s.key] === "number" ? (row[s.key] as number) : 0), 0)),

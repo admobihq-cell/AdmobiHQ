@@ -28,7 +28,7 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="flex max-h-[min(28rem,var(--radix-dropdown-menu-content-available-height))] w-80 min-w-80 flex-col overflow-y-hidden p-0"
+        className="flex max-h-[min(36rem,var(--radix-dropdown-menu-content-available-height))] w-[min(24rem,calc(100vw-1rem))] min-w-0 rounded-2xl flex-col overflow-y-hidden p-0"
       >
         <NotificationPeek
           items={items}

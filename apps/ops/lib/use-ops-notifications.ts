@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useQueries } from "@tanstack/react-query"
+import { Car, FileText, FileUser, LifeBuoy, Mail, Megaphone, Siren, Truck } from "lucide-react"
 
 import type { NotificationFeedItem } from "@workspace/ui/lib/notifications"
 import { formatLabel, type OpsPermission, type OpsRole } from "@workspace/ops-contracts"
@@ -170,8 +171,13 @@ export function useOpsNotifications(access: Access) {
             i.acknowledged_at ? "acknowledged" : "UNACKNOWLEDGED",
           ) || "Needs a responder",
         category: "SOS",
-        tone: "warning",
+        tone: "danger",
+        icon: Siren,
         href: `/sos/${i.id}`,
+        actions: [
+          { label: "Respond", href: `/sos/${i.id}`, primary: true },
+          ...(i.driver_phone ? [{ label: "Call driver", href: `tel:${i.driver_phone}` }] : []),
+        ],
         createdAt: i.created_at,
       })
     }
@@ -183,7 +189,9 @@ export function useOpsNotifications(access: Access) {
         body: joinMeta(a.city, a.phone) || "Awaiting review",
         category: "Driver application",
         tone: "info",
+        icon: FileUser,
         href: `/driver-applications/${a.id}`,
+        actions: [{ label: "Review application", href: `/driver-applications/${a.id}`, primary: true }],
         createdAt: a.submitted_at ?? a.created_at,
       })
     }
@@ -200,7 +208,9 @@ export function useOpsNotifications(access: Access) {
         ),
         category: "Support",
         tone: ["urgent", "high"].includes(c.priority) ? "warning" : "neutral",
+        icon: LifeBuoy,
         href: `/support/${c.id}`,
+        actions: [{ label: "Open case", href: `/support/${c.id}`, primary: ["urgent", "high"].includes(c.priority) }],
         createdAt: c.updated_at,
       })
     }
@@ -212,7 +222,12 @@ export function useOpsNotifications(access: Access) {
         body: joinMeta(l.contact_name, l.budget_range, l.cities.join(", ")),
         category: "Campaign lead",
         tone: "success",
+        icon: Megaphone,
         href: "/leads",
+        actions: [
+          { label: "View leads", href: "/leads" },
+          ...(l.email ? [{ label: "Email", href: `mailto:${l.email}` }] : []),
+        ],
         createdAt: l.created_at,
       })
     }
@@ -224,7 +239,9 @@ export function useOpsNotifications(access: Access) {
         body: joinMeta(f.primary_contact_name, f.city, f.fleet_size),
         category: "Fleet partner",
         tone: "info",
+        icon: Truck,
         href: "/fleet",
+        actions: [{ label: "View partners", href: "/fleet" }],
         createdAt: f.created_at,
       })
     }
@@ -236,6 +253,7 @@ export function useOpsNotifications(access: Access) {
         body: joinMeta(d.city, d.vehicle_type, d.phone),
         category: "Driver lead",
         tone: "info",
+        icon: Car,
         href: "/drivers",
         createdAt: d.created_at,
       })
@@ -249,6 +267,7 @@ export function useOpsNotifications(access: Access) {
         body: joinMeta("Waitlist signup", w.source),
         category: "Waitlist",
         tone: "neutral",
+        icon: Mail,
         href: "/waitlist",
         createdAt: w.created_at,
       })
@@ -262,6 +281,7 @@ export function useOpsNotifications(access: Access) {
         body: joinMeta(m.email, "Requested the media kit"),
         category: "Media kit",
         tone: "neutral",
+        icon: FileText,
         href: "/media-kit",
         createdAt: m.created_at,
       })

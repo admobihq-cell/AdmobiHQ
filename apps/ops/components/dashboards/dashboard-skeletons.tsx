@@ -116,13 +116,22 @@ export function SupportSkeleton({ safety }: { safety: boolean }) {
 export function OverviewSkeleton() {
   return (
     <SkeletonShell label="Loading overview">
-      <HeroKpiSkeleton cells={5} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="flex flex-col gap-3 rounded-2xl bg-muted/60 p-4">
+            <Skeleton className="size-9 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-7 w-28" />
+            </div>
+          </div>
+        ))}
+      </div>
       <div className="grid gap-4 xl:grid-cols-3">
         <ChartSkeleton className="xl:col-span-2" />
-        <ListSkeleton rows={4} />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3">
         <ChartSkeleton variant="bars" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
         <ChartSkeleton variant="bars" />
         <ChartSkeleton variant="bars" />
       </div>

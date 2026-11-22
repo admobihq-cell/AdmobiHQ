@@ -69,6 +69,7 @@ export type PipelineDto = {
   /** Budget of campaigns approved in the period; null without `finances`. */
   bookedKes: Delta | null
   funnel: { label: string; value: number }[]
+  /** Per day: submitted, approved, and `booked` (KES approved that day) when money is included. */
   trend: DailyPoint[]
   queue: ReviewQueueRow[]
 }
@@ -78,7 +79,7 @@ export async function queryPipeline(range: DateRangeKey, includeMoney: boolean):
   const today = nairobiDay(new Date())
   const reviewedIn = (alias: string) => `${NAIROBI(`${alias}.reviewed_at`)} BETWEEN $1::date AND $2::date`
 
-  const [counts, reviews, booked, prevBooked, cohort, submittedDays, approvedDays, queue] = await Promise.all([
+  const [counts, reviews, booked, prevBooked, cohort, submittedDays, approvedDays, queue, bookedDays] = await Promise.all([
     rows<{ live: number; in_review: number }>(
       `SELECT COUNT(*) FILTER (WHERE status = 'approved' AND starts_on <= $1::date AND ends_on >= $1::date)::int AS live,
               COUNT(*) FILTER (WHERE status = 'submitted')::int AS in_review
@@ -120,6 +121,13 @@ export async function queryPipeline(range: DateRangeKey, includeMoney: boolean):
        ORDER BY c.submitted_at ASC LIMIT 20`,
       []
     ),
+    includeMoney
+      ? rows<{ day: string; kes: number }>(
+          `SELECT ${NAIROBI("c.reviewed_at")}::text AS day, COALESCE(SUM(c.budget_kes), 0)::float8 AS kes FROM campaigns c
+           WHERE c.status = 'approved' AND c.reviewed_at IS NOT NULL AND ${reviewedIn("c")} GROUP BY 1`,
+          [w.start, w.end]
+        )
+      : Promise.resolve([]),
   ])
 
   const r = reviews[0]
@@ -127,6 +135,7 @@ export async function queryPipeline(range: DateRangeKey, includeMoney: boolean):
   const start = range === "all" ? ([...submittedDays, ...approvedDays].map((d) => d.day).sort()[0] ?? w.end) : w.start
   const sub = new Map(submittedDays.map((d) => [d.day, num(d.n)]))
   const app = new Map(approvedDays.map((d) => [d.day, num(d.n)]))
+  const bk = new Map(bookedDays.map((d) => [d.day, roundTo(num(d.kes), 2)]))
 
   return {
     window: { start, end: w.end },
@@ -141,7 +150,12 @@ export async function queryPipeline(range: DateRangeKey, includeMoney: boolean):
       { label: "Reviewed", value: num(co?.reviewed) },
       { label: "Approved", value: num(co?.approved) },
     ],
-    trend: eachDay(start, w.end).map((day) => ({ day, submitted: sub.get(day) ?? 0, approved: app.get(day) ?? 0 })),
+    trend: eachDay(start, w.end).map((day) => ({
+      day,
+      submitted: sub.get(day) ?? 0,
+      approved: app.get(day) ?? 0,
+      ...(includeMoney ? { booked: bk.get(day) ?? 0 } : {}),
+    })),
     queue: queue.map((q) => ({
       id: q.id,
       name: q.name,

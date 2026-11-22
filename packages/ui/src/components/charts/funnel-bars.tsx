@@ -1,18 +1,37 @@
 "use client"
 
+import * as React from "react"
+
 import {
   DIM_TRANSITION,
-  HoverTip,
   chartColor,
   defaultFormat,
   useActiveMark,
 } from "@workspace/ui/components/charts/shared"
 import { cn } from "@workspace/ui/lib/utils"
 
+/** SVG units; the shape stretches to the container, labels are HTML on top so text never distorts. */
+const W = 1000
+const H = 200
+const MID = H / 2
+/** The thickest core band, leaving room above and below for the halos. */
+const CORE_MAX = MID * 0.74
+/** A stage with almost nothing still shows as a thin line, never vanishes. */
+const MIN_SHARE = 0.035
+/** Two soft halos widen the band, like light around the flow. */
+const HALOS = [
+  { pad: 0.2, opacity: 0.12 },
+  { pad: 0.1, opacity: 0.2 },
+] as const
+/** Where in a stage the flow starts bending toward the next stage's size. */
+const BEND_START = 0.55
+
 /**
- * Steps of a process as a ribbon funnel: each step a rounded bar on a track sized against the
- * first, joined to the next by a soft ribbon that narrows to what carried over. One hue, because
- * the steps are ordered, not separate entities. Hovering a step lifts it and dims the others.
+ * Steps of a process as a funnel: a horizontal band whose thickness at each stage is its share of
+ * the first, bending smoothly into the next, with soft halos around it. Each stage shows its count,
+ * its share of the first as a pill, and its label; hover (or focus) a stage for how much carried
+ * over from the one before. One hue, deepening stage by stage, because the steps are ordered,
+ * not separate entities.
  */
 export function FunnelBars({
   steps,
@@ -23,60 +42,92 @@ export function FunnelBars({
   valueFormatter?: (value: number) => string
   className?: string
 }) {
-  const first = steps[0]?.value ?? 0
-  const widthOf = (value: number) => (first > 0 ? Math.max(0, Math.min(100, (value / first) * 100)) : 0)
-  const { set, opacityOf } = useActiveMark()
+  const { active, set, opacityOf } = useActiveMark()
+  const n = steps.length
+  if (n === 0) return null
+
+  const first = steps[0]!.value
+  const share = (value: number) => (first > 0 ? Math.max(0, Math.min(1, value / first)) : 0)
+  const half = (value: number) => CORE_MAX * Math.max(MIN_SHARE, share(value))
+  const stageW = W / n
+
+  // One closed band per stage: flat at its own size, then a smooth S-curve to the next stage's.
+  const bandPath = (i: number, pad: number) => {
+    const a = half(steps[i]!.value) + CORE_MAX * pad
+    const next = steps[i + 1]
+    const b = (next ? half(next.value) : half(steps[i]!.value)) + CORE_MAX * pad
+    const x0 = i * stageW
+    const x1 = x0 + stageW
+    const xm = x0 + stageW * BEND_START
+    const xc = (xm + x1) / 2
+    return [
+      `M ${x0} ${MID - a}`,
+      `L ${xm} ${MID - a}`,
+      `C ${xc} ${MID - a} ${xc} ${MID - b} ${x1} ${MID - b}`,
+      `L ${x1} ${MID + b}`,
+      `C ${xc} ${MID + b} ${xc} ${MID + a} ${xm} ${MID + a}`,
+      `L ${x0} ${MID + a}`,
+      "Z",
+    ].join(" ")
+  }
+  // Deeper stages read darker, like the flow concentrating.
+  const coreOpacity = (i: number) => (n === 1 ? 1 : 0.55 + (0.45 * i) / (n - 1))
 
   return (
-    <ol className={cn("flex flex-col", className)} onMouseLeave={() => set(null)}>
-      {steps.map((step, index) => {
-        const previous = index > 0 ? steps[index - 1]!.value : null
-        const carry = previous && previous > 0 ? Math.round((step.value / previous) * 100) : null
-        const ofFirst = first > 0 ? Math.round((step.value / first) * 100) : 0
-        const width = widthOf(step.value)
-        const next = steps[index + 1]
-        return (
-          <li key={step.label} className="flex flex-col">
-            <div className="flex items-center gap-2 pb-1 text-sm">
-              <span className="min-w-0 flex-1 truncate">{step.label}</span>
-              <span className="font-medium tabular-nums">{valueFormatter(step.value)}</span>
-              <span className="w-24 text-right text-xs text-muted-foreground tabular-nums">
-                {carry === null ? "" : `${carry}% of previous`}
+    <div className={cn("relative h-60 w-full select-none", className)} onMouseLeave={() => set(null)}>
+      <svg
+        className="absolute inset-x-0 top-9 bottom-9 h-[calc(100%-4.5rem)] w-full"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        {steps.map((step, i) => (
+          <g key={step.label} style={{ opacity: opacityOf(i), ...DIM_TRANSITION }}>
+            {HALOS.map((halo) => (
+              <path key={halo.pad} d={bandPath(i, halo.pad)} fill={chartColor(0)} fillOpacity={halo.opacity} />
+            ))}
+            <path d={bandPath(i, 0)} fill={chartColor(0)} fillOpacity={coreOpacity(i)} />
+          </g>
+        ))}
+      </svg>
+
+      <ol className="relative grid h-full" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+        {steps.map((step, i) => {
+          const previous = i > 0 ? steps[i - 1]!.value : null
+          const carry = previous && previous > 0 ? Math.round((step.value / previous) * 100) : null
+          const ofFirst = Math.round(share(step.value) * 100)
+          return (
+            <li
+              key={step.label}
+              tabIndex={0}
+              onMouseEnter={() => set(i)}
+              onFocus={() => set(i)}
+              onBlur={() => set(null)}
+              aria-label={`${step.label}: ${valueFormatter(step.value)}, ${ofFirst}% of ${steps[0]!.label.toLowerCase()}${carry === null ? "" : `, ${carry}% of ${steps[i - 1]!.label.toLowerCase()}`}`}
+              className={cn(
+                "flex min-w-0 flex-col items-center justify-between py-1 text-center outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-ring",
+                i > 0 && "border-l border-border/70"
+              )}
+            >
+              <span className="text-lg font-semibold tracking-tight tabular-nums">{valueFormatter(step.value)}</span>
+              <span className="rounded-full bg-foreground px-2.5 py-0.5 text-xs font-semibold text-background tabular-nums shadow-sm">
+                {ofFirst}%
               </span>
-            </div>
-            <HoverTip tip={`${step.label}: ${valueFormatter(step.value)} (${ofFirst}% of ${steps[0]!.label.toLowerCase()})`}>
-              <div
-                tabIndex={0}
-                onMouseEnter={() => set(index)}
-                onFocus={() => set(index)}
-                onBlur={() => set(null)}
-                className="relative h-4 overflow-hidden rounded-full bg-chart-track outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <div
-                  className="flex h-full items-center rounded-full pl-1"
-                  style={{ width: `${width}%`, background: chartColor(0), opacity: opacityOf(index), ...DIM_TRANSITION }}
+              <span className="flex max-w-full flex-col items-center px-1">
+                <span className="max-w-full truncate text-sm text-muted-foreground">{step.label}</span>
+                <span
+                  className={cn(
+                    "h-4 text-[11px] text-muted-foreground/80 tabular-nums transition-opacity duration-150",
+                    active === i && carry !== null ? "opacity-100" : "opacity-0"
+                  )}
                 >
-                  {width >= 14 ? (
-                    <span className="rounded-full bg-background/85 px-1.5 text-[10px] leading-3 font-medium tabular-nums text-foreground">
-                      {ofFirst}%
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </HoverTip>
-            {next ? (
-              // The ribbon: from this bar's width down to the next one's, so the drop-off reads as a shape.
-              <svg className="h-3 w-full" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden>
-                <polygon
-                  points={`0,0 ${width},0 ${widthOf(next.value)},12 0,12`}
-                  fill={chartColor(0)}
-                  fillOpacity={0.12}
-                />
-              </svg>
-            ) : null}
-          </li>
-        )
-      })}
-    </ol>
+                  {carry === null ? "" : `${carry}% of previous`}
+                </span>
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }

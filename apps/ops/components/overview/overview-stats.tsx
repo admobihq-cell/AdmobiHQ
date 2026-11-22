@@ -1,3 +1,4 @@
+import { cache } from "react"
 import type { OpsPermission } from "@workspace/ops-contracts"
 
 import type { DateRangeKey } from "@/lib/queries/stats"
@@ -32,7 +33,8 @@ export async function OverviewStats({ range }: OverviewStatsProps) {
   return <OverviewDashboard data={data} />
 }
 
-async function loadOverview(range: DateRangeKey) {
+/** Cached per request so the banner and the dashboard below share one load. */
+export const loadOverview = cache(async function loadOverview(range: DateRangeKey) {
   const days =
     range === "7d" ? 7 : range === "90d" ? 90 : range === "all" ? 365 : 30
 
@@ -45,16 +47,22 @@ async function loadOverview(range: DateRangeKey) {
   // open every form. Split the query per form if partial viewers need the chart.
   const allForms = forms.length === OVERVIEW_FORMS.length
 
-  const [overview, timeline, content, actions, booked] = await Promise.all([
+  const [overview, timeline, content, actions, pipeline] = await Promise.all([
     forms.length > 0 ? getOverviewStats(range) : Promise.resolve(null),
     allForms ? getSubmissionsOverTime(days) : Promise.resolve(null),
     has("content") ? getContentStats() : Promise.resolve(null),
     getActionQueue(has, range),
     // Booked budget is money: it needs both the campaigns dashboard and finances.
-    has("campaigns") && has("finances") ? getPipeline(range, true).then((p) => p.bookedKes) : Promise.resolve(null),
+    has("campaigns") && has("finances") ? getPipeline(range, true) : Promise.resolve(null),
   ])
+  const booked = pipeline?.bookedKes ?? null
+  // A pipeline cached before `booked` joined the trend has none: no line rather than a flat zero.
+  const bookedTrend =
+    pipeline && pipeline.trend.some((p) => typeof p.booked === "number")
+      ? pipeline.trend.map((p) => ({ day: p.day, value: Number(p.booked ?? 0) }))
+      : null
 
   const submissions = scopeSubmissions(overview, has)
 
-  return { submissions, timeline, content, actions, booked }
-}
+  return { submissions, timeline, content, actions, booked, bookedTrend }
+})

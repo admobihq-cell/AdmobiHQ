@@ -22,11 +22,32 @@ export function DonutChart({
   data,
   centerLabel,
   valueFormatter = defaultFormat,
+  half = false,
   className,
 }: {
   data: NamedValue[]
   centerLabel?: { label: string; value: string }
   valueFormatter?: (value: number) => string
+  /** A half ring of rounded segments on a faint track, the leading share in the centre, legend below. */
+  half?: boolean
+  className?: string
+}) {
+  return half ? (
+    <HalfDonut data={data} valueFormatter={valueFormatter} className={className} />
+  ) : (
+    <FullDonut data={data} centerLabel={centerLabel} valueFormatter={valueFormatter} className={className} />
+  )
+}
+
+function FullDonut({
+  data,
+  centerLabel,
+  valueFormatter,
+  className,
+}: {
+  data: NamedValue[]
+  centerLabel?: { label: string; value: string }
+  valueFormatter: (value: number) => string
   className?: string
 }) {
   const total = data.reduce((sum, row) => sum + row.value, 0)
@@ -90,6 +111,98 @@ export function DonutChart({
             <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">
               {total > 0 ? `${Math.round((row.value / total) * 100)}%` : "—"}
             </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function HalfDonut({
+  data,
+  valueFormatter,
+  className,
+}: {
+  data: NamedValue[]
+  valueFormatter: (value: number) => string
+  className?: string
+}) {
+  const total = data.reduce((sum, row) => sum + row.value, 0)
+  const { active, set, opacityOf } = useActiveMark()
+  // The centre shows the hovered slice, else the largest one.
+  const leader = data.reduce((best, row, i) => (row.value > (data[best]?.value ?? -1) ? i : best), 0)
+  const shown = data[active ?? leader]
+  const config: ChartConfig = Object.fromEntries(
+    data.map((row, i) => [row.name, { label: row.name, color: chartColor(i) }])
+  )
+
+  return (
+    <div className={cn("flex flex-col items-center gap-3", className)}>
+      <div className="relative aspect-[2/1] w-full max-w-72">
+        <ChartContainer config={config} className="aspect-auto size-full">
+          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+            {/* The faint track the segments sit on. */}
+            <Pie
+              data={[{ name: "track", value: 1 }]}
+              dataKey="value"
+              cx="50%"
+              cy="100%"
+              startAngle={180}
+              endAngle={0}
+              innerRadius="138%"
+              outerRadius="198%"
+              fill="var(--chart-track)"
+              stroke="none"
+              isAnimationActive={false}
+              tooltipType="none"
+            />
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="100%"
+              startAngle={180}
+              endAngle={0}
+              innerRadius="142%"
+              outerRadius="194%"
+              paddingAngle={data.length > 1 ? 3 : 0}
+              cornerRadius={999}
+              stroke="none"
+              isAnimationActive={false}
+              onMouseEnter={(_, index) => set(index)}
+              onMouseLeave={() => set(null)}
+            >
+              {data.map((row, i) => (
+                <Cell key={row.name} fill={chartColor(i)} fillOpacity={opacityOf(i)} style={DIM_TRANSITION} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        {shown ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center text-center">
+            <span className="text-3xl font-semibold tracking-tight tabular-nums">
+              {total > 0 ? `${Math.round((shown.value / total) * 100)}%` : "—"}
+            </span>
+            <span className="max-w-[60%] truncate text-xs text-muted-foreground">{shown.name}</span>
+          </div>
+        ) : null}
+      </div>
+      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-sm">
+        {data.map((row, i) => (
+          <li
+            key={row.name}
+            className="flex items-center gap-1.5"
+            onMouseEnter={() => set(i)}
+            onMouseLeave={() => set(null)}
+          >
+            <span
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ background: chartColor(i), opacity: opacityOf(i), ...DIM_TRANSITION }}
+              aria-hidden
+            />
+            <span className="text-muted-foreground">{row.name}</span>
+            <span className="font-medium tabular-nums">{valueFormatter(row.value)}</span>
           </li>
         ))}
       </ul>

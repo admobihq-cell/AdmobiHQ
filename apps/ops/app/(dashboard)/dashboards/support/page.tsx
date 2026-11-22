@@ -27,8 +27,7 @@ export default async function SupportDashboardPage({ searchParams }: { searchPar
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <DashboardHeader page="support" />
-      <DashboardNav range={range} />
+      <DashboardHeader page="support" actions={<DashboardNav range={range} />} />
       <Suspense key={range} fallback={<SupportSkeleton safety={includeSafety} />}>
         <Content range={range} includeSafety={includeSafety} />
       </Suspense>

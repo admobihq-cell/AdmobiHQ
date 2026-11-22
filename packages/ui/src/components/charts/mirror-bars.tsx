@@ -13,6 +13,7 @@ import {
   BAR_SIZE,
   DIM_TRANSITION,
   MARK,
+  allowDecimalsFor,
   axisFormatter,
   dataEndRadius,
   seriesValues,
@@ -75,6 +76,7 @@ export function MirrorBars({
           tickLine={false}
           axisLine={false}
           width={48}
+          allowDecimals={allowDecimalsFor(seriesValues(rows, [up.key, down.key]))}
           tickFormatter={(value: number) => axisFormatter(seriesValues(rows, [up.key, down.key]), valueFormatter)(Math.abs(value))}
         />
         <ChartTooltip

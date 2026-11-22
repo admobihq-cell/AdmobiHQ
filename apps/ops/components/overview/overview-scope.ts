@@ -1,4 +1,4 @@
-import type { OpsPermission } from "@workspace/ops-contracts"
+import { delta, type OpsPermission } from "@workspace/ops-contracts"
 
 import type { OverviewForm } from "@/components/overview/overview-dashboard"
 
@@ -6,6 +6,8 @@ type Named = Array<{ name: string; value: number }>
 
 type OverviewStatsRow = {
   totals: Record<OverviewForm, number>
+  /** Previous window's totals; null (or absent) when there is nothing to compare, e.g. "all". */
+  previous?: Record<OverviewForm, number> | null
   byType: Named
   budgetMix: Named
   driversByCity: Named
@@ -27,7 +29,11 @@ export function scopeSubmissions(overview: OverviewStatsRow | null, has: (p: Ops
 
   const labels = new Set(forms.map((f) => f.label))
   return {
-    forms: forms.map((f) => ({ key: f.key, value: overview.totals[f.key] })),
+    forms: forms.map((f) => ({
+      key: f.key,
+      value: overview.totals[f.key],
+      delta: delta(overview.totals[f.key], overview.previous ? overview.previous[f.key] : null),
+    })),
     total: forms.reduce((sum, f) => sum + overview.totals[f.key], 0),
     byType: overview.byType.filter((t) => labels.has(t.name)),
     budgetMix: has("leads") ? overview.budgetMix : null,

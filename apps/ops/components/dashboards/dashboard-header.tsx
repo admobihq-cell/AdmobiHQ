@@ -26,13 +26,26 @@ export const DASHBOARD_COPY = {
   },
 } as const
 
-export function DashboardHeader({ page }: { page: keyof typeof DASHBOARD_COPY }) {
+/**
+ * `actions` sits at the right, level with the description: a page whose only control is the date
+ * range puts it here instead of on a row of its own, which left a band of empty space.
+ */
+export function DashboardHeader({
+  page,
+  actions,
+}: {
+  page: keyof typeof DASHBOARD_COPY
+  actions?: React.ReactNode
+}) {
   const { title, description } = DASHBOARD_COPY[page]
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
-      <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-      <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Dashboards</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+      </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>
   )
 }

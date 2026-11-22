@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 
 import { OverviewSkeleton } from "@/components/dashboards/dashboard-skeletons"
-import { DashboardNav } from "@/components/dashboards/dashboard-nav"
 import { OverviewModules } from "@/components/overview/overview-modules"
 import { OverviewStats } from "@/components/overview/overview-stats"
 import { OverviewWelcome, WelcomeSkeleton } from "@/components/overview/overview-welcome"
@@ -28,11 +27,10 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
   const range = parseRange(rawRange)
 
   return (
-    <div className="flex flex-1 flex-col gap-8">
+    <div className="flex flex-1 flex-col gap-6">
       <Suspense fallback={<WelcomeSkeleton />}>
-        <OverviewWelcome />
+        <OverviewWelcome range={range} />
       </Suspense>
-      <DashboardNav range={range} />
 
       <Suspense fallback={<OverviewSkeleton />} key={range}>
         <OverviewStats range={range} />

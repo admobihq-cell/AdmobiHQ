@@ -40,9 +40,9 @@ Dark `.dark`: Charcoal-violet neutrals with brighter primary for contrast; accen
   - **Lines:** 2 px. Hovered points are 8 px dots with a 2 px surface ring.
   - **Areas:** a wash that fades from 18% at the top to nothing.
   - **Hover:** the active mark stays full strength and the rest dim to 35% (`useActiveMark`), with a hairline crosshair on time series.
-  - **Y-axes:** compact (10K, 2.5M) once values reach 10,000 (`axisFormatter`), so labels never wrap.
+  - **Y-axes:** compact (10K, 2.5M) once values reach 10,000 (`axisFormatter`), so labels never wrap. When every plotted value is a whole number (campaigns, submissions, drivers) the axis never ticks at a fraction (`allowDecimalsFor`): half a campaign does not exist.
   - **Headline figures** count up (`CountUp`).
-  - **Forms we use:** cash-flow `SankeyChart`, `SyncedPanels` (two measures of different scale as stacked panels with one crosshair), `ColumnChart`, contributions-style `ActivityGrid` (one hue), and the ribbon `FunnelBars`.
+  - **Forms we use:** cash-flow `SankeyChart`, `SyncedPanels` (two measures of different scale as stacked panels with one crosshair), `ColumnChart`, contributions-style `ActivityGrid` (one hue), and the `FunnelBars` funnel (a horizontal band thick as each stage's share of the first, bending smoothly into the next, with two soft halos; count above, share-of-first pill on the band, label below; one hue deepening per stage; hover a stage for its share of the previous one).
   - **Forms we don't use, deliberately:**
     - Dual y-axes, which invite comparisons the data doesn't support (use `SyncedPanels`).
     - Radial gauges (use a meter).

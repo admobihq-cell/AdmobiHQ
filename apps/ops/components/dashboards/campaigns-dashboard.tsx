@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { formatCompact, formatKes } from "@workspace/ops-contracts"
+import { foldOther, formatCompact, formatKes } from "@workspace/ops-contracts"
 
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { ChartCard } from "@workspace/ui/components/charts/chart-card"
+import { DonutChart } from "@workspace/ui/components/charts/donut-chart"
 import { FunnelBars } from "@workspace/ui/components/charts/funnel-bars"
 import { Heatmap } from "@workspace/ui/components/charts/heatmap"
 import { RankBars } from "@workspace/ui/components/charts/rank-bars"
@@ -183,7 +184,11 @@ export function DeliveryTab({ data }: { data: DeliveryDto }) {
           )}
         </DashboardCard>
         <ChartCard title="Delivery by market" description="Plays delivered on schedule" isEmpty={data.byMarket.length === 0} emptyMessage={EMPTY_DELIVERY} table={{ columns: ["Market", "Plays"], rows: data.byMarket.map((m) => [m.name, m.value]) }}>
-          <RankBars data={data.byMarket} valueFormatter={formatCompact} />
+          <DonutChart
+            data={foldOther([...data.byMarket].sort((a, b) => b.value - a.value), 5)}
+            valueFormatter={formatCompact}
+            centerLabel={{ label: "Plays", value: formatCompact(data.byMarket.reduce((sum, m) => sum + m.value, 0)) }}
+          />
         </ChartCard>
         <ChartCard title="Missed spots by time of day" description="Where the schedule fell short" isEmpty={data.missedByDaypart.every((d) => d.value === 0)} emptyMessage={data.hasRows ? "No missed spots in this period." : EMPTY_DELIVERY} table={{ columns: ["Time of day", "Missed"], rows: data.missedByDaypart.map((d) => [d.name, d.value]) }}>
           <RankBars data={data.missedByDaypart} valueFormatter={formatCompact} />

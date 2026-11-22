@@ -85,6 +85,15 @@ export function seriesValues(rows: Record<string, unknown>[], keys: string[]): n
   return rows.flatMap((row) => keys.map((k) => row[k]).filter((v): v is number => typeof v === "number"))
 }
 
+/**
+ * Recharts' `allowDecimals` for a y-axis. When every plotted value is a whole number (campaigns,
+ * submissions, drivers) the axis must not tick at 0.5: half a campaign doesn't exist. Money and
+ * rates with real fractions keep decimal ticks.
+ */
+export function allowDecimalsFor(values: number[]): boolean {
+  return !values.every((v) => Number.isInteger(v))
+}
+
 /** CSS for marks whose opacity changes on hover. */
 export const DIM_TRANSITION = { transition: "opacity 120ms ease-out" } as const
 

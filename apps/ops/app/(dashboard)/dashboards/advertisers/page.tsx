@@ -28,8 +28,7 @@ export default async function AdvertisersDashboardPage({ searchParams }: { searc
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <DashboardHeader page="advertisers" />
-      <DashboardNav range={range} />
+      <DashboardHeader page="advertisers" actions={<DashboardNav range={range} />} />
       <Suspense key={range} fallback={<AdvertisersSkeleton money={includeMoney} />}>
         <Content range={range} includeMoney={includeMoney} />
       </Suspense>
