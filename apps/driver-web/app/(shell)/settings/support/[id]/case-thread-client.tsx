@@ -101,7 +101,7 @@ export function CaseThreadClient({ caseId }: { caseId: number }) {
               {createdAt ? (
                 <>
                   <span aria-hidden>·</span>
-                  <span>Opened {new Date(createdAt).toLocaleDateString()}</span>
+                  <span>Opened {new Date(createdAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Nairobi" })}</span>
                 </>
               ) : null}
               <span aria-hidden>·</span>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { customerKeysForEvent, customerToastTone } from "./live-routing"
+import { customerKeysForEvent, customerToastTone, driverKeysForEvent } from "./live-routing"
 
 describe("customerKeysForEvent", () => {
   it("refreshes campaigns for campaign notifications", () => {
@@ -42,5 +42,19 @@ describe("customerToastTone", () => {
     expect(customerToastTone("campaign_changes_requested")).toEqual({ tone: "warning", sound: "low" })
     expect(customerToastTone("payment_failed")).toEqual({ tone: "warning", sound: "low" })
     expect(customerToastTone("billing_document_sent")).toEqual({ tone: "info", sound: "chime" })
+  })
+})
+
+describe("driverKeysForEvent", () => {
+  const note = (type: string) => driverKeysForEvent({ topic: "notification", type })
+
+  it("refreshes the screens a driver notification makes stale", () => {
+    expect(note("application_approved")).toEqual([["driver-notifications"], ["driver-profile"]])
+    expect(note("payout_settled")).toEqual([["driver-notifications"], ["driver-payouts"]])
+    expect(note("sos_resolved")).toEqual([["driver-notifications"], ["sos"]])
+  })
+
+  it("ignores topics a driver never receives", () => {
+    expect(driverKeysForEvent({ topic: "payment" })).toEqual([])
   })
 })

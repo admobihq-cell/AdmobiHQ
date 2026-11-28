@@ -37,3 +37,24 @@ export function customerToastTone(type: string): { tone: "info" | "success" | "w
   if (type === "campaign_approved" || type === "payment_received") return { tone: "success", sound: "ping" }
   return { tone: "info", sound: "chime" }
 }
+
+/** What a driver event makes stale. */
+export function driverKeysForEvent(event: LiveEvent): unknown[][] {
+  if (event.topic !== "notification") return []
+  const type = event.type ?? ""
+  const keys: unknown[][] = [["driver-notifications"]]
+  if (type.startsWith("application_")) keys.push(["driver-profile"])
+  if (type.startsWith("payout_")) keys.push(["driver-payouts"])
+  if (type.startsWith("sos_")) keys.push(["sos"])
+  return keys
+}
+
+const DRIVER_SUCCESS = new Set(["application_approved", "payout_settled"])
+const DRIVER_WARNING = new Set(["application_rejected", "application_changes_requested", "payout_failed"])
+
+/** Toast tone and sound for a driver notification type. */
+export function driverToastTone(type: string): { tone: "info" | "success" | "warning"; sound: "chime" | "ping" | "low" } {
+  if (DRIVER_WARNING.has(type)) return { tone: "warning", sound: "low" }
+  if (DRIVER_SUCCESS.has(type)) return { tone: "success", sound: "ping" }
+  return { tone: "info", sound: "chime" }
+}

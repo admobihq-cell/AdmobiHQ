@@ -52,7 +52,7 @@ function fundingCopy(summary: FinanceSummaryDto): { headline: string; detail: st
       detail: "There is no recent spending to project a run-out date from.",
     }
   }
-  const pace = `${formatKes(available)} available, about ${funding.runwayDays} days at your last 30 days of spend.`
+  const pace = `${formatKes(available)} available, about ${funding.runwayDays} day${funding.runwayDays === 1 ? "" : "s"} at your last 30 days of spend.`
   return funding.level === "low"
     ? { headline: `Your funds run out around ${runOutDate(funding.runwayDays)}`, detail: `Top up soon to keep campaigns running. ${pace}` }
     : { headline: `You're covered until about ${runOutDate(funding.runwayDays)}`, detail: pace }
@@ -192,7 +192,7 @@ export function UpcomingChargesCard({ summary }: { summary: FinanceSummaryDto })
             {nextChargeKes !== null && nextChargeOn ? (
               <div className="flex w-fit max-w-full items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
                 <Zap aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 truncate">
+                <span className="min-w-0">
                   Next charge <span className="font-semibold tabular-nums">{formatKes(nextChargeKes)}</span> on {nextChargeOn}
                 </span>
               </div>
@@ -207,7 +207,7 @@ export function UpcomingChargesCard({ summary }: { summary: FinanceSummaryDto })
                     <IconTile icon={Megaphone} className="size-10 bg-background" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{charge.campaignName}</span>
-                      <span className="block truncate text-xs text-muted-foreground tabular-nums">
+                      <span className="block text-xs text-muted-foreground tabular-nums">
                         Starts {charge.startsOn} · {formatKes(charge.remainingKes)}
                       </span>
                     </span>

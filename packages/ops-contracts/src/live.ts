@@ -12,6 +12,8 @@ export const LIVE_TOPICS = [
   "support",
   "sos",
   "application",
+  /** A public form came in; `type` says which one. */
+  "submission",
 ] as const
 export type LiveTopic = (typeof LIVE_TOPICS)[number]
 

@@ -4,6 +4,7 @@ import { auditPublic } from "@/lib/audit"
 import { getPgPool } from "@/lib/pg"
 import { waitlistSchema } from "@/lib/validation/lead-schemas"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 type WaitlistUpsertRow = {
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
     console.log("[Admobi API waitlist] Saved:", row.email)
 
     if (row.inserted) {
+      await publishLive([liveChannel.ops], { topic: "submission", type: "waitlist", id: row.id })
       void notifyOpsStaffAlert({
         type: "waitlist",
         entityId: row.id,

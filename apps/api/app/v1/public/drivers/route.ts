@@ -8,6 +8,7 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { DriverConfirmation } from "@/lib/email/templates/DriverConfirmation"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { verifyTurnstile } from "@/lib/turnstile"
 
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
     })
 
     console.log("[Admobi API drivers] Saved:", { id: data.id })
+    await publishLive([liveChannel.ops], { topic: "submission", type: "driver-lead", id: data.id })
 
     // Push notifies ops staff independently of email — must not be
     // skipped just because Resend fails (e.g. invalid API key).

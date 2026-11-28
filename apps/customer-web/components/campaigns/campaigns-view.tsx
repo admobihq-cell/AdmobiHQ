@@ -254,7 +254,9 @@ function CampaignsTable({
               <TableRow key={campaign.id}>
                 <TableCell className="p-0">
                   <Link href={href} className="block px-2 py-2">
-                    <span className="block font-medium">{campaign.name}</span>
+                    <span className="block max-w-72 truncate font-medium" title={campaign.name}>
+                      {campaign.name}
+                    </span>
                     <span className="block text-xs text-muted-foreground">
                       {FORMAT_LABELS[campaign.format] ?? campaign.format}
                     </span>
@@ -267,7 +269,7 @@ function CampaignsTable({
                   />
                 </TableCell>
                 <TableCell className="p-0">
-                  <Link href={href} className="block px-2 py-2 text-muted-foreground">
+                  <Link href={href} className="block max-w-40 truncate px-2 py-2 text-muted-foreground">
                     {campaign.market ?? "—"}
                   </Link>
                 </TableCell>
@@ -288,7 +290,7 @@ function CampaignsTable({
                 </TableCell>
                 {showOwner ? (
                   <TableCell className="p-0">
-                    <Link href={href} className="block truncate px-2 py-2 text-muted-foreground">
+                    <Link href={href} className="block max-w-48 truncate px-2 py-2 text-muted-foreground">
                       {campaign.created_by_name ?? "—"}
                     </Link>
                   </TableCell>
@@ -429,7 +431,7 @@ export function CampaignsView() {
             <Link key={campaign.id} href={href} className="block">
               <Card className="shadow-none transition-colors hover:bg-muted/20">
                 <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-                  <CardTitle className="text-base leading-snug">{campaign.name}</CardTitle>
+                  <CardTitle className="min-w-0 text-base leading-snug [overflow-wrap:anywhere]">{campaign.name}</CardTitle>
                   <CampaignStatusBadge
                     status={campaign.status}
                     flightPhase={campaign.flight_phase}

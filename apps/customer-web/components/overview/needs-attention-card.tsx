@@ -36,7 +36,7 @@ export function buildAttentionItems({
   } else if (finance?.funding.level === "low") {
     items.push({
       title: "Funds are running low",
-      meta: finance.funding.runwayDays === null ? "Top up to keep campaigns running" : `About ${finance.funding.runwayDays} days left at this pace`,
+      meta: finance.funding.runwayDays === null ? "Top up to keep campaigns running" : `About ${finance.funding.runwayDays} day${finance.funding.runwayDays === 1 ? "" : "s"} left at this pace`,
       action: "Top up",
       tag: { label: "Funds", tone: "warning" },
       href: "/billing",

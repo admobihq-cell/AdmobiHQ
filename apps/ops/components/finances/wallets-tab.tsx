@@ -40,7 +40,7 @@ const COLUMNS: LedgerColumn<WalletRowDto>[] = [
     align: "right",
     render: (w) => <span className={w.availableKes < 0 ? "font-medium text-destructive" : undefined}>{formatKes(w.availableKes)}</span>,
   },
-  { key: "runway", header: "Runway", align: "right", render: (w) => (w.runwayDays === null ? "—" : `${w.runwayDays} days`) },
+  { key: "runway", header: "Runway", align: "right", render: (w) => (w.runwayDays === null ? "—" : `${w.runwayDays} day${w.runwayDays === 1 ? "" : "s"}`) },
   { key: "last", header: "Last top-up", render: (w) => w.lastTopUpOn ?? "None" },
   { key: "status", header: "Status", render: (w) => <StatusPill tone={STATUS[w.status].tone}>{STATUS[w.status].label}</StatusPill> },
 ]

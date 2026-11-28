@@ -196,9 +196,9 @@ The Media Library's product name. Files are owned by the advertiser org, not by 
 
 ### Live updates (SSE)
 
-`GET /v1/customer/live` and `GET /v1/ops/live` hold a Server-Sent Events stream (`text/event-stream`). The client reads it with `fetch` plus a bearer token (EventSource can't send headers), via `useLiveEvents` in `@workspace/ui/lib/live-events`.
+`GET /v1/customer/live`, `GET /v1/driver/live` and `GET /v1/ops/live` hold a Server-Sent Events stream (`text/event-stream`). The client reads it with `fetch` plus a bearer token (EventSource can't send headers), via `useLiveEvents` in `@workspace/ui/lib/live-events`.
 
-- **Channels** (Upstash Redis pub/sub, `lib/realtime.ts`): advertisers subscribe to `user:<clerkUserId>` and `org:<orgId>`; ops subscribe to `ops`.
+- **Channels** (Upstash Redis pub/sub, `lib/realtime.ts`): advertisers subscribe to `user:<clerkUserId>` and `org:<orgId>`; drivers to `user:<clerkUserId>`; ops subscribe to `ops`.
 - **Event shape** (`LiveEvent` in `@workspace/ops-contracts`): `{ topic, id?, type?, actor? }`. Topic and ids only: never names, amounts or text. Clients re-fetch through the normal permission-checked endpoints.
 - **Publishers** (`publishLive`, fire-and-forget, never throws):
   - Every customer notification insert (the three helpers in `lib/advertiser/advertiser-notify.ts` and `lib/payments/money-notify.ts`) publishes `notification` to each recipient's user channel.
@@ -206,6 +206,10 @@ The Media Library's product name. Files are owned by the advertiser org, not by 
   - Sending a billing document, or recording a payment on one, writes a `billing_document_sent` / `billing_document_payment` inbox row for billing readers and publishes `billing-document` to the org.
   - Campaign submit publishes `review-queue`; public support create publishes `support`; driver SOS publishes `sos` (before the emails); driver profile submit publishes `application`. All of these go to `ops`.
   - A campaign review decision (single or bulk) publishes `campaign` to ops, so other ops screens follow it. No toast.
+  - An advertiser withdrawal publishes `campaign` with `type: "withdrawn"` to ops (toasts). Edits publish nothing: a campaign under review is frozen, and resubmitting publishes `review-queue`.
+  - A driver application review publishes `application` with `type: "reviewed"` to ops (no toast).
+  - Every driver notification write (application submit and review, SOS acknowledged or resolved, payouts) publishes `notification` to the driver (`publishDriverNotice`).
+  - Public forms (campaign lead, fleet partner, driver signup, waitlist, media kit) publish `submission` to ops, with `type` naming the form.
 - **Stream lifecycle:** `: connected` first, `: ping` every 25 s, closed by the server at 280 s (`maxDuration = 300`). The client policy is `nextLiveStep` in `@workspace/ops-contracts`:
   - After the planned close, it reconnects at once with a fresh token and **no refetch**.
   - After an early end or an error, it backs off (1, 2, 5, 10, then 30 s) and refetches on the next good connect.

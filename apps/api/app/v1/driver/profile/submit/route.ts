@@ -14,6 +14,7 @@ import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { AdminAlert, reviewUrl } from "@/lib/email/templates/AdminAlert"
 import { DriverApplicationSubmitted } from "@/lib/email/templates/DriverApplicationSubmitted"
 import { prisma } from "@/lib/prisma"
+import { publishDriverNotice } from "@/lib/driver/publish-driver-notice"
 import { liveChannel, publishLive } from "@/lib/realtime"
 
 export async function POST() {
@@ -60,6 +61,7 @@ export async function POST() {
         body: "We're reviewing your documents — this usually takes a day or two.",
       },
     })
+    await publishDriverNotice(auth.access.userId, "application_submitted", auth.access.userId)
 
     const driverEmail = await getDriverEmail(auth.access.userId)
     if (driverEmail) {

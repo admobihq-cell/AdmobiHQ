@@ -72,8 +72,8 @@ const columns: ColumnDef<CampaignListItemDto, any>[] = [
     header: "Campaign",
     meta: { cellClassName: "p-0" },
     cell: ({ row }) => (
-      <CampaignLink id={row.original.id} className="block px-2 py-2 font-medium">
-        {row.original.name}
+      <CampaignLink id={row.original.id} className="block max-w-72 truncate px-2 py-2 font-medium">
+        <span title={row.original.name}>{row.original.name}</span>
       </CampaignLink>
     ),
   },
@@ -82,8 +82,8 @@ const columns: ColumnDef<CampaignListItemDto, any>[] = [
     header: "Advertiser",
     meta: { cellClassName: "p-0" },
     cell: ({ row }) => (
-      <CampaignLink id={row.original.id} className="block px-2 py-2">
-        {row.original.advertiser_org_name ?? row.original.contact_email ?? "—"}
+      <CampaignLink id={row.original.id} className="block max-w-56 truncate px-2 py-2">
+        <span title={row.original.advertiser_org_name ?? row.original.contact_email ?? "—"}>{row.original.advertiser_org_name ?? row.original.contact_email ?? "—"}</span>
       </CampaignLink>
     ),
   },
@@ -92,8 +92,8 @@ const columns: ColumnDef<CampaignListItemDto, any>[] = [
     header: "Market",
     meta: { cellClassName: "p-0" },
     cell: ({ row }) => (
-      <CampaignLink id={row.original.id} className="block px-2 py-2">
-        {row.original.market ?? "—"}
+      <CampaignLink id={row.original.id} className="block max-w-40 truncate px-2 py-2">
+        <span title={row.original.market ?? "—"}>{row.original.market ?? "—"}</span>
       </CampaignLink>
     ),
   },

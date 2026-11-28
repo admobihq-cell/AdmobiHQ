@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useAuth } from "@clerk/nextjs"
 import { ArrowLeft, FileCheck2, MapPin, Phone, Wallet } from "lucide-react"
@@ -120,29 +120,20 @@ function DocumentPreview({
 export function DriverApplicationDetailView({ applicationId }: { applicationId: number }) {
   const client = useOpsClient()
   const queryClient = useQueryClient()
-  const [data, setData] = useState<DriverProfileDto | null>(null)
-  const [loading, setLoading] = useState(true)
   const [deciding, setDeciding] = useState<"rejected" | "changes_requested" | "unapprove" | null>(
     null,
   )
   const [reason, setReason] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
-  const load = useCallback(async () => {
-    try {
-      const result = await client.driverApplications.get(applicationId)
-      setData(result)
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setLoading(false)
-    }
-  }, [client, applicationId])
-
+  // Under the list's key, so a live event refreshes an open page too.
+  const { data, error, refetch } = useQuery({
+    queryKey: ["ops-driver-applications", "detail", applicationId],
+    queryFn: () => client.driverApplications.get(applicationId),
+  })
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load()
-  }, [load])
+    if (error) toast.error(formatApiError(error))
+  }, [error])
 
   async function review(
     decision: "approved" | "rejected" | "changes_requested",
@@ -161,21 +152,17 @@ export function DriverApplicationDetailView({ applicationId }: { applicationId: 
       toast.success(successMessage)
       setDeciding(null)
       setReason("")
-      // This detail view predates the TanStack Query migration and wasn't
-      // itself converted, but the list at /driver-applications now caches
-      // under ["ops-driver-applications"] (see driver-applications-view.tsx)
-      // — without this, a review decision here would leave that list
-      // showing the pre-decision status for up to staleTime.
-      void queryClient.invalidateQueries({ queryKey: ["ops-driver-applications"] })
-      await load()
+      await queryClient.invalidateQueries({ queryKey: ["ops-driver-applications"] })
     } catch (e) {
       toast.error(formatApiError(e))
+      // Someone else may have decided first: show where it stands now.
+      void refetch()
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (loading || !data) {
+  if (!data) {
     return <DriverApplicationDetailSkeleton />
   }
 

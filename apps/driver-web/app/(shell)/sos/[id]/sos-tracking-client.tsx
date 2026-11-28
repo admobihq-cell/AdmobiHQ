@@ -9,6 +9,16 @@ import { toast } from "sonner"
 
 import { SAFETY_TERMINAL_STATUSES, formatLabel } from "@workspace/ops-contracts"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -38,6 +48,7 @@ function relativeTime(iso: string): string {
 
 export function SosTrackingClient({ incidentId }: { incidentId: number }) {
   const { getToken } = useAuth()
+  const [confirmCancel, setConfirmCancel] = useState(false)
   const queryClient = useQueryClient()
 
   const [reply, setReply] = useState("")
@@ -236,10 +247,26 @@ export function SosTrackingClient({ incidentId }: { incidentId: number }) {
             variant="outline"
             className="text-destructive border-destructive/40 hover:bg-destructive/10"
             disabled={cancelMutation.isPending}
-            onClick={() => cancelMutation.mutate()}
+            onClick={() => setConfirmCancel(true)}
           >
             This was a false alarm — cancel
           </Button>
+          <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel this report?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  The Admobi team will stop responding. Only cancel if you&apos;re safe.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep it open</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={() => cancelMutation.mutate()}>
+                  Cancel report
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       ) : incident.resolution ? (
         <Card>

@@ -247,6 +247,7 @@ const NOTES: Record<string, string> = {
   "/v1/customer/mobile-announcements/read": "Mark all announcements read",
 
   // Driver app
+  "/v1/driver/live": "Server-sent live events for the signed-in driver (ids only)",
   "/v1/driver/profile": "Read and edit the driver profile",
   "/v1/driver/profile/submit": "Submit the profile for review",
   "/v1/driver/documents": "Upload a profile document",

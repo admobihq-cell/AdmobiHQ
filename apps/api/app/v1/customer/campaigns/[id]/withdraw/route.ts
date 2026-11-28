@@ -9,6 +9,7 @@ import { CREATIVES_INCLUDE, getOwnedCampaign } from "@/lib/campaigns/campaign-st
 import { unspentBudgetKes } from "@/lib/payments/funding"
 import { notifyCreditReleased } from "@/lib/payments/money-notify"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -48,6 +49,9 @@ export async function POST(_req: Request, { params }: Params) {
   if (count === 0) return jsonError("The campaign changed while you were withdrawing it. Refresh and try again.", 409)
 
   const updated = await prisma.campaign.findUniqueOrThrow({ where: { id }, include: CREATIVES_INCLUDE })
+
+  // A reviewer may have it open. publishLive never throws.
+  await publishLive([liveChannel.ops], { topic: "campaign", id, type: "withdrawn", actor: auth.access.userId })
 
   await auditFromCustomerUser(auth.access.userId, {
     action: "update",

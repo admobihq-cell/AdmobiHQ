@@ -30,8 +30,12 @@ export function Fact({
       </span>
       <div className="min-w-0 space-y-0.5">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="truncate text-sm font-semibold tabular-nums">{value}</p>
-        {sub ? <p className="truncate text-xs text-muted-foreground">{sub}</p> : null}
+        <p className="text-sm font-semibold tabular-nums [overflow-wrap:anywhere]">{value}</p>
+        {sub ? (
+          <p className="truncate text-xs text-muted-foreground" title={typeof sub === "string" ? sub : undefined}>
+            {sub}
+          </p>
+        ) : null}
       </div>
     </div>
   )

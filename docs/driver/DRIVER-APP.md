@@ -116,3 +116,7 @@ Deliveries ships as **placeholder screens behind one ops-controlled platform fla
 - **Payouts** are sent by ops through Paystack Transfers to the M-Pesa number or bank account on the profile. The driver gets a push and inbox notice when a payout is sent or fails, and a notice (plus email) whenever their payout details change. The bank field is a picker fed by `GET /v1/driver/payout-banks` (Paystack's Kenyan bank list), which stores the bank code with the name.
 - **CRM join** — `DriverProfile.clerk_user_id` is not linked to the marketing `Driver` row.
 - **Real deliveries** — dispatch, job assignment, proof-of-delivery, and per-driver `delivers`.
+
+## Live updates (driver web)
+
+`LiveUpdates` in the shell holds the `/v1/driver/live` stream ([API.md](../api/API.md#live-updates-sse)). Application decisions, SOS acknowledgements and payout results refresh their screens and show a toast without a reload. Because verification status is server-rendered and cached for five minutes, an application event also expires that driver's cached profile. Driver mobile has no stream; it relies on push and refetching.

@@ -5,6 +5,7 @@ import { formatLabel, safetyIncidentOpsUpdateSchema } from "@workspace/ops-contr
 
 import { auditFromOpsUser } from "@/lib/audit"
 import { jsonError, parseId, parseJsonBody, requireOpsPermissionAccess } from "@/lib/api-utils"
+import { publishDriverNotice } from "@/lib/driver/publish-driver-notice"
 import { prisma } from "@/lib/prisma"
 import { toIncidentPhoto, toIncidentUpdate, toOpsIncident } from "@/lib/safety/safety-incident"
 import { appendSystemUpdate } from "@/lib/safety/safety-incident-store"
@@ -111,6 +112,7 @@ export async function PATCH(req: Request, { params }: Params) {
           body: "Someone from the Admobi team is on it and will be in touch.",
         },
       })
+      await publishDriverNotice(existing.driver_clerk_user_id, "sos_acknowledged")
     }
     if (data.status === "resolved") {
       await prisma.driverNotification.create({
@@ -121,6 +123,7 @@ export async function PATCH(req: Request, { params }: Params) {
           body: parsed.data.resolution!.trim().slice(0, 240),
         },
       })
+      await publishDriverNotice(existing.driver_clerk_user_id, "sos_resolved")
     }
   } catch (notifyError) {
     console.error("[sos] Failed to write driver notification:", notifyError)

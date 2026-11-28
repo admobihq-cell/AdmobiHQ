@@ -36,6 +36,7 @@ import { driverTourChapters } from "@/lib/tour-chapters"
 import { BottomTabs } from "@/components/shell/bottom-tabs"
 import { NavUser } from "@/components/shell/nav-user"
 import { DriverCommandPalette } from "@/components/shell/driver-command-palette"
+import { LiveUpdates } from "@/components/shell/live-updates"
 import { NotificationBell } from "@/components/shell/notification-bell"
 import { SosFab } from "@/components/shell/sos-fab"
 import { VerificationBadge } from "@/components/shell/verification-badge"
@@ -141,6 +142,7 @@ export function AppShell({
               <ThemeToggle />
             </div>
           </header>
+          <LiveUpdates />
           {/* Bottom padding clears the tab bar + SOS button on phones, and the SOS button on desktop. */}
           <main className="flex min-h-[calc(100vh-3rem)] flex-1 flex-col gap-4 p-4 pb-40 md:p-6 md:pb-24">
             {children}

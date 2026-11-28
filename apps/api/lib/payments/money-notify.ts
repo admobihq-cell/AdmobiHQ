@@ -14,6 +14,7 @@ import { renderTemplate } from "@/lib/email/render-template"
 import { sendAdminEmail, sendEmail } from "@/lib/email/send-email"
 import { MoneyUpdate } from "@/lib/email/templates/MoneyUpdate"
 import { PaymentReceipt, formatKes } from "@/lib/email/templates/PaymentReceipt"
+import { publishDriverNotice } from "@/lib/driver/publish-driver-notice"
 import { prisma } from "@/lib/prisma"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
 import { notifyUserPush } from "@/lib/push/user-push"
@@ -319,6 +320,7 @@ export function alertOpsFinance(p: { title: string; body: string; email?: boolea
 
 async function noticeDriver(clerkUserId: string, type: string, title: string, body: string) {
   await prisma.driverNotification.create({ data: { clerk_user_id: clerkUserId, type, title, body } })
+  await publishDriverNotice(clerkUserId, type)
   await notifyUserPush("driver", clerkUserId, { title, body, href: DRIVER_EARNINGS_HREF })
 }
 

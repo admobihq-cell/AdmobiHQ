@@ -4,6 +4,7 @@ import { auditPublic } from "@/lib/audit"
 import { prisma } from "@/lib/prisma"
 import { mediaKitSchema } from "@/lib/validation/lead-schemas"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
     })
 
     console.log("[Admobi API media-kit] Saved:", data.email)
+    await publishLive([liveChannel.ops], { topic: "submission", type: "media-kit", id: data.id })
 
     void notifyOpsStaffAlert({
       type: "media-kit",

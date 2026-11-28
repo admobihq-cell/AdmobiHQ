@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache"
 import { unstable_rethrow } from "next/navigation"
 import type { DriverProfileDto } from "@workspace/ops-contracts"
 
+import { driverProfileTag } from "@/lib/driver-profile-tag"
 import { apiPublicUrl } from "@/lib/site-urls"
 
 export type DriverProfileFetchResult =
@@ -48,7 +49,7 @@ export async function fetchDriverProfile(): Promise<DriverProfileFetchResult> {
     const profile = await unstable_cache(
       () => fetchDriverProfileDto(token),
       ["driver-profile", userId],
-      { revalidate: 300 },
+      { revalidate: 300, tags: [driverProfileTag(userId)] },
     )()
     return { status: "ok", profile }
   } catch (error) {

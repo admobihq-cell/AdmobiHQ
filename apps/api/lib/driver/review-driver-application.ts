@@ -3,6 +3,7 @@ import type { DriverProfileDto } from "@workspace/ops-contracts"
 import { auditFromOpsUser } from "@/lib/audit"
 import type { OpsAccess, ReviewOutcome } from "@/lib/campaigns/review-campaign"
 import { getDriverEmail } from "@/lib/driver/driver-clerk"
+import { publishDriverNotice } from "@/lib/driver/publish-driver-notice"
 import { toDriverProfileDto } from "@/lib/driver/driver-profile-dto"
 import { renderTemplate } from "@/lib/email/render-template"
 import { sendEmail } from "@/lib/email/send-email"
@@ -11,6 +12,7 @@ import {
   type DriverApplicationDecisionKind,
 } from "@/lib/email/templates/DriverApplicationDecision"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 
 const NOTIFICATION_COPY: Record<
   DriverApplicationDecisionKind,
@@ -75,6 +77,9 @@ export async function reviewDriverApplication(
     include: { documents: { orderBy: { created_at: "asc" } } },
   })
 
+  // Other ops screens follow the decision. publishLive never throws.
+  await publishLive([liveChannel.ops], { topic: "application", id, type: "reviewed", actor: access.userId })
+
   await auditFromOpsUser(access, {
     action: "update",
     entity_type: "driver_profile",
@@ -96,6 +101,7 @@ export async function reviewDriverApplication(
         body: copy.body(updated.rejection_reason),
       },
     })
+    await publishDriverNotice(updated.clerk_user_id, copy.type)
 
     const driverEmail = await getDriverEmail(updated.clerk_user_id)
     if (driverEmail) {

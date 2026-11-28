@@ -493,7 +493,7 @@ export function TeamSettingsView() {
                             {invite.roleName ?? "Member"}
                             {declined
                               ? " · they turned this down"
-                              : ` · expires ${new Date(invite.expiresAt).toLocaleDateString()}`}
+                              : ` · expires ${new Date(invite.expiresAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Nairobi" })}`}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

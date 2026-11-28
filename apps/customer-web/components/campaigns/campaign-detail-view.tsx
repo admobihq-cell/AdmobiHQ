@@ -69,7 +69,7 @@ function flightStat(campaign: CampaignDto): { value: string; hint?: string } {
   const flight = flightOf(campaign.starts_on, campaign.ends_on)
   if (flight.kind === "unscheduled") return { value: "Not scheduled" }
   const range = flightRange(campaign.starts_on, campaign.ends_on)
-  if (campaign.status !== "approved") return { value: `${flight.totalDays} days`, hint: `Requested · ${range}` }
+  if (campaign.status !== "approved") return { value: `${flight.totalDays} day${flight.totalDays === 1 ? "" : "s"}`, hint: `Requested · ${range}` }
   return { value: flightLabel(flight), hint: range }
 }
 

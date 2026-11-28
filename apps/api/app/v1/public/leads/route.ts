@@ -9,6 +9,7 @@ import { CampaignConfirmation } from "@/lib/email/templates/CampaignConfirmation
 import { FleetPartnerConfirmation } from "@/lib/email/templates/FleetPartnerConfirmation"
 import { AdminAlert } from "@/lib/email/templates/AdminAlert"
 import { notifyOpsStaffAlert } from "@/lib/push/ops-alerts"
+import { liveChannel, publishLive } from "@/lib/realtime"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { verifyTurnstile } from "@/lib/turnstile"
 
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
         },
       })
       console.log("[Admobi API leads] Saved campaign lead:", { id: data.id })
+      await publishLive([liveChannel.ops], { topic: "submission", type: "lead", id: data.id })
 
       // Push notifies ops staff independently of email — must not be
       // skipped just because Resend fails (e.g. invalid API key).
@@ -146,6 +148,7 @@ export async function POST(req: Request) {
         },
       })
       console.log("[Admobi API leads] Saved fleet partner:", { id: data.id })
+      await publishLive([liveChannel.ops], { topic: "submission", type: "fleet", id: data.id })
 
       // Push notifies ops staff independently of email — must not be
       // skipped just because Resend fails (e.g. invalid API key).

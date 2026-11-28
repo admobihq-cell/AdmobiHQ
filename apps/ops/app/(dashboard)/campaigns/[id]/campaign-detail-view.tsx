@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useAuth } from "@clerk/nextjs"
 import {
@@ -186,28 +186,20 @@ function CreativePreview({
 export function CampaignDetailView({ campaignId }: { campaignId: number }) {
   const client = useOpsClient()
   const queryClient = useQueryClient()
-  const [data, setData] = useState<CampaignDto | null>(null)
-  const [loading, setLoading] = useState(true)
   const [deciding, setDeciding] = useState<"rejected" | "changes_requested" | "unapprove" | null>(
     null,
   )
   const [reason, setReason] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
-  const load = useCallback(async () => {
-    try {
-      setData(await client.campaigns.get(campaignId))
-    } catch (e) {
-      toast.error(formatApiError(e))
-    } finally {
-      setLoading(false)
-    }
-  }, [client, campaignId])
-
+  // Under the list's key, so a live event refreshes an open page too.
+  const { data, error, refetch } = useQuery({
+    queryKey: ["ops-campaigns", "detail", campaignId],
+    queryFn: () => client.campaigns.get(campaignId),
+  })
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load()
-  }, [load])
+    if (error) toast.error(formatApiError(error))
+  }, [error])
 
   async function review(
     decision: "approved" | "rejected" | "changes_requested",
@@ -227,16 +219,17 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
       setDeciding(null)
       setReason("")
       // Keep the list's cached status from going stale for up to staleTime.
-      void queryClient.invalidateQueries({ queryKey: ["ops-campaigns"] })
-      await load()
+      await queryClient.invalidateQueries({ queryKey: ["ops-campaigns"] })
     } catch (e) {
       toast.error(formatApiError(e))
+      // Someone else may have decided first: show where it stands now.
+      void refetch()
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (loading || !data) return <CampaignDetailSkeleton />
+  if (!data) return <CampaignDetailSkeleton />
 
   const format = data.format as CampaignFormat
   const canReview = data.status === "submitted"
@@ -370,7 +363,7 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
           </Link>
         </Button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-semibold tracking-tight">{data.name}</h1>
+          <h1 className="text-xl font-semibold tracking-tight [overflow-wrap:anywhere]">{data.name}</h1>
           <p className="text-sm text-muted-foreground">
             Campaign #{data.id} ·{" "}
             {data.submitted_at
@@ -456,7 +449,7 @@ export function CampaignDetailView({ campaignId }: { campaignId: number }) {
             {data.notes ? (
               <div className="border-t px-4 py-3">
                 <p className="text-sm text-muted-foreground">Notes</p>
-                <p className="mt-1 whitespace-pre-line text-sm">{data.notes}</p>
+                <p className="mt-1 whitespace-pre-line text-sm [overflow-wrap:anywhere]">{data.notes}</p>
               </div>
             ) : null}
           </SectionCard>

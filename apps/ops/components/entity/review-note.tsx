@@ -25,7 +25,7 @@ export function ReviewNote({
       <MessageSquareWarning className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div className="min-w-0 space-y-1">
         <p className="font-medium">Last review note — {audience} sees this</p>
-        <p className="whitespace-pre-line">{reason}</p>
+        <p className="whitespace-pre-line [overflow-wrap:anywhere]">{reason}</p>
       </div>
     </div>
   )

@@ -7,6 +7,7 @@ import { nairobiDay } from "@workspace/ops-contracts"
 import { availableKes } from "@/lib/payments/funding"
 import { testDatabaseUrl } from "@/lib/test-database-url"
 
+const { publishLive } = vi.hoisted(() => ({ publishLive: vi.fn(async () => undefined) }))
 const databaseUrl = testDatabaseUrl()
 let orgId = 0
 
@@ -14,6 +15,7 @@ vi.mock("@/lib/api-utils", async () => ({
   ...(await vi.importActual<typeof import("@/lib/api-utils")>("@/lib/api-utils")),
   requireCustomerPermissionAccess: vi.fn(async () => ({ access: { userId: "user_withdraw", orgId } })),
 }))
+vi.mock("@/lib/realtime", () => ({ publishLive, liveChannel: { ops: "ops" } }))
 vi.mock("@/lib/audit", () => ({ auditFromCustomerUser: vi.fn(async () => undefined) }))
 vi.mock("@/lib/payments/money-notify", () => ({ notifyCreditReleased: vi.fn(async () => undefined) }))
 
@@ -62,6 +64,7 @@ describe.skipIf(!databaseUrl)("withdraw campaign", { timeout: 30_000 }, () => {
     const after = await prisma.campaign.findUniqueOrThrow({ where: { id: c.id } })
     expect(after.status).toBe("cancelled")
     expect(after.funded_at).toBeNull()
+    expect(publishLive).toHaveBeenCalledWith(["ops"], { topic: "campaign", id: c.id, type: "withdrawn", actor: "user_withdraw" })
     expect(await prisma.$transaction((tx) => availableKes(tx, orgId))).toBe(1000)
   })
 
