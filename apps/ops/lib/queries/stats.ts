@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache"
 import type { DateRangeKey } from "@workspace/ops-contracts"
 
 import { getPgPool } from "@/lib/pg"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 
 export type { DateRangeKey }
 
@@ -150,7 +151,7 @@ export function getOverviewStats(range: DateRangeKey = "30d") {
   return unstable_cache(
     () => queryOverviewStats(range),
     ["ops-overview-stats-v2", range],
-    { revalidate: 300 },
+    { revalidate: 300, tags: [OPS_LIVE_TAG] },
   )()
 }
 
@@ -197,6 +198,6 @@ export function getSubmissionsOverTime(days = 30) {
   return unstable_cache(
     () => querySubmissionsOverTime(days),
     ["ops-submissions-over-time-v2", String(days)],
-    { revalidate: 300 },
+    { revalidate: 300, tags: [OPS_LIVE_TAG] },
   )()
 }

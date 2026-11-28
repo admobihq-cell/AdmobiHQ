@@ -16,6 +16,7 @@ import {
 import { unspentBudgetKes } from "@/lib/payments/funding"
 import { notifyCreditReleased } from "@/lib/payments/money-notify"
 import { prisma } from "@/lib/prisma"
+import { liveChannel, publishLive } from "@/lib/realtime"
 
 export type OpsAccess = NonNullable<
   Awaited<ReturnType<typeof requireOpsPermissionAccess>>["access"]
@@ -93,6 +94,10 @@ export async function reviewCampaign(
     },
     include: CREATIVES_INCLUDE,
   })
+
+  // Other ops screens (queue, badge, dashboards) follow the decision. Advertisers hear it
+  // through their notifications below. publishLive never throws.
+  await publishLive([liveChannel.ops], { topic: "campaign", id, actor: access.userId })
 
   await auditFromOpsUser(access, {
     action: "update",

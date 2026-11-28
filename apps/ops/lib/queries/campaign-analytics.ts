@@ -17,6 +17,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { getPgPool } from "@/lib/pg"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 
 /**
  * Ops campaign dashboards, raw SQL across every org. The caller has already checked the
@@ -358,7 +359,7 @@ export async function queryInventory(range: DateRangeKey, includeMoney: boolean)
 // Cached entry points. The money variants get their own keys.
 // ---------------------------------------------------------------------------
 
-const CACHE = { revalidate: 300 }
+const CACHE = { revalidate: 300, tags: [OPS_LIVE_TAG] }
 const variant = (includeMoney: boolean) => (includeMoney ? "money" : "no-money")
 
 export const getPipeline = (range: DateRangeKey, includeMoney: boolean) =>

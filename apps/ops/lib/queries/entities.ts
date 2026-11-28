@@ -10,6 +10,7 @@ import {
   type PaginationParams,
 } from "@workspace/ops-contracts"
 import { prisma } from "@/lib/prisma"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 
 type PaginatedResult<T> = {
   items: T[]
@@ -148,7 +149,7 @@ export const getPendingDriverApplicationsCount = unstable_cache(
     return prisma.driverProfile.count({ where: { status: "submitted" } })
   },
   ["ops-pending-driver-applications"],
-  { revalidate: 300 },
+  { revalidate: 300, tags: [OPS_LIVE_TAG] },
 )
 
 /** Drafts aren't ops's concern yet — an advertiser still filling out the
@@ -228,7 +229,7 @@ export const getPendingCampaignsCount = unstable_cache(
     return prisma.campaign.count({ where: { status: "submitted" } })
   },
   ["ops-pending-campaigns"],
-  { revalidate: 300 },
+  { revalidate: 300, tags: [OPS_LIVE_TAG] },
 )
 
 export async function listFleetPartners(

@@ -11,6 +11,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { getPgPool } from "@/lib/pg"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 import { queryFinanceWallets } from "@/lib/queries/finance"
 
 /**
@@ -111,5 +112,5 @@ export const getAdvertisers = (range: DateRangeKey, includeMoney: boolean) =>
   unstable_cache(
     () => queryAdvertisers(range, includeMoney),
     ["ops-advertisers", range, includeMoney ? "money" : "no-money"],
-    { revalidate: 300 }
+    { revalidate: 300, tags: [OPS_LIVE_TAG] }
   )()

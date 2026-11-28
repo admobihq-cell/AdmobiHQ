@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache"
 import { resolveReportRange, type DailyPoint, type DateRangeKey, type NamedValue } from "@workspace/ops-contracts"
 
 import { getPgPool } from "@/lib/pg"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 
 /**
  * The ops Support & safety dashboard. The caller has already checked `support`. Incident data is
@@ -141,4 +142,5 @@ async function querySafety(): Promise<SafetySummary> {
 export const getSupport = (range: DateRangeKey, includeSafety: boolean) =>
   unstable_cache(() => querySupport(range, includeSafety), ["ops-support", range, includeSafety ? "safety" : "no-safety"], {
     revalidate: 300,
+    tags: [OPS_LIVE_TAG],
   })()

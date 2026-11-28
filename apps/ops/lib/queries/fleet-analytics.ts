@@ -9,6 +9,7 @@ import {
 } from "@workspace/ops-contracts"
 
 import { getPgPool } from "@/lib/pg"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 
 /**
  * The ops Fleet dashboard. The caller has already checked `drivers`. Payouts are money: the
@@ -169,4 +170,4 @@ export async function queryFleet(range: DateRangeKey, includeMoney: boolean): Pr
 }
 
 export const getFleet = (range: DateRangeKey, includeMoney: boolean) =>
-  unstable_cache(() => queryFleet(range, includeMoney), ["ops-fleet", range, includeMoney ? "money" : "no-money"], { revalidate: 300 })()
+  unstable_cache(() => queryFleet(range, includeMoney), ["ops-fleet", range, includeMoney ? "money" : "no-money"], { revalidate: 300, tags: [OPS_LIVE_TAG] })()

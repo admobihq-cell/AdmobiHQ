@@ -11,10 +11,13 @@ import type { LiveEvent, LiveTopic, OpsPermission, OpsRole } from "@workspace/op
 import { liveToast, type LiveToastInput } from "@workspace/ui/components/live-toast"
 import { useLiveEvents } from "@workspace/ui/lib/live-events"
 
+import { expireLiveCache } from "@/lib/live-actions"
+
 type Route = {
   permission: OpsPermission
   keys: unknown[][]
-  toast: (id: number | undefined) => LiveToastInput
+  /** Left out for events that only refresh data. */
+  toast?: (id: number | undefined) => LiveToastInput
 }
 
 /** What each ops event refreshes, and the toast a viewer with the permission sees. */
@@ -41,6 +44,10 @@ const ROUTES: Partial<Record<LiveTopic, Route>> = {
       sound: "chime",
       action: { label: "Review", href: id ? `/campaigns/${id}` : "/campaigns" },
     }),
+  },
+  campaign: {
+    permission: "campaigns",
+    keys: [["ops-campaigns"]],
   },
   payment: {
     permission: "finances",
@@ -76,8 +83,8 @@ const ROUTES: Partial<Record<LiveTopic, Route>> = {
 }
 
 /**
- * Keeps ops live: refreshes the queues an event touches, re-renders the server sidebar counts,
- * and toasts only what this role may see. The event carries ids; the toast copy is static.
+ * Keeps ops live: refreshes the queues an event touches, re-renders server-rendered counts and
+ * dashboards past their cache, and toasts only what this role may see. The event carries ids; the toast copy is static.
  */
 export function OpsLiveUpdates({ role, permissions }: { role: OpsRole; permissions: OpsPermission[] }) {
   const { getToken, isSignedIn } = useAuth()
@@ -89,7 +96,12 @@ export function OpsLiveUpdates({ role, permissions }: { role: OpsRole; permissio
 
   const refreshSidebar = useCallback(() => {
     clearTimeout(refreshTimer.current)
-    refreshTimer.current = setTimeout(() => router.refresh(), 1000)
+    refreshTimer.current = setTimeout(() => {
+      // Still re-render if expiring fails: stale numbers beat a frozen screen.
+      void expireLiveCache()
+        .catch(() => {})
+        .then(() => router.refresh())
+    }, 1000)
   }, [router])
 
   const onEvent = useCallback(
@@ -98,7 +110,7 @@ export function OpsLiveUpdates({ role, permissions }: { role: OpsRole; permissio
       if (!route) return
       for (const key of route.keys) void queryClient.invalidateQueries({ queryKey: key })
       refreshSidebar()
-      if (role !== "admin" && !permissions.includes(route.permission)) return
+      if (!route.toast || (role !== "admin" && !permissions.includes(route.permission))) return
       // The publisher's nonce is the same in every open tab, so only one of them plays the sound.
       liveToast({ ...route.toast(event.id), key: event.nonce ?? `${event.topic}:${event.id}`, overflowHref: "/notifications" })
     },

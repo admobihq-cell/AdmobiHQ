@@ -21,6 +21,7 @@ import {
 import { monthlyUsd, USD_KES } from "@/lib/integration-costs"
 import { DELETED_ORG, INACTIVE_AFTER_DAYS, NO_CAMPAIGN } from "@/lib/queries/finance-constants"
 import { getPgPool } from "@/lib/pg"
+import { OPS_LIVE_TAG } from "@/lib/queries/live-tag"
 import { listIntegrations } from "@/lib/queries/integrations"
 
 /**
@@ -514,7 +515,7 @@ export async function queryRecordOptions(): Promise<RecordOptionsDto> {
 
 /** Tagged so recording a transaction can expire every finance read at once (see finances/actions.ts). */
 export const FINANCE_CACHE_TAG = "ops-finance"
-const CACHE = { revalidate: 300, tags: [FINANCE_CACHE_TAG] }
+const CACHE = { revalidate: 300, tags: [FINANCE_CACHE_TAG, OPS_LIVE_TAG] }
 
 export const getFinanceOverview = (range: DateRangeKey) =>
   unstable_cache(() => queryFinanceOverview(range), ["ops-finance-overview", range], CACHE)()
